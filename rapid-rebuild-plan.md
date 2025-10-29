@@ -21,19 +21,28 @@
 
 ## Tech Stack
 
-**Backend:**
-- Rails 7
+**Backend (Heroku):**
+- Rails 7 API mode
 - PostgreSQL
 - Active Storage for file uploads
+- CORS configured for Vercel frontend
 
-**Frontend:**
-- React (with existing UI components from Abodable/stockli.st)
+**Frontend (Vercel):**
+- React (standalone SPA)
 - Tailwind CSS
-- Hotwire/Turbo (for some interactions)
+- Axios for API calls
+- React Router for navigation
 
 **File Processing:**
-- Roo gem (for Excel/CSV parsing)
+- Roo gem (for Excel/CSV parsing on import)
+- Caxlsx gem (for Excel generation on export)
 - ActiveStorage for uploads
+
+**Architecture:**
+- Backend: API-only Rails app on Heroku
+- Frontend: React SPA on Vercel
+- Communication: REST API with JSON
+- Authentication: JWT tokens (for API auth)
 
 ---
 
@@ -113,11 +122,16 @@ create_table :columns do |t|
   t.string :column_name, null: false # database column name
   t.string :column_type, null: false # single_line_text, email, number, etc.
   t.integer :max_length
+  t.integer :min_length
   t.string :default_value
   t.text :description
   t.boolean :searchable, default: true
   t.boolean :is_title, default: false
   t.boolean :is_unique, default: false
+  t.boolean :required, default: false
+  t.decimal :min_value # for number types
+  t.decimal :max_value # for number types
+  t.text :validation_message # custom error message
   t.integer :position
   t.timestamps
 end
@@ -181,6 +195,27 @@ Create actual PostgreSQL tables based on user-defined schemas. Each user table g
 - Confirmation modal
 - Soft delete option (add deleted_at column)
 
+**2.6 Data Export**
+- Export any table to CSV
+- Export any table to Excel (.xlsx)
+- Export filtered/searched results
+- Export all tables (full backup)
+- Download button on list views
+
+**2.7 Column Type Editing**
+- Edit column types after import
+- Handle data migration when changing types
+- Warn about potential data loss
+- Preview changes before applying
+
+**2.8 Data Validation**
+- Required fields (prevent empty values)
+- Format validation (email, phone, URL)
+- Min/max values for numbers
+- Min/max length for text
+- Custom validation messages
+- Show validation errors clearly on forms
+
 ### UI Components Needed
 
 1. **Table Dashboard**
@@ -202,6 +237,12 @@ Create actual PostgreSQL tables based on user-defined schemas. Each user table g
    - Clean layout
    - Edit mode toggle
    - Related records section (placeholder)
+
+5. **Export Modal**
+   - Choose format (CSV or Excel)
+   - Export current view or all data
+   - Progress indicator
+   - Download button
 
 ---
 
@@ -332,12 +373,6 @@ end
 - Select multiple records
 - Bulk edit
 - Bulk delete
-- Export to CSV
-
-**5.6 Data Export**
-- Export any table to CSV
-- Export all tables (backup)
-- Scheduled exports (future)
 
 ---
 
@@ -514,10 +549,11 @@ Full list of supported column types and their properties:
 
 ## UI/UX Design Guidelines
 
-### Design System (from Abodable)
-- **Colors:** Purple theme (#151740, #5b21b6, #8b5cf6)
-- **Typography:** Sofia Pro
-- **Components:** Use existing UI components from Abodable/stockli.st
+### Design System
+- **Framework:** Stock Tailwind CSS (no custom theme needed initially)
+- **Colors:** Tailwind's default color palette (can customize later)
+- **Typography:** Tailwind's default font stack
+- **Components:** Standard Tailwind UI patterns
 - **Layout:** Clean, spacious, professional
 
 ### Key UI Patterns
@@ -670,51 +706,273 @@ class TypeDetector
 end
 ```
 
+### Data Export Implementation
+
+```ruby
+class DataExporter
+  def initialize(table, format: :csv)
+    @table = table
+    @format = format
+  end
+  
+  def export(records = nil)
+    records ||= @table.dynamic_model.all
+    
+    case @format
+    when :csv
+      export_csv(records)
+    when :xlsx
+      export_excel(records)
+    end
+  end
+  
+  private
+  
+  def export_csv(records)
+    require 'csv'
+    
+    CSV.generate do |csv|
+      # Header row
+      csv << @table.columns.pluck(:name)
+      
+      # Data rows
+      records.each do |record|
+        csv << @table.columns.map { |col| record.send(col.column_name) }
+      end
+    end
+  end
+  
+  def export_excel(records)
+    require 'caxlsx'
+    
+    package = Axlsx::Package.new
+    workbook = package.workbook
+    
+    workbook.add_worksheet(name: @table.name) do |sheet|
+      # Header row
+      sheet.add_row @table.columns.pluck(:name)
+      
+      # Data rows
+      records.each do |record|
+        sheet.add_row @table.columns.map { |col| record.send(col.column_name) }
+      end
+    end
+    
+    package.to_stream.read
+  end
+end
+```
+
+### Column Type Migration
+
+```ruby
+class ColumnMigrator
+  def change_type(column, new_type)
+    old_type = column.column_type
+    table = column.table
+    
+    # Preview changes
+    preview = preview_migration(column, new_type)
+    
+    # Check for data loss
+    if preview[:data_loss_count] > 0
+      return {
+        success: false,
+        error: "#{preview[:data_loss_count]} records will lose data",
+        preview: preview
+      }
+    end
+    
+    # Execute migration
+    ActiveRecord::Migration.change_column(
+      table.database_table_name,
+      column.column_name,
+      type_to_db_type(new_type)
+    )
+    
+    column.update(column_type: new_type)
+    
+    { success: true }
+  end
+  
+  private
+  
+  def preview_migration(column, new_type)
+    model = column.table.dynamic_model
+    records = model.all
+    
+    data_loss_count = 0
+    sample_issues = []
+    
+    records.each do |record|
+      value = record.send(column.column_name)
+      next if value.nil?
+      
+      unless valid_for_type?(value, new_type)
+        data_loss_count += 1
+        sample_issues << { id: record.id, value: value } if sample_issues.length < 5
+      end
+    end
+    
+    {
+      total_records: records.count,
+      data_loss_count: data_loss_count,
+      sample_issues: sample_issues
+    }
+  end
+  
+  def valid_for_type?(value, type)
+    case type
+    when 'email'
+      value.to_s.match?(/@/)
+    when 'number', 'currency', 'percentage'
+      Float(value) rescue false
+    when 'whole_number'
+      Integer(value) rescue false
+    when 'boolean'
+      ['true', 'false', '1', '0'].include?(value.to_s.downcase)
+    when 'date'
+      Date.parse(value.to_s) rescue false
+    when 'date_and_time'
+      DateTime.parse(value.to_s) rescue false
+    else
+      true # text types accept anything
+    end
+  end
+  
+  def type_to_db_type(type)
+    {
+      'single_line_text' => :string,
+      'email' => :string,
+      'multiple_lines_text' => :text,
+      'date' => :date,
+      'date_and_time' => :datetime,
+      'number' => :decimal,
+      'percentage' => :decimal,
+      'currency' => :decimal,
+      'whole_number' => :integer,
+      'boolean' => :boolean
+    }[type]
+  end
+end
+```
+
+### Validation Implementation
+
+```ruby
+class DynamicValidator
+  def validate_record(table, attributes)
+    errors = {}
+    
+    table.columns.each do |column|
+      value = attributes[column.column_name]
+      
+      # Required field check
+      if column.required && value.blank?
+        errors[column.column_name] = column.validation_message || "#{column.name} is required"
+        next
+      end
+      
+      next if value.blank? # Skip validation if optional and empty
+      
+      # Type-specific validation
+      case column.column_type
+      when 'email'
+        unless value.match?(/\A[^@\s]+@[^@\s]+\z/)
+          errors[column.column_name] = "#{column.name} must be a valid email"
+        end
+      when 'number', 'currency', 'percentage'
+        numeric_value = Float(value) rescue nil
+        if numeric_value.nil?
+          errors[column.column_name] = "#{column.name} must be a number"
+        elsif column.min_value && numeric_value < column.min_value
+          errors[column.column_name] = "#{column.name} must be at least #{column.min_value}"
+        elsif column.max_value && numeric_value > column.max_value
+          errors[column.column_name] = "#{column.name} must be at most #{column.max_value}"
+        end
+      when 'whole_number'
+        unless value.to_s.match?(/^\d+$/)
+          errors[column.column_name] = "#{column.name} must be a whole number"
+        end
+      when 'single_line_text', 'email'
+        if column.min_length && value.length < column.min_length
+          errors[column.column_name] = "#{column.name} must be at least #{column.min_length} characters"
+        elsif column.max_length && value.length > column.max_length
+          errors[column.column_name] = "#{column.name} must be at most #{column.max_length} characters"
+        end
+      end
+    end
+    
+    errors
+  end
+end
+```
+
 ---
 
 ## File Structure
 
+### Backend (Rails API - Heroku)
 ```
 app/
 ├── controllers/
-│   ├── tables_controller.rb          # CRUD for table definitions
-│   ├── columns_controller.rb         # CRUD for column definitions
-│   ├── imports_controller.rb         # Spreadsheet upload & import
-│   ├── records_controller.rb         # Dynamic record CRUD
-│   └── relationships_controller.rb   # Managing lookups
+│   ├── api/
+│   │   └── v1/
+│   │       ├── tables_controller.rb          # CRUD for table definitions
+│   │       ├── columns_controller.rb         # CRUD for column definitions
+│   │       ├── imports_controller.rb         # Spreadsheet upload & import
+│   │       ├── records_controller.rb         # Dynamic record CRUD
+│   │       └── relationships_controller.rb   # Managing lookups
 ├── models/
-│   ├── table.rb                      # Table definition model
-│   ├── column.rb                     # Column definition model
-│   ├── import.rb                     # Import job tracking
+│   ├── table.rb                              # Table definition model
+│   ├── column.rb                             # Column definition model
+│   ├── import.rb                             # Import job tracking
 │   └── concerns/
-│       └── dynamic_model.rb          # Dynamic AR model creation
+│       └── dynamic_model.rb                  # Dynamic AR model creation
 ├── services/
-│   ├── table_builder.rb              # Creates actual DB tables
-│   ├── type_detector.rb              # Detects column types from data
-│   ├── spreadsheet_parser.rb         # Parses CSV/XLSX files
-│   └── data_importer.rb              # Imports rows into tables
-├── views/
+│   ├── table_builder.rb                      # Creates actual DB tables
+│   ├── type_detector.rb                      # Detects column types from data
+│   ├── spreadsheet_parser.rb                 # Parses CSV/XLSX files
+│   ├── data_importer.rb                      # Imports rows into tables
+│   ├── data_exporter.rb                      # Exports tables to CSV/Excel
+│   └── column_migrator.rb                    # Handles column type changes
+└── config/
+    ├── routes.rb                             # API routes
+    └── initializers/
+        └── cors.rb                           # CORS config for Vercel
+```
+
+### Frontend (React SPA - Vercel)
+```
+src/
+├── components/
 │   ├── tables/
-│   │   ├── index.html.erb            # List of all tables
-│   │   ├── show.html.erb             # Table detail/settings
-│   │   └── new.html.erb              # Create table manually
+│   │   ├── TableList.jsx                     # List of all tables
+│   │   ├── TableDetail.jsx                   # Table settings view
+│   │   └── TableForm.jsx                     # Create/edit table
 │   ├── imports/
-│   │   ├── new.html.erb              # Upload spreadsheet
-│   │   ├── preview.html.erb          # Preview & configure import
-│   │   └── result.html.erb           # Import results
-│   └── records/
-│       ├── index.html.erb            # List records in a table
-│       ├── show.html.erb             # Record detail
-│       └── _form.html.erb            # Dynamic form partial
-└── javascript/
-    ├── components/
-    │   ├── TableList.jsx             # React component for table grid
-    │   ├── DataTable.jsx             # React component for record list
-    │   ├── DynamicForm.jsx           # React component for forms
-    │   ├── TypeDetector.jsx          # UI for type detection preview
-    │   └── FileUploader.jsx          # Drag-drop upload component
-    └── utils/
-        └── api.js                    # API client for backend
+│   │   ├── FileUploader.jsx                  # Drag-drop upload
+│   │   ├── ImportPreview.jsx                 # Preview before import
+│   │   └── TypeDetector.jsx                  # Type detection UI
+│   ├── records/
+│   │   ├── RecordList.jsx                    # Data table component
+│   │   ├── RecordDetail.jsx                  # Record detail view
+│   │   └── DynamicForm.jsx                   # Auto-generated forms
+│   ├── columns/
+│   │   ├── ColumnList.jsx                    # Table columns
+│   │   └── ColumnForm.jsx                    # Add/edit column
+│   └── layout/
+│       ├── Sidebar.jsx                       # Navigation sidebar
+│       ├── Header.jsx                        # Top header
+│       └── Layout.jsx                        # Main layout wrapper
+├── pages/
+│   ├── Dashboard.jsx                         # Home page
+│   ├── TablePage.jsx                         # View table data
+│   └── ImportPage.jsx                        # Upload spreadsheet
+├── utils/
+│   ├── api.js                                # Axios API client
+│   └── constants.js                          # Shared constants
+└── App.jsx                                   # Main app with routing
 ```
 
 ---
@@ -781,20 +1039,34 @@ app/
 ## Deployment Strategy
 
 ### Development Environment
-- Local Rails server
-- PostgreSQL database
-- Hot reload for React components
+- **Backend:** Local Rails API server (port 3000)
+- **Frontend:** Vite dev server (port 5173)
+- PostgreSQL database locally
+- CORS enabled for localhost
 
 ### Staging Environment
-- Heroku or similar
+- **Backend:** Heroku staging app
+- **Frontend:** Vercel preview deployment
 - Production-like data
 - Team testing
 
 ### Production Environment
-- Heroku/AWS/DigitalOcean
-- Automated backups
-- Monitoring (Sentry/Rollbar)
-- SSL certificate
+- **Backend:** Heroku production app
+  - PostgreSQL addon
+  - Automated backups
+  - SSL included
+  - Monitoring (Sentry/Rollbar)
+- **Frontend:** Vercel production deployment
+  - Automatic deploys from main branch
+  - Edge network (fast globally)
+  - SSL included
+  - Preview deployments for PRs
+
+### Deployment Flow
+1. Push code to GitHub
+2. Vercel auto-deploys frontend
+3. Heroku auto-deploys backend (via GitHub integration)
+4. Environment variables configured in both platforms
 
 ---
 
@@ -813,6 +1085,10 @@ app/
 - ✅ Can edit existing records
 - ✅ Can delete records
 - ✅ Basic search works
+- ✅ Can export tables to CSV/Excel
+- ✅ Can change column types after import
+- ✅ Required field validation works
+- ✅ Format validation works (email, numbers, etc.)
 
 ### Phase 3 Success (Week 3)
 - ✅ Can create lookup relationships
@@ -870,11 +1146,42 @@ Before starting development, clarify:
 - Claude Code for implementation
 - Access to Rapid Platform for testing/export
 - Sample data from Tekna's Rapid instance
+- GitHub repos (two repos: frontend + backend)
+
+### API Architecture
+- RESTful endpoints
+- JSON responses
+- JWT authentication (optional for Phase 1)
+- CORS configured for Vercel domain
+- API versioning (v1)
+
+**Example endpoints:**
+```
+GET    /api/v1/tables              # List all tables
+POST   /api/v1/tables              # Create table
+GET    /api/v1/tables/:id          # Get table details
+PATCH  /api/v1/tables/:id          # Update table
+DELETE /api/v1/tables/:id          # Delete table
+
+POST   /api/v1/imports             # Upload spreadsheet
+GET    /api/v1/imports/:id/preview # Preview import
+POST   /api/v1/imports/:id/execute # Execute import
+
+GET    /api/v1/tables/:table_id/records        # List records
+POST   /api/v1/tables/:table_id/records        # Create record
+GET    /api/v1/tables/:table_id/records/:id    # Get record
+PATCH  /api/v1/tables/:table_id/records/:id    # Update record
+DELETE /api/v1/tables/:table_id/records/:id    # Delete record
+
+GET    /api/v1/tables/:table_id/export         # Export table data
+POST   /api/v1/columns/:id/change_type         # Change column type
+POST   /api/v1/records/validate                # Validate record data
+```
 
 ### Design
-- Existing Abodable UI components
-- Tailwind CSS setup
-- Icon library (Heroicons or similar)
+- Stock Tailwind CSS
+- Tailwind UI components (optional, for nicer defaults)
+- Heroicons for icons
 
 ### Infrastructure
 - GitHub repo for code
@@ -886,14 +1193,18 @@ Before starting development, clarify:
 
 ## Budget Considerations
 
-**Zero external costs approach:**
-- Self-development (your time + Claude Code)
-- Use existing UI components (no design costs)
-- Open source gems/libraries
-- Heroku free tier for staging (or DigitalOcean $5/mo droplet)
-- Production hosting: ~$20-50/mo
+**Hosting costs:**
+- **Vercel:** Free tier (plenty for your team size)
+- **Heroku:** 
+  - Eco dyno: $5/mo (backend)
+  - Mini PostgreSQL: $5/mo (database)
+  - Total: $10/mo
+- **Development:** Self-development (your time + Claude Code)
+- **Libraries:** All open source (free)
 
-**Total estimated cost:** $50-100/mo for hosting, $0 for development
+**Total estimated cost:** $10/mo for hosting, $0 for development
+
+(Can start with Heroku free tier during development, upgrade to paid at launch)
 
 ---
 

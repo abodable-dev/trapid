@@ -11,8 +11,15 @@ Rails.application.routes.draw do
   # API routes
   namespace :api do
     namespace :v1 do
-      # Add your API routes here
-      # Example: resources :items
+      # Import routes
+      post 'imports/upload', to: 'imports#upload'
+      post 'imports/execute', to: 'imports#execute'
+
+      # Table management
+      resources :tables do
+        # Record management for dynamic tables
+        resources :records
+      end
     end
   end
 
