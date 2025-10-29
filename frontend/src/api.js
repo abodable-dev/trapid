@@ -64,6 +64,17 @@ export const api = {
     return response.json();
   },
 
+  async patch(endpoint, data) {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('API request failed');
+    return response.json();
+  },
+
   async delete(endpoint) {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'DELETE',

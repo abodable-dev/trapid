@@ -49,14 +49,24 @@ export default function ColumnForm({ table, column, onClose }) {
     setSaving(true)
 
     try {
+      // Generate column_name from name if not editing
+      const columnData = { ...formData }
+      if (!isEditing && !columnData.column_name) {
+        columnData.column_name = formData.name
+          .toLowerCase()
+          .replace(/\s+/g, '_')
+          .replace(/[^a-z0-9_]/g, '')
+      }
+
       if (isEditing) {
-        await api.put(`/api/v1/tables/${table.id}/columns/${column.id}`, { column: formData })
+        await api.put(`/api/v1/tables/${table.id}/columns/${column.id}`, { column: columnData })
       } else {
-        await api.post(`/api/v1/tables/${table.id}/columns`, { column: formData })
+        await api.post(`/api/v1/tables/${table.id}/columns`, { column: columnData })
       }
       onClose()
     } catch (err) {
-      setError(err.response?.data?.error || err.message)
+      console.error('Column save error:', err)
+      setError(err.response?.data?.errors?.join(', ') || err.response?.data?.error || err.message)
     } finally {
       setSaving(false)
     }

@@ -23,6 +23,10 @@ Rails.application.routes.draw do
       # Grok AI integration
       post 'grok/chat', to: 'grok#chat'
       get 'grok/suggest-features', to: 'grok#suggest_features'
+      post 'grok/plans', to: 'grok#create_plan'
+      get 'grok/plans', to: 'grok#list_plans'
+      get 'grok/plans/:id', to: 'grok#show_plan'
+      patch 'grok/plans/:id', to: 'grok#update_plan'
 
       # Table management
       resources :tables do
