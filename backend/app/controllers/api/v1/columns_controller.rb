@@ -17,6 +17,11 @@ module Api
           result = builder.create_database_table
 
           if result[:success]
+            # Reload the dynamic model to pick up new columns
+            table_reloaded.reload_dynamic_model
+            # Reset the connection's schema cache for this table
+            ActiveRecord::Base.connection.schema_cache.clear_data_source_cache!(table_reloaded.database_table_name)
+
             render json: {
               success: true,
               column: column_json(column)
@@ -47,6 +52,11 @@ module Api
           result = builder.create_database_table
 
           if result[:success]
+            # Reload the dynamic model to pick up changes
+            table_reloaded.reload_dynamic_model
+            # Reset the connection's schema cache for this table
+            ActiveRecord::Base.connection.schema_cache.clear_data_source_cache!(table_reloaded.database_table_name)
+
             render json: {
               success: true,
               column: column_json(@column)
