@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import GrokChat, { GrokChatButton } from '../GrokChat'
 import {
   Dialog,
   DialogBackdrop,
@@ -72,6 +73,7 @@ export default function AppLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [grokChatOpen, setGrokChatOpen] = useState(false)
   const location = useLocation()
 
   // Determine which section we're in based on the current path
@@ -443,6 +445,10 @@ export default function AppLayout({ children }) {
           <div className="px-4 sm:px-6 lg:px-8">{children}</div>
         </main>
       </div>
+
+      {/* Grok Chat */}
+      <GrokChat isOpen={grokChatOpen} onClose={() => setGrokChatOpen(false)} />
+      {!grokChatOpen && <GrokChatButton onClick={() => setGrokChatOpen(true)} />}
     </div>
   )
 }
