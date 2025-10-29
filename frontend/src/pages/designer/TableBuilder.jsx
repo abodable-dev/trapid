@@ -116,28 +116,45 @@ export default function TableBuilder() {
     setError(null)
 
     try {
-      // Create table with columns using the imports/execute endpoint
-      const columnsData = columns.map((col, index) => ({
-        name: col.name,
-        column_name: col.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
-        column_type: col.column_type,
-        is_title: index === 0, // First column is title
-        searchable: true,
-        required: false
-      }))
-
-      const response = await api.post('/api/v1/imports/execute', {
-        table_name: tableName,
-        columns: columnsData,
-        temp_file_path: null // No file, just create empty table with columns
+      // Step 1: Create the table
+      const tableResponse = await api.post('/api/v1/tables', {
+        table: {
+          name: tableName,
+          searchable: true
+        }
       })
 
-      if (response.success && response.table) {
-        // Navigate directly to the spreadsheet view
-        navigate(`/tables/${response.table.id}`)
-      } else {
-        setError(response.error || 'Failed to create table')
+      if (!tableResponse.success || !tableResponse.table) {
+        setError('Failed to create table')
+        return
       }
+
+      const tableId = tableResponse.table.id
+
+      // Step 2: Create each column
+      for (let index = 0; index < columns.length; index++) {
+        const col = columns[index]
+        const columnData = {
+          name: col.name,
+          column_name: col.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+          column_type: col.column_type,
+          is_title: index === 0, // First column is title
+          searchable: true,
+          required: false
+        }
+
+        const columnResponse = await api.post(`/api/v1/tables/${tableId}/columns`, {
+          column: columnData
+        })
+
+        if (!columnResponse.success) {
+          setError(`Failed to create column: ${col.name}`)
+          return
+        }
+      }
+
+      // Step 3: Navigate to the spreadsheet view
+      navigate(`/tables/${tableId}`)
     } catch (err) {
       console.error('Table creation error:', err)
       setError(err.response?.data?.error || err.message || 'Failed to create table')

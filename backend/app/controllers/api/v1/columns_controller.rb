@@ -2,7 +2,7 @@ module Api
   module V1
     class ColumnsController < ApplicationController
       before_action :set_table
-      before_action :set_column, only: [:show, :update, :destroy]
+      before_action :set_column, only: [:update, :destroy]
 
       # POST /api/v1/tables/:table_id/columns
       def create
