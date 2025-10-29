@@ -96,7 +96,7 @@ class GrokService
   end
 
   def load_project_documentation
-    doc_path = Rails.root.join("..", "rapid-rebuild-plan.md")
+    doc_path = Rails.root.join("rapid-rebuild-plan.md")
     return nil unless File.exist?(doc_path)
 
     content = File.read(doc_path)
