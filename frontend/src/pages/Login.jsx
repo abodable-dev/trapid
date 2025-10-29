@@ -1,4 +1,36 @@
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+
 export default function Login() {
+  const navigate = useNavigate()
+  const { login } = useAuth()
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    const result = await login(formData.email, formData.password)
+
+    if (result.success) {
+      navigate('/dashboard')
+    } else {
+      setError(result.error || 'Login failed. Please try again.')
+    }
+    setLoading(false)
+  }
+
   return (
     <div className="flex min-h-full">
       <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
@@ -19,15 +51,21 @@ export default function Login() {
             </h2>
             <p className="mt-2 text-sm/6 text-gray-500 dark:text-gray-400">
               Not a member?{' '}
-              <a href="#" className="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
-                Start a 14 day free trial
-              </a>
+              <Link to="/signup" className="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                Create an account
+              </Link>
             </p>
           </div>
 
           <div className="mt-10">
+            {error && (
+              <div className="mb-4 rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+              </div>
+            )}
+
             <div>
-              <form action="#" method="POST" className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="email" className="block text-sm/6 font-medium text-gray-900 dark:text-gray-100">
                     Email address
@@ -39,6 +77,8 @@ export default function Login() {
                       name="email"
                       required
                       autoComplete="email"
+                      value={formData.email}
+                      onChange={handleChange}
                       className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6 dark:bg-white/5 dark:text-white dark:outline-white/10 dark:placeholder:text-gray-500 dark:focus:outline-indigo-500"
                     />
                   </div>
@@ -55,6 +95,8 @@ export default function Login() {
                       name="password"
                       required
                       autoComplete="current-password"
+                      value={formData.password}
+                      onChange={handleChange}
                       className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6 dark:bg-white/5 dark:text-white dark:outline-white/10 dark:placeholder:text-gray-500 dark:focus:outline-indigo-500"
                     />
                   </div>
@@ -107,9 +149,10 @@ export default function Login() {
                 <div>
                   <button
                     type="submit"
-                    className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:shadow-none dark:hover:bg-indigo-400 dark:focus-visible:outline-indigo-500"
+                    disabled={loading}
+                    className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:shadow-none dark:hover:bg-indigo-400 dark:focus-visible:outline-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Sign in
+                    {loading ? 'Signing in...' : 'Sign in'}
                   </button>
                 </div>
               </form>

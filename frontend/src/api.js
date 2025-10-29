@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const api = {
   async get(endpoint) {
@@ -21,6 +21,16 @@ export const api = {
       },
       credentials: 'include',
       body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('API request failed');
+    return response.json();
+  },
+
+  async postFormData(endpoint, formData) {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
     });
     if (!response.ok) throw new Error('API request failed');
     return response.json();

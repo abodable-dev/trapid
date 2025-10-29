@@ -1,0 +1,98 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { api } from '../api'
+
+export default function Dashboard() {
+  const [tables, setTables] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    loadTables()
+  }, [])
+
+  const loadTables = async () => {
+    try {
+      setLoading(true)
+      const response = await api.get('/api/v1/tables')
+      setTables(response.tables || [])
+    } catch (err) {
+      setError('Failed to load tables')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-600">Loading tables...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-600">{error}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Tables</h1>
+        <Link
+          to="/import"
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+        >
+          Import New Table
+        </Link>
+      </div>
+
+      {tables.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No tables yet</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Get started by importing a spreadsheet to create your first table.
+          </p>
+          <Link
+            to="/import"
+            className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          >
+            Import Your First Table
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tables.map((table) => (
+            <Link
+              key={table.id}
+              to={`/tables/${table.id}`}
+              className="block p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-indigo-300 transition dark:bg-gray-800 dark:border-gray-700 dark:hover:border-indigo-500"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {table.name}
+                  </h3>
+                  {table.description && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{table.description}</p>
+                  )}
+                </div>
+                {table.icon && (
+                  <span className="text-2xl">{table.icon}</span>
+                )}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Database: {table.database_table_name}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
