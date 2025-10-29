@@ -38,6 +38,13 @@ class GrokService
   def build_system_message(context)
     prompt = "You are Grok, an AI assistant helping a development team build Trapid, a database management application."
 
+    # Include project rebuild plan for context
+    rebuild_plan = load_project_documentation
+    if rebuild_plan
+      prompt += "\n\n## PROJECT REBUILD PLAN\n#{rebuild_plan}\n"
+      prompt += "\n\nUse this plan as reference when discussing features, architecture, and priorities."
+    end
+
     if context[:current_page]
       prompt += "\n\nThe user is currently on: #{context[:current_page]}"
     end
@@ -86,5 +93,22 @@ class GrokService
       model: response["model"],
       usage: response["usage"]
     }
+  end
+
+  def load_project_documentation
+    doc_path = Rails.root.join("..", "rapid-rebuild-plan.md")
+    return nil unless File.exist?(doc_path)
+
+    content = File.read(doc_path)
+
+    # Truncate to avoid token limits (keep first 3000 characters)
+    if content.length > 3000
+      content[0..3000] + "\n\n[Document truncated...]"
+    else
+      content
+    end
+  rescue => e
+    Rails.logger.error "Failed to load project documentation: #{e.message}"
+    nil
   end
 end
