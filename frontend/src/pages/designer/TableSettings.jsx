@@ -21,7 +21,11 @@ export default function TableSettings() {
     try {
       setLoading(true)
       const response = await api.get(`/api/v1/tables/${id}`)
-      setTable(response.data)
+      if (response.success && response.table) {
+        setTable(response.table)
+      } else {
+        setError('Failed to load table')
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -33,7 +37,9 @@ export default function TableSettings() {
     try {
       setSaving(true)
       const response = await api.put(`/api/v1/tables/${id}`, { table: updates })
-      setTable(response.data)
+      if (response.success && response.table) {
+        setTable(response.table)
+      }
     } catch (err) {
       setError(err.message)
     } finally {

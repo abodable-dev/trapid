@@ -5,12 +5,15 @@ import { EllipsisVerticalIcon } from '@heroicons/react/20/solid'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { api } from '../../api'
 import CreateTableModal from '../../components/designer/CreateTableModal'
+import DeleteTableModal from '../../components/designer/DeleteTableModal'
 
 export default function DesignerHome() {
   const [tables, setTables] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, tableId: null, tableName: '' })
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     fetchTables()
@@ -28,16 +31,27 @@ export default function DesignerHome() {
     }
   }
 
-  const handleDeleteTable = async (tableId, tableName) => {
-    if (!confirm(`Are you sure you want to delete "${tableName}"? This will delete all data in this table.`)) {
-      return
+  const openDeleteModal = (tableId, tableName) => {
+    setDeleteModal({ isOpen: true, tableId, tableName })
+  }
+
+  const closeDeleteModal = () => {
+    if (!isDeleting) {
+      setDeleteModal({ isOpen: false, tableId: null, tableName: '' })
     }
+  }
+
+  const confirmDelete = async () => {
+    setIsDeleting(true)
 
     try {
-      await api.delete(`/api/v1/tables/${tableId}`)
+      await api.delete(`/api/v1/tables/${deleteModal.tableId}`)
+      setDeleteModal({ isOpen: false, tableId: null, tableName: '' })
       fetchTables() // Refresh the list
     } catch (err) {
       alert(`Error deleting table: ${err.message}`)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -75,6 +89,24 @@ export default function DesignerHome() {
 
   return (
     <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Designer</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Manage your table structures and columns
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowCreateModal(true)}
+          className="inline-flex items-center gap-x-2 rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:shadow-none dark:hover:bg-indigo-400"
+        >
+          <PlusIcon className="h-5 w-5" />
+          Create Table
+        </button>
+      </div>
+
       {/* Tables List */}
       {tables.length === 0 ? (
         <div className="text-center py-12">
@@ -140,7 +172,7 @@ export default function DesignerHome() {
               </div>
               <div className="flex flex-none items-center gap-x-4">
                 <Link
-                  to={`/designer/tables/${table.id}`}
+                  to={`/tables/${table.id}`}
                   className="hidden rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:block dark:bg-white/10 dark:text-white dark:shadow-none dark:ring-white/5 dark:hover:bg-white/20"
                 >
                   View table<span className="sr-only">, {table.name}</span>
@@ -173,7 +205,7 @@ export default function DesignerHome() {
                     </MenuItem>
                     <MenuItem>
                       <button
-                        onClick={() => handleDeleteTable(table.id, table.name)}
+                        onClick={() => openDeleteModal(table.id, table.name)}
                         className="block w-full text-left px-3 py-1 text-sm/6 text-red-600 data-[focus]:bg-gray-50 data-[focus]:outline-none dark:text-red-400 dark:data-[focus]:bg-white/5"
                       >
                         Delete<span className="sr-only">, {table.name}</span>
@@ -191,6 +223,15 @@ export default function DesignerHome() {
       <CreateTableModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
+      />
+
+      {/* Delete Table Modal */}
+      <DeleteTableModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDelete}
+        tableName={deleteModal.tableName}
+        isDeleting={isDeleting}
       />
     </div>
   )

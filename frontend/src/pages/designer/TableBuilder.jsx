@@ -116,32 +116,22 @@ export default function TableBuilder() {
     setError(null)
 
     try {
-      // Create the table
+      // Just create the table - user will add columns through the UI
       const tableData = {
         name: tableName,
         searchable: true
       }
 
       const tableResponse = await api.post('/api/v1/tables', { table: tableData })
-      const tableId = tableResponse.data.id
 
-      // Create all columns
-      for (const column of columns) {
-        await api.post(`/api/v1/tables/${tableId}/columns`, {
-          column: {
-            name: column.name,
-            column_type: column.column_type,
-            is_title: column.is_title,
-            required: false,
-            searchable: true
-          }
-        })
+      if (tableResponse.success && tableResponse.table) {
+        // Navigate directly to the table settings page
+        navigate(`/designer/tables/${tableResponse.table.id}`)
+      } else {
+        setError('Failed to create table')
       }
-
-      // Navigate to the table settings page
-      navigate(`/designer/tables/${tableId}`)
     } catch (err) {
-      setError(err.response?.data?.error || err.message)
+      setError(err.message || 'Failed to create table')
     } finally {
       setSaving(false)
     }
