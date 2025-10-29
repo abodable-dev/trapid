@@ -25,7 +25,7 @@ import {
   Bars4Icon,
   DocumentTextIcon,
   SparklesIcon,
-  WrenchScrewdriverIcon,
+  LightBulbIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/outline'
@@ -40,11 +40,10 @@ const explorerNavigation = [
 // Navigation for Designer view
 const designerNavigation = [
   { name: 'Tables', href: '/designer', icon: TableCellsIcon },
-  { name: 'Features', href: '/designer/features', icon: StarIcon },
   { name: 'Menus', href: '/designer/menus', icon: Bars4Icon },
   { name: 'Pages', href: '/designer/pages', icon: DocumentTextIcon },
   { name: 'Experiences', href: '/designer/experiences', icon: SparklesIcon },
-  { name: 'Maintenance', href: '/designer/maintenance', icon: WrenchScrewdriverIcon },
+  { name: 'Features', href: '/designer/features', icon: LightBulbIcon },
 ]
 
 // Navigation for Workflow view (placeholder for now)
@@ -442,7 +441,12 @@ export default function AppLayout({ children }) {
 
         {/* Main content */}
         <main className="py-10">
-          <div className="px-4 sm:px-6 lg:px-8">{children}</div>
+          <div className="px-4 sm:px-6 lg:px-8">
+            {typeof children === 'function'
+              ? children({ onOpenGrokChat: () => setGrokChatOpen(true) })
+              : children
+            }
+          </div>
         </main>
       </div>
 

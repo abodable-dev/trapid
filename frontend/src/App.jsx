@@ -10,7 +10,6 @@ import Features from './pages/designer/Features'
 import Menus from './pages/designer/Menus'
 import Pages from './pages/designer/Pages'
 import Experiences from './pages/designer/Experiences'
-import Maintenance from './pages/designer/Maintenance'
 
 function App() {
   return (
@@ -23,11 +22,14 @@ function App() {
         <Route path="/designer" element={<AppLayout><DesignerHome /></AppLayout>} />
         <Route path="/designer/tables/new" element={<AppLayout><TableBuilder /></AppLayout>} />
         <Route path="/designer/tables/:id" element={<AppLayout><TableSettings /></AppLayout>} />
-        <Route path="/designer/features" element={<AppLayout><Features /></AppLayout>} />
         <Route path="/designer/menus" element={<AppLayout><Menus /></AppLayout>} />
         <Route path="/designer/pages" element={<AppLayout><Pages /></AppLayout>} />
         <Route path="/designer/experiences" element={<AppLayout><Experiences /></AppLayout>} />
-        <Route path="/designer/maintenance" element={<AppLayout><Maintenance /></AppLayout>} />
+        <Route path="/designer/features" element={
+          <AppLayout>
+            {({ onOpenGrokChat }) => <Features onOpenGrokChat={onOpenGrokChat} />}
+          </AppLayout>
+        } />
       </Routes>
     </BrowserRouter>
   )

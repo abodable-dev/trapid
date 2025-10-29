@@ -23,7 +23,7 @@ export default function GrokChat({ isOpen, onClose }) {
     if (isOpen && messages.length === 0) {
       setMessages([{
         role: 'assistant',
-        content: "Hey! I'm Grok, your AI teammate. I can see what you're working on and help plan features, debug issues, or discuss architecture. What's on your mind?"
+        content: "Hey! I'm here to help you build out this product. Talk to me the same way you'd talk with Grok - let's wrap our heads around the product and features together. What are you thinking about building?"
       }])
     }
   }, [isOpen])
@@ -52,10 +52,12 @@ export default function GrokChat({ isOpen, onClose }) {
       })
 
       if (response.success) {
-        setMessages(prev => [...prev, {
+        const newMessage = {
           role: 'assistant',
-          content: response.response
-        }])
+          content: response.response,
+          showSaveButton: response.response.toLowerCase().includes('are you happy with this plan')
+        }
+        setMessages(prev => [...prev, newMessage])
       } else {
         setMessages(prev => [...prev, {
           role: 'error',
@@ -70,6 +72,33 @@ export default function GrokChat({ isOpen, onClose }) {
       }])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSavePlan = async () => {
+    const planTitle = prompt('Give this plan a title:')
+    if (!planTitle) return
+
+    try {
+      const response = await api.post('/api/v1/grok/plans', {
+        title: planTitle,
+        description: messages[1]?.content?.substring(0, 200), // First user message
+        conversation: messages,
+        status: 'planning'
+      })
+
+      if (response.success) {
+        setMessages(prev => [...prev, {
+          role: 'system',
+          content: `✅ Plan saved as "${planTitle}"! You can find it in the Features section.`
+        }])
+      }
+    } catch (error) {
+      console.error('Failed to save plan:', error)
+      setMessages(prev => [...prev, {
+        role: 'error',
+        content: 'Failed to save plan. Please try again.'
+      }])
     }
   }
 
@@ -131,21 +160,34 @@ export default function GrokChat({ isOpen, onClose }) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+          <div key={index}>
             <div
-              className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                message.role === 'user'
-                  ? 'bg-indigo-600 text-white'
-                  : message.role === 'error'
-                  ? 'bg-red-50 dark:bg-red-900/10 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-800'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
-              }`}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              <div
+                className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                  message.role === 'user'
+                    ? 'bg-indigo-600 text-white'
+                    : message.role === 'error'
+                    ? 'bg-red-50 dark:bg-red-900/10 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-800'
+                    : message.role === 'system'
+                    ? 'bg-green-50 dark:bg-green-900/10 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-800'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                }`}
+              >
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              </div>
             </div>
+            {message.showSaveButton && (
+              <div className="flex justify-start mt-2">
+                <button
+                  onClick={handleSavePlan}
+                  className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-md font-medium"
+                >
+                  💾 Save Plan to Features
+                </button>
+              </div>
+            )}
           </div>
         ))}
         {loading && (
