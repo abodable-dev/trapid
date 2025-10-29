@@ -116,22 +116,31 @@ export default function TableBuilder() {
     setError(null)
 
     try {
-      // Just create the table - user will add columns through the UI
-      const tableData = {
-        name: tableName,
-        searchable: true
-      }
+      // Create table with columns using the imports/execute endpoint
+      const columnsData = columns.map((col, index) => ({
+        name: col.name,
+        column_name: col.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+        column_type: col.column_type,
+        is_title: index === 0, // First column is title
+        searchable: true,
+        required: false
+      }))
 
-      const tableResponse = await api.post('/api/v1/tables', { table: tableData })
+      const response = await api.post('/api/v1/imports/execute', {
+        table_name: tableName,
+        columns: columnsData,
+        temp_file_path: null // No file, just create empty table with columns
+      })
 
-      if (tableResponse.success && tableResponse.table) {
-        // Navigate directly to the table settings page
-        navigate(`/designer/tables/${tableResponse.table.id}`)
+      if (response.success && response.table) {
+        // Navigate directly to the spreadsheet view
+        navigate(`/tables/${response.table.id}`)
       } else {
-        setError('Failed to create table')
+        setError(response.error || 'Failed to create table')
       }
     } catch (err) {
-      setError(err.message || 'Failed to create table')
+      console.error('Table creation error:', err)
+      setError(err.response?.data?.error || err.message || 'Failed to create table')
     } finally {
       setSaving(false)
     }

@@ -197,9 +197,9 @@ export function GrokChatButton({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full p-4 shadow-lg z-40 flex items-center gap-x-2 group"
+      className="fixed bottom-6 right-6 bg-black hover:bg-gray-800 text-white rounded-full p-3 shadow-lg z-40 flex items-center gap-x-2 group"
     >
-      <img src="/grok-logo.svg" alt="Grok" className="h-6 w-6" />
+      <img src="/grok-logo.png" alt="Grok" className="h-10 w-10" />
       <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap">
         Ask Grok
       </span>

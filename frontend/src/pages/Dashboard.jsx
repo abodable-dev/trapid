@@ -30,7 +30,9 @@ export default function Dashboard() {
     try {
       setLoading(true)
       const response = await api.get('/api/v1/tables')
-      setTables(response.tables || [])
+      // Only show tables that are marked as live
+      const liveTables = (response.tables || []).filter(table => table.is_live)
+      setTables(liveTables)
     } catch (err) {
       setError('Failed to load tables')
       console.error(err)
