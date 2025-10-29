@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { api } from '../api'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [tables, setTables] = useState([])
   const [filteredTables, setFilteredTables] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchParams] = useSearchParams()
   const searchQuery = searchParams.get('search') || ''
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [newTableName, setNewTableName] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState(null)
 
   useEffect(() => {
     loadTables()
@@ -41,6 +47,76 @@ export default function Dashboard() {
     }
   }
 
+  const handleCreateTable = async () => {
+    if (!newTableName.trim()) {
+      setCreateError('Table name is required')
+      return
+    }
+
+    setCreating(true)
+    setCreateError(null)
+
+    try {
+      // Step 1: Create the table
+      const tableResponse = await api.post('/api/v1/tables', {
+        table: {
+          name: newTableName,
+          searchable: true
+        }
+      })
+
+      if (!tableResponse.success || !tableResponse.table) {
+        setCreateError('Failed to create table')
+        return
+      }
+
+      const tableId = tableResponse.table.id
+
+      // Step 2: Create default columns
+      const defaultColumns = [
+        { name: 'Name', column_type: 'single_line_text', is_title: true },
+        { name: 'Email', column_type: 'email', is_title: false },
+        { name: 'Phone', column_type: 'single_line_text', is_title: false },
+        { name: 'Status', column_type: 'single_line_text', is_title: false },
+        { name: 'Created Date', column_type: 'date', is_title: false },
+      ]
+
+      for (let index = 0; index < defaultColumns.length; index++) {
+        const col = defaultColumns[index]
+        const columnData = {
+          name: col.name,
+          column_name: col.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+          column_type: col.column_type,
+          is_title: col.is_title,
+          searchable: true,
+          required: false
+        }
+
+        const columnResponse = await api.post(`/api/v1/tables/${tableId}/columns`, {
+          column: columnData
+        })
+
+        if (!columnResponse.success) {
+          setCreateError(`Failed to create column: ${col.name}`)
+          return
+        }
+      }
+
+      // Step 3: Mark table as live
+      await api.put(`/api/v1/tables/${tableId}`, {
+        table: { is_live: true }
+      })
+
+      // Step 4: Navigate to the spreadsheet view
+      navigate(`/tables/${tableId}`)
+    } catch (err) {
+      console.error('Table creation error:', err)
+      setCreateError(err.response?.data?.error || err.message || 'Failed to create table')
+    } finally {
+      setCreating(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -61,12 +137,24 @@ export default function Dashboard() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Tables</h1>
-        <Link
-          to="/import"
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-        >
-          Import New Table
-        </Link>
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              setShowCreateModal(true)
+              setNewTableName('')
+              setCreateError(null)
+            }}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          >
+            Create New Table
+          </button>
+          <Link
+            to="/import"
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+          >
+            Import Spreadsheet
+          </Link>
+        </div>
       </div>
 
       {searchQuery && (
@@ -82,14 +170,26 @@ export default function Dashboard() {
         <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No tables yet</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Get started by importing a spreadsheet to create your first table.
+            Get started by creating a new table or importing a spreadsheet.
           </p>
-          <Link
-            to="/import"
-            className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-          >
-            Import Your First Table
-          </Link>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => {
+                setShowCreateModal(true)
+                setNewTableName('')
+                setCreateError(null)
+              }}
+              className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+            >
+              Create Your First Table
+            </button>
+            <Link
+              to="/import"
+              className="inline-block px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+            >
+              Import Spreadsheet
+            </Link>
+          </div>
         </div>
       ) : filteredTables.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
@@ -130,6 +230,78 @@ export default function Dashboard() {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Create Table Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+              onClick={() => setShowCreateModal(false)}
+            />
+
+            {/* Modal */}
+            <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Create New Table
+                </h3>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Give your table a name. We'll create it with default columns (Name, Email, Phone, Status, Created Date) that you can customize later.
+              </p>
+
+              <div className="mb-6">
+                <label htmlFor="tableName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Table Name
+                </label>
+                <input
+                  type="text"
+                  id="tableName"
+                  value={newTableName}
+                  onChange={(e) => setNewTableName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !creating) {
+                      handleCreateTable()
+                    }
+                  }}
+                  placeholder="e.g., Contacts, Tasks, Projects..."
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  autoFocus
+                />
+                {createError && (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">{createError}</p>
+                )}
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  disabled={creating}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateTable}
+                  disabled={creating || !newTableName.trim()}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {creating ? 'Creating...' : 'Create Table'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

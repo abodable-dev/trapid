@@ -8,6 +8,8 @@ class Column < ApplicationRecord
     in: %w[
       single_line_text
       email
+      phone
+      url
       multiple_lines_text
       date
       date_and_time
@@ -30,6 +32,8 @@ class Column < ApplicationRecord
   COLUMN_TYPE_MAP = {
     'single_line_text' => :string,
     'email' => :string,
+    'phone' => :string,
+    'url' => :string,
     'multiple_lines_text' => :text,
     'date' => :date,
     'date_and_time' => :datetime,

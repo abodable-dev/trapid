@@ -61,7 +61,7 @@ export default function TableBuilder() {
   const [columns, setColumns] = useState([
     { id: 1, name: 'Name', column_type: 'single_line_text', is_title: true },
     { id: 2, name: 'Email', column_type: 'email', is_title: false },
-    { id: 3, name: 'Phone', column_type: 'phone', is_title: false },
+    { id: 3, name: 'Phone', column_type: 'single_line_text', is_title: false },
     { id: 4, name: 'Status', column_type: 'single_line_text', is_title: false },
     { id: 5, name: 'Created Date', column_type: 'date', is_title: false },
   ])

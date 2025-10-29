@@ -30,6 +30,9 @@ export default function TablePage() {
   const [error, setError] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [editingCell, setEditingCell] = useState(null) // { recordId, columnName }
+  const [editValue, setEditValue] = useState('')
+  const [isAddingRow, setIsAddingRow] = useState(false)
 
   useEffect(() => {
     loadTable()
@@ -59,6 +62,70 @@ export default function TablePage() {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAddRow = async () => {
+    if (isAddingRow) return
+
+    try {
+      setIsAddingRow(true)
+      // Create an empty record with all columns
+      const newRecordData = {}
+      table.columns.forEach(col => {
+        newRecordData[col.column_name] = ''
+      })
+
+      const response = await api.post(`/api/v1/tables/${id}/records`, {
+        record: newRecordData
+      })
+
+      if (response.success) {
+        await loadRecords()
+      }
+    } catch (err) {
+      console.error('Failed to add record:', err)
+      alert('Failed to add record')
+    } finally {
+      setIsAddingRow(false)
+    }
+  }
+
+  const handleCellClick = (recordId, columnName, currentValue) => {
+    setEditingCell({ recordId, columnName })
+    setEditValue(currentValue || '')
+  }
+
+  const handleCellBlur = async () => {
+    if (!editingCell) return
+
+    const { recordId, columnName } = editingCell
+    const record = records.find(r => r.id === recordId)
+
+    // Only update if value changed
+    if (record && record[columnName] !== editValue) {
+      try {
+        const updateData = { [columnName]: editValue }
+        await api.put(`/api/v1/tables/${id}/records/${recordId}`, {
+          record: updateData
+        })
+        await loadRecords()
+      } catch (err) {
+        console.error('Failed to update record:', err)
+        alert('Failed to update record')
+      }
+    }
+
+    setEditingCell(null)
+    setEditValue('')
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.target.blur()
+    } else if (e.key === 'Escape') {
+      setEditingCell(null)
+      setEditValue('')
     }
   }
 
@@ -130,10 +197,12 @@ export default function TablePage() {
             </Link>
             <button
               type="button"
-              className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded ml-2"
+              onClick={handleAddRow}
+              disabled={isAddingRow}
+              className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <PlusIcon className="h-4 w-4" />
-              Add
+              {isAddingRow ? 'Adding...' : 'Add'}
             </button>
           </div>
         </div>
@@ -156,10 +225,12 @@ export default function TablePage() {
               <div className="mt-4">
                 <button
                   type="button"
-                  className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded"
+                  onClick={handleAddRow}
+                  disabled={isAddingRow}
+                  className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <PlusIcon className="h-4 w-4" />
-                  Add Record
+                  {isAddingRow ? 'Adding...' : 'Add Record'}
                 </button>
               </div>
             </div>
@@ -196,14 +267,32 @@ export default function TablePage() {
                     <td className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800/50 group-hover:bg-blue-100/50 dark:group-hover:bg-blue-900/20 border-r border-b border-gray-200 dark:border-gray-700 px-4 py-2">
                       <span className="text-xs text-gray-500 dark:text-gray-400">{idx + 1}</span>
                     </td>
-                    {table.columns.map((column) => (
-                      <td
-                        key={column.id}
-                        className="border-r border-b border-gray-200 dark:border-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10"
-                      >
-                        {formatValue(record[column.column_name], column.column_type)}
-                      </td>
-                    ))}
+                    {table.columns.map((column) => {
+                      const isEditing = editingCell?.recordId === record.id && editingCell?.columnName === column.column_name
+                      return (
+                        <td
+                          key={column.id}
+                          className="border-r border-b border-gray-200 dark:border-gray-700 px-0 py-0 text-sm bg-white dark:bg-gray-900 group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10"
+                          onClick={() => !isEditing && handleCellClick(record.id, column.column_name, record[column.column_name])}
+                        >
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={handleCellBlur}
+                              onKeyDown={handleKeyDown}
+                              autoFocus
+                              className="w-full h-full px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-2 border-blue-500 focus:outline-none"
+                            />
+                          ) : (
+                            <div className="px-4 py-2 cursor-text hover:bg-blue-50/30 dark:hover:bg-blue-900/5 min-h-[36px] flex items-center">
+                              {formatValue(record[column.column_name], column.column_type)}
+                            </div>
+                          )}
+                        </td>
+                      )
+                    })}
                   </tr>
                 ))}
               </tbody>
