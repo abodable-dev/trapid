@@ -56,6 +56,7 @@ class GrokService
     end
 
     prompt += "\n\nHelp the team plan features, debug issues, and build efficiently. Be concise and actionable."
+    prompt += "\n\nIMPORTANT: After discussing a feature or plan, always end by asking: 'Are you happy with this plan for the feature?' This signals that the plan can be saved for future reference."
 
     prompt
   end

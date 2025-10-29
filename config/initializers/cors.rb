@@ -7,7 +7,12 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins ENV.fetch("CORS_ORIGINS", "http://localhost:5173,http://localhost:5176").split(",")
+    # Allow all Vercel preview and production deployments, plus localhost
+    origins(
+      /https:\/\/trapid-.*\.vercel\.app$/,  # All Vercel deployments
+      "http://localhost:5173",
+      "http://localhost:5176"
+    )
 
     resource "*",
       headers: :any,

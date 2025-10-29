@@ -11,12 +11,17 @@ class TableBuilder
     return { success: false, errors: @errors } unless validate_table
 
     begin
+      # Store these in local variables for use inside the schema block
+      table_name = @table.database_table_name
+      columns = @table.columns.order(:position).to_a
+      builder = self
+
       ActiveRecord::Migration.suppress_messages do
         ActiveRecord::Schema.define do
-          create_table @table.database_table_name.to_sym, force: true do |t|
+          create_table table_name.to_sym, force: true do |t|
             # Add columns from the table definition
-            @table.columns.order(:position).each do |column|
-              add_column_to_migration(t, column)
+            columns.each do |column|
+              builder.send(:add_column_to_migration, t, column)
             end
 
             t.timestamps

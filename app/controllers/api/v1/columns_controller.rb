@@ -11,7 +11,9 @@ module Api
 
         if column.save
           # Rebuild the database table with the new column
-          builder = TableBuilder.new(@table.reload)
+          # Reload table with columns association
+          table_reloaded = Table.includes(:columns).find(@table.id)
+          builder = TableBuilder.new(table_reloaded)
           result = builder.create_database_table
 
           if result[:success]
@@ -20,6 +22,8 @@ module Api
               column: column_json(column)
             }, status: :created
           else
+            # Log the error for debugging
+            Rails.logger.error "TableBuilder failed: #{result[:errors].inspect}"
             column.destroy
             render json: {
               success: false,
@@ -38,7 +42,8 @@ module Api
       def update
         if @column.update(column_params)
           # Rebuild the database table to reflect the changes
-          builder = TableBuilder.new(@table.reload)
+          table_reloaded = Table.includes(:columns).find(@table.id)
+          builder = TableBuilder.new(table_reloaded)
           result = builder.create_database_table
 
           if result[:success]
@@ -65,7 +70,8 @@ module Api
         @column.destroy
 
         # Rebuild the database table without this column
-        builder = TableBuilder.new(@table.reload)
+        table_reloaded = Table.includes(:columns).find(@table.id)
+        builder = TableBuilder.new(table_reloaded)
         result = builder.create_database_table
 
         if result[:success]
