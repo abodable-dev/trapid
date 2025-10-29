@@ -68,7 +68,8 @@ export default function ImportPreview({ data, onComplete, onBack }) {
       const response = await api.post('/api/v1/imports/execute', {
         table_name: tableName,
         columns: columns,
-        temp_file_path: data.temp_file_path,
+        file_content: data.file_content,
+        original_filename: data.original_filename,
       })
 
       if (response.success) {
