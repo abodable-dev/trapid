@@ -8,7 +8,7 @@ module Api
         tables = Table.includes(:columns).all
         render json: {
           success: true,
-          tables: tables.map { |t| table_json(t) }
+          tables: tables.map { |t| table_json(t, include_record_count: true) }
         }
       end
 
@@ -85,11 +85,12 @@ module Api
           :icon,
           :title_column,
           :searchable,
-          :description
+          :description,
+          :is_live
         )
       end
 
-      def table_json(table, include_columns: false)
+      def table_json(table, include_columns: false, include_record_count: false)
         json = {
           id: table.id,
           name: table.name,
@@ -100,6 +101,7 @@ module Api
           title_column: table.title_column,
           searchable: table.searchable,
           description: table.description,
+          is_live: table.is_live,
           created_at: table.created_at,
           updated_at: table.updated_at
         }
@@ -128,12 +130,25 @@ module Api
               is_multiple: col.is_multiple
             }
           end
+        end
 
+        if include_columns || include_record_count
           # Get record count
           begin
             json[:record_count] = table.dynamic_model.count
           rescue
             json[:record_count] = 0
+          end
+        end
+
+        # Always include columns info for list view
+        unless include_columns
+          json[:columns] = table.columns.order(:position).map do |col|
+            {
+              id: col.id,
+              name: col.name,
+              column_type: col.column_type
+            }
           end
         end
 

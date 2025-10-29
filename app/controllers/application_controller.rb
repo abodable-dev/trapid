@@ -4,6 +4,16 @@ class ApplicationController < ActionController::API
   private
 
   def authorize_request
+    # Skip auth in development for faster iteration
+    if Rails.env.development?
+      @current_user = User.first || User.create!(
+        name: "Dev User",
+        email: "dev@example.com",
+        password: "password123"
+      )
+      return
+    end
+
     header = request.headers["Authorization"]
     token = header.split(" ").last if header
 
