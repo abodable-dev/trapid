@@ -6,6 +6,17 @@ import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import ImportPage from './pages/ImportPage'
 import TablePage from './pages/TablePage'
+import DesignerHome from './pages/designer/DesignerHome'
+import TableSettings from './pages/designer/TableSettings'
+import TableBuilder from './pages/designer/TableBuilder'
+import Features from './pages/designer/Features'
+import Menus from './pages/designer/Menus'
+import Pages from './pages/designer/Pages'
+import Experiences from './pages/designer/Experiences'
+import Maintenance from './pages/designer/Maintenance'
+import Profile from './pages/Profile'
+import Settings from './pages/Settings'
+import Logout from './pages/Logout'
 
 // Protected Route component
 function ProtectedRoute({ children }) {
@@ -72,6 +83,90 @@ function AppRoutes() {
             <AppLayout><TablePage /></AppLayout>
           </ProtectedRoute>
         }
+      />
+      <Route
+        path="/designer"
+        element={
+          <ProtectedRoute>
+            <AppLayout><DesignerHome /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/designer/tables/new"
+        element={
+          <ProtectedRoute>
+            <AppLayout><TableBuilder /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/designer/tables/:id"
+        element={
+          <ProtectedRoute>
+            <AppLayout><TableSettings /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/designer/features"
+        element={
+          <ProtectedRoute>
+            <AppLayout><Features /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/designer/menus"
+        element={
+          <ProtectedRoute>
+            <AppLayout><Menus /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/designer/pages"
+        element={
+          <ProtectedRoute>
+            <AppLayout><Pages /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/designer/experiences"
+        element={
+          <ProtectedRoute>
+            <AppLayout><Experiences /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/designer/maintenance"
+        element={
+          <ProtectedRoute>
+            <AppLayout><Maintenance /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <AppLayout><Profile /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <AppLayout><Settings /></AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/logout"
+        element={<Logout />}
       />
     </Routes>
   )

@@ -17,24 +17,51 @@ import {
   HomeIcon,
   ArrowUpTrayIcon,
   XMarkIcon,
+  UserCircleIcon,
+  ArrowRightOnRectangleIcon,
+  TableCellsIcon,
+  StarIcon,
+  Bars4Icon,
+  DocumentTextIcon,
+  SparklesIcon,
+  WrenchScrewdriverIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'
 
-const navigation = [
+// Navigation for Explorer view
+const explorerNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Import Data', href: '/import', icon: ArrowUpTrayIcon },
 ]
 
+// Navigation for Designer view
+const designerNavigation = [
+  { name: 'Tables', href: '/designer', icon: TableCellsIcon },
+  { name: 'Features', href: '/designer/features', icon: StarIcon },
+  { name: 'Menus', href: '/designer/menus', icon: Bars4Icon },
+  { name: 'Pages', href: '/designer/pages', icon: DocumentTextIcon },
+  { name: 'Experiences', href: '/designer/experiences', icon: SparklesIcon },
+  { name: 'Maintenance', href: '/designer/maintenance', icon: WrenchScrewdriverIcon },
+]
+
+// Navigation for Workflow view (placeholder for now)
+const workflowNavigation = [
+  { name: 'Workflows', href: '/workflow', icon: HomeIcon },
+]
+
 // Main sections - these will be bottom navigation eventually
 const mainSections = [
-  { name: 'Explorer', href: '#', initial: 'E' },
-  { name: 'Workflow', href: '#', initial: 'W' },
-  { name: 'Designer', href: '#', initial: 'D' },
+  { name: 'Explorer', href: '/dashboard', initial: 'E' },
+  { name: 'Workflow', href: '/workflow', initial: 'W' },
+  { name: 'Designer', href: '/designer', initial: 'D' },
 ]
 
 const userNavigation = [
-  { name: 'Your profile', href: '#' },
-  { name: 'Sign out', href: '#' },
+  { name: 'Your profile', href: '/profile', icon: UserCircleIcon },
+  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+  { name: 'Sign out', href: '/logout', icon: ArrowRightOnRectangleIcon },
 ]
 
 function classNames(...classes) {
@@ -43,13 +70,45 @@ function classNames(...classes) {
 
 export default function AppLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const location = useLocation()
+
+  // Determine which section we're in based on the current path
+  const getCurrentSection = () => {
+    if (location.pathname.startsWith('/designer')) {
+      return 'designer'
+    } else if (location.pathname.startsWith('/workflow')) {
+      return 'workflow'
+    } else {
+      return 'explorer'
+    }
+  }
+
+  // Get the appropriate navigation based on the current section
+  const getNavigation = () => {
+    const section = getCurrentSection()
+    switch (section) {
+      case 'designer':
+        return designerNavigation
+      case 'workflow':
+        return workflowNavigation
+      case 'explorer':
+      default:
+        return explorerNavigation
+    }
+  }
+
+  const navigation = getNavigation()
 
   const isCurrentPath = (href) => {
     if (href === '/dashboard') {
       return location.pathname === '/dashboard' || location.pathname.startsWith('/tables/')
     }
-    return location.pathname.startsWith(href)
+    if (href === '/designer') {
+      return location.pathname === '/designer' || location.pathname.startsWith('/designer/tables')
+    }
+    return location.pathname === href || location.pathname.startsWith(href + '/')
   }
 
   return (
@@ -124,7 +183,7 @@ export default function AppLayout({ children }) {
                       })}
                     </ul>
                   </li>
-                  <li>
+                  <li className="mt-auto">
                     <div className="text-xs/6 font-semibold text-gray-400">Sections</div>
                     <ul role="list" className="-mx-2 mt-2 space-y-1">
                       {mainSections.map((item) => (
@@ -142,18 +201,6 @@ export default function AppLayout({ children }) {
                       ))}
                     </ul>
                   </li>
-                  <li className="mt-auto">
-                    <Link
-                      to="#"
-                      className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
-                    >
-                      <Cog6ToothIcon
-                        aria-hidden="true"
-                        className="size-6 shrink-0 text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-white"
-                      />
-                      Settings
-                    </Link>
-                  </li>
                 </ul>
               </nav>
             </div>
@@ -162,22 +209,53 @@ export default function AppLayout({ children }) {
       </Dialog>
 
       {/* Static sidebar for desktop */}
-      <div className="hidden bg-gray-900 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4 dark:border-white/10 dark:bg-black/10">
-          <div className="flex h-16 shrink-0 items-center">
-            <img
-              alt="Trapid"
-              src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
-              className="h-8 w-auto dark:hidden"
-            />
-            <img
-              alt="Trapid"
-              src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
-              className="hidden h-8 w-auto dark:block"
-            />
-            <span className="ml-3 text-xl font-bold text-gray-900 dark:text-white">Trapid</span>
+      <div className={classNames(
+        "hidden bg-gray-900 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col transition-all duration-300",
+        sidebarCollapsed ? "lg:w-16" : "lg:w-72"
+      )}>
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white pb-4 dark:border-white/10 dark:bg-black/10">
+          <div className={classNames(
+            "flex h-16 shrink-0 items-center relative",
+            sidebarCollapsed ? "justify-center px-2" : "px-6"
+          )}>
+            {!sidebarCollapsed && (
+              <>
+                <img
+                  alt="Trapid"
+                  src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
+                  className="h-8 w-auto dark:hidden"
+                />
+                <img
+                  alt="Trapid"
+                  src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
+                  className="hidden h-8 w-auto dark:block"
+                />
+                <span className="ml-3 text-xl font-bold text-gray-900 dark:text-white">Trapid</span>
+              </>
+            )}
+            {sidebarCollapsed && (
+              <img
+                alt="Trapid"
+                src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600"
+                className="h-8 w-auto dark:hidden"
+              />
+            )}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className={classNames(
+                "absolute p-1 rounded hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200",
+                sidebarCollapsed ? "-right-3 top-1/2 -translate-y-1/2" : "right-2 top-1/2 -translate-y-1/2"
+              )}
+              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {sidebarCollapsed ? (
+                <ChevronRightIcon className="h-5 w-5" />
+              ) : (
+                <ChevronLeftIcon className="h-5 w-5" />
+              )}
+            </button>
           </div>
-          <nav className="flex flex-1 flex-col">
+          <nav className={classNames("flex flex-1 flex-col", sidebarCollapsed ? "px-2" : "px-6")}>
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
@@ -187,11 +265,13 @@ export default function AppLayout({ children }) {
                       <li key={item.name}>
                         <Link
                           to={item.href}
+                          title={sidebarCollapsed ? item.name : undefined}
                           className={classNames(
                             current
                               ? 'bg-gray-50 text-indigo-600 dark:bg-white/5 dark:text-white'
                               : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white',
                             'group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold',
+                            sidebarCollapsed && 'justify-center'
                           )}
                         >
                           <item.icon
@@ -203,42 +283,36 @@ export default function AppLayout({ children }) {
                               'size-6 shrink-0',
                             )}
                           />
-                          {item.name}
+                          {!sidebarCollapsed && item.name}
                         </Link>
                       </li>
                     )
                   })}
                 </ul>
               </li>
-              <li>
-                <div className="text-xs/6 font-semibold text-gray-400">Sections</div>
-                <ul role="list" className="-mx-2 mt-2 space-y-1">
+              <li className="mt-auto">
+                {!sidebarCollapsed && (
+                  <div className="text-xs/6 font-semibold text-gray-400">Sections</div>
+                )}
+                <ul role="list" className={classNames("-mx-2 space-y-1", !sidebarCollapsed && "mt-2")}>
                   {mainSections.map((item) => (
                     <li key={item.name}>
                       <Link
                         to={item.href}
-                        className="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+                        title={sidebarCollapsed ? item.name : undefined}
+                        className={classNames(
+                          "group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white",
+                          sidebarCollapsed && "justify-center"
+                        )}
                       >
                         <span className="flex size-6 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-[0.625rem] font-medium text-gray-400 group-hover:border-indigo-600 group-hover:text-indigo-600 dark:border-white/10 dark:bg-white/5 dark:group-hover:border-white/20 dark:group-hover:text-white">
                           {item.initial}
                         </span>
-                        <span className="truncate">{item.name}</span>
+                        {!sidebarCollapsed && <span className="truncate">{item.name}</span>}
                       </Link>
                     </li>
                   ))}
                 </ul>
-              </li>
-              <li className="mt-auto">
-                <Link
-                  to="#"
-                  className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
-                >
-                  <Cog6ToothIcon
-                    aria-hidden="true"
-                    className="size-6 shrink-0 text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-white"
-                  />
-                  Settings
-                </Link>
               </li>
             </ul>
           </nav>
@@ -246,7 +320,10 @@ export default function AppLayout({ children }) {
       </div>
 
       {/* Main content area */}
-      <div className="lg:pl-72">
+      <div className={classNames(
+        "transition-all duration-300",
+        sidebarCollapsed ? "lg:pl-16" : "lg:pl-72"
+      )}>
         {/* Top bar */}
         <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900 dark:shadow-none">
           <button
@@ -262,10 +339,21 @@ export default function AppLayout({ children }) {
           <div aria-hidden="true" className="h-6 w-px bg-gray-200 lg:hidden dark:bg-white/10" />
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <form action="#" method="GET" className="grid flex-1 grid-cols-1">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (searchQuery.trim()) {
+                  // Navigate to dashboard with search query
+                  window.location.href = `/dashboard?search=${encodeURIComponent(searchQuery)}`
+                }
+              }}
+              className="grid flex-1 grid-cols-1"
+            >
               <input
                 name="search"
-                placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tables..."
                 aria-label="Search"
                 className="col-start-1 row-start-1 block size-full bg-white pl-8 text-base text-gray-900 outline-none placeholder:text-gray-400 sm:text-sm/6 dark:bg-gray-900 dark:text-white dark:placeholder:text-gray-500"
               />
@@ -302,18 +390,48 @@ export default function AppLayout({ children }) {
                 </MenuButton>
                 <MenuItems
                   transition
-                  className="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg outline outline-1 outline-gray-900/5 transition data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in dark:bg-gray-800 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10"
+                  className="absolute right-0 z-10 mt-2.5 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg outline outline-1 outline-black/5 transition data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in dark:divide-white/10 dark:bg-gray-800 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10"
                 >
-                  {userNavigation.map((item) => (
-                    <MenuItem key={item.name}>
-                      <a
-                        href={item.href}
-                        className="block px-3 py-1 text-sm/6 text-gray-900 data-[focus]:bg-gray-50 data-[focus]:outline-none dark:text-white dark:data-[focus]:bg-white/5"
+                  <div className="py-1">
+                    <MenuItem>
+                      <Link
+                        to="/profile"
+                        className="group flex items-center px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900 data-[focus]:outline-none dark:text-gray-300 dark:data-[focus]:bg-white/5 dark:data-[focus]:text-white"
                       >
-                        {item.name}
-                      </a>
+                        <UserCircleIcon
+                          aria-hidden="true"
+                          className="mr-3 size-5 text-gray-400 group-data-[focus]:text-gray-500 dark:text-gray-500 dark:group-data-[focus]:text-white"
+                        />
+                        Your profile
+                      </Link>
                     </MenuItem>
-                  ))}
+                    <MenuItem>
+                      <Link
+                        to="/settings"
+                        className="group flex items-center px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900 data-[focus]:outline-none dark:text-gray-300 dark:data-[focus]:bg-white/5 dark:data-[focus]:text-white"
+                      >
+                        <Cog6ToothIcon
+                          aria-hidden="true"
+                          className="mr-3 size-5 text-gray-400 group-data-[focus]:text-gray-500 dark:text-gray-500 dark:group-data-[focus]:text-white"
+                        />
+                        Settings
+                      </Link>
+                    </MenuItem>
+                  </div>
+                  <div className="py-1">
+                    <MenuItem>
+                      <Link
+                        to="/logout"
+                        className="group flex items-center px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900 data-[focus]:outline-none dark:text-gray-300 dark:data-[focus]:bg-white/5 dark:data-[focus]:text-white"
+                      >
+                        <ArrowRightOnRectangleIcon
+                          aria-hidden="true"
+                          className="mr-3 size-5 text-gray-400 group-data-[focus]:text-gray-500 dark:text-gray-500 dark:group-data-[focus]:text-white"
+                        />
+                        Sign out
+                      </Link>
+                    </MenuItem>
+                  </div>
                 </MenuItems>
               </Menu>
             </div>

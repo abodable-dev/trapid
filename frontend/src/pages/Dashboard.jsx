@@ -1,15 +1,30 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../api'
 
 export default function Dashboard() {
   const [tables, setTables] = useState([])
+  const [filteredTables, setFilteredTables] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [searchParams] = useSearchParams()
+  const searchQuery = searchParams.get('search') || ''
 
   useEffect(() => {
     loadTables()
   }, [])
+
+  useEffect(() => {
+    if (searchQuery) {
+      const filtered = tables.filter(table =>
+        table.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (table.description && table.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+      setFilteredTables(filtered)
+    } else {
+      setFilteredTables(tables)
+    }
+  }, [searchQuery, tables])
 
   const loadTables = async () => {
     try {
@@ -52,6 +67,15 @@ export default function Dashboard() {
         </Link>
       </div>
 
+      {searchQuery && (
+        <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+          Showing {filteredTables.length} result{filteredTables.length !== 1 ? 's' : ''} for "{searchQuery}"
+          <Link to="/dashboard" className="ml-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+            Clear search
+          </Link>
+        </div>
+      )}
+
       {tables.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No tables yet</h3>
@@ -65,9 +89,22 @@ export default function Dashboard() {
             Import Your First Table
           </Link>
         </div>
+      ) : filteredTables.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No tables found</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            No tables match your search query "{searchQuery}".
+          </p>
+          <Link
+            to="/dashboard"
+            className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          >
+            Clear search
+          </Link>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tables.map((table) => (
+          {filteredTables.map((table) => (
             <Link
               key={table.id}
               to={`/tables/${table.id}`}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { api } from '../../api'
+import { TrashIcon } from '@heroicons/react/24/outline'
 
 const COLUMN_TYPES = [
   { value: 'single_line_text', label: 'Single Line Text' },
@@ -19,6 +20,7 @@ export default function ImportPreview({ data, onComplete, onBack }) {
   const [columns, setColumns] = useState(
     data.headers.map((header, index) => ({
       name: header,
+      original_header: header, // Keep track of the original header for data mapping
       column_name: header.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
       column_type: data.detected_types[header] || 'single_line_text',
       is_title: index === 0,
@@ -32,6 +34,24 @@ export default function ImportPreview({ data, onComplete, onBack }) {
     const newColumns = [...columns]
     newColumns[index] = { ...newColumns[index], [field]: value }
     setColumns(newColumns)
+  }
+
+  const handleDeleteColumn = (index) => {
+    if (columns.length === 1) {
+      setError('Cannot delete all columns. At least one column is required.')
+      return
+    }
+
+    const newColumns = columns.filter((_, i) => i !== index)
+
+    // If the deleted column was the title, make the first remaining column the title
+    const hasTitle = newColumns.some(col => col.is_title)
+    if (!hasTitle && newColumns.length > 0) {
+      newColumns[0].is_title = true
+    }
+
+    setColumns(newColumns)
+    setError(null)
   }
 
   const handleImport = async () => {
@@ -48,6 +68,7 @@ export default function ImportPreview({ data, onComplete, onBack }) {
       const response = await api.post('/api/v1/imports/execute', {
         table_name: tableName,
         columns: columns,
+        temp_file_path: data.temp_file_path,
       })
 
       if (response.success) {
@@ -141,6 +162,14 @@ export default function ImportPreview({ data, onComplete, onBack }) {
                   Title
                 </label>
               </div>
+              <button
+                type="button"
+                onClick={() => handleDeleteColumn(index)}
+                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Delete column"
+              >
+                <TrashIcon className="h-5 w-5" />
+              </button>
             </div>
           ))}
         </div>
@@ -155,12 +184,12 @@ export default function ImportPreview({ data, onComplete, onBack }) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {data.headers.map((header, index) => (
+                {columns.map((column, index) => (
                   <th
                     key={index}
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    {header}
+                    {column.name}
                   </th>
                 ))}
               </tr>
@@ -168,16 +197,21 @@ export default function ImportPreview({ data, onComplete, onBack }) {
             <tbody className="bg-white divide-y divide-gray-200">
               {data.preview_rows.map((row, rowIndex) => (
                 <tr key={rowIndex}>
-                  {data.headers.map((header, cellIndex) => (
-                    <td
-                      key={cellIndex}
-                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                    >
-                      {row[header] !== null && row[header] !== undefined
-                        ? String(row[header])
-                        : '-'}
-                    </td>
-                  ))}
+                  {columns.map((column, cellIndex) => {
+                    // Use the original_header to access the correct data from the row
+                    const cellValue = row[column.original_header]
+
+                    return (
+                      <td
+                        key={cellIndex}
+                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                      >
+                        {cellValue !== null && cellValue !== undefined
+                          ? String(cellValue)
+                          : '-'}
+                      </td>
+                    )
+                  })}
                 </tr>
               ))}
             </tbody>

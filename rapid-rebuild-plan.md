@@ -1,5 +1,24 @@
 # Rapid Platform Rebuild Plan
 
+## 📋 Plan Updates & Changelog
+
+**Latest Update: October 29, 2025**
+
+### Changes Made
+- ✅ Added three-section application architecture (Home/Designer/Workflows)
+- ✅ Added data export functionality (CSV/Excel)
+- ✅ Added column type editing after import
+- ✅ Added data validation (required fields, format validation, min/max)
+- ✅ Separated frontend (Vercel) and backend (Heroku) architecture
+- ✅ Using stock Tailwind CSS (with Tailwind UI Plus components)
+
+### In Progress
+- Backend services complete (TypeDetector, SpreadsheetParser, TableBuilder, DataImporter)
+- Database models and migrations complete
+- Starting React frontend development
+
+---
+
 ## Project Overview
 
 **Goal:** Replace Rapid Platform with a custom-built solution that allows teams to manage construction data through spreadsheet imports and a simple table builder.
@@ -7,6 +26,95 @@
 **Approach:** Spreadsheet-first migration strategy - upload CSVs/Excel files to auto-generate tables, then layer on custom features.
 
 **Timeline:** 4-6 weeks to operational, then ongoing feature development
+
+---
+
+## Application Architecture - Three Sections
+
+Inspired by Rapid Platform's structure, the application is divided into three distinct modes accessible via bottom navigation:
+
+### 🏠 Section 1: Home (Explorer Mode)
+**Purpose:** Day-to-day operations - where users work with their data
+
+**Features:**
+- Dashboard with table grid
+- View records in tables
+- Create/edit/delete records
+- Search and filter data
+- Import spreadsheets
+- Export data (CSV/Excel)
+- Quick actions
+
+**User Experience:**
+- Clean, simple interface
+- Optimized for speed
+- Mobile-friendly
+- Non-technical users
+
+**Routes:**
+- `/` - Dashboard
+- `/tables/:id` - Table list view
+- `/tables/:id/records/:record_id` - Record detail
+
+### ⚙️ Section 2: Designer Mode
+**Purpose:** Database structure - where admins build and configure
+
+**Features:**
+- Create/edit tables
+- Manage columns
+- Set up relationships
+- Configure validation rules
+- Change column types
+- Table settings and options
+- Icon selection
+
+**User Experience:**
+- More technical interface
+- Detailed configuration options
+- Confirmation dialogs for destructive actions
+- Preview changes before applying
+
+**Routes:**
+- `/designer` - Tables list
+- `/designer/tables/:id` - Table configuration
+- `/designer/tables/:id/columns` - Column management
+- `/designer/tables/:id/relationships` - Relationships
+
+### 🔄 Section 3: Workflows (Phase 6+)
+**Purpose:** Automation and business logic
+
+**Features (Future):**
+- Workflow builder
+- Triggers and actions
+- Notifications
+- Scheduled tasks
+- Custom automations
+- Email integration
+
+**User Experience:**
+- Visual workflow builder
+- Drag-and-drop interface
+- Testing and debugging tools
+
+**Routes:**
+- `/workflows` - Workflow list
+- `/workflows/:id` - Workflow editor
+
+### Navigation Structure
+
+**Bottom Navigation Bar:**
+```
+┌─────────────────────────────────────────────┐
+│  🏠 Home    ⚙️ Designer    🔄 Workflows     │
+└─────────────────────────────────────────────┘
+```
+
+**Benefits of This Structure:**
+- **Safety:** Prevents accidental structural changes while working with data
+- **Clarity:** Clear separation between "using" and "building"
+- **Permissions:** Can restrict Designer mode to admins only
+- **Focus:** Each mode optimized for its specific task
+- **Scalability:** Easy to add new sections (Reports, Settings, etc.)
 
 ---
 
@@ -946,33 +1054,55 @@ app/
 ```
 src/
 ├── components/
-│   ├── tables/
-│   │   ├── TableList.jsx                     # List of all tables
-│   │   ├── TableDetail.jsx                   # Table settings view
-│   │   └── TableForm.jsx                     # Create/edit table
-│   ├── imports/
+│   ├── layout/
+│   │   ├── BottomNav.jsx                     # Three-section navigation
+│   │   ├── Sidebar.jsx                       # Table list sidebar
+│   │   ├── Header.jsx                        # Top header
+│   │   └── Layout.jsx                        # Main layout wrapper
+│   ├── home/                                 # HOME SECTION COMPONENTS
+│   │   ├── Dashboard.jsx                     # Table grid dashboard
+│   │   ├── TableView.jsx                     # List of records
+│   │   ├── RecordDetail.jsx                  # Record detail modal
+│   │   ├── RecordForm.jsx                    # Create/edit record form
+│   │   └── SearchBar.jsx                     # Search and filter
+│   ├── designer/                             # DESIGNER SECTION COMPONENTS
+│   │   ├── TablesList.jsx                    # List of all tables
+│   │   ├── TableSettings.jsx                 # Table configuration
+│   │   ├── ColumnManager.jsx                 # Manage columns
+│   │   ├── ColumnForm.jsx                    # Add/edit column
+│   │   ├── RelationshipManager.jsx           # Setup relationships
+│   │   └── TypeChangeModal.jsx               # Change column type
+│   ├── imports/                              # IMPORT FLOW COMPONENTS
 │   │   ├── FileUploader.jsx                  # Drag-drop upload
 │   │   ├── ImportPreview.jsx                 # Preview before import
-│   │   └── TypeDetector.jsx                  # Type detection UI
-│   ├── records/
-│   │   ├── RecordList.jsx                    # Data table component
-│   │   ├── RecordDetail.jsx                  # Record detail view
-│   │   └── DynamicForm.jsx                   # Auto-generated forms
-│   ├── columns/
-│   │   ├── ColumnList.jsx                    # Table columns
-│   │   └── ColumnForm.jsx                    # Add/edit column
-│   └── layout/
-│       ├── Sidebar.jsx                       # Navigation sidebar
-│       ├── Header.jsx                        # Top header
-│       └── Layout.jsx                        # Main layout wrapper
+│   │   ├── TypeDetector.jsx                  # Type detection UI
+│   │   └── ImportResults.jsx                 # Import success/errors
+│   ├── shared/                               # SHARED COMPONENTS
+│   │   ├── DataTable.jsx                     # Reusable data table
+│   │   ├── DynamicForm.jsx                   # Auto-generated forms
+│   │   ├── ExportModal.jsx                   # Export to CSV/Excel
+│   │   ├── IconPicker.jsx                    # Icon selection
+│   │   └── ValidationDisplay.jsx             # Show validation errors
+│   └── workflows/                            # WORKFLOWS SECTION (Future)
+│       └── (TBD)
 ├── pages/
-│   ├── Dashboard.jsx                         # Home page
-│   ├── TablePage.jsx                         # View table data
-│   └── ImportPage.jsx                        # Upload spreadsheet
+│   ├── Home/
+│   │   ├── Dashboard.jsx                     # Home dashboard
+│   │   └── TablePage.jsx                     # View table data
+│   ├── Designer/
+│   │   ├── DesignerHome.jsx                  # Designer landing
+│   │   ├── TableConfig.jsx                   # Configure table
+│   │   └── ColumnEdit.jsx                    # Edit columns
+│   ├── Workflows/
+│   │   └── WorkflowsHome.jsx                 # Workflows (future)
+│   └── Import/
+│       └── ImportWizard.jsx                  # Import flow
 ├── utils/
 │   ├── api.js                                # Axios API client
-│   └── constants.js                          # Shared constants
-└── App.jsx                                   # Main app with routing
+│   ├── constants.js                          # Shared constants
+│   └── validators.js                         # Client-side validation
+├── App.jsx                                   # Main app with routing
+└── routes.jsx                                # Route definitions
 ```
 
 ---
@@ -1127,6 +1257,47 @@ Before starting development, clarify:
 
 ## Next Steps
 
+### Immediate Frontend Tasks (In Priority Order)
+
+**Phase 1: Core Layout & Navigation**
+1. ✅ Add frontend dependencies (axios, react-router, tailwind)
+2. Create BottomNav component with three sections (Home/Designer/Workflows)
+3. Create main Layout wrapper component
+4. Setup React Router with section-based routing
+5. Create basic page shells for each section
+
+**Phase 2: Home Section (Explorer)**
+6. Create Dashboard component with table grid (using Tailwind UI)
+7. Create TableView component for displaying records
+8. Create RecordDetail modal/slide-over
+9. Create DynamicForm component for record editing
+10. Add search and filter functionality
+11. Add export button with ExportModal
+
+**Phase 3: Import Flow**
+12. Create FileUploader component with drag-and-drop
+13. Create ImportPreview component for column type editing
+14. Create ImportResults component
+15. Wire up to backend import endpoints
+
+**Phase 4: Designer Section**
+16. Create TablesList component (designer home)
+17. Create TableSettings page
+18. Create ColumnManager component
+19. Create ColumnForm for adding/editing columns
+20. Create TypeChangeModal with preview
+21. Add validation rule configuration UI
+
+**Phase 5: Testing & Polish**
+22. Test all CRUD operations
+23. Test import flow with real Rapid exports
+24. Add loading states
+25. Add error handling
+26. Mobile responsive testing
+27. Performance optimization
+
+---
+
 1. **Review this plan** - get team feedback
 2. **Prioritize features** - cut anything non-essential for go-live
 3. **Set up Rails app** - initialize project with correct gems
@@ -1177,6 +1348,37 @@ GET    /api/v1/tables/:table_id/export         # Export table data
 POST   /api/v1/columns/:id/change_type         # Change column type
 POST   /api/v1/records/validate                # Validate record data
 ```
+
+### Frontend Routing Structure
+
+**React Router configuration:**
+```jsx
+// Home Section Routes
+/                                    → Dashboard
+/tables/:id                          → Table list view
+/tables/:id/records/:record_id       → Record detail
+/import                              → Import wizard
+
+// Designer Section Routes
+/designer                            → Designer home (tables list)
+/designer/tables/new                 → Create new table
+/designer/tables/:id                 → Table settings
+/designer/tables/:id/columns         → Column management
+/designer/tables/:id/columns/new     → Add column
+/designer/tables/:id/columns/:col_id → Edit column
+/designer/tables/:id/relationships   → Relationship config
+
+// Workflows Section Routes (Future)
+/workflows                           → Workflows home
+/workflows/new                       → Create workflow
+/workflows/:id                       → Edit workflow
+```
+
+**Bottom Navigation State Management:**
+- Active section tracked in URL
+- Persists across page refreshes
+- Clear visual indication of current section
+- Can restrict sections by user role (future)
 
 ### Design
 - Stock Tailwind CSS

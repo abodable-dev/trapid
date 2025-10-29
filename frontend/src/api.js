@@ -1,12 +1,23 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return headers;
+};
+
 export const api = {
   async get(endpoint) {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       credentials: 'include',
     });
     if (!response.ok) throw new Error('API request failed');
@@ -16,9 +27,7 @@ export const api = {
   async post(endpoint, data) {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify(data),
     });
@@ -27,8 +36,16 @@ export const api = {
   },
 
   async postFormData(endpoint, formData) {
+    const token = localStorage.getItem('token');
+    const headers = {};
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'POST',
+      headers,
       credentials: 'include',
       body: formData,
     });
@@ -39,9 +56,7 @@ export const api = {
   async put(endpoint, data) {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify(data),
     });
@@ -52,9 +67,7 @@ export const api = {
   async delete(endpoint) {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       credentials: 'include',
     });
     if (!response.ok) throw new Error('API request failed');

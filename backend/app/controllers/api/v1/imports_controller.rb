@@ -14,14 +14,10 @@ module Api
         temp_file = save_temp_file(file)
 
         # Parse the spreadsheet
-        parser = SpreadsheetParser.new(temp_file.path)
+        parser = SpreadsheetParser.new(temp_file.to_s)
         result = parser.parse
 
         if result[:success]
-          # Store temp file path in session for later use
-          session[:import_file_path] = temp_file.path
-          session[:import_file_name] = file.original_filename
-
           render json: {
             success: true,
             data: {
@@ -30,7 +26,8 @@ module Api
               total_rows: result[:total_rows],
               detected_types: result[:detected_types],
               suggested_table_name: result[:suggested_table_name],
-              temp_file_id: Base64.encode64(temp_file.path)
+              temp_file_path: temp_file.to_s,
+              original_filename: file.original_filename
             }
           }
         else
@@ -44,7 +41,7 @@ module Api
       # POST /api/v1/imports/execute
       # Create table and import data
       def execute
-        file_path = session[:import_file_path]
+        file_path = params[:temp_file_path]
 
         unless file_path && File.exist?(file_path)
           return render json: { error: 'No file found. Please upload again.' }, status: :unprocessable_entity
@@ -102,8 +99,6 @@ module Api
 
         # Clean up temp file
         File.delete(file_path) if File.exist?(file_path)
-        session.delete(:import_file_path)
-        session.delete(:import_file_name)
 
         render json: {
           success: true,
