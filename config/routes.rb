@@ -11,6 +11,11 @@ Rails.application.routes.draw do
   # API routes
   namespace :api do
     namespace :v1 do
+      # Authentication routes
+      post 'auth/signup', to: 'authentication#signup'
+      post 'auth/login', to: 'authentication#login'
+      get 'auth/me', to: 'authentication#me'
+
       # Import routes
       post 'imports/upload', to: 'imports#upload'
       post 'imports/execute', to: 'imports#execute'
