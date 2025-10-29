@@ -10,14 +10,27 @@ module Api
 
         file = params[:file]
 
-        # Save uploaded file temporarily
-        temp_file = save_temp_file(file)
+        # Read file content into memory
+        file_content = file.read
+
+        # Write to a temp file for parsing
+        temp_file = Tempfile.new(['import', File.extname(file.original_filename)])
+        temp_file.binmode
+        temp_file.write(file_content)
+        temp_file.rewind
 
         # Parse the spreadsheet
-        parser = SpreadsheetParser.new(temp_file.to_s)
+        parser = SpreadsheetParser.new(temp_file.path)
         result = parser.parse
 
+        # Close and delete the temp file
+        temp_file.close
+        temp_file.unlink
+
         if result[:success]
+          # Encode file content as base64 to send back to frontend
+          encoded_content = Base64.strict_encode64(file_content)
+
           render json: {
             success: true,
             data: {
@@ -26,7 +39,7 @@ module Api
               total_rows: result[:total_rows],
               detected_types: result[:detected_types],
               suggested_table_name: result[:suggested_table_name],
-              temp_file_path: temp_file.to_s,
+              file_content: encoded_content,
               original_filename: file.original_filename
             }
           }
@@ -41,14 +54,23 @@ module Api
       # POST /api/v1/imports/execute
       # Create table and import data
       def execute
-        file_path = params[:temp_file_path]
+        file_content = params[:file_content]
+        original_filename = params[:original_filename]
 
-        unless file_path && File.exist?(file_path)
-          Rails.logger.error "Import execute failed: file_path=#{file_path}, exists=#{file_path && File.exist?(file_path)}"
+        unless file_content.present?
           return render json: {
             success: false,
-            error: 'File not found. The uploaded file has expired. Please upload and import again.',
-            details: 'Uploaded files are temporary on this platform. Please complete the import immediately after upload.'
+            error: 'File content not provided. Please upload the file again.',
+          }, status: :unprocessable_entity
+        end
+
+        # Decode base64 file content
+        begin
+          decoded_content = Base64.strict_decode64(file_content)
+        rescue ArgumentError => e
+          return render json: {
+            success: false,
+            error: 'Invalid file content encoding.'
           }, status: :unprocessable_entity
         end
 
@@ -98,50 +120,41 @@ module Api
           return render json: { success: false, errors: build_result[:errors] }, status: :unprocessable_entity
         end
 
-        # Import the data
-        importer = DataImporter.new(table, file_path, params[:column_mapping] || {})
-        import_result = importer.import
+        # Create a temp file for the importer to use
+        temp_file = Tempfile.new(['import', File.extname(original_filename || '.csv')])
+        temp_file.binmode
+        temp_file.write(decoded_content)
+        temp_file.rewind
 
-        # Clean up temp file
-        File.delete(file_path) if File.exist?(file_path)
+        begin
+          # Import the data
+          importer = DataImporter.new(table, temp_file.path, params[:column_mapping] || {})
+          import_result = importer.import
 
-        render json: {
-          success: true,
-          table: {
-            id: table.id,
-            name: table.name,
-            database_table_name: table.database_table_name
-          },
-          import_stats: {
-            imported_count: import_result[:imported_count],
-            failed_count: import_result[:failed_count],
-            total_rows: import_result[:imported_count] + import_result[:failed_count],
-            failed_rows: import_result[:failed_rows]
+          render json: {
+            success: true,
+            table: {
+              id: table.id,
+              name: table.name,
+              database_table_name: table.database_table_name
+            },
+            import_stats: {
+              imported_count: import_result[:imported_count],
+              failed_count: import_result[:failed_count],
+              total_rows: import_result[:imported_count] + import_result[:failed_count],
+              failed_rows: import_result[:failed_rows]
+            }
           }
-        }
+        ensure
+          # Always clean up temp file
+          temp_file.close
+          temp_file.unlink
+        end
       rescue => e
         table&.destroy
         render json: { success: false, error: e.message }, status: :internal_server_error
       end
 
-      private
-
-      def save_temp_file(uploaded_file)
-        # Create temp directory if it doesn't exist
-        temp_dir = Rails.root.join('tmp', 'uploads')
-        FileUtils.mkdir_p(temp_dir)
-
-        # Generate unique filename
-        filename = "#{SecureRandom.hex(8)}#{File.extname(uploaded_file.original_filename)}"
-        temp_path = temp_dir.join(filename)
-
-        # Save file
-        File.open(temp_path, 'wb') do |file|
-          file.write(uploaded_file.read)
-        end
-
-        temp_path
-      end
     end
   end
 end
