@@ -20,8 +20,15 @@ Rails.application.routes.draw do
       post 'imports/upload', to: 'imports#upload'
       post 'imports/execute', to: 'imports#execute'
 
+      # Grok AI integration
+      post 'grok/chat', to: 'grok#chat'
+      get 'grok/suggest-features', to: 'grok#suggest_features'
+
       # Table management
       resources :tables do
+        # Column management
+        resources :columns, only: [:create, :update, :destroy]
+
         # Record management for dynamic tables
         resources :records
       end
