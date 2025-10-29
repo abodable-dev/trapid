@@ -62,4 +62,53 @@ class Api::V1::GrokController < ApplicationController
       }, status: :internal_server_error
     end
   end
+
+  # POST /api/v1/grok/plans
+  def create_plan
+    plan = @current_user.grok_plans.create(
+      title: params[:title],
+      description: params[:description],
+      conversation: params[:conversation] || [],
+      status: params[:status] || 'planning'
+    )
+
+    if plan.persisted?
+      render json: { success: true, plan: plan }
+    else
+      render json: { success: false, errors: plan.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  # GET /api/v1/grok/plans
+  def list_plans
+    plans = @current_user.grok_plans.recent
+    render json: { success: true, plans: plans }
+  end
+
+  # GET /api/v1/grok/plans/:id
+  def show_plan
+    plan = @current_user.grok_plans.find(params[:id])
+    render json: { success: true, plan: plan }
+  rescue ActiveRecord::RecordNotFound
+    render json: { success: false, error: "Plan not found" }, status: :not_found
+  end
+
+  # PATCH /api/v1/grok/plans/:id
+  def update_plan
+    plan = @current_user.grok_plans.find(params[:id])
+
+    if plan.update(plan_params)
+      render json: { success: true, plan: plan }
+    else
+      render json: { success: false, errors: plan.errors.full_messages }, status: :unprocessable_entity
+    end
+  rescue ActiveRecord::RecordNotFound
+    render json: { success: false, error: "Plan not found" }, status: :not_found
+  end
+
+  private
+
+  def plan_params
+    params.permit(:title, :description, :status, conversation: [])
+  end
 end
