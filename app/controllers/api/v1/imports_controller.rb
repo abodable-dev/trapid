@@ -44,7 +44,12 @@ module Api
         file_path = params[:temp_file_path]
 
         unless file_path && File.exist?(file_path)
-          return render json: { error: 'No file found. Please upload again.' }, status: :unprocessable_entity
+          Rails.logger.error "Import execute failed: file_path=#{file_path}, exists=#{file_path && File.exist?(file_path)}"
+          return render json: {
+            success: false,
+            error: 'File not found. The uploaded file has expired. Please upload and import again.',
+            details: 'Uploaded files are temporary on this platform. Please complete the import immediately after upload.'
+          }, status: :unprocessable_entity
         end
 
         # Extract parameters
