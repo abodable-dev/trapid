@@ -62,11 +62,17 @@ export default function ImportPreview({ data, onComplete, onBack }) {
       return
     }
 
+    // Validate session key exists
+    if (!data.session_key) {
+      setError('Session expired. Please upload the file again.')
+      return
+    }
+
     try {
       setImporting(true)
 
       const response = await api.post('/api/v1/imports/execute', {
-        session_key: data.session_key,  // Use session key instead of file content
+        session_key: data.session_key,
         table_name: tableName,
         columns: columns,
       })
