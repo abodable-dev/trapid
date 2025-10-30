@@ -1,3 +1,5 @@
+require 'fileutils'
+
 module Api
   module V1
     class ImportsController < ApplicationController
@@ -10,63 +12,68 @@ module Api
 
         file = params[:file]
 
-        # Create temp directory if it doesn't exist
-        temp_dir = Rails.root.join('tmp', 'imports')
-        FileUtils.mkdir_p(temp_dir)
+        begin
+          # Use /tmp directly for Heroku compatibility
+          temp_dir = File.join(Dir.tmpdir, 'imports')
+          FileUtils.mkdir_p(temp_dir) unless Dir.exist?(temp_dir)
 
-        # Generate unique filename
-        timestamp = Time.current.to_i
-        random_key = SecureRandom.hex(8)
-        extension = File.extname(file.original_filename)
-        temp_filename = "import_#{timestamp}_#{random_key}#{extension}"
-        temp_file_path = temp_dir.join(temp_filename)
+          # Generate unique filename
+          timestamp = Time.current.to_i
+          random_key = SecureRandom.hex(8)
+          extension = File.extname(file.original_filename)
+          temp_filename = "import_#{timestamp}_#{random_key}#{extension}"
+          temp_file_path = File.join(temp_dir, temp_filename)
 
-        # Save uploaded file to temp location
-        File.open(temp_file_path, 'wb') do |f|
-          f.write(file.read)
-        end
+          # Save uploaded file to temp location
+          File.open(temp_file_path, 'wb') do |f|
+            f.write(file.read)
+          end
 
-        # Parse the spreadsheet
-        parser = SpreadsheetParser.new(temp_file_path.to_s)
-        result = parser.parse
+          # Parse the spreadsheet
+          parser = SpreadsheetParser.new(temp_file_path)
+          result = parser.parse
 
-        if result[:success]
-          # Create import session record
-          import_session = ImportSession.create!(
-            file_path: temp_file_path.to_s,
-            original_filename: file.original_filename,
-            file_size: File.size(temp_file_path)
-          )
+          if result[:success]
+            # Create import session record
+            import_session = ImportSession.create!(
+              file_path: temp_file_path,
+              original_filename: file.original_filename,
+              file_size: File.size(temp_file_path)
+            )
 
-          render json: {
-            success: true,
-            data: {
-              session_key: import_session.session_key,
-              headers: result[:headers],
-              preview_rows: result[:preview_data],
-              total_rows: result[:total_rows],
-              detected_types: result[:detected_types],
-              suggested_table_name: result[:suggested_table_name],
-              original_filename: file.original_filename
+            render json: {
+              success: true,
+              data: {
+                session_key: import_session.session_key,
+                headers: result[:headers],
+                preview_rows: result[:preview_data],
+                total_rows: result[:total_rows],
+                detected_types: result[:detected_types],
+                suggested_table_name: result[:suggested_table_name],
+                original_filename: file.original_filename
+              }
             }
-          }
-        else
-          # Clean up file if parsing failed
-          File.delete(temp_file_path) if File.exist?(temp_file_path)
+          else
+            # Clean up file if parsing failed
+            File.delete(temp_file_path) if File.exist?(temp_file_path)
+
+            render json: {
+              success: false,
+              errors: result[:errors]
+            }, status: :unprocessable_entity
+          end
+        rescue => e
+          # Clean up file on error
+          File.delete(temp_file_path) if temp_file_path && File.exist?(temp_file_path)
+
+          Rails.logger.error "Import upload error: #{e.class} - #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
 
           render json: {
             success: false,
-            errors: result[:errors]
-          }, status: :unprocessable_entity
+            error: e.message
+          }, status: :internal_server_error
         end
-      rescue => e
-        # Clean up file on error
-        File.delete(temp_file_path) if temp_file_path && File.exist?(temp_file_path)
-
-        render json: {
-          success: false,
-          error: e.message
-        }, status: :internal_server_error
       end
 
       # POST /api/v1/imports/execute
@@ -170,6 +177,10 @@ module Api
         rescue => e
           table&.destroy
           import_session&.cleanup_file!
+
+          Rails.logger.error "Import execute error: #{e.class} - #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+
           render json: { success: false, error: e.message }, status: :internal_server_error
         end
       end
