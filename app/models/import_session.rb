@@ -3,9 +3,9 @@ class ImportSession < ApplicationRecord
   validates :file_path, presence: true
   validates :original_filename, presence: true
 
-  # Set expiration to 1 hour from now by default
-  before_create :set_expiration
-  before_create :generate_session_key
+  # Set defaults before validation so they're present when validated
+  before_validation :generate_session_key, on: :create
+  before_validation :set_expiration, on: :create
 
   # Scope to find only valid (non-expired) sessions
   scope :valid, -> { where("expires_at > ?", Time.current) }
