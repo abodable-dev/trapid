@@ -41,7 +41,7 @@ module Api
               file_size: File.size(temp_file_path)
             )
 
-            render json: {
+            response_data = {
               success: true,
               data: {
                 session_key: import_session.session_key,
@@ -53,6 +53,10 @@ module Api
                 original_filename: file.original_filename
               }
             }
+
+            Rails.logger.info "Upload response - session_key: #{import_session.session_key}"
+
+            render json: response_data
           else
             # Clean up file if parsing failed
             File.delete(temp_file_path) if File.exist?(temp_file_path)

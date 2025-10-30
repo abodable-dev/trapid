@@ -16,6 +16,9 @@ const COLUMN_TYPES = [
 ]
 
 export default function ImportPreview({ data, onComplete, onBack }) {
+  console.log('ImportPreview received data:', data)
+  console.log('Session key in preview:', data.session_key)
+
   const [tableName, setTableName] = useState(data.suggested_table_name || '')
   const [columns, setColumns] = useState(
     data.headers.map((header, index) => ({

@@ -62,6 +62,9 @@ export default function FileUploader({ onUploadSuccess }) {
 
       const response = await api.postFormData('/api/v1/imports/upload', formData)
 
+      console.log('Upload response:', response)
+      console.log('Session key from response:', response.data?.session_key)
+
       if (response.success) {
         onUploadSuccess(response.data)
       } else {
