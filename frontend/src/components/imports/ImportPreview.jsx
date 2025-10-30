@@ -66,16 +66,15 @@ export default function ImportPreview({ data, onComplete, onBack }) {
       setImporting(true)
 
       const response = await api.post('/api/v1/imports/execute', {
+        session_key: data.session_key,  // Use session key instead of file content
         table_name: tableName,
         columns: columns,
-        file_content: data.file_content,
-        original_filename: data.original_filename,
       })
 
       if (response.success) {
         onComplete(response.table.id)
       } else {
-        setError(response.errors?.[0] || 'Import failed')
+        setError(response.error || response.errors?.[0] || 'Import failed')
       }
     } catch (err) {
       setError('Failed to import data. Please try again.')

@@ -10,67 +10,92 @@ module Api
 
         file = params[:file]
 
-        # Read file content into memory
-        file_content = file.read
+        # Create temp directory if it doesn't exist
+        temp_dir = Rails.root.join('tmp', 'imports')
+        FileUtils.mkdir_p(temp_dir)
 
-        # Write to a temp file for parsing
-        temp_file = Tempfile.new(['import', File.extname(file.original_filename)])
-        temp_file.binmode
-        temp_file.write(file_content)
-        temp_file.rewind
+        # Generate unique filename
+        timestamp = Time.current.to_i
+        random_key = SecureRandom.hex(8)
+        extension = File.extname(file.original_filename)
+        temp_filename = "import_#{timestamp}_#{random_key}#{extension}"
+        temp_file_path = temp_dir.join(temp_filename)
+
+        # Save uploaded file to temp location
+        File.open(temp_file_path, 'wb') do |f|
+          f.write(file.read)
+        end
 
         # Parse the spreadsheet
-        parser = SpreadsheetParser.new(temp_file.path)
+        parser = SpreadsheetParser.new(temp_file_path.to_s)
         result = parser.parse
 
-        # Close and delete the temp file
-        temp_file.close
-        temp_file.unlink
-
         if result[:success]
-          # Encode file content as base64 to send back to frontend
-          encoded_content = Base64.strict_encode64(file_content)
+          # Create import session record
+          import_session = ImportSession.create!(
+            file_path: temp_file_path.to_s,
+            original_filename: file.original_filename,
+            file_size: File.size(temp_file_path)
+          )
 
           render json: {
             success: true,
             data: {
+              session_key: import_session.session_key,
               headers: result[:headers],
               preview_rows: result[:preview_data],
               total_rows: result[:total_rows],
               detected_types: result[:detected_types],
               suggested_table_name: result[:suggested_table_name],
-              file_content: encoded_content,
               original_filename: file.original_filename
             }
           }
         else
+          # Clean up file if parsing failed
+          File.delete(temp_file_path) if File.exist?(temp_file_path)
+
           render json: {
             success: false,
             errors: result[:errors]
           }, status: :unprocessable_entity
         end
+      rescue => e
+        # Clean up file on error
+        File.delete(temp_file_path) if temp_file_path && File.exist?(temp_file_path)
+
+        render json: {
+          success: false,
+          error: e.message
+        }, status: :internal_server_error
       end
 
       # POST /api/v1/imports/execute
-      # Create table and import data
+      # Create table and import data using session key
       def execute
-        file_content = params[:file_content]
-        original_filename = params[:original_filename]
+        session_key = params[:session_key]
 
-        unless file_content.present?
+        unless session_key.present?
           return render json: {
             success: false,
-            error: 'File content not provided. Please upload the file again.',
+            error: 'Session key not provided. Please upload the file again.',
           }, status: :unprocessable_entity
         end
 
-        # Decode base64 file content
-        begin
-          decoded_content = Base64.strict_decode64(file_content)
-        rescue ArgumentError => e
+        # Find the import session
+        import_session = ImportSession.valid.find_by(session_key: session_key)
+
+        unless import_session
           return render json: {
             success: false,
-            error: 'Invalid file content encoding.'
+            error: 'Import session expired or not found. Please upload the file again.',
+          }, status: :unprocessable_entity
+        end
+
+        unless import_session.file_exists?
+          import_session.destroy
+          return render json: {
+            success: false,
+            error: 'Import file not found. Please upload the file again.',
           }, status: :unprocessable_entity
         end
 
@@ -120,16 +145,13 @@ module Api
           return render json: { success: false, errors: build_result[:errors] }, status: :unprocessable_entity
         end
 
-        # Create a temp file for the importer to use
-        temp_file = Tempfile.new(['import', File.extname(original_filename || '.csv')])
-        temp_file.binmode
-        temp_file.write(decoded_content)
-        temp_file.rewind
-
         begin
-          # Import the data
-          importer = DataImporter.new(table, temp_file.path, params[:column_mapping] || {})
+          # Import the data using the saved file
+          importer = DataImporter.new(table, import_session.file_path, params[:column_mapping] || {})
           import_result = importer.import
+
+          # Clean up the import session and file after successful import
+          import_session.cleanup_file!
 
           render json: {
             success: true,
@@ -145,14 +167,11 @@ module Api
               failed_rows: import_result[:failed_rows]
             }
           }
-        ensure
-          # Always clean up temp file
-          temp_file.close
-          temp_file.unlink
+        rescue => e
+          table&.destroy
+          import_session&.cleanup_file!
+          render json: { success: false, error: e.message }, status: :internal_server_error
         end
-      rescue => e
-        table&.destroy
-        render json: { success: false, error: e.message }, status: :internal_server_error
       end
 
     end

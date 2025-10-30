@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_29_042707) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_30_014258) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -52,6 +52,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_29_042707) do
     t.index ["user_id"], name: "index_grok_plans_on_user_id"
   end
 
+  create_table "import_sessions", force: :cascade do |t|
+    t.string "session_key"
+    t.string "file_path"
+    t.string "original_filename"
+    t.integer "file_size"
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["session_key"], name: "index_import_sessions_on_session_key", unique: true
+  end
+
   create_table "tables", force: :cascade do |t|
     t.string "name", null: false
     t.string "singular_name"
@@ -65,6 +76,70 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_29_042707) do
     t.datetime "updated_at", null: false
     t.boolean "is_live", default: false, null: false
     t.index ["database_table_name"], name: "index_tables_on_database_table_name", unique: true
+  end
+
+  create_table "user_dog_dog_cat_baf84797", force: :cascade do |t|
+    t.string "name"
+    t.string "email"
+    t.string "phone"
+    t.string "status"
+    t.date "created_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_hel_2f4512ee", force: :cascade do |t|
+    t.string "name"
+    t.string "email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_hello_5c375e87", force: :cascade do |t|
+    t.string "name"
+    t.string "email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_new2_adc4649b", force: :cascade do |t|
+    t.string "name"
+    t.string "email"
+    t.string "phone"
+    t.string "status"
+    t.date "created_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_test443_66f3065d", force: :cascade do |t|
+    t.string "name"
+    t.string "email"
+    t.string "phone"
+    t.string "status"
+    t.date "created_date"
+    t.string "column_5"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_test_auto_save_a242d512", force: :cascade do |t|
+    t.string "email_address"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_test_fa0cb4f3", force: :cascade do |t|
+    t.string "name"
+    t.string "email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_users_7f31c50d", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "users", force: :cascade do |t|

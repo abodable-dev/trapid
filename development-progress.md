@@ -243,7 +243,42 @@ Trapid is a no-code/low-code platform that allows users to:
 - 🔲 Audit logs
 - 🔲 Team collaboration features
 
-#### Phase 6: Advanced Features (Future)
+#### Phase 6: AI Automation & Integrations (Future)
+
+**AI Quote Collection Agent** (Planned with Lindy.ai):
+- 🔲 Automatic supplier outreach when new jobs start
+- 🔲 Connect Pricebook, Contacts, and Estimating tables
+- 🔲 Email integration for supplier communication
+- 🔲 Parse supplier responses and update pricebook automatically
+- 🔲 Track quote status and follow-up reminders
+- 🔲 Multi-supplier comparison and selection
+
+**Workflow**:
+1. New job created → Trigger AI agent
+2. Agent analyzes job requirements and cross-references pricebook
+3. Identifies required purchases and relevant suppliers from contacts
+4. Drafts and sends personalized quote requests via email
+5. Monitors inbox for supplier responses
+6. Parses email responses (pricing, lead times, availability)
+7. Updates pricebook with current quotes
+8. Notifies team when quotes are complete
+9. Optional: Suggest best suppliers based on pricing/history
+
+**Technical Approach**:
+- Integration with Lindy.ai for AI orchestration
+- Email API integration (SendGrid, Mailgun, or Gmail API)
+- Webhook endpoints in Trapid to receive updates
+- Natural language processing for email parsing
+- Automated data entry into pricebook table
+
+**Benefits**:
+- Saves hours of manual quote collection
+- Ensures pricebook stays current
+- Reduces human error in data entry
+- Faster turnaround on estimates
+- Better supplier relationship management
+
+#### Phase 7: Advanced Features (Future)
 - 🔲 Real-time collaboration
 - 🔲 Version history and rollback
 - 🔲 API key management for external access
