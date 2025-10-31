@@ -20,7 +20,9 @@ class TableBuilder
         ActiveRecord::Schema.define do
           create_table table_name.to_sym, force: true do |t|
             # Add columns from the table definition
+            # Skip 'id' column as Rails creates it automatically as the primary key
             columns.each do |column|
+              next if column.column_name == 'id'
               builder.send(:add_column_to_migration, t, column)
             end
 
