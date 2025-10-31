@@ -125,6 +125,7 @@ module Api
         )
 
         unless table.save
+          Rails.logger.error "Table save failed: #{table.errors.full_messages.join(', ')}"
           return render json: { success: false, errors: table.errors.full_messages }, status: :unprocessable_entity
         end
 
@@ -142,6 +143,7 @@ module Api
           )
 
           unless column.save
+            Rails.logger.error "Column save failed: #{column.errors.full_messages.join(', ')}"
             table.destroy
             return render json: { success: false, errors: column.errors.full_messages }, status: :unprocessable_entity
           end
@@ -152,6 +154,7 @@ module Api
         build_result = builder.create_database_table
 
         unless build_result[:success]
+          Rails.logger.error "Table build failed: #{build_result[:errors].join(', ')}"
           table.destroy
           return render json: { success: false, errors: build_result[:errors] }, status: :unprocessable_entity
         end
