@@ -11,7 +11,8 @@ class DataImporter
   end
 
   # Import all rows from the spreadsheet into the table
-  def import
+  # Accepts optional block for progress callback: yield(current_row, total_rows)
+  def import(&progress_callback)
     parser = SpreadsheetParser.new(@file_path)
     parsed_data = parser.parse
 
@@ -21,22 +22,57 @@ class DataImporter
     end
 
     rows = parser.all_rows
+    total_rows = rows.length
     model = @table.dynamic_model
 
-    rows.each_with_index do |row_data, index|
-      begin
-        # Map spreadsheet data to database columns
-        attributes = map_row_to_attributes(row_data)
+    # Process rows in batches for better performance
+    batch_size = 500
+    rows.each_slice(batch_size).with_index do |batch, batch_index|
+      batch_records = []
 
-        # Create the record
-        record = model.create!(attributes)
-        @imported_count += 1
-      rescue => e
-        @failed_rows << {
-          row_number: index + 2,  # +2 because: +1 for 0-index, +1 for header row
-          data: row_data,
-          error: e.message
-        }
+      batch.each_with_index do |row_data, index_in_batch|
+        row_index = batch_index * batch_size + index_in_batch
+
+        begin
+          # Map spreadsheet data to database columns
+          attributes = map_row_to_attributes(row_data)
+          batch_records << attributes
+        rescue => e
+          @failed_rows << {
+            row_number: row_index + 2,  # +2 because: +1 for 0-index, +1 for header row
+            data: row_data,
+            error: e.message
+          }
+        end
+      end
+
+      # Bulk insert the batch
+      if batch_records.any?
+        begin
+          model.insert_all(batch_records, returning: false)
+          @imported_count += batch_records.length
+
+          # Call progress callback if provided
+          if progress_callback
+            current_progress = [(batch_index + 1) * batch_size, total_rows].min
+            progress_callback.call(current_progress, total_rows)
+          end
+        rescue => e
+          # If bulk insert fails, fall back to individual inserts for this batch
+          batch_records.each_with_index do |attributes, index|
+            row_index = batch_index * batch_size + index
+            begin
+              model.create!(attributes)
+              @imported_count += 1
+            rescue => individual_error
+              @failed_rows << {
+                row_number: row_index + 2,
+                data: rows[row_index],
+                error: individual_error.message
+              }
+            end
+          end
+        end
       end
     end
 

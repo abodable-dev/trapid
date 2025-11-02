@@ -19,6 +19,7 @@ Rails.application.routes.draw do
       # Import routes
       post 'imports/upload', to: 'imports#upload'
       post 'imports/execute', to: 'imports#execute'
+      get 'imports/status/:session_key', to: 'imports#status'
 
       # Grok AI integration
       post 'grok/chat', to: 'grok#chat'
