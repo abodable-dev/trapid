@@ -81,7 +81,7 @@ module Api
       end
 
       # POST /api/v1/imports/execute
-      # Create table and import data using session key
+      # Create table and start background import job
       def execute
         session_key = params[:session_key]
 
@@ -159,37 +159,49 @@ module Api
           return render json: { success: false, errors: build_result[:errors] }, status: :unprocessable_entity
         end
 
-        begin
-          # Import the data using the saved file
-          importer = DataImporter.new(table, import_session.file_path, params[:column_mapping] || {})
-          import_result = importer.import
+        # Link table to import session
+        import_session.update!(table_id: table.id, status: 'queued')
 
-          # Clean up the import session and file after successful import
-          import_session.cleanup_file!
+        # Start background import job
+        ImportJob.perform_later(import_session.id, table.id, params[:column_mapping] || {})
 
-          render json: {
-            success: true,
-            table: {
-              id: table.id,
-              name: table.name,
-              database_table_name: table.database_table_name
-            },
-            import_stats: {
-              imported_count: import_result[:imported_count],
-              failed_count: import_result[:failed_count],
-              total_rows: import_result[:imported_count] + import_result[:failed_count],
-              failed_rows: import_result[:failed_rows]
-            }
-          }
-        rescue => e
-          table&.destroy
-          import_session&.cleanup_file!
+        render json: {
+          success: true,
+          session_key: session_key,
+          table_id: table.id
+        }
+      end
 
-          Rails.logger.error "Import execute error: #{e.class} - #{e.message}"
-          Rails.logger.error e.backtrace.join("\n")
+      # GET /api/v1/imports/status/:session_key
+      # Check the status of an import job
+      def status
+        session_key = params[:session_key]
 
-          render json: { success: false, error: e.message }, status: :internal_server_error
+        import_session = ImportSession.find_by(session_key: session_key)
+
+        unless import_session
+          return render json: {
+            success: false,
+            error: 'Import session not found'
+          }, status: :not_found
         end
+
+        response = {
+          success: true,
+          status: import_session.status || 'pending',
+          progress: import_session.progress || 0,
+          total_rows: import_session.total_rows || 0,
+          processed_rows: import_session.processed_rows || 0
+        }
+
+        if import_session.status == 'completed'
+          response[:table_id] = import_session.table_id
+          response[:result] = import_session.result
+        elsif import_session.status == 'failed'
+          response[:error] = import_session.error_message
+        end
+
+        render json: response
       end
 
     end

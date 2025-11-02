@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '../../api'
 import { TrashIcon } from '@heroicons/react/24/outline'
+import ImportProgress from './ImportProgress'
 
 const COLUMN_TYPES = [
   { value: 'single_line_text', label: 'Single Line Text' },
@@ -32,6 +33,8 @@ export default function ImportPreview({ data, onComplete, onBack }) {
   )
   const [importing, setImporting] = useState(false)
   const [error, setError] = useState(null)
+  const [showProgress, setShowProgress] = useState(false)
+  const [importSessionKey, setImportSessionKey] = useState(null)
 
   const handleColumnChange = (index, field, value) => {
     const newColumns = [...columns]
@@ -81,7 +84,9 @@ export default function ImportPreview({ data, onComplete, onBack }) {
       })
 
       if (response.success) {
-        onComplete(response.table.id)
+        // Show progress screen with the session key
+        setImportSessionKey(response.session_key || data.session_key)
+        setShowProgress(true)
       } else {
         setError(response.error || response.errors?.[0] || 'Import failed')
       }
@@ -91,6 +96,11 @@ export default function ImportPreview({ data, onComplete, onBack }) {
     } finally {
       setImporting(false)
     }
+  }
+
+  // Show progress screen if import has started
+  if (showProgress && importSessionKey) {
+    return <ImportProgress sessionKey={importSessionKey} onComplete={onComplete} />
   }
 
   return (
