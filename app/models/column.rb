@@ -27,6 +27,7 @@ class Column < ApplicationRecord
   }
 
   before_validation :generate_column_name, if: -> { column_name.blank? }
+  validate :lookup_configuration_valid, if: -> { column_type.in?(['lookup', 'multiple_lookups']) }
 
   # Map column types to database column types
   COLUMN_TYPE_MAP = {
@@ -59,5 +60,27 @@ class Column < ApplicationRecord
     # Generate a safe database column name from the name field
     # e.g., "Contact Email" => "contact_email"
     self.column_name = name.parameterize(separator: '_')
+  end
+
+  def lookup_configuration_valid
+    if lookup_table_id.blank?
+      errors.add(:lookup_table_id, "must be specified for lookup columns")
+      return
+    end
+
+    target = Table.find_by(id: lookup_table_id)
+    if target.nil?
+      errors.add(:lookup_table_id, "table not found")
+      return
+    end
+
+    if lookup_display_column.blank?
+      errors.add(:lookup_display_column, "must be specified for lookup columns")
+      return
+    end
+
+    unless target.columns.exists?(column_name: lookup_display_column)
+      errors.add(:lookup_display_column, "column '#{lookup_display_column}' not found in table '#{target.name}'")
+    end
   end
 end

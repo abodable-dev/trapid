@@ -139,8 +139,24 @@ module Api
         }
 
         # Add all column values
-        @table.columns.each do |column|
-          json[column.column_name] = record.send(column.column_name)
+        @table.columns.includes(:lookup_table).each do |column|
+          value = record.send(column.column_name)
+
+          # Handle lookup columns - return both ID and display value
+          if column.column_type == 'lookup' && value.present?
+            begin
+              related_record = column.lookup_table.dynamic_model.find_by(id: value)
+              json[column.column_name] = {
+                id: value,
+                display: related_record ? related_record.send(column.lookup_display_column).to_s : "[Deleted]"
+              }
+            rescue => e
+              Rails.logger.error "Error loading lookup value for #{column.column_name}: #{e.message}"
+              json[column.column_name] = { id: value, display: "[Error]" }
+            end
+          else
+            json[column.column_name] = value
+          end
         end
 
         json

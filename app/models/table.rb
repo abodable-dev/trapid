@@ -17,6 +17,7 @@ class Table < ApplicationRecord
     # Classify will handle spaces and special characters
     class_name = name.gsub(/[^a-zA-Z0-9_]/, '').classify
     table_name = database_table_name
+    table_columns = columns.includes(:lookup_table) # Eager load for performance
 
     # Check if class already exists
     begin
@@ -36,6 +37,9 @@ class Table < ApplicationRecord
         self.table_name = table_name
       end
     end
+
+    # Add belongs_to associations for lookup columns
+    add_lookup_associations(table_columns)
 
     @dynamic_model
   end
@@ -69,5 +73,28 @@ class Table < ApplicationRecord
     # Add a random suffix to avoid collisions
     random_suffix = SecureRandom.hex(4)
     self.database_table_name = "user_#{base_name}_#{random_suffix}"
+  end
+
+  def add_lookup_associations(table_columns)
+    # Add belongs_to associations for each lookup column
+    table_columns.where(column_type: 'lookup').each do |col|
+      next unless col.lookup_table
+
+      association_name = col.column_name.to_sym
+      target_class_name = col.lookup_table.name.gsub(/[^a-zA-Z0-9_]/, '').classify
+
+      # Skip if association already defined
+      next if @dynamic_model.reflect_on_association(association_name)
+
+      begin
+        @dynamic_model.belongs_to association_name,
+                                  class_name: target_class_name,
+                                  foreign_key: col.column_name,
+                                  optional: !col.required,
+                                  primary_key: :id
+      rescue => e
+        Rails.logger.error "Failed to add belongs_to association for #{association_name}: #{e.message}"
+      end
+    end
   end
 end
