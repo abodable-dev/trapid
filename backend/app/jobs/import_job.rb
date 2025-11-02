@@ -14,6 +14,11 @@ class ImportJob < ApplicationJob
     )
 
     begin
+      # Check if file exists before importing
+      unless File.exist?(import_session.file_path)
+        raise "Import file not found at #{import_session.file_path}. File may have been deleted or is on a different dyno."
+      end
+
       # Import the data using the saved file
       importer = DataImporter.new(table, import_session.file_path, column_mapping)
 
