@@ -21,7 +21,7 @@ class ImportSession < ApplicationRecord
 
   def cleanup_file!
     File.delete(file_path) if file_exists?
-    destroy
+    # Don't destroy the session - keep it so frontend can check status
   end
 
   # Class method to cleanup expired sessions
