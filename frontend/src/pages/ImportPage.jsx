@@ -14,8 +14,8 @@ export default function ImportPage() {
   }
 
   const handleImportComplete = (tableId) => {
-    // Navigate to the table designer/edit page so user can verify and adjust
-    navigate(`/designer/tables/${tableId}`)
+    // Navigate directly to the table view for editing
+    navigate(`/tables/${tableId}`)
   }
 
   const handleBack = () => {
