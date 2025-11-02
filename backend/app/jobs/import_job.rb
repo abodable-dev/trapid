@@ -14,9 +14,15 @@ class ImportJob < ApplicationJob
     )
 
     begin
-      # Check if file exists before importing
+      # Restore file from database if it doesn't exist on this dyno
       unless File.exist?(import_session.file_path)
-        raise "Import file not found at #{import_session.file_path}. File may have been deleted or is on a different dyno."
+        # Ensure directory exists
+        FileUtils.mkdir_p(File.dirname(import_session.file_path))
+
+        # Write file data from database to filesystem
+        File.write(import_session.file_path, import_session.file_data)
+
+        Rails.logger.info "Restored import file from database to #{import_session.file_path}"
       end
 
       # Import the data using the saved file
