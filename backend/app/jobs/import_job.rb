@@ -27,16 +27,19 @@ class ImportJob < ApplicationJob
       end
 
       # Update final status
+      imported_count = import_result[:imported_count] || 0
+      failed_count = import_result[:failed_count] || 0
+
       import_session.update(
         status: 'completed',
         progress: 100,
-        total_rows: import_result[:imported_count] + import_result[:failed_count],
-        processed_rows: import_result[:imported_count],
+        total_rows: imported_count + failed_count,
+        processed_rows: imported_count,
         completed_at: Time.current,
         result: {
-          imported_count: import_result[:imported_count],
-          failed_count: import_result[:failed_count],
-          failed_rows: import_result[:failed_rows]
+          imported_count: imported_count,
+          failed_count: failed_count,
+          failed_rows: import_result[:failed_rows] || []
         }
       )
 
@@ -53,9 +56,10 @@ class ImportJob < ApplicationJob
         completed_at: Time.current
       )
 
-      # Clean up on error
+      # Clean up on error - destroy table but keep import session for error display
       table&.destroy
-      import_session&.cleanup_file!
+      # Delete the file but DON'T destroy the import_session so user can see error
+      File.delete(import_session.file_path) if import_session.file_exists?
 
       raise e
     end
