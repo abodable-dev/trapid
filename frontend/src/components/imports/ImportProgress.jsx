@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import api from '../../utils/api'
+import { api } from '../../api'
 
 export default function ImportProgress({ sessionKey, onComplete }) {
   const [status, setStatus] = useState('queued')
