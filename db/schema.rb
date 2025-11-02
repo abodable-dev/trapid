@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_02_033635) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_02_233047) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -68,6 +68,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_02_033635) do
     t.text "error_message"
     t.json "result"
     t.integer "table_id"
+    t.text "file_data"
     t.index ["session_key"], name: "index_import_sessions_on_session_key", unique: true
     t.index ["status"], name: "index_import_sessions_on_status"
     t.index ["table_id"], name: "index_import_sessions_on_table_id"

@@ -34,11 +34,15 @@ module Api
           result = parser.parse
 
           if result[:success]
-            # Create import session record
+            # Read and store file contents in database for cross-dyno access
+            file_data = File.read(temp_file_path)
+
+            # Create import session record with file data
             import_session = ImportSession.create!(
               file_path: temp_file_path,
               original_filename: file.original_filename,
-              file_size: File.size(temp_file_path)
+              file_size: File.size(temp_file_path),
+              file_data: file_data
             )
 
             response_data = {
