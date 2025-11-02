@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_30_014258) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_02_033635) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,7 +60,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_30_014258) do
     t.datetime "expires_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "status", default: "pending"
+    t.decimal "progress", precision: 5, scale: 2, default: "0.0"
+    t.integer "total_rows", default: 0
+    t.integer "processed_rows", default: 0
+    t.datetime "completed_at"
+    t.text "error_message"
+    t.json "result"
+    t.integer "table_id"
     t.index ["session_key"], name: "index_import_sessions_on_session_key", unique: true
+    t.index ["status"], name: "index_import_sessions_on_status"
+    t.index ["table_id"], name: "index_import_sessions_on_table_id"
   end
 
   create_table "tables", force: :cascade do |t|
