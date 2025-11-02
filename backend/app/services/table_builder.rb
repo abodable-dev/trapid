@@ -61,6 +61,21 @@ class TableBuilder
         )
       end
 
+      # Add foreign key for lookup columns
+      if column.column_type == 'lookup' && column.lookup_table
+        begin
+          ActiveRecord::Migration.add_foreign_key(
+            @table.database_table_name.to_sym,
+            column.lookup_table.database_table_name.to_sym,
+            column: column.column_name.to_sym,
+            on_delete: :nullify  # Set to NULL when referenced record is deleted
+          )
+        rescue => e
+          Rails.logger.error "Failed to add foreign key for #{column.column_name}: #{e.message}"
+          # Don't fail the whole operation if FK creation fails
+        end
+      end
+
       # Reload the dynamic model
       @table.reload_dynamic_model
 

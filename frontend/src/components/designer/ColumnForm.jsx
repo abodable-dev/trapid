@@ -34,14 +34,59 @@ export default function ColumnForm({ table, column, onClose }) {
     min_value: column?.min_value || '',
     default_value: column?.default_value || '',
     validation_message: column?.validation_message || '',
+    lookup_table_id: column?.lookup_table_id || '',
+    lookup_display_column: column?.lookup_display_column || '',
+    is_multiple: column?.is_multiple || false,
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [tables, setTables] = useState([])
+  const [targetTableColumns, setTargetTableColumns] = useState([])
 
   const selectedType = COLUMN_TYPES.find(t => t.value === formData.column_type)
   const supportsValidation = selectedType?.supportsValidation
   const supportsLength = ['single_line_text', 'multiple_lines_text', 'email'].includes(formData.column_type)
   const supportsMinMax = ['number', 'whole_number', 'currency', 'percentage'].includes(formData.column_type)
+  const isLookupType = formData.column_type === 'lookup' || formData.column_type === 'multiple_lookups'
+
+  // Fetch available tables for lookup configuration
+  useEffect(() => {
+    const fetchTables = async () => {
+      try {
+        const response = await api.get('/api/v1/tables')
+        // Filter out the current table (can't lookup to self)
+        setTables(response.data.tables.filter(t => t.id !== table.id))
+      } catch (err) {
+        console.error('Error fetching tables:', err)
+      }
+    }
+
+    if (isLookupType) {
+      fetchTables()
+    }
+  }, [isLookupType, table.id])
+
+  // Fetch columns from the selected lookup table
+  useEffect(() => {
+    const fetchTargetColumns = async () => {
+      if (!formData.lookup_table_id) {
+        setTargetTableColumns([])
+        return
+      }
+
+      try {
+        const response = await api.get(`/api/v1/tables/${formData.lookup_table_id}`)
+        setTargetTableColumns(response.data.table.columns || [])
+      } catch (err) {
+        console.error('Error fetching target table columns:', err)
+        setTargetTableColumns([])
+      }
+    }
+
+    if (isLookupType && formData.lookup_table_id) {
+      fetchTargetColumns()
+    }
+  }, [isLookupType, formData.lookup_table_id])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -156,6 +201,83 @@ export default function ColumnForm({ table, column, onClose }) {
                       </p>
                     )}
                   </div>
+
+                  {/* Lookup Configuration */}
+                  {isLookupType && (
+                    <div className="border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 bg-indigo-50 dark:bg-indigo-900/10">
+                      <h4 className="text-sm font-medium text-indigo-900 dark:text-indigo-300 mb-3">
+                        Lookup Configuration
+                      </h4>
+
+                      {/* Target Table Selector */}
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Link to Table *
+                        </label>
+                        <select
+                          value={formData.lookup_table_id}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            lookup_table_id: e.target.value,
+                            lookup_display_column: '' // Reset display column when table changes
+                          })}
+                          required={isLookupType}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-white/5 dark:border-white/10 dark:text-white"
+                        >
+                          <option value="">Select a table...</option>
+                          {tables.map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Choose which table this column will link to
+                        </p>
+                      </div>
+
+                      {/* Display Column Selector */}
+                      {formData.lookup_table_id && (
+                        <div className="mb-3">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Display Field *
+                          </label>
+                          <select
+                            value={formData.lookup_display_column}
+                            onChange={(e) => setFormData({
+                              ...formData,
+                              lookup_display_column: e.target.value
+                            })}
+                            required={isLookupType}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-white/5 dark:border-white/10 dark:text-white"
+                          >
+                            <option value="">Select field to display...</option>
+                            {targetTableColumns.map(col => (
+                              <option key={col.id} value={col.column_name}>
+                                {col.name}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            This field will be shown in the dropdown
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Multiple Selection Checkbox */}
+                      {formData.column_type === 'multiple_lookups' && (
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={formData.is_multiple}
+                            onChange={(e) => setFormData({ ...formData, is_multiple: e.target.checked })}
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                          />
+                          <label className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                            Allow multiple selections
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Description */}
                   <div>

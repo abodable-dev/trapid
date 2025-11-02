@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { api } from '../api'
 import CurrencyCell from '../components/table/CurrencyCell'
+import ColumnHeader from '../components/table/ColumnHeader'
 import { formatPercentage, formatNumber } from '../utils/formatters'
 import {
   ChevronLeftIcon,
@@ -131,6 +132,20 @@ export default function TablePage() {
     }
   }
 
+  const handleColumnTypeChange = async (columnId, newType) => {
+    try {
+      await api.put(`/api/v1/tables/${id}/columns/${columnId}`, {
+        column: { column_type: newType }
+      })
+      // Reload table data to get updated column info
+      await loadTable()
+      await loadRecords()
+    } catch (err) {
+      console.error('Failed to update column type:', err)
+      alert('Failed to update column type')
+    }
+  }
+
   if (error) {
     return (
       <div className="text-center py-12">
@@ -250,12 +265,10 @@ export default function TablePage() {
                       key={column.id}
                       className="border-r border-b border-gray-200 dark:border-gray-700 px-4 py-2 text-left min-w-[150px]"
                     >
-                      <div className="flex items-center gap-x-2">
-                        {getColumnIcon(column.column_type)}
-                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                          {column.name}
-                        </span>
-                      </div>
+                      <ColumnHeader
+                        column={column}
+                        onTypeChange={handleColumnTypeChange}
+                      />
                     </th>
                   ))}
                 </tr>

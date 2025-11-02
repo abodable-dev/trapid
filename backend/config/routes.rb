@@ -32,7 +32,11 @@ Rails.application.routes.draw do
       # Table management
       resources :tables do
         # Column management
-        resources :columns, only: [:create, :update, :destroy]
+        resources :columns, only: [:create, :update, :destroy] do
+          member do
+            get :lookup_options
+          end
+        end
 
         # Record management for dynamic tables
         resources :records

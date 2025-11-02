@@ -94,6 +94,39 @@ module Api
         end
       end
 
+      # GET /api/v1/tables/:table_id/columns/:id/lookup_options
+      def lookup_options
+        column = @table.columns.find(params[:id])
+
+        unless column.column_type.in?(['lookup', 'multiple_lookups'])
+          return render json: { error: 'Not a lookup column' }, status: :bad_request
+        end
+
+        unless column.lookup_table
+          return render json: { error: 'Lookup table not configured' }, status: :unprocessable_entity
+        end
+
+        target_table = column.lookup_table
+        records = target_table.dynamic_model.limit(1000).order(:id)
+
+        options = records.map do |record|
+          {
+            id: record.id,
+            display: record.send(column.lookup_display_column).to_s
+          }
+        rescue => e
+          Rails.logger.error "Error reading lookup value: #{e.message}"
+          { id: record.id, display: "[Error]" }
+        end
+
+        render json: {
+          success: true,
+          options: options
+        }
+      rescue => e
+        render json: { error: e.message }, status: :internal_server_error
+      end
+
       private
 
       def set_table
