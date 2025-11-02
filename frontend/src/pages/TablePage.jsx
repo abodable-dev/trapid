@@ -4,6 +4,7 @@ import { api } from '../api'
 import CurrencyCell from '../components/table/CurrencyCell'
 import LookupCell from '../components/table/LookupCell'
 import ColumnHeader from '../components/table/ColumnHeader'
+import AddColumnModal from '../components/table/AddColumnModal'
 import { formatPercentage, formatNumber } from '../utils/formatters'
 import {
   ChevronLeftIcon,
@@ -37,6 +38,7 @@ export default function TablePage() {
   const [editingCell, setEditingCell] = useState(null) // { recordId, columnName }
   const [editValue, setEditValue] = useState('')
   const [isAddingRow, setIsAddingRow] = useState(false)
+  const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false)
 
   useEffect(() => {
     loadTable()
@@ -170,6 +172,28 @@ export default function TablePage() {
     }
   }
 
+  const handleAddColumn = async (columnData) => {
+    try {
+      const response = await api.post(`/api/v1/tables/${id}/columns`, {
+        column: {
+          name: columnData.name,
+          column_name: columnData.name.toLowerCase().replace(/\s+/g, '_'),
+          column_type: columnData.column_type,
+          position: table.columns.length
+        }
+      })
+
+      if (response.success) {
+        setIsAddColumnModalOpen(false)
+        await loadTable()
+        await loadRecords()
+      }
+    } catch (err) {
+      console.error('Failed to add column:', err)
+      alert('Failed to add column')
+    }
+  }
+
   if (error) {
     return (
       <div className="text-center py-12">
@@ -281,13 +305,15 @@ export default function TablePage() {
             <table className="min-w-full border-collapse">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-800/50">
-                  <th className="sticky left-0 z-20 bg-gray-50 dark:bg-gray-800/50 border-r border-b border-gray-200 dark:border-gray-700 px-4 py-2 text-left">
+                  <th className="sticky left-0 z-20 bg-gray-50 dark:bg-gray-800/50 border-r border-b border-gray-200 dark:border-gray-700 px-4 py-2 text-left w-12">
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#</span>
                   </th>
-                  {table.columns.map((column) => (
+                  {table.columns.map((column, index) => (
                     <th
                       key={column.id}
-                      className="border-r border-b border-gray-200 dark:border-gray-700 px-4 py-2 text-left min-w-[150px]"
+                      className={`border-r border-b border-gray-200 dark:border-gray-700 px-4 py-2 text-left min-w-[150px] ${
+                        index === 0 ? 'sticky left-12 z-20 bg-gray-50 dark:bg-gray-800/50' : ''
+                      }`}
                     >
                       <ColumnHeader
                         column={column}
@@ -295,6 +321,16 @@ export default function TablePage() {
                       />
                     </th>
                   ))}
+                  <th className="border-r border-b border-gray-200 dark:border-gray-700 px-2 py-2 text-center w-12 bg-gray-50 dark:bg-gray-800/50">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddColumnModalOpen(true)}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded transition-colors"
+                      title="Add column"
+                    >
+                      <PlusIcon className="h-4 w-4" />
+                    </button>
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900">
@@ -303,17 +339,21 @@ export default function TablePage() {
                     key={record.id}
                     className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
                   >
-                    <td className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800/50 group-hover:bg-blue-100/50 dark:group-hover:bg-blue-900/20 border-r border-b border-gray-200 dark:border-gray-700 px-4 py-2">
+                    <td className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800/50 group-hover:bg-blue-100/50 dark:group-hover:bg-blue-900/20 border-r border-b border-gray-200 dark:border-gray-700 px-4 py-2 w-12">
                       <span className="text-xs text-gray-500 dark:text-gray-400">{idx + 1}</span>
                     </td>
-                    {table.columns.map((column) => {
+                    {table.columns.map((column, colIndex) => {
                       const isEditing = editingCell?.recordId === record.id && editingCell?.columnName === column.column_name
                       const isCurrency = column.column_type === 'currency'
 
                       return (
                         <td
                           key={column.id}
-                          className="border-r border-b border-gray-200 dark:border-gray-700 px-0 py-0 text-sm bg-white dark:bg-gray-900 group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10"
+                          className={`border-r border-b border-gray-200 dark:border-gray-700 px-0 py-0 text-sm group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10 ${
+                            colIndex === 0
+                              ? 'sticky left-12 z-10 bg-white dark:bg-gray-900 group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10'
+                              : 'bg-white dark:bg-gray-900'
+                          }`}
                           onClick={() => !isEditing && !isCurrency && handleCellClick(record.id, column.column_name, record[column.column_name])}
                         >
                           {isEditing ? (
@@ -347,6 +387,9 @@ export default function TablePage() {
                         </td>
                       )
                     })}
+                    <td className="border-r border-b border-gray-200 dark:border-gray-700 px-2 py-2 text-center w-12 bg-white dark:bg-gray-900 group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10">
+                      {/* Empty cell for plus column */}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -381,6 +424,13 @@ export default function TablePage() {
           </div>
         </div>
       )}
+
+      {/* Add Column Modal */}
+      <AddColumnModal
+        isOpen={isAddColumnModalOpen}
+        onClose={() => setIsAddColumnModalOpen(false)}
+        onAdd={handleAddColumn}
+      />
     </div>
   )
 }
