@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { api } from '../api'
 import CurrencyCell from '../components/table/CurrencyCell'
+import LookupCell from '../components/table/LookupCell'
 import ColumnHeader from '../components/table/ColumnHeader'
 import { formatPercentage, formatNumber } from '../utils/formatters'
 import {
@@ -121,6 +122,29 @@ export default function TablePage() {
 
     setEditingCell(null)
     setEditValue('')
+  }
+
+  const handleCellUpdate = async (recordId, columnName, newValue) => {
+    const record = records.find(r => r.id === recordId)
+
+    // Get the current value (handle both object and primitive values for lookups)
+    const currentValue = typeof record[columnName] === 'object'
+      ? record[columnName]?.id
+      : record[columnName]
+
+    // Only update if value changed
+    if (currentValue !== newValue) {
+      try {
+        const updateData = { [columnName]: newValue }
+        await api.put(`/api/v1/tables/${id}/records/${recordId}`, {
+          record: updateData
+        })
+        await loadRecords()
+      } catch (err) {
+        console.error('Failed to update record:', err)
+        alert('Failed to update record')
+      }
+    }
   }
 
   const handleKeyDown = (e) => {
@@ -302,6 +326,15 @@ export default function TablePage() {
                               autoFocus
                               className="w-full h-full px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-2 border-blue-500 focus:outline-none"
                             />
+                          ) : column.column_type === 'lookup' ? (
+                            <div className="px-4 py-2 min-h-[36px] flex items-center">
+                              <LookupCell
+                                column={column}
+                                value={record[column.column_name]}
+                                onChange={(newValue) => handleCellUpdate(record.id, column.column_name, newValue)}
+                                isEditing={isEditing}
+                              />
+                            </div>
                           ) : isCurrency ? (
                             <div className="px-4 py-2 min-h-[36px] flex items-center">
                               <CurrencyCell value={record[column.column_name]} />
@@ -378,6 +411,9 @@ function formatValue(value, columnType) {
   }
 
   switch (columnType) {
+    case 'lookup':
+      // Lookup values are objects with { id, display } from backend
+      return typeof value === 'object' ? value.display : value
     case 'boolean':
       return value ? 'Yes' : 'No'
     case 'currency':
