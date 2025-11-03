@@ -35,6 +35,7 @@ import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'
 // Navigation for Explorer view
 const explorerNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+  { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
   { name: 'Import Data', href: '/import', icon: ArrowUpTrayIcon },
 ]
 

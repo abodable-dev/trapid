@@ -3,6 +3,7 @@ import AppLayout from './components/layout/AppLayout'
 import Dashboard from './pages/Dashboard'
 import ImportPage from './pages/ImportPage'
 import TablePage from './pages/TablePage'
+import ActiveJobsPage from './pages/ActiveJobsPage'
 import DesignerHome from './pages/designer/DesignerHome'
 import TableSettings from './pages/designer/TableSettings'
 import TableBuilder from './pages/designer/TableBuilder'
@@ -17,6 +18,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
+        <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
         <Route path="/import" element={<AppLayout><ImportPage /></AppLayout>} />
         <Route path="/tables/:id" element={<AppLayout><TablePage /></AppLayout>} />
         <Route path="/designer" element={<AppLayout><DesignerHome /></AppLayout>} />
