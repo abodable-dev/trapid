@@ -20,44 +20,17 @@ import {
   XMarkIcon,
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
-  TableCellsIcon,
-  StarIcon,
-  Bars4Icon,
-  DocumentTextIcon,
-  SparklesIcon,
-  LightBulbIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   BriefcaseIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'
 
-// Navigation for Explorer view
-const explorerNavigation = [
+// Simplified navigation - just the main items
+const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
   { name: 'Import Data', href: '/import', icon: ArrowUpTrayIcon },
-]
-
-// Navigation for Designer view
-const designerNavigation = [
-  { name: 'Tables', href: '/designer', icon: TableCellsIcon },
-  { name: 'Menus', href: '/designer/menus', icon: Bars4Icon },
-  { name: 'Pages', href: '/designer/pages', icon: DocumentTextIcon },
-  { name: 'Experiences', href: '/designer/experiences', icon: SparklesIcon },
-  { name: 'Features', href: '/designer/features', icon: LightBulbIcon },
-]
-
-// Navigation for Workflow view (placeholder for now)
-const workflowNavigation = [
-  { name: 'Workflows', href: '/workflow', icon: HomeIcon },
-]
-
-// Main sections - these will be bottom navigation eventually
-const mainSections = [
-  { name: 'Explorer', href: '/dashboard', initial: 'E' },
-  { name: 'Workflow', href: '/workflow', initial: 'W' },
-  { name: 'Designer', href: '/designer', initial: 'D' },
 ]
 
 const userNavigation = [
@@ -77,39 +50,9 @@ export default function AppLayout({ children }) {
   const [grokChatOpen, setGrokChatOpen] = useState(false)
   const location = useLocation()
 
-  // Determine which section we're in based on the current path
-  const getCurrentSection = () => {
-    if (location.pathname.startsWith('/designer')) {
-      return 'designer'
-    } else if (location.pathname.startsWith('/workflow')) {
-      return 'workflow'
-    } else {
-      return 'explorer'
-    }
-  }
-
-  // Get the appropriate navigation based on the current section
-  const getNavigation = () => {
-    const section = getCurrentSection()
-    switch (section) {
-      case 'designer':
-        return designerNavigation
-      case 'workflow':
-        return workflowNavigation
-      case 'explorer':
-      default:
-        return explorerNavigation
-    }
-  }
-
-  const navigation = getNavigation()
-
   const isCurrentPath = (href) => {
     if (href === '/dashboard') {
       return location.pathname === '/dashboard' || location.pathname.startsWith('/tables/')
-    }
-    if (href === '/designer') {
-      return location.pathname === '/designer' || location.pathname.startsWith('/designer/tables')
     }
     return location.pathname === href || location.pathname.startsWith(href + '/')
   }
@@ -184,24 +127,6 @@ export default function AppLayout({ children }) {
                           </li>
                         )
                       })}
-                    </ul>
-                  </li>
-                  <li className="mt-auto">
-                    <div className="text-xs/6 font-semibold text-gray-400">Sections</div>
-                    <ul role="list" className="-mx-2 mt-2 space-y-1">
-                      {mainSections.map((item) => (
-                        <li key={item.name}>
-                          <Link
-                            to={item.href}
-                            className="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
-                          >
-                            <span className="flex size-6 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-[0.625rem] font-medium text-gray-400 group-hover:border-indigo-600 group-hover:text-indigo-600 dark:border-white/10 dark:bg-white/5 dark:group-hover:border-white/20 dark:group-hover:text-white">
-                              {item.initial}
-                            </span>
-                            <span className="truncate">{item.name}</span>
-                          </Link>
-                        </li>
-                      ))}
                     </ul>
                   </li>
                 </ul>
@@ -291,30 +216,6 @@ export default function AppLayout({ children }) {
                       </li>
                     )
                   })}
-                </ul>
-              </li>
-              <li className="mt-auto">
-                {!sidebarCollapsed && (
-                  <div className="text-xs/6 font-semibold text-gray-400">Sections</div>
-                )}
-                <ul role="list" className={classNames("-mx-2 space-y-1", !sidebarCollapsed && "mt-2")}>
-                  {mainSections.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        to={item.href}
-                        title={sidebarCollapsed ? item.name : undefined}
-                        className={classNames(
-                          "group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white",
-                          sidebarCollapsed && "justify-center"
-                        )}
-                      >
-                        <span className="flex size-6 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-[0.625rem] font-medium text-gray-400 group-hover:border-indigo-600 group-hover:text-indigo-600 dark:border-white/10 dark:bg-white/5 dark:group-hover:border-white/20 dark:group-hover:text-white">
-                          {item.initial}
-                        </span>
-                        {!sidebarCollapsed && <span className="truncate">{item.name}</span>}
-                      </Link>
-                    </li>
-                  ))}
                 </ul>
               </li>
             </ul>
