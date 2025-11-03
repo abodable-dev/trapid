@@ -2,6 +2,7 @@ class Supplier < ApplicationRecord
   # Associations
   has_many :pricebook_items, dependent: :nullify
   has_many :price_histories, dependent: :nullify
+  belongs_to :contact, optional: true
 
   # Validations
   validates :name, presence: true, uniqueness: true
@@ -14,6 +15,11 @@ class Supplier < ApplicationRecord
   scope :active, -> { where(is_active: true) }
   scope :by_rating, -> { order(rating: :desc) }
   scope :by_response_rate, -> { order(response_rate: :desc) }
+  scope :matched, -> { where.not(contact_id: nil) }
+  scope :unmatched, -> { where(contact_id: nil) }
+  scope :verified, -> { where(is_verified: true) }
+  scope :needs_review, -> { where(is_verified: false).where.not(contact_id: nil) }
+  scope :by_match_confidence, -> { order(confidence_score: :desc) }
 
   # Class methods
   def self.find_or_create_by_name(name)
@@ -45,5 +51,33 @@ class Supplier < ApplicationRecord
       days = (hours / 24.0).round(1)
       "#{days}d"
     end
+  end
+
+  # Matching methods
+  def matched?
+    contact_id.present?
+  end
+
+  def match_confidence_label
+    return "No match" unless matched?
+
+    case confidence_score
+    when 1.0
+      "Exact"
+    when 0.9..Float::INFINITY
+      "High"
+    when 0.7..0.9
+      "Fuzzy"
+    when 0.0
+      "Manual"
+    else
+      "Low"
+    end
+  end
+
+  def match_status
+    return :unmatched unless matched?
+    return :verified if is_verified?
+    :needs_review
   end
 end

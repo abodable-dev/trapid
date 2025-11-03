@@ -45,7 +45,21 @@ Rails.application.routes.draw do
       end
 
       # Suppliers management
-      resources :suppliers
+      resources :suppliers do
+        collection do
+          get :unmatched
+          get :needs_review
+          post :auto_match
+        end
+        member do
+          post :link_contact
+          post :unlink_contact
+          post :verify_match
+        end
+      end
+
+      # Contacts management
+      resources :contacts
 
       # Table management
       resources :tables do
