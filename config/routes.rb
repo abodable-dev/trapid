@@ -35,6 +35,7 @@ Rails.application.routes.draw do
         resources :columns, only: [:create, :update, :destroy] do
           member do
             get :lookup_options
+            get :lookup_search
           end
         end
 

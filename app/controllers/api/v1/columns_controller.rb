@@ -127,6 +127,89 @@ module Api
         render json: { error: e.message }, status: :internal_server_error
       end
 
+      # GET /api/v1/tables/:table_id/columns/:id/lookup_search?q=search_term
+      def lookup_search
+        column = @table.columns.find(params[:id])
+
+        unless column.column_type.in?(['lookup', 'multiple_lookups'])
+          return render json: { error: 'Not a lookup column' }, status: :bad_request
+        end
+
+        unless column.lookup_table
+          return render json: { error: 'Lookup table not configured' }, status: :unprocessable_entity
+        end
+
+        search_term = params[:q].to_s.strip
+        target_table = column.lookup_table
+        model = target_table.dynamic_model
+
+        # If no search term, return top 20 recent records
+        if search_term.blank?
+          records = model.limit(20).order(created_at: :desc)
+        else
+          # Get all searchable columns from the target table
+          searchable_columns = target_table.columns
+            .where(searchable: true)
+            .pluck(:column_name)
+
+          # If no searchable columns defined, search all text/string columns
+          if searchable_columns.empty?
+            searchable_columns = target_table.columns
+              .where(column_type: ['single_line_text', 'email', 'phone', 'url', 'multiple_lines_text'])
+              .pluck(:column_name)
+          end
+
+          # Build search query across all searchable columns
+          if searchable_columns.any?
+            search_conditions = searchable_columns.map { |col| "#{col} ILIKE :search" }.join(' OR ')
+            records = model.where(search_conditions, search: "%#{search_term}%")
+              .limit(20)
+              .order(:id)
+          else
+            # Fallback: just search the display column
+            records = model.where(
+              "#{column.lookup_display_column} ILIKE :search",
+              search: "%#{search_term}%"
+            ).limit(20).order(:id)
+          end
+        end
+
+        # Build result with display value and additional context
+        results = records.map do |record|
+          # Get all text columns for context
+          context_fields = {}
+          target_table.columns
+            .where(column_type: ['single_line_text', 'email', 'phone', 'url'])
+            .limit(3)
+            .each do |col|
+              value = record.send(col.column_name)
+              context_fields[col.name] = value if value.present?
+            end
+
+          {
+            id: record.id,
+            display: record.send(column.lookup_display_column).to_s,
+            context: context_fields
+          }
+        rescue => e
+          Rails.logger.error "Error reading lookup search result: #{e.message}"
+          {
+            id: record.id,
+            display: "[Error]",
+            context: {}
+          }
+        end
+
+        render json: {
+          success: true,
+          results: results,
+          count: results.length
+        }
+      rescue => e
+        Rails.logger.error "Lookup search error: #{e.message}"
+        render json: { error: e.message }, status: :internal_server_error
+      end
+
       private
 
       def set_table
