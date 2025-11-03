@@ -179,7 +179,11 @@ export default function ActiveJobsPage() {
                   </tr>
                 ) : (
                   jobs.map((job, index) => (
-                    <tr key={job.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <tr
+                      key={job.id}
+                      onClick={() => navigate(`/jobs/${job.id}`)}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                    >
                       <td className="px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400">
                         {index + 1}
                       </td>
@@ -197,7 +201,10 @@ export default function ActiveJobsPage() {
                           />
                         ) : (
                           <div
-                            onClick={() => handleCellClick(job.id, 'title', job.title)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCellClick(job.id, 'title', job.title)
+                            }}
                             className="text-xs text-gray-900 dark:text-white cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded truncate max-w-md"
                             title={job.title}
                           >
@@ -220,7 +227,10 @@ export default function ActiveJobsPage() {
                           />
                         ) : (
                           <div
-                            onClick={() => handleCellClick(job.id, 'contract_value', job.contract_value)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCellClick(job.id, 'contract_value', job.contract_value)
+                            }}
                             className="text-xs text-gray-900 dark:text-white cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded"
                           >
                             {job.contract_value ? formatCurrency(job.contract_value, false) : '-'}
@@ -242,7 +252,10 @@ export default function ActiveJobsPage() {
                           />
                         ) : (
                           <div
-                            onClick={() => handleCellClick(job.id, 'live_profit', job.live_profit)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCellClick(job.id, 'live_profit', job.live_profit)
+                            }}
                             className={`text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded ${
                               job.live_profit >= 0
                                 ? 'text-green-600 dark:text-green-400'
@@ -268,7 +281,10 @@ export default function ActiveJobsPage() {
                           />
                         ) : (
                           <div
-                            onClick={() => handleCellClick(job.id, 'profit_percentage', job.profit_percentage)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCellClick(job.id, 'profit_percentage', job.profit_percentage)
+                            }}
                             className={`text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded ${
                               job.profit_percentage >= 0
                                 ? 'text-green-600 dark:text-green-400'
@@ -293,7 +309,10 @@ export default function ActiveJobsPage() {
                           />
                         ) : (
                           <div
-                            onClick={() => handleCellClick(job.id, 'stage', job.stage)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCellClick(job.id, 'stage', job.stage)
+                            }}
                             className="text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded inline-block"
                           >
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100/60 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200">
