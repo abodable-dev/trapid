@@ -7,6 +7,9 @@ import {
   PlusIcon,
   XMarkIcon,
   FunnelIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  Bars3Icon,
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../utils/formatters'
 import { api } from '../api'
@@ -29,9 +32,14 @@ export default function PriceBooksPage() {
     total_pages: 0
   })
   const [hasMore, setHasMore] = useState(true)
+  const [sortBy, setSortBy] = useState('item_code')
+  const [sortDirection, setSortDirection] = useState('asc')
+  const [showItemSearch, setShowItemSearch] = useState(false)
+  const [itemSearchQuery, setItemSearchQuery] = useState('')
 
   const observerTarget = useRef(null)
   const searchTimeoutRef = useRef(null)
+  const itemSearchRef = useRef(null)
 
   // Debounced search
   const debouncedSearch = useCallback((query) => {
@@ -60,9 +68,20 @@ export default function PriceBooksPage() {
     setItems([])
     setPagination(prev => ({ ...prev, page: 1 }))
     loadPriceBook(1, searchQuery, categoryFilter, supplierFilter, riskFilter)
-  }, [categoryFilter, supplierFilter, riskFilter])
+  }, [categoryFilter, supplierFilter, riskFilter, sortBy, sortDirection])
 
-  const loadPriceBook = async (page = 1, search = searchQuery, category = categoryFilter, supplier = supplierFilter, risk = riskFilter) => {
+  // Close item search when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (itemSearchRef.current && !itemSearchRef.current.contains(event.target)) {
+        setShowItemSearch(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const loadPriceBook = async (page = 1, search = searchQuery, category = categoryFilter, supplier = supplierFilter, risk = riskFilter, sort = sortBy, direction = sortDirection) => {
     try {
       if (page === 1) {
         setLoading(true)
@@ -76,6 +95,8 @@ export default function PriceBooksPage() {
           category: category || undefined,
           supplier_id: supplier || undefined,
           risk_level: risk || undefined,
+          sort_by: sort,
+          sort_direction: direction,
           page,
           limit: 50
         }
@@ -202,6 +223,24 @@ export default function PriceBooksPage() {
     return badges
   }
 
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(column)
+      setSortDirection('asc')
+    }
+    setItems([])
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }
+
+  const SortIcon = ({ column }) => {
+    if (sortBy !== column) return <Bars3Icon className="h-4 w-4 text-gray-400" />
+    return sortDirection === 'asc' ?
+      <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+      <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+  }
+
   if (loading && pagination.page === 1) {
     return (
       <div className="flex h-screen overflow-hidden">
@@ -214,157 +253,90 @@ export default function PriceBooksPage() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
-        {/* Sticky Header */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 flex-shrink-0">
-          <div className="px-8 py-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <CurrencyDollarIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                    Price Book
-                  </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {getResultsText()}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => navigate('/import')}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+      <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
+        <div className="overflow-x-auto border-l border-r border-b border-gray-200 dark:border-gray-700 rounded-lg">
+          <table className="min-w-full">
+            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+              <tr>
+                <th
+                  onClick={() => handleSort('item_code')}
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <ArrowUpTrayIcon className="h-5 w-5 mr-2" />
-                  Import CSV
-                </button>
-                <button
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
+                  <div className="flex items-center gap-2">
+                    <span>Code</span>
+                    <SortIcon column="item_code" />
+                  </div>
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 relative">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowItemSearch(!showItemSearch)}
+                      className="flex items-center gap-2 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                    >
+                      <span>Item Name</span>
+                      <MagnifyingGlassIcon className="h-4 w-4" />
+                    </button>
+                    {showItemSearch && (
+                      <div
+                        ref={itemSearchRef}
+                        className="absolute top-full left-0 mt-1 w-80 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3 z-50"
+                      >
+                        <input
+                          type="text"
+                          placeholder="Search item name..."
+                          value={itemSearchQuery}
+                          onChange={(e) => {
+                            setItemSearchQuery(e.target.value)
+                            setSearchQuery(e.target.value)
+                          }}
+                          autoFocus
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('risk_level')}
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <PlusIcon className="h-5 w-5 mr-2" />
-                  Add Item
-                </button>
-              </div>
-            </div>
-
-            {/* Search and Filters */}
-            <div className="flex gap-4">
-              <div className="flex-1 relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by code, name, or description..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white placeholder-gray-400"
-                />
-              </div>
-
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white min-w-[200px]"
-              >
-                <option value="">All Categories</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-
-              <select
-                value={supplierFilter}
-                onChange={(e) => setSupplierFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white min-w-[200px]"
-              >
-                <option value="">All Suppliers</option>
-                {suppliers.map(([id, name]) => (
-                  <option key={id} value={id}>{name}</option>
-                ))}
-              </select>
-
-              <select
-                value={riskFilter}
-                onChange={(e) => setRiskFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white min-w-[180px]"
-              >
-                <option value="">All Risk Levels</option>
-                <option value="low">Low Risk</option>
-                <option value="medium">Medium Risk</option>
-                <option value="high">High Risk</option>
-                <option value="critical">Critical</option>
-              </select>
-
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  title="Clear all filters"
+                  <div className="flex items-center gap-2">
+                    <span>Status</span>
+                    <SortIcon column="risk_level" />
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('category')}
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <XMarkIcon className="h-5 w-5" />
-                </button>
-              )}
-            </div>
-
-            {/* Active filters badges */}
-            {hasActiveFilters && (
-              <div className="flex gap-2 mt-3">
-                {searchQuery && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200">
-                    <MagnifyingGlassIcon className="h-4 w-4 mr-1" />
-                    "{searchQuery}"
-                  </span>
-                )}
-                {categoryFilter && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200">
-                    <FunnelIcon className="h-4 w-4 mr-1" />
-                    {categoryFilter}
-                  </span>
-                )}
-                {supplierFilter && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200">
-                    Supplier: {suppliers.find(([id]) => id === parseInt(supplierFilter))?.[1]}
-                  </span>
-                )}
-                {riskFilter && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200">
-                    Risk: {riskFilter.charAt(0).toUpperCase() + riskFilter.slice(1)}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Scrollable Table Container */}
-        <div className="flex-1 overflow-auto p-8">
-          <div className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Code
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Item Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Price
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Unit
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Supplier
-                    </th>
-                  </tr>
-                </thead>
+                  <div className="flex items-center gap-2">
+                    <span>Category</span>
+                    <SortIcon column="category" />
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('current_price')}
+                  className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="flex items-center justify-end gap-2">
+                    <span>Price</span>
+                    <SortIcon column="current_price" />
+                  </div>
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Unit
+                </th>
+                <th
+                  onClick={() => handleSort('supplier')}
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>Supplier</span>
+                    <SortIcon column="supplier" />
+                  </div>
+                </th>
+              </tr>
+            </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                   {items.length === 0 ? (
                     <tr>
