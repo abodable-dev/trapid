@@ -32,6 +32,20 @@ Rails.application.routes.draw do
       # Construction jobs management
       resources :constructions
 
+      # Price Book management
+      resources :pricebook, controller: 'pricebook_items', path: 'pricebook' do
+        member do
+          get :history
+        end
+        collection do
+          patch :bulk_update
+          post :import
+        end
+      end
+
+      # Suppliers management
+      resources :suppliers
+
       # Table management
       resources :tables do
         # Column management
