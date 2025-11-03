@@ -5,7 +5,6 @@ import {
   PlusIcon,
   BriefcaseIcon,
 } from '@heroicons/react/24/outline'
-import ExplorerSidebar from '../components/layout/ExplorerSidebar'
 import { useNavigate } from 'react-router-dom'
 
 export default function ActiveJobsPage() {
@@ -89,7 +88,6 @@ export default function ActiveJobsPage() {
   if (loading && jobs.length === 0) {
     return (
       <div className="flex h-screen overflow-hidden">
-        <ExplorerSidebar onUploadClick={() => navigate('/import')} />
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         </div>
@@ -100,7 +98,6 @@ export default function ActiveJobsPage() {
   if (error) {
     return (
       <div className="flex h-screen overflow-hidden">
-        <ExplorerSidebar onUploadClick={() => navigate('/import')} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-red-600 dark:text-red-400">{error}</div>
         </div>
@@ -110,8 +107,6 @@ export default function ActiveJobsPage() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <ExplorerSidebar onUploadClick={() => navigate('/import')} />
-
       <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
