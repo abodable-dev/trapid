@@ -105,60 +105,60 @@ export default function ActiveJobsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-              Active Jobs
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Construction projects currently in progress
-            </p>
-          </div>
-          <button
-            onClick={handleAddJob}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <PlusIcon className="h-5 w-5 mr-2" />
-            Add Job
-          </button>
-        </div>
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between">
+        <h1 className="text-lg font-medium text-gray-900 dark:text-white">
+          Active Jobs
+        </h1>
+        <button
+          onClick={handleAddJob}
+          className="inline-flex items-center px-3 py-1.5 border border-transparent rounded text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+        >
+          <PlusIcon className="h-4 w-4 mr-1" />
+          Add Job
+        </button>
       </div>
 
-      <div className="p-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <div className="p-4">
+        <div className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-900">
+            <table className="min-w-full">
+              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-8">
+                    #
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                     Title
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
                     Contract Value
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
                     Live Profit
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
                     Profit %
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                     Stage
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                 {jobs.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan="6" className="px-3 py-8 text-center text-xs text-gray-500 dark:text-gray-400">
                       No active jobs found. Click "Add Job" to create one.
                     </td>
                   </tr>
                 ) : (
-                  jobs.map((job) => (
-                    <tr key={job.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                  jobs.map((job, index) => (
+                    <tr key={job.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400">
+                        {index + 1}
+                      </td>
+
+                      <td className="px-3 py-1.5">
                         {editingCell?.jobId === job.id && editingCell?.field === 'title' ? (
                           <input
                             type="text"
@@ -167,19 +167,20 @@ export default function ActiveJobsPage() {
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus
-                            className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-1.5 py-0.5 text-xs border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                           />
                         ) : (
                           <div
                             onClick={() => handleCellClick(job.id, 'title', job.title)}
-                            className="text-sm text-gray-900 dark:text-white cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-2 py-1 rounded"
+                            className="text-xs text-gray-900 dark:text-white cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded truncate max-w-md"
+                            title={job.title}
                           >
                             {job.title || '-'}
                           </div>
                         )}
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-1.5 text-right">
                         {editingCell?.jobId === job.id && editingCell?.field === 'contract_value' ? (
                           <input
                             type="number"
@@ -189,19 +190,19 @@ export default function ActiveJobsPage() {
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus
-                            className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-1.5 py-0.5 text-xs text-right border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                           />
                         ) : (
                           <div
                             onClick={() => handleCellClick(job.id, 'contract_value', job.contract_value)}
-                            className="text-sm text-gray-900 dark:text-white cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-2 py-1 rounded"
+                            className="text-xs text-gray-900 dark:text-white cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded"
                           >
-                            {job.contract_value ? formatCurrency(job.contract_value) : '-'}
+                            {job.contract_value ? formatCurrency(job.contract_value, false) : '-'}
                           </div>
                         )}
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-1.5 text-right">
                         {editingCell?.jobId === job.id && editingCell?.field === 'live_profit' ? (
                           <input
                             type="number"
@@ -211,23 +212,23 @@ export default function ActiveJobsPage() {
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus
-                            className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-1.5 py-0.5 text-xs text-right border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                           />
                         ) : (
                           <div
                             onClick={() => handleCellClick(job.id, 'live_profit', job.live_profit)}
-                            className={`text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-2 py-1 rounded ${
+                            className={`text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded ${
                               job.live_profit >= 0
                                 ? 'text-green-600 dark:text-green-400'
                                 : 'text-red-600 dark:text-red-400'
                             }`}
                           >
-                            {job.live_profit ? formatCurrency(job.live_profit) : '-'}
+                            {job.live_profit ? formatCurrency(job.live_profit, false) : '-'}
                           </div>
                         )}
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-1.5 text-right">
                         {editingCell?.jobId === job.id && editingCell?.field === 'profit_percentage' ? (
                           <input
                             type="number"
@@ -237,12 +238,12 @@ export default function ActiveJobsPage() {
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus
-                            className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-1.5 py-0.5 text-xs text-right border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                           />
                         ) : (
                           <div
                             onClick={() => handleCellClick(job.id, 'profit_percentage', job.profit_percentage)}
-                            className={`text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-2 py-1 rounded ${
+                            className={`text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded ${
                               job.profit_percentage >= 0
                                 ? 'text-green-600 dark:text-green-400'
                                 : 'text-red-600 dark:text-red-400'
@@ -253,7 +254,7 @@ export default function ActiveJobsPage() {
                         )}
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-1.5">
                         {editingCell?.jobId === job.id && editingCell?.field === 'stage' ? (
                           <input
                             type="text"
@@ -262,14 +263,14 @@ export default function ActiveJobsPage() {
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus
-                            className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-1.5 py-0.5 text-xs border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                           />
                         ) : (
                           <div
                             onClick={() => handleCellClick(job.id, 'stage', job.stage)}
-                            className="text-sm text-gray-900 dark:text-white cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-2 py-1 rounded"
+                            className="text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded inline-block"
                           >
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100/60 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200">
                               {job.stage || 'Not Set'}
                             </span>
                           </div>
@@ -283,47 +284,47 @@ export default function ActiveJobsPage() {
           </div>
 
           {totalPages > 1 && (
-            <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
+            <div className="bg-white dark:bg-gray-800 px-3 py-2 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
               <div className="flex-1 flex justify-between sm:hidden">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="ml-2 relative inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
               </div>
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                  <p className="text-xs text-gray-700 dark:text-gray-300">
                     Page <span className="font-medium">{currentPage}</span> of{' '}
                     <span className="font-medium">{totalPages}</span>
                   </p>
                 </div>
                 <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <nav className="relative z-0 inline-flex rounded -space-x-px" aria-label="Pagination">
                     <button
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center px-2 py-1 rounded-l border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Previous</span>
-                      <ChevronLeftIcon className="h-5 w-5" aria-hidden="true" />
+                      <ChevronLeftIcon className="h-4 w-4" aria-hidden="true" />
                     </button>
                     <button
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center px-2 py-1 rounded-r border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Next</span>
-                      <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
+                      <ChevronRightIcon className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </nav>
                 </div>
