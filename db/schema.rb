@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_03_003048) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_03_034025) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -45,7 +45,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_03_003048) do
     t.string "title"
     t.decimal "contract_value", precision: 15, scale: 2
     t.decimal "live_profit", precision: 15, scale: 2
-    t.decimal "profit_percentage", precision: 5, scale: 2
+    t.decimal "profit_percentage", precision: 10, scale: 2
     t.string "stage"
     t.string "status"
     t.string "ted_number"
