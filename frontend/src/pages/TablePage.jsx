@@ -12,8 +12,6 @@ import {
   FunnelIcon,
   ArrowDownTrayIcon,
   Cog6ToothIcon,
-  ChevronLeftIcon as ChevronPaginationLeft,
-  ChevronRightIcon,
   DocumentTextIcon,
   HashtagIcon,
   EnvelopeIcon,
@@ -33,8 +31,6 @@ export default function TablePage() {
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [editingCell, setEditingCell] = useState(null) // { recordId, columnName }
   const [editValue, setEditValue] = useState('')
   const [isAddingRow, setIsAddingRow] = useState(false)
@@ -43,7 +39,7 @@ export default function TablePage() {
   useEffect(() => {
     loadTable()
     loadRecords()
-  }, [id, currentPage])
+  }, [id])
 
   const loadTable = async () => {
     try {
@@ -59,10 +55,9 @@ export default function TablePage() {
     try {
       setLoading(true)
       const response = await api.get(
-        `/api/v1/tables/${id}/records?page=${currentPage}&per_page=50`
+        `/api/v1/tables/${id}/records?per_page=1000`
       )
       setRecords(response.records || [])
-      setTotalPages(response.pagination?.total_pages || 1)
     } catch (err) {
       setError('Failed to load records')
       console.error(err)
@@ -320,14 +315,14 @@ export default function TablePage() {
             <table className="min-w-full border-collapse">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-800/50">
-                  <th className="sticky left-0 z-20 bg-gray-50 dark:bg-gray-800/50 border-r border-b border-gray-200 dark:border-gray-700 px-4 py-2 text-left w-12">
+                  <th className="sticky left-0 z-20 bg-gray-50 dark:bg-gray-800/50 border-r border-b border-gray-200 dark:border-gray-700 px-2 py-1 text-left w-8">
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#</span>
                   </th>
                   {table.columns.map((column, index) => (
                     <th
                       key={column.id}
-                      className={`border-r border-b border-gray-200 dark:border-gray-700 px-4 py-2 text-left min-w-[150px] ${
-                        index === 0 ? 'sticky left-12 z-20 bg-gray-50 dark:bg-gray-800/50' : ''
+                      className={`border-r border-b border-gray-200 dark:border-gray-700 px-2 py-1 text-left min-w-[120px] ${
+                        index === 0 ? 'sticky left-8 z-20 bg-gray-50 dark:bg-gray-800/50' : ''
                       }`}
                     >
                       <ColumnHeader
@@ -337,14 +332,14 @@ export default function TablePage() {
                       />
                     </th>
                   ))}
-                  <th className="border-r border-b border-gray-200 dark:border-gray-700 px-2 py-2 text-center w-12 bg-gray-50 dark:bg-gray-800/50">
+                  <th className="border-r border-b border-gray-200 dark:border-gray-700 px-1 py-1 text-center w-8 bg-gray-50 dark:bg-gray-800/50">
                     <button
                       type="button"
                       onClick={() => setIsAddColumnModalOpen(true)}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded transition-colors"
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-0.5 rounded transition-colors"
                       title="Add column"
                     >
-                      <PlusIcon className="h-4 w-4" />
+                      <PlusIcon className="h-3 w-3" />
                     </button>
                   </th>
                 </tr>
@@ -355,7 +350,7 @@ export default function TablePage() {
                     key={record.id}
                     className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
                   >
-                    <td className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800/50 group-hover:bg-blue-100/50 dark:group-hover:bg-blue-900/20 border-r border-b border-gray-200 dark:border-gray-700 px-4 py-2 w-12">
+                    <td className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800/50 group-hover:bg-blue-100/50 dark:group-hover:bg-blue-900/20 border-r border-b border-gray-200 dark:border-gray-700 px-2 py-1 w-8">
                       <span className="text-xs text-gray-500 dark:text-gray-400">{idx + 1}</span>
                     </td>
                     {table.columns.map((column, colIndex) => {
@@ -365,9 +360,9 @@ export default function TablePage() {
                       return (
                         <td
                           key={column.id}
-                          className={`border-r border-b border-gray-200 dark:border-gray-700 px-0 py-0 text-sm group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10 ${
+                          className={`border-r border-b border-gray-200 dark:border-gray-700 px-0 py-0 text-xs group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10 ${
                             colIndex === 0
-                              ? 'sticky left-12 z-10 bg-white dark:bg-gray-900 group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10'
+                              ? 'sticky left-8 z-10 bg-white dark:bg-gray-900 group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10'
                               : 'bg-white dark:bg-gray-900'
                           }`}
                           onClick={() => !isEditing && !isCurrency && handleCellClick(record.id, column.column_name, record[column.column_name])}
@@ -380,10 +375,10 @@ export default function TablePage() {
                               onBlur={handleCellBlur}
                               onKeyDown={handleKeyDown}
                               autoFocus
-                              className="w-full h-full px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-2 border-blue-500 focus:outline-none"
+                              className="w-full h-full px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-2 border-blue-500 focus:outline-none text-xs"
                             />
                           ) : column.column_type === 'lookup' ? (
-                            <div className="px-4 py-2 min-h-[36px] flex items-center">
+                            <div className="px-2 py-1 min-h-[24px] flex items-center">
                               <AutocompleteLookupCell
                                 column={column}
                                 value={record[column.column_name]}
@@ -392,11 +387,11 @@ export default function TablePage() {
                               />
                             </div>
                           ) : isCurrency ? (
-                            <div className="px-4 py-2 min-h-[36px] flex items-center">
+                            <div className="px-2 py-1 min-h-[24px] flex items-center">
                               <CurrencyCell value={record[column.column_name]} />
                             </div>
                           ) : (
-                            <div className="px-4 py-2 cursor-text hover:bg-blue-50/30 dark:hover:bg-blue-900/5 min-h-[36px] flex items-center">
+                            <div className="px-2 py-1 cursor-text hover:bg-blue-50/30 dark:hover:bg-blue-900/5 min-h-[24px] flex items-center">
                               {formatValue(record[column.column_name], column.column_type)}
                             </div>
                           )}
@@ -413,33 +408,6 @@ export default function TablePage() {
           </div>
         )}
       </div>
-
-      {/* Footer with pagination - Google Sheets style */}
-      {totalPages > 1 && (
-        <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-2">
-          <div className="flex items-center justify-between">
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              Page {currentPage} of {totalPages}
-            </div>
-            <div className="flex items-center gap-x-1">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronPaginationLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="p-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronRightIcon className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Add Column Modal */}
       <AddColumnModal
