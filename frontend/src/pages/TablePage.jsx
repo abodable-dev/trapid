@@ -446,6 +446,7 @@ export default function TablePage() {
         isOpen={isAddColumnModalOpen}
         onClose={() => setIsAddColumnModalOpen(false)}
         onAdd={handleAddColumn}
+        tableId={id}
       />
     </div>
   )

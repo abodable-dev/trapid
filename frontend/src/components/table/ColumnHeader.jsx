@@ -13,7 +13,7 @@ import {
   DocumentIcon,
   ArrowsRightLeftIcon,
 } from '@heroicons/react/24/outline'
-import LookupConfigModal from './LookupConfigModal'
+import LookupConfigSlideout from './LookupConfigSlideout'
 
 const COLUMN_TYPES = [
   { value: 'single_line_text', label: 'Single line text', icon: DocumentTextIcon },
@@ -123,9 +123,9 @@ export default function ColumnHeader({ column, onTypeChange, tableId }) {
         )}
       </div>
 
-      {/* Lookup Configuration Modal */}
+      {/* Lookup Configuration Slideout */}
       {showLookupConfig && (
-        <LookupConfigModal
+        <LookupConfigSlideout
           column={column}
           tableId={tableId}
           onSave={handleLookupSave}

@@ -19,11 +19,13 @@ import {
   ArrowPathIcon,
   MagnifyingGlassIcon,
   RectangleStackIcon,
+  ArrowsRightLeftIcon,
 } from '@heroicons/react/24/outline'
+import LookupConfigSlideout from './LookupConfigSlideout'
 
 const COLUMN_TYPES = [
   // Standard Fields
-  { value: 'lookup', label: 'Link to another record', icon: LinkIcon, category: 'Standard fields' },
+  { value: 'lookup', label: 'Link to another record', icon: ArrowsRightLeftIcon, category: 'Standard fields', needsConfig: true },
   { value: 'single_line_text', label: 'Single line text', icon: DocumentTextIcon, category: 'Standard fields' },
   { value: 'multi_line_text', label: 'Long text', icon: Bars3BottomLeftIcon, category: 'Standard fields' },
   { value: 'attachment', label: 'Attachment', icon: PaperClipIcon, category: 'Standard fields' },
@@ -51,11 +53,12 @@ const COLUMN_TYPES = [
   { value: 'autonumber', label: 'Autonumber', icon: HashtagIcon, category: 'Standard fields' },
 ]
 
-export default function AddColumnModal({ isOpen, onClose, onAdd }) {
+export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
   const [columnName, setColumnName] = useState('')
   const [columnType, setColumnType] = useState('single_line_text')
   const [formulaExpression, setFormulaExpression] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showLookupConfig, setShowLookupConfig] = useState(false)
 
   useEffect(() => {
     if (!isOpen) {
@@ -69,6 +72,12 @@ export default function AddColumnModal({ isOpen, onClose, onAdd }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!columnName.trim() || isSubmitting) return
+
+    // For lookup columns, show the configuration slideout
+    if (columnType === 'lookup') {
+      setShowLookupConfig(true)
+      return
+    }
 
     // For formula columns, require a formula expression
     if (columnType === 'formula' && !formulaExpression.trim()) {
@@ -93,19 +102,34 @@ export default function AddColumnModal({ isOpen, onClose, onAdd }) {
     setIsSubmitting(false)
   }
 
+  const handleLookupSave = async (lookupConfig) => {
+    setIsSubmitting(true)
+    const columnData = {
+      name: columnName.trim(),
+      column_type: 'lookup',
+      lookup_table_id: lookupConfig.lookup_table_id,
+      lookup_display_column: lookupConfig.lookup_display_column
+    }
+
+    await onAdd(columnData)
+    setShowLookupConfig(false)
+    setIsSubmitting(false)
+  }
+
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick={onClose}
-      />
+    <>
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+          onClick={onClose}
+        />
 
-      {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
+        {/* Modal */}
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -219,5 +243,16 @@ export default function AddColumnModal({ isOpen, onClose, onAdd }) {
         </div>
       </div>
     </div>
+
+      {/* Lookup Configuration Slideout */}
+      {showLookupConfig && (
+        <LookupConfigSlideout
+          column={{ name: columnName }}
+          tableId={tableId}
+          onSave={handleLookupSave}
+          onClose={() => setShowLookupConfig(false)}
+        />
+      )}
+    </>
   )
 }
