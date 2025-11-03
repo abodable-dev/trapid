@@ -267,9 +267,12 @@ export default function SuppliersPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     {supplier.contact ? (
                       <div>
-                        <div className="text-sm text-gray-900 dark:text-white">
+                        <Link
+                          to={`/contacts/${supplier.contact.id}`}
+                          className="text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                        >
                           {supplier.contact.full_name}
-                        </div>
+                        </Link>
                         {supplier.contact.email && (
                           <div className="text-xs text-gray-500 dark:text-gray-400">
                             {supplier.contact.email}
