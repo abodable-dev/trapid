@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_02_233047) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_03_003048) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -39,6 +39,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_02_233047) do
     t.index ["lookup_table_id"], name: "index_columns_on_lookup_table_id"
     t.index ["table_id", "column_name"], name: "index_columns_on_table_id_and_column_name", unique: true
     t.index ["table_id"], name: "index_columns_on_table_id"
+  end
+
+  create_table "constructions", force: :cascade do |t|
+    t.string "title"
+    t.decimal "contract_value", precision: 15, scale: 2
+    t.decimal "live_profit", precision: 15, scale: 2
+    t.decimal "profit_percentage", precision: 5, scale: 2
+    t.string "stage"
+    t.string "status"
+    t.string "ted_number"
+    t.string "certifier_job_no"
+    t.date "start_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status"], name: "index_constructions_on_status"
   end
 
   create_table "grok_plans", force: :cascade do |t|

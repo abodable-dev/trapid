@@ -138,12 +138,28 @@ module Api
           updated_at: record.updated_at
         }
 
-        # Add all column values
+        # First pass: collect all base column values
+        record_data = {}
         @table.columns.includes(:lookup_table).each do |column|
-          value = record.send(column.column_name)
+          record_data[column.column_name] = record.send(column.column_name)
+        end
 
+        # Second pass: build JSON with computed formula values
+        formula_evaluator = FormulaEvaluator.new(@table)
+
+        @table.columns.includes(:lookup_table).each do |column|
+          value = record_data[column.column_name]
+
+          # Handle formula columns - compute the value
+          if column.column_type == 'formula'
+            formula_expression = column.settings&.dig('formula')
+            if formula_expression.present?
+              json[column.column_name] = formula_evaluator.evaluate(formula_expression, record_data)
+            else
+              json[column.column_name] = nil
+            end
           # Handle lookup columns - return both ID and display value
-          if column.column_type == 'lookup' && value.present?
+          elsif column.column_type == 'lookup' && value.present?
             begin
               related_record = column.lookup_table.dynamic_model.find_by(id: value)
               json[column.column_name] = {
