@@ -158,10 +158,18 @@ export default function TablePage() {
     }
   }
 
-  const handleColumnTypeChange = async (columnId, newType) => {
+  const handleColumnTypeChange = async (columnId, newType, lookupConfig = null) => {
     try {
+      const columnData = { column_type: newType }
+
+      // If lookup configuration is provided, include it
+      if (lookupConfig) {
+        columnData.lookup_table_id = lookupConfig.lookup_table_id
+        columnData.lookup_display_column = lookupConfig.lookup_display_column
+      }
+
       await api.put(`/api/v1/tables/${id}/columns/${columnId}`, {
-        column: { column_type: newType }
+        column: columnData
       })
       // Reload table data to get updated column info
       await loadTable()
@@ -324,6 +332,7 @@ export default function TablePage() {
                     >
                       <ColumnHeader
                         column={column}
+                        tableId={id}
                         onTypeChange={handleColumnTypeChange}
                       />
                     </th>
