@@ -23,6 +23,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   BriefcaseIcon,
+  BookOpenIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'
 
@@ -30,6 +31,7 @@ import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
+  { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
   { name: 'Import Data', href: '/import', icon: ArrowUpTrayIcon },
 ]
 
