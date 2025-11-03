@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { api } from '../api'
 import CurrencyCell from '../components/table/CurrencyCell'
-import LookupCell from '../components/table/LookupCell'
+import AutocompleteLookupCell from '../components/table/AutocompleteLookupCell'
 import ColumnHeader from '../components/table/ColumnHeader'
 import AddColumnModal from '../components/table/AddColumnModal'
 import { formatPercentage, formatNumber } from '../utils/formatters'
@@ -368,7 +368,7 @@ export default function TablePage() {
                             />
                           ) : column.column_type === 'lookup' ? (
                             <div className="px-4 py-2 min-h-[36px] flex items-center">
-                              <LookupCell
+                              <AutocompleteLookupCell
                                 column={column}
                                 value={record[column.column_name]}
                                 onChange={(newValue) => handleCellUpdate(record.id, column.column_name, newValue)}

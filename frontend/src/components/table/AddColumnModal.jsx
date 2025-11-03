@@ -11,20 +11,44 @@ import {
   CurrencyDollarIcon,
   LinkIcon,
   DocumentIcon,
+  PaperClipIcon,
+  Bars3BottomLeftIcon,
+  UserIcon,
+  StarIcon,
+  CalculatorIcon,
+  ArrowPathIcon,
+  MagnifyingGlassIcon,
+  RectangleStackIcon,
 } from '@heroicons/react/24/outline'
 
 const COLUMN_TYPES = [
-  { value: 'single_line_text', label: 'Single line text', icon: DocumentTextIcon },
-  { value: 'multi_line_text', label: 'Long text', icon: DocumentIcon },
-  { value: 'number', label: 'Number', icon: HashtagIcon },
-  { value: 'currency', label: 'Currency', icon: CurrencyDollarIcon },
-  { value: 'percentage', label: 'Percentage', icon: HashtagIcon },
-  { value: 'email', label: 'Email', icon: EnvelopeIcon },
-  { value: 'phone', label: 'Phone', icon: PhoneIcon },
-  { value: 'url', label: 'URL', icon: LinkIcon },
-  { value: 'date', label: 'Date', icon: CalendarIcon },
-  { value: 'date_and_time', label: 'Date & Time', icon: ClockIcon },
-  { value: 'boolean', label: 'Checkbox', icon: CheckCircleIcon },
+  // Standard Fields
+  { value: 'lookup', label: 'Link to another record', icon: LinkIcon, category: 'Standard fields' },
+  { value: 'single_line_text', label: 'Single line text', icon: DocumentTextIcon, category: 'Standard fields' },
+  { value: 'multi_line_text', label: 'Long text', icon: Bars3BottomLeftIcon, category: 'Standard fields' },
+  { value: 'attachment', label: 'Attachment', icon: PaperClipIcon, category: 'Standard fields' },
+  { value: 'boolean', label: 'Checkbox', icon: CheckCircleIcon, category: 'Standard fields' },
+  { value: 'multiple_select', label: 'Multiple select', icon: RectangleStackIcon, category: 'Standard fields' },
+  { value: 'single_select', label: 'Single select', icon: RectangleStackIcon, category: 'Standard fields' },
+  { value: 'user', label: 'User', icon: UserIcon, category: 'Standard fields' },
+  { value: 'date', label: 'Date', icon: CalendarIcon, category: 'Standard fields' },
+  { value: 'phone', label: 'Phone number', icon: PhoneIcon, category: 'Standard fields' },
+  { value: 'email', label: 'Email', icon: EnvelopeIcon, category: 'Standard fields' },
+  { value: 'url', label: 'URL', icon: LinkIcon, category: 'Standard fields' },
+  { value: 'number', label: 'Number', icon: HashtagIcon, category: 'Standard fields' },
+  { value: 'currency', label: 'Currency', icon: CurrencyDollarIcon, category: 'Standard fields' },
+  { value: 'percentage', label: 'Percent', icon: HashtagIcon, category: 'Standard fields' },
+  { value: 'duration', label: 'Duration', icon: ClockIcon, category: 'Standard fields' },
+  { value: 'rating', label: 'Rating', icon: StarIcon, category: 'Standard fields' },
+  { value: 'formula', label: 'Formula', icon: CalculatorIcon, category: 'Standard fields' },
+  { value: 'rollup', label: 'Rollup', icon: ArrowPathIcon, category: 'Standard fields' },
+  { value: 'count', label: 'Count', icon: HashtagIcon, category: 'Standard fields' },
+  { value: 'lookup_field', label: 'Lookup', icon: MagnifyingGlassIcon, category: 'Standard fields' },
+  { value: 'created_time', label: 'Created time', icon: ClockIcon, category: 'Standard fields' },
+  { value: 'last_modified_time', label: 'Last modified time', icon: ClockIcon, category: 'Standard fields' },
+  { value: 'created_by', label: 'Created by', icon: UserIcon, category: 'Standard fields' },
+  { value: 'last_modified_by', label: 'Last modified by', icon: UserIcon, category: 'Standard fields' },
+  { value: 'autonumber', label: 'Autonumber', icon: HashtagIcon, category: 'Standard fields' },
 ]
 
 export default function AddColumnModal({ isOpen, onClose, onAdd }) {
@@ -99,7 +123,15 @@ export default function AddColumnModal({ isOpen, onClose, onAdd }) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Column Type
               </label>
-              <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+              <div className="border border-gray-300 dark:border-gray-600 rounded-lg max-h-80 overflow-y-auto">
+                {/* Category Header */}
+                <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Standard fields
+                  </span>
+                </div>
+
+                {/* Column Type Options */}
                 {COLUMN_TYPES.map((type) => {
                   const Icon = type.icon
                   const isSelected = columnType === type.value
@@ -109,16 +141,16 @@ export default function AddColumnModal({ isOpen, onClose, onAdd }) {
                       key={type.value}
                       type="button"
                       onClick={() => setColumnType(type.value)}
-                      className={`flex items-center gap-x-3 px-3 py-2 text-sm rounded-lg border transition-colors ${
+                      className={`w-full flex items-center gap-x-3 px-3 py-2.5 text-sm border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors ${
                         isSelected
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300'
-                          : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                     >
                       <Icon className={`h-4 w-4 flex-shrink-0 ${
                         isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
                       }`} />
-                      <span className="truncate">{type.label}</span>
+                      <span className="text-left">{type.label}</span>
                     </button>
                   )
                 })}
