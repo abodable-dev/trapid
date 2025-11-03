@@ -36,10 +36,18 @@ module Api
         render json: {
           success: true,
           contact: @contact.as_json(
+            only: [
+              :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
+              :tax_number, :xero_id, :sync_with_xero, :sys_type_id, :deleted, :parent_id, :parent,
+              :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at
+            ],
             include: {
               suppliers: {
                 only: [:id, :name, :confidence_score, :match_type, :is_verified],
-                methods: [:match_confidence_label]
+                methods: [:match_confidence_label],
+                include: {
+                  pricebook_items: { only: [:id] }
+                }
               }
             }
           )
