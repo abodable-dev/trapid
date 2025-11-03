@@ -27,11 +27,15 @@ import {
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'
 
-// Simplified navigation - just the main items
+// Main navigation items
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
+]
+
+// Bottom navigation items
+const bottomNavigation = [
   { name: 'Import Data', href: '/import', icon: ArrowUpTrayIcon },
 ]
 
@@ -131,6 +135,38 @@ export default function AppLayout({ children }) {
                       })}
                     </ul>
                   </li>
+                  <li className="mt-auto">
+                    <ul role="list" className="-mx-2 space-y-1">
+                      {bottomNavigation.map((item) => {
+                        const current = isCurrentPath(item.href)
+                        return (
+                          <li key={item.name}>
+                            <Link
+                              to={item.href}
+                              onClick={() => setSidebarOpen(false)}
+                              className={classNames(
+                                current
+                                  ? 'bg-gray-50 text-indigo-600 dark:bg-white/5 dark:text-white'
+                                  : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white',
+                                'group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold',
+                              )}
+                            >
+                              <item.icon
+                                aria-hidden="true"
+                                className={classNames(
+                                  current
+                                    ? 'text-indigo-600 dark:text-white'
+                                    : 'text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-white',
+                                  'size-6 shrink-0',
+                                )}
+                              />
+                              {item.name}
+                            </Link>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </li>
                 </ul>
               </nav>
             </div>
@@ -190,6 +226,39 @@ export default function AppLayout({ children }) {
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
                   {navigation.map((item) => {
+                    const current = isCurrentPath(item.href)
+                    return (
+                      <li key={item.name}>
+                        <Link
+                          to={item.href}
+                          title={sidebarCollapsed ? item.name : undefined}
+                          className={classNames(
+                            current
+                              ? 'bg-gray-50 text-indigo-600 dark:bg-white/5 dark:text-white'
+                              : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white',
+                            'group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold',
+                            sidebarCollapsed && 'justify-center'
+                          )}
+                        >
+                          <item.icon
+                            aria-hidden="true"
+                            className={classNames(
+                              current
+                                ? 'text-indigo-600 dark:text-white'
+                                : 'text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-white',
+                              'size-6 shrink-0',
+                            )}
+                          />
+                          {!sidebarCollapsed && item.name}
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </li>
+              <li className="mt-auto">
+                <ul role="list" className="-mx-2 space-y-1">
+                  {bottomNavigation.map((item) => {
                     const current = isCurrentPath(item.href)
                     return (
                       <li key={item.name}>
