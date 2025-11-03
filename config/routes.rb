@@ -40,6 +40,7 @@ Rails.application.routes.draw do
         collection do
           patch :bulk_update
           post :import
+          post :preview
         end
       end
 

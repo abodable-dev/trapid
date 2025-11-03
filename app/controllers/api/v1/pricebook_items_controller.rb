@@ -84,7 +84,7 @@ module Api
         render json: histories.as_json(include: { supplier: { only: [:id, :name] } })
       end
 
-      # PATCH /api/v1/pricebook/bulk
+      # PATCH /api/v1/pricebook/bulk_update
       def bulk_update
         updates = params[:updates] || []
         results = { success: [], errors: [] }
@@ -99,6 +99,62 @@ module Api
         end
 
         render json: results
+      end
+
+      # POST /api/v1/pricebook/import
+      def import
+        unless params[:file]
+          return render json: { error: "No file provided" }, status: :unprocessable_entity
+        end
+
+        file = params[:file]
+        temp_file = Tempfile.new(['pricebook_import', '.csv'])
+
+        begin
+          # Save uploaded file
+          temp_file.write(file.read)
+          temp_file.rewind
+
+          # Import options
+          options = {
+            skip_missing_prices: params[:skip_missing_prices] == 'true',
+            create_suppliers: params[:create_suppliers] != 'false',
+            create_categories: params[:create_categories] != 'false',
+            update_existing: params[:update_existing] == 'true'
+          }
+
+          # Run import service
+          import_service = PricebookImportService.new(temp_file.path, options)
+          result = import_service.import
+
+          render json: result
+        ensure
+          temp_file.close
+          temp_file.unlink
+        end
+      end
+
+      # POST /api/v1/pricebook/preview
+      def preview
+        unless params[:file]
+          return render json: { error: "No file provided" }, status: :unprocessable_entity
+        end
+
+        file = params[:file]
+        temp_file = Tempfile.new(['pricebook_preview', '.csv'])
+
+        begin
+          temp_file.write(file.read)
+          temp_file.rewind
+
+          import_service = PricebookImportService.new(temp_file.path)
+          result = import_service.preview(params[:limit]&.to_i || 10)
+
+          render json: result
+        ensure
+          temp_file.close
+          temp_file.unlink
+        end
       end
 
       private
