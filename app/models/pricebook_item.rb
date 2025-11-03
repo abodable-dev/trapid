@@ -11,6 +11,7 @@ class PricebookItem < ApplicationRecord
 
   # Callbacks
   before_save :check_pricing_review_status
+  before_save :update_price_timestamp, if: :will_save_change_to_current_price?
   after_update :track_price_change, if: :saved_change_to_current_price?
 
   # Scopes
@@ -83,6 +84,198 @@ class PricebookItem < ApplicationRecord
     ((last_price - first_price) / first_price * 100).round(2)
   end
 
+  # Price Freshness Status
+  def price_age_in_days
+    return nil if price_last_updated_at.nil?
+    (Time.current - price_last_updated_at).to_i / 1.day
+  end
+
+  def price_freshness_status
+    return 'missing' if current_price.nil? || current_price.zero?
+    return 'unknown' if price_last_updated_at.nil?
+
+    days = price_age_in_days
+
+    if days < 90  # Less than 3 months
+      'fresh'
+    elsif days < 180  # 3-6 months
+      'needs_confirmation'
+    else  # 6+ months
+      'outdated'
+    end
+  end
+
+  def price_freshness_label
+    case price_freshness_status
+    when 'fresh'
+      'Fresh'
+    when 'needs_confirmation'
+      'Needs Confirmation'
+    when 'outdated'
+      'Outdated'
+    when 'missing'
+      'No Price'
+    when 'unknown'
+      'Unknown Age'
+    end
+  end
+
+  def price_freshness_color
+    case price_freshness_status
+    when 'fresh'
+      'green'
+    when 'needs_confirmation'
+      'orange'
+    when 'outdated'
+      'red'
+    when 'missing'
+      'red'
+    when 'unknown'
+      'gray'
+    end
+  end
+
+  # Supplier Reliability Score (0-100)
+  def supplier_reliability_score
+    return 0 unless supplier
+
+    score = 0
+
+    # Rating contributes 40 points (0-5 rating * 8)
+    score += (supplier.rating || 0) * 8
+
+    # Response rate contributes 30 points
+    score += (supplier.response_rate || 0) * 0.3
+
+    # Response time contributes 30 points (inverse - faster is better)
+    # Assume 48 hours is baseline, < 12 hours is excellent
+    if supplier.avg_response_time
+      time_score = [30 - (supplier.avg_response_time / 2.0), 0].max
+      score += time_score
+    end
+
+    score.round
+  end
+
+  # Price Volatility (based on price history)
+  def price_volatility
+    return 'unknown' if price_histories.count < 2
+
+    # Calculate coefficient of variation from last 6 months
+    recent_prices = price_histories
+      .where("created_at >= ?", 6.months.ago)
+      .pluck(:new_price)
+      .compact
+
+    return 'stable' if recent_prices.size < 2
+
+    mean = recent_prices.sum / recent_prices.size.to_f
+    variance = recent_prices.map { |p| (p - mean) ** 2 }.sum / recent_prices.size
+    std_dev = Math.sqrt(variance)
+
+    # Coefficient of variation
+    cv = mean.zero? ? 0 : (std_dev / mean * 100)
+
+    if cv < 5
+      'stable'
+    elsif cv < 15
+      'moderate'
+    else
+      'volatile'
+    end
+  end
+
+  def price_volatility_score
+    case price_volatility
+    when 'stable'
+      0  # No risk
+    when 'moderate'
+      25  # Some risk
+    when 'volatile'
+      50  # High risk
+    else
+      10  # Unknown = slight risk
+    end
+  end
+
+  # Missing Information Risk
+  def missing_info_score
+    score = 0
+    score += 30 unless supplier_id.present?
+    score += 20 unless brand.present?
+    score += 10 unless category.present?
+    score
+  end
+
+  # Combined Risk Score (0-100, higher = more risk)
+  def risk_score
+    return 100 if current_price.nil? || current_price.zero?
+
+    score = 0
+
+    # Price freshness contributes 40 points
+    case price_freshness_status
+    when 'fresh'
+      score += 0
+    when 'needs_confirmation'
+      score += 20
+    when 'outdated', 'unknown'
+      score += 40
+    end
+
+    # Supplier reliability contributes 20 points (inverse)
+    reliability = supplier_reliability_score
+    score += [20 - (reliability / 5.0), 0].max
+
+    # Price volatility contributes 20 points
+    score += price_volatility_score * 0.4
+
+    # Missing info contributes 20 points
+    score += missing_info_score * 0.33
+
+    [score.round, 100].min
+  end
+
+  def risk_level
+    score = risk_score
+
+    if score < 25
+      'low'
+    elsif score < 50
+      'medium'
+    elsif score < 75
+      'high'
+    else
+      'critical'
+    end
+  end
+
+  def risk_level_label
+    case risk_level
+    when 'low'
+      'Low Risk'
+    when 'medium'
+      'Medium Risk'
+    when 'high'
+      'High Risk'
+    when 'critical'
+      'Critical'
+    end
+  end
+
+  def risk_level_color
+    case risk_level
+    when 'low'
+      'green'
+    when 'medium'
+      'yellow'
+    when 'high'
+      'orange'
+    when 'critical'
+      'red'
+    end
+  end
+
   private
 
   def check_pricing_review_status
@@ -105,5 +298,9 @@ class PricebookItem < ApplicationRecord
       change_reason: "manual_edit",
       supplier_id: supplier_id
     )
+  end
+
+  def update_price_timestamp
+    self.price_last_updated_at = Time.current if current_price.present?
   end
 end

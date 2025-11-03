@@ -16,16 +16,30 @@ module Api
         @items = @items.price_range(params[:min_price], params[:max_price])
         @items = @items.needs_pricing if params[:needs_pricing] == "true"
 
+        # Risk level filter
+        if params[:risk_level].present?
+          @items = @items.select do |item|
+            item.risk_level == params[:risk_level]
+          end
+        end
+
         # Pagination
         page = params[:page]&.to_i || 1
         limit = params[:limit]&.to_i || 100
         offset = (page - 1) * limit
 
-        total_count = @items.count
-        @items = @items.limit(limit).offset(offset)
+        total_count = @items.is_a?(Array) ? @items.count : @items.count
+
+        # Apply pagination
+        if @items.is_a?(Array)
+          paginated_items = @items[offset, limit] || []
+        else
+          @items = @items.limit(limit).offset(offset)
+          paginated_items = @items
+        end
 
         render json: {
-          items: @items.as_json(include: { supplier: { only: [:id, :name] } }),
+          items: paginated_items.map { |item| item_with_risk_data(item) },
           pagination: {
             page: page,
             limit: limit,
@@ -177,6 +191,26 @@ module Api
           :notes,
           :is_active,
           :needs_pricing_review
+        )
+      end
+
+      def item_with_risk_data(item)
+        item.as_json(include: { supplier: { only: [:id, :name] } }).merge(
+          price_last_updated_at: item.price_last_updated_at,
+          price_age_days: item.price_age_in_days,
+          price_freshness: {
+            status: item.price_freshness_status,
+            label: item.price_freshness_label,
+            color: item.price_freshness_color
+          },
+          risk: {
+            score: item.risk_score,
+            level: item.risk_level,
+            label: item.risk_level_label,
+            color: item.risk_level_color
+          },
+          supplier_reliability: item.supplier_reliability_score,
+          price_volatility: item.price_volatility
         )
       end
     end
