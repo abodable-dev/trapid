@@ -100,6 +100,9 @@ GEM
     debug (1.11.0)
       irb (~> 1.10)
       reline (>= 0.3.8)
+    dentaku (3.5.6)
+      bigdecimal
+      concurrent-ruby
     dotenv (3.1.8)
     drb (2.2.3)
     ed25519 (1.4.0)
@@ -352,6 +355,7 @@ DEPENDENCIES
   caxlsx (~> 4.1.0)
   caxlsx_rails (~> 0.6.3)
   debug
+  dentaku
   jwt (~> 2.7)
   kamal
   pg (~> 1.1)

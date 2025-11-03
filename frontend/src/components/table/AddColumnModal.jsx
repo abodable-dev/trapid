@@ -54,12 +54,14 @@ const COLUMN_TYPES = [
 export default function AddColumnModal({ isOpen, onClose, onAdd }) {
   const [columnName, setColumnName] = useState('')
   const [columnType, setColumnType] = useState('single_line_text')
+  const [formulaExpression, setFormulaExpression] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (!isOpen) {
       setColumnName('')
       setColumnType('single_line_text')
+      setFormulaExpression('')
       setIsSubmitting(false)
     }
   }, [isOpen])
@@ -68,8 +70,26 @@ export default function AddColumnModal({ isOpen, onClose, onAdd }) {
     e.preventDefault()
     if (!columnName.trim() || isSubmitting) return
 
+    // For formula columns, require a formula expression
+    if (columnType === 'formula' && !formulaExpression.trim()) {
+      alert('Please enter a formula expression')
+      return
+    }
+
     setIsSubmitting(true)
-    await onAdd({ name: columnName.trim(), column_type: columnType })
+    const columnData = {
+      name: columnName.trim(),
+      column_type: columnType
+    }
+
+    // Add formula expression to settings if it's a formula column
+    if (columnType === 'formula') {
+      columnData.settings = {
+        formula: formulaExpression.trim()
+      }
+    }
+
+    await onAdd(columnData)
     setIsSubmitting(false)
   }
 
@@ -156,6 +176,27 @@ export default function AddColumnModal({ isOpen, onClose, onAdd }) {
                 })}
               </div>
             </div>
+
+            {/* Formula Expression (only shown for formula type) */}
+            {columnType === 'formula' && (
+              <div>
+                <label htmlFor="formula-expression" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Formula
+                </label>
+                <textarea
+                  id="formula-expression"
+                  value={formulaExpression}
+                  onChange={(e) => setFormulaExpression(e.target.value)}
+                  placeholder="e.g., {Price} * {Quantity} or {Amount} * 0.1"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white font-mono text-sm"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Reference other columns using curly braces: {'{Column Name}'}
+                </p>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-x-3 pt-4">

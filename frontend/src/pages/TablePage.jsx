@@ -174,13 +174,20 @@ export default function TablePage() {
 
   const handleAddColumn = async (columnData) => {
     try {
+      const columnPayload = {
+        name: columnData.name,
+        column_name: columnData.name.toLowerCase().replace(/\s+/g, '_'),
+        column_type: columnData.column_type,
+        position: table.columns.length
+      }
+
+      // Add settings if provided (e.g., formula expression)
+      if (columnData.settings) {
+        columnPayload.settings = columnData.settings
+      }
+
       const response = await api.post(`/api/v1/tables/${id}/columns`, {
-        column: {
-          name: columnData.name,
-          column_name: columnData.name.toLowerCase().replace(/\s+/g, '_'),
-          column_type: columnData.column_type,
-          position: table.columns.length
-        }
+        column: columnPayload
       })
 
       if (response.success) {

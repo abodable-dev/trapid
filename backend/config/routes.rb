@@ -29,6 +29,9 @@ Rails.application.routes.draw do
       get 'grok/plans/:id', to: 'grok#show_plan'
       patch 'grok/plans/:id', to: 'grok#update_plan'
 
+      # Construction jobs management
+      resources :constructions
+
       # Table management
       resources :tables do
         # Column management
