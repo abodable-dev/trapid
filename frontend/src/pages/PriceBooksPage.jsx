@@ -416,7 +416,5 @@ export default function PriceBooksPage() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
   )
 }
