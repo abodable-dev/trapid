@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_03_074835) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_03_083525) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -54,6 +54,30 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_03_074835) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["status"], name: "index_constructions_on_status"
+  end
+
+  create_table "contacts", force: :cascade do |t|
+    t.integer "sys_type_id"
+    t.boolean "deleted"
+    t.integer "parent_id"
+    t.string "parent"
+    t.string "drive_id"
+    t.string "folder_id"
+    t.string "tax_number"
+    t.string "xero_id"
+    t.string "email"
+    t.string "office_phone"
+    t.string "mobile_phone"
+    t.string "website"
+    t.string "first_name"
+    t.string "last_name"
+    t.string "full_name"
+    t.boolean "sync_with_xero"
+    t.integer "contact_region_id"
+    t.string "contact_region"
+    t.boolean "branch"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "grok_plans", force: :cascade do |t|
@@ -118,9 +142,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_03_074835) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.tsvector "searchable_text"
+    t.datetime "price_last_updated_at"
     t.index ["category"], name: "index_pricebook_items_on_category"
     t.index ["item_code"], name: "index_pricebook_items_on_item_code", unique: true
     t.index ["needs_pricing_review"], name: "index_pricebook_items_on_needs_pricing_review"
+    t.index ["price_last_updated_at"], name: "index_pricebook_items_on_price_last_updated_at"
     t.index ["searchable_text"], name: "idx_pricebook_search", using: :gin
     t.index ["supplier_id"], name: "index_pricebook_items_on_supplier_id"
   end
@@ -138,7 +164,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_03_074835) do
     t.boolean "is_active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "contact_id"
+    t.decimal "confidence_score", precision: 5, scale: 4
+    t.string "match_type"
+    t.boolean "is_verified", default: false
+    t.string "original_name"
+    t.index ["contact_id"], name: "index_suppliers_on_contact_id"
     t.index ["is_active"], name: "index_suppliers_on_is_active"
+    t.index ["is_verified"], name: "index_suppliers_on_is_verified"
+    t.index ["match_type"], name: "index_suppliers_on_match_type"
     t.index ["name"], name: "index_suppliers_on_name", unique: true
   end
 

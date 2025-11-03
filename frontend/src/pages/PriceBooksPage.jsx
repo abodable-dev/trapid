@@ -19,6 +19,7 @@ export default function PriceBooksPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [supplierFilter, setSupplierFilter] = useState('')
+  const [riskFilter, setRiskFilter] = useState('')
   const [categories, setCategories] = useState([])
   const [suppliers, setSuppliers] = useState([])
   const [pagination, setPagination] = useState({
@@ -41,9 +42,9 @@ export default function PriceBooksPage() {
     searchTimeoutRef.current = setTimeout(() => {
       setItems([])
       setPagination(prev => ({ ...prev, page: 1 }))
-      loadPriceBook(1, query, categoryFilter, supplierFilter)
+      loadPriceBook(1, query, categoryFilter, supplierFilter, riskFilter)
     }, 300)
-  }, [categoryFilter, supplierFilter])
+  }, [categoryFilter, supplierFilter, riskFilter])
 
   useEffect(() => {
     debouncedSearch(searchQuery)
@@ -58,10 +59,10 @@ export default function PriceBooksPage() {
   useEffect(() => {
     setItems([])
     setPagination(prev => ({ ...prev, page: 1 }))
-    loadPriceBook(1, searchQuery, categoryFilter, supplierFilter)
-  }, [categoryFilter, supplierFilter])
+    loadPriceBook(1, searchQuery, categoryFilter, supplierFilter, riskFilter)
+  }, [categoryFilter, supplierFilter, riskFilter])
 
-  const loadPriceBook = async (page = 1, search = searchQuery, category = categoryFilter, supplier = supplierFilter) => {
+  const loadPriceBook = async (page = 1, search = searchQuery, category = categoryFilter, supplier = supplierFilter, risk = riskFilter) => {
     try {
       if (page === 1) {
         setLoading(true)
@@ -74,6 +75,7 @@ export default function PriceBooksPage() {
           search: search || undefined,
           category: category || undefined,
           supplier_id: supplier || undefined,
+          risk_level: risk || undefined,
           page,
           limit: 50
         }
@@ -137,12 +139,13 @@ export default function PriceBooksPage() {
     setSearchQuery('')
     setCategoryFilter('')
     setSupplierFilter('')
+    setRiskFilter('')
     setItems([])
     setPagination(prev => ({ ...prev, page: 1 }))
-    loadPriceBook(1, '', '', '')
+    loadPriceBook(1, '', '', '', '')
   }
 
-  const hasActiveFilters = searchQuery || categoryFilter || supplierFilter
+  const hasActiveFilters = searchQuery || categoryFilter || supplierFilter || riskFilter
 
   const getResultsText = () => {
     const { page, limit, total_count } = pagination
@@ -153,6 +156,50 @@ export default function PriceBooksPage() {
       return `${total_count.toLocaleString()} ${total_count === 1 ? 'item' : 'items'}`
     }
     return `Showing ${showing.toLocaleString()} of ${total_count.toLocaleString()} items`
+  }
+
+  // Badge component matching Tailwind UI Catalyst design
+  const Badge = ({ color, children }) => {
+    const colorClasses = {
+      green: 'bg-green-500/15 text-green-700 dark:bg-green-500/10 dark:text-green-400',
+      yellow: 'bg-yellow-400/20 text-yellow-700 dark:bg-yellow-400/10 dark:text-yellow-500',
+      orange: 'bg-orange-400/20 text-orange-700 dark:bg-orange-400/10 dark:text-orange-500',
+      red: 'bg-red-500/15 text-red-700 dark:bg-red-500/10 dark:text-red-400',
+      gray: 'bg-gray-400/20 text-gray-700 dark:bg-gray-400/10 dark:text-gray-400'
+    }
+
+    return (
+      <span className={`inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ${colorClasses[color] || colorClasses.gray}`}>
+        <svg className={`h-1.5 w-1.5 fill-current`} viewBox="0 0 6 6" aria-hidden="true">
+          <circle cx={3} cy={3} r={3} />
+        </svg>
+        {children}
+      </span>
+    )
+  }
+
+  const getRiskBadges = (item) => {
+    const badges = []
+
+    // Price Freshness Badge
+    if (item.price_freshness) {
+      badges.push(
+        <Badge key="freshness" color={item.price_freshness.color}>
+          {item.price_freshness.label}
+        </Badge>
+      )
+    }
+
+    // Overall Risk Badge (if medium or higher)
+    if (item.risk && ['medium', 'high', 'critical'].includes(item.risk.level)) {
+      badges.push(
+        <Badge key="risk" color={item.risk.color}>
+          {item.risk.label}
+        </Badge>
+      )
+    }
+
+    return badges
   }
 
   if (loading && pagination.page === 1) {
@@ -235,6 +282,18 @@ export default function PriceBooksPage() {
                 ))}
               </select>
 
+              <select
+                value={riskFilter}
+                onChange={(e) => setRiskFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white min-w-[180px]"
+              >
+                <option value="">All Risk Levels</option>
+                <option value="low">Low Risk</option>
+                <option value="medium">Medium Risk</option>
+                <option value="high">High Risk</option>
+                <option value="critical">Critical</option>
+              </select>
+
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
@@ -266,6 +325,11 @@ export default function PriceBooksPage() {
                     Supplier: {suppliers.find(([id]) => id === parseInt(supplierFilter))?.[1]}
                   </span>
                 )}
+                {riskFilter && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200">
+                    Risk: {riskFilter.charAt(0).toUpperCase() + riskFilter.slice(1)}
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -285,6 +349,9 @@ export default function PriceBooksPage() {
                       Item Name
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Category
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -301,7 +368,7 @@ export default function PriceBooksPage() {
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                   {items.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                      <td colSpan="7" className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                         {hasActiveFilters
                           ? 'No items match your filters. Try adjusting your search or clearing filters.'
                           : 'No items found in the price book.'}
@@ -319,11 +386,15 @@ export default function PriceBooksPage() {
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                             {item.item_name}
-                            {item.needs_pricing_review && (
-                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200">
-                                ⚠️ Needs Pricing
-                              </span>
-                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="flex flex-wrap gap-1">
+                              {getRiskBadges(item).length > 0 ? (
+                                getRiskBadges(item)
+                              ) : (
+                                <Badge color="green">OK</Badge>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                             {item.category || '-'}
@@ -343,7 +414,7 @@ export default function PriceBooksPage() {
                       {/* Infinite scroll trigger */}
                       {hasMore && (
                         <tr ref={observerTarget}>
-                          <td colSpan="6" className="px-4 py-4 text-center">
+                          <td colSpan="7" className="px-4 py-4 text-center">
                             {loadingMore ? (
                               <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
@@ -361,7 +432,7 @@ export default function PriceBooksPage() {
                       {/* End of results */}
                       {!hasMore && items.length > 0 && (
                         <tr>
-                          <td colSpan="6" className="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                          <td colSpan="7" className="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                             End of results
                           </td>
                         </tr>

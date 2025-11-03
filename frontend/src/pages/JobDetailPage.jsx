@@ -6,6 +6,9 @@ import {
   ChartBarIcon,
   DocumentTextIcon,
   Bars3Icon,
+  PencilIcon,
+  XMarkIcon,
+  CheckIcon,
 } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import { formatCurrency, formatPercentage } from '../utils/formatters'
@@ -38,6 +41,9 @@ export default function JobDetailPage() {
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('Overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedJob, setEditedJob] = useState(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     loadJob()
@@ -49,12 +55,46 @@ export default function JobDetailPage() {
       const response = await api.get(`/api/v1/constructions/${id}`)
       // API returns the construction object directly, not wrapped
       setJob(response)
+      setEditedJob(response)
     } catch (err) {
       setError('Failed to load job details')
       console.error(err)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleEdit = () => {
+    setIsEditing(true)
+    setEditedJob({ ...job })
+  }
+
+  const handleCancel = () => {
+    setIsEditing(false)
+    setEditedJob({ ...job })
+  }
+
+  const handleSave = async () => {
+    try {
+      setSaving(true)
+      await api.put(`/api/v1/constructions/${id}`, {
+        construction: editedJob
+      })
+      await loadJob()
+      setIsEditing(false)
+    } catch (err) {
+      console.error('Failed to update job:', err)
+      alert('Failed to update job')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleFieldChange = (field, value) => {
+    setEditedJob(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }
 
   if (loading) {
@@ -258,49 +298,201 @@ export default function JobDetailPage() {
             <div className="space-y-6">
               <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
-                    Job Details
-                  </h3>
-                  <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Title</dt>
-                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">{job.title || '-'}</dd>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                      Job Details
+                    </h3>
+                    {!isEditing ? (
+                      <button
+                        onClick={handleEdit}
+                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-2" />
+                        Edit
+                      </button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleCancel}
+                          disabled={saving}
+                          className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                        >
+                          <XMarkIcon className="h-4 w-4 mr-2" />
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSave}
+                          disabled={saving}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                        >
+                          <CheckIcon className="h-4 w-4 mr-2" />
+                          {saving ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {isEditing ? (
+                    <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Title
+                        </label>
+                        <input
+                          type="text"
+                          value={editedJob.title || ''}
+                          onChange={(e) => handleFieldChange('title', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Status
+                        </label>
+                        <input
+                          type="text"
+                          value={editedJob.status || ''}
+                          onChange={(e) => handleFieldChange('status', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Stage
+                        </label>
+                        <input
+                          type="text"
+                          value={editedJob.stage || ''}
+                          onChange={(e) => handleFieldChange('stage', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Contract Value
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editedJob.contract_value || ''}
+                          onChange={(e) => handleFieldChange('contract_value', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Live Profit
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editedJob.live_profit || ''}
+                          onChange={(e) => handleFieldChange('live_profit', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Profit Percentage
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editedJob.profit_percentage || ''}
+                          onChange={(e) => handleFieldChange('profit_percentage', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          TED Number
+                        </label>
+                        <input
+                          type="text"
+                          value={editedJob.ted_number || ''}
+                          onChange={(e) => handleFieldChange('ted_number', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Certifier Job No
+                        </label>
+                        <input
+                          type="text"
+                          value={editedJob.certifier_job_no || ''}
+                          onChange={(e) => handleFieldChange('certifier_job_no', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Start Date
+                        </label>
+                        <input
+                          type="date"
+                          value={editedJob.start_date || ''}
+                          onChange={(e) => handleFieldChange('start_date', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</dt>
-                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">{job.status || '-'}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Stage</dt>
-                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">{job.stage || '-'}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Contract Value</dt>
-                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                        {job.contract_value ? formatCurrency(job.contract_value, false) : '-'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Live Profit</dt>
-                      <dd className={`mt-1 text-sm font-medium ${
-                        job.live_profit >= 0
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        {job.live_profit ? formatCurrency(job.live_profit, false) : '-'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Profit Percentage</dt>
-                      <dd className={`mt-1 text-sm font-medium ${
-                        job.profit_percentage >= 0
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        {job.profit_percentage ? formatPercentage(job.profit_percentage, 2) : '-'}
-                      </dd>
-                    </div>
-                  </dl>
+                  ) : (
+                    <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Title</dt>
+                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">{job.title || '-'}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</dt>
+                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">{job.status || '-'}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Stage</dt>
+                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">{job.stage || '-'}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Contract Value</dt>
+                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                          {job.contract_value ? formatCurrency(job.contract_value, false) : '-'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Live Profit</dt>
+                        <dd className={`mt-1 text-sm font-medium ${
+                          job.live_profit >= 0
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-red-600 dark:text-red-400'
+                        }`}>
+                          {job.live_profit ? formatCurrency(job.live_profit, false) : '-'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Profit Percentage</dt>
+                        <dd className={`mt-1 text-sm font-medium ${
+                          job.profit_percentage >= 0
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-red-600 dark:text-red-400'
+                        }`}>
+                          {job.profit_percentage ? formatPercentage(job.profit_percentage, 2) : '-'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">TED Number</dt>
+                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">{job.ted_number || '-'}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Certifier Job No</dt>
+                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">{job.certifier_job_no || '-'}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Start Date</dt>
+                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                          {job.start_date ? new Date(job.start_date).toLocaleDateString() : '-'}
+                        </dd>
+                      </div>
+                    </dl>
+                  )}
                 </div>
               </div>
             </div>
