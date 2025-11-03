@@ -15,23 +15,20 @@ export default function ActiveJobsPage() {
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [editingCell, setEditingCell] = useState(null)
   const [editValue, setEditValue] = useState('')
 
   useEffect(() => {
     loadJobs()
-  }, [currentPage])
+  }, [])
 
   const loadJobs = async () => {
     try {
       setLoading(true)
       const response = await api.get(
-        `/api/v1/constructions?status=Active&page=${currentPage}&per_page=50`
+        `/api/v1/constructions?status=Active&per_page=1000`
       )
       setJobs(response.constructions || [])
-      setTotalPages(response.pagination?.total_pages || 1)
     } catch (err) {
       setError('Failed to load active jobs')
       console.error(err)
