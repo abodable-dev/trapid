@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import {
   DocumentTextIcon,
@@ -54,6 +54,7 @@ const COLUMN_TYPES = [
 ]
 
 export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
+  const [step, setStep] = useState(1) // 1 = column type, 2 = column name + settings
   const [columnName, setColumnName] = useState('')
   const [columnType, setColumnType] = useState('single_line_text')
   const [formulaExpression, setFormulaExpression] = useState('')
@@ -63,10 +64,11 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
   const [showColumnSuggestions, setShowColumnSuggestions] = useState(false)
   const [filteredColumns, setFilteredColumns] = useState([])
   const [cursorPosition, setCursorPosition] = useState(0)
-  const textareaRef = useState(null)
+  const textareaRef = useRef(null)
 
   useEffect(() => {
     if (!isOpen) {
+      setStep(1)
       setColumnName('')
       setColumnType('single_line_text')
       setFormulaExpression('')
@@ -130,9 +132,14 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
     setShowColumnSuggestions(false)
 
     // Focus back on textarea
-    if (textareaRef[0]) {
-      textareaRef[0].focus()
+    if (textareaRef.current) {
+      textareaRef.current.focus()
     }
+  }
+
+  const handleColumnTypeSelect = (type) => {
+    setColumnType(type)
+    setStep(2)
   }
 
   const handleSubmit = async (e) => {
@@ -195,12 +202,24 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
 
         {/* Modal */}
         <div className="flex min-h-full items-center justify-center p-4">
-          <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
+          <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Add Column
-            </h2>
+            <div className="flex items-center gap-x-3">
+              {step === 2 && (
+                <button
+                  onClick={() => setStep(1)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              )}
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {step === 1 ? 'Select Column Type' : 'Configure Column'}
+              </h2>
+            </div>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -210,102 +229,134 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {/* Column Name */}
-            <div>
-              <label htmlFor="column-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Column Name
-              </label>
-              <input
-                type="text"
-                id="column-name"
-                value={columnName}
-                onChange={(e) => setColumnName(e.target.value)}
-                placeholder="Enter column name"
-                autoFocus
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                required
-              />
-            </div>
+          <div className="relative">
+            <div
+              className="flex transition-transform duration-300 ease-in-out"
+              style={{ transform: `translateX(-${(step - 1) * 100}%)` }}
+            >
+              {/* Step 1: Column Type Selection */}
+              <div className="w-full flex-shrink-0 p-6">
+                <div className="border border-gray-300 dark:border-gray-600 rounded-lg max-h-96 overflow-y-auto">
+                  {/* Category Header */}
+                  <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                      Standard fields
+                    </span>
+                  </div>
 
-            {/* Column Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Column Type
-              </label>
-              <div className="border border-gray-300 dark:border-gray-600 rounded-lg max-h-80 overflow-y-auto">
-                {/* Category Header */}
-                <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0">
-                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Standard fields
-                  </span>
+                  {/* Column Type Options */}
+                  {COLUMN_TYPES.map((type) => {
+                    const Icon = type.icon
+                    const isSelected = columnType === type.value
+
+                    return (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => handleColumnTypeSelect(type.value)}
+                        className={`w-full flex items-center gap-x-3 px-3 py-2.5 text-sm border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors ${
+                          isSelected
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        <Icon className={`h-4 w-4 flex-shrink-0 ${
+                          isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
+                        }`} />
+                        <span className="text-left">{type.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Step 2: Column Name + Settings */}
+              <form onSubmit={handleSubmit} className="w-full flex-shrink-0 p-6 space-y-4">
+                {/* Column Name */}
+                <div>
+                  <label htmlFor="column-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Column Name
+                  </label>
+                  <input
+                    type="text"
+                    id="column-name"
+                    value={columnName}
+                    onChange={(e) => setColumnName(e.target.value)}
+                    placeholder="Enter column name"
+                    autoFocus={step === 2}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    required
+                  />
                 </div>
 
-                {/* Column Type Options */}
-                {COLUMN_TYPES.map((type) => {
-                  const Icon = type.icon
-                  const isSelected = columnType === type.value
+                {/* Formula Expression (only shown for formula type) */}
+                {columnType === 'formula' && (
+                  <div className="relative">
+                    <label htmlFor="formula-expression" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Formula
+                    </label>
+                    <textarea
+                      ref={textareaRef}
+                      id="formula-expression"
+                      value={formulaExpression}
+                      onChange={handleFormulaChange}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape' && showColumnSuggestions) {
+                          setShowColumnSuggestions(false)
+                          e.preventDefault()
+                        }
+                      }}
+                      placeholder="e.g., {Price} * {Quantity} or {Amount} * 0.1"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white font-mono text-sm"
+                      required
+                    />
 
-                  return (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => setColumnType(type.value)}
-                      className={`w-full flex items-center gap-x-3 px-3 py-2.5 text-sm border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors ${
-                        isSelected
-                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      <Icon className={`h-4 w-4 flex-shrink-0 ${
-                        isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
-                      }`} />
-                      <span className="text-left">{type.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
+                    {/* Column suggestions dropdown */}
+                    {showColumnSuggestions && filteredColumns.length > 0 && (
+                      <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {filteredColumns.map((column) => (
+                          <button
+                            key={column.id}
+                            type="button"
+                            onClick={() => insertColumnName(column.name)}
+                            className="w-full text-left px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                          >
+                            <span className="font-medium">{column.name}</span>
+                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                              ({column.column_type})
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Type {'{'}  to see available columns
+                    </p>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!columnName.trim() || isSubmitting}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? 'Adding...' : 'Add Column'}
+                  </button>
+                </div>
+              </form>
             </div>
-
-            {/* Formula Expression (only shown for formula type) */}
-            {columnType === 'formula' && (
-              <div>
-                <label htmlFor="formula-expression" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Formula
-                </label>
-                <textarea
-                  id="formula-expression"
-                  value={formulaExpression}
-                  onChange={(e) => setFormulaExpression(e.target.value)}
-                  placeholder="e.g., {Price} * {Quantity} or {Amount} * 0.1"
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white font-mono text-sm"
-                  required
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Reference other columns using curly braces: {'{Column Name}'}
-                </p>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={!columnName.trim() || isSubmitting}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Adding...' : 'Add Column'}
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
