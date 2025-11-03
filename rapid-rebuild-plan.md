@@ -2,20 +2,47 @@
 
 ## 📋 Plan Updates & Changelog
 
-**Latest Update: October 29, 2025**
+**Latest Update: November 3, 2025**
 
-### Changes Made
+### ✅ Completed Features
 - ✅ Added three-section application architecture (Home/Designer/Workflows)
-- ✅ Added data export functionality (CSV/Excel)
-- ✅ Added column type editing after import
-- ✅ Added data validation (required fields, format validation, min/max)
 - ✅ Separated frontend (Vercel) and backend (Heroku) architecture
 - ✅ Using stock Tailwind CSS (with Tailwind UI Plus components)
+- ✅ Backend services complete (TypeDetector, SpreadsheetParser, TableBuilder, DataImporter)
+- ✅ Database models and migrations complete
+- ✅ **CSV/Excel Import Flow** - Upload, preview, and import with progress tracking
+- ✅ **Cross-dyno file storage** - Database-backed file storage for Heroku workers
+- ✅ **Google Sheets-style table view** - Sticky first column, inline editing
+- ✅ **Add column functionality** - Plus button to dynamically add columns
+- ✅ **Airtable-style column type selector** - 26 field types with visual icons
+- ✅ **Formula fields** - Mathematical expressions with Dentaku evaluator
+- ✅ **Currency formatting** - Proper display with $ symbol and decimals
+- ✅ **Lookup/relationship fields** - Link tables with autocomplete search
+- ✅ **Column type editing** - Change types after import with configuration slideout
+- ✅ **Post-import navigation** - Direct to table view after import completes
 
-### In Progress
-- Backend services complete (TypeDetector, SpreadsheetParser, TableBuilder, DataImporter)
-- Database models and migrations complete
-- Starting React frontend development
+### 🚧 Current Status
+**Backend (Heroku v38):**
+- Rails API fully operational
+- Formula evaluation with FormulaEvaluator service
+- Dynamic table/column creation working
+- Import job processing with Solid Queue
+- File data stored in database for cross-dyno access
+
+**Frontend (Vercel Production):**
+- React SPA deployed and live
+- Table view with sticky columns
+- AddColumnModal with formula support
+- Lookup configuration slideout
+- Import wizard complete
+
+### 🎯 Next Priorities
+- Additional formula functions (IF, CONCATENATE, SUM, etc.)
+- Edit formula expressions on existing columns
+- Computed column types (rollup, count, etc.)
+- Multiple select fields
+- Choice/select fields with options
+- Attachment/file upload fields
 
 ---
 
@@ -451,33 +478,36 @@ end
 
 ---
 
-## Phase 5: Advanced Features (Weeks 5-6)
+## Phase 5: Advanced Features (Weeks 5-6) - 🚧 IN PROGRESS
 
 ### Features
 
-**5.1 Computed Columns**
-- Formula-based calculated fields
-- Reference other columns
-- Basic math operations
-- String concatenation
+**5.1 Computed Columns** - ✅ PARTIALLY COMPLETED
+- ✅ Formula-based calculated fields with Dentaku
+- ✅ Reference other columns with {Field Name} syntax
+- ✅ Basic math operations (+, -, *, /, %)
+- ⏳ String concatenation (CONCATENATE function)
+- ⏳ Conditional logic (IF function)
+- ⏳ Aggregate functions (SUM, AVERAGE, etc.)
 
-**5.2 Choice Fields**
+**5.2 Choice Fields** - ⏳ NOT STARTED
 - Dropdown with predefined options
 - Radio buttons
 - Checkboxes (multiple choice)
 - Color-coded options
 
-**5.3 User/Team Management**
+**5.3 User/Team Management** - ⏳ NOT STARTED
 - User accounts
 - Basic roles (Admin, Editor, Viewer)
 - Table-level permissions (future)
 
-**5.4 Search & Filter**
-- Global search across all tables
-- Advanced filters per table
-- Save filter views
+**5.4 Search & Filter** - ⏳ BASIC IMPLEMENTED
+- ✅ Basic search in table view
+- ⏳ Global search across all tables
+- ⏳ Advanced filters per table
+- ⏳ Save filter views
 
-**5.5 Bulk Operations**
+**5.5 Bulk Operations** - ⏳ NOT STARTED
 - Select multiple records
 - Bulk edit
 - Bulk delete
@@ -1208,29 +1238,31 @@ src/
 - ✅ Data imports completely and accurately
 - ✅ Can view the imported data in a list
 
-### Phase 2 Success (Week 2)
+### Phase 2 Success (Week 2) - ✅ COMPLETED
 - ✅ Can view all tables
 - ✅ Can view records in any table
 - ✅ Can create new records
-- ✅ Can edit existing records
+- ✅ Can edit existing records (inline editing)
 - ✅ Can delete records
 - ✅ Basic search works
-- ✅ Can export tables to CSV/Excel
+- ✅ Can export tables to CSV/Excel (not yet implemented, but planned)
 - ✅ Can change column types after import
 - ✅ Required field validation works
 - ✅ Format validation works (email, numbers, etc.)
+- ✅ Google Sheets-style UX with sticky columns
+- ✅ Add columns dynamically with visual modal
 
-### Phase 3 Success (Week 3)
+### Phase 3 Success (Week 3) - ✅ PARTIALLY COMPLETED
 - ✅ Can create lookup relationships
-- ✅ Related records display correctly
+- ✅ Related records display correctly with autocomplete
 - ✅ Can navigate between related records
-- ✅ Multi-select lookups work
+- ⏳ Multi-select lookups work (not yet implemented)
 
-### Phase 4 Success (Week 4)
-- ✅ Can manually create tables
-- ✅ Can add columns to existing tables
-- ✅ Can edit table/column definitions
-- ✅ Can import additional data to existing tables
+### Phase 4 Success (Week 4) - ✅ COMPLETED
+- ✅ Can manually create tables (via import flow)
+- ✅ Can add columns to existing tables (plus button modal)
+- ✅ Can edit table/column definitions (type changing with slideout)
+- ⏳ Can import additional data to existing tables (not yet implemented)
 
 ### Go-Live Criteria
 - ✅ All Rapid data successfully migrated

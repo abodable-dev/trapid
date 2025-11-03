@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import ExplorerSidebar from '../components/layout/ExplorerSidebar'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -134,28 +135,33 @@ export default function Dashboard() {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Tables</h1>
-        <div className="flex gap-3">
-          <button
-            onClick={() => {
-              setShowCreateModal(true)
-              setNewTableName('')
-              setCreateError(null)
-            }}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-          >
-            Create New Table
-          </button>
-          <Link
-            to="/import"
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
-          >
-            Import Spreadsheet
-          </Link>
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar */}
+      <ExplorerSidebar onUploadClick={() => navigate('/import')} />
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto p-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Tables</h1>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                setShowCreateModal(true)
+                setNewTableName('')
+                setCreateError(null)
+              }}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+            >
+              Create New Table
+            </button>
+            <Link
+              to="/import"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+            >
+              Import Spreadsheet
+            </Link>
+          </div>
         </div>
-      </div>
 
       {searchQuery && (
         <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
@@ -304,6 +310,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

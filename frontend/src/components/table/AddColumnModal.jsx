@@ -59,6 +59,11 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
   const [formulaExpression, setFormulaExpression] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showLookupConfig, setShowLookupConfig] = useState(false)
+  const [availableColumns, setAvailableColumns] = useState([])
+  const [showColumnSuggestions, setShowColumnSuggestions] = useState(false)
+  const [filteredColumns, setFilteredColumns] = useState([])
+  const [cursorPosition, setCursorPosition] = useState(0)
+  const textareaRef = useState(null)
 
   useEffect(() => {
     if (!isOpen) {
@@ -66,8 +71,69 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
       setColumnType('single_line_text')
       setFormulaExpression('')
       setIsSubmitting(false)
+      setShowColumnSuggestions(false)
+    } else if (isOpen && tableId) {
+      // Fetch available columns for autocomplete
+      fetchTableColumns()
     }
-  }, [isOpen])
+  }, [isOpen, tableId])
+
+  const fetchTableColumns = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/tables/${tableId}`)
+      const data = await response.json()
+      if (data.success && data.table) {
+        setAvailableColumns(data.table.columns || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch columns:', err)
+    }
+  }
+
+  const handleFormulaChange = (e) => {
+    const value = e.target.value
+    const cursorPos = e.target.selectionStart
+
+    setFormulaExpression(value)
+    setCursorPosition(cursorPos)
+
+    // Check if we're inside a {  } block
+    const beforeCursor = value.substring(0, cursorPos)
+    const lastOpenBrace = beforeCursor.lastIndexOf('{')
+    const lastCloseBrace = beforeCursor.lastIndexOf('}')
+
+    if (lastOpenBrace > lastCloseBrace) {
+      // We're inside a { } block
+      const searchTerm = beforeCursor.substring(lastOpenBrace + 1)
+      const filtered = availableColumns.filter(col =>
+        col.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      setFilteredColumns(filtered)
+      setShowColumnSuggestions(filtered.length > 0)
+    } else {
+      setShowColumnSuggestions(false)
+    }
+  }
+
+  const insertColumnName = (columnName) => {
+    const beforeCursor = formulaExpression.substring(0, cursorPosition)
+    const afterCursor = formulaExpression.substring(cursorPosition)
+    const lastOpenBrace = beforeCursor.lastIndexOf('{')
+
+    const newValue =
+      formulaExpression.substring(0, lastOpenBrace + 1) +
+      columnName +
+      '}' +
+      afterCursor
+
+    setFormulaExpression(newValue)
+    setShowColumnSuggestions(false)
+
+    // Focus back on textarea
+    if (textareaRef[0]) {
+      textareaRef[0].focus()
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
