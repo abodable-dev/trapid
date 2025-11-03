@@ -99,25 +99,38 @@ export default function ExplorerSidebar({ onUploadClick }) {
 
         {/* Active Jobs Section */}
         <div className="border-t border-gray-200 dark:border-gray-800">
-          <button
-            onClick={() => setJobsExpanded(!jobsExpanded)}
-            className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <BriefcaseIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              <span className="font-medium text-sm text-gray-900 dark:text-white">
+          <div className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800">
+            <Link
+              to="/active-jobs"
+              className={`flex items-center gap-3 flex-1 ${
+                isActiveRoute('/active-jobs')
+                  ? 'text-indigo-700 dark:text-indigo-400'
+                  : 'text-gray-900 dark:text-white'
+              }`}
+            >
+              <BriefcaseIcon className={`h-5 w-5 ${
+                isActiveRoute('/active-jobs')
+                  ? 'text-indigo-600 dark:text-indigo-400'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`} />
+              <span className="font-medium text-sm">
                 Active Jobs
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
                 {activeJobs.length}
               </span>
-            </div>
-            <ChevronRightIcon
-              className={`h-4 w-4 text-gray-400 transition-transform ${
-                jobsExpanded ? 'rotate-90' : ''
-              }`}
-            />
-          </button>
+            </Link>
+            <button
+              onClick={() => setJobsExpanded(!jobsExpanded)}
+              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+            >
+              <ChevronRightIcon
+                className={`h-4 w-4 text-gray-400 transition-transform ${
+                  jobsExpanded ? 'rotate-90' : ''
+                }`}
+              />
+            </button>
+          </div>
 
           {jobsExpanded && (
             <div className="pb-2">

@@ -5,9 +5,13 @@ import {
   PlusIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  BriefcaseIcon,
 } from '@heroicons/react/24/outline'
+import ExplorerSidebar from '../components/layout/ExplorerSidebar'
+import { useNavigate } from 'react-router-dom'
 
 export default function ActiveJobsPage() {
+  const navigate = useNavigate()
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -89,36 +93,58 @@ export default function ActiveJobsPage() {
 
   if (loading && jobs.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex h-screen overflow-hidden">
+        <ExplorerSidebar onUploadClick={() => navigate('/import')} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-600">{error}</div>
+      <div className="flex h-screen overflow-hidden">
+        <ExplorerSidebar onUploadClick={() => navigate('/import')} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-red-600 dark:text-red-400">{error}</div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between">
-        <h1 className="text-lg font-medium text-gray-900 dark:text-white">
-          Active Jobs
-        </h1>
-        <button
-          onClick={handleAddJob}
-          className="inline-flex items-center px-3 py-1.5 border border-transparent rounded text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
-        >
-          <PlusIcon className="h-4 w-4 mr-1" />
-          Add Job
-        </button>
-      </div>
+    <div className="flex h-screen overflow-hidden">
+      <ExplorerSidebar onUploadClick={() => navigate('/import')} />
 
-      <div className="p-4">
+      <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+        {/* Header */}
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+          <div className="px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <BriefcaseIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                    Active Jobs
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleAddJob}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none shadow-sm transition-colors"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Add Job
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-8">
         <div className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -332,6 +358,7 @@ export default function ActiveJobsPage() {
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   )
