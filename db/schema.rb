@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_03_034025) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_03_074835) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -87,6 +87,59 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_03_034025) do
     t.index ["session_key"], name: "index_import_sessions_on_session_key", unique: true
     t.index ["status"], name: "index_import_sessions_on_status"
     t.index ["table_id"], name: "index_import_sessions_on_table_id"
+  end
+
+  create_table "price_histories", force: :cascade do |t|
+    t.bigint "pricebook_item_id", null: false
+    t.decimal "old_price", precision: 10, scale: 2
+    t.decimal "new_price", precision: 10, scale: 2
+    t.string "change_reason"
+    t.bigint "changed_by_user_id"
+    t.bigint "supplier_id"
+    t.string "quote_reference"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_price_histories_on_created_at"
+    t.index ["pricebook_item_id"], name: "index_price_histories_on_pricebook_item_id"
+    t.index ["supplier_id"], name: "index_price_histories_on_supplier_id"
+  end
+
+  create_table "pricebook_items", force: :cascade do |t|
+    t.string "item_code", null: false
+    t.string "item_name", null: false
+    t.string "category"
+    t.string "unit_of_measure", default: "Each"
+    t.decimal "current_price", precision: 10, scale: 2
+    t.bigint "supplier_id"
+    t.string "brand"
+    t.text "notes"
+    t.boolean "is_active", default: true
+    t.boolean "needs_pricing_review", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.tsvector "searchable_text"
+    t.index ["category"], name: "index_pricebook_items_on_category"
+    t.index ["item_code"], name: "index_pricebook_items_on_item_code", unique: true
+    t.index ["needs_pricing_review"], name: "index_pricebook_items_on_needs_pricing_review"
+    t.index ["searchable_text"], name: "idx_pricebook_search", using: :gin
+    t.index ["supplier_id"], name: "index_pricebook_items_on_supplier_id"
+  end
+
+  create_table "suppliers", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "contact_person"
+    t.string "email"
+    t.string "phone"
+    t.text "address"
+    t.integer "rating", default: 0
+    t.decimal "response_rate", precision: 5, scale: 2, default: "0.0"
+    t.integer "avg_response_time"
+    t.text "notes"
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["is_active"], name: "index_suppliers_on_is_active"
+    t.index ["name"], name: "index_suppliers_on_name", unique: true
   end
 
   create_table "tables", force: :cascade do |t|
@@ -179,4 +232,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_03_034025) do
 
   add_foreign_key "columns", "tables"
   add_foreign_key "grok_plans", "users"
+  add_foreign_key "price_histories", "pricebook_items"
+  add_foreign_key "price_histories", "suppliers"
+  add_foreign_key "pricebook_items", "suppliers"
 end
