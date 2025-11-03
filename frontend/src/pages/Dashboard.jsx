@@ -243,10 +243,11 @@ export default function Dashboard() {
       )}
 
       {tables.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+        <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+          <TableCellsIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No tables yet</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Get started by creating a new table or importing a spreadsheet.
+          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+            Get started by creating a new table or importing a spreadsheet to begin organizing your data.
           </p>
           <div className="flex gap-3 justify-center">
             <button
@@ -255,14 +256,16 @@ export default function Dashboard() {
                 setNewTableName('')
                 setCreateError(null)
               }}
-              className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm"
             >
+              <PlusIcon className="h-5 w-5" />
               Create Your First Table
             </button>
             <Link
               to="/import"
-              className="inline-block px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition shadow-sm"
             >
+              <ArrowUpTrayIcon className="h-5 w-5" />
               Import Spreadsheet
             </Link>
           </div>
@@ -281,31 +284,47 @@ export default function Dashboard() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTables.map((table) => (
-            <Link
-              key={table.id}
-              to={`/tables/${table.id}`}
-              className="block p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-indigo-300 transition dark:bg-gray-800 dark:border-gray-700 dark:hover:border-indigo-500"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {table.name}
-                  </h3>
-                  {table.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{table.description}</p>
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">All Tables</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {filteredTables.length} {filteredTables.length === 1 ? 'table' : 'tables'}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredTables.map((table) => (
+              <Link
+                key={table.id}
+                to={`/tables/${table.id}`}
+                className="group block p-5 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-400 transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:border-blue-500"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {table.name}
+                    </h3>
+                    {table.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{table.description}</p>
+                    )}
+                  </div>
+                  {table.icon && (
+                    <span className="text-2xl ml-3 flex-shrink-0">{table.icon}</span>
                   )}
                 </div>
-                {table.icon && (
-                  <span className="text-2xl">{table.icon}</span>
-                )}
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Database: {table.database_table_name}
-              </div>
-            </Link>
-          ))}
+
+                <div className="flex items-center justify-between text-sm pt-3 border-t border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                    <ChartBarIcon className="h-4 w-4" />
+                    <span>{(table.record_count || 0).toLocaleString()} {table.record_count === 1 ? 'record' : 'records'}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-gray-500 dark:text-gray-500">
+                    <ClockIcon className="h-4 w-4" />
+                    <span>{formatDate(table.updated_at)}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
@@ -371,7 +390,7 @@ export default function Dashboard() {
                 <button
                   onClick={handleCreateTable}
                   disabled={creating || !newTableName.trim()}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {creating ? 'Creating...' : 'Create Table'}
                 </button>

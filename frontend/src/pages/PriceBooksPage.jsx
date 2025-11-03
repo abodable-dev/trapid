@@ -7,7 +7,7 @@ import {
   PlusIcon,
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../utils/formatters'
-import api from '../api'
+import { api } from '../api'
 
 export default function PriceBooksPage() {
   const navigate = useNavigate()
