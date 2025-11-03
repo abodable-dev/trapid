@@ -134,7 +134,7 @@ export default function ActiveJobsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto border-l border-r border-b border-gray-200 dark:border-gray-700">
           <table className="min-w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>

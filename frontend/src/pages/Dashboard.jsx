@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { api } from '../api'
-import { XMarkIcon } from '@heroicons/react/24/outline'
-import ExplorerSidebar from '../components/layout/ExplorerSidebar'
+import {
+  XMarkIcon,
+  TableCellsIcon,
+  ChartBarIcon,
+  ClockIcon,
+  PlusIcon,
+  ArrowUpTrayIcon
+} from '@heroicons/react/24/outline'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -134,15 +140,77 @@ export default function Dashboard() {
     )
   }
 
-  return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <ExplorerSidebar onUploadClick={() => navigate('/import')} />
+  // Calculate stats
+  const totalTables = tables.length
+  const totalRecords = tables.reduce((sum, table) => sum + (table.record_count || 0), 0)
 
+  // Format date helper
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Never'
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Tables</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Dashboard</h1>
+
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <TableCellsIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Tables</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-white">{totalTables}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <ChartBarIcon className="h-8 w-8 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Records</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-white">{totalRecords.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <ClockIcon className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Activity</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                    {tables.length > 0 ? formatDate(tables.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0]?.updated_at) : 'Never'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
           <div className="flex gap-3">
             <button
               onClick={() => {
@@ -150,14 +218,16 @@ export default function Dashboard() {
                 setNewTableName('')
                 setCreateError(null)
               }}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm"
             >
+              <PlusIcon className="h-5 w-5" />
               Create New Table
             </button>
             <Link
               to="/import"
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition shadow-sm"
             >
+              <ArrowUpTrayIcon className="h-5 w-5" />
               Import Spreadsheet
             </Link>
           </div>

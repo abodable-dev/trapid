@@ -70,3 +70,7 @@ else
 end
 
 puts "Seed data loaded successfully!"
+
+# Load Price Book seed data
+puts "\n" + "="*50
+load File.join(Rails.root, 'db', 'seeds', 'pricebook_seed.rb')
