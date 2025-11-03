@@ -33,6 +33,15 @@ module Api
 
       # GET /api/v1/contacts/:id
       def show
+        suppliers_with_items = @contact.suppliers.includes(:pricebook_items).map do |supplier|
+          supplier.as_json(
+            only: [:id, :name, :confidence_score, :match_type, :is_verified],
+            methods: [:match_confidence_label]
+          ).merge(
+            pricebook_items: supplier.pricebook_items.map { |item| { id: item.id } }
+          )
+        end
+
         render json: {
           success: true,
           contact: @contact.as_json(
@@ -40,16 +49,9 @@ module Api
               :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
               :tax_number, :xero_id, :sync_with_xero, :sys_type_id, :deleted, :parent_id, :parent,
               :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at
-            ],
-            include: {
-              suppliers: {
-                only: [:id, :name, :confidence_score, :match_type, :is_verified],
-                methods: [:match_confidence_label],
-                include: {
-                  pricebook_items: { only: [:id] }
-                }
-              }
-            }
+            ]
+          ).merge(
+            suppliers: suppliers_with_items
           )
         }
       end
