@@ -8,12 +8,15 @@ import {
   PencilIcon,
   XMarkIcon,
   CheckIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import { formatCurrency, formatPercentage } from '../utils/formatters'
+import { POSummaryCards, POTable, PurchaseOrderModal } from '../components/purchase-orders'
 
 const tabs = [
   { name: 'Overview' },
+  { name: 'Purchase Orders' },
   { name: 'Activity' },
   { name: 'Budget' },
   { name: 'Schedule' },
@@ -36,6 +39,13 @@ export default function JobDetailPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [editedJob, setEditedJob] = useState(null)
   const [saving, setSaving] = useState(false)
+
+  // Purchase Orders state
+  const [purchaseOrders, setPurchaseOrders] = useState([])
+  const [suppliers, setSuppliers] = useState([])
+  const [showPOModal, setShowPOModal] = useState(false)
+  const [editingPO, setEditingPO] = useState(null)
+  const [loadingPOs, setLoadingPOs] = useState(false)
 
   useEffect(() => {
     loadJob()
@@ -87,6 +97,94 @@ export default function JobDetailPage() {
       ...prev,
       [field]: value
     }))
+  }
+
+  // Purchase Orders functions
+  const loadPurchaseOrders = async () => {
+    try {
+      setLoadingPOs(true)
+      const response = await api.get('/api/v1/purchase_orders', {
+        params: { construction_id: id }
+      })
+      setPurchaseOrders(response.purchase_orders || [])
+    } catch (err) {
+      console.error('Failed to load purchase orders:', err)
+    } finally {
+      setLoadingPOs(false)
+    }
+  }
+
+  const loadSuppliers = async () => {
+    try {
+      const response = await api.get('/api/v1/suppliers')
+      setSuppliers(response.suppliers || [])
+    } catch (err) {
+      console.error('Failed to load suppliers:', err)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'Purchase Orders') {
+      loadPurchaseOrders()
+      loadSuppliers()
+    }
+  }, [activeTab])
+
+  const handleSavePO = async (poData) => {
+    try {
+      if (editingPO) {
+        await api.put(`/api/v1/purchase_orders/${editingPO.id}`, {
+          purchase_order: poData
+        })
+      } else {
+        await api.post('/api/v1/purchase_orders', {
+          purchase_order: poData
+        })
+      }
+      await loadPurchaseOrders()
+      setShowPOModal(false)
+      setEditingPO(null)
+    } catch (err) {
+      console.error('Failed to save purchase order:', err)
+      alert('Failed to save purchase order')
+      throw err
+    }
+  }
+
+  const handleEditPO = (po) => {
+    setEditingPO(po)
+    setShowPOModal(true)
+  }
+
+  const handleDeletePO = async (poId) => {
+    if (!confirm('Are you sure you want to delete this purchase order?')) return
+    try {
+      await api.delete(`/api/v1/purchase_orders/${poId}`)
+      await loadPurchaseOrders()
+    } catch (err) {
+      console.error('Failed to delete purchase order:', err)
+      alert('Failed to delete purchase order')
+    }
+  }
+
+  const handleApprovePO = async (poId) => {
+    try {
+      await api.post(`/api/v1/purchase_orders/${poId}/approve`)
+      await loadPurchaseOrders()
+    } catch (err) {
+      console.error('Failed to approve purchase order:', err)
+      alert('Failed to approve purchase order')
+    }
+  }
+
+  const handleSendPO = async (poId) => {
+    try {
+      await api.post(`/api/v1/purchase_orders/${poId}/send_to_supplier`)
+      await loadPurchaseOrders()
+    } catch (err) {
+      console.error('Failed to send purchase order:', err)
+      alert('Failed to send purchase order')
+    }
   }
 
   if (loading) {
@@ -424,6 +522,55 @@ export default function JobDetailPage() {
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'Purchase Orders' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                  Purchase Orders
+                </h3>
+                <button
+                  onClick={() => {
+                    setEditingPO(null)
+                    setShowPOModal(true)
+                  }}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  New Purchase Order
+                </button>
+              </div>
+
+              {loadingPOs ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                </div>
+              ) : (
+                <>
+                  <POSummaryCards purchaseOrders={purchaseOrders} />
+                  <POTable
+                    purchaseOrders={purchaseOrders}
+                    onEdit={handleEditPO}
+                    onDelete={handleDeletePO}
+                    onApprove={handleApprovePO}
+                    onSend={handleSendPO}
+                  />
+                </>
+              )}
+
+              <PurchaseOrderModal
+                isOpen={showPOModal}
+                onClose={() => {
+                  setShowPOModal(false)
+                  setEditingPO(null)
+                }}
+                onSave={handleSavePO}
+                purchaseOrder={editingPO}
+                suppliers={suppliers}
+                constructionId={id}
+              />
             </div>
           )}
 
