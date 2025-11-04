@@ -57,18 +57,6 @@ export default function SuppliersPage() {
     loadContacts()
   }, [matchStatus])
 
-  // Listen for global search event from AppLayout
-  useEffect(() => {
-    const handleGlobalSearch = (event) => {
-      setSearchQuery(event.detail)
-    }
-
-    window.addEventListener('global-search', handleGlobalSearch)
-    return () => {
-      window.removeEventListener('global-search', handleGlobalSearch)
-    }
-  }, [])
-
   const loadSuppliers = async () => {
     try {
       setLoading(true)

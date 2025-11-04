@@ -25,15 +25,13 @@ import {
   BriefcaseIcon,
   BookOpenIcon,
   UserGroupIcon,
-  CalendarDaysIcon,
 } from '@heroicons/react/24/outline'
-import { ChevronDownIcon } from '@heroicons/react/20/solid'
+import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'
 
 // Main navigation items
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
-  { name: 'Master Schedule', href: '/schedule', icon: CalendarDaysIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
   { name: 'Suppliers', href: '/suppliers', icon: UserGroupIcon },
 ]
@@ -56,6 +54,7 @@ function classNames(...classes) {
 export default function AppLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const [grokChatOpen, setGrokChatOpen] = useState(false)
   const location = useLocation()
 
@@ -317,7 +316,30 @@ export default function AppLayout({ children }) {
           <div aria-hidden="true" className="h-6 w-px bg-gray-200 lg:hidden dark:bg-white/10" />
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="flex flex-1 items-center justify-end gap-x-4 lg:gap-x-6">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (searchQuery.trim()) {
+                  // Navigate to dashboard with search query
+                  window.location.href = `/dashboard?search=${encodeURIComponent(searchQuery)}`
+                }
+              }}
+              className="grid flex-1 grid-cols-1"
+            >
+              <input
+                name="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tables..."
+                aria-label="Search"
+                className="col-start-1 row-start-1 block size-full bg-white pl-8 text-base text-gray-900 outline-none placeholder:text-gray-400 sm:text-sm/6 dark:bg-gray-900 dark:text-white dark:placeholder:text-gray-500"
+              />
+              <MagnifyingGlassIcon
+                aria-hidden="true"
+                className="pointer-events-none col-start-1 row-start-1 size-5 self-center text-gray-400"
+              />
+            </form>
+            <div className="flex items-center gap-x-4 lg:gap-x-6">
               <button type="button" className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-white">
                 <span className="sr-only">View notifications</span>
                 <BellIcon aria-hidden="true" className="size-6" />

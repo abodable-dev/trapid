@@ -18,7 +18,6 @@ export default function PriceBooksPage() {
   const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [searching, setSearching] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -42,23 +41,34 @@ export default function PriceBooksPage() {
   const searchTimeoutRef = useRef(null)
   const itemSearchRef = useRef(null)
 
-  // Load all items on mount (no search params)
+  // Debounced search
+  const debouncedSearch = useCallback((query) => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      setItems([])
+      setPagination(prev => ({ ...prev, page: 1 }))
+      loadPriceBook(1, query, categoryFilter, supplierFilter, riskFilter)
+    }, 300)
+  }, [categoryFilter, supplierFilter, riskFilter])
+
   useEffect(() => {
-    loadPriceBook()
-  }, [])
+    debouncedSearch(searchQuery)
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [searchQuery, debouncedSearch])
 
-  // Client-side filtering
-  const filteredItems = items.filter(item => {
-    if (!searchQuery) return true
-
-    const query = searchQuery.toLowerCase()
-    return (
-      item.item_code?.toLowerCase().includes(query) ||
-      item.item_name?.toLowerCase().includes(query) ||
-      item.category?.toLowerCase().includes(query) ||
-      item.supplier?.name?.toLowerCase().includes(query)
-    )
-  })
+  // Load on filter change
+  useEffect(() => {
+    setItems([])
+    setPagination(prev => ({ ...prev, page: 1 }))
+    loadPriceBook(1, searchQuery, categoryFilter, supplierFilter, riskFilter)
+  }, [categoryFilter, supplierFilter, riskFilter, sortBy, sortDirection])
 
   // Close item search when clicking outside
   useEffect(() => {
@@ -71,19 +81,7 @@ export default function PriceBooksPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Listen for global search event from AppLayout
-  useEffect(() => {
-    const handleGlobalSearch = (event) => {
-      setSearchQuery(event.detail)
-    }
-
-    window.addEventListener('global-search', handleGlobalSearch)
-    return () => {
-      window.removeEventListener('global-search', handleGlobalSearch)
-    }
-  }, [])
-
-  const loadPriceBook = async (page = 1) => {
+  const loadPriceBook = async (page = 1, search = searchQuery, category = categoryFilter, supplier = supplierFilter, risk = riskFilter, sort = sortBy, direction = sortDirection) => {
     try {
       if (page === 1) {
         setLoading(true)
@@ -93,8 +91,14 @@ export default function PriceBooksPage() {
 
       const response = await api.get('/api/v1/pricebook', {
         params: {
+          search: search || undefined,
+          category: category || undefined,
+          supplier_id: supplier || undefined,
+          risk_level: risk || undefined,
+          sort_by: sort,
+          sort_direction: direction,
           page,
-          limit: 100  // Load more items per page for better client-side filtering
+          limit: 50
         }
       })
 
@@ -124,7 +128,6 @@ export default function PriceBooksPage() {
       setHasMore(false)
     } finally {
       setLoading(false)
-      setSearching(false)
       setLoadingMore(false)
     }
   }
@@ -227,7 +230,7 @@ export default function PriceBooksPage() {
       setSortBy(column)
       setSortDirection('asc')
     }
-    // Don't clear items - the useEffect will reload and pagination reset happens in loadPriceBook
+    setItems([])
     setPagination(prev => ({ ...prev, page: 1 }))
   }
 
@@ -238,8 +241,7 @@ export default function PriceBooksPage() {
       <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
   }
 
-  // Only show full page loading on initial load (no items yet)
-  if (loading && items.length === 0) {
+  if (loading && pagination.page === 1) {
     return (
       <div className="flex h-screen overflow-hidden">
         <div className="flex-1 flex items-center justify-center">
@@ -252,24 +254,6 @@ export default function PriceBooksPage() {
   return (
     <div className="flex h-screen overflow-hidden">
       <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
-        {/* Search bar */}
-        <div className="p-4 bg-white dark:bg-gray-900 sticky top-0 z-20 border-b border-gray-200 dark:border-gray-700">
-          <div className="relative max-w-md">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search items by code, name, category, or supplier..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white"
-            />
-            {searchQuery && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
-                {filteredItems.length} of {items.length} items
-              </div>
-            )}
-          </div>
-        </div>
         <div className="overflow-x-auto border-l border-r border-b border-gray-200 dark:border-gray-700 rounded-lg">
           <table className="min-w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
@@ -283,8 +267,36 @@ export default function PriceBooksPage() {
                     <SortIcon column="item_code" />
                   </div>
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  Item Name
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 relative">
+                  <div className="flex items-center gap-2">
+                    <span>Item Name</span>
+                    <div ref={itemSearchRef} className="relative flex items-center">
+                      {!showItemSearch ? (
+                        <button
+                          onClick={() => setShowItemSearch(true)}
+                          className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                          title="Search items"
+                        >
+                          <MagnifyingGlassIcon className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                          <input
+                            type="text"
+                            placeholder="Search items..."
+                            value={itemSearchQuery}
+                            onChange={(e) => {
+                              setItemSearchQuery(e.target.value)
+                              setSearchQuery(e.target.value)
+                            }}
+                            autoFocus
+                            className="w-64 px-3 py-1.5 pl-9 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm shadow-lg animate-in slide-in-from-right-5 duration-200"
+                          />
+                          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </th>
                 <th
                   onClick={() => handleSort('risk_level')}
@@ -328,17 +340,17 @@ export default function PriceBooksPage() {
               </tr>
             </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
-                  {filteredItems.length === 0 ? (
+                  {items.length === 0 ? (
                     <tr>
                       <td colSpan="7" className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                        {searchQuery
-                          ? 'No items match your search. Try a different search term.'
+                        {hasActiveFilters
+                          ? 'No items match your filters. Try adjusting your search or clearing filters.'
                           : 'No items found in the price book.'}
                       </td>
                     </tr>
                   ) : (
                     <>
-                      {filteredItems.map((item) => (
+                      {items.map((item) => (
                         <tr
                           key={item.id}
                           onClick={() => navigate(`/price-books/${item.id}`)}

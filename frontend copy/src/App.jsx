@@ -12,7 +12,6 @@ import SupplierDetailPage from './pages/SupplierDetailPage'
 import SupplierEditPage from './pages/SupplierEditPage'
 import ContactDetailPage from './pages/ContactDetailPage'
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage'
-import PurchaseOrderEditPage from './pages/PurchaseOrderEditPage'
 import DesignerHome from './pages/designer/DesignerHome'
 import TableSettings from './pages/designer/TableSettings'
 import TableBuilder from './pages/designer/TableBuilder'
@@ -35,7 +34,6 @@ function App() {
         <Route path="/suppliers/:id/edit" element={<AppLayout><SupplierEditPage /></AppLayout>} />
         <Route path="/suppliers/:id" element={<AppLayout><SupplierDetailPage /></AppLayout>} />
         <Route path="/contacts/:id" element={<AppLayout><ContactDetailPage /></AppLayout>} />
-        <Route path="/purchase-orders/:id/edit" element={<AppLayout><PurchaseOrderEditPage /></AppLayout>} />
         <Route path="/purchase-orders/:id" element={<AppLayout><PurchaseOrderDetailPage /></AppLayout>} />
         <Route path="/import" element={<AppLayout><ImportPage /></AppLayout>} />
         <Route path="/tables/:id" element={<AppLayout><TablePage /></AppLayout>} />

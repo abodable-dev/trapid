@@ -28,25 +28,25 @@ export default function POTable({ purchaseOrders, onEdit, onDelete, onApprove, o
       <table className="min-w-full">
         <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
           <tr>
-            <th className="px-3 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
               PO Number
             </th>
-            <th className="px-3 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
               Supplier
             </th>
-            <th className="px-3 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
               Description
             </th>
-            <th className="px-3 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
               Required Date
             </th>
-            <th className="px-3 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
               Status
             </th>
-            <th className="px-3 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
               Total
             </th>
-            <th className="px-3 py-4 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
               Actions
             </th>
           </tr>
@@ -65,34 +65,25 @@ export default function POTable({ purchaseOrders, onEdit, onDelete, onApprove, o
                 onClick={() => handleRowClick(po.id)}
                 className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
               >
-                <td className="px-4 py-5 text-sm font-medium text-gray-900 dark:text-white">
+                <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                   {po.purchase_order_number}
                 </td>
-                <td className="px-4 py-5 text-sm text-gray-900 dark:text-white" onClick={(e) => e.stopPropagation()}>
-                  {po.supplier ? (
-                    <button
-                      onClick={() => navigate(`/suppliers/${po.supplier.id}`)}
-                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 hover:underline"
-                    >
-                      {po.supplier.name}
-                    </button>
-                  ) : (
-                    '-'
-                  )}
+                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                  {po.supplier?.name || '-'}
                 </td>
-                <td className="px-4 py-5 text-sm text-gray-600 dark:text-gray-400 max-w-md truncate">
+                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 max-w-md truncate">
                   {po.description || '-'}
                 </td>
-                <td className="px-4 py-5 text-sm text-gray-600 dark:text-gray-400">
+                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                   {formatDate(po.required_date)}
                 </td>
-                <td className="px-4 py-5 text-sm">
+                <td className="px-4 py-3 text-sm">
                   <POStatusBadge status={po.status} />
                 </td>
-                <td className="px-4 py-5 text-sm text-right text-gray-900 dark:text-white font-medium">
+                <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white font-medium">
                   {formatCurrency(po.total, false)}
                 </td>
-                <td className="px-4 py-5 text-sm text-center" onClick={(e) => e.stopPropagation()}>
+                <td className="px-4 py-3 text-sm text-center" onClick={(e) => e.stopPropagation()}>
                   <Menu as="div" className="relative inline-block text-left">
                     <MenuButton className="flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none">
                       <span className="sr-only">Open options</span>
@@ -117,11 +108,11 @@ export default function POTable({ purchaseOrders, onEdit, onDelete, onApprove, o
                             </button>
                           )}
                         </MenuItem>
-                        {['draft', 'pending'].includes(po.status) && (
+                        {['draft', 'pending'].includes(po.status) && onEdit && (
                           <MenuItem>
                             {({ focus }) => (
                               <button
-                                onClick={() => navigate(`/purchase-orders/${po.id}/edit`)}
+                                onClick={() => onEdit(po)}
                                 className={`${
                                   focus ? 'bg-gray-100 dark:bg-gray-700' : ''
                                 } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
