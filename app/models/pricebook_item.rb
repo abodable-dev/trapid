@@ -163,12 +163,14 @@ class PricebookItem < ApplicationRecord
 
   # Price Volatility (based on price history)
   def price_volatility
-    return 'unknown' if price_histories.count < 2
+    return 'unknown' if price_histories.loaded? ? price_histories.size < 2 : price_histories.count < 2
 
     # Calculate coefficient of variation from last 6 months
+    # Filter in memory to avoid N+1 queries when price_histories is eager loaded
+    six_months_ago = 6.months.ago
     recent_prices = price_histories
-      .where("created_at >= ?", 6.months.ago)
-      .pluck(:new_price)
+      .select { |ph| ph.created_at >= six_months_ago }
+      .map(&:new_price)
       .compact
 
     return 'stable' if recent_prices.size < 2
