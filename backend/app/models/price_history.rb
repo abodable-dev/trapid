@@ -5,8 +5,8 @@ class PriceHistory < ApplicationRecord
 
   # Validations
   validates :pricebook_item_id, presence: true
-  validates :new_price, numericality: { greater_than_or_equal_to: 0, allow_nil: true }
-  validates :old_price, numericality: { greater_than_or_equal_to: 0, allow_nil: true }
+  validates :new_price, numericality: { allow_nil: true }  # Allow negative prices for rebates/credits
+  validates :old_price, numericality: { allow_nil: true }  # Allow negative prices for rebates/credits
 
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
