@@ -55,12 +55,13 @@ export default function PriceBookItemDetailPage() {
         supplier_id: supplierId
       })
 
-      // Optimistically update the state without full reload
+      // Update the state with the full item data from the response
       if (response.success && response.item) {
         setItem(prevItem => ({
           ...prevItem,
-          default_supplier: response.item.default_supplier,
-          default_supplier_id: response.item.default_supplier_id
+          ...response.item,
+          // Preserve price_histories from previous state
+          price_histories: prevItem.price_histories
         }))
       }
     } catch (err) {
