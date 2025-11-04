@@ -359,20 +359,20 @@ export default function PriceBookItemDetailPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Supplier Card */}
-            {item.supplier && (
+            {(item.default_supplier || item.supplier) && (
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <BuildingStorefrontIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                  Supplier
+                  {item.default_supplier ? 'Default Supplier' : 'Supplier'}
                 </h2>
 
                 <div className="space-y-3">
                   <div>
                     <Link
-                      to={`/suppliers/${item.supplier.id}`}
+                      to={`/suppliers/${(item.default_supplier || item.supplier).id}`}
                       className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
                     >
-                      {item.supplier.name}
+                      {(item.default_supplier || item.supplier).name}
                     </Link>
                   </div>
 
