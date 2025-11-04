@@ -1,7 +1,7 @@
 module Api
   module V1
     class PricebookItemsController < ApplicationController
-      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history]
+      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image]
 
       # GET /api/v1/pricebook
       def index
@@ -171,6 +171,79 @@ module Api
         end
       end
 
+      # POST /api/v1/pricebook/:id/fetch_image
+      def fetch_image
+        # Queue background job to fetch image
+        FetchProductImageJob.perform_later(@item.id)
+
+        render json: {
+          success: true,
+          message: "Image fetch queued for #{@item.item_name}",
+          item: item_with_image_data(@item)
+        }
+      end
+
+      # POST /api/v1/pricebook/:id/update_image
+      def update_image
+        if params[:image_url].present?
+          @item.update(
+            image_url: params[:image_url],
+            image_source: 'manual',
+            image_fetched_at: Time.current,
+            image_fetch_status: 'success'
+          )
+
+          render json: {
+            success: true,
+            message: "Image updated",
+            item: item_with_image_data(@item)
+          }
+        else
+          render json: { success: false, error: "image_url is required" }, status: :unprocessable_entity
+        end
+      end
+
+      # POST /api/v1/pricebook/fetch_all_images
+      def fetch_all_images
+        limit = params[:limit]&.to_i || 100
+        supplier_id = params[:supplier_id]
+
+        if supplier_id.present?
+          # Fetch images for specific supplier
+          FetchSupplierImagesJob.perform_later(supplier_id, limit)
+          message = "Image fetch queued for supplier items (limit: #{limit})"
+        else
+          # Fetch images for all items
+          FetchAllImagesJob.perform_later(limit)
+          message = "Image fetch queued for all items (limit: #{limit})"
+        end
+
+        render json: {
+          success: true,
+          message: message,
+          stats: image_stats
+        }
+      end
+
+      # GET /api/v1/pricebook/image_stats
+      def image_stats
+        total = PricebookItem.count
+        with_images = PricebookItem.where.not(image_url: nil).count
+        pending = PricebookItem.where(image_url: nil, image_fetch_status: nil).count
+        fetching = PricebookItem.where(image_fetch_status: 'fetching').count
+        failed = PricebookItem.where(image_fetch_status: 'failed').count
+
+        render json: {
+          total: total,
+          with_images: with_images,
+          without_images: total - with_images,
+          pending: pending,
+          fetching: fetching,
+          failed: failed,
+          percentage_complete: total > 0 ? ((with_images.to_f / total) * 100).round(2) : 0
+        }
+      end
+
       private
 
       def set_pricebook_item
@@ -210,7 +283,18 @@ module Api
             color: item.risk_level_color
           },
           supplier_reliability: item.supplier_reliability_score,
-          price_volatility: item.price_volatility
+          price_volatility: item.price_volatility,
+          image_url: item.image_url,
+          image_fetch_status: item.image_fetch_status
+        )
+      end
+
+      def item_with_image_data(item)
+        item.as_json(include: { supplier: { only: [:id, :name] } }).merge(
+          image_url: item.image_url,
+          image_source: item.image_source,
+          image_fetched_at: item.image_fetched_at,
+          image_fetch_status: item.image_fetch_status
         )
       end
     end
