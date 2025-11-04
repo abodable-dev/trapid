@@ -38,6 +38,7 @@ Rails.application.routes.draw do
           get :history
           post :fetch_image
           post :update_image
+          post :add_price
         end
         collection do
           patch :bulk_update

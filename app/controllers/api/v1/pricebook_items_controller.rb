@@ -1,7 +1,7 @@
 module Api
   module V1
     class PricebookItemsController < ApplicationController
-      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image]
+      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image, :add_price]
 
       # GET /api/v1/pricebook
       def index
@@ -228,6 +228,44 @@ module Api
       # GET /api/v1/pricebook/image_stats
       def image_stats
         render json: calculate_image_stats
+      end
+
+      # POST /api/v1/pricebook/:id/add_price
+      def add_price
+        old_price = @item.current_price
+
+        # Update the current price
+        @item.current_price = params[:price]
+        @item.supplier_id = params[:supplier_id] if params[:supplier_id].present?
+
+        if @item.save
+          # Create price history entry with LGA and date effective
+          price_history = @item.price_histories.create!(
+            old_price: old_price,
+            new_price: params[:price],
+            supplier_id: params[:supplier_id],
+            lga: params[:lga],
+            date_effective: params[:date_effective] || Date.today,
+            change_reason: 'manual_price_update'
+          )
+
+          render json: {
+            success: true,
+            message: 'Price added successfully',
+            item: item_with_risk_data(@item),
+            price_history: {
+              id: price_history.id,
+              old_price: price_history.old_price,
+              new_price: price_history.new_price,
+              lga: price_history.lga,
+              date_effective: price_history.date_effective,
+              supplier: price_history.supplier ? { id: price_history.supplier.id, name: price_history.supplier.name } : nil,
+              created_at: price_history.created_at
+            }
+          }
+        else
+          render json: { success: false, errors: @item.errors.full_messages }, status: :unprocessable_entity
+        end
       end
 
       private

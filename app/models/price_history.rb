@@ -7,6 +7,18 @@ class PriceHistory < ApplicationRecord
   validates :pricebook_item_id, presence: true
   validates :new_price, numericality: { allow_nil: true }  # Allow negative prices for rebates/credits
   validates :old_price, numericality: { allow_nil: true }  # Allow negative prices for rebates/credits
+  validates :lga, inclusion: {
+    in: [
+      'Toowoomba Regional Council',
+      'Lockyer Valley Regional Council',
+      'City of Gold Coast',
+      'Brisbane City Council',
+      'Sunshine Coast Regional Council',
+      'Redland City Council',
+      'Scenic Rim Regional Council'
+    ],
+    allow_nil: true
+  }
 
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
