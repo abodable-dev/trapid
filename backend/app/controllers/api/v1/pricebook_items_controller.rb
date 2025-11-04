@@ -55,14 +55,17 @@ module Api
 
       # GET /api/v1/pricebook/:id
       def show
-        render json: @item.as_json(
-          include: {
-            supplier: { only: [:id, :name, :email, :phone, :rating] },
-            price_histories: {
-              only: [:id, :old_price, :new_price, :change_reason, :created_at],
-              include: { supplier: { only: [:id, :name] } }
+        render json: item_with_risk_data(@item).merge(
+          @item.as_json(
+            include: {
+              supplier: { only: [:id, :name, :email, :phone, :rating] },
+              default_supplier: { only: [:id, :name] },
+              price_histories: {
+                only: [:id, :old_price, :new_price, :change_reason, :created_at],
+                include: { supplier: { only: [:id, :name] } }
+              }
             }
-          }
+          )
         )
       end
 
