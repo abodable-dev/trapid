@@ -39,7 +39,7 @@ module Api
 
         # Pagination
         page = params[:page]&.to_i || 1
-        per_page = params[:per_page]&.to_i || 50
+        per_page = params[:per_page]&.to_i || 500  # Increased from 50 to 500
         total_count = @purchase_orders.count
         total_pages = (total_count.to_f / per_page).ceil
 
