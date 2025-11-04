@@ -313,21 +313,19 @@ export default function PriceBookItemDetailPage() {
                               {history.supplier ? (
                                 <Switch
                                   checked={isDefaultSupplier}
-                                  onChange={(checked) => {
-                                    console.log('Toggle clicked!', { checked, isDefaultSupplier, supplierId: history.supplier.id })
-                                    if (!isDefaultSupplier) {
-                                      handleSetDefaultSupplier(null, history.supplier.id)
-                                    }
+                                  onChange={() => {
+                                    // Always allow changing to a different supplier
+                                    handleSetDefaultSupplier(null, history.supplier.id)
                                   }}
                                   className={`${
                                     isDefaultSupplier ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
-                                  } relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer`}
+                                  } relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer`}
                                 >
                                   <span className="sr-only">Set {history.supplier.name} as default supplier</span>
                                   <span
                                     className={`${
                                       isDefaultSupplier ? 'translate-x-5' : 'translate-x-0.5'
-                                    } inline-block h-4 w-4 transform rounded-full bg-white transition-transform pointer-events-none`}
+                                    } inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out pointer-events-none`}
                                   />
                                 </Switch>
                               ) : (
