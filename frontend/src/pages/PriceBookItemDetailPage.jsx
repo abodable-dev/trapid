@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Switch, Menu } from '@headlessui/react'
+import { Switch, Menu, Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import { api } from '../api'
 import { formatCurrency } from '../utils/formatters'
 import {
@@ -28,6 +28,8 @@ export default function PriceBookItemDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isAddPriceModalOpen, setIsAddPriceModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [historyToDelete, setHistoryToDelete] = useState(null)
 
   useEffect(() => {
     loadItem()
@@ -72,11 +74,18 @@ export default function PriceBookItemDetailPage() {
     }
   }
 
-  const handleDeletePriceHistory = async (historyId) => {
-    if (!confirm('Are you sure you want to delete this price history entry?')) return
+  const handleDeletePriceHistory = (history) => {
+    setHistoryToDelete(history)
+    setIsDeleteModalOpen(true)
+  }
+
+  const confirmDeletePriceHistory = async () => {
+    if (!historyToDelete) return
 
     try {
-      await api.delete(`/api/v1/pricebook/${id}/price_histories/${historyId}`)
+      await api.delete(`/api/v1/pricebook/${id}/price_histories/${historyToDelete.id}`)
+      setIsDeleteModalOpen(false)
+      setHistoryToDelete(null)
       // Reload the item to refresh price histories
       await loadItem()
     } catch (err) {
@@ -405,7 +414,7 @@ export default function PriceBookItemDetailPage() {
                                     <Menu.Item>
                                       {({ active }) => (
                                         <button
-                                          onClick={() => handleDeletePriceHistory(history.id)}
+                                          onClick={() => handleDeletePriceHistory(history)}
                                           className={`${
                                             active ? 'bg-gray-100 dark:bg-gray-700' : ''
                                           } group flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400`}
@@ -566,6 +575,76 @@ export default function PriceBookItemDetailPage() {
         itemId={id}
         onSuccess={loadItem}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} className="relative z-50">
+        <DialogBackdrop
+          transition
+          className="fixed inset-0 bg-gray-500/75 transition-opacity data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in dark:bg-gray-900/50"
+        />
+
+        <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <DialogPanel
+              transition
+              className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:w-full sm:max-w-lg data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95 dark:bg-gray-800 dark:outline dark:outline-1 dark:-outline-offset-1 dark:outline-white/10"
+            >
+              <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4 dark:bg-gray-800">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex size-12 shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:size-10 dark:bg-red-500/10">
+                    <ExclamationTriangleIcon aria-hidden="true" className="size-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                    <DialogTitle as="h3" className="text-base font-semibold text-gray-900 dark:text-white">
+                      Delete Price History
+                    </DialogTitle>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Are you sure you want to delete this price history entry?
+                        {historyToDelete && (
+                          <>
+                            {' '}This will permanently remove the price change from{' '}
+                            <span className="font-medium">{historyToDelete.old_price ? formatCurrency(historyToDelete.old_price, false) : 'N/A'}</span>
+                            {' '}to{' '}
+                            <span className="font-medium">{formatCurrency(historyToDelete.new_price, false)}</span>
+                            {historyToDelete.supplier && (
+                              <>
+                                {' '}for{' '}
+                                <span className="font-medium">{historyToDelete.supplier.name}</span>
+                              </>
+                            )}
+                            . This action cannot be undone.
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 dark:bg-gray-700/25">
+                <button
+                  type="button"
+                  onClick={confirmDeletePriceHistory}
+                  className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto dark:bg-red-500 dark:shadow-none dark:hover:bg-red-400"
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  data-autofocus
+                  onClick={() => {
+                    setIsDeleteModalOpen(false)
+                    setHistoryToDelete(null)
+                  }}
+                  className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto dark:bg-white/10 dark:text-white dark:shadow-none dark:ring-white/5 dark:hover:bg-white/20"
+                >
+                  Cancel
+                </button>
+              </div>
+            </DialogPanel>
+          </div>
+        </div>
+      </Dialog>
     </div>
   )
 }
