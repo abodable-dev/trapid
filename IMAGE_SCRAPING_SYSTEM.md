@@ -124,16 +124,21 @@ curl "https://trapid-backend-447058022b51.herokuapp.com/api/v1/pricebook/image_s
 ## 🎯 Image Search Strategy
 
 The system searches for images using:
-1. **Supplier Name** + **Item Code** + **Item Name** + "product"
-2. Example: "Harvey Norman Commercial QLD SSFL Abey Flushline Laundry Tub product"
+1. **Brand** + **Item Code** + **Item Name** (simplified) + "product"
+2. Example: "Abey SSFL Laundry Tub product"
 
 ### Image Sources
-- DuckDuckGo Image Search (primary, no API key needed)
-- Google Custom Search (optional, requires API key for better results)
+- **Google Custom Search API** (recommended, requires API key)
+- Fallback: placeholder until API is configured
 
-### Image Selection
-- Currently: First valid, accessible image
-- **TODO**: Integrate Claude AI to analyze and select best image
+### Image Selection with Claude AI ✨
+- **Claude 3 Haiku** analyzes up to 5 image candidates
+- Selects the best product image based on:
+  1. Clear product photo (not logos/diagrams)
+  2. Actual product match (not similar items)
+  3. High quality and well-lit
+  4. Clear product visibility
+- Fallback: First valid, accessible image if Claude unavailable
 
 ## 📦 Cloudinary Integration
 
@@ -169,11 +174,31 @@ CLOUDINARY_API_KEY=895213223838643
 CLOUDINARY_API_SECRET=Cl1Ufiux0DQMBnkDSUvfdrG-XVo
 ```
 
-### Optional (for better image search results)
+### Required for Image Search
+To enable image scraping, you need EITHER:
+
+**Option 1: Google Custom Search API (Recommended)**
 ```bash
 GOOGLE_SEARCH_API_KEY=your_key_here
 GOOGLE_SEARCH_CX=your_cx_here
 ```
+- Free tier: 100 searches/day
+- Setup: https://developers.google.com/custom-search/v1/overview
+
+**Option 2: SerpAPI (Alternative)**
+```bash
+SERPAPI_KEY=your_key_here
+```
+- Free tier: 100 searches/month
+- Setup: https://serpapi.com/
+
+### Optional: Claude AI for Intelligent Image Selection
+```bash
+ANTHROPIC_API_KEY=your_key_here
+```
+- Uses Claude 3 Haiku (~$0.0001 per image)
+- Analyzes multiple images and selects the best one
+- Fallback to first valid image if not configured
 
 ## 📊 Expected Results
 
@@ -189,12 +214,19 @@ For 5,287 items:
 - Prevents overwhelming search engines
 - Can be adjusted in `ProductImageScraper`
 
+## ✅ Claude AI Integration (Completed!)
+
+The system now uses **Claude 3 Haiku** to intelligently select product images:
+- Analyzes up to 5 image candidates per product
+- Evaluates image quality, relevance, and clarity
+- Costs ~$0.0001 per product (very affordable)
+- Automatic fallback if Claude unavailable
+
 ## 🔜 Future Enhancements
 
-1. **Claude AI Integration**
-   - Analyze multiple image candidates
-   - Select most relevant product image
-   - Filter out logos, unrelated images
+1. **Image Search API Setup** (Required for Production)
+   - Set up Google Custom Search API or SerpAPI
+   - Currently returns empty results until API is configured
 
 2. **Supplier Website Scraping**
    - Direct scraping from supplier websites
@@ -207,6 +239,17 @@ For 5,287 items:
 4. **Bulk Upload Interface**
    - Manual CSV upload with image URLs
    - Drag-and-drop image upload
+
+## 🚨 Current Status
+
+- ✅ Database schema complete
+- ✅ Background job processing working
+- ✅ API endpoints functional
+- ✅ Cloudinary integration ready
+- ✅ Claude AI image selection integrated
+- ❌ **Image search API needed** (Google Custom Search or SerpAPI)
+
+**Next Step**: Set up Google Custom Search API to enable image fetching.
 
 ## 📝 Example Usage Script
 
