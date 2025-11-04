@@ -18,7 +18,7 @@ class Supplier < ApplicationRecord
 
   # Helper method to get all contact phones
   def contact_phones
-    ([phone] + contacts.pluck(:mobile_phone, :office_phone).flatten).compact.uniq
+    ([phone, contact_number] + contacts.pluck(:mobile_phone, :office_phone).flatten).compact.uniq
   end
 
   # Validations

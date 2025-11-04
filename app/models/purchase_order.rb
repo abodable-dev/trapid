@@ -8,7 +8,7 @@ class PurchaseOrder < ApplicationRecord
   accepts_nested_attributes_for :line_items, allow_destroy: true
 
   # Validations
-  validates :po_number, presence: true, uniqueness: true
+  validates :purchase_order_number, presence: true, uniqueness: true
   validates :construction_id, presence: true
   validates :status, presence: true, inclusion: {
     in: %w[draft pending approved sent received invoiced paid cancelled]
@@ -29,6 +29,7 @@ class PurchaseOrder < ApplicationRecord
   # Callbacks
   before_validation :generate_po_number, if: :new_record?
   before_save :calculate_totals
+  before_save :calculate_variances
 
   # Scopes
   scope :by_status, ->(status) { where(status: status) if status.present? }
@@ -40,8 +41,34 @@ class PurchaseOrder < ApplicationRecord
   # Instance methods
   def calculate_totals
     self.sub_total = line_items.sum { |item| item.quantity * item.unit_price }
-    self.tax_amount = line_items.sum(&:tax_amount)
-    self.total_amount = sub_total + tax_amount
+    self.tax = line_items.sum(&:tax_amount)
+    self.total = sub_total + tax
+
+    # Calculate amount still to be invoiced
+    self.amount_still_to_be_invoiced = total - (amount_invoiced || 0)
+  end
+
+  def calculate_variances
+    # Calculate total with allowance (can be customized based on business logic)
+    self.total_with_allowance = total
+
+    # Calculate budget variance
+    if budget.present? && budget > 0
+      self.diff_po_with_allowance_versus_budget = total_with_allowance - budget
+    end
+
+    # Calculate Xero variances
+    if xero_amount_paid.present?
+      self.xero_still_to_be_paid = total - xero_amount_paid
+
+      if !xero_complete
+        self.diff_xero_and_total_but_not_complete = xero_amount_paid - total
+      end
+
+      if budget.present? && budget > 0
+        self.xero_budget_diff = xero_amount_paid - budget
+      end
+    end
   end
 
   def approve!(user_id = nil)
@@ -75,15 +102,15 @@ class PurchaseOrder < ApplicationRecord
   private
 
   def generate_po_number
-    return if po_number.present?
+    return if purchase_order_number.present?
 
     last_po = PurchaseOrder.order(created_at: :desc).first
-    next_number = if last_po && last_po.po_number =~ /PO-(\d+)/
+    next_number = if last_po && last_po.purchase_order_number =~ /PO-(\d+)/
       $1.to_i + 1
     else
       1
     end
 
-    self.po_number = "PO-#{next_number.to_s.rjust(6, '0')}"
+    self.purchase_order_number = "PO-#{next_number.to_s.rjust(6, '0')}"
   end
 end
