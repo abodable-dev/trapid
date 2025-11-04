@@ -243,9 +243,6 @@ export default function SuppliersPage() {
                   Contact
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Confidence
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -257,9 +254,12 @@ export default function SuppliersPage() {
               {filteredSuppliers.map((supplier) => (
                 <tr key={supplier.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    <Link
+                      to={`/suppliers/${supplier.id}`}
+                      className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                    >
                       {supplier.name}
-                    </div>
+                    </Link>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                       {supplier.pricebook_items?.length || 0} items
                     </div>
@@ -281,20 +281,6 @@ export default function SuppliersPage() {
                       </div>
                     ) : (
                       <span className="text-sm text-gray-500 dark:text-gray-400">No contact</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {supplier.contact_id && (
-                      <div className="text-sm">
-                        <span className="text-gray-900 dark:text-white">
-                          {supplier.match_confidence_label}
-                        </span>
-                        {supplier.confidence_score && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                            ({(supplier.confidence_score * 100).toFixed(1)}%)
-                          </span>
-                        )}
-                      </div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
