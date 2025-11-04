@@ -1,107 +1,174 @@
 namespace :pricebook do
-  desc "Import price book items from CSV file"
-  task :import, [:file_path] => :environment do |t, args|
-    require 'csv'
+  desc "Import clean price book data from CSV files"
+  task import_clean: :environment do
+    puts "\n" + "="*60
+    puts "PRICE BOOK CLEAN IMPORT"
+    puts "="*60
 
-    # Default to the cleaned CSV in db directory
-    file_path = args[:file_path] || File.join(Rails.root, 'db', 'pricebook_cleaned.csv')
+    # Step 1: Clear existing data
+    puts "\nStep 1: Clearing existing data..."
 
-    unless File.exist?(file_path)
-      puts "Error: File not found at #{file_path}"
-      exit 1
+    deleted_histories = PriceHistory.count
+    PriceHistory.delete_all
+    puts "  ✓ Deleted #{deleted_histories} price history records"
+
+    deleted_items = PricebookItem.count
+    PricebookItem.delete_all
+    puts "  ✓ Deleted #{deleted_items} pricebook items"
+
+    deleted_suppliers = Supplier.count
+    Supplier.delete_all
+    puts "  ✓ Deleted #{deleted_suppliers} suppliers"
+
+    # Step 2: Import Suppliers
+    puts "\nStep 2: Importing suppliers..."
+    suppliers_file = ENV['SUPPLIERS_CSV'] || Rails.root.join('tmp', 'suppliers.csv')
+
+    unless File.exist?(suppliers_file)
+      puts "  ⚠ Suppliers file not found at: #{suppliers_file}"
+      puts "  Set SUPPLIERS_CSV environment variable or place file at tmp/suppliers.csv"
+      next
     end
 
-    puts "="*60
-    puts "Price Book Import"
-    puts "="*60
-    puts "File: #{file_path}"
-    puts "Current database: #{PricebookItem.count} items, #{Supplier.count} suppliers"
-    puts ""
+    supplier_map = {}
+    supplier_count = 0
 
-    # Run import
-    service = PricebookImportService.new(file_path, {
-      skip_missing_prices: false,
-      create_suppliers: true,
-      create_categories: true,
-      update_existing: ENV['UPDATE_EXISTING'] == 'true'
-    })
+    CSV.foreach(suppliers_file, headers: true, header_converters: :symbol) do |row|
+      supplier = Supplier.create!(
+        name: row[:name],
+        contact_person: row[:contact_person],
+        email: row[:email],
+        phone: row[:phone],
+        address: row[:address],
+        rating: row[:rating]&.to_i || 0,
+        response_rate: row[:response_rate]&.to_f || 0,
+        avg_response_time: row[:avg_response_time]&.to_i,
+        notes: row[:notes],
+        is_active: row[:is_active] == 'false' ? false : true
+      )
 
-    puts "Starting import..."
-    result = service.import
+      # Map supplier name to ID for linking
+      supplier_map[row[:name]] = supplier.id
+      supplier_count += 1
+    end
 
-    puts ""
-    puts "="*60
-    puts "Import Results"
-    puts "="*60
-    puts "Success: #{result[:success] ? '✓' : '✗'}"
-    puts ""
-    puts "Statistics:"
-    puts "  Total rows processed: #{result[:stats][:total_rows]}"
-    puts "  Items imported: #{result[:stats][:imported_count]}"
-    puts "  Items updated: #{result[:stats][:updated_count]}"
-    puts "  Items skipped: #{result[:stats][:skipped_count]}"
-    puts "  Errors: #{result[:stats][:error_count]}"
-    puts "  Suppliers created: #{result[:stats][:suppliers_created]}"
-    puts "  Categories found: #{result[:stats][:categories_created]}"
-    puts ""
+    puts "  ✓ Imported #{supplier_count} suppliers"
 
-    if result[:errors].any?
-      puts "Errors (first 10):"
-      result[:errors].first(10).each do |error|
-        puts "  Row #{error[:row]} (#{error[:item_code]}): #{error[:error]}"
+    # Step 3: Import Price Book Items
+    puts "\nStep 3: Importing price book items..."
+    items_file = ENV['ITEMS_CSV'] || Rails.root.join('tmp', 'pricebook_items.csv')
+
+    unless File.exist?(items_file)
+      puts "  ⚠ Items file not found at: #{items_file}"
+      puts "  Set ITEMS_CSV environment variable or place file at tmp/pricebook_items.csv"
+      next
+    end
+
+    item_map = {}
+    item_count = 0
+
+    CSV.foreach(items_file, headers: true, header_converters: :symbol) do |row|
+      # Find supplier by name
+      supplier_id = row[:supplier_name].present? ? supplier_map[row[:supplier_name]] : nil
+
+      item = PricebookItem.create!(
+        item_code: row[:item_code],
+        item_name: row[:item_name],
+        category: row[:category],
+        unit_of_measure: row[:unit_of_measure] || 'Each',
+        current_price: row[:current_price]&.to_f,
+        supplier_id: supplier_id,
+        brand: row[:brand],
+        notes: row[:notes],
+        is_active: row[:is_active] == 'false' ? false : true,
+        needs_pricing_review: row[:needs_pricing_review] == 'true' ? true : false,
+        price_last_updated_at: row[:price_last_updated_at].present? ? Time.parse(row[:price_last_updated_at]) : nil
+      )
+
+      # Map item code to ID for linking price history
+      item_map[row[:item_code]] = item.id
+      item_count += 1
+    end
+
+    puts "  ✓ Imported #{item_count} price book items"
+
+    # Step 4: Import Price History
+    puts "\nStep 4: Importing price history..."
+    history_file = ENV['HISTORY_CSV'] || Rails.root.join('tmp', 'price_history.csv')
+
+    unless File.exist?(history_file)
+      puts "  ⚠ Price history file not found at: #{history_file}"
+      puts "  Skipping price history import (optional)"
+      puts "\n" + "="*60
+      puts "IMPORT COMPLETE"
+      puts "="*60
+      puts "Suppliers: #{Supplier.count}"
+      puts "Price Book Items: #{PricebookItem.count}"
+      puts "Price History: #{PriceHistory.count}"
+      next
+    end
+
+    history_count = 0
+
+    CSV.foreach(history_file, headers: true, header_converters: :symbol) do |row|
+      item_id = item_map[row[:item_code]]
+      supplier_id = row[:supplier_name].present? ? supplier_map[row[:supplier_name]] : nil
+
+      unless item_id
+        puts "  ⚠ Skipping history for unknown item: #{row[:item_code]}"
+        next
       end
-      puts ""
+
+      PriceHistory.create!(
+        pricebook_item_id: item_id,
+        old_price: row[:old_price]&.to_f,
+        new_price: row[:new_price]&.to_f,
+        change_reason: row[:change_reason] || 'import',
+        supplier_id: supplier_id,
+        quote_reference: row[:quote_reference],
+        created_at: row[:created_at].present? ? Time.parse(row[:created_at]) : Time.current
+      )
+
+      history_count += 1
     end
 
-    if result[:warnings].any?
-      puts "Warnings (first 10 of #{result[:warnings].length}):"
-      result[:warnings].first(10).each { |w| puts "  #{w}" }
-      puts ""
-    end
+    puts "  ✓ Imported #{history_count} price history records"
 
-    puts "Final database: #{PricebookItem.count} items, #{Supplier.count} suppliers"
+    # Summary
+    puts "\n" + "="*60
+    puts "IMPORT COMPLETE"
     puts "="*60
+    puts "Suppliers: #{Supplier.count}"
+    puts "Price Book Items: #{PricebookItem.count}"
+    puts "Price History: #{PriceHistory.count}"
+    puts "\nData successfully imported and linked!"
   end
 
-  desc "Show price book statistics"
-  task stats: :environment do
-    puts "="*60
-    puts "Price Book Statistics"
-    puts "="*60
-    puts "Total items: #{PricebookItem.count}"
-    puts "Active items: #{PricebookItem.active.count}"
-    puts "Items needing pricing: #{PricebookItem.needs_pricing.count}"
-    puts ""
-    puts "Categories (#{PricebookItem.categories.length}):"
-    PricebookItem.categories.each do |category|
-      count = PricebookItem.by_category(category).count
-      puts "  #{category}: #{count}"
-    end
-    puts ""
-    puts "Suppliers (#{Supplier.count}):"
-    Supplier.order(:name).limit(20).each do |supplier|
-      count = supplier.pricebook_items.count
-      puts "  #{supplier.name}: #{count} items"
-    end
-    if Supplier.count > 20
-      puts "  ... and #{Supplier.count - 20} more"
-    end
-    puts "="*60
-  end
+  desc "Generate sample CSV templates"
+  task generate_templates: :environment do
+    puts "Generating CSV templates..."
 
-  desc "Clear all price book data (use with caution!)"
-  task clear: :environment do
-    print "Are you sure you want to delete all price book data? (yes/no): "
-    confirmation = STDIN.gets.chomp
-
-    if confirmation.downcase == 'yes'
-      puts "Deleting all price book data..."
-      PricebookItem.delete_all
-      PriceHistory.delete_all
-      Supplier.delete_all
-      puts "Done. Database cleared."
-    else
-      puts "Cancelled."
+    # Suppliers template
+    CSV.open(Rails.root.join('tmp', 'suppliers_template.csv'), 'w') do |csv|
+      csv << %w[name contact_person email phone address rating response_rate avg_response_time notes is_active]
+      csv << ['TL Supply', 'John Smith', 'john@tlsupply.com.au', '1300 123 456', '123 Trade St', 4, 85.5, 24, 'Reliable supplier', true]
     end
+    puts "  ✓ Created tmp/suppliers_template.csv"
+
+    # Price book items template
+    CSV.open(Rails.root.join('tmp', 'pricebook_items_template.csv'), 'w') do |csv|
+      csv << %w[item_code item_name category unit_of_measure current_price supplier_name brand notes is_active needs_pricing_review price_last_updated_at]
+      csv << ['DPP', 'Wiring Double Power Point', 'Electrical', 'Each', 51.00, 'TL Supply', 'Clipsal', '', true, false, '2024-01-15']
+    end
+    puts "  ✓ Created tmp/pricebook_items_template.csv"
+
+    # Price history template
+    CSV.open(Rails.root.join('tmp', 'price_history_template.csv'), 'w') do |csv|
+      csv << %w[item_code old_price new_price change_reason supplier_name quote_reference created_at]
+      csv << ['DPP', 48.00, 51.00, 'price_increase', 'TL Supply', 'Q-2024-001', '2024-01-15']
+    end
+    puts "  ✓ Created tmp/price_history_template.csv"
+
+    puts "\nTemplates created in tmp/ directory"
   end
 end
