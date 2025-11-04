@@ -44,9 +44,10 @@ module Api
           suppliers: @suppliers.as_json(
             include: {
               contact: { only: [:id, :full_name, :email, :mobile_phone] },
+              contacts: { only: [:id, :full_name, :email, :mobile_phone, :office_phone] },
               pricebook_items: { only: [:id, :item_code, :item_name, :current_price] }
             },
-            methods: [:match_confidence_label, :match_status]
+            methods: [:match_confidence_label, :match_status, :contact_emails, :contact_phones]
           )
         }
       end

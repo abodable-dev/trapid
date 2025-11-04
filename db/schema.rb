@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_04_030112) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_04_032250) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -210,6 +210,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_030112) do
     t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
   end
 
+  create_table "supplier_contacts", force: :cascade do |t|
+    t.bigint "supplier_id", null: false
+    t.bigint "contact_id", null: false
+    t.boolean "is_primary", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_supplier_contacts_on_contact_id"
+    t.index ["supplier_id", "contact_id"], name: "index_supplier_contacts_on_supplier_id_and_contact_id", unique: true
+    t.index ["supplier_id"], name: "index_supplier_contacts_on_supplier_id"
+  end
+
   create_table "suppliers", force: :cascade do |t|
     t.string "name", null: false
     t.string "contact_person"
@@ -333,4 +344,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_030112) do
   add_foreign_key "purchase_order_line_items", "purchase_orders"
   add_foreign_key "purchase_orders", "constructions"
   add_foreign_key "purchase_orders", "suppliers"
+  add_foreign_key "supplier_contacts", "contacts"
+  add_foreign_key "supplier_contacts", "suppliers"
 end
