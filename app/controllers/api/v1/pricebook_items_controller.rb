@@ -1,7 +1,7 @@
 module Api
   module V1
     class PricebookItemsController < ApplicationController
-      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image, :add_price, :set_default_supplier]
+      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image, :add_price, :set_default_supplier, :delete_price_history]
 
       # GET /api/v1/pricebook
       def index
@@ -293,6 +293,27 @@ module Api
           }
         else
           render json: { success: false, errors: @item.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      # DELETE /api/v1/pricebook/:id/price_histories/:history_id
+      def delete_price_history
+        history_id = params[:history_id]
+
+        if history_id.blank?
+          return render json: { success: false, error: 'history_id is required' }, status: :unprocessable_entity
+        end
+
+        price_history = @item.price_histories.find_by(id: history_id)
+
+        if price_history.nil?
+          return render json: { success: false, error: 'Price history not found' }, status: :not_found
+        end
+
+        if price_history.destroy
+          render json: { success: true, message: 'Price history deleted successfully' }
+        else
+          render json: { success: false, errors: price_history.errors.full_messages }, status: :unprocessable_entity
         end
       end
 
