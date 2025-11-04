@@ -234,7 +234,8 @@ module Api
       def add_price
         old_price = @item.current_price
 
-        # Update the current price
+        # Skip automatic price history callback since we're creating it manually
+        @item.skip_price_history_callback = true
         @item.current_price = params[:price]
         @item.supplier_id = params[:supplier_id] if params[:supplier_id].present?
 
