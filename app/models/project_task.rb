@@ -1,0 +1,90 @@
+class ProjectTask < ApplicationRecord
+  belongs_to :project
+  belongs_to :task_template, optional: true
+  belongs_to :purchase_order, optional: true
+  belongs_to :assigned_to, class_name: 'User', optional: true
+
+  # Dependency relationships
+  has_many :successor_dependencies, class_name: 'TaskDependency',
+           foreign_key: 'predecessor_task_id', dependent: :destroy
+  has_many :predecessor_dependencies, class_name: 'TaskDependency',
+           foreign_key: 'successor_task_id', dependent: :destroy
+
+  has_many :successor_tasks, through: :successor_dependencies, source: :successor_task
+  has_many :predecessor_tasks, through: :predecessor_dependencies, source: :predecessor_task
+
+  # Progress tracking
+  has_many :task_updates, dependent: :destroy
+
+  validates :name, presence: true
+  validates :task_type, presence: true
+  validates :category, presence: true
+  validates :status, inclusion: { in: %w[not_started in_progress complete on_hold] }
+  validates :progress_percentage, inclusion: { in: 0..100 }
+  validates :duration_days, presence: true, numericality: { greater_than: 0 }
+
+  scope :by_status, ->(status) { where(status: status) }
+  scope :not_started, -> { where(status: 'not_started') }
+  scope :in_progress, -> { where(status: 'in_progress') }
+  scope :completed, -> { where(status: 'complete') }
+  scope :on_hold, -> { where(status: 'on_hold') }
+  scope :critical_path, -> { where(is_critical_path: true) }
+  scope :milestones, -> { where(is_milestone: true) }
+  scope :overdue, -> { where('planned_end_date < ? AND status != ?', Date.current, 'complete') }
+  scope :upcoming, -> { where('planned_start_date <= ? AND status = ?', 1.week.from_now, 'not_started') }
+  scope :by_category, ->(category) { where(category: category) }
+
+  before_save :update_actual_dates
+  after_save :update_project_timeline, if: :saved_change_to_planned_end_date?
+
+  def complete!
+    update!(
+      status: 'complete',
+      progress_percentage: 100,
+      actual_end_date: Date.current
+    )
+  end
+
+  def start!
+    update!(
+      status: 'in_progress',
+      actual_start_date: actual_start_date || Date.current
+    )
+  end
+
+  def can_start?
+    predecessor_tasks.all? { |pred| pred.status == 'complete' }
+  end
+
+  def blocked_by
+    predecessor_tasks.where.not(status: 'complete')
+  end
+
+  def total_float
+    return 0 unless planned_start_date && planned_end_date
+    # This is simplified - would need backward pass for accurate float calculation
+    0
+  end
+
+  def is_on_critical_path?
+    is_critical_path
+  end
+
+  private
+
+  def update_actual_dates
+    case status
+    when 'in_progress'
+      self.actual_start_date ||= Date.current
+    when 'complete'
+      self.actual_start_date ||= Date.current
+      self.actual_end_date = Date.current
+      self.progress_percentage = 100
+    end
+  end
+
+  def update_project_timeline
+    # Recalculate project end date if this task's end date changed
+    project.reload
+  end
+end
