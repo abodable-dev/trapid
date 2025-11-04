@@ -1,6 +1,7 @@
 class PricebookItem < ApplicationRecord
   # Associations
   belongs_to :supplier, optional: true
+  belongs_to :default_supplier, class_name: 'Supplier', optional: true
   has_many :price_histories, dependent: :destroy
 
   # Validations
