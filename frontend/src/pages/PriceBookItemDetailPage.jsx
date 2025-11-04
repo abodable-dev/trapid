@@ -270,8 +270,8 @@ export default function PriceBookItemDetailPage() {
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Old Price</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">New Price</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Change</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Supplier</th>
                         <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Default</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Supplier</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -297,9 +297,6 @@ export default function PriceBookItemDetailPage() {
                                 {changePercent !== 0 && ` (${change > 0 ? '+' : ''}${changePercent}%)`}
                               </span>
                             </td>
-                            <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
-                              {history.supplier?.name || '-'}
-                            </td>
                             <td className="px-3 py-2 text-center">
                               {history.supplier ? (
                                 <button
@@ -320,6 +317,9 @@ export default function PriceBookItemDetailPage() {
                               ) : (
                                 <span className="text-gray-400 text-xs">-</span>
                               )}
+                            </td>
+                            <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                              {history.supplier?.name || '-'}
                             </td>
                           </tr>
                         )

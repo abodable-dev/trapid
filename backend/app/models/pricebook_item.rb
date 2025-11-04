@@ -4,6 +4,9 @@ class PricebookItem < ApplicationRecord
   belongs_to :default_supplier, class_name: 'Supplier', optional: true
   has_many :price_histories, dependent: :destroy
 
+  # Attribute for skipping price history callback
+  attr_accessor :skip_price_history_callback
+
   # Validations
   validates :item_code, presence: true, uniqueness: true
   validates :item_name, presence: true
@@ -13,7 +16,7 @@ class PricebookItem < ApplicationRecord
   # Callbacks
   before_save :check_pricing_review_status
   before_save :update_price_timestamp, if: :will_save_change_to_current_price?
-  after_update :track_price_change, if: :saved_change_to_current_price?
+  after_update :track_price_change, if: :should_track_price_change?
 
   # Scopes
   scope :active, -> { where(is_active: true) }
@@ -287,6 +290,10 @@ class PricebookItem < ApplicationRecord
       # Unflag if price is now set
       self.needs_pricing_review = false
     end
+  end
+
+  def should_track_price_change?
+    saved_change_to_current_price? && !skip_price_history_callback
   end
 
   def track_price_change
