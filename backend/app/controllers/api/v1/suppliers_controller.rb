@@ -194,6 +194,8 @@ module Api
         params.require(:supplier).permit(
           :name,
           :contact_person,
+          :contact_name,
+          :contact_number,
           :email,
           :phone,
           :address,

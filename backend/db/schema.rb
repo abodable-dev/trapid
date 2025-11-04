@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_04_032250) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_04_034634) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -179,7 +179,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_032250) do
   end
 
   create_table "purchase_orders", force: :cascade do |t|
-    t.string "po_number", null: false
+    t.string "purchase_order_number", null: false
     t.bigint "construction_id", null: false
     t.bigint "supplier_id"
     t.string "status", default: "draft", null: false
@@ -187,9 +187,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_032250) do
     t.text "delivery_address"
     t.text "special_instructions"
     t.decimal "sub_total", precision: 15, scale: 2, default: "0.0"
-    t.decimal "tax_amount", precision: 15, scale: 2, default: "0.0"
-    t.decimal "total_amount", precision: 15, scale: 2, default: "0.0"
-    t.decimal "budget_allocation", precision: 15, scale: 2
+    t.decimal "tax", precision: 15, scale: 2, default: "0.0"
+    t.decimal "total", precision: 15, scale: 2, default: "0.0"
+    t.decimal "budget", precision: 15, scale: 2
     t.decimal "amount_invoiced", precision: 15, scale: 2, default: "0.0"
     t.decimal "amount_paid", precision: 15, scale: 2, default: "0.0"
     t.string "xero_invoice_id"
@@ -203,8 +203,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_032250) do
     t.datetime "approved_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "amount_still_to_be_invoiced", precision: 15, scale: 2, default: "0.0"
+    t.decimal "total_with_allowance", precision: 15, scale: 2, default: "0.0"
+    t.text "ted_task"
+    t.boolean "estimation_check", default: false
+    t.boolean "part_payment", default: false
+    t.string "xero_supplier"
+    t.boolean "xero_complete", default: false
+    t.decimal "xero_still_to_be_paid", precision: 15, scale: 2, default: "0.0"
+    t.decimal "xero_budget_diff", precision: 15, scale: 2, default: "0.0"
+    t.date "xero_paid_date"
+    t.decimal "xero_total_with_allowance", precision: 15, scale: 2, default: "0.0"
+    t.decimal "xero_amount_paid_exc_gst", precision: 15, scale: 2, default: "0.0"
+    t.decimal "total_allowance_xero_paid", precision: 15, scale: 2, default: "0.0"
+    t.decimal "diff_po_with_allowance_versus_budget", precision: 15, scale: 2, default: "0.0"
+    t.decimal "diff_xero_and_total_but_not_complete", precision: 15, scale: 2, default: "0.0"
     t.index ["construction_id"], name: "index_purchase_orders_on_construction_id"
-    t.index ["po_number"], name: "index_purchase_orders_on_po_number", unique: true
+    t.index ["purchase_order_number"], name: "index_purchase_orders_on_purchase_order_number", unique: true
     t.index ["required_date"], name: "index_purchase_orders_on_required_date"
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
@@ -239,6 +254,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_032250) do
     t.string "match_type"
     t.boolean "is_verified", default: false
     t.string "original_name"
+    t.string "contact_name"
+    t.string "contact_number"
     t.index ["contact_id"], name: "index_suppliers_on_contact_id"
     t.index ["is_active"], name: "index_suppliers_on_is_active"
     t.index ["is_verified"], name: "index_suppliers_on_is_verified"

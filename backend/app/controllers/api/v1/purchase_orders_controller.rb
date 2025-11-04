@@ -17,8 +17,8 @@ module Api
         if params[:search].present?
           search_term = "%#{params[:search]}%"
           @purchase_orders = @purchase_orders.where(
-            'po_number ILIKE ? OR description ILIKE ?',
-            search_term, search_term
+            'purchase_order_number ILIKE ? OR description ILIKE ? OR ted_task ILIKE ?',
+            search_term, search_term, search_term
           )
         end
 
@@ -32,7 +32,7 @@ module Api
         # Sorting
         sort_by = params[:sort_by] || 'created_at'
         sort_direction = params[:sort_direction] || 'desc'
-        allowed_sort_columns = %w[po_number total_amount required_date status created_at]
+        allowed_sort_columns = %w[purchase_order_number total required_date status created_at]
         sort_column = allowed_sort_columns.include?(sort_by) ? sort_by : 'created_at'
 
         @purchase_orders = @purchase_orders.order("#{sort_column} #{sort_direction}")
@@ -153,11 +153,21 @@ module Api
           :description,
           :delivery_address,
           :special_instructions,
-          :budget_allocation,
+          :budget,
           :required_date,
           :ordered_date,
           :expected_delivery_date,
+          :ted_task,
+          :estimation_check,
+          :part_payment,
+          :amount_invoiced,
+          :amount_paid,
           :xero_invoice_id,
+          :xero_supplier,
+          :xero_complete,
+          :xero_amount_paid,
+          :xero_amount_paid_exc_gst,
+          :xero_paid_date,
           line_items_attributes: [
             :id,
             :pricebook_item_id,
