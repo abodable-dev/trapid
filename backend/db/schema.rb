@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_04_052248) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_04_053323) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -173,6 +173,57 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_052248) do
     t.index ["supplier_id"], name: "index_pricebook_items_on_supplier_id"
   end
 
+  create_table "project_tasks", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.bigint "task_template_id"
+    t.bigint "purchase_order_id"
+    t.string "name", null: false
+    t.string "task_type", null: false
+    t.string "category", null: false
+    t.string "task_code"
+    t.string "status", default: "not_started"
+    t.integer "progress_percentage", default: 0
+    t.date "planned_start_date"
+    t.date "planned_end_date"
+    t.date "actual_start_date"
+    t.date "actual_end_date"
+    t.integer "duration_days", default: 1
+    t.bigint "assigned_to_id"
+    t.string "supplier_name"
+    t.boolean "is_milestone", default: false
+    t.boolean "is_critical_path", default: false
+    t.text "notes"
+    t.text "completion_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_to_id"], name: "index_project_tasks_on_assigned_to_id"
+    t.index ["is_critical_path"], name: "index_project_tasks_on_is_critical_path"
+    t.index ["planned_start_date", "planned_end_date"], name: "index_project_tasks_on_planned_start_date_and_planned_end_date"
+    t.index ["project_id", "status"], name: "index_project_tasks_on_project_id_and_status"
+    t.index ["project_id"], name: "index_project_tasks_on_project_id"
+    t.index ["purchase_order_id"], name: "index_project_tasks_on_purchase_order_id"
+    t.index ["task_template_id"], name: "index_project_tasks_on_task_template_id"
+  end
+
+  create_table "projects", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "project_code"
+    t.text "description"
+    t.date "start_date"
+    t.date "planned_end_date"
+    t.date "actual_end_date"
+    t.string "status", default: "planning"
+    t.string "client_name"
+    t.text "site_address"
+    t.bigint "project_manager_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_code"], name: "index_projects_on_project_code", unique: true
+    t.index ["project_manager_id"], name: "index_projects_on_project_manager_id"
+    t.index ["start_date", "planned_end_date"], name: "index_projects_on_start_date_and_planned_end_date"
+    t.index ["status"], name: "index_projects_on_status"
+  end
+
   create_table "purchase_order_line_items", force: :cascade do |t|
     t.bigint "purchase_order_id", null: false
     t.bigint "pricebook_item_id"
@@ -230,9 +281,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_052248) do
     t.decimal "total_allowance_xero_paid", precision: 15, scale: 2, default: "0.0"
     t.decimal "diff_po_with_allowance_versus_budget", precision: 15, scale: 2, default: "0.0"
     t.decimal "diff_xero_and_total_but_not_complete", precision: 15, scale: 2, default: "0.0"
+    t.date "required_on_site_date"
+    t.boolean "creates_schedule_tasks", default: true
+    t.string "task_category"
     t.index ["construction_id"], name: "index_purchase_orders_on_construction_id"
+    t.index ["creates_schedule_tasks"], name: "index_purchase_orders_on_creates_schedule_tasks"
     t.index ["purchase_order_number"], name: "index_purchase_orders_on_purchase_order_number", unique: true
     t.index ["required_date"], name: "index_purchase_orders_on_required_date"
+    t.index ["required_on_site_date"], name: "index_purchase_orders_on_required_on_site_date"
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
   end
@@ -288,6 +344,54 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_052248) do
     t.datetime "updated_at", null: false
     t.boolean "is_live", default: false, null: false
     t.index ["database_table_name"], name: "index_tables_on_database_table_name", unique: true
+  end
+
+  create_table "task_dependencies", force: :cascade do |t|
+    t.bigint "successor_task_id", null: false
+    t.bigint "predecessor_task_id", null: false
+    t.string "dependency_type", default: "finish_to_start"
+    t.integer "lag_days", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["predecessor_task_id"], name: "index_task_dependencies_on_predecessor_task_id"
+    t.index ["successor_task_id", "predecessor_task_id"], name: "index_unique_task_dependency", unique: true
+    t.index ["successor_task_id"], name: "index_task_dependencies_on_successor_task_id"
+    t.check_constraint "successor_task_id <> predecessor_task_id", name: "check_no_self_dependency"
+  end
+
+  create_table "task_templates", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "task_type", null: false
+    t.string "category", null: false
+    t.integer "default_duration_days", default: 1
+    t.integer "sequence_order", default: 0
+    t.integer "predecessor_template_codes", default: [], array: true
+    t.text "description"
+    t.boolean "is_milestone", default: false
+    t.boolean "requires_photo", default: false
+    t.boolean "is_standard", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_task_templates_on_category"
+    t.index ["sequence_order"], name: "index_task_templates_on_sequence_order"
+    t.index ["task_type"], name: "index_task_templates_on_task_type"
+  end
+
+  create_table "task_updates", force: :cascade do |t|
+    t.bigint "project_task_id", null: false
+    t.bigint "user_id", null: false
+    t.string "status_before"
+    t.string "status_after"
+    t.integer "progress_before"
+    t.integer "progress_after"
+    t.text "notes"
+    t.text "photo_urls", default: [], array: true
+    t.date "update_date", default: -> { "CURRENT_DATE" }, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_task_id"], name: "index_task_updates_on_project_task_id"
+    t.index ["update_date"], name: "index_task_updates_on_update_date"
+    t.index ["user_id"], name: "index_task_updates_on_user_id"
   end
 
   create_table "user_dog_dog_cat_baf84797", force: :cascade do |t|
@@ -369,10 +473,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_052248) do
   add_foreign_key "price_histories", "suppliers"
   add_foreign_key "pricebook_items", "suppliers"
   add_foreign_key "pricebook_items", "suppliers", column: "default_supplier_id"
+  add_foreign_key "project_tasks", "projects"
+  add_foreign_key "project_tasks", "purchase_orders"
+  add_foreign_key "project_tasks", "task_templates"
+  add_foreign_key "project_tasks", "users", column: "assigned_to_id"
+  add_foreign_key "projects", "users", column: "project_manager_id"
   add_foreign_key "purchase_order_line_items", "pricebook_items"
   add_foreign_key "purchase_order_line_items", "purchase_orders"
   add_foreign_key "purchase_orders", "constructions"
   add_foreign_key "purchase_orders", "suppliers"
   add_foreign_key "supplier_contacts", "contacts"
   add_foreign_key "supplier_contacts", "suppliers"
+  add_foreign_key "task_dependencies", "project_tasks", column: "predecessor_task_id"
+  add_foreign_key "task_dependencies", "project_tasks", column: "successor_task_id"
+  add_foreign_key "task_updates", "project_tasks"
+  add_foreign_key "task_updates", "users"
 end

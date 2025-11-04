@@ -3,6 +3,7 @@ class PurchaseOrder < ApplicationRecord
   belongs_to :construction, counter_cache: true
   belongs_to :supplier, optional: true
   has_many :line_items, class_name: 'PurchaseOrderLineItem', dependent: :destroy
+  has_many :project_tasks, dependent: :nullify
 
   # Nested attributes
   accepts_nested_attributes_for :line_items, allow_destroy: true
@@ -37,6 +38,7 @@ class PurchaseOrder < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
   scope :overdue, -> { where('required_date < ? AND status NOT IN (?)', Date.today, ['received', 'cancelled']) }
   scope :pending_approval, -> { where(status: 'pending') }
+  scope :for_schedule, -> { where(creates_schedule_tasks: true) }
 
   # Instance methods
   def calculate_totals
