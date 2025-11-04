@@ -13,6 +13,7 @@ import SupplierEditPage from './pages/SupplierEditPage'
 import ContactDetailPage from './pages/ContactDetailPage'
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage'
 import PurchaseOrderEditPage from './pages/PurchaseOrderEditPage'
+import MasterSchedulePage from './pages/MasterSchedulePage'
 import DesignerHome from './pages/designer/DesignerHome'
 import TableSettings from './pages/designer/TableSettings'
 import TableBuilder from './pages/designer/TableBuilder'
@@ -29,6 +30,7 @@ function App() {
         <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
         <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
         <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />
+        <Route path="/schedule" element={<AppLayout><MasterSchedulePage /></AppLayout>} />
         <Route path="/price-books" element={<AppLayout><PriceBooksPage /></AppLayout>} />
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
         <Route path="/suppliers" element={<AppLayout><SuppliersPage /></AppLayout>} />

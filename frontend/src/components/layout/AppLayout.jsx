@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import GrokChat, { GrokChatButton } from '../GrokChat'
 import {
   Dialog,
   DialogBackdrop,
@@ -56,7 +55,6 @@ function classNames(...classes) {
 export default function AppLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [grokChatOpen, setGrokChatOpen] = useState(false)
   const location = useLocation()
 
   const isCurrentPath = (href) => {
