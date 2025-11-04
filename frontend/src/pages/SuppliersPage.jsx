@@ -209,9 +209,18 @@ export default function SuppliersPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Supplier Management</h1>
-        <p className="text-gray-600 dark:text-gray-400">Manage supplier-contact relationships and verify matches</p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Supplier Management</h1>
+          <p className="text-gray-600 dark:text-gray-400">Manage supplier-contact relationships and verify matches</p>
+        </div>
+        <Link
+          to="/suppliers/new"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition self-start sm:self-auto"
+        >
+          <UserPlusIcon className="h-5 w-5" />
+          New Supplier
+        </Link>
       </div>
 
       {/* Stats */}
