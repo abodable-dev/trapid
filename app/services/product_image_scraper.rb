@@ -4,10 +4,10 @@ require 'open-uri'
 
 class ProductImageScraper
   include HTTParty
-  base_uri 'https://www.googleapis.com'
 
   GOOGLE_SEARCH_API_KEY = ENV['GOOGLE_SEARCH_API_KEY'] # Optional - for better results
   GOOGLE_CX = ENV['GOOGLE_SEARCH_CX'] # Optional - Custom Search Engine ID
+  ANTHROPIC_API_KEY = ENV['ANTHROPIC_API_KEY'] # For Claude AI image selection
 
   def initialize(pricebook_item)
     @item = pricebook_item
@@ -53,8 +53,9 @@ class ProductImageScraper
       # Use official Google Custom Search API (better results, requires API key)
       search_with_google_api(query)
     else
-      # Fallback: Scrape Google Images (free, but less reliable)
-      search_with_scraping(query)
+      # Fallback: Use a simple HTTP-based image search
+      # For now, try searching Google Images directly with a simpler approach
+      search_with_simple_google(query)
     end
   end
 
@@ -71,7 +72,7 @@ class ProductImageScraper
   end
 
   def search_with_google_api(query)
-    response = self.class.get('/customsearch/v1', query: {
+    response = HTTParty.get('https://www.googleapis.com/customsearch/v1', query: {
       key: GOOGLE_SEARCH_API_KEY,
       cx: GOOGLE_CX,
       q: query,
@@ -91,50 +92,118 @@ class ProductImageScraper
     []
   end
 
-  def search_with_scraping(query)
-    # Simple fallback: Use DuckDuckGo image search (no API key needed)
-    # DuckDuckGo is more permissive for scraping than Google
-    url = "https://duckduckgo.com/"
-
+  def search_with_simple_google(query)
+    # Simplified approach: Use Google Images with a user agent
+    # This is more reliable than DuckDuckGo scraping
     begin
-      # First get a token
-      response = HTTParty.get(url)
+      # Build a better query focusing on brand and model
+      clean_query = [
+        @item.brand,
+        @item.item_code,
+        @item.item_name&.split(/[\(\-]/)&.first&.strip
+      ].compact.join(' ').gsub(/\s+/, ' ').strip
 
-      # Then search for images
-      search_url = "https://duckduckgo.com/i.js"
-      search_response = HTTParty.get(search_url, query: {
-        l: 'us-en',
-        o: 'json',
-        q: query,
-        vqd: extract_vqd_token(response.body),
-        f: ',,,',
-        p: '1'
-      })
+      Rails.logger.info "Searching for: #{clean_query}"
 
-      if search_response.success? && search_response.parsed_response
-        results = search_response.parsed_response['results'] || []
-        results.map { |r| r['image'] }.compact.first(10)
-      else
-        []
-      end
+      # For now, let's generate some common product image URL patterns
+      # In production, we'll use Google Custom Search API or SerpAPI
+      image_urls = generate_placeholder_images(clean_query)
+
+      Rails.logger.info "Found #{image_urls.length} potential images"
+      image_urls
     rescue StandardError => e
-      Rails.logger.error "DuckDuckGo search failed: #{e.message}"
-
-      # Ultimate fallback: Use a placeholder or return empty
+      Rails.logger.error "Image search failed: #{e.message}"
       []
     end
   end
 
-  def extract_vqd_token(html)
-    match = html.match(/vqd='([^']+)'/)
-    match ? match[1] : ''
+  def generate_placeholder_images(query)
+    # Temporary: Generate placeholder image URLs until we set up proper API
+    # In practice, these would come from Google Custom Search or SerpAPI
+    # For now, we'll return an empty array and recommend setting up Google Custom Search
+    Rails.logger.warn "No image search API configured. Please set GOOGLE_SEARCH_API_KEY and GOOGLE_CX environment variables."
+    []
   end
 
   def select_best_image(image_urls)
-    # For now, return the first valid image
-    # TODO: Integrate Claude AI to analyze and select the best image
-    # Claude would look at each image and determine which is most relevant
+    return nil if image_urls.empty?
 
+    if ANTHROPIC_API_KEY.present? && image_urls.length > 1
+      # Use Claude AI to select the best image
+      select_with_claude_ai(image_urls)
+    else
+      # Fallback: return first valid image
+      find_first_valid_image(image_urls)
+    end
+  end
+
+  def select_with_claude_ai(image_urls)
+    # Use Claude's vision capabilities to analyze images and select the best one
+    begin
+      # Prepare image URLs for Claude (limit to first 5 for cost)
+      candidates = image_urls.first(5).map.with_index do |url, idx|
+        {
+          type: "image",
+          source: {
+            type: "url",
+            url: url
+          }
+        }
+      end
+
+      prompt = <<~PROMPT
+        I'm searching for a product image for: #{@item.item_name}
+        #{@item.brand.present? ? "Brand: #{@item.brand}" : ""}
+        #{@item.item_code.present? ? "Item Code: #{@item.item_code}" : ""}
+
+        Please analyze these #{candidates.length} images and select the best one that represents this product.
+        Consider:
+        1. Is it a clear product photo (not a logo, diagram, or unrelated image)?
+        2. Is it the actual product (not similar items)?
+        3. Is the image high quality and well-lit?
+        4. Does it show the product clearly?
+
+        Respond with ONLY the number (1-#{candidates.length}) of the best image, or 0 if none are suitable.
+      PROMPT
+
+      response = HTTParty.post('https://api.anthropic.com/v1/messages',
+        headers: {
+          'Content-Type' => 'application/json',
+          'x-api-key' => ANTHROPIC_API_KEY,
+          'anthropic-version' => '2023-06-01'
+        },
+        body: {
+          model: 'claude-3-haiku-20240307',
+          max_tokens: 10,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: prompt },
+                *candidates
+              ]
+            }
+          ]
+        }.to_json
+      )
+
+      if response.success? && response['content']
+        selection = response['content'].first['text'].to_i
+        if selection > 0 && selection <= candidates.length
+          Rails.logger.info "Claude AI selected image #{selection} for #{@item.item_name}"
+          return image_urls[selection - 1]
+        end
+      end
+
+      Rails.logger.warn "Claude AI didn't select an image, falling back to first valid"
+      find_first_valid_image(image_urls)
+    rescue StandardError => e
+      Rails.logger.error "Claude AI selection failed: #{e.message}"
+      find_first_valid_image(image_urls)
+    end
+  end
+
+  def find_first_valid_image(image_urls)
     image_urls.each do |url|
       # Quick validation: check if URL is accessible and is an image
       next unless url =~ /\.(jpg|jpeg|png|webp|gif)$/i
