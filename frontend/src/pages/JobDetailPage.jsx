@@ -5,7 +5,6 @@ import {
   CurrencyDollarIcon,
   ChartBarIcon,
   DocumentTextIcon,
-  Bars3Icon,
   PencilIcon,
   XMarkIcon,
   CheckIcon,
@@ -23,12 +22,6 @@ const tabs = [
   { name: 'Settings' },
 ]
 
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Active Jobs', href: '/active-jobs' },
-  { name: 'Import', href: '/import' },
-]
-
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
@@ -40,7 +33,6 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('Overview')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editedJob, setEditedJob] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -151,70 +143,7 @@ export default function JobDetailPage() {
   ]
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar for desktop */}
-      <div className="hidden md:flex md:w-64 md:flex-col">
-        <div className="flex flex-col flex-grow bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto">
-          <div className="flex items-center flex-shrink-0 px-4 py-5 border-b border-gray-200 dark:border-gray-800">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Trapid</h1>
-          </div>
-          <nav className="flex-1 px-3 py-4 space-y-1">
-            {navigation.map((item) => (
-              <button
-                key={item.name}
-                onClick={() => navigate(item.href)}
-                className="w-full text-left group flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                {item.name}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
-
-      {/* Mobile menu button */}
-      <div className="md:hidden fixed top-0 left-0 z-40 p-4">
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg"
-        >
-          <Bars3Icon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-        </button>
-      </div>
-
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 md:hidden">
-            <div className="flex items-center justify-between px-4 py-5 border-b border-gray-200 dark:border-gray-800">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Trapid</h1>
-              <button onClick={() => setSidebarOpen(false)}>
-                <span className="text-gray-600 dark:text-gray-300">×</span>
-              </button>
-            </div>
-            <nav className="px-3 py-4 space-y-1">
-              {navigation.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => {
-                    navigate(item.href)
-                    setSidebarOpen(false)
-                  }}
-                  className="w-full text-left group flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  {item.name}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </>
-      )}
-
-      <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+    <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
           <div className="px-8 py-6">
@@ -577,6 +506,5 @@ export default function JobDetailPage() {
           )}
         </div>
       </div>
-    </div>
   )
 }

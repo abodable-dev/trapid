@@ -25,7 +25,7 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
         <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
-        <Route path="/jobs/:id" element={<JobDetailPage />} />
+        <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />
         <Route path="/price-books" element={<AppLayout><PriceBooksPage /></AppLayout>} />
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
         <Route path="/suppliers" element={<AppLayout><SuppliersPage /></AppLayout>} />
