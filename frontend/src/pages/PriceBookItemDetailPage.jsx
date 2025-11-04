@@ -314,6 +314,7 @@ export default function PriceBookItemDetailPage() {
                                 <Switch
                                   checked={isDefaultSupplier}
                                   onChange={(checked) => {
+                                    console.log('Toggle clicked!', { checked, isDefaultSupplier, supplierId: history.supplier.id })
                                     if (!isDefaultSupplier) {
                                       handleSetDefaultSupplier(null, history.supplier.id)
                                     }
