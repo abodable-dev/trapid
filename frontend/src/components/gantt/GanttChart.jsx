@@ -1,8 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import GanttHeader from './GanttHeader'
 import GanttGrid from './GanttGrid'
 import TaskRow from './TaskRow'
+import ColorCustomizationMenu from './ColorCustomizationMenu'
 import { getProjectDateRange } from './utils/dateCalculations'
+import { getStoredColorConfig, saveColorConfig } from './utils/colorSchemes'
 
 /**
  * GanttChart - Main Gantt chart container
@@ -12,6 +14,12 @@ export default function GanttChart({ tasks = [], projectInfo = {} }) {
   const [zoomLevel, setZoomLevel] = useState('weeks') // days, weeks, months
   const [colorBy, setColorBy] = useState('status') // status or category
   const [showWeekends, setShowWeekends] = useState(false)
+  const [colorConfig, setColorConfig] = useState(getStoredColorConfig())
+
+  // Save color config when it changes
+  useEffect(() => {
+    saveColorConfig(colorConfig)
+  }, [colorConfig])
 
   // Calculate pixels per day based on zoom level
   const pixelsPerDay = useMemo(() => {
@@ -68,6 +76,14 @@ export default function GanttChart({ tasks = [], projectInfo = {} }) {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Color Customization */}
+          <ColorCustomizationMenu
+            tasks={tasks}
+            colorConfig={colorConfig}
+            onColorChange={setColorConfig}
+            colorBy={colorBy}
+          />
+
           {/* Zoom Controls */}
           <div className="flex items-center gap-1">
             <button
@@ -146,6 +162,7 @@ export default function GanttChart({ tasks = [], projectInfo = {} }) {
               projectEndDate={projectEndDate}
               pixelsPerDay={pixelsPerDay}
               colorBy={colorBy}
+              colorConfig={colorConfig}
             />
           ))}
         </div>

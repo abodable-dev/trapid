@@ -6,7 +6,7 @@ import { calculateTaskPosition, calculateTaskWidth, formatDate } from './utils/d
  * TaskRow - Single row in Gantt chart (task info + timeline bar)
  * Implements Monday.com's hover highlight pattern
  */
-export default function TaskRow({ task, projectStartDate, projectEndDate, pixelsPerDay, colorBy }) {
+export default function TaskRow({ task, projectStartDate, projectEndDate, pixelsPerDay, colorBy, colorConfig }) {
   const [isHovered, setIsHovered] = useState(false)
 
   const left = calculateTaskPosition(task.start_date, projectStartDate, pixelsPerDay)
@@ -48,6 +48,7 @@ export default function TaskRow({ task, projectStartDate, projectEndDate, pixels
           width={width}
           pixelsPerDay={pixelsPerDay}
           colorBy={colorBy}
+          colorConfig={colorConfig}
         />
       </div>
     </div>

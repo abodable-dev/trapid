@@ -1,11 +1,14 @@
 import { useState } from 'react'
-import { getStatusColor } from './utils/dateCalculations'
+import { Label, Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react'
+import { ChevronUpDownIcon } from '@heroicons/react/16/solid'
+import { CheckIcon } from '@heroicons/react/20/solid'
+import { getStatusColor, getCategoryColor } from './utils/colorSchemes'
 
 /**
  * TaskTable - Inline editing table view for tasks
  * Inspired by Monday.com and Airtable's spreadsheet-like interface
  */
-export default function TaskTable({ tasks = [], onTaskUpdate }) {
+export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig }) {
   const [editingCell, setEditingCell] = useState(null)
   const [editValue, setEditValue] = useState('')
 
@@ -31,15 +34,9 @@ export default function TaskTable({ tasks = [], onTaskUpdate }) {
     return editingCell?.taskId === taskId && editingCell?.field === field
   }
 
-  const getStatusBadgeClass = (status) => {
-    const classes = {
-      'not_started': 'bg-gray-100 text-gray-700',
-      'in_progress': 'bg-blue-100 text-blue-700',
-      'complete': 'bg-green-100 text-green-700',
-      'blocked': 'bg-red-100 text-red-700',
-      'on_hold': 'bg-orange-100 text-orange-700',
-    }
-    return classes[status] || classes['not_started']
+  const getStatusBadge = (status) => {
+    const colorObj = getStatusColor(status, colorConfig)
+    return colorObj.badge
   }
 
   const formatDate = (date) => {
@@ -150,7 +147,7 @@ export default function TaskTable({ tasks = [], onTaskUpdate }) {
 
                 {/* Status */}
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(task.status)}`}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset ${getStatusBadge(task.status)}`}>
                     {task.status ? task.status.replace('_', ' ') : 'Not Started'}
                   </span>
                 </td>
@@ -191,7 +188,7 @@ export default function TaskTable({ tasks = [], onTaskUpdate }) {
                         className="h-2 rounded-full transition-all"
                         style={{
                           width: `${task.progress || 0}%`,
-                          backgroundColor: getStatusColor(task.status),
+                          backgroundColor: getStatusColor(task.status, colorConfig).bar,
                         }}
                       />
                     </div>

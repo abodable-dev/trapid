@@ -1,13 +1,15 @@
-import { getStatusColor, getCategoryColor } from './utils/dateCalculations'
+import { getStatusColor, getCategoryColor } from './utils/colorSchemes'
 
 /**
  * TaskBar - Individual task bar in timeline
  * Inspired by Monday.com's clean, minimal design
  */
-export default function TaskBar({ task, left, width, pixelsPerDay, colorBy = 'status' }) {
-  const backgroundColor = colorBy === 'status'
-    ? getStatusColor(task.status)
-    : getCategoryColor(task.category)
+export default function TaskBar({ task, left, width, pixelsPerDay, colorBy = 'status', colorConfig }) {
+  const colorObj = colorBy === 'status'
+    ? getStatusColor(task.status, colorConfig)
+    : getCategoryColor(task.category, colorConfig)
+
+  const backgroundColor = colorObj.bar
 
   const progressWidth = task.progress ? `${task.progress}%` : '0%'
 

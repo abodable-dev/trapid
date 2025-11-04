@@ -166,6 +166,7 @@ export default function MasterSchedulePage() {
                   {viewMode === 'table' && (
                     <TaskTable
                       tasks={scheduleData.tasks}
+                      colorConfig={{}}
                       onTaskUpdate={(taskId, field, value) => {
                         console.log('Update task:', taskId, field, value)
                         // Will implement API update in Phase 2
