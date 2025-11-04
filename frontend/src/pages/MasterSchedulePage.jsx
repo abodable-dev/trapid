@@ -1,49 +1,46 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import api from '../utils/api'
+import { useParams, useNavigate } from 'react-router-dom'
+import { api } from '../api'
 
 export default function MasterSchedulePage() {
-  const [projects, setProjects] = useState([])
-  const [selectedProject, setSelectedProject] = useState(null)
+  const { id } = useParams() // Get job/construction ID from URL
+  const [construction, setConstruction] = useState(null)
+  const [project, setProject] = useState(null)
+  const [scheduleData, setScheduleData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => {
-    loadProjects()
-  }, [])
+    loadConstructionAndSchedule()
+  }, [id])
 
-  useEffect(() => {
-    if (selectedProject) {
-      loadProjectSchedule(selectedProject.id)
-    }
-  }, [selectedProject])
-
-  const loadProjects = async () => {
+  const loadConstructionAndSchedule = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/api/v1/projects')
-      setProjects(response.projects || [])
 
-      // Auto-select first project if available
-      if (response.projects && response.projects.length > 0) {
-        setSelectedProject(response.projects[0])
+      // Load construction/job details
+      const constructionResponse = await api.get(`/api/v1/constructions/${id}`)
+      setConstruction(constructionResponse.construction)
+
+      // Find the project for this construction
+      const projectsResponse = await api.get('/api/v1/projects')
+      const jobProject = projectsResponse.projects?.find(p => p.construction_id === parseInt(id))
+
+      if (jobProject) {
+        setProject(jobProject)
+
+        // Load the Gantt schedule for this project
+        const scheduleResponse = await api.get(`/api/v1/projects/${jobProject.id}/gantt`)
+        setScheduleData(scheduleResponse)
+      } else {
+        setError('No schedule found for this job')
       }
     } catch (err) {
-      console.error('Failed to load projects:', err)
-      setError('Failed to load projects')
+      console.error('Failed to load schedule:', err)
+      setError('Failed to load schedule')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const loadProjectSchedule = async (projectId) => {
-    try {
-      const response = await api.get(`/api/v1/projects/${projectId}/gantt`)
-      // Will implement Gantt chart rendering here
-      console.log('Schedule data:', response)
-    } catch (err) {
-      console.error('Failed to load schedule:', err)
     }
   }
 
@@ -52,7 +49,7 @@ export default function MasterSchedulePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-          <p className="mt-2 text-sm text-gray-500">Loading projects...</p>
+          <p className="mt-2 text-sm text-gray-500">Loading schedule...</p>
         </div>
       </div>
     )
@@ -63,40 +60,13 @@ export default function MasterSchedulePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600">{error}</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (projects.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
+          <button
+            type="button"
+            onClick={() => navigate(`/jobs/${id}`)}
+            className="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-semibold text-gray-900">No projects</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by creating a new project.</p>
-          <div className="mt-6">
-            <button
-              type="button"
-              onClick={() => navigate('/active-jobs')}
-              className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-            >
-              View Active Jobs
-            </button>
-          </div>
+            Back to Job
+          </button>
         </div>
       </div>
     )
@@ -107,48 +77,42 @@ export default function MasterSchedulePage() {
       <div className="py-10">
         <header>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">
-              Master Schedule
-            </h1>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">
+                  Master Schedule
+                </h1>
+                {construction && (
+                  <p className="mt-1 text-sm text-gray-500">{construction.title}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate(`/jobs/${id}`)}
+                className="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              >
+                Back to Job
+              </button>
+            </div>
           </div>
         </header>
         <main>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            {/* Project Selector */}
-            <div className="mt-8">
-              <label htmlFor="project" className="block text-sm font-medium text-gray-700">
-                Select Project
-              </label>
-              <select
-                id="project"
-                name="project"
-                className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                value={selectedProject?.id || ''}
-                onChange={(e) => {
-                  const project = projects.find(p => p.id === parseInt(e.target.value))
-                  setSelectedProject(project)
-                }}
-              >
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name} - {project.status}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Project Info */}
-            {selectedProject && (
+            {project && (
               <div className="mt-6 bg-white shadow sm:rounded-lg">
                 <div className="px-4 py-5 sm:p-6">
                   <h3 className="text-lg font-medium leading-6 text-gray-900">
-                    {selectedProject.name}
+                    {project.name}
                   </h3>
                   <div className="mt-2 max-w-xl text-sm text-gray-500">
-                    <p>Project Code: {selectedProject.project_code}</p>
-                    <p>Start Date: {selectedProject.start_date}</p>
-                    <p>End Date: {selectedProject.planned_end_date || 'Not set'}</p>
-                    <p>Status: <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">{selectedProject.status}</span></p>
+                    <p>Project Code: {project.project_code}</p>
+                    <p>Start Date: {project.start_date}</p>
+                    <p>End Date: {project.planned_end_date || 'Not set'}</p>
+                    <p>Status: <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">{project.status}</span></p>
+                    {scheduleData && (
+                      <p className="mt-2">Tasks: {scheduleData.tasks?.length || 0}</p>
+                    )}
                   </div>
                 </div>
               </div>

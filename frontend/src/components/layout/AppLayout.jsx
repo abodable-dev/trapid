@@ -24,7 +24,6 @@ import {
   BriefcaseIcon,
   BookOpenIcon,
   UserGroupIcon,
-  CalendarDaysIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
@@ -32,7 +31,6 @@ import { ChevronDownIcon } from '@heroicons/react/20/solid'
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
-  { name: 'Master Schedule', href: '/schedule', icon: CalendarDaysIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
   { name: 'Suppliers', href: '/suppliers', icon: UserGroupIcon },
 ]
@@ -394,17 +392,10 @@ export default function AppLayout({ children }) {
         {/* Main content */}
         <main className="py-10">
           <div className="px-4 sm:px-6 lg:px-8">
-            {typeof children === 'function'
-              ? children({ onOpenGrokChat: () => setGrokChatOpen(true) })
-              : children
-            }
+            {children}
           </div>
         </main>
       </div>
-
-      {/* Grok Chat */}
-      <GrokChat isOpen={grokChatOpen} onClose={() => setGrokChatOpen(false)} />
-      {!grokChatOpen && <GrokChatButton onClick={() => setGrokChatOpen(true)} />}
     </div>
   )
 }
