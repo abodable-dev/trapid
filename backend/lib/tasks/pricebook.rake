@@ -71,15 +71,18 @@ namespace :pricebook do
       # Find supplier by name
       supplier_id = row[:supplier_name].present? ? supplier_map[row[:supplier_name]] : nil
 
+      # Parse price, handling empty strings
+      current_price = row[:current_price].present? && !row[:current_price].strip.empty? ? row[:current_price].to_f : nil
+
       item = PricebookItem.create!(
         item_code: row[:item_code],
         item_name: row[:item_name],
-        category: row[:category],
-        unit_of_measure: row[:unit_of_measure] || 'Each',
-        current_price: row[:current_price]&.to_f,
+        category: row[:category].present? && !row[:category].strip.empty? ? row[:category] : nil,
+        unit_of_measure: row[:unit_of_measure].present? ? row[:unit_of_measure] : 'Each',
+        current_price: current_price,
         supplier_id: supplier_id,
-        brand: row[:brand],
-        notes: row[:notes],
+        brand: row[:brand].present? && !row[:brand].strip.empty? ? row[:brand] : nil,
+        notes: row[:notes].present? && !row[:notes].strip.empty? ? row[:notes] : nil,
         is_active: row[:is_active] == 'false' ? false : true,
         needs_pricing_review: row[:needs_pricing_review] == 'true' ? true : false,
         price_last_updated_at: row[:price_last_updated_at].present? ? Time.parse(row[:price_last_updated_at]) : nil

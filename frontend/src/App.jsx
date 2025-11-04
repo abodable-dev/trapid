@@ -6,6 +6,7 @@ import TablePage from './pages/TablePage'
 import ActiveJobsPage from './pages/ActiveJobsPage'
 import JobDetailPage from './pages/JobDetailPage'
 import PriceBooksPage from './pages/PriceBooksPage'
+import PriceBookItemDetailPage from './pages/PriceBookItemDetailPage'
 import SuppliersPage from './pages/SuppliersPage'
 import SupplierDetailPage from './pages/SupplierDetailPage'
 import ContactDetailPage from './pages/ContactDetailPage'
@@ -26,6 +27,7 @@ function App() {
         <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
         <Route path="/jobs/:id" element={<JobDetailPage />} />
         <Route path="/price-books" element={<AppLayout><PriceBooksPage /></AppLayout>} />
+        <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
         <Route path="/suppliers" element={<AppLayout><SuppliersPage /></AppLayout>} />
         <Route path="/suppliers/:id" element={<AppLayout><SupplierDetailPage /></AppLayout>} />
         <Route path="/contacts/:id" element={<AppLayout><ContactDetailPage /></AppLayout>} />
