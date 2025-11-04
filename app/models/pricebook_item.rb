@@ -6,7 +6,7 @@ class PricebookItem < ApplicationRecord
   # Validations
   validates :item_code, presence: true, uniqueness: true
   validates :item_name, presence: true
-  validates :current_price, numericality: { greater_than_or_equal_to: 0, allow_nil: true }
+  validates :current_price, numericality: { allow_nil: true }  # Allow negative prices for rebates/credits
   validates :unit_of_measure, presence: true
 
   # Callbacks
