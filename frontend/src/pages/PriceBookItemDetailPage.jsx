@@ -13,7 +13,10 @@ import {
   CheckCircleIcon,
   ClockIcon,
   ShieldCheckIcon,
+  PlusIcon,
+  PencilIcon,
 } from '@heroicons/react/24/outline'
+import AddPriceModal from '../components/modals/AddPriceModal'
 
 export default function PriceBookItemDetailPage() {
   const { id } = useParams()
@@ -21,6 +24,7 @@ export default function PriceBookItemDetailPage() {
   const [item, setItem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isAddPriceModalOpen, setIsAddPriceModalOpen] = useState(false)
 
   useEffect(() => {
     loadItem()
@@ -230,10 +234,19 @@ export default function PriceBookItemDetailPage() {
 
             {/* Price History Card */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <ChartBarIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                Price History
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <ChartBarIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  Price History
+                </h2>
+                <button
+                  onClick={() => setIsAddPriceModalOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  Add Price
+                </button>
+              </div>
 
               {item.price_histories && item.price_histories.length > 0 ? (
                 <div className="overflow-hidden">
@@ -411,6 +424,14 @@ export default function PriceBookItemDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Add Price Modal */}
+      <AddPriceModal
+        isOpen={isAddPriceModalOpen}
+        onClose={() => setIsAddPriceModalOpen(false)}
+        itemId={id}
+        onSuccess={loadItem}
+      />
     </div>
   )
 }
