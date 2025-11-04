@@ -70,8 +70,12 @@ end
 
 puts "🏗️  Importing Malbon Street Construction Job from CSV..."
 
-# Find the CSV file
-csv_path = Rails.root.join('..', 'easybuildapp development Purchase Orders-3.csv')
+# Find the CSV file (in backend root on Heroku, parent dir locally)
+csv_path = if File.exist?(Rails.root.join('easybuildapp development Purchase Orders-3.csv'))
+  Rails.root.join('easybuildapp development Purchase Orders-3.csv')
+else
+  Rails.root.join('..', 'easybuildapp development Purchase Orders-3.csv')
+end
 
 unless File.exist?(csv_path)
   puts "❌ CSV file not found at: #{csv_path}"
