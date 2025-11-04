@@ -306,12 +306,19 @@ export default function PriceBookItemDetailPage() {
                                 {changePercent !== 0 && ` (${change > 0 ? '+' : ''}${changePercent}%)`}
                               </span>
                             </td>
-                            <td className="px-3 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                            <td className="px-3 py-2 text-center">
                               {history.supplier ? (
-                                <div className="inline-block pointer-events-auto">
+                                <div
+                                  className="inline-block"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <Switch
                                     checked={isDefaultSupplier}
-                                    onChange={() => handleSetDefaultSupplier(null, history.supplier.id)}
+                                    onChange={(checked) => {
+                                      if (!isDefaultSupplier) {
+                                        handleSetDefaultSupplier(null, history.supplier.id)
+                                      }
+                                    }}
                                     className={`${
                                       isDefaultSupplier ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
                                     } relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer`}
