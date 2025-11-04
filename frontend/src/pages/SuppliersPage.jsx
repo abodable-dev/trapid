@@ -28,8 +28,6 @@ export default function SuppliersPage() {
   // Column visibility state
   const [visibleColumns, setVisibleColumns] = useState({
     supplier: true,
-    email: true,
-    phone: true,
     rating: true,
     items: true,
     contact: true,
@@ -40,11 +38,9 @@ export default function SuppliersPage() {
   // Define all available columns
   const availableColumns = [
     { key: 'supplier', label: 'Supplier Name' },
-    { key: 'email', label: 'Email' },
-    { key: 'phone', label: 'Phone' },
     { key: 'rating', label: 'Rating' },
     { key: 'items', label: 'Items Count' },
-    { key: 'contact', label: 'Contact' },
+    { key: 'contact', label: 'Supplier Details' },
     { key: 'status', label: 'Status' },
     { key: 'actions', label: 'Actions' }
   ]
@@ -283,16 +279,6 @@ export default function SuppliersPage() {
                     Supplier
                   </th>
                 )}
-                {visibleColumns.email && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Email
-                  </th>
-                )}
-                {visibleColumns.phone && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Phone
-                  </th>
-                )}
                 {visibleColumns.rating && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Rating
@@ -305,7 +291,7 @@ export default function SuppliersPage() {
                 )}
                 {visibleColumns.contact && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Contact
+                    Supplier Details
                   </th>
                 )}
                 {visibleColumns.status && (
@@ -333,32 +319,6 @@ export default function SuppliersPage() {
                       </Link>
                     </td>
                   )}
-                  {visibleColumns.email && (
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        {supplier.contact_emails && supplier.contact_emails.length > 0 ? (
-                          supplier.contact_emails.map((email, idx) => (
-                            <div key={idx} className="truncate max-w-xs">{email}</div>
-                          ))
-                        ) : (
-                          '-'
-                        )}
-                      </div>
-                    </td>
-                  )}
-                  {visibleColumns.phone && (
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        {supplier.contact_phones && supplier.contact_phones.length > 0 ? (
-                          supplier.contact_phones.map((phone, idx) => (
-                            <div key={idx}>{phone}</div>
-                          ))
-                        ) : (
-                          '-'
-                        )}
-                      </div>
-                    </td>
-                  )}
                   {visibleColumns.rating && (
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1">
@@ -377,24 +337,41 @@ export default function SuppliersPage() {
                     </td>
                   )}
                   {visibleColumns.contact && (
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {supplier.contact ? (
-                        <div>
+                    <td className="px-6 py-4">
+                      <div className="space-y-1">
+                        {supplier.contact ? (
                           <Link
                             to={`/contacts/${supplier.contact.id}`}
                             className="text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium"
                           >
                             {supplier.contact.full_name}
                           </Link>
-                          {supplier.contact.email && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {supplier.contact.email}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-500 dark:text-gray-400">No contact</span>
-                      )}
+                        ) : (
+                          <span className="text-sm text-gray-500 dark:text-gray-400">No contact</span>
+                        )}
+
+                        {/* Email addresses */}
+                        {supplier.contact_emails && supplier.contact_emails.length > 0 && (
+                          <div className="space-y-0.5">
+                            {supplier.contact_emails.map((email, idx) => (
+                              <div key={idx} className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-xs">
+                                {email}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Phone numbers */}
+                        {supplier.contact_phones && supplier.contact_phones.length > 0 && (
+                          <div className="space-y-0.5">
+                            {supplier.contact_phones.map((phone, idx) => (
+                              <div key={idx} className="text-xs text-gray-600 dark:text-gray-400">
+                                {phone}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </td>
                   )}
                   {visibleColumns.status && (
