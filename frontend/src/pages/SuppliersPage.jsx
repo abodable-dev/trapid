@@ -7,8 +7,10 @@ import {
   ExclamationTriangleIcon,
   XCircleIcon,
   ArrowPathIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline'
+import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
 
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState([])
@@ -21,6 +23,38 @@ export default function SuppliersPage() {
   const [selectedSupplier, setSelectedSupplier] = useState(null)
   const [selectedContact, setSelectedContact] = useState(null)
   const [showLinkModal, setShowLinkModal] = useState(false)
+  const [showColumnModal, setShowColumnModal] = useState(false)
+
+  // Column visibility state
+  const [visibleColumns, setVisibleColumns] = useState({
+    supplier: true,
+    email: true,
+    phone: true,
+    rating: true,
+    items: true,
+    contact: true,
+    status: true,
+    actions: true
+  })
+
+  // Define all available columns
+  const availableColumns = [
+    { key: 'supplier', label: 'Supplier Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'rating', label: 'Rating' },
+    { key: 'items', label: 'Items Count' },
+    { key: 'contact', label: 'Contact' },
+    { key: 'status', label: 'Status' },
+    { key: 'actions', label: 'Actions' }
+  ]
+
+  const toggleColumn = (columnKey) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey]
+    }))
+  }
 
   useEffect(() => {
     loadSuppliers()
@@ -208,6 +242,14 @@ export default function SuppliersPage() {
         </div>
 
         <div className="flex gap-2">
+          <button
+            onClick={() => setShowColumnModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+          >
+            <AdjustmentsHorizontalIcon className="h-5 w-5" />
+            Columns
+          </button>
+
           <select
             value={matchStatus}
             onChange={(e) => setMatchStatus(e.target.value)}
@@ -236,87 +278,151 @@ export default function SuppliersPage() {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Supplier
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Contact
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
+                {visibleColumns.supplier && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Supplier
+                  </th>
+                )}
+                {visibleColumns.email && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Email
+                  </th>
+                )}
+                {visibleColumns.phone && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Phone
+                  </th>
+                )}
+                {visibleColumns.rating && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Rating
+                  </th>
+                )}
+                {visibleColumns.items && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Items
+                  </th>
+                )}
+                {visibleColumns.contact && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Contact
+                  </th>
+                )}
+                {visibleColumns.status && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                )}
+                {visibleColumns.actions && (
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredSuppliers.map((supplier) => (
                 <tr key={supplier.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Link
-                      to={`/suppliers/${supplier.id}`}
-                      className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
-                    >
-                      {supplier.name}
-                    </Link>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {supplier.pricebook_items?.length || 0} items
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {supplier.contact ? (
-                      <div>
-                        <Link
-                          to={`/contacts/${supplier.contact.id}`}
-                          className="text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium"
-                        >
-                          {supplier.contact.full_name}
-                        </Link>
-                        {supplier.contact.email && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {supplier.contact.email}
-                          </div>
+                  {visibleColumns.supplier && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Link
+                        to={`/suppliers/${supplier.id}`}
+                        className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                      >
+                        {supplier.name}
+                      </Link>
+                    </td>
+                  )}
+                  {visibleColumns.email && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {supplier.email || '-'}
+                      </span>
+                    </td>
+                  )}
+                  {visibleColumns.phone && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {supplier.phone || '-'}
+                      </span>
+                    </td>
+                  )}
+                  {visibleColumns.rating && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm text-gray-900 dark:text-white">
+                          {supplier.rating || 0}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">/ 5</span>
+                      </div>
+                    </td>
+                  )}
+                  {visibleColumns.items && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {supplier.pricebook_items?.length || 0}
+                      </span>
+                    </td>
+                  )}
+                  {visibleColumns.contact && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {supplier.contact ? (
+                        <div>
+                          <Link
+                            to={`/contacts/${supplier.contact.id}`}
+                            className="text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                          >
+                            {supplier.contact.full_name}
+                          </Link>
+                          {supplier.contact.email && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {supplier.contact.email}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500 dark:text-gray-400">No contact</span>
+                      )}
+                    </td>
+                  )}
+                  {visibleColumns.status && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getMatchBadge(supplier)}
+                    </td>
+                  )}
+                  {visibleColumns.actions && (
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-2">
+                        {!supplier.contact_id && (
+                          <button
+                            onClick={() => {
+                              setSelectedSupplier(supplier)
+                              setShowLinkModal(true)
+                            }}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            Link
+                          </button>
+                        )}
+                        {supplier.contact_id && !supplier.is_verified && (
+                          <button
+                            onClick={() => verifyMatch(supplier.id)}
+                            className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                          >
+                            Verify
+                          </button>
+                        )}
+                        {supplier.contact_id && (
+                          <button
+                            onClick={() => unlinkSupplier(supplier.id)}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                          >
+                            Unlink
+                          </button>
                         )}
                       </div>
-                    ) : (
-                      <span className="text-sm text-gray-500 dark:text-gray-400">No contact</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getMatchBadge(supplier)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      {!supplier.contact_id && (
-                        <button
-                          onClick={() => {
-                            setSelectedSupplier(supplier)
-                            setShowLinkModal(true)
-                          }}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                        >
-                          Link
-                        </button>
-                      )}
-                      {supplier.contact_id && !supplier.is_verified && (
-                        <button
-                          onClick={() => verifyMatch(supplier.id)}
-                          className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
-                        >
-                          Verify
-                        </button>
-                      )}
-                      {supplier.contact_id && (
-                        <button
-                          onClick={() => unlinkSupplier(supplier.id)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          Unlink
-                        </button>
-                      )}
-                    </div>
-                  </td>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -384,6 +490,15 @@ export default function SuppliersPage() {
           </div>
         </div>
       )}
+
+      {/* Column Visibility Modal */}
+      <ColumnVisibilityModal
+        isOpen={showColumnModal}
+        onClose={() => setShowColumnModal(false)}
+        columns={availableColumns}
+        visibleColumns={visibleColumns}
+        onToggleColumn={toggleColumn}
+      />
     </div>
   )
 }
