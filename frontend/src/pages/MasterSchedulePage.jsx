@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { ChartBarIcon, TableCellsIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import GanttChart from '../components/gantt/GanttChart'
+import TaskTable from '../components/gantt/TaskTable'
 
 export default function MasterSchedulePage() {
   const { id } = useParams() // Get job/construction ID from URL
@@ -10,6 +12,7 @@ export default function MasterSchedulePage() {
   const [scheduleData, setScheduleData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [viewMode, setViewMode] = useState('gantt') // 'gantt' or 'table'
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -119,13 +122,57 @@ export default function MasterSchedulePage() {
               </div>
             )}
 
-            {/* Gantt Chart */}
-            <div className="mt-8">
+            {/* View Toggle */}
+            <div className="mt-8 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setViewMode('gantt')}
+                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                    viewMode === 'gantt'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <ChartBarIcon className="h-5 w-5" />
+                  Gantt Chart
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                    viewMode === 'table'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <TableCellsIcon className="h-5 w-5" />
+                  Table View
+                </button>
+              </div>
+              <p className="text-sm text-gray-500">
+                {scheduleData?.tasks?.length || 0} tasks
+              </p>
+            </div>
+
+            {/* Gantt Chart or Table View */}
+            <div className="mt-4">
               {scheduleData && scheduleData.tasks && (
-                <GanttChart
-                  tasks={scheduleData.tasks}
-                  projectInfo={scheduleData.project}
-                />
+                <>
+                  {viewMode === 'gantt' && (
+                    <GanttChart
+                      tasks={scheduleData.tasks}
+                      projectInfo={scheduleData.project}
+                    />
+                  )}
+                  {viewMode === 'table' && (
+                    <TaskTable
+                      tasks={scheduleData.tasks}
+                      onTaskUpdate={(taskId, field, value) => {
+                        console.log('Update task:', taskId, field, value)
+                        // Will implement API update in Phase 2
+                      }}
+                    />
+                  )}
+                </>
               )}
             </div>
           </div>
