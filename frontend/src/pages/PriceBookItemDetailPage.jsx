@@ -51,17 +51,20 @@ export default function PriceBookItemDetailPage() {
     }
 
     console.log('Setting default supplier:', supplierId)
+    console.log('Item ID:', id)
+    console.log('Making request to:', `/api/v1/pricebook/${id}/set_default_supplier`)
 
     try {
       const response = await api.post(`/api/v1/pricebook/${id}/set_default_supplier`, {
         supplier_id: supplierId
       })
-      console.log('Response:', response)
+      console.log('Success! Response:', response)
       // Reload item to reflect the new default supplier
       await loadItem()
     } catch (err) {
       console.error('Failed to set default supplier:', err)
-      alert('Failed to set default supplier. Please try again.')
+      console.error('Error details:', err.response?.data)
+      alert(`Failed to set default supplier: ${err.response?.data?.error || err.message}`)
     }
   }
 
