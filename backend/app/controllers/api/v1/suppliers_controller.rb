@@ -5,7 +5,7 @@ module Api
 
       # GET /api/v1/suppliers
       def index
-        @suppliers = Supplier.all
+        @suppliers = Supplier.includes(:contact, :contacts, :pricebook_items).all
 
         # Filter by active status
         @suppliers = @suppliers.active if params[:active] == "true"

@@ -5,7 +5,7 @@ module Api
 
       # GET /api/v1/pricebook
       def index
-        @items = PricebookItem.active
+        @items = PricebookItem.includes(:supplier, :default_supplier).active
 
         # Apply search
         @items = @items.search(params[:search]) if params[:search].present?
