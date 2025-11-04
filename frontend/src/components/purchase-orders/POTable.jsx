@@ -58,7 +58,7 @@ export default function POTable({ purchaseOrders, onEdit, onDelete, onApprove, o
                 className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
               >
                 <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                  {po.po_number}
+                  {po.purchase_order_number}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                   {po.supplier?.name || '-'}
@@ -73,7 +73,7 @@ export default function POTable({ purchaseOrders, onEdit, onDelete, onApprove, o
                   <POStatusBadge status={po.status} />
                 </td>
                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white font-medium">
-                  {formatCurrency(po.total_amount, false)}
+                  {formatCurrency(po.total, false)}
                 </td>
                 <td className="px-4 py-3 text-sm text-center">
                   <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>

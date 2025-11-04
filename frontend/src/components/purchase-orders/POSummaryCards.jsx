@@ -4,11 +4,11 @@ import { formatCurrency } from '../../utils/formatters'
 export default function POSummaryCards({ purchaseOrders }) {
   const calculateStats = () => {
     const totalPOs = purchaseOrders.length
-    const totalValue = purchaseOrders.reduce((sum, po) => sum + (parseFloat(po.total_amount) || 0), 0)
+    const totalValue = purchaseOrders.reduce((sum, po) => sum + (parseFloat(po.total) || 0), 0)
     const pendingApprovals = purchaseOrders.filter(po => po.status === 'pending').length
     const outstandingInvoices = purchaseOrders.filter(po =>
       ['sent', 'received', 'invoiced'].includes(po.status)
-    ).reduce((sum, po) => sum + (parseFloat(po.total_amount) - parseFloat(po.amount_paid || 0)), 0)
+    ).reduce((sum, po) => sum + (parseFloat(po.total) - parseFloat(po.amount_paid || 0)), 0)
 
     return { totalPOs, totalValue, pendingApprovals, outstandingInvoices }
   }
