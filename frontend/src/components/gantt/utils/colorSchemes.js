@@ -87,6 +87,16 @@ export const DEFAULT_CATEGORY_COLORS = {
   finishing: 'pink',
 }
 
+// Default color mappings for task types
+export const DEFAULT_TYPE_COLORS = {
+  task: 'blue',
+  milestone: 'purple',
+  approval: 'yellow',
+  delivery: 'green',
+  inspection: 'indigo',
+  meeting: 'pink',
+}
+
 /**
  * Get color configuration from localStorage or use defaults
  */
@@ -103,6 +113,7 @@ export const getStoredColorConfig = () => {
   return {
     statusColors: DEFAULT_STATUS_COLORS,
     categoryColors: DEFAULT_CATEGORY_COLORS,
+    typeColors: DEFAULT_TYPE_COLORS,
   }
 }
 
@@ -134,6 +145,14 @@ export const getCategoryColor = (category, colorConfig) => {
 }
 
 /**
+ * Get color for a task type
+ */
+export const getTypeColor = (taskType, colorConfig) => {
+  const colorKey = colorConfig?.typeColors?.[taskType] || DEFAULT_TYPE_COLORS[taskType] || 'blue'
+  return AVAILABLE_COLORS[colorKey]
+}
+
+/**
  * Get all unique statuses from tasks
  */
 export const getUniqueStatuses = (tasks) => {
@@ -153,4 +172,15 @@ export const getUniqueCategories = (tasks) => {
     if (task.category) categories.add(task.category)
   })
   return Array.from(categories)
+}
+
+/**
+ * Get all unique task types from tasks
+ */
+export const getUniqueTypes = (tasks) => {
+  const types = new Set()
+  tasks.forEach(task => {
+    if (task.task_type) types.add(task.task_type)
+  })
+  return Array.from(types)
 }

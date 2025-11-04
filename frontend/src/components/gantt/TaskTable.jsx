@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { Label, Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react'
 import { ChevronUpDownIcon } from '@heroicons/react/16/solid'
 import { CheckIcon } from '@heroicons/react/20/solid'
-import { getStatusColor, getCategoryColor } from './utils/colorSchemes'
+import { getStatusColor, getCategoryColor, getTypeColor } from './utils/colorSchemes'
 
 /**
  * TaskTable - Inline editing table view for tasks
  * Inspired by Monday.com and Airtable's spreadsheet-like interface
  */
-export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig }) {
+export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig, colorBy = 'status' }) {
   const [editingCell, setEditingCell] = useState(null)
   const [editValue, setEditValue] = useState('')
 
@@ -34,9 +34,27 @@ export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig }) {
     return editingCell?.taskId === taskId && editingCell?.field === field
   }
 
-  const getStatusBadge = (status) => {
-    const colorObj = getStatusColor(status, colorConfig)
-    return colorObj.badge
+  const getBadgeStyle = (task) => {
+    if (colorBy === 'status') {
+      const colorObj = getStatusColor(task.status, colorConfig)
+      return colorObj.badge
+    } else if (colorBy === 'category') {
+      const colorObj = getCategoryColor(task.category, colorConfig)
+      return colorObj.badge
+    } else {
+      const colorObj = getTypeColor(task.task_type, colorConfig)
+      return colorObj.badge
+    }
+  }
+
+  const getProgressBarColor = (task) => {
+    if (colorBy === 'status') {
+      return getStatusColor(task.status, colorConfig).bar
+    } else if (colorBy === 'category') {
+      return getCategoryColor(task.category, colorConfig).bar
+    } else {
+      return getTypeColor(task.task_type, colorConfig).bar
+    }
   }
 
   const formatDate = (date) => {
@@ -147,16 +165,28 @@ export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig }) {
 
                 {/* Status */}
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset ${getStatusBadge(task.status)}`}>
-                    {task.status ? task.status.replace('_', ' ') : 'Not Started'}
-                  </span>
+                  {colorBy === 'status' ? (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset ${getBadgeStyle(task)}`}>
+                      {task.status ? task.status.replace('_', ' ') : 'Not Started'}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-900">
+                      {task.status ? task.status.replace('_', ' ') : 'Not Started'}
+                    </span>
+                  )}
                 </td>
 
                 {/* Category */}
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-sm text-gray-900">
-                    {task.category || '-'}
-                  </span>
+                  {colorBy === 'category' ? (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset ${getBadgeStyle(task)}`}>
+                      {task.category || '-'}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-900">
+                      {task.category || '-'}
+                    </span>
+                  )}
                 </td>
 
                 {/* Start Date */}
@@ -188,7 +218,7 @@ export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig }) {
                         className="h-2 rounded-full transition-all"
                         style={{
                           width: `${task.progress || 0}%`,
-                          backgroundColor: getStatusColor(task.status, colorConfig).bar,
+                          backgroundColor: getProgressBarColor(task),
                         }}
                       />
                     </div>
@@ -214,9 +244,15 @@ export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig }) {
 
                 {/* Type */}
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-sm text-gray-900">
-                    {task.task_type || '-'}
-                  </span>
+                  {colorBy === 'type' ? (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset ${getBadgeStyle(task)}`}>
+                      {task.task_type || '-'}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-900">
+                      {task.task_type || '-'}
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}

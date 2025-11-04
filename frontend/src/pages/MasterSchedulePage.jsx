@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChartBarIcon, TableCellsIcon } from '@heroicons/react/24/outline'
+import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import GanttChart from '../components/gantt/GanttChart'
 import TaskTable from '../components/gantt/TaskTable'
+import ColorCustomizationMenu from '../components/gantt/ColorCustomizationMenu'
+import { getStoredColorConfig, saveColorConfig } from '../components/gantt/utils/colorSchemes'
 
 export default function MasterSchedulePage() {
   const { id } = useParams() // Get job/construction ID from URL
@@ -13,7 +15,14 @@ export default function MasterSchedulePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [viewMode, setViewMode] = useState('gantt') // 'gantt' or 'table'
+  const [colorBy, setColorBy] = useState('status') // 'status', 'category', or 'type'
+  const [colorConfig, setColorConfig] = useState(getStoredColorConfig())
   const navigate = useNavigate()
+
+  // Save color config when it changes
+  useEffect(() => {
+    saveColorConfig(colorConfig)
+  }, [colorConfig])
 
   useEffect(() => {
     loadConstructionAndSchedule()
@@ -78,50 +87,33 @@ export default function MasterSchedulePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="py-10">
+      <div className="py-6">
         <header>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">
-                  Master Schedule
-                </h1>
-                {construction && (
-                  <p className="mt-1 text-sm text-gray-500">{construction.title}</p>
-                )}
-              </div>
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => navigate(`/jobs/${id}`)}
-                className="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100 transition-colors"
+                title="Back to Job"
               >
-                Back to Job
+                <ArrowLeftIcon className="h-5 w-5" />
               </button>
+              <div className="flex-1">
+                <h1 className="text-xl font-semibold text-gray-900">
+                  Master Schedule
+                  {construction && (
+                    <span className="ml-2 text-base font-normal text-gray-500">
+                      {construction.title}
+                    </span>
+                  )}
+                </h1>
+              </div>
             </div>
           </div>
         </header>
         <main>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            {/* Project Info */}
-            {project && (
-              <div className="mt-6 bg-white shadow sm:rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg font-medium leading-6 text-gray-900">
-                    {project.name}
-                  </h3>
-                  <div className="mt-2 max-w-xl text-sm text-gray-500">
-                    <p>Project Code: {project.project_code}</p>
-                    <p>Start Date: {project.start_date}</p>
-                    <p>End Date: {project.planned_end_date || 'Not set'}</p>
-                    <p>Status: <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">{project.status}</span></p>
-                    {scheduleData && (
-                      <p className="mt-2">Tasks: {scheduleData.tasks?.length || 0}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* View Toggle */}
             <div className="mt-8 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -148,9 +140,35 @@ export default function MasterSchedulePage() {
                   Table View
                 </button>
               </div>
-              <p className="text-sm text-gray-500">
-                {scheduleData?.tasks?.length || 0} tasks
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-gray-500">
+                  {scheduleData?.tasks?.length || 0} tasks
+                </p>
+
+                {/* Color By Dropdown */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">Color by:</span>
+                  <select
+                    value={colorBy}
+                    onChange={(e) => setColorBy(e.target.value)}
+                    className="text-xs border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="status">Status</option>
+                    <option value="category">Category</option>
+                    <option value="type">Type</option>
+                  </select>
+                </div>
+
+                {/* Color Customization Menu */}
+                {scheduleData && scheduleData.tasks && (
+                  <ColorCustomizationMenu
+                    tasks={scheduleData.tasks}
+                    colorConfig={colorConfig}
+                    onColorChange={setColorConfig}
+                    colorBy={colorBy}
+                  />
+                )}
+              </div>
             </div>
 
             {/* Gantt Chart or Table View */}
@@ -161,12 +179,15 @@ export default function MasterSchedulePage() {
                     <GanttChart
                       tasks={scheduleData.tasks}
                       projectInfo={scheduleData.project}
+                      colorBy={colorBy}
+                      colorConfig={colorConfig}
                     />
                   )}
                   {viewMode === 'table' && (
                     <TaskTable
                       tasks={scheduleData.tasks}
-                      colorConfig={{}}
+                      colorBy={colorBy}
+                      colorConfig={colorConfig}
                       onTaskUpdate={(taskId, field, value) => {
                         console.log('Update task:', taskId, field, value)
                         // Will implement API update in Phase 2

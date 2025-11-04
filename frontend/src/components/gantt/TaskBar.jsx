@@ -1,4 +1,4 @@
-import { getStatusColor, getCategoryColor } from './utils/colorSchemes'
+import { getStatusColor, getCategoryColor, getTypeColor } from './utils/colorSchemes'
 
 /**
  * TaskBar - Individual task bar in timeline
@@ -7,7 +7,9 @@ import { getStatusColor, getCategoryColor } from './utils/colorSchemes'
 export default function TaskBar({ task, left, width, pixelsPerDay, colorBy = 'status', colorConfig }) {
   const colorObj = colorBy === 'status'
     ? getStatusColor(task.status, colorConfig)
-    : getCategoryColor(task.category, colorConfig)
+    : colorBy === 'category'
+    ? getCategoryColor(task.category, colorConfig)
+    : getTypeColor(task.task_type, colorConfig)
 
   const backgroundColor = colorObj.bar
 

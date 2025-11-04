@@ -1,16 +1,17 @@
 import { useState, Fragment } from 'react'
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react'
 import { SwatchIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
-import { AVAILABLE_COLORS, getUniqueStatuses, getUniqueCategories } from './utils/colorSchemes'
+import { AVAILABLE_COLORS, getUniqueStatuses, getUniqueCategories, getUniqueTypes } from './utils/colorSchemes'
 
 /**
  * ColorCustomizationMenu - Dropdown menu for customizing Gantt colors
  */
 export default function ColorCustomizationMenu({ tasks, colorConfig, onColorChange, colorBy }) {
-  const [activeTab, setActiveTab] = useState('status') // 'status' or 'category'
+  const [activeTab, setActiveTab] = useState('status') // 'status', 'category', or 'type'
 
   const statuses = getUniqueStatuses(tasks)
   const categories = getUniqueCategories(tasks)
+  const types = getUniqueTypes(tasks)
 
   const handleColorChange = (item, colorKey) => {
     if (activeTab === 'status') {
@@ -21,11 +22,19 @@ export default function ColorCustomizationMenu({ tasks, colorConfig, onColorChan
           [item]: colorKey,
         },
       })
-    } else {
+    } else if (activeTab === 'category') {
       onColorChange({
         ...colorConfig,
         categoryColors: {
           ...colorConfig.categoryColors,
+          [item]: colorKey,
+        },
+      })
+    } else {
+      onColorChange({
+        ...colorConfig,
+        typeColors: {
+          ...colorConfig.typeColors,
           [item]: colorKey,
         },
       })
@@ -35,8 +44,10 @@ export default function ColorCustomizationMenu({ tasks, colorConfig, onColorChan
   const getCurrentColor = (item) => {
     if (activeTab === 'status') {
       return colorConfig.statusColors[item] || 'gray'
-    } else {
+    } else if (activeTab === 'category') {
       return colorConfig.categoryColors[item] || 'blue'
+    } else {
+      return colorConfig.typeColors[item] || 'blue'
     }
   }
 
@@ -44,7 +55,7 @@ export default function ColorCustomizationMenu({ tasks, colorConfig, onColorChan
     return text.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
   }
 
-  const items = activeTab === 'status' ? statuses : categories
+  const items = activeTab === 'status' ? statuses : activeTab === 'category' ? categories : types
 
   return (
     <Menu as="div" className="relative inline-block text-left">
@@ -69,23 +80,33 @@ export default function ColorCustomizationMenu({ tasks, colorConfig, onColorChan
             <div className="flex gap-2 mb-4 border-b border-gray-200">
               <button
                 onClick={() => setActiveTab('status')}
-                className={`pb-2 px-3 text-sm font-medium transition-colors ${
+                className={`pb-2 px-2 text-sm font-medium transition-colors ${
                   activeTab === 'status'
                     ? 'text-indigo-600 border-b-2 border-indigo-600'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Status Colors
+                Status
               </button>
               <button
                 onClick={() => setActiveTab('category')}
-                className={`pb-2 px-3 text-sm font-medium transition-colors ${
+                className={`pb-2 px-2 text-sm font-medium transition-colors ${
                   activeTab === 'category'
                     ? 'text-indigo-600 border-b-2 border-indigo-600'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Category Colors
+                Category
+              </button>
+              <button
+                onClick={() => setActiveTab('type')}
+                className={`pb-2 px-2 text-sm font-medium transition-colors ${
+                  activeTab === 'type'
+                    ? 'text-indigo-600 border-b-2 border-indigo-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Type
               </button>
             </div>
 
@@ -143,7 +164,7 @@ export default function ColorCustomizationMenu({ tasks, colorConfig, onColorChan
 
             {items.length === 0 && (
               <p className="text-sm text-gray-500 text-center py-4">
-                No {activeTab === 'status' ? 'statuses' : 'categories'} found
+                No {activeTab === 'status' ? 'statuses' : activeTab === 'category' ? 'categories' : 'types'} found
               </p>
             )}
           </div>
