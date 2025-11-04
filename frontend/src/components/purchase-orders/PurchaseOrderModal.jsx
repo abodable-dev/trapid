@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, SparklesIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { api } from '../../api'
 
 export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOrder, suppliers, constructionId }) {
   const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
     delivery_address: '',
     special_instructions: '',
     status: 'draft',
+    category: '',
     line_items_attributes: [
       {
         description: '',
@@ -19,6 +21,9 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
     ]
   })
   const [saving, setSaving] = useState(false)
+  const [smartLookupLoading, setSmartLookupLoading] = useState(false)
+  const [lookupWarnings, setLookupWarnings] = useState([])
+  const [lookupMetadata, setLookupMetadata] = useState(null)
 
   useEffect(() => {
     if (purchaseOrder) {
@@ -56,6 +61,55 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
     }))
   }
 
+  const handleSmartLookup = async () => {
+    if (!formData.description || !formData.line_items_attributes[0]?.description) {
+      alert('Please enter a task description first')
+      return
+    }
+
+    setSmartLookupLoading(true)
+    setLookupWarnings([])
+    setLookupMetadata(null)
+
+    try {
+      const taskDescription = formData.description || formData.line_items_attributes[0]?.description
+      const quantity = formData.line_items_attributes[0]?.quantity || 1
+
+      const result = await api.post('/api/v1/purchase_orders/smart_lookup', {
+        construction_id: constructionId,
+        task_description: taskDescription,
+        category: formData.category,
+        quantity: quantity
+      })
+
+      if (result.success && result.supplier) {
+        // Auto-populate the form with lookup results
+        setFormData(prev => ({
+          ...prev,
+          supplier_id: result.supplier.id,
+          delivery_address: result.metadata?.delivery_address || prev.delivery_address,
+          line_items_attributes: prev.line_items_attributes.map((item, idx) =>
+            idx === 0 ? {
+              ...item,
+              unit_price: result.unit_price || item.unit_price,
+              pricebook_item_id: result.price_book_item?.id
+            } : item
+          )
+        }))
+
+        setLookupWarnings(result.warnings || [])
+        setLookupMetadata(result.metadata || {})
+      } else {
+        setLookupWarnings(result.warnings || ['Smart lookup failed'])
+      }
+    } catch (error) {
+      console.error('Smart lookup error:', error)
+      alert('Failed to perform smart lookup')
+    } finally {
+      setSmartLookupLoading(false)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
@@ -88,7 +142,49 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Smart Lookup Banner */}
+              {lookupWarnings.length > 0 && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
+                  <div className="flex">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+                        Smart Lookup Warnings
+                      </h4>
+                      <ul className="text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside">
+                        {lookupWarnings.map((warning, idx) => (
+                          <li key={idx}>{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Category
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => handleChange('category', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
+                  >
+                    <option value="">Select Category</option>
+                    <option value="plumbing">Plumbing</option>
+                    <option value="electrical">Electrical</option>
+                    <option value="carpentry">Carpentry</option>
+                    <option value="painting">Painting</option>
+                    <option value="roofing">Roofing</option>
+                    <option value="concrete">Concrete</option>
+                    <option value="landscaping">Landscaping</option>
+                    <option value="hvac">HVAC</option>
+                    <option value="materials">Materials</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Supplier
@@ -119,13 +215,25 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Description
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleSmartLookup}
+                    disabled={smartLookupLoading}
+                    className="inline-flex items-center px-3 py-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 disabled:opacity-50"
+                  >
+                    <SparklesIcon className="h-4 w-4 mr-1" />
+                    {smartLookupLoading ? 'Looking up...' : 'Smart Fill'}
+                  </button>
+                </div>
                 <textarea
                   value={formData.description || ''}
                   onChange={(e) => handleChange('description', e.target.value)}
                   rows={2}
+                  placeholder="e.g., Water Tank, Foundation Concrete, Electrical Rough-In"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
                 />
               </div>
