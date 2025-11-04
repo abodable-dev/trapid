@@ -148,7 +148,7 @@ module Api
           success: true,
           supplier: @supplier.as_json(
             include: {
-              contact: { only: [:id, :full_name, :email, :mobile_phone, :office_phone, :website] },
+              contact: { only: [:id, :full_name, :email, :mobile_phone, :office_phone, :website, :tax_number, :xero_id, :sync_with_xero] },
               pricebook_items: { only: [:id, :item_code, :item_name, :category, :current_price] }
             },
             methods: [:match_confidence_label, :match_status]

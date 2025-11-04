@@ -13,7 +13,10 @@ import {
   TrashIcon,
   StarIcon,
   ClockIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  GlobeAltIcon,
+  IdentificationIcon,
+  ArrowPathRoundedSquareIcon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 
@@ -217,6 +220,75 @@ export default function SupplierDetailPage() {
                   <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                     <p className="text-sm text-gray-500 dark:text-gray-400">Contact Person</p>
                     <p className="text-gray-900 dark:text-white font-medium">{supplier.contact_person}</p>
+                  </div>
+                )}
+
+                {supplier.contact_name && (
+                  <div className={supplier.contact_person ? "" : "pt-4 border-t border-gray-200 dark:border-gray-700"}>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Contact Name</p>
+                    <p className="text-gray-900 dark:text-white font-medium">{supplier.contact_name}</p>
+                  </div>
+                )}
+
+                {supplier.contact_number && (
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Contact Number</p>
+                    <a href={`tel:${supplier.contact_number}`} className="text-gray-900 dark:text-white">
+                      {supplier.contact_number}
+                    </a>
+                  </div>
+                )}
+
+                {supplier.contact?.website && (
+                  <div className="flex items-start gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <GlobeAltIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Website</p>
+                      <a
+                        href={supplier.contact.website.startsWith('http') ? supplier.contact.website : `https://${supplier.contact.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                      >
+                        {supplier.contact.website}
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {supplier.contact?.tax_number && (
+                  <div className="flex items-start gap-3">
+                    <IdentificationIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Tax Number (ABN)</p>
+                      <p className="text-gray-900 dark:text-white font-mono">{supplier.contact.tax_number}</p>
+                    </div>
+                  </div>
+                )}
+
+                {supplier.contact?.xero_id && (
+                  <div className="flex items-start gap-3">
+                    <ArrowPathRoundedSquareIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Xero ID</p>
+                      <p className="text-gray-900 dark:text-white font-mono text-sm">{supplier.contact.xero_id}</p>
+                    </div>
+                  </div>
+                )}
+
+                {supplier.contact?.sync_with_xero !== null && supplier.contact?.sync_with_xero !== undefined && (
+                  <div className="flex items-start gap-3">
+                    <ArrowPathRoundedSquareIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Sync with Xero</p>
+                      <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                        supplier.contact.sync_with_xero
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                      }`}>
+                        {supplier.contact.sync_with_xero ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>

@@ -15,6 +15,8 @@ export default function SupplierEditPage() {
     phone: '',
     address: '',
     contact_person: '',
+    contact_name: '',
+    contact_number: '',
     rating: '',
     response_rate: '',
     avg_response_time: '',
@@ -38,6 +40,8 @@ export default function SupplierEditPage() {
         phone: supplier.phone || '',
         address: supplier.address || '',
         contact_person: supplier.contact_person || '',
+        contact_name: supplier.contact_name || '',
+        contact_number: supplier.contact_number || '',
         rating: supplier.rating || '',
         response_rate: supplier.response_rate || '',
         avg_response_time: supplier.avg_response_time || '',
@@ -176,6 +180,35 @@ export default function SupplierEditPage() {
                 name="contact_person"
                 value={formData.contact_person}
                 onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="contact_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Contact Name
+              </label>
+              <input
+                type="text"
+                id="contact_name"
+                name="contact_name"
+                value={formData.contact_name}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="contact_number" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Contact Number
+              </label>
+              <input
+                type="text"
+                id="contact_number"
+                name="contact_number"
+                value={formData.contact_number}
+                onChange={handleChange}
+                placeholder="e.g., 0490499171"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
