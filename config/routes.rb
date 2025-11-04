@@ -32,6 +32,13 @@ Rails.application.routes.draw do
       # Construction jobs management
       resources :constructions
 
+      # Master Schedule - Projects
+      resources :projects do
+        member do
+          get :gantt
+        end
+      end
+
       # Purchase Orders management
       resources :purchase_orders do
         collection do

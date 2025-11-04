@@ -11,6 +11,14 @@ class Project < ApplicationRecord
   scope :active, -> { where(status: ['planning', 'active']) }
   scope :completed, -> { where(status: 'complete') }
 
+  def total_tasks
+    project_tasks.count
+  end
+
+  def completed_tasks
+    project_tasks.where(status: 'complete').count
+  end
+
   def progress_percentage
     return 0 if project_tasks.empty?
 
