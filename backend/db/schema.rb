@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_04_023136) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_04_030112) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -53,6 +53,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_023136) do
     t.date "start_date"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "purchase_orders_count", default: 0, null: false
     t.index ["status"], name: "index_constructions_on_status"
   end
 
@@ -158,6 +159,55 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_023136) do
     t.index ["price_last_updated_at"], name: "index_pricebook_items_on_price_last_updated_at"
     t.index ["searchable_text"], name: "idx_pricebook_search", using: :gin
     t.index ["supplier_id"], name: "index_pricebook_items_on_supplier_id"
+  end
+
+  create_table "purchase_order_line_items", force: :cascade do |t|
+    t.bigint "purchase_order_id", null: false
+    t.bigint "pricebook_item_id"
+    t.text "description", null: false
+    t.decimal "quantity", precision: 15, scale: 3, default: "1.0", null: false
+    t.decimal "unit_price", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "tax_amount", precision: 15, scale: 2, default: "0.0"
+    t.decimal "total_amount", precision: 15, scale: 2, default: "0.0"
+    t.text "notes"
+    t.integer "line_number", default: 1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["pricebook_item_id"], name: "index_purchase_order_line_items_on_pricebook_item_id"
+    t.index ["purchase_order_id", "line_number"], name: "index_po_line_items_on_po_and_line_num"
+    t.index ["purchase_order_id"], name: "index_purchase_order_line_items_on_purchase_order_id"
+  end
+
+  create_table "purchase_orders", force: :cascade do |t|
+    t.string "po_number", null: false
+    t.bigint "construction_id", null: false
+    t.bigint "supplier_id"
+    t.string "status", default: "draft", null: false
+    t.text "description"
+    t.text "delivery_address"
+    t.text "special_instructions"
+    t.decimal "sub_total", precision: 15, scale: 2, default: "0.0"
+    t.decimal "tax_amount", precision: 15, scale: 2, default: "0.0"
+    t.decimal "total_amount", precision: 15, scale: 2, default: "0.0"
+    t.decimal "budget_allocation", precision: 15, scale: 2
+    t.decimal "amount_invoiced", precision: 15, scale: 2, default: "0.0"
+    t.decimal "amount_paid", precision: 15, scale: 2, default: "0.0"
+    t.string "xero_invoice_id"
+    t.decimal "xero_amount_paid", precision: 15, scale: 2, default: "0.0"
+    t.date "required_date"
+    t.date "ordered_date"
+    t.date "expected_delivery_date"
+    t.date "received_date"
+    t.integer "created_by_id"
+    t.integer "approved_by_id"
+    t.datetime "approved_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id"], name: "index_purchase_orders_on_construction_id"
+    t.index ["po_number"], name: "index_purchase_orders_on_po_number", unique: true
+    t.index ["required_date"], name: "index_purchase_orders_on_required_date"
+    t.index ["status"], name: "index_purchase_orders_on_status"
+    t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
   end
 
   create_table "suppliers", force: :cascade do |t|
@@ -279,4 +329,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_023136) do
   add_foreign_key "price_histories", "suppliers"
   add_foreign_key "pricebook_items", "suppliers"
   add_foreign_key "pricebook_items", "suppliers", column: "default_supplier_id"
+  add_foreign_key "purchase_order_line_items", "pricebook_items"
+  add_foreign_key "purchase_order_line_items", "purchase_orders"
+  add_foreign_key "purchase_orders", "constructions"
+  add_foreign_key "purchase_orders", "suppliers"
 end

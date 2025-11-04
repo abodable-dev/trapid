@@ -152,6 +152,7 @@ class PricebookImportService
       category: category,
       current_price: current_price,
       supplier: supplier,
+      default_supplier: supplier, # Set default supplier to match the supplier from spreadsheet
       unit_of_measure: row[:unit_of_measure] || row[:unit] || 'Each',
       brand: row[:brand]&.strip,
       notes: row[:notes]&.strip,
@@ -175,7 +176,10 @@ class PricebookImportService
     end
 
     # Only update supplier if provided
-    updates[:supplier] = supplier if supplier.present?
+    if supplier.present?
+      updates[:supplier] = supplier
+      updates[:default_supplier] = supplier # Also update default supplier to match
+    end
 
     item.update!(updates)
   end
