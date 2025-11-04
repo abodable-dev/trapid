@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../api'
+import GanttChart from '../components/gantt/GanttChart'
 
 export default function MasterSchedulePage() {
   const { id } = useParams() // Get job/construction ID from URL
@@ -118,38 +119,14 @@ export default function MasterSchedulePage() {
               </div>
             )}
 
-            {/* Gantt Chart Container */}
-            <div className="mt-8 bg-white shadow sm:rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                  Schedule Timeline
-                </h3>
-
-                {/* Gantt Chart will be rendered here */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
-                  <svg
-                    className="mx-auto h-12 w-12 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  <h3 className="mt-2 text-sm font-semibold text-gray-900">Gantt Chart</h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Gantt chart visualization will be displayed here
-                  </p>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Using dhtmlxGantt library for interactive timeline
-                  </p>
-                </div>
-              </div>
+            {/* Gantt Chart */}
+            <div className="mt-8">
+              {scheduleData && scheduleData.tasks && (
+                <GanttChart
+                  tasks={scheduleData.tasks}
+                  projectInfo={scheduleData.project}
+                />
+              )}
             </div>
           </div>
         </main>
