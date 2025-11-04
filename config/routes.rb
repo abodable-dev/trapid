@@ -76,6 +76,9 @@ Rails.application.routes.draw do
       # Contacts management
       resources :contacts
 
+      # Company Settings
+      resource :company_settings, only: [:show, :update]
+
       # Table management
       resources :tables do
         # Column management
