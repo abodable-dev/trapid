@@ -282,6 +282,17 @@ module Api
 
         @item.default_supplier_id = supplier_id
 
+        # Find the most recent price for this supplier
+        supplier_price_history = @item.price_histories
+          .where(supplier_id: supplier_id)
+          .order(created_at: :desc)
+          .first
+
+        # Update current_price if we found a price for this supplier
+        if supplier_price_history && supplier_price_history.new_price
+          @item.current_price = supplier_price_history.new_price
+        end
+
         if @item.save
           # Reload the association to get the updated default_supplier object
           @item.reload
