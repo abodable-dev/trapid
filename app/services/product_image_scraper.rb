@@ -211,7 +211,7 @@ class ProductImageScraper
   def self.fetch_images_for_all_items(limit: 100)
     items = PricebookItem
             .where(image_url: nil)
-            .where.not(image_fetch_status: 'fetching')
+            .where("image_fetch_status IS NULL OR image_fetch_status != ?", 'fetching')
             .limit(limit)
             .to_a # Convert to array to respect limit
 
@@ -249,7 +249,7 @@ class ProductImageScraper
     items = PricebookItem
             .where(supplier_id: supplier_id)
             .where(image_url: nil)
-            .where.not(image_fetch_status: 'fetching')
+            .where("image_fetch_status IS NULL OR image_fetch_status != ?", 'fetching')
             .limit(limit)
             .to_a # Convert to array to respect limit
 
