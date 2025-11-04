@@ -36,11 +36,15 @@ Rails.application.routes.draw do
       resources :pricebook, controller: 'pricebook_items', path: 'pricebook' do
         member do
           get :history
+          post :fetch_image
+          post :update_image
         end
         collection do
           patch :bulk_update
           post :import
           post :preview
+          post :fetch_all_images
+          get :image_stats
         end
       end
 

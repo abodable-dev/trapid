@@ -43,6 +43,11 @@ gem "roo", "~> 2.10.0"  # Excel/CSV parsing
 gem "caxlsx", "~> 4.1.0"  # Excel generation
 gem "caxlsx_rails", "~> 0.6.3"  # Rails integration for Excel export
 
+# Image management and scraping
+gem "cloudinary", "~> 2.1"  # Cloud image storage and CDN
+gem "httparty", "~> 0.22"  # HTTP requests for image scraping
+gem "mini_magick", "~> 4.12"  # Image processing
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
