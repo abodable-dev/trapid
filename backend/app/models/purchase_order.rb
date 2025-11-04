@@ -15,7 +15,7 @@ class PurchaseOrder < ApplicationRecord
   }
 
   # Status enum
-  enum status: {
+  enum :status, {
     draft: 'draft',
     pending: 'pending',
     approved: 'approved',
