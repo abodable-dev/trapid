@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Switch } from '@headlessui/react'
+import { Switch, Menu } from '@headlessui/react'
 import { api } from '../api'
 import { formatCurrency } from '../utils/formatters'
 import {
@@ -16,6 +16,8 @@ import {
   ShieldCheckIcon,
   PlusIcon,
   PencilIcon,
+  EllipsisVerticalIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline'
 import AddPriceModal from '../components/modals/AddPriceModal'
 
@@ -68,6 +70,25 @@ export default function PriceBookItemDetailPage() {
       console.error('Failed to set default supplier:', err)
       alert(`Failed to set default supplier: ${err.response?.data?.error || err.message}`)
     }
+  }
+
+  const handleDeletePriceHistory = async (historyId) => {
+    if (!confirm('Are you sure you want to delete this price history entry?')) return
+
+    try {
+      await api.delete(`/api/v1/pricebook/${id}/price_histories/${historyId}`)
+      // Reload the item to refresh price histories
+      await loadItem()
+    } catch (err) {
+      console.error('Failed to delete price history:', err)
+      alert('Failed to delete price history. Please try again.')
+    }
+  }
+
+  const handleEditPriceHistory = (history) => {
+    // TODO: Open edit modal with pre-filled data
+    console.log('Edit price history:', history)
+    alert('Edit functionality coming soon!')
   }
 
   const Badge = ({ color, children }) => {
@@ -309,6 +330,7 @@ export default function PriceBookItemDetailPage() {
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Change</th>
                         <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Default</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Supplier</th>
+                        <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -359,6 +381,43 @@ export default function PriceBookItemDetailPage() {
                             </td>
                             <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
                               {history.supplier?.name || '-'}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <Menu as="div" className="relative inline-block text-left">
+                                <Menu.Button className="flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                  <EllipsisVerticalIcon className="h-5 w-5" />
+                                </Menu.Button>
+                                <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                  <div className="py-1">
+                                    <Menu.Item>
+                                      {({ active }) => (
+                                        <button
+                                          onClick={() => handleEditPriceHistory(history)}
+                                          className={`${
+                                            active ? 'bg-gray-100 dark:bg-gray-700' : ''
+                                          } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
+                                        >
+                                          <PencilIcon className="mr-3 h-4 w-4" />
+                                          Edit
+                                        </button>
+                                      )}
+                                    </Menu.Item>
+                                    <Menu.Item>
+                                      {({ active }) => (
+                                        <button
+                                          onClick={() => handleDeletePriceHistory(history.id)}
+                                          className={`${
+                                            active ? 'bg-gray-100 dark:bg-gray-700' : ''
+                                          } group flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400`}
+                                        >
+                                          <TrashIcon className="mr-3 h-4 w-4" />
+                                          Delete
+                                        </button>
+                                      )}
+                                    </Menu.Item>
+                                  </div>
+                                </Menu.Items>
+                              </Menu>
                             </td>
                           </tr>
                         )
