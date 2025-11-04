@@ -283,6 +283,9 @@ module Api
         @item.default_supplier_id = supplier_id
 
         if @item.save
+          # Reload the association to get the updated default_supplier object
+          @item.reload
+
           render json: {
             success: true,
             message: 'Default supplier updated successfully',
