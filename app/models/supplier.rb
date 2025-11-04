@@ -21,12 +21,18 @@ class Supplier < ApplicationRecord
     ([phone, contact_number] + contacts.pluck(:mobile_phone, :office_phone).flatten).compact.uniq
   end
 
+  # Serialization
+  serialize :trade_categories, coder: JSON
+  serialize :is_default_for_trades, coder: JSON
+
   # Validations
   validates :name, presence: true, uniqueness: true
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP, allow_blank: true }
   validates :rating, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 5, allow_nil: true }
   validates :response_rate, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100, allow_nil: true }
   validates :avg_response_time, numericality: { only_integer: true, greater_than_or_equal_to: 0, allow_nil: true }
+  validates :supplier_code, uniqueness: { allow_blank: true }
+  validates :markup_percentage, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100, allow_nil: true }
 
   # Scopes
   scope :active, -> { where(is_active: true) }
@@ -42,6 +48,26 @@ class Supplier < ApplicationRecord
   def self.find_or_create_by_name(name)
     return nil if name.blank?
     find_or_create_by(name: name.strip)
+  end
+
+  def self.find_by_supplier_code(code)
+    return nil if code.blank?
+    find_by(supplier_code: code.to_s.upcase)
+  end
+
+  def self.default_for_trade(trade_category)
+    return nil if trade_category.blank?
+    where("is_default_for_trades::jsonb ? :trade", trade: trade_category.to_s.downcase)
+      .active
+      .order(rating: :desc)
+      .first
+  end
+
+  def self.for_trade(trade_category)
+    return active.all if trade_category.blank?
+    where("trade_categories::jsonb ? :trade", trade: trade_category.to_s.downcase)
+      .active
+      .order(rating: :desc)
   end
 
   # Instance methods
