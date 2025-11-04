@@ -62,13 +62,18 @@ module Api
 
       # GET /api/v1/purchase_orders/:id
       def show
-        render json: @purchase_order.as_json(include: {
-          supplier: { only: [:id, :name, :contact_person, :email, :phone] },
-          construction: { only: [:id, :title] },
-          line_items: {
-            include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price, :unit_of_measure] } }
-          }
-        })
+        company_setting = CompanySetting.instance
+
+        render json: {
+          **@purchase_order.as_json(include: {
+            supplier: { only: [:id, :name, :contact_person, :email, :phone, :address] },
+            construction: { only: [:id, :title] },
+            line_items: {
+              include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price, :unit_of_measure] } }
+            }
+          }),
+          company_setting: company_setting.as_json(only: [:company_name, :abn, :gst_number, :email, :phone, :address, :logo_url])
+        }
       end
 
       # POST /api/v1/purchase_orders

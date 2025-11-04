@@ -16,9 +16,16 @@ import {
   ChartBarIcon,
   GlobeAltIcon,
   IdentificationIcon,
-  ArrowPathRoundedSquareIcon
+  ArrowPathRoundedSquareIcon,
+  CubeIcon,
+  CurrencyDollarIcon,
+  TagIcon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(' ')
+}
 
 export default function SupplierDetailPage() {
   const { id } = useParams()
@@ -26,6 +33,7 @@ export default function SupplierDetailPage() {
   const [supplier, setSupplier] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [currentTab, setCurrentTab] = useState('overview')
 
   useEffect(() => {
     loadSupplier()
@@ -121,270 +129,339 @@ export default function SupplierDetailPage() {
     )
   }
 
+  const tabs = [
+    { name: 'Overview', id: 'overview' },
+    { name: 'Price Book', id: 'pricebook' },
+    { name: 'Performance', id: 'performance' }
+  ]
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-6">
+    <div className="min-h-full">
+      {/* Back Button */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <button
           onClick={() => navigate('/suppliers')}
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 mb-4"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
         >
-          <ArrowLeftIcon className="h-5 w-5" />
+          <ArrowLeftIcon className="h-4 w-4" />
           Back to Suppliers
         </button>
+      </div>
 
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {supplier.name}
-              </h1>
-              {getMatchBadge()}
+      {/* Page Header */}
+      <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-6">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight">
+                  {supplier.name}
+                </h1>
+                {getMatchBadge()}
+              </div>
+              {supplier.contact && (
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Contact: {supplier.contact.full_name}
+                </p>
+              )}
             </div>
-            {supplier.contact && (
-              <p className="text-gray-600 dark:text-gray-400">
-                Contact:{' '}
-                <Link
-                  to={`/contacts/${supplier.contact.id}`}
-                  className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                >
-                  {supplier.contact.full_name}
-                </Link>
-              </p>
-            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate(`/suppliers/${id}/edit`)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+              >
+                <PencilIcon className="h-4 w-4" />
+                Edit
+              </button>
+              <button
+                onClick={deleteSupplier}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition"
+              >
+                <TrashIcon className="h-4 w-4" />
+                Delete
+              </button>
+            </div>
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => navigate(`/suppliers/${id}/edit`)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              <PencilIcon className="h-5 w-5" />
-              Edit
-            </button>
-            <button
-              onClick={deleteSupplier}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            >
-              <TrashIcon className="h-5 w-5" />
-              Delete
-            </button>
+          {/* Secondary Navigation */}
+          <div className="mt-4">
+            <nav className="-mb-px flex space-x-8">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setCurrentTab(tab.id)}
+                  className={classNames(
+                    tab.id === currentTab
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300',
+                    'whitespace-nowrap border-b-2 px-1 pb-4 text-sm font-medium transition'
+                  )}
+                >
+                  {tab.name}
+                </button>
+              ))}
+            </nav>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Info */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Contact Information */}
-          {(supplier.email || supplier.phone || supplier.address) && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Contact Information</h2>
-
-              <div className="space-y-4">
-                {supplier.email && (
-                  <div className="flex items-start gap-3">
-                    <EnvelopeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
-                      <a href={`mailto:${supplier.email}`} className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
-                        {supplier.email}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {supplier.phone && (
-                  <div className="flex items-start gap-3">
-                    <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Phone</p>
-                      <a href={`tel:${supplier.phone}`} className="text-gray-900 dark:text-white">
-                        {supplier.phone}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {supplier.address && (
-                  <div className="flex items-start gap-3">
-                    <MapPinIcon className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Address</p>
-                      <p className="text-gray-900 dark:text-white">{supplier.address}</p>
-                    </div>
-                  </div>
-                )}
-
-                {supplier.contact_person && (
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Contact Person</p>
-                    <p className="text-gray-900 dark:text-white font-medium">{supplier.contact_person}</p>
-                  </div>
-                )}
-
-                {supplier.contact_name && (
-                  <div className={supplier.contact_person ? "" : "pt-4 border-t border-gray-200 dark:border-gray-700"}>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Contact Name</p>
-                    <p className="text-gray-900 dark:text-white font-medium">{supplier.contact_name}</p>
-                  </div>
-                )}
-
-                {supplier.contact_number && (
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Contact Number</p>
-                    <a href={`tel:${supplier.contact_number}`} className="text-gray-900 dark:text-white">
-                      {supplier.contact_number}
-                    </a>
-                  </div>
-                )}
-
-                {supplier.contact?.website && (
-                  <div className="flex items-start gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <GlobeAltIcon className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Website</p>
-                      <a
-                        href={supplier.contact.website.startsWith('http') ? supplier.contact.website : `https://${supplier.contact.website}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                      >
-                        {supplier.contact.website}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {supplier.contact?.tax_number && (
-                  <div className="flex items-start gap-3">
-                    <IdentificationIcon className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Tax Number (ABN)</p>
-                      <p className="text-gray-900 dark:text-white font-mono">{supplier.contact.tax_number}</p>
-                    </div>
-                  </div>
-                )}
-
-                {supplier.contact?.xero_id && (
-                  <div className="flex items-start gap-3">
-                    <ArrowPathRoundedSquareIcon className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Xero ID</p>
-                      <p className="text-gray-900 dark:text-white font-mono text-sm">{supplier.contact.xero_id}</p>
-                    </div>
-                  </div>
-                )}
-
-                {supplier.contact?.sync_with_xero !== null && supplier.contact?.sync_with_xero !== undefined && (
-                  <div className="flex items-start gap-3">
-                    <ArrowPathRoundedSquareIcon className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Sync with Xero</p>
-                      <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-                        supplier.contact.sync_with_xero
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
-                      }`}>
-                        {supplier.contact.sync_with_xero ? 'Enabled' : 'Disabled'}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Performance Metrics */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Performance</h2>
-
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Rating</p>
-                {renderStars(supplier.rating || 0)}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Response Rate</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <ChartBarIcon className="h-5 w-5 text-gray-400" />
-                    <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {parseFloat(supplier.response_rate || 0).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Avg Response Time</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <ClockIcon className="h-5 w-5 text-gray-400" />
-                    <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {supplier.avg_response_time ? `${supplier.avg_response_time}h` : 'N/A'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
-                <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full mt-1 ${
-                  supplier.is_active
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
-                }`}>
-                  {supplier.is_active ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-
-              {supplier.notes && (
-                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Notes</p>
-                  <p className="text-gray-900 dark:text-white">{supplier.notes}</p>
-                </div>
-              )}
-            </div>
+      {/* Stats Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 px-4 py-5 shadow-sm border border-gray-200 dark:border-gray-700 sm:p-6">
+            <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <CubeIcon className="h-5 w-5" />
+              Total Items
+            </dt>
+            <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
+              {supplier.pricebook_items?.length || 0}
+            </dd>
           </div>
 
-          {/* Price Book Items */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Price Book Items ({supplier.pricebook_items?.length || 0})
-            </h2>
+          <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 px-4 py-5 shadow-sm border border-gray-200 dark:border-gray-700 sm:p-6">
+            <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <CurrencyDollarIcon className="h-5 w-5" />
+              Total Value
+            </dt>
+            <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
+              ${supplier.pricebook_items && supplier.pricebook_items.length > 0
+                ? supplier.pricebook_items.reduce((sum, item) => sum + parseFloat(item.current_price || 0), 0).toFixed(2)
+                : '0.00'}
+            </dd>
+          </div>
 
+          <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 px-4 py-5 shadow-sm border border-gray-200 dark:border-gray-700 sm:p-6">
+            <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <ChartBarIcon className="h-5 w-5" />
+              Response Rate
+            </dt>
+            <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
+              {parseFloat(supplier.response_rate || 0).toFixed(1)}%
+            </dd>
+          </div>
+
+          <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 px-4 py-5 shadow-sm border border-gray-200 dark:border-gray-700 sm:p-6">
+            <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <TagIcon className="h-5 w-5" />
+              Categories
+            </dt>
+            <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
+              {supplier.pricebook_items && supplier.pricebook_items.length > 0
+                ? new Set(supplier.pricebook_items.map((item) => item.category).filter(Boolean)).size
+                : 0}
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      {/* Tab Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        {currentTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Contact Information */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-base font-semibold leading-6 text-gray-900 dark:text-white">Contact Information</h3>
+              </div>
+              <div className="px-6 py-5">
+                <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                  {supplier.email && (
+                    <div>
+                      <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <EnvelopeIcon className="h-4 w-4" />
+                        Email
+                      </dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                        <a href={`mailto:${supplier.email}`} className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                          {supplier.email}
+                        </a>
+                      </dd>
+                    </div>
+                  )}
+                  {supplier.phone && (
+                    <div>
+                      <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <PhoneIcon className="h-4 w-4" />
+                        Phone
+                      </dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                        <a href={`tel:${supplier.phone}`} className="hover:text-blue-600 dark:hover:text-blue-400">
+                          {supplier.phone}
+                        </a>
+                      </dd>
+                    </div>
+                  )}
+                  {supplier.address && (
+                    <div className="sm:col-span-2">
+                      <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <MapPinIcon className="h-4 w-4" />
+                        Address
+                      </dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">{supplier.address}</dd>
+                    </div>
+                  )}
+                  {supplier.contact_person && (
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Person</dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white font-medium">{supplier.contact_person}</dd>
+                    </div>
+                  )}
+                  {supplier.contact_name && (
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Name</dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white font-medium">{supplier.contact_name}</dd>
+                    </div>
+                  )}
+                  {supplier.contact_number && (
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Number</dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                        <a href={`tel:${supplier.contact_number}`} className="hover:text-blue-600 dark:hover:text-blue-400">
+                          {supplier.contact_number}
+                        </a>
+                      </dd>
+                    </div>
+                  )}
+                  {supplier.contact?.website && (
+                    <div>
+                      <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <GlobeAltIcon className="h-4 w-4" />
+                        Website
+                      </dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                        <a
+                          href={supplier.contact.website.startsWith('http') ? supplier.contact.website : `https://${supplier.contact.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                        >
+                          {supplier.contact.website}
+                        </a>
+                      </dd>
+                    </div>
+                  )}
+                  {supplier.contact?.tax_number && (
+                    <div>
+                      <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <IdentificationIcon className="h-4 w-4" />
+                        Tax Number (ABN)
+                      </dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white font-mono">{supplier.contact.tax_number}</dd>
+                    </div>
+                  )}
+                  {supplier.contact?.xero_id && (
+                    <div>
+                      <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <ArrowPathRoundedSquareIcon className="h-4 w-4" />
+                        Xero ID
+                      </dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white font-mono">{supplier.contact.xero_id}</dd>
+                    </div>
+                  )}
+                  {supplier.contact?.sync_with_xero !== null && supplier.contact?.sync_with_xero !== undefined && (
+                    <div>
+                      <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <ArrowPathRoundedSquareIcon className="h-4 w-4" />
+                        Sync with Xero
+                      </dt>
+                      <dd className="mt-1">
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                          supplier.contact.sync_with_xero
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                        }`}>
+                          {supplier.contact.sync_with_xero ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+            </div>
+
+            {/* System Info */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-base font-semibold leading-6 text-gray-900 dark:text-white">System Information</h3>
+              </div>
+              <div className="px-6 py-5">
+                <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-3">
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Supplier ID</dt>
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white font-mono">#{supplier.id}</dd>
+                  </div>
+                  {supplier.created_at && (
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Created</dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                        {new Date(supplier.created_at).toLocaleDateString()}
+                      </dd>
+                    </div>
+                  )}
+                  {supplier.updated_at && (
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                        {new Date(supplier.updated_at).toLocaleDateString()}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+            </div>
+
+            {supplier.notes && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-base font-semibold leading-6 text-gray-900 dark:text-white">Notes</h3>
+                </div>
+                <div className="px-6 py-5">
+                  <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">{supplier.notes}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {currentTab === 'pricebook' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-base font-semibold leading-6 text-gray-900 dark:text-white">
+                Price Book Items ({supplier.pricebook_items?.length || 0})
+              </h3>
+            </div>
             {supplier.pricebook_items && supplier.pricebook_items.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead>
+                  <thead className="bg-gray-50 dark:bg-gray-900/50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Code
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Item Name
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Category
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                        Price
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Current Price
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {supplier.pricebook_items.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
-                        <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-white">
+                      <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
                           {item.item_code}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                           {item.item_name}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {item.category || '-'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
                           ${parseFloat(item.current_price || 0).toFixed(2)}
                         </td>
                       </tr>
@@ -393,89 +470,62 @@ export default function SupplierDetailPage() {
                 </table>
               </div>
             ) : (
-              <p className="text-gray-500 dark:text-gray-400 text-sm">No items in price book</p>
+              <div className="px-6 py-12 text-center">
+                <CubeIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No items</h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">This supplier has no items in their price book.</p>
+              </div>
             )}
           </div>
-        </div>
+        )}
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Quick Stats */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h2>
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Total Items</span>
-                <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {supplier.pricebook_items?.length || 0}
-                </span>
+        {currentTab === 'performance' && (
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-base font-semibold leading-6 text-gray-900 dark:text-white">Performance Metrics</h3>
               </div>
-
-              {supplier.pricebook_items && supplier.pricebook_items.length > 0 && (
-                <>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Avg Price</span>
-                    <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                      $
-                      {(
-                        supplier.pricebook_items.reduce((sum, item) => sum + parseFloat(item.current_price || 0), 0) /
-                        supplier.pricebook_items.length
-                      ).toFixed(2)}
-                    </span>
+              <div className="px-6 py-5">
+                <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Rating</dt>
+                    <dd className="mt-2">{renderStars(supplier.rating || 0)}</dd>
                   </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Total Value</span>
-                    <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                      $
-                      {supplier.pricebook_items
-                        .reduce((sum, item) => sum + parseFloat(item.current_price || 0), 0)
-                        .toFixed(2)}
-                    </span>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</dt>
+                    <dd className="mt-2">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        supplier.is_active
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                      }`}>
+                        {supplier.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </dd>
                   </div>
-
-                  <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Categories</span>
-                    <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {new Set(supplier.pricebook_items.map((item) => item.category).filter(Boolean)).size}
-                    </span>
+                  <div>
+                    <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                      <ChartBarIcon className="h-4 w-4" />
+                      Response Rate
+                    </dt>
+                    <dd className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+                      {parseFloat(supplier.response_rate || 0).toFixed(1)}%
+                    </dd>
                   </div>
-                </>
-              )}
+                  <div>
+                    <dt className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                      <ClockIcon className="h-4 w-4" />
+                      Average Response Time
+                    </dt>
+                    <dd className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">
+                      {supplier.avg_response_time ? `${supplier.avg_response_time}h` : 'N/A'}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
             </div>
           </div>
-
-          {/* System Info */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">System Info</h2>
-
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Supplier ID</p>
-                <p className="text-gray-900 dark:text-white font-mono text-sm">#{supplier.id}</p>
-              </div>
-
-              {supplier.created_at && (
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Created</p>
-                  <p className="text-gray-900 dark:text-white text-sm">
-                    {new Date(supplier.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              )}
-
-              {supplier.updated_at && (
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Last Updated</p>
-                  <p className="text-gray-900 dark:text-white text-sm">
-                    {new Date(supplier.updated_at).toLocaleDateString()}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )
