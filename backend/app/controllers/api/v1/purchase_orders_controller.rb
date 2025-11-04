@@ -144,6 +144,136 @@ module Api
         end
       end
 
+      # POST /api/v1/purchase_orders/smart_lookup
+      # Smart lookup for PO auto-population
+      # Params: { construction_id, task_description, category, quantity, supplier_preference }
+      def smart_lookup
+        service = SmartPoLookupService.new(construction_id: params[:construction_id])
+        result = service.lookup(
+          task_description: params[:task_description],
+          category: params[:category],
+          quantity: params[:quantity] || 1,
+          supplier_preference: params[:supplier_preference]
+        )
+
+        render json: result
+      end
+
+      # POST /api/v1/purchase_orders/smart_create
+      # Create PO with smart auto-population
+      def smart_create
+        service = SmartPoLookupService.new(construction_id: params[:construction_id])
+        lookup_result = service.lookup(
+          task_description: params[:task_description],
+          category: params[:category],
+          quantity: params[:quantity] || 1,
+          supplier_preference: params[:supplier_preference]
+        )
+
+        unless lookup_result[:success]
+          render json: { errors: lookup_result[:warnings] }, status: :unprocessable_entity
+          return
+        end
+
+        # Build PO from lookup result
+        @purchase_order = PurchaseOrder.new(
+          construction_id: params[:construction_id],
+          supplier_id: lookup_result[:supplier].id,
+          description: params[:task_description],
+          delivery_address: lookup_result[:metadata][:delivery_address],
+          status: params[:status] || 'draft',
+          required_date: params[:required_date],
+          budget: lookup_result[:total_with_gst],
+          line_items_attributes: [
+            {
+              description: params[:task_description],
+              quantity: params[:quantity] || 1,
+              unit_price: lookup_result[:unit_price],
+              pricebook_item_id: lookup_result[:price_book_item]&.id
+            }
+          ]
+        )
+
+        if @purchase_order.save
+          render json: {
+            purchase_order: @purchase_order.as_json(include: :line_items),
+            lookup_metadata: lookup_result[:metadata],
+            warnings: lookup_result[:warnings]
+          }, status: :created
+        else
+          render json: { errors: @purchase_order.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      # POST /api/v1/purchase_orders/bulk_create
+      # Create multiple POs from JSON array
+      # Params: { construction_id, purchase_orders: [{task_description, category, quantity, supplier_preference}] }
+      def bulk_create
+        service = SmartPoLookupService.new(construction_id: params[:construction_id])
+        po_requests = params[:purchase_orders] || []
+
+        results = []
+        errors = []
+
+        po_requests.each_with_index do |po_request, index|
+          lookup_result = service.lookup(
+            task_description: po_request[:task_description],
+            category: po_request[:category],
+            quantity: po_request[:quantity] || 1,
+            supplier_preference: po_request[:supplier_preference]
+          )
+
+          if lookup_result[:success]
+            purchase_order = PurchaseOrder.new(
+              construction_id: params[:construction_id],
+              supplier_id: lookup_result[:supplier].id,
+              description: po_request[:task_description],
+              delivery_address: lookup_result[:metadata][:delivery_address],
+              status: po_request[:status] || 'draft',
+              required_date: po_request[:required_date],
+              budget: lookup_result[:total_with_gst],
+              line_items_attributes: [
+                {
+                  description: po_request[:task_description],
+                  quantity: po_request[:quantity] || 1,
+                  unit_price: lookup_result[:unit_price],
+                  pricebook_item_id: lookup_result[:price_book_item]&.id
+                }
+              ]
+            )
+
+            if purchase_order.save
+              results << {
+                index: index,
+                success: true,
+                purchase_order: purchase_order.as_json(include: :line_items),
+                warnings: lookup_result[:warnings]
+              }
+            else
+              errors << {
+                index: index,
+                task_description: po_request[:task_description],
+                errors: purchase_order.errors.full_messages
+              }
+            end
+          else
+            errors << {
+              index: index,
+              task_description: po_request[:task_description],
+              errors: lookup_result[:warnings]
+            }
+          end
+        end
+
+        render json: {
+          success: errors.empty?,
+          created: results.length,
+          failed: errors.length,
+          results: results,
+          errors: errors
+        }, status: errors.empty? ? :created : :unprocessable_entity
+      end
+
       private
 
       def set_purchase_order

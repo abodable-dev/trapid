@@ -34,6 +34,11 @@ Rails.application.routes.draw do
 
       # Purchase Orders management
       resources :purchase_orders do
+        collection do
+          post :smart_lookup
+          post :smart_create
+          post :bulk_create
+        end
         member do
           post :approve
           post :send_to_supplier

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_04_053323) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_04_062045) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -218,6 +218,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_053323) do
     t.bigint "project_manager_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "construction_id", null: false
+    t.index ["construction_id"], name: "index_projects_on_construction_id"
     t.index ["project_code"], name: "index_projects_on_project_code", unique: true
     t.index ["project_manager_id"], name: "index_projects_on_project_manager_id"
     t.index ["start_date", "planned_end_date"], name: "index_projects_on_start_date_and_planned_end_date"
@@ -324,11 +326,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_053323) do
     t.string "original_name"
     t.string "contact_name"
     t.string "contact_number"
+    t.string "supplier_code"
+    t.text "trade_categories"
+    t.text "is_default_for_trades"
+    t.decimal "markup_percentage", precision: 5, scale: 2, default: "0.0"
     t.index ["contact_id"], name: "index_suppliers_on_contact_id"
     t.index ["is_active"], name: "index_suppliers_on_is_active"
     t.index ["is_verified"], name: "index_suppliers_on_is_verified"
     t.index ["match_type"], name: "index_suppliers_on_match_type"
     t.index ["name"], name: "index_suppliers_on_name", unique: true
+    t.index ["supplier_code"], name: "index_suppliers_on_supplier_code", unique: true
   end
 
   create_table "tables", force: :cascade do |t|
@@ -477,6 +484,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_053323) do
   add_foreign_key "project_tasks", "purchase_orders"
   add_foreign_key "project_tasks", "task_templates"
   add_foreign_key "project_tasks", "users", column: "assigned_to_id"
+  add_foreign_key "projects", "constructions"
   add_foreign_key "projects", "users", column: "project_manager_id"
   add_foreign_key "purchase_order_line_items", "pricebook_items"
   add_foreign_key "purchase_order_line_items", "purchase_orders"
