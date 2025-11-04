@@ -43,11 +43,17 @@ export default function PriceBookItemDetailPage() {
     }
   }
 
-  const handleSetDefaultSupplier = async (supplierId) => {
+  const handleSetDefaultSupplier = async (e, supplierId) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    console.log('Setting default supplier:', supplierId)
+
     try {
-      await api.post(`/api/v1/pricebook/${id}/set_default_supplier`, {
+      const response = await api.post(`/api/v1/pricebook/${id}/set_default_supplier`, {
         supplier_id: supplierId
       })
+      console.log('Response:', response)
       // Reload item to reflect the new default supplier
       await loadItem()
     } catch (err) {
@@ -301,7 +307,7 @@ export default function PriceBookItemDetailPage() {
                               {history.supplier ? (
                                 <button
                                   type="button"
-                                  onClick={() => handleSetDefaultSupplier(history.supplier.id)}
+                                  onClick={(e) => handleSetDefaultSupplier(e, history.supplier.id)}
                                   className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
                                     isDefaultSupplier
                                       ? 'bg-indigo-600'
