@@ -39,6 +39,7 @@ Rails.application.routes.draw do
           post :fetch_image
           post :update_image
           post :add_price
+          post :set_default_supplier
         end
         collection do
           patch :bulk_update

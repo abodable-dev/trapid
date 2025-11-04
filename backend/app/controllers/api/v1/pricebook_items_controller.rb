@@ -1,7 +1,7 @@
 module Api
   module V1
     class PricebookItemsController < ApplicationController
-      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image, :add_price]
+      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image, :add_price, :set_default_supplier]
 
       # GET /api/v1/pricebook
       def index
@@ -268,6 +268,27 @@ module Api
         end
       end
 
+      # POST /api/v1/pricebook/:id/set_default_supplier
+      def set_default_supplier
+        supplier_id = params[:supplier_id]
+
+        if supplier_id.blank?
+          return render json: { success: false, error: 'supplier_id is required' }, status: :unprocessable_entity
+        end
+
+        @item.default_supplier_id = supplier_id
+
+        if @item.save
+          render json: {
+            success: true,
+            message: 'Default supplier updated successfully',
+            item: item_with_risk_data(@item)
+          }
+        else
+          render json: { success: false, errors: @item.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
       private
 
       def calculate_image_stats
@@ -310,7 +331,10 @@ module Api
       end
 
       def item_with_risk_data(item)
-        item.as_json(include: { supplier: { only: [:id, :name] } }).merge(
+        item.as_json(include: {
+          supplier: { only: [:id, :name] },
+          default_supplier: { only: [:id, :name] }
+        }).merge(
           price_last_updated_at: item.price_last_updated_at,
           price_age_days: item.price_age_in_days,
           price_freshness: {

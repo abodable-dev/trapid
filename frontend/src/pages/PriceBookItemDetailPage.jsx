@@ -43,6 +43,19 @@ export default function PriceBookItemDetailPage() {
     }
   }
 
+  const handleSetDefaultSupplier = async (supplierId) => {
+    try {
+      await api.post(`/api/v1/pricebook/${id}/set_default_supplier`, {
+        supplier_id: supplierId
+      })
+      // Reload item to reflect the new default supplier
+      await loadItem()
+    } catch (err) {
+      console.error('Failed to set default supplier:', err)
+      alert('Failed to set default supplier. Please try again.')
+    }
+  }
+
   const Badge = ({ color, children }) => {
     const colorClasses = {
       green: 'bg-green-500/15 text-green-700 dark:bg-green-500/10 dark:text-green-400',
@@ -258,12 +271,14 @@ export default function PriceBookItemDetailPage() {
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">New Price</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Change</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Supplier</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Default</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {item.price_histories.slice(0, 10).map((history, idx) => {
                         const change = history.new_price - history.old_price
                         const changePercent = history.old_price ? ((change / history.old_price) * 100).toFixed(1) : 0
+                        const isDefaultSupplier = history.supplier && item.default_supplier && history.supplier.id === item.default_supplier.id
 
                         return (
                           <tr key={idx}>
@@ -284,6 +299,27 @@ export default function PriceBookItemDetailPage() {
                             </td>
                             <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
                               {history.supplier?.name || '-'}
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              {history.supplier ? (
+                                <button
+                                  onClick={() => handleSetDefaultSupplier(history.supplier.id)}
+                                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                                    isDefaultSupplier
+                                      ? 'bg-indigo-600'
+                                      : 'bg-gray-200 dark:bg-gray-700'
+                                  }`}
+                                  aria-label={`Set ${history.supplier.name} as default supplier`}
+                                >
+                                  <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                      isDefaultSupplier ? 'translate-x-5' : 'translate-x-0.5'
+                                    }`}
+                                  />
+                                </button>
+                              ) : (
+                                <span className="text-gray-400 text-xs">-</span>
+                              )}
                             </td>
                           </tr>
                         )
