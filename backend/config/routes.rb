@@ -54,6 +54,7 @@ Rails.application.routes.draw do
           post :update_image
           post :add_price
           post :set_default_supplier
+          delete 'price_histories/:history_id', to: 'pricebook_items#delete_price_history'
         end
         collection do
           patch :bulk_update
