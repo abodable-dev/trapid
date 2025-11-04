@@ -400,57 +400,6 @@ export default function SupplierDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Contact Match Info */}
-          {supplier.contact && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Contact Match</h2>
-
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Linked Contact</p>
-                  <Link
-                    to={`/contacts/${supplier.contact.id}`}
-                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium"
-                  >
-                    {supplier.contact.full_name}
-                  </Link>
-                </div>
-
-                {supplier.contact.email && (
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
-                    <a href={`mailto:${supplier.contact.email}`} className="text-sm text-gray-900 dark:text-white">
-                      {supplier.contact.email}
-                    </a>
-                  </div>
-                )}
-
-                {supplier.contact.mobile_phone && (
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Mobile</p>
-                    <a href={`tel:${supplier.contact.mobile_phone}`} className="text-sm text-gray-900 dark:text-white">
-                      {supplier.contact.mobile_phone}
-                    </a>
-                  </div>
-                )}
-
-                <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Match Type</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {supplier.match_confidence_label}
-                    </span>
-                    {supplier.confidence_score && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {(supplier.confidence_score * 100).toFixed(1)}%
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Quick Stats */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h2>
