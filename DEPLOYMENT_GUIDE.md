@@ -7,7 +7,7 @@ Successfully imported and linked all EasyBuild data:
 - **5,285 price book items**
 - **3,626 price history records**
 
-All data is properly linked and ready for production deployment.
+All data is properly linked and ready for production deployment with **ONE SIMPLE COMMAND**.
 
 ## What Changed
 
@@ -21,9 +21,10 @@ All data is properly linked and ready for production deployment.
    - Handles suppliers, items, and price histories
    - Groups price histories chronologically
 
-2. **Import Script** (`backend/lib/tasks/pricebook.rake`)
+2. **Production Deployment Script** (`backend/lib/tasks/deploy_production_data.rake`)
+   - All CSV data included in repository at `backend/db/import_data/`
    - Clears existing data
-   - Imports suppliers, items, and price histories
+   - Imports all suppliers, items, and price histories
    - Links all data correctly
 
 3. **Price History Empty State** (Frontend)
@@ -32,65 +33,56 @@ All data is properly linked and ready for production deployment.
 
 ## Deployment Steps
 
-### 1. Deploy Backend Changes (Already Done ✓)
+### ONE COMMAND DEPLOYMENT ✨
 
-The backend code is already deployed since it auto-deploys from GitHub.
+The CSV files are already in the GitHub repository and will auto-deploy to Heroku!
 
-### 2. Upload CSV Files to Production
-
-You have three options:
-
-#### Option A: Using Heroku Run (Recommended)
+Just run:
 
 ```bash
-# Start a Heroku bash session
-heroku run bash --app trapid-backend
-
-# Create CSV files by copying content
-cat > tmp/suppliers.csv << 'EOF'
-[Paste content from backend/tmp/suppliers.csv]
-EOF
-
-cat > tmp/pricebook_items.csv << 'EOF'
-[Paste content from backend/tmp/pricebook_items.csv]
-EOF
-
-cat > tmp/price_history.csv << 'EOF'
-[Paste content from backend/tmp/price_history.csv]
-EOF
-
-# Run the import
-bundle exec rails pricebook:import_clean
-
-# Exit
-exit
+heroku run rails pricebook:deploy_to_production --app trapid-backend
 ```
 
-####  Option B: Copy Files Directly
+That's it! The command will:
+1. ✓ Clear existing price book data
+2. ✓ Import all 209 suppliers
+3. ✓ Import all 5,285 price book items (with supplier links)
+4. ✓ Import all 3,626 price history records
 
-The CSV files are already generated in `backend/tmp/`:
-- `backend/tmp/suppliers.csv` (209 suppliers)
-- `backend/tmp/pricebook_items.csv` (5,285 items)
-- `backend/tmp/price_history.csv` (3,626 records)
+### Expected Output
 
-You can copy these files to production using scp, S3, or any file transfer method.
+```
+============================================================
+DEPLOYING PRICE BOOK DATA TO PRODUCTION
+============================================================
 
-#### Option C: Re-run Conversion on Production
+Step 1: Clearing existing data...
+  ✓ Deleted X price history records
+  ✓ Deleted X pricebook items
+  ✓ Deleted X suppliers
 
-If you prefer to upload the original EasyBuild CSVs:
+Step 2: Importing suppliers...
+  ✓ Imported 209 suppliers
 
-```bash
-# Upload the three original CSVs to the root directory on Heroku
-# Then run:
-heroku run bash --app trapid-backend
-bundle exec rails pricebook:convert_easybuild
-bundle exec rails pricebook:import_clean
-exit
+Step 3: Importing price book items...
+  ✓ Imported 5285 price book items
+
+Step 4: Importing price history...
+  ✓ Imported 3626 price history records
+
+============================================================
+DEPLOYMENT COMPLETE
+============================================================
+Suppliers: 209
+Price Book Items: 5285
+Price History: 3626
+
+Data successfully deployed to production!
 ```
 
-### 3. Verify Data
+### Verify Data
 
-After import, verify the data:
+After deployment, verify the data:
 
 ```bash
 heroku run rails runner "puts 'Suppliers: ' + Supplier.count.to_s; puts 'Items: ' + PricebookItem.count.to_s; puts 'Histories: ' + PriceHistory.count.to_s" --app trapid-backend
@@ -103,14 +95,18 @@ Items: 5285
 Histories: 3626
 ```
 
-### 4. Frontend is Already Deployed ✓
+### View in Browser
 
-The frontend auto-deploys from GitHub to Vercel, so the price history empty state fix is already live.
+Once deployed, visit https://trapid.vercel.app/price-books to see your complete price book with:
+- All 5,285 items listed
+- Risk scoring and status badges
+- Clickable rows to view item details
+- Full price history on each item detail page
 
 ## Important Notes
 
 ### Data Cleared on Import
-The `pricebook:import_clean` task **deletes all existing** suppliers, price book items, and price histories before importing. Make sure you want to do this!
+The deployment task **deletes all existing** suppliers, price book items, and price histories before importing. This ensures a clean import with no duplicates.
 
 ### Negative Prices
 The data includes some negative prices (e.g., "Rebate" items at -$25). This is intentional and now supported.
@@ -119,52 +115,44 @@ The data includes some negative prices (e.g., "Rebate" items at -$25). This is i
 Price histories are sorted chronologically and include old_price and new_price to show actual price changes over time.
 
 ### Suppliers
-All suppliers are imported with default ratings (3/5) since the EasyBuild export doesn't include detailed supplier information. You can update these later.
+All suppliers are imported with default ratings (3/5) since the EasyBuild export doesn't include detailed supplier information. You can update these later through the UI.
 
 ## Testing Locally
 
-The import has been tested locally and successfully loaded:
-- All 209 suppliers
-- All 5,285 items with proper supplier links
-- All 3,626 price history records with chronological ordering
+The import has been tested locally and successfully loaded all data. You can test locally again with:
 
-You can test locally again with:
 ```bash
 cd backend
-bundle exec rails pricebook:import_clean
+bundle exec rails pricebook:deploy_to_production
 ```
 
 ## Files Reference
 
-**Conversion Script:**
-- `backend/lib/tasks/convert_easybuild_data.rake`
+**Production Deployment Script:**
+- `backend/lib/tasks/deploy_production_data.rake` - Single command deployment
 
-**Import Script:**
-- `backend/lib/tasks/pricebook.rake`
+**CSV Data Files (committed to git):**
+- `backend/db/import_data/suppliers.csv` (209 suppliers)
+- `backend/db/import_data/pricebook_items.csv` (5,285 items)
+- `backend/db/import_data/price_history.csv` (3,626 histories)
+
+**Conversion Script (for reference):**
+- `backend/lib/tasks/convert_easybuild_data.rake`
 
 **Documentation:**
 - `backend/PRICEBOOK_IMPORT.md` - Detailed CSV format documentation
 
-**Converted CSV Files (ready to import):**
-- `backend/tmp/suppliers.csv`
-- `backend/tmp/pricebook_items.csv`
-- `backend/tmp/price_history.csv`
-
-**Original EasyBuild Exports:**
+**Original EasyBuild Exports (not committed):**
 - `easybuildapp development Price Books.csv`
 - `easybuildapp development Price Histories.csv`
 - `easybuildapp development Contacts-1.csv`
 
 ## Next Steps
 
-1. Choose deployment option (A, B, or C above)
-2. Run the import on production
-3. Verify data counts
-4. Check the price books page on trapid.vercel.app
-5. Click on an item to see the detail page with price history
+1. Run the deployment command: `heroku run rails pricebook:deploy_to_production --app trapid-backend`
+2. Wait 2-3 minutes for import to complete
+3. Verify data counts match expected values
+4. Visit https://trapid.vercel.app/price-books
+5. Click on any item to see the detail page with full price history
 
-The price history section will now show either:
-- The actual price history table (if there are records)
-- A helpful empty state message (if no records yet)
-
-Once you import the data, all 3,626 price history records will be displayed on their respective item detail pages!
+All 3,626 price history records will now be displayed on their respective item detail pages! 🎉
