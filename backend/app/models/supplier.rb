@@ -2,7 +2,24 @@ class Supplier < ApplicationRecord
   # Associations
   has_many :pricebook_items, dependent: :nullify
   has_many :price_histories, dependent: :nullify
-  belongs_to :contact, optional: true
+  belongs_to :contact, optional: true  # Legacy association
+  has_many :supplier_contacts, dependent: :destroy
+  has_many :contacts, through: :supplier_contacts
+
+  # Helper method to get primary contact
+  def primary_contact
+    supplier_contacts.primary.first&.contact || contact
+  end
+
+  # Helper method to get all contact emails
+  def contact_emails
+    ([email] + contacts.pluck(:email)).compact.uniq
+  end
+
+  # Helper method to get all contact phones
+  def contact_phones
+    ([phone] + contacts.pluck(:mobile_phone, :office_phone).flatten).compact.uniq
+  end
 
   # Validations
   validates :name, presence: true, uniqueness: true

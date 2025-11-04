@@ -334,17 +334,29 @@ export default function SuppliersPage() {
                     </td>
                   )}
                   {visibleColumns.email && (
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900 dark:text-white">
-                        {supplier.email || '-'}
-                      </span>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {supplier.contact_emails && supplier.contact_emails.length > 0 ? (
+                          supplier.contact_emails.map((email, idx) => (
+                            <div key={idx} className="truncate max-w-xs">{email}</div>
+                          ))
+                        ) : (
+                          '-'
+                        )}
+                      </div>
                     </td>
                   )}
                   {visibleColumns.phone && (
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900 dark:text-white">
-                        {supplier.phone || '-'}
-                      </span>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {supplier.contact_phones && supplier.contact_phones.length > 0 ? (
+                          supplier.contact_phones.map((phone, idx) => (
+                            <div key={idx}>{phone}</div>
+                          ))
+                        ) : (
+                          '-'
+                        )}
+                      </div>
                     </td>
                   )}
                   {visibleColumns.rating && (

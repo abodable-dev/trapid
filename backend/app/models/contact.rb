@@ -1,6 +1,8 @@
 class Contact < ApplicationRecord
   # Associations
-  has_many :suppliers, dependent: :nullify
+  has_many :suppliers, dependent: :nullify  # Legacy association
+  has_many :supplier_contacts, dependent: :destroy
+  has_many :linked_suppliers, through: :supplier_contacts, source: :supplier
 
   # Validations
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP, allow_blank: true }
