@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_04_062045) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_04_063833) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -196,6 +196,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_062045) do
     t.text "completion_notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "sequence_order"
+    t.date "required_on_site_date"
     t.index ["assigned_to_id"], name: "index_project_tasks_on_assigned_to_id"
     t.index ["is_critical_path"], name: "index_project_tasks_on_is_critical_path"
     t.index ["planned_start_date", "planned_end_date"], name: "index_project_tasks_on_planned_start_date_and_planned_end_date"
@@ -219,6 +221,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_062045) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "construction_id", null: false
+    t.datetime "generated_at"
     t.index ["construction_id"], name: "index_projects_on_construction_id"
     t.index ["project_code"], name: "index_projects_on_project_code", unique: true
     t.index ["project_manager_id"], name: "index_projects_on_project_manager_id"
