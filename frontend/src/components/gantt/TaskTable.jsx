@@ -62,6 +62,12 @@ export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig, color
     return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
+  // Get unique assigned users from all tasks
+  const uniqueAssignedUsers = [...new Set(tasks.map(t => t.assigned_to).filter(Boolean))]
+
+  // Get unique suppliers from all tasks
+  const uniqueSuppliers = [...new Set(tasks.map(t => t.supplier).filter(Boolean))]
+
   const EditableCell = ({ task, field, value, type = 'text' }) => {
     const editing = isEditing(task.id, field)
 
@@ -89,6 +95,148 @@ export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig, color
       >
         {value || '-'}
       </div>
+    )
+  }
+
+  const AssignedToListbox = ({ task }) => {
+    const [selected, setSelected] = useState(task.assigned_to || null)
+
+    const handleChange = (value) => {
+      setSelected(value)
+      if (onTaskUpdate) {
+        onTaskUpdate(task.id, 'assigned_to', value)
+      }
+    }
+
+    return (
+      <Listbox value={selected} onChange={handleChange}>
+        <div className="relative">
+          <ListboxButton className="relative w-full cursor-pointer rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-sm text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <span className="block truncate">{selected || 'Unassigned'}</span>
+            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+              <ChevronUpDownIcon className="h-4 w-4 text-gray-400" aria-hidden="true" />
+            </span>
+          </ListboxButton>
+          <ListboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+            <ListboxOption
+              value={null}
+              className={({ active }) =>
+                `relative cursor-pointer select-none py-2 pl-3 pr-9 ${
+                  active ? 'bg-indigo-600 text-white' : 'text-gray-900'
+                }`
+              }
+            >
+              {({ selected, active }) => (
+                <>
+                  <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                    Unassigned
+                  </span>
+                  {selected && (
+                    <span className={`absolute inset-y-0 right-0 flex items-center pr-4 ${active ? 'text-white' : 'text-indigo-600'}`}>
+                      <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                  )}
+                </>
+              )}
+            </ListboxOption>
+            {uniqueAssignedUsers.map((user) => (
+              <ListboxOption
+                key={user}
+                value={user}
+                className={({ active }) =>
+                  `relative cursor-pointer select-none py-2 pl-3 pr-9 ${
+                    active ? 'bg-indigo-600 text-white' : 'text-gray-900'
+                  }`
+                }
+              >
+                {({ selected, active }) => (
+                  <>
+                    <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                      {user}
+                    </span>
+                    {selected && (
+                      <span className={`absolute inset-y-0 right-0 flex items-center pr-4 ${active ? 'text-white' : 'text-indigo-600'}`}>
+                        <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                    )}
+                  </>
+                )}
+              </ListboxOption>
+            ))}
+          </ListboxOptions>
+        </div>
+      </Listbox>
+    )
+  }
+
+  const SupplierListbox = ({ task }) => {
+    const [selected, setSelected] = useState(task.supplier || null)
+
+    const handleChange = (value) => {
+      setSelected(value)
+      if (onTaskUpdate) {
+        onTaskUpdate(task.id, 'supplier', value)
+      }
+    }
+
+    return (
+      <Listbox value={selected} onChange={handleChange}>
+        <div className="relative">
+          <ListboxButton className="relative w-full cursor-pointer rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-sm text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <span className="block truncate">{selected || 'No supplier'}</span>
+            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+              <ChevronUpDownIcon className="h-4 w-4 text-gray-400" aria-hidden="true" />
+            </span>
+          </ListboxButton>
+          <ListboxOptions className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+            <ListboxOption
+              value={null}
+              className={({ active }) =>
+                `relative cursor-pointer select-none py-2 pl-3 pr-9 ${
+                  active ? 'bg-indigo-600 text-white' : 'text-gray-900'
+                }`
+              }
+            >
+              {({ selected, active }) => (
+                <>
+                  <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                    No supplier
+                  </span>
+                  {selected && (
+                    <span className={`absolute inset-y-0 right-0 flex items-center pr-4 ${active ? 'text-white' : 'text-indigo-600'}`}>
+                      <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                  )}
+                </>
+              )}
+            </ListboxOption>
+            {uniqueSuppliers.map((supplier) => (
+              <ListboxOption
+                key={supplier}
+                value={supplier}
+                className={({ active }) =>
+                  `relative cursor-pointer select-none py-2 pl-3 pr-9 ${
+                    active ? 'bg-indigo-600 text-white' : 'text-gray-900'
+                  }`
+                }
+              >
+                {({ selected, active }) => (
+                  <>
+                    <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                      {supplier}
+                    </span>
+                    {selected && (
+                      <span className={`absolute inset-y-0 right-0 flex items-center pr-4 ${active ? 'text-white' : 'text-indigo-600'}`}>
+                        <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                    )}
+                  </>
+                )}
+              </ListboxOption>
+            ))}
+          </ListboxOptions>
+        </div>
+      </Listbox>
     )
   }
 
@@ -230,16 +378,12 @@ export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig, color
 
                 {/* Assigned To */}
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-sm text-gray-900">
-                    {task.assigned_to || '-'}
-                  </span>
+                  <AssignedToListbox task={task} />
                 </td>
 
                 {/* Supplier */}
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-sm text-gray-900">
-                    {task.supplier || '-'}
-                  </span>
+                  <SupplierListbox task={task} />
                 </td>
 
                 {/* Type */}
