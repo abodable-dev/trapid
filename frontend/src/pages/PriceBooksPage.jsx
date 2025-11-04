@@ -269,31 +269,33 @@ export default function PriceBooksPage() {
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 relative">
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setShowItemSearch(!showItemSearch)}
-                      className="flex items-center gap-2 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                    >
-                      <span>Item Name</span>
-                      <MagnifyingGlassIcon className="h-4 w-4" />
-                    </button>
-                    {showItemSearch && (
-                      <div
-                        ref={itemSearchRef}
-                        className="absolute top-full left-0 mt-1 w-80 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3 z-50"
-                      >
-                        <input
-                          type="text"
-                          placeholder="Search item name..."
-                          value={itemSearchQuery}
-                          onChange={(e) => {
-                            setItemSearchQuery(e.target.value)
-                            setSearchQuery(e.target.value)
-                          }}
-                          autoFocus
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
-                        />
-                      </div>
-                    )}
+                    <span>Item Name</span>
+                    <div ref={itemSearchRef} className="relative flex items-center">
+                      {!showItemSearch ? (
+                        <button
+                          onClick={() => setShowItemSearch(true)}
+                          className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                          title="Search items"
+                        >
+                          <MagnifyingGlassIcon className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                          <input
+                            type="text"
+                            placeholder="Search items..."
+                            value={itemSearchQuery}
+                            onChange={(e) => {
+                              setItemSearchQuery(e.target.value)
+                              setSearchQuery(e.target.value)
+                            }}
+                            autoFocus
+                            className="w-64 px-3 py-1.5 pl-9 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm shadow-lg animate-in slide-in-from-right-5 duration-200"
+                          />
+                          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </th>
                 <th
