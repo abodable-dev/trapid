@@ -89,7 +89,7 @@ export default function MasterSchedulePage() {
     <div className="min-h-screen bg-gray-50">
       <div className="py-6">
         <header>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -108,7 +108,7 @@ export default function MasterSchedulePage() {
           </div>
         </header>
         <main>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="px-4 sm:px-6 lg:px-8">
             {/* View Toggle */}
             <div className="mt-8 flex items-center justify-between">
               <div className="flex items-center gap-2">
