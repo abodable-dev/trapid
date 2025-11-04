@@ -104,7 +104,7 @@ export default function GanttChart({ tasks = [], projectInfo = {}, colorBy = 'st
       </div>
 
       {/* Gantt Chart Content */}
-      <div className="overflow-auto" style={{ maxHeight: '600px' }}>
+      <div className="overflow-auto" style={{ height: 'calc(100vh - 280px)', minHeight: '400px' }}>
         {/* Header */}
         <GanttHeader
           projectStartDate={projectStartDate}

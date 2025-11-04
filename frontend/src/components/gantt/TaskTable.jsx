@@ -251,12 +251,12 @@ export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig, color
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden" style={{ height: 'calc(100vh - 280px)', minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+      <div className="overflow-x-auto overflow-y-auto flex-1">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 sticky top-0 z-20">
             <tr>
-              <th className="sticky left-0 z-10 bg-gray-50 px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+              <th className="sticky left-0 z-30 bg-gray-50 px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                 Task Name
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -405,13 +405,13 @@ export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig, color
       </div>
 
       {/* Table Footer */}
-      <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+      <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 flex-shrink-0">
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-700">
             Showing <span className="font-medium">{tasks.length}</span> task{tasks.length !== 1 ? 's' : ''}
           </p>
           <p className="text-xs text-gray-500">
-            Click any cell to edit (Phase 2 feature)
+            Click Assigned To or Supplier to edit
           </p>
         </div>
       </div>
