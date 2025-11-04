@@ -102,11 +102,6 @@ export default function MasterSchedulePage() {
               <div className="flex-1">
                 <h1 className="text-xl font-semibold text-gray-900">
                   Master Schedule
-                  {construction && (
-                    <span className="ml-2 text-base font-normal text-gray-500">
-                      {construction.title}
-                    </span>
-                  )}
                 </h1>
               </div>
             </div>
