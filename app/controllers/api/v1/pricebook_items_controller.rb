@@ -221,19 +221,25 @@ module Api
         render json: {
           success: true,
           message: message,
-          stats: image_stats
+          stats: calculate_image_stats
         }
       end
 
       # GET /api/v1/pricebook/image_stats
       def image_stats
+        render json: calculate_image_stats
+      end
+
+      private
+
+      def calculate_image_stats
         total = PricebookItem.count
         with_images = PricebookItem.where.not(image_url: nil).count
         pending = PricebookItem.where(image_url: nil, image_fetch_status: nil).count
         fetching = PricebookItem.where(image_fetch_status: 'fetching').count
         failed = PricebookItem.where(image_fetch_status: 'failed').count
 
-        render json: {
+        {
           total: total,
           with_images: with_images,
           without_images: total - with_images,
@@ -243,8 +249,6 @@ module Api
           percentage_complete: total > 0 ? ((with_images.to_f / total) * 100).round(2) : 0
         }
       end
-
-      private
 
       def set_pricebook_item
         @item = PricebookItem.find(params[:id])

@@ -213,6 +213,7 @@ class ProductImageScraper
             .where(image_url: nil)
             .where.not(image_fetch_status: 'fetching')
             .limit(limit)
+            .to_a # Convert to array to respect limit
 
     results = {
       total: items.count,
@@ -221,7 +222,7 @@ class ProductImageScraper
       errors: []
     }
 
-    items.find_each do |item|
+    items.each do |item|
       scraper = new(item)
       result = scraper.fetch_and_upload_image
 
@@ -250,10 +251,11 @@ class ProductImageScraper
             .where(image_url: nil)
             .where.not(image_fetch_status: 'fetching')
             .limit(limit)
+            .to_a # Convert to array to respect limit
 
     results = { total: items.count, success: 0, failed: 0 }
 
-    items.find_each do |item|
+    items.each do |item|
       scraper = new(item)
       result = scraper.fetch_and_upload_image
 
