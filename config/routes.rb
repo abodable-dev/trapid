@@ -32,6 +32,15 @@ Rails.application.routes.draw do
       # Construction jobs management
       resources :constructions
 
+      # Purchase Orders management
+      resources :purchase_orders do
+        member do
+          post :approve
+          post :send_to_supplier
+          post :mark_received
+        end
+      end
+
       # Price Book management
       resources :pricebook, controller: 'pricebook_items', path: 'pricebook' do
         member do
