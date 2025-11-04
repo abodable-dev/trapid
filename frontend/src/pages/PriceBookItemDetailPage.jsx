@@ -112,6 +112,20 @@ export default function PriceBookItemDetailPage() {
     return `${years} ${years === 1 ? 'year' : 'years'} ago`
   }
 
+  // Get the price from the default supplier or fall back to current price
+  const getDisplayPrice = () => {
+    if (item && item.default_supplier && item.price_histories) {
+      // Find the most recent price history for the default supplier
+      const defaultSupplierHistory = item.price_histories.find(
+        history => history.supplier && history.supplier.id === item.default_supplier.id
+      )
+      if (defaultSupplierHistory) {
+        return defaultSupplierHistory.new_price
+      }
+    }
+    return item?.current_price
+  }
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -190,9 +204,18 @@ export default function PriceBookItemDetailPage() {
 
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Price</dt>
-                  <dd className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
-                    {item.current_price ? formatCurrency(item.current_price, false) : 'No price set'}
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    {item.default_supplier ? 'Default Supplier Price' : 'Current Price'}
+                  </dt>
+                  <dd className="mt-1">
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {getDisplayPrice() ? formatCurrency(getDisplayPrice(), false) : 'No price set'}
+                    </div>
+                    {item.default_supplier && (
+                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        from {item.default_supplier.name}
+                      </div>
+                    )}
                   </dd>
                 </div>
                 <div>
