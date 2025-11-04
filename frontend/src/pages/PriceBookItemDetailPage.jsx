@@ -311,29 +311,24 @@ export default function PriceBookItemDetailPage() {
                             </td>
                             <td className="px-3 py-2 text-center">
                               {history.supplier ? (
-                                <div
-                                  className="inline-block"
-                                  onClick={(e) => e.stopPropagation()}
+                                <Switch
+                                  checked={isDefaultSupplier}
+                                  onChange={(checked) => {
+                                    if (!isDefaultSupplier) {
+                                      handleSetDefaultSupplier(null, history.supplier.id)
+                                    }
+                                  }}
+                                  className={`${
+                                    isDefaultSupplier ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
+                                  } relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer`}
                                 >
-                                  <Switch
-                                    checked={isDefaultSupplier}
-                                    onChange={(checked) => {
-                                      if (!isDefaultSupplier) {
-                                        handleSetDefaultSupplier(null, history.supplier.id)
-                                      }
-                                    }}
+                                  <span className="sr-only">Set {history.supplier.name} as default supplier</span>
+                                  <span
                                     className={`${
-                                      isDefaultSupplier ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
-                                    } relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer`}
-                                  >
-                                    <span className="sr-only">Set {history.supplier.name} as default supplier</span>
-                                    <span
-                                      className={`${
-                                        isDefaultSupplier ? 'translate-x-5' : 'translate-x-0.5'
-                                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform pointer-events-none`}
-                                    />
-                                  </Switch>
-                                </div>
+                                      isDefaultSupplier ? 'translate-x-5' : 'translate-x-0.5'
+                                    } inline-block h-4 w-4 transform rounded-full bg-white transition-transform pointer-events-none`}
+                                  />
+                                </Switch>
                               ) : (
                                 <span className="text-gray-400 text-xs">-</span>
                               )}
