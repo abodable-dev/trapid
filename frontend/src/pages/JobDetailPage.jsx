@@ -19,6 +19,7 @@ import TeamSettings from '../components/job-detail/TeamSettings'
 const tabs = [
   { name: 'Overview' },
   { name: 'Purchase Orders' },
+  { name: 'Estimates' },
   { name: 'Activity' },
   { name: 'Budget' },
   { name: 'Schedule' },

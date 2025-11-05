@@ -11,7 +11,9 @@ import {
   ExclamationTriangleIcon,
   ArrowLeftIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  CubeIcon,
+  TagIcon
 } from '@heroicons/react/24/outline'
 
 export default function ContactDetailPage() {
@@ -267,7 +269,7 @@ export default function ContactDetailPage() {
                   <div key={supplier.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-750 rounded-lg">
                     <div className="flex-1">
                       <Link
-                        to="/suppliers"
+                        to={`/suppliers/${supplier.id}`}
                         className="text-gray-900 dark:text-white font-medium hover:text-blue-600 dark:hover:text-blue-400"
                       >
                         {supplier.name}
@@ -289,6 +291,93 @@ export default function ContactDetailPage() {
               </div>
             ) : (
               <p className="text-gray-500 dark:text-gray-400 text-sm">No suppliers linked to this contact</p>
+            )}
+          </div>
+
+          {/* Price Book */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3">
+                <CubeIcon className="h-5 w-5 text-gray-400" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Price Book Items
+                </h2>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50">
+                  {suppliers.reduce((sum, s) => sum + (s.pricebook_items?.length || 0), 0)} items
+                </span>
+              </div>
+            </div>
+            {suppliers.some(s => s.pricebook_items && s.pricebook_items.length > 0) ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                      <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        Supplier
+                      </th>
+                      <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        Code
+                      </th>
+                      <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        Item Name
+                      </th>
+                      <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        Current Price
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {suppliers.flatMap(supplier =>
+                      (supplier.pricebook_items || []).map(item => ({
+                        ...item,
+                        supplierName: supplier.name,
+                        supplierId: supplier.id
+                      }))
+                    ).map((item) => (
+                      <tr key={`${item.supplierId}-${item.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          <Link
+                            to={`/suppliers/${item.supplierId}`}
+                            className="hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                          >
+                            {item.supplierName}
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
+                          {item.item_code}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                          {item.item_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {item.category ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+                              <TagIcon className="h-3 w-3" />
+                              {item.category}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-white">
+                          ${parseFloat(item.current_price || 0).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="px-6 py-16 text-center">
+                <CubeIcon className="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600" />
+                <h3 className="mt-4 text-base font-medium text-gray-900 dark:text-white">No items in price book</h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  This contact's suppliers don't have any items in their price books yet.
+                </p>
+              </div>
             )}
           </div>
         </div>
