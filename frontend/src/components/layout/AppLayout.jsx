@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import axios from 'axios'
 import {
   Dialog,
   DialogBackdrop,
@@ -54,10 +55,21 @@ function classNames(...classes) {
 export default function AppLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [version, setVersion] = useState('loading...')
   const location = useLocation()
 
-  // Use version injected at build time from Vercel's git commit SHA
-  const version = __APP_VERSION__
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/version`)
+        setVersion(response.data.version)
+      } catch (error) {
+        console.error('Failed to fetch version:', error)
+        setVersion('unknown')
+      }
+    }
+    fetchVersion()
+  }, [])
 
   const isCurrentPath = (href) => {
     if (href === '/dashboard') {
