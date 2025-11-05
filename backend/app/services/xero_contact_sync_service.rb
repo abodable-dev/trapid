@@ -59,8 +59,7 @@ class XeroContactSyncService
     end
   end
 
-  private
-
+  # Make methods public for use by XeroContactSyncJob
   def fetch_xero_contacts
     result = @xero_client.get('Contacts')
 
@@ -357,5 +356,10 @@ class XeroContactSyncService
     return nil if tax_number.blank?
     # Remove spaces, dashes, and other formatting
     tax_number.to_s.gsub(/[\s\-]/, '').upcase
+  end
+
+  # Helper to set sync timestamp (useful for job)
+  def set_sync_timestamp(timestamp)
+    @sync_timestamp = timestamp
   end
 end
