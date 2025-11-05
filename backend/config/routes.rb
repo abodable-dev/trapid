@@ -95,6 +95,13 @@ Rails.application.routes.draw do
       # Company Settings
       resource :company_settings, only: [:show, :update]
 
+      # Folder Templates for OneDrive sync
+      resources :folder_templates do
+        member do
+          post :duplicate
+        end
+      end
+
       # Xero integration
       resources :xero, only: [] do
         collection do
@@ -102,6 +109,11 @@ Rails.application.routes.draw do
           post :callback
           get :status
           delete :disconnect
+          get :invoices
+          post :match_invoice
+          post :webhook
+          post :sync_contacts
+          get :sync_status
         end
       end
 

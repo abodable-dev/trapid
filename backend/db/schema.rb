@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_05_003856) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_05_013035) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -89,6 +89,30 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_003856) do
     t.integer "contact_region_id"
     t.string "contact_region"
     t.boolean "branch"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "last_synced_at"
+    t.text "xero_sync_error"
+  end
+
+  create_table "folder_template_items", force: :cascade do |t|
+    t.bigint "folder_template_id", null: false
+    t.string "name"
+    t.integer "level"
+    t.integer "order"
+    t.integer "parent_id"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["folder_template_id"], name: "index_folder_template_items_on_folder_template_id"
+  end
+
+  create_table "folder_templates", force: :cascade do |t|
+    t.string "name"
+    t.string "template_type"
+    t.boolean "is_system_default"
+    t.boolean "is_active"
+    t.integer "created_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -290,8 +314,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_003856) do
     t.date "required_on_site_date"
     t.boolean "creates_schedule_tasks", default: true
     t.string "task_category"
+    t.string "payment_status", default: "pending", null: false
+    t.decimal "invoiced_amount", precision: 15, scale: 2, default: "0.0"
+    t.date "invoice_date"
+    t.string "invoice_reference"
     t.index ["construction_id"], name: "index_purchase_orders_on_construction_id"
     t.index ["creates_schedule_tasks"], name: "index_purchase_orders_on_creates_schedule_tasks"
+    t.index ["payment_status"], name: "index_purchase_orders_on_payment_status"
     t.index ["purchase_order_number"], name: "index_purchase_orders_on_purchase_order_number", unique: true
     t.index ["required_date"], name: "index_purchase_orders_on_required_date"
     t.index ["required_on_site_date"], name: "index_purchase_orders_on_required_on_site_date"
@@ -492,6 +521,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_003856) do
   end
 
   add_foreign_key "columns", "tables"
+  add_foreign_key "folder_template_items", "folder_templates"
   add_foreign_key "grok_plans", "users"
   add_foreign_key "price_histories", "pricebook_items"
   add_foreign_key "price_histories", "suppliers"

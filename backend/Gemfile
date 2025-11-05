@@ -50,6 +50,7 @@ gem "mini_magick", "~> 4.12"  # Image processing
 
 # OAuth2 for Xero integration
 gem "oauth2", "~> 2.0"  # OAuth2 authentication for Xero API
+gem "fuzzy_match", "~> 2.1"  # Fuzzy string matching for contact sync
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
