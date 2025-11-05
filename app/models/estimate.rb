@@ -3,6 +3,7 @@ class Estimate < ApplicationRecord
   belongs_to :construction, optional: true
   has_many :estimate_line_items, dependent: :destroy
   has_many :purchase_orders, dependent: :nullify
+  has_many :estimate_reviews, dependent: :destroy
 
   # Enums
   enum :status, {

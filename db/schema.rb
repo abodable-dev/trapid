@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_05_041725) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_05_044117) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -129,6 +129,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_041725) do
     t.datetime "updated_at", null: false
     t.index ["category"], name: "index_estimate_line_items_on_category"
     t.index ["estimate_id"], name: "index_estimate_line_items_on_estimate_id"
+  end
+
+  create_table "estimate_reviews", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "estimate_id", null: false
+    t.string "status", default: "pending", null: false
+    t.text "ai_findings"
+    t.text "discrepancies"
+    t.integer "items_matched", default: 0
+    t.integer "items_mismatched", default: 0
+    t.integer "items_missing", default: 0
+    t.integer "items_extra", default: 0
+    t.decimal "confidence_score", precision: 5, scale: 2
+    t.datetime "reviewed_at"
+    t.index ["estimate_id"], name: "index_estimate_reviews_on_estimate_id"
+    t.index ["reviewed_at"], name: "index_estimate_reviews_on_reviewed_at"
+    t.index ["status"], name: "index_estimate_reviews_on_status"
   end
 
   create_table "estimates", force: :cascade do |t|
@@ -653,6 +671,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_041725) do
   add_foreign_key "columns", "tables"
   add_foreign_key "constructions", "designs"
   add_foreign_key "estimate_line_items", "estimates"
+  add_foreign_key "estimate_reviews", "estimates"
   add_foreign_key "estimates", "constructions"
   add_foreign_key "folder_template_items", "folder_templates"
   add_foreign_key "grok_plans", "users"

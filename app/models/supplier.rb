@@ -1,6 +1,7 @@
 class Supplier < ApplicationRecord
   # Associations
   has_many :pricebook_items, dependent: :nullify
+  has_many :default_pricebook_items, class_name: 'PricebookItem', foreign_key: 'default_supplier_id', dependent: :nullify
   has_many :price_histories, dependent: :nullify
   has_many :purchase_orders, dependent: :restrict_with_exception
   belongs_to :contact, optional: true  # Legacy association

@@ -45,7 +45,8 @@ module Api
             include: {
               contact: { only: [:id, :full_name, :email, :mobile_phone] },
               contacts: { only: [:id, :full_name, :email, :mobile_phone, :office_phone] },
-              pricebook_items: { only: [:id, :item_code, :item_name, :current_price] }
+              pricebook_items: { only: [:id, :item_code, :item_name, :current_price] },
+              default_pricebook_items: { only: [:id, :item_code, :item_name, :current_price, :supplier_id] }
             },
             methods: [:match_confidence_label, :match_status, :contact_emails, :contact_phones]
           )
@@ -149,7 +150,8 @@ module Api
           supplier: @supplier.as_json(
             include: {
               contact: { only: [:id, :full_name, :email, :mobile_phone, :office_phone, :website, :tax_number, :xero_id, :sync_with_xero] },
-              pricebook_items: { only: [:id, :item_code, :item_name, :category, :current_price] }
+              pricebook_items: { only: [:id, :item_code, :item_name, :category, :current_price] },
+              default_pricebook_items: { only: [:id, :item_code, :item_name, :category, :current_price, :supplier_id] }
             },
             methods: [:match_confidence_label, :match_status]
           )

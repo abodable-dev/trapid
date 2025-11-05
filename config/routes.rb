@@ -164,8 +164,13 @@ Rails.application.routes.draw do
         member do
           patch :match
           post :generate_purchase_orders
+          post :ai_review, to: 'estimate_reviews#create'
         end
+        resources :reviews, controller: 'estimate_reviews', only: [:index]
       end
+
+      # Estimate Reviews (AI Plan Analysis)
+      resources :estimate_reviews, only: [:show, :destroy]
 
       # External integrations (API endpoints for third-party systems)
       namespace :external do
