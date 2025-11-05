@@ -24,6 +24,7 @@ import {
   BriefcaseIcon,
   BookOpenIcon,
   UserGroupIcon,
+  UsersIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
@@ -32,6 +33,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
+  { name: 'Contacts', href: '/contacts', icon: UsersIcon },
   { name: 'Suppliers', href: '/suppliers', icon: UserGroupIcon },
 ]
 

@@ -1,6 +1,7 @@
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import AccountsLayout from '../components/layout/AccountsLayout'
 import XeroConnection from '../components/settings/XeroConnection'
+import OneDriveConnection from '../components/settings/OneDriveConnection'
 import FolderTemplatesTab from '../components/settings/FolderTemplatesTab'
 
 export default function SettingsPage() {
@@ -47,8 +48,9 @@ export default function SettingsPage() {
                 </p>
               </div>
 
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 space-y-6">
                 <XeroConnection />
+                <OneDriveConnection />
               </div>
             </div>
           </TabPanel>

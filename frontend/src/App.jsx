@@ -11,6 +11,7 @@ import SuppliersPage from './pages/SuppliersPage'
 import SupplierDetailPage from './pages/SupplierDetailPage'
 import SupplierEditPage from './pages/SupplierEditPage'
 import SupplierNewPage from './pages/SupplierNewPage'
+import ContactsPage from './pages/ContactsPage'
 import ContactDetailPage from './pages/ContactDetailPage'
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage'
 import PurchaseOrderEditPage from './pages/PurchaseOrderEditPage'
@@ -36,11 +37,12 @@ function App() {
         <Route path="/jobs/:id/schedule" element={<AppLayout><MasterSchedulePage /></AppLayout>} />
         <Route path="/price-books" element={<AppLayout><PriceBooksPage /></AppLayout>} />
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
+        <Route path="/contacts" element={<AppLayout><ContactsPage /></AppLayout>} />
+        <Route path="/contacts/:id" element={<AppLayout><ContactDetailPage /></AppLayout>} />
         <Route path="/suppliers" element={<AppLayout><SuppliersPage /></AppLayout>} />
         <Route path="/suppliers/new" element={<AppLayout><SupplierNewPage /></AppLayout>} />
         <Route path="/suppliers/:id/edit" element={<AppLayout><SupplierEditPage /></AppLayout>} />
         <Route path="/suppliers/:id" element={<AppLayout><SupplierDetailPage /></AppLayout>} />
-        <Route path="/contacts/:id" element={<AppLayout><ContactDetailPage /></AppLayout>} />
         <Route path="/purchase-orders/:id/edit" element={<AppLayout><PurchaseOrderEditPage /></AppLayout>} />
         <Route path="/purchase-orders/:id" element={<AppLayout><PurchaseOrderDetailPage /></AppLayout>} />
         <Route path="/import" element={<AppLayout><ImportPage /></AppLayout>} />

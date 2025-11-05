@@ -1,100 +1,147 @@
-import { useState } from 'react'
-import { FolderIcon, DocumentIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect, useRef } from 'react'
+import {
+  FolderIcon,
+  DocumentIcon,
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
+  ArrowTopRightOnSquareIcon,
+  CloudIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+} from '@heroicons/react/24/outline'
+import { api } from '../../api'
 
 export default function JobDocumentsTab({ jobId, jobTitle }) {
-  const [folders] = useState([
-    {
-      id: 1,
-      name: '01 REVIT',
-      fileCount: 0,
-      lastModified: null,
-    },
-    {
-      id: 2,
-      name: '02 Land Info',
-      fileCount: 0,
-      lastModified: null,
-    },
-    {
-      id: 3,
-      name: '03 Contract',
-      fileCount: 0,
-      lastModified: null,
-      children: [
-        { id: 4, name: 'Sales Info', fileCount: 0 },
-        { id: 5, name: 'Sent', fileCount: 0 },
-      ],
-    },
-    {
-      id: 6,
-      name: '04 Certification',
-      fileCount: 0,
-      lastModified: null,
-      children: [
-        { id: 7, name: 'Final Inspection Form 16, Form 11 or 21', fileCount: 0 },
-        { id: 8, name: 'Final Send For Inc Certificates', fileCount: 0 },
-        { id: 9, name: 'SDA Plan Approved', fileCount: 0 },
-        { id: 10, name: 'Send SDA Approval', fileCount: 0 },
-        { id: 11, name: 'Start Approved Plan And Approval', fileCount: 0 },
-        { id: 12, name: 'Start To Send For Certification', fileCount: 0 },
-      ],
-    },
-    {
-      id: 13,
-      name: '05 Estimation',
-      fileCount: 0,
-      lastModified: null,
-      children: [
-        { id: 14, name: 'Energex Connection', fileCount: 0 },
-        { id: 15, name: 'Estimation', fileCount: 0 },
-        { id: 16, name: 'Quotes', fileCount: 0 },
-      ],
-    },
-    {
-      id: 17,
-      name: '06 Colour Selection',
-      fileCount: 0,
-      lastModified: null,
-    },
-    {
-      id: 18,
-      name: '07 Photos',
-      fileCount: 0,
-      lastModified: null,
-      children: [
-        { id: 19, name: '01 SITE', fileCount: 0 },
-        { id: 20, name: '02 SLAB', fileCount: 0 },
-        { id: 21, name: '03 FRAME', fileCount: 0 },
-        { id: 22, name: '04 ENCLOSED', fileCount: 0 },
-        { id: 23, name: '05 FIXING', fileCount: 0 },
-        { id: 24, name: '06 Practical Completion', fileCount: 0 },
-        { id: 25, name: '07 Supervisor Photos', fileCount: 0 },
-      ],
-    },
-    {
-      id: 26,
-      name: '08 SITE',
-      fileCount: 0,
-      lastModified: null,
-    },
-    {
-      id: 27,
-      name: '09 Handover',
-      fileCount: 0,
-      lastModified: null,
-    },
-    {
-      id: 28,
-      name: '10 Finance',
-      fileCount: 0,
-      lastModified: null,
-      children: [
-        { id: 29, name: 'Invoices PDF', fileCount: 0 },
-      ],
-    },
-  ])
-
+  const [status, setStatus] = useState({
+    loading: true,
+    connected: false,
+    folderPath: null,
+    driveId: null,
+    rootFolderId: null,
+  })
+  const [folders, setFolders] = useState([])
   const [expandedFolders, setExpandedFolders] = useState(new Set())
+  const [connecting, setConnecting] = useState(false)
+  const [creatingFolders, setCreatingFolders] = useState(false)
+  const [uploading, setUploading] = useState(null)
+  const [error, setError] = useState(null)
+  const [message, setMessage] = useState(null)
+  const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    checkOneDriveStatus()
+  }, [jobId])
+
+  const checkOneDriveStatus = async () => {
+    try {
+      setStatus(prev => ({ ...prev, loading: true }))
+      setError(null)
+
+      const response = await api.get(`/api/v1/onedrive/status?construction_id=${jobId}`)
+
+      setStatus({
+        loading: false,
+        connected: response.connected,
+        folderPath: response.folder_path,
+        driveId: response.drive_id,
+        rootFolderId: response.root_folder_id,
+      })
+
+      // If connected, load the folder structure
+      if (response.connected && response.root_folder_id) {
+        await loadFolderStructure(response.root_folder_id)
+      }
+    } catch (err) {
+      console.error('Failed to check OneDrive status:', err)
+      setStatus({ loading: false, connected: false })
+      setError(err.message || 'Failed to check OneDrive status')
+    }
+  }
+
+  const loadFolderStructure = async (rootFolderId) => {
+    try {
+      const response = await api.get(`/api/v1/onedrive/folders?construction_id=${jobId}`)
+
+      // Build hierarchical folder structure from flat list
+      const items = response.items || []
+      const folderItems = items.filter(item => item.folder)
+
+      setFolders(folderItems)
+    } catch (err) {
+      console.error('Failed to load folder structure:', err)
+      setError(err.message || 'Failed to load folders')
+    }
+  }
+
+  const handleConnectOneDrive = () => {
+    setConnecting(true)
+    // Redirect to OAuth authorization endpoint
+    window.location.href = `${import.meta.env.VITE_API_URL}/api/v1/onedrive/authorize?construction_id=${jobId}`
+  }
+
+  const handleCreateFolders = async () => {
+    try {
+      setCreatingFolders(true)
+      setError(null)
+      setMessage(null)
+
+      const response = await api.post(`/api/v1/onedrive/create_folders?construction_id=${jobId}`)
+
+      setMessage({
+        type: 'success',
+        text: `Folder structure created successfully! Root folder: ${response.folder_path}`,
+      })
+
+      // Refresh status and folder structure
+      await checkOneDriveStatus()
+    } catch (err) {
+      console.error('Failed to create folders:', err)
+      setError(err.message || 'Failed to create folder structure')
+    } finally {
+      setCreatingFolders(false)
+    }
+  }
+
+  const handleUpload = (folderId) => {
+    setUploading(folderId)
+    fileInputRef.current.click()
+  }
+
+  const handleFileSelect = async (event) => {
+    const file = event.target.files[0]
+    if (!file || !uploading) return
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('construction_id', jobId)
+      formData.append('folder_id', uploading)
+
+      await api.post('/api/v1/onedrive/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      setMessage({
+        type: 'success',
+        text: `File "${file.name}" uploaded successfully!`,
+      })
+
+      // Refresh folder structure
+      await loadFolderStructure(status.rootFolderId)
+    } catch (err) {
+      console.error('Failed to upload file:', err)
+      setError(err.message || 'Failed to upload file')
+    } finally {
+      setUploading(null)
+      event.target.value = '' // Reset file input
+    }
+  }
+
+  const handleOpenInOneDrive = (webUrl) => {
+    window.open(webUrl, '_blank', 'noopener,noreferrer')
+  }
 
   const toggleFolder = (folderId) => {
     setExpandedFolders(prev => {
@@ -109,8 +156,9 @@ export default function JobDocumentsTab({ jobId, jobTitle }) {
   }
 
   const renderFolder = (folder, level = 0) => {
-    const hasChildren = folder.children && folder.children.length > 0
+    const hasChildren = folder.folder?.childCount > 0
     const isExpanded = expandedFolders.has(folder.id)
+    const fileCount = folder.folder?.childCount || 0
 
     return (
       <div key={folder.id}>
@@ -138,18 +186,23 @@ export default function JobDocumentsTab({ jobId, jobTitle }) {
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                 {folder.name}
               </p>
+              {folder.lastModifiedDateTime && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Modified {new Date(folder.lastModifiedDateTime).toLocaleDateString()}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-4">
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {folder.fileCount} files
+                {fileCount} {fileCount === 1 ? 'item' : 'items'}
               </span>
 
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    alert('Upload functionality coming with OneDrive integration')
+                    handleUpload(folder.id)
                   }}
                   className="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
                   title="Upload files"
@@ -159,7 +212,7 @@ export default function JobDocumentsTab({ jobId, jobTitle }) {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    alert('Open in OneDrive - integration coming soon')
+                    handleOpenInOneDrive(folder.webUrl)
                   }}
                   className="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
                   title="Open in OneDrive"
@@ -171,40 +224,220 @@ export default function JobDocumentsTab({ jobId, jobTitle }) {
           </div>
         </div>
 
-        {hasChildren && isExpanded && (
-          <div>
-            {folder.children.map(child => renderFolder(child, level + 1))}
-          </div>
-        )}
+        {/* For now, we'll show a flat list. In the future, we could recursively load children */}
       </div>
     )
   }
 
+  // Loading state
+  if (status.loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="flex items-center gap-x-3">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent dark:border-indigo-500"></div>
+          <span className="text-sm text-gray-600 dark:text-gray-400">Loading OneDrive status...</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Not connected state
+  if (!status.connected) {
+    return (
+      <div className="space-y-6">
+        {/* Connection prompt */}
+        <div className="text-center py-12 bg-white dark:bg-gray-900 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
+          <CloudIcon className="mx-auto h-16 w-16 text-gray-400 dark:text-gray-500" />
+          <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
+            Connect to OneDrive
+          </h3>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+            Connect your Microsoft OneDrive account to automatically create a folder structure for {jobTitle}
+            and sync documents.
+          </p>
+
+          {error && (
+            <div className="mt-6 max-w-md mx-auto">
+              <div className="rounded-md bg-red-50 dark:bg-red-900/10 p-4">
+                <div className="flex">
+                  <ExclamationCircleIcon className="h-5 w-5 text-red-400 dark:text-red-500" />
+                  <div className="ml-3">
+                    <p className="text-sm text-red-800 dark:text-red-400">{error}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6">
+            <button
+              onClick={handleConnectOneDrive}
+              disabled={connecting}
+              className="inline-flex items-center gap-2 px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              {connecting ? (
+                <>
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <CloudIcon className="h-5 w-5" />
+                  Connect OneDrive
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="mt-8 max-w-md mx-auto text-left">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">What happens next:</h4>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <li>You'll be redirected to Microsoft to sign in</li>
+              <li>Authorize Trapid to access your OneDrive</li>
+              <li>Return here to create your folder structure</li>
+              <li>Upload, view, and manage documents directly from Trapid</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Connected but no folders created yet
+  if (status.connected && !status.rootFolderId) {
+    return (
+      <div className="space-y-6">
+        {/* Success message */}
+        <div className="rounded-md bg-green-50 dark:bg-green-900/10 p-4">
+          <div className="flex">
+            <CheckCircleIcon className="h-5 w-5 text-green-400 dark:text-green-500" />
+            <div className="ml-3">
+              <p className="text-sm text-green-800 dark:text-green-400">
+                OneDrive connected successfully! Now create your folder structure.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Create folders prompt */}
+        <div className="text-center py-12 bg-white dark:bg-gray-900 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
+          <FolderIcon className="mx-auto h-16 w-16 text-yellow-500" />
+          <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
+            Create Folder Structure
+          </h3>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+            Create the Tekna Standard Residential folder structure in your OneDrive for {jobTitle}.
+          </p>
+
+          {error && (
+            <div className="mt-6 max-w-md mx-auto">
+              <div className="rounded-md bg-red-50 dark:bg-red-900/10 p-4">
+                <div className="flex">
+                  <ExclamationCircleIcon className="h-5 w-5 text-red-400 dark:text-red-500" />
+                  <div className="ml-3">
+                    <p className="text-sm text-red-800 dark:text-red-400">{error}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6">
+            <button
+              onClick={handleCreateFolders}
+              disabled={creatingFolders}
+              className="inline-flex items-center gap-2 px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              {creatingFolders ? (
+                <>
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  Creating Folders...
+                </>
+              ) : (
+                <>
+                  <FolderIcon className="h-5 w-5" />
+                  Create Folder Structure
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Connected and folders exist - show the full interface
   return (
     <div className="space-y-6">
-      {/* Header with actions */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+      {/* Messages */}
+      {message && (
+        <div
+          className={`rounded-md p-4 ${
+            message.type === 'success'
+              ? 'bg-green-50 dark:bg-green-900/10'
+              : 'bg-red-50 dark:bg-red-900/10'
+          }`}
+        >
+          <div className="flex">
+            <div className="flex-shrink-0">
+              {message.type === 'success' ? (
+                <CheckCircleIcon className="h-5 w-5 text-green-400 dark:text-green-500" />
+              ) : (
+                <ExclamationCircleIcon className="h-5 w-5 text-red-400 dark:text-red-500" />
+              )}
+            </div>
+            <div className="ml-3">
+              <p
+                className={`text-sm ${
+                  message.type === 'success'
+                    ? 'text-green-800 dark:text-green-400'
+                    : 'text-red-800 dark:text-red-400'
+                }`}
+              >
+                {message.text}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-md bg-red-50 dark:bg-red-900/10 p-4">
+          <div className="flex">
+            <ExclamationCircleIcon className="h-5 w-5 text-red-400 dark:text-red-500" />
+            <div className="ml-3">
+              <p className="text-sm text-red-800 dark:text-red-400">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header with OneDrive status */}
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              Project Documents
-            </h3>
+            <div className="flex items-center gap-2">
+              <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-500" />
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                OneDrive Connected
+              </h3>
+            </div>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              OneDrive folder structure for <span className="font-medium">{jobTitle}</span>
+              Synced folder: <span className="font-medium">{status.folderPath || jobTitle}</span>
             </p>
-            <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+            <p className="mt-1 text-xs text-green-600 dark:text-green-400">
               📁 Tekna Standard Residential Template
             </p>
           </div>
 
           <button
-            onClick={() => alert('Sync with OneDrive - integration coming soon')}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            onClick={() => loadFolderStructure(status.rootFolderId)}
+            className="inline-flex items-center gap-2 px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            Sync with OneDrive
+            Refresh
           </button>
         </div>
       </div>
@@ -217,24 +450,38 @@ export default function JobDocumentsTab({ jobId, jobTitle }) {
               Folder Structure
             </h4>
             <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-              <span>29 folders</span>
-              <span>•</span>
-              <span>0 files</span>
+              <span>{folders.length} folders</span>
             </div>
           </div>
         </div>
 
-        <div className="divide-y divide-gray-200 dark:divide-gray-700">
-          {folders.map(folder => renderFolder(folder, 0))}
-        </div>
+        {folders.length > 0 ? (
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            {folders.map(folder => renderFolder(folder, 0))}
+          </div>
+        ) : (
+          <div className="px-4 py-12 text-center">
+            <FolderIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              No folders found. Try refreshing.
+            </p>
+          </div>
+        )}
 
         <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            This folder structure was created from the <span className="font-medium">Tekna Standard Residential</span> template.
-            Full OneDrive integration coming soon.
+            Synced with OneDrive • Click folder actions to upload or open in OneDrive
           </p>
         </div>
       </div>
+
+      {/* Hidden file input for uploads */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
     </div>
   )
 }
