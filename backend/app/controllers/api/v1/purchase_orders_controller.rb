@@ -49,7 +49,10 @@ module Api
           purchase_orders: @purchase_orders.as_json(include: {
             supplier: { only: [:id, :name] },
             construction: { only: [:id, :title] },
-            line_items: { include: { pricebook_item: { only: [:id, :item_code, :item_name] } } }
+            line_items: {
+              include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price] } },
+              methods: [:price_drift, :price_outdated?, :price_status, :price_status_label]
+            }
           }),
           pagination: {
             current_page: page,
@@ -69,7 +72,8 @@ module Api
             supplier: { only: [:id, :name, :contact_person, :email, :phone, :address] },
             construction: { only: [:id, :title] },
             line_items: {
-              include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price, :unit_of_measure] } }
+              include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price, :unit_of_measure] } },
+              methods: [:price_drift, :price_outdated?, :price_status, :price_status_label]
             }
           }),
           company_setting: company_setting.as_json(only: [:company_name, :abn, :gst_number, :email, :phone, :address, :logo_url])
