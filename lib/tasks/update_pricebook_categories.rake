@@ -3,7 +3,7 @@ require 'csv'
 namespace :pricebook do
   desc "Update pricebook items with categories and suppliers from CSV"
   task update_categories: :environment do
-    csv_path = Rails.root.join('..', 'easybuildapp development Price Books(in).csv')
+    csv_path = Rails.root.join('pricebook_import.csv')
 
     unless File.exist?(csv_path)
       puts "❌ CSV file not found at: #{csv_path}"
