@@ -1,0 +1,35 @@
+- If i ever flag an error, pull on the bug-hunter agent to go and find the issue. Consult with the backend developer to come up with a solution in the fastest possible manner
+- every time i ask to make a design or a front end change, use the design agent. I want design to remain consistant
+- when implementing features that users should be able to customize or configure themselves, consult with the no-code agent first to ensure we're empowering users rather than hardcoding values. The no-code agent will work with the frontend designer to create intuitive configuration UIs. Focus areas include: table customization, view presets, filters, dashboard layouts, form templates, and user preferences. PRIMARY PATTERN: inline editing inspired by Airtable and Monday.com - click to edit, auto-save, no unnecessary modals
+- SECURITY: Before ANY deployment, the deploy-manager agent MUST scan for leaked API keys, tokens, secrets, and credentials. Run the API key detection script and BLOCK deployment if any secrets are found. Never push API keys, access tokens, private keys, or credentials to production. All secrets must be in environment variables only.
+- when creating pills, lets use this code as reference export default function Example() {
+  return (
+    <>
+      <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-gray-400/10 dark:text-gray-400">
+        Badge
+      </span>
+      <span className="inline-flex items-center rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-400/10 dark:text-red-400">
+        Badge
+      </span>
+      <span className="inline-flex items-center rounded-md bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800 dark:bg-yellow-400/10 dark:text-yellow-500">
+        Badge
+      </span>
+      <span className="inline-flex items-center rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-400/10 dark:text-green-400">
+        Badge
+      </span>
+      <span className="inline-flex items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-400/10 dark:text-blue-400">
+        Badge
+      </span>
+      <span className="inline-flex items-center rounded-md bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-400">
+        Badge
+      </span>
+      <span className="inline-flex items-center rounded-md bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700 dark:bg-purple-400/10 dark:text-purple-400">
+        Badge
+      </span>
+      <span className="inline-flex items-center rounded-md bg-pink-100 px-2 py-1 text-xs font-medium text-pink-700 dark:bg-pink-400/10 dark:text-pink-400">
+        Badge
+      </span>
+    </>
+  )
+}
+ I want to be able to use the same colours and keep the UI/UX vibrant and fun
