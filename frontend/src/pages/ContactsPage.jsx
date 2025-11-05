@@ -161,8 +161,8 @@ export default function ContactsPage() {
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Contacts & Clients</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage your contacts and client relationships</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Contacts & Suppliers</h1>
+          <p className="text-gray-600 dark:text-gray-400">Manage your contacts and supplier relationships</p>
         </div>
       </div>
 
@@ -191,7 +191,7 @@ export default function ContactsPage() {
               }`
             }
           >
-            Clients ({suppliers.length})
+            Suppliers ({suppliers.length})
           </Tab>
         </TabList>
 
@@ -412,9 +412,9 @@ export default function ContactsPage() {
             </div>
           </TabPanel>
 
-          {/* Clients Tab */}
+          {/* Suppliers Tab */}
           <TabPanel>
-            {/* Stats for Clients */}
+            {/* Stats for Suppliers */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
                 <div className="flex items-center justify-between">

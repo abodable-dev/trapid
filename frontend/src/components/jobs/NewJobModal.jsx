@@ -1,5 +1,5 @@
-import { useState, Fragment } from 'react'
-import { Dialog, Transition } from '@headlessui/react'
+import { useState, Fragment, useEffect } from 'react'
+import { Dialog, Transition, Combobox, RadioGroup } from '@headlessui/react'
 import {
   XMarkIcon,
   BriefcaseIcon,
@@ -12,7 +12,13 @@ import {
   CheckCircleIcon,
   ArrowRightIcon,
   ArrowLeftIcon,
+  MagnifyingGlassIcon,
+  DocumentTextIcon,
+  CheckIcon,
+  ChevronUpDownIcon,
+  LightBulbIcon,
 } from '@heroicons/react/24/outline'
+import api from '../../api'
 
 const STAGES = [
   'Planning',
@@ -30,28 +36,107 @@ const STATUSES = [
   'Complete',
 ]
 
+const LEAD_SOURCES = [
+  'Referral',
+  'Website',
+  'Social Media',
+  'Email Campaign',
+  'Walk-in',
+  'Past Client',
+  'Other',
+]
+
+const LAND_STATUS_OPTIONS = [
+  'Registered',
+  'Not Yet Registered',
+  'Unconditional',
+  'Settled',
+  'Under Contract',
+]
+
 export default function NewJobModal({ isOpen, onClose, onSuccess }) {
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [direction, setDirection] = useState('forward')
   const [formData, setFormData] = useState({
     title: '',
-    client_name: '',
     location: '',
+    client_id: null,
+    client_name: '',
+    client_email: '',
+    client_phone: '',
+    lead_source: '',
     contract_value: '',
     start_date: '',
     end_date: '',
     site_supervisor_name: 'Andrew Clement',
     stage: 'Planning',
     status: 'Active',
+    has_plans: false,
+    has_engineering: false,
+    has_soil_report: false,
+    has_energy_report: false,
+    land_status: '',
   })
 
+  // Client lookup state
+  const [clients, setClients] = useState([])
+  const [clientQuery, setClientQuery] = useState('')
+  const [selectedClient, setSelectedClient] = useState(null)
+  const [loadingClients, setLoadingClients] = useState(false)
+
   const totalSteps = 3
+
+  // Debounced client search
+  useEffect(() => {
+    if (clientQuery.length < 2) {
+      setClients([])
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      setLoadingClients(true)
+      try {
+        const response = await api.get(`/api/v1/contacts?search=${encodeURIComponent(clientQuery)}`)
+        setClients(response.data.contacts || [])
+      } catch (error) {
+        console.error('Error fetching clients:', error)
+        setClients([])
+      } finally {
+        setLoadingClients(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [clientQuery])
 
   const handleChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
+    }))
+  }
+
+  const handleClientSelect = (client) => {
+    if (!client) {
+      setSelectedClient(null)
+      setFormData(prev => ({
+        ...prev,
+        client_id: null,
+        client_name: '',
+        client_email: '',
+        client_phone: ''
+      }))
+      return
+    }
+
+    setSelectedClient(client)
+    setFormData(prev => ({
+      ...prev,
+      client_id: client.id,
+      client_name: client.full_name || '',
+      client_email: client.email || '',
+      client_phone: client.mobile_phone || client.office_phone || ''
     }))
   }
 
@@ -85,16 +170,26 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
       // Reset form
       setFormData({
         title: '',
-        client_name: '',
         location: '',
+        client_id: null,
+        client_name: '',
+        client_email: '',
+        client_phone: '',
+        lead_source: '',
         contract_value: '',
         start_date: '',
         end_date: '',
-        project_manager: '',
+        site_supervisor_name: 'Andrew Clement',
         stage: 'Planning',
         status: 'Active',
-        site_supervisor_name: 'Andrew Clement',
+        has_plans: false,
+        has_engineering: false,
+        has_soil_report: false,
+        has_energy_report: false,
+        land_status: '',
       })
+      setSelectedClient(null)
+      setClientQuery('')
       setStep(1)
       onClose()
     } catch (error) {
@@ -107,11 +202,20 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
 
   const canProceedToNext = () => {
     if (step === 1) {
-      return formData.title.trim() !== ''
+      return (
+        formData.title.trim() !== '' &&
+        formData.location.trim() !== '' &&
+        formData.client_id !== null
+      )
+    }
+    if (step === 2) {
+      return true // All fields optional
     }
     if (step === 3) {
       return (
         formData.title.trim() !== '' &&
+        formData.location.trim() !== '' &&
+        formData.client_id !== null &&
         formData.site_supervisor_name.trim() !== '' &&
         formData.status.trim() !== ''
       )

@@ -5,12 +5,18 @@ class MicrosoftGraphClient
   class AuthenticationError < StandardError; end
   class APIError < StandardError; end
 
-  def initialize(credential)
-    @credential = credential
+  def initialize(credential = nil)
+    # Support both per-construction and organization-level credentials
+    @credential = credential || OrganizationOneDriveCredential.active_credential
+
+    unless @credential
+      raise AuthenticationError, "No OneDrive credential found. Please connect OneDrive first."
+    end
+
     ensure_valid_token!
   end
 
-  # OAuth Methods
+  # OAuth Methods (for per-construction auth - legacy)
 
   # Get authorization URL for user to consent
   def self.authorization_url(redirect_uri, state = nil)
@@ -26,7 +32,7 @@ class MicrosoftGraphClient
     "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?#{params.to_query}"
   end
 
-  # Exchange authorization code for access token
+  # Exchange authorization code for access token (for per-construction auth)
   def self.exchange_code_for_token(code, redirect_uri)
     response = HTTParty.post(TOKEN_URL,
       body: {
@@ -42,38 +48,130 @@ class MicrosoftGraphClient
     handle_token_response(response)
   end
 
-  # Refresh access token
-  def refresh_token!
+  # Client Credentials Flow (for organization-wide auth)
+  def self.authenticate_as_application
     response = HTTParty.post(TOKEN_URL,
       body: {
         client_id: ENV['ONEDRIVE_CLIENT_ID'],
         client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
-        refresh_token: @credential.refresh_token,
-        grant_type: 'refresh_token'
+        scope: 'https://graph.microsoft.com/.default',
+        grant_type: 'client_credentials'
       },
       headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
     )
 
-    token_data = self.class.handle_token_response(response)
+    handle_token_response(response)
+  end
 
-    # Update credential with new tokens
-    @credential.update!(
-      access_token: token_data[:access_token],
-      refresh_token: token_data[:refresh_token] || @credential.refresh_token,
-      token_expires_at: token_data[:expires_at]
-    )
+  # Refresh access token
+  def refresh_token!
+    # Check if this is organization credential (doesn't use refresh tokens with client credentials)
+    if @credential.is_a?(OrganizationOneDriveCredential)
+      # For organization credentials using client credentials flow, just get a new token
+      token_data = self.class.authenticate_as_application
+
+      @credential.update!(
+        access_token: token_data[:access_token],
+        token_expires_at: token_data[:expires_at]
+      )
+    else
+      # For per-construction credentials, use refresh token
+      response = HTTParty.post(TOKEN_URL,
+        body: {
+          client_id: ENV['ONEDRIVE_CLIENT_ID'],
+          client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+          refresh_token: @credential.refresh_token,
+          grant_type: 'refresh_token'
+        },
+        headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
+      )
+
+      token_data = self.class.handle_token_response(response)
+
+      @credential.update!(
+        access_token: token_data[:access_token],
+        refresh_token: token_data[:refresh_token] || @credential.refresh_token,
+        token_expires_at: token_data[:expires_at]
+      )
+    end
 
     token_data
   end
 
   # Drive/Folder Operations
 
-  # Get user's default drive
+  # Get user's default drive (or first available drive for app permissions)
   def get_default_drive
-    get('/me/drive')
+    # For app permissions, we need to get a specific drive
+    # Try to get the organization's default drive
+    response = get('/drives')
+
+    if response['value']&.any?
+      response['value'].first # Return first available drive
+    else
+      # Fallback to /me/drive for delegated permissions
+      get('/me/drive')
+    end
   end
 
-  # Create folder structure based on template
+  # Get drive by ID
+  def get_drive(drive_id)
+    get("/drives/#{drive_id}")
+  end
+
+  # Create root folder for all jobs (organization-level)
+  def create_jobs_root_folder(folder_name = "Trapid Jobs")
+    # Get the drive if we don't have it
+    unless @credential.drive_id
+      drive = get_default_drive
+      @credential.update!(
+        drive_id: drive['id'],
+        drive_name: drive['name']
+      )
+    end
+
+    # Create root folder for all Trapid jobs
+    root_folder = create_folder(folder_name, drive_id: @credential.drive_id)
+
+    # Update credential with root folder info
+    @credential.update!(
+      root_folder_id: root_folder['id'],
+      root_folder_path: folder_name,
+      metadata: @credential.metadata.merge({
+        root_folder_name: folder_name,
+        root_folder_web_url: root_folder['webUrl'],
+        created_at: Time.current
+      })
+    )
+
+    root_folder
+  end
+
+  # Create folder structure for a specific construction/job
+  def create_job_folder_structure(construction, template)
+    # Ensure we have a root folder for all jobs
+    unless @credential.root_folder_id
+      create_jobs_root_folder
+    end
+
+    # Prepare job data for variable resolution
+    job_data = {
+      job_code: construction.id.to_s.rjust(3, '0'),
+      project_name: construction.title,
+      site_supervisor: construction.site_supervisor_name
+    }
+
+    # Create job-specific root folder (e.g., "001 - Malbon Street")
+    job_folder_name = "#{job_data[:job_code]} - #{job_data[:project_name]}"
+    job_folder = create_folder(job_folder_name, parent_id: @credential.root_folder_id)
+
+    # Create subfolders based on template
+    create_subfolders_from_template(template, job_folder['id'], job_data)
+
+    job_folder
+  end
+
+  # Create folder structure based on template (legacy per-construction method)
   def create_folder_structure(template, job_data = {})
     drive = get_default_drive
     drive_id = drive['id']
@@ -86,17 +184,19 @@ class MicrosoftGraphClient
 
     root_folder = create_folder(root_folder_name, drive_id: drive_id)
 
-    # Update credential with folder information
-    @credential.update!(
-      drive_id: drive_id,
-      root_folder_id: root_folder['id'],
-      folder_path: root_folder_name,
-      metadata: @credential.metadata.merge({
-        root_folder_name: root_folder_name,
-        root_folder_web_url: root_folder['webUrl'],
-        created_at: Time.current
-      })
-    )
+    # Update credential with folder information (for per-construction credentials)
+    if @credential.is_a?(OneDriveCredential)
+      @credential.update!(
+        drive_id: drive_id,
+        root_folder_id: root_folder['id'],
+        folder_path: root_folder_name,
+        metadata: @credential.metadata.merge({
+          root_folder_name: root_folder_name,
+          root_folder_web_url: root_folder['webUrl'],
+          created_at: Time.current
+        })
+      )
+    end
 
     # Create subfolders based on template
     create_subfolders_from_template(template, root_folder['id'], job_data)
@@ -109,9 +209,9 @@ class MicrosoftGraphClient
     path = if drive_id && !parent_id
       "/drives/#{drive_id}/root/children"
     elsif parent_id
-      "/me/drive/items/#{parent_id}/children"
+      "/drives/#{@credential.drive_id}/items/#{parent_id}/children"
     else
-      "/me/drive/root/children"
+      "/drives/#{@credential.drive_id}/root/children"
     end
 
     post(path, {
@@ -123,24 +223,34 @@ class MicrosoftGraphClient
 
   # List items in a folder
   def list_folder_items(folder_id = nil)
-    path = if folder_id
-      "/me/drive/items/#{folder_id}/children"
-    else
-      @credential.root_folder_id ?
-        "/me/drive/items/#{@credential.root_folder_id}/children" :
-        "/me/drive/root/children"
+    folder_id = folder_id || @credential.root_folder_id
+
+    unless folder_id
+      raise APIError, "No folder ID provided and no root folder configured"
     end
 
+    path = "/drives/#{@credential.drive_id}/items/#{folder_id}/children"
     get(path)
   end
 
   # Get folder by path
   def get_folder_by_path(path)
     encoded_path = path.split('/').map { |segment| CGI.escape(segment) }.join('/')
-    get("/me/drive/root:/#{encoded_path}")
+    get("/drives/#{@credential.drive_id}/root:/#{encoded_path}")
   rescue APIError => e
     return nil if e.message.include?('itemNotFound')
     raise
+  end
+
+  # Search for job folder by construction
+  def find_job_folder(construction)
+    job_code = construction.id.to_s.rjust(3, '0')
+    search_query = "#{job_code} - #{construction.title}"
+
+    results = search(search_query, @credential.root_folder_id)
+
+    # Find exact match
+    results['value']&.find { |item| item['name'] == search_query && item['folder'] }
   end
 
   # File Operations
@@ -150,7 +260,7 @@ class MicrosoftGraphClient
     filename ||= File.basename(file.path)
 
     post(
-      "/me/drive/items/#{parent_folder_id}:/#{filename}:/content",
+      "/drives/#{@credential.drive_id}/items/#{parent_folder_id}:/#{filename}:/content",
       File.read(file),
       { 'Content-Type' => 'application/octet-stream' }
     )
@@ -159,7 +269,7 @@ class MicrosoftGraphClient
   # Create upload session for large files (>= 4MB)
   def create_upload_session(parent_folder_id, filename, file_size)
     post(
-      "/me/drive/items/#{parent_folder_id}:/#{filename}:/createUploadSession",
+      "/drives/#{@credential.drive_id}/items/#{parent_folder_id}:/#{filename}:/createUploadSession",
       {
         item: {
           "@microsoft.graph.conflictBehavior": "rename",
@@ -172,7 +282,7 @@ class MicrosoftGraphClient
   # Download file
   def download_file(file_id)
     response = HTTParty.get(
-      "#{GRAPH_API_BASE}/me/drive/items/#{file_id}/content",
+      "#{GRAPH_API_BASE}/drives/#{@credential.drive_id}/items/#{file_id}/content",
       headers: auth_headers,
       follow_redirects: true
     )
@@ -183,20 +293,20 @@ class MicrosoftGraphClient
 
   # Get file metadata
   def get_file(file_id)
-    get("/me/drive/items/#{file_id}")
+    get("/drives/#{@credential.drive_id}/items/#{file_id}")
   end
 
   # Delete file or folder
   def delete_item(item_id)
-    delete("/me/drive/items/#{item_id}")
+    delete("/drives/#{@credential.drive_id}/items/#{item_id}")
   end
 
   # Search for files
   def search(query, folder_id = nil)
     path = if folder_id
-      "/me/drive/items/#{folder_id}/search(q='#{CGI.escape(query)}')"
+      "/drives/#{@credential.drive_id}/items/#{folder_id}/search(q='#{CGI.escape(query)}')"
     else
-      "/me/drive/root/search(q='#{CGI.escape(query)}')"
+      "/drives/#{@credential.drive_id}/root/search(q='#{CGI.escape(query)}')"
     end
 
     get(path)

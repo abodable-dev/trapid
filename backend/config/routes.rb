@@ -120,7 +120,7 @@ Rails.application.routes.draw do
         end
       end
 
-      # OneDrive integration
+      # OneDrive integration (per-job - legacy)
       get 'onedrive/authorize', to: 'one_drive#authorize'
       get 'onedrive/callback', to: 'one_drive#callback'
       get 'onedrive/status', to: 'one_drive#status'
@@ -129,6 +129,15 @@ Rails.application.routes.draw do
       get 'onedrive/folders', to: 'one_drive#list_items'
       post 'onedrive/upload', to: 'one_drive#upload'
       get 'onedrive/download', to: 'one_drive#download'
+
+      # OneDrive integration (organization-wide)
+      get 'organization_onedrive/status', to: 'organization_onedrive#status'
+      post 'organization_onedrive/connect', to: 'organization_onedrive#connect'
+      delete 'organization_onedrive/disconnect', to: 'organization_onedrive#disconnect'
+      post 'organization_onedrive/create_job_folders', to: 'organization_onedrive#create_job_folders'
+      get 'organization_onedrive/job_folders', to: 'organization_onedrive#list_job_items'
+      post 'organization_onedrive/upload', to: 'organization_onedrive#upload'
+      get 'organization_onedrive/download', to: 'organization_onedrive#download'
 
       # Table management
       resources :tables do
