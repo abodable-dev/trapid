@@ -37,6 +37,9 @@ Rails.application.routes.draw do
         member do
           get :gantt
         end
+
+        # Project tasks (nested under projects)
+        resources :tasks, controller: 'project_tasks'
       end
 
       # Purchase Orders management
@@ -91,6 +94,16 @@ Rails.application.routes.draw do
 
       # Company Settings
       resource :company_settings, only: [:show, :update]
+
+      # Xero integration
+      resources :xero, only: [] do
+        collection do
+          get :auth_url
+          post :callback
+          get :status
+          delete :disconnect
+        end
+      end
 
       # Table management
       resources :tables do
