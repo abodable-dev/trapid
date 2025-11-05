@@ -48,6 +48,9 @@ gem "cloudinary", "~> 2.1"  # Cloud image storage and CDN
 gem "httparty", "~> 0.22"  # HTTP requests for image scraping
 gem "mini_magick", "~> 4.12"  # Image processing
 
+# OAuth2 for Xero integration
+gem "oauth2", "~> 2.0"  # OAuth2 authentication for Xero API
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
