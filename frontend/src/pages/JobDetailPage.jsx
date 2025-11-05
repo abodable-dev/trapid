@@ -15,6 +15,7 @@ import { formatCurrency, formatPercentage } from '../utils/formatters'
 import { POSummaryCards, POTable, PurchaseOrderModal } from '../components/purchase-orders'
 import JobDocumentsTab from '../components/documents/JobDocumentsTab'
 import TeamSettings from '../components/job-detail/TeamSettings'
+import EstimatesTab from '../components/estimates/EstimatesTab'
 
 const tabs = [
   { name: 'Overview' },
@@ -576,6 +577,10 @@ export default function JobDetailPage() {
                 construction={job}
               />
             </div>
+          )}
+
+          {activeTab === 'Estimates' && (
+            <EstimatesTab jobId={id} />
           )}
 
           {activeTab === 'Activity' && (

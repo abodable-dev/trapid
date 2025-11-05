@@ -312,8 +312,11 @@ export default function AppLayout({ children }) {
         "transition-all duration-300",
         sidebarCollapsed ? "lg:pl-16" : "lg:pl-72"
       )}>
-        {/* Top bar */}
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900 dark:shadow-none">
+        {/* Top bar - hidden when sidebar is collapsed on desktop */}
+        <div className={classNames(
+          "sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900 dark:shadow-none transition-all duration-300",
+          sidebarCollapsed ? "lg:hidden" : ""
+        )}>
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
@@ -404,7 +407,10 @@ export default function AppLayout({ children }) {
         </div>
 
         {/* Main content */}
-        <main className="py-10">
+        <main className={classNames(
+          "py-10",
+          sidebarCollapsed ? "lg:pt-10" : ""
+        )}>
           <div className="px-4 sm:px-6 lg:px-8">
             {children}
           </div>

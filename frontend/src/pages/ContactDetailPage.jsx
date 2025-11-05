@@ -13,7 +13,8 @@ import {
   PencilIcon,
   TrashIcon,
   CubeIcon,
-  TagIcon
+  TagIcon,
+  StarIcon
 } from '@heroicons/react/24/outline'
 
 export default function ContactDetailPage() {
@@ -303,11 +304,11 @@ export default function ContactDetailPage() {
                   Price Book Items
                 </h2>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50">
-                  {suppliers.reduce((sum, s) => sum + (s.pricebook_items?.length || 0), 0)} items
+                  {suppliers.reduce((sum, s) => sum + (s.pricebook_items?.length || 0) + (s.default_pricebook_items?.length || 0), 0)} items
                 </span>
               </div>
             </div>
-            {suppliers.some(s => s.pricebook_items && s.pricebook_items.length > 0) ? (
+            {suppliers.some(s => (s.pricebook_items && s.pricebook_items.length > 0) || (s.default_pricebook_items && s.default_pricebook_items.length > 0)) ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead>
@@ -330,21 +331,36 @@ export default function ContactDetailPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {suppliers.flatMap(supplier =>
-                      (supplier.pricebook_items || []).map(item => ({
+                    {suppliers.flatMap(supplier => [
+                      ...(supplier.pricebook_items || []).map(item => ({
                         ...item,
                         supplierName: supplier.name,
-                        supplierId: supplier.id
+                        supplierId: supplier.id,
+                        isDefault: false
+                      })),
+                      ...(supplier.default_pricebook_items || []).map(item => ({
+                        ...item,
+                        supplierName: supplier.name,
+                        supplierId: supplier.id,
+                        isDefault: true
                       }))
-                    ).map((item) => (
-                      <tr key={`${item.supplierId}-${item.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                          <Link
-                            to={`/suppliers/${item.supplierId}`}
-                            className="hover:text-blue-600 dark:hover:text-blue-400 font-medium"
-                          >
-                            {item.supplierName}
-                          </Link>
+                    ]).map((item) => (
+                      <tr key={`${item.supplierId}-${item.id}-${item.isDefault ? 'default' : 'owned'}`} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Link
+                              to={`/suppliers/${item.supplierId}`}
+                              className="text-sm hover:text-blue-600 dark:hover:text-blue-400 font-medium text-gray-900 dark:text-white"
+                            >
+                              {item.supplierName}
+                            </Link>
+                            {item.isDefault && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200 border border-amber-200 dark:border-amber-800">
+                                <StarIcon className="h-3 w-3" />
+                                Default
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
                           {item.item_code}
