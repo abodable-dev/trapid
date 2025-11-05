@@ -4,6 +4,7 @@ import { formatCurrency, formatPercentage } from '../utils/formatters'
 import {
   PlusIcon,
   BriefcaseIcon,
+  ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
 import NewJobModal from '../components/jobs/NewJobModal'
@@ -140,48 +141,50 @@ export default function ActiveJobsPage() {
         </div>
 
         <div className="overflow-x-auto border-l border-r border-b border-gray-200 dark:border-gray-700 rounded-lg">
-          <table className="min-w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-800/50">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-8">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-8">
                   #
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  Title
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Job Title
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Contract Value
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Live Profit
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Profit %
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Stage
+                </th>
+                <th className="relative px-3 py-3">
+                  <span className="sr-only">Actions</span>
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-900">
+            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
               {jobs.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-3 py-8 text-center text-xs text-gray-500 dark:text-gray-400">
-                    No active jobs found. Click "Add Job" to create one.
+                  <td colSpan="7" className="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    No active jobs found. Click "New Job" to create one.
                   </td>
                 </tr>
               ) : (
                 jobs.map((job, index) => (
                   <tr
                     key={job.id}
-                    onClick={() => navigate(`/jobs/${job.id}`)}
-                    className="border-b border-gray-200 dark:border-gray-700 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 cursor-pointer"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                   >
-                      <td className="px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {index + 1}
                       </td>
 
-                      <td className="px-3 py-1.5">
+                      <td className="px-3 py-4">
                         {editingCell?.jobId === job.id && editingCell?.field === 'title' ? (
                           <input
                             type="text"
@@ -190,23 +193,32 @@ export default function ActiveJobsPage() {
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus
-                            className="w-full px-1.5 py-0.5 text-xs border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-2 py-1 text-sm border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                           />
                         ) : (
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCellClick(job.id, 'title', job.title)
-                            }}
-                            className="text-xs text-gray-900 dark:text-white cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded truncate max-w-md"
-                            title={job.title}
-                          >
-                            {job.title || '-'}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => navigate(`/jobs/${job.id}`)}
+                              className="text-sm font-medium text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 truncate max-w-md"
+                              title={job.title}
+                            >
+                              {job.title || 'Untitled Job'}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleCellClick(job.id, 'title', job.title)
+                              }}
+                              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-1.5 py-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                              title="Edit title"
+                            >
+                              Edit
+                            </button>
                           </div>
                         )}
                       </td>
 
-                      <td className="px-3 py-1.5 text-right">
+                      <td className="px-3 py-4 whitespace-nowrap text-right text-sm">
                         {editingCell?.jobId === job.id && editingCell?.field === 'contract_value' ? (
                           <input
                             type="number"
@@ -216,7 +228,7 @@ export default function ActiveJobsPage() {
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus
-                            className="w-full px-1.5 py-0.5 text-xs text-right border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-2 py-1 text-sm text-right border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                           />
                         ) : (
                           <div
@@ -224,14 +236,15 @@ export default function ActiveJobsPage() {
                               e.stopPropagation()
                               handleCellClick(job.id, 'contract_value', job.contract_value)
                             }}
-                            className="text-xs text-gray-900 dark:text-white cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded"
+                            className="text-gray-900 dark:text-white cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md"
+                            title="Click to edit"
                           >
                             {job.contract_value ? formatCurrency(job.contract_value, false) : '-'}
                           </div>
                         )}
                       </td>
 
-                      <td className="px-3 py-1.5 text-right">
+                      <td className="px-3 py-4 whitespace-nowrap text-right text-sm">
                         {editingCell?.jobId === job.id && editingCell?.field === 'live_profit' ? (
                           <input
                             type="number"
@@ -241,7 +254,7 @@ export default function ActiveJobsPage() {
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus
-                            className="w-full px-1.5 py-0.5 text-xs text-right border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-2 py-1 text-sm text-right border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                           />
                         ) : (
                           <div
@@ -249,18 +262,19 @@ export default function ActiveJobsPage() {
                               e.stopPropagation()
                               handleCellClick(job.id, 'live_profit', job.live_profit)
                             }}
-                            className={`text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded ${
+                            className={`cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md font-medium ${
                               job.live_profit >= 0
                                 ? 'text-green-600 dark:text-green-400'
                                 : 'text-red-600 dark:text-red-400'
                             }`}
+                            title="Click to edit"
                           >
                             {job.live_profit ? formatCurrency(job.live_profit, false) : '-'}
                           </div>
                         )}
                       </td>
 
-                      <td className="px-3 py-1.5 text-right">
+                      <td className="px-3 py-4 whitespace-nowrap text-right text-sm">
                         {editingCell?.jobId === job.id && editingCell?.field === 'profit_percentage' ? (
                           <input
                             type="number"
@@ -270,7 +284,7 @@ export default function ActiveJobsPage() {
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus
-                            className="w-full px-1.5 py-0.5 text-xs text-right border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-2 py-1 text-sm text-right border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                           />
                         ) : (
                           <div
@@ -278,18 +292,19 @@ export default function ActiveJobsPage() {
                               e.stopPropagation()
                               handleCellClick(job.id, 'profit_percentage', job.profit_percentage)
                             }}
-                            className={`text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded ${
+                            className={`cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md font-medium ${
                               job.profit_percentage >= 0
                                 ? 'text-green-600 dark:text-green-400'
                                 : 'text-red-600 dark:text-red-400'
                             }`}
+                            title="Click to edit"
                           >
                             {job.profit_percentage ? formatPercentage(job.profit_percentage, 2) : '-'}
                           </div>
                         )}
                       </td>
 
-                      <td className="px-3 py-1.5">
+                      <td className="px-3 py-4 whitespace-nowrap text-sm">
                         {editingCell?.jobId === job.id && editingCell?.field === 'stage' ? (
                           <input
                             type="text"
@@ -298,7 +313,7 @@ export default function ActiveJobsPage() {
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus
-                            className="w-full px-1.5 py-0.5 text-xs border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-2 py-1 text-sm border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                           />
                         ) : (
                           <div
@@ -306,13 +321,25 @@ export default function ActiveJobsPage() {
                               e.stopPropagation()
                               handleCellClick(job.id, 'stage', job.stage)
                             }}
-                            className="text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded inline-block"
+                            className="cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md inline-block"
+                            title="Click to edit"
                           >
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100/60 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
                               {job.stage || 'Not Set'}
                             </span>
                           </div>
                         )}
+                      </td>
+
+                      <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => navigate(`/jobs/${job.id}`)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                          title="View job details"
+                        >
+                          View
+                          <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                        </button>
                       </td>
                   </tr>
                 ))

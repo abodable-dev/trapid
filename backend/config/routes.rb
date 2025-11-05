@@ -92,6 +92,9 @@ Rails.application.routes.draw do
       # Contacts management
       resources :contacts
 
+      # Designs library
+      resources :designs
+
       # Company Settings
       resource :company_settings, only: [:show, :update]
 

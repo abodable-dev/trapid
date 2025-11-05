@@ -18,7 +18,7 @@ import {
   ChevronUpDownIcon,
   LightBulbIcon,
 } from '@heroicons/react/24/outline'
-import api from '../../api'
+import { api } from '../../api'
 
 const STAGES = [
   'Planning',
@@ -338,30 +338,13 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                         />
                       </div>
 
-                      {/* Client Name */}
-                      <div className="group">
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          <div className="rounded-lg bg-blue-100 dark:bg-blue-900/30 p-2">
-                            <UserCircleIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          Client Name
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.client_name}
-                          onChange={(e) => handleChange('client_name', e.target.value)}
-                          placeholder="e.g., John Smith Properties"
-                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white transition-all"
-                        />
-                      </div>
-
                       {/* Location */}
                       <div className="group">
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           <div className="rounded-lg bg-green-100 dark:bg-green-900/30 p-2">
                             <MapPinIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
                           </div>
-                          Location / Address
+                          Location / Address <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -369,7 +352,110 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                           onChange={(e) => handleChange('location', e.target.value)}
                           placeholder="e.g., 123 Main Street, Sydney NSW 2000"
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white transition-all"
+                          required
                         />
+                      </div>
+
+                      {/* Client Lookup */}
+                      <div className="group">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <div className="rounded-lg bg-blue-100 dark:bg-blue-900/30 p-2">
+                            <UserCircleIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          Client <span className="text-red-500">*</span>
+                        </label>
+                        <Combobox value={selectedClient} onChange={handleClientSelect}>
+                          <div className="relative">
+                            <div className="relative w-full">
+                              <Combobox.Input
+                                className="w-full px-4 py-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white transition-all"
+                                displayValue={(client) => client?.full_name || ''}
+                                onChange={(e) => setClientQuery(e.target.value)}
+                                placeholder="Search for a client..."
+                              />
+                              <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-3">
+                                <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                              </Combobox.Button>
+                            </div>
+                            <Transition
+                              as={Fragment}
+                              leave="transition ease-in duration-100"
+                              leaveFrom="opacity-100"
+                              leaveTo="opacity-0"
+                              afterLeave={() => setClientQuery('')}
+                            >
+                              <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                {loadingClients && (
+                                  <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
+                                    Searching...
+                                  </div>
+                                )}
+                                {!loadingClients && clientQuery.length >= 2 && clients.length === 0 && (
+                                  <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
+                                    No clients found. <button type="button" className="text-indigo-600 hover:text-indigo-500">Create new contact?</button>
+                                  </div>
+                                )}
+                                {clients.map((client) => (
+                                  <Combobox.Option
+                                    key={client.id}
+                                    value={client}
+                                    className={({ active }) =>
+                                      `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
+                                        active ? 'bg-indigo-600 text-white' : 'text-gray-900 dark:text-white'
+                                      }`
+                                    }
+                                  >
+                                    {({ selected, active }) => (
+                                      <>
+                                        <div className="flex flex-col">
+                                          <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                            {client.full_name}
+                                          </span>
+                                          {client.email && (
+                                            <span className={`block truncate text-xs ${active ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'}`}>
+                                              {client.email}
+                                            </span>
+                                          )}
+                                        </div>
+                                        {selected && (
+                                          <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-white' : 'text-indigo-600'}`}>
+                                            <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                          </span>
+                                        )}
+                                      </>
+                                    )}
+                                  </Combobox.Option>
+                                ))}
+                              </Combobox.Options>
+                            </Transition>
+                          </div>
+                        </Combobox>
+                        {selectedClient && (
+                          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                            {formData.client_email && <p>Email: {formData.client_email}</p>}
+                            {formData.client_phone && <p>Phone: {formData.client_phone}</p>}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Lead Source */}
+                      <div className="group">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <div className="rounded-lg bg-amber-100 dark:bg-amber-900/30 p-2">
+                            <LightBulbIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                          </div>
+                          Lead Source
+                        </label>
+                        <select
+                          value={formData.lead_source}
+                          onChange={(e) => handleChange('lead_source', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white transition-all"
+                        >
+                          <option value="">Select a source...</option>
+                          {LEAD_SOURCES.map(source => (
+                            <option key={source} value={source}>{source}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                         )}
@@ -394,10 +480,10 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                     <div className="space-y-6 animate-fadeIn">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                          Financial & Timeline
+                          Project Details
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                          Set the contract value and project timeline
+                          Set the contract value, timeline, and site supervisor
                         </p>
                       </div>
 
@@ -457,20 +543,21 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                         </div>
                       </div>
 
-                      {/* Project Manager */}
+                      {/* Site Supervisor */}
                       <div className="group">
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           <div className="rounded-lg bg-amber-100 dark:bg-amber-900/30 p-2">
                             <UserCircleIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                           </div>
-                          Project Manager
+                          Site Supervisor <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
-                          value={formData.project_manager}
-                          onChange={(e) => handleChange('project_manager', e.target.value)}
-                          placeholder="e.g., Sarah Johnson"
+                          value={formData.site_supervisor_name}
+                          onChange={(e) => handleChange('site_supervisor_name', e.target.value)}
+                          placeholder="e.g., Andrew Clement"
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white transition-all"
+                          required
                         />
                       </div>
                     </div>
@@ -496,29 +583,101 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                     <div className="space-y-6 animate-fadeIn">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                          Project Status
+                          Documentation & Status
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                          Define where this project is in its lifecycle
+                          Track available documents, land status, and project stage
                         </p>
                       </div>
 
-                      {/* Site Supervisor */}
+                      {/* Documents Available */}
                       <div className="group">
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          <div className="rounded-lg bg-amber-100 dark:bg-amber-900/30 p-2">
-                            <UserCircleIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                          <div className="rounded-lg bg-emerald-100 dark:bg-emerald-900/30 p-2">
+                            <DocumentTextIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                           </div>
-                          Site Supervisor <span className="text-red-500">*</span>
+                          Documents Available
                         </label>
-                        <input
-                          type="text"
-                          value={formData.site_supervisor_name}
-                          onChange={(e) => handleChange('site_supervisor_name', e.target.value)}
-                          placeholder="e.g., Andrew Clement"
-                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white transition-all"
-                          required
-                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <label className="flex items-center gap-3 p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={formData.has_plans}
+                              onChange={(e) => handleChange('has_plans', e.target.checked)}
+                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Plans/Drawings</span>
+                          </label>
+                          <label className="flex items-center gap-3 p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={formData.has_engineering}
+                              onChange={(e) => handleChange('has_engineering', e.target.checked)}
+                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Engineering</span>
+                          </label>
+                          <label className="flex items-center gap-3 p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={formData.has_soil_report}
+                              onChange={(e) => handleChange('has_soil_report', e.target.checked)}
+                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Soil Report</span>
+                          </label>
+                          <label className="flex items-center gap-3 p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={formData.has_energy_report}
+                              onChange={(e) => handleChange('has_energy_report', e.target.checked)}
+                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Energy Report</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Land Status */}
+                      <div className="group">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                          <div className="rounded-lg bg-teal-100 dark:bg-teal-900/30 p-2">
+                            <MapPinIcon className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                          </div>
+                          Land Status
+                        </label>
+                        <RadioGroup value={formData.land_status} onChange={(value) => handleChange('land_status', value)}>
+                          <div className="space-y-2">
+                            {LAND_STATUS_OPTIONS.map((option) => (
+                              <RadioGroup.Option
+                                key={option}
+                                value={option}
+                                className={({ checked }) =>
+                                  `flex items-center gap-3 p-3 border ${
+                                    checked
+                                      ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                                      : 'border-gray-300 dark:border-gray-600'
+                                  } rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors`
+                                }
+                              >
+                                {({ checked }) => (
+                                  <>
+                                    <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${
+                                      checked ? 'border-indigo-600' : 'border-gray-300 dark:border-gray-600'
+                                    }`}>
+                                      {checked && <div className="h-2 w-2 rounded-full bg-indigo-600" />}
+                                    </div>
+                                    <span className={`text-sm ${
+                                      checked ? 'text-indigo-900 dark:text-indigo-100 font-medium' : 'text-gray-700 dark:text-gray-300'
+                                    }`}>
+                                      {option}
+                                    </span>
+                                  </>
+                                )}
+                              </RadioGroup.Option>
+                            ))}
+                          </div>
+                        </RadioGroup>
                       </div>
 
                       {/* Stage */}
@@ -570,8 +729,12 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                             </h4>
                             <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                               <p><span className="font-medium">Job:</span> {formData.title || 'Untitled'}</p>
+                              <p><span className="font-medium">Location:</span> {formData.location || 'Not specified'}</p>
                               {formData.client_name && <p><span className="font-medium">Client:</span> {formData.client_name}</p>}
+                              {formData.lead_source && <p><span className="font-medium">Lead Source:</span> {formData.lead_source}</p>}
                               {formData.contract_value && <p><span className="font-medium">Value:</span> ${parseFloat(formData.contract_value).toLocaleString()}</p>}
+                              {formData.site_supervisor_name && <p><span className="font-medium">Site Supervisor:</span> {formData.site_supervisor_name}</p>}
+                              {formData.land_status && <p><span className="font-medium">Land:</span> {formData.land_status}</p>}
                               <p><span className="font-medium">Stage:</span> {formData.stage} • <span className="font-medium">Status:</span> {formData.status}</p>
                             </div>
                           </div>

@@ -3,6 +3,7 @@ class Construction < ApplicationRecord
   has_many :purchase_orders, dependent: :destroy
   has_one :project, dependent: :destroy
   has_one :one_drive_credential, dependent: :destroy
+  belongs_to :design, optional: true
 
   # Validations
   validates :title, presence: true

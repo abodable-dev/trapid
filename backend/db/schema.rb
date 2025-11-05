@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_05_030303) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_05_031759) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -69,6 +69,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_030303) do
     t.string "site_supervisor_name", default: "Andrew Clement"
     t.string "site_supervisor_email"
     t.string "site_supervisor_phone"
+    t.bigint "design_id"
+    t.string "design_name"
+    t.index ["design_id"], name: "index_constructions_on_design_id"
+    t.index ["design_name"], name: "index_constructions_on_design_name"
     t.index ["status"], name: "index_constructions_on_status"
   end
 
@@ -96,6 +100,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_030303) do
     t.datetime "updated_at", null: false
     t.datetime "last_synced_at"
     t.text "xero_sync_error"
+  end
+
+  create_table "designs", force: :cascade do |t|
+    t.string "name", null: false
+    t.decimal "size", precision: 10, scale: 2
+    t.decimal "frontage_required", precision: 10, scale: 2
+    t.string "floor_plan_url"
+    t.text "description"
+    t.boolean "is_active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["is_active"], name: "index_designs_on_is_active"
+    t.index ["name"], name: "index_designs_on_name", unique: true
   end
 
   create_table "folder_template_items", force: :cascade do |t|
@@ -586,6 +603,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_030303) do
   end
 
   add_foreign_key "columns", "tables"
+  add_foreign_key "constructions", "designs"
   add_foreign_key "folder_template_items", "folder_templates"
   add_foreign_key "grok_plans", "users"
   add_foreign_key "one_drive_credentials", "constructions"
