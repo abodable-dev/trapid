@@ -161,6 +161,16 @@ module Api
         @supplier = Supplier.new(supplier_params)
 
         if @supplier.save
+          # Auto-create linked Contact with Xero sync enabled
+          contact = create_contact_from_supplier(@supplier)
+
+          if contact.persisted?
+            @supplier.update(contact_id: contact.id)
+
+            # Optionally trigger immediate Xero sync
+            # XeroContactSyncJob.perform_later
+          end
+
           render json: { success: true, supplier: @supplier }, status: :created
         else
           render json: { success: false, errors: @supplier.errors.full_messages }, status: :unprocessable_entity
@@ -379,6 +389,21 @@ module Api
       end
 
       private
+
+      def create_contact_from_supplier(supplier)
+        # Create a Contact from Supplier data with Xero sync enabled
+        Contact.create(
+          full_name: supplier.name,
+          email: supplier.email,
+          mobile_phone: supplier.phone || supplier.contact_number,
+          office_phone: supplier.contact_number,
+          sync_with_xero: true
+        )
+      rescue StandardError => e
+        Rails.logger.error("Failed to create contact for supplier #{supplier.id}: #{e.message}")
+        # Return unsaved contact to avoid breaking supplier creation
+        Contact.new
+      end
 
       def set_supplier
         @supplier = Supplier.find(params[:id])
