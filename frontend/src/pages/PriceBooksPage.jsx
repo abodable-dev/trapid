@@ -31,6 +31,7 @@ export default function PriceBooksPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [categories, setCategories] = useState([])
   const [suppliers, setSuppliers] = useState([])
+  const [allSuppliers, setAllSuppliers] = useState([]) // Store all suppliers for filtering
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 50,
@@ -43,6 +44,16 @@ export default function PriceBooksPage() {
 
   const observerTarget = useRef(null)
   const searchTimeoutRef = useRef(null)
+
+  // Clear supplier filter if it's no longer in the filtered suppliers list
+  useEffect(() => {
+    if (supplierFilter && suppliers.length > 0) {
+      const supplierStillExists = suppliers.some(s => s.id.toString() === supplierFilter.toString())
+      if (!supplierStillExists) {
+        setSupplierFilter('')
+      }
+    }
+  }, [suppliers])
 
   // Debounced search - reload when filters change
   useEffect(() => {
@@ -102,7 +113,9 @@ export default function PriceBooksPage() {
           setCategories(response.filters.categories)
         }
         if (response.filters?.suppliers) {
-          setSuppliers(response.filters.suppliers.map(([id, name]) => ({ id, name })))
+          const supplierList = response.filters.suppliers.map(([id, name]) => ({ id, name }))
+          setAllSuppliers(supplierList)
+          setSuppliers(supplierList)
         }
       }
     } catch (err) {
@@ -163,14 +176,13 @@ export default function PriceBooksPage() {
     return `Showing ${showing.toLocaleString()} of ${total_count.toLocaleString()} items`
   }
 
-  // Badge component matching Tailwind UI Catalyst design
+  // Badge component matching Tailwind UI standard design
   const Badge = ({ color, children }) => {
     const colorClasses = {
-      green: 'bg-green-500/15 text-green-700 dark:bg-green-500/10 dark:text-green-400',
-      yellow: 'bg-yellow-400/20 text-yellow-700 dark:bg-yellow-400/10 dark:text-yellow-500',
-      orange: 'bg-orange-400/20 text-orange-700 dark:bg-orange-400/10 dark:text-orange-500',
-      red: 'bg-red-500/15 text-red-700 dark:bg-red-500/10 dark:text-red-400',
-      gray: 'bg-gray-400/20 text-gray-700 dark:bg-gray-400/10 dark:text-gray-400'
+      green: 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400',
+      yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-400/10 dark:text-yellow-500',
+      red: 'bg-red-100 text-red-700 dark:bg-red-400/10 dark:text-red-400',
+      gray: 'bg-gray-100 text-gray-600 dark:bg-gray-400/10 dark:text-gray-400'
     }
 
     return (
