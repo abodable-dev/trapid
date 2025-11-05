@@ -62,7 +62,7 @@ export default function AppLayout({ children }) {
     // Fetch the backend version from the API
     const fetchVersion = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/version`)
+        const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/version`)
         setVersion(response.data.version)
       } catch (error) {
         console.error('Failed to fetch version:', error)
