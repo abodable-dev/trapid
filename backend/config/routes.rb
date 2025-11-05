@@ -8,6 +8,7 @@ Rails.application.routes.draw do
   # API health check
   get "/health", to: "health#index"
   get "/version", to: "health#version"
+  post "/version/increment", to: "health#increment_version"
 
   # API routes
   namespace :api do
