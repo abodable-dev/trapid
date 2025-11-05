@@ -5,6 +5,7 @@ class PurchaseOrder < ApplicationRecord
   belongs_to :estimate, optional: true
   has_many :line_items, class_name: 'PurchaseOrderLineItem', dependent: :destroy
   has_many :project_tasks, dependent: :nullify
+  has_many :schedule_tasks, dependent: :nullify
 
   # Nested attributes
   accepts_nested_attributes_for :line_items, allow_destroy: true

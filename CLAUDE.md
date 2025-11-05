@@ -322,3 +322,4 @@ DataTable follows Tailwind UI Application UI patterns:
 - Consistent spacing (py-5 for cells, py-3.5 for headers)
 - Typography hierarchy (font-semibold for headers, font-medium for primary text)
 - Full dark mode support throughout
+- whenever anything gets deployed, i only want it to give me the URL trapid.vercel.app. Anything else should be excluded as it's then deploying to the incorrect location Please consult the delpoy agent

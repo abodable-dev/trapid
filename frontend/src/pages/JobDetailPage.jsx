@@ -16,6 +16,7 @@ import { POSummaryCards, POTable, PurchaseOrderModal } from '../components/purch
 import JobDocumentsTab from '../components/documents/JobDocumentsTab'
 import TeamSettings from '../components/job-detail/TeamSettings'
 import EstimatesTab from '../components/estimates/EstimatesTab'
+import ScheduleMasterTab from '../components/schedule-master/ScheduleMasterTab'
 
 const tabs = [
   { name: 'Overview' },
@@ -23,7 +24,7 @@ const tabs = [
   { name: 'Estimates' },
   { name: 'Activity' },
   { name: 'Budget' },
-  { name: 'Schedule' },
+  { name: 'Schedule Master' },
   { name: 'Documents' },
   { name: 'Team' },
   { name: 'Settings' },
@@ -609,26 +610,8 @@ export default function JobDetailPage() {
             </div>
           )}
 
-          {activeTab === 'Schedule' && (
-            <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                    Master Schedule
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/jobs/${id}/schedule`)}
-                    className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                  >
-                    View Gantt Chart
-                  </button>
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  View and manage the project timeline with tasks, dependencies, and critical path analysis.
-                </p>
-              </div>
-            </div>
+          {activeTab === 'Schedule Master' && (
+            <ScheduleMasterTab constructionId={id} />
           )}
 
           {activeTab === 'Documents' && (

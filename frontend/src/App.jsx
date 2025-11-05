@@ -5,6 +5,7 @@ import ImportPage from './pages/ImportPage'
 import TablePage from './pages/TablePage'
 import ActiveJobsPage from './pages/ActiveJobsPage'
 import JobDetailPage from './pages/JobDetailPage'
+import JobSetupPage from './pages/JobSetupPage'
 import PriceBooksPage from './pages/PriceBooksPage'
 import PriceBookItemDetailPage from './pages/PriceBookItemDetailPage'
 import SuppliersPage from './pages/SuppliersPage'
@@ -34,6 +35,7 @@ function App() {
         <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
         <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
         <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />
+        <Route path="/jobs/:id/setup" element={<AppLayout><JobSetupPage /></AppLayout>} />
         <Route path="/jobs/:id/schedule" element={<AppLayout><MasterSchedulePage /></AppLayout>} />
         <Route path="/price-books" element={<AppLayout><PriceBooksPage /></AppLayout>} />
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />

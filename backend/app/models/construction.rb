@@ -1,6 +1,7 @@
 class Construction < ApplicationRecord
   # Associations
   has_many :purchase_orders, dependent: :destroy
+  has_many :schedule_tasks, dependent: :destroy
   has_one :project, dependent: :destroy
   has_one :one_drive_credential, dependent: :destroy
   belongs_to :design, optional: true
@@ -75,5 +76,18 @@ class Construction < ApplicationRecord
       email: site_supervisor_email,
       phone: site_supervisor_phone
     }
+  end
+
+  # Check if OneDrive folders have not been requested yet
+  def folders_not_requested?
+    onedrive_folder_creation_status == 'not_requested'
+  end
+
+  # Trigger OneDrive folder creation if not already created
+  def create_folders_if_needed!(template_id = nil)
+    return unless folders_not_requested?
+
+    update!(onedrive_folder_creation_status: 'pending')
+    CreateJobFoldersJob.perform_later(id, template_id)
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_05_044117) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_05_051002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -476,6 +476,36 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_044117) do
     t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
   end
 
+  create_table "schedule_tasks", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.bigint "purchase_order_id"
+    t.string "title", null: false
+    t.string "status", default: "not_started"
+    t.datetime "start_date"
+    t.datetime "complete_date"
+    t.string "duration"
+    t.integer "duration_days"
+    t.string "supplier_category"
+    t.string "supplier_name"
+    t.boolean "paid_internal", default: false
+    t.datetime "approx_date"
+    t.boolean "confirm", default: false
+    t.boolean "supplier_confirm", default: false
+    t.datetime "task_started"
+    t.datetime "completed"
+    t.jsonb "predecessors", default: []
+    t.text "attachments"
+    t.boolean "matched_to_po", default: false
+    t.integer "sequence_order"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id", "matched_to_po"], name: "index_schedule_tasks_on_construction_id_and_matched_to_po"
+    t.index ["construction_id"], name: "index_schedule_tasks_on_construction_id"
+    t.index ["matched_to_po"], name: "index_schedule_tasks_on_matched_to_po"
+    t.index ["purchase_order_id"], name: "index_schedule_tasks_on_purchase_order_id"
+    t.index ["status"], name: "index_schedule_tasks_on_status"
+  end
+
   create_table "supplier_contacts", force: :cascade do |t|
     t.bigint "supplier_id", null: false
     t.bigint "contact_id", null: false
@@ -692,6 +722,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_044117) do
   add_foreign_key "purchase_orders", "constructions"
   add_foreign_key "purchase_orders", "estimates"
   add_foreign_key "purchase_orders", "suppliers"
+  add_foreign_key "schedule_tasks", "constructions"
+  add_foreign_key "schedule_tasks", "purchase_orders"
   add_foreign_key "supplier_contacts", "contacts"
   add_foreign_key "supplier_contacts", "suppliers"
   add_foreign_key "task_dependencies", "project_tasks", column: "predecessor_task_id"

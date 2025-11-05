@@ -91,9 +91,9 @@ export default function ActiveJobsPage() {
         alert('Job created successfully! OneDrive folders are being created in the background.')
       }
 
-      // Navigate to the new job detail page if we have an ID
+      // Navigate to the setup page if we have an ID
       if (response.construction && response.construction.id) {
-        navigate(`/jobs/${response.construction.id}`)
+        navigate(`/jobs/${response.construction.id}/setup`)
       }
     } catch (err) {
       console.error('Failed to create job:', err)

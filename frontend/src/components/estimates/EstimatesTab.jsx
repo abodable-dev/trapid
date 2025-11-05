@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import EstimateStatusBadge from './EstimateStatusBadge'
+import AiReviewModal from './AiReviewModal'
 
 export default function EstimatesTab({ jobId }) {
   const navigate = useNavigate()
@@ -18,6 +19,8 @@ export default function EstimatesTab({ jobId }) {
   const [expandedEstimate, setExpandedEstimate] = useState(null)
   const [generatingPOs, setGeneratingPOs] = useState(null)
   const [error, setError] = useState(null)
+  const [showAiReviewModal, setShowAiReviewModal] = useState(false)
+  const [selectedEstimateForReview, setSelectedEstimateForReview] = useState(null)
 
   useEffect(() => {
     loadEstimates()
@@ -117,6 +120,16 @@ export default function EstimatesTab({ jobId }) {
       console.error('Failed to delete estimate:', err)
       alert('Failed to delete estimate. Please try again.')
     }
+  }
+
+  const handleAiReview = (estimate) => {
+    setSelectedEstimateForReview(estimate)
+    setShowAiReviewModal(true)
+  }
+
+  const handleCloseAiReview = () => {
+    setShowAiReviewModal(false)
+    setSelectedEstimateForReview(null)
   }
 
   const formatDate = (dateString) => {
@@ -228,14 +241,25 @@ export default function EstimatesTab({ jobId }) {
                   {/* Actions */}
                   <div className="flex items-center space-x-2 ml-4">
                     {canGeneratePOs && (
-                      <button
-                        onClick={() => handleGeneratePOs(estimate.id)}
-                        disabled={generatingPOs === estimate.id}
-                        className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <SparklesIcon className="h-4 w-4 mr-1.5" />
-                        {generatingPOs === estimate.id ? 'Generating...' : 'Generate POs'}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleAiReview(estimate)}
+                          disabled={estimate.has_review}
+                          className="inline-flex items-center px-3 py-1.5 border border-indigo-600 dark:border-indigo-500 rounded-md text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          title={estimate.has_review ? 'Review already exists' : 'Analyze estimate against construction plans using AI'}
+                        >
+                          <SparklesIcon className="h-4 w-4 mr-1.5" />
+                          AI Review
+                        </button>
+                        <button
+                          onClick={() => handleGeneratePOs(estimate.id)}
+                          disabled={generatingPOs === estimate.id}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <SparklesIcon className="h-4 w-4 mr-1.5" />
+                          {generatingPOs === estimate.id ? 'Generating...' : 'Generate POs'}
+                        </button>
+                      </>
                     )}
 
                     {hasGeneratedPOs && (
@@ -336,6 +360,14 @@ export default function EstimatesTab({ jobId }) {
           )
         })}
       </div>
+
+      {/* AI Review Modal */}
+      <AiReviewModal
+        isOpen={showAiReviewModal}
+        onClose={handleCloseAiReview}
+        estimateId={selectedEstimateForReview?.id}
+        estimateName={selectedEstimateForReview ? `Estimate #${selectedEstimateForReview.id}` : ''}
+      />
     </div>
   )
 }
