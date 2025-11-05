@@ -45,6 +45,7 @@ export default function PriceBooksPage() {
   const [hasMore, setHasMore] = useState(true)
   const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'category')
   const [sortDirection, setSortDirection] = useState(searchParams.get('sort_direction') || 'asc')
+  const [editingCategory, setEditingCategory] = useState(null) // Track which item's category is being edited
 
   const observerTarget = useRef(null)
   const searchTimeoutRef = useRef(null)
@@ -278,6 +279,26 @@ export default function PriceBooksPage() {
         // These are handled by the main search
         setSearchQuery(value)
         break
+    }
+  }
+
+  const handleCategoryUpdate = async (itemId, newCategory) => {
+    try {
+      await api.patch(`/api/v1/pricebook/${itemId}`, {
+        pricebook_item: {
+          category: newCategory
+        }
+      })
+
+      // Update local state
+      setItems(items.map(item =>
+        item.id === itemId ? { ...item, category: newCategory } : item
+      ))
+
+      setEditingCategory(null)
+    } catch (error) {
+      console.error('Failed to update category:', error)
+      alert('Failed to update category')
     }
   }
 
@@ -578,8 +599,32 @@ export default function PriceBooksPage() {
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                            {item.category || '-'}
+                          <td
+                            className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditingCategory(item.id)
+                            }}
+                          >
+                            {editingCategory === item.id ? (
+                              <select
+                                autoFocus
+                                value={item.category || ''}
+                                onChange={(e) => handleCategoryUpdate(item.id, e.target.value)}
+                                onBlur={() => setEditingCategory(null)}
+                                className="w-full px-2 py-1 text-sm border border-indigo-500 rounded focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-indigo-400"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <option value="">Select category...</option>
+                                {categories.map((cat) => (
+                                  <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400">
+                                {item.category || '-'}
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white font-medium">
                             {item.current_price ? formatCurrency(item.current_price, false) : '-'}
