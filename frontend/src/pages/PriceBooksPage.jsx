@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../utils/formatters'
 import { api } from '../api'
+import ColumnHeaderMenu from '../components/pricebook/ColumnHeaderMenu'
 
 export default function PriceBooksPage() {
   const navigate = useNavigate()
@@ -230,6 +231,34 @@ export default function PriceBooksPage() {
     setPagination(prev => ({ ...prev, page: 1 }))
   }
 
+  const handleColumnFilter = (column, value) => {
+    switch (column) {
+      case 'category':
+        setCategoryFilter(value)
+        break
+      case 'supplier':
+        setSupplierFilter(value)
+        break
+      case 'risk_level':
+        setRiskFilter(value)
+        break
+      case 'current_price':
+        if (value && typeof value === 'object') {
+          setMinPrice(value.min || '')
+          setMaxPrice(value.max || '')
+        } else {
+          setMinPrice('')
+          setMaxPrice('')
+        }
+        break
+      case 'item_code':
+      case 'item_name':
+        // These are handled by the main search
+        setSearchQuery(value)
+        break
+    }
+  }
+
   const SortIcon = ({ column }) => {
     if (sortBy !== column) return <Bars3Icon className="h-4 w-4 text-gray-400" />
     return sortDirection === 'asc' ?
@@ -410,56 +439,88 @@ export default function PriceBooksPage() {
           <table className="min-w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
               <tr>
-                <th
-                  onClick={() => handleSort('item_code')}
-                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span>Code</span>
-                    <SortIcon column="item_code" />
-                  </div>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <ColumnHeaderMenu
+                    label="Code"
+                    column="item_code"
+                    sortBy={sortBy}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                    onFilter={handleColumnFilter}
+                    filterValue={searchQuery}
+                    filterType="search"
+                  />
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  Item Name
+                  <ColumnHeaderMenu
+                    label="Item Name"
+                    column="item_name"
+                    sortBy={sortBy}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                    onFilter={handleColumnFilter}
+                    filterValue={searchQuery}
+                    filterType="search"
+                  />
                 </th>
-                <th
-                  onClick={() => handleSort('risk_level')}
-                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span>Status</span>
-                    <SortIcon column="risk_level" />
-                  </div>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <ColumnHeaderMenu
+                    label="Status"
+                    column="risk_level"
+                    sortBy={sortBy}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                    onFilter={handleColumnFilter}
+                    filterValue={riskFilter}
+                    filterType="select"
+                    filterOptions={[
+                      { label: 'Low Risk', value: 'low', count: null },
+                      { label: 'Medium Risk', value: 'medium', count: null },
+                      { label: 'High Risk', value: 'high', count: null },
+                      { label: 'Critical', value: 'critical', count: null },
+                    ]}
+                  />
                 </th>
-                <th
-                  onClick={() => handleSort('category')}
-                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span>Category</span>
-                    <SortIcon column="category" />
-                  </div>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <ColumnHeaderMenu
+                    label="Category"
+                    column="category"
+                    sortBy={sortBy}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                    onFilter={handleColumnFilter}
+                    filterValue={categoryFilter}
+                    filterType="select"
+                    filterOptions={categories.map(cat => ({ label: cat, value: cat, count: null }))}
+                  />
                 </th>
-                <th
-                  onClick={() => handleSort('current_price')}
-                  className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <div className="flex items-center justify-end gap-2">
-                    <span>Price</span>
-                    <SortIcon column="current_price" />
-                  </div>
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <ColumnHeaderMenu
+                    label="Price"
+                    column="current_price"
+                    sortBy={sortBy}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                    onFilter={handleColumnFilter}
+                    filterValue={minPrice || maxPrice ? { min: minPrice, max: maxPrice } : ''}
+                    filterType="price-range"
+                  />
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                   Unit
                 </th>
-                <th
-                  onClick={() => handleSort('supplier')}
-                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span>Supplier</span>
-                    <SortIcon column="supplier" />
-                  </div>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <ColumnHeaderMenu
+                    label="Supplier"
+                    column="supplier"
+                    sortBy={sortBy}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                    onFilter={handleColumnFilter}
+                    filterValue={supplierFilter}
+                    filterType="select"
+                    filterOptions={suppliers.map(sup => ({ label: sup.name, value: sup.id.toString(), count: null }))}
+                  />
                 </th>
               </tr>
             </thead>
