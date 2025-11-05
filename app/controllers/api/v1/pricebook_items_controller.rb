@@ -42,7 +42,7 @@ module Api
         suppliers_list = if params[:category].present?
           # Get suppliers who have items in the selected category
           Supplier.joins(:pricebook_items)
-                  .where(pricebook_items: { category: params[:category], deleted: false })
+                  .where(pricebook_items: { category: params[:category], is_active: true })
                   .distinct
                   .pluck(:id, :name)
         else
