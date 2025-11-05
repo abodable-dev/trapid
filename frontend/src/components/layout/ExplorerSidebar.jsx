@@ -97,8 +97,15 @@ export default function ExplorerSidebar({ onUploadClick }) {
           </Link>
         </div>
 
+        {/* Settings Header */}
+        <div className="border-t border-gray-200 dark:border-gray-800 pt-4 pb-2 px-4">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Settings
+          </h3>
+        </div>
+
         {/* Active Jobs Section */}
-        <div className="border-t border-gray-200 dark:border-gray-800">
+        <div>
           <div className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800">
             <Link
               to="/active-jobs"
@@ -174,7 +181,7 @@ export default function ExplorerSidebar({ onUploadClick }) {
         </div>
 
         {/* Price Books Section */}
-        <div className="border-t border-gray-200 dark:border-gray-800">
+        <div>
           <button
             onClick={() => setPriceBooksExpanded(!priceBooksExpanded)}
             className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"

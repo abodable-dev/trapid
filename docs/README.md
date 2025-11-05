@@ -26,53 +26,45 @@ trapid/
 
 ## Getting Started
 
-### Prerequisites
-- Ruby 3.x
-- Node.js 18+
-- PostgreSQL
-- Git
+### Quick Start
 
-### Local Development Setup
+For a minimal setup to run the app locally:
 
-#### 1. Clone the repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/trapid.git
-cd trapid
-```
-
-#### 2. Backend Setup
-```bash
+# Backend
 cd backend
-
-# Install dependencies
-bundle install
-
-# Create and setup database
-rails db:create
-rails db:migrate
-rails db:seed
-
-# Start the Rails server (runs on port 3000)
-rails server
-```
-
-#### 3. Frontend Setup
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Copy environment file
 cp .env.example .env
+echo "SECRET_KEY_BASE=$(bin/rails secret)" >> .env
+bundle install
+rails db:create db:migrate
+rails server
 
-# Update .env with your backend URL (default: http://localhost:3000)
-
-# Start the development server (runs on port 5173)
+# Frontend (in new terminal)
+cd frontend
+cp .env.example .env
+npm install
 npm run dev
 ```
 
 Visit [http://localhost:5173](http://localhost:5173) to see the application.
+
+### Full Setup with Integrations
+
+For complete setup including OneDrive, Xero, Cloudinary, and AI features, see:
+
+📚 **[ENVIRONMENT_SETUP.md](./ENVIRONMENT_SETUP.md)** - Complete environment configuration guide
+
+This guide includes:
+- Detailed setup instructions for all services
+- How to obtain API keys
+- Integration testing
+- Troubleshooting
+
+### Prerequisites
+- Ruby 3.3.0+
+- Node.js 18+
+- PostgreSQL 14+
+- Git
 
 ## Deployment
 
@@ -176,18 +168,18 @@ const deleted = await api.delete('/api/endpoint/:id');
 
 ## Environment Variables
 
-### Backend (.env)
-```
-DATABASE_URL=postgresql://localhost/trapid_development
-RAILS_ENV=development
-CORS_ORIGINS=http://localhost:5173
-SECRET_KEY_BASE=generate_with_rails_secret
-```
+For detailed environment variable setup, see **[ENVIRONMENT_SETUP.md](./ENVIRONMENT_SETUP.md)**.
 
-### Frontend (.env)
-```
-VITE_API_URL=http://localhost:3000
-```
+### Quick Reference
+
+**Backend** (`backend/.env`):
+- Copy from `backend/.env.example`
+- Required: `DATABASE_URL`, `SECRET_KEY_BASE`
+- Optional: Integration keys (OneDrive, Xero, Cloudinary, AI services)
+
+**Frontend** (`frontend/.env`):
+- Copy from `frontend/.env.example`
+- Required: `VITE_API_URL` (backend URL)
 
 ## License
 

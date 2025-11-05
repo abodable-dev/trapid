@@ -323,3 +323,4 @@ DataTable follows Tailwind UI Application UI patterns:
 - Typography hierarchy (font-semibold for headers, font-medium for primary text)
 - Full dark mode support throughout
 - whenever anything gets deployed, i only want it to give me the URL trapid.vercel.app. Anything else should be excluded as it's then deploying to the incorrect location Please consult the delpoy agent
+- whenever a deploy happens, in the following chat please specify the deploy number
