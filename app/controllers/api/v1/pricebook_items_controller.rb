@@ -23,6 +23,30 @@ module Api
           end
         end
 
+        # Sorting
+        if params[:sort_by].present? && !@items.is_a?(Array)
+          sort_column = params[:sort_by]
+          sort_direction = params[:sort_direction]&.downcase == 'desc' ? :desc : :asc
+
+          # Map frontend column names to database columns
+          column_mapping = {
+            'item_code' => 'item_code',
+            'item_name' => 'item_name',
+            'category' => 'category',
+            'current_price' => 'current_price',
+            'supplier' => 'suppliers.name'
+          }
+
+          db_column = column_mapping[sort_column] || 'item_code'
+
+          # Join suppliers table if sorting by supplier
+          if sort_column == 'supplier'
+            @items = @items.left_joins(:supplier)
+          end
+
+          @items = @items.order("#{db_column} #{sort_direction}")
+        end
+
         # Pagination
         page = params[:page]&.to_i || 1
         limit = params[:limit]&.to_i || 100
