@@ -39,7 +39,7 @@ function App() {
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
         <Route path="/contacts" element={<AppLayout><ContactsPage /></AppLayout>} />
         <Route path="/contacts/:id" element={<AppLayout><ContactDetailPage /></AppLayout>} />
-        <Route path="/suppliers" element={<AppLayout><SuppliersPage /></AppLayout>} />
+        <Route path="/suppliers" element={<Navigate to="/contacts" replace />} />
         <Route path="/suppliers/new" element={<AppLayout><SupplierNewPage /></AppLayout>} />
         <Route path="/suppliers/:id/edit" element={<AppLayout><SupplierEditPage /></AppLayout>} />
         <Route path="/suppliers/:id" element={<AppLayout><SupplierDetailPage /></AppLayout>} />

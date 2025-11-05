@@ -34,7 +34,6 @@ const navigation = [
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
   { name: 'Contacts', href: '/contacts', icon: UsersIcon },
-  { name: 'Suppliers', href: '/suppliers', icon: UserGroupIcon },
 ]
 
 // Bottom navigation items

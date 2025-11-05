@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Tab, TabGroup, TabList, TabPanel, TabPanels, Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react'
 import { api } from '../api'
 import {
   MagnifyingGlassIcon,
@@ -12,11 +12,13 @@ import {
   BuildingOfficeIcon,
   UserGroupIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
 
 export default function ContactsPage() {
+  const navigate = useNavigate()
   const [contacts, setContacts] = useState([])
   const [suppliers, setSuppliers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -24,6 +26,7 @@ export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showColumnModal, setShowColumnModal] = useState(false)
   const [activeTab, setActiveTab] = useState(0)
+  const [selectedCategories, setSelectedCategories] = useState([])
 
   // Column visibility state for Contacts tab
   const [visibleContactColumns, setVisibleContactColumns] = useState({
@@ -38,6 +41,7 @@ export default function ContactsPage() {
   // Column visibility state for Clients tab
   const [visibleClientColumns, setVisibleClientColumns] = useState({
     supplier: true,
+    categories: true,
     rating: true,
     items: true,
     contact: true,
@@ -57,6 +61,7 @@ export default function ContactsPage() {
 
   const clientColumns = [
     { key: 'supplier', label: 'Supplier Name' },
+    { key: 'categories', label: 'Trade Categories' },
     { key: 'rating', label: 'Rating' },
     { key: 'items', label: 'Items Count' },
     { key: 'contact', label: 'Supplier Details' },
@@ -117,14 +122,28 @@ export default function ContactsPage() {
     }))
   }
 
+  // Get unique categories from all suppliers
+  const allCategories = Array.from(
+    new Set(
+      suppliers.flatMap(s => s.trade_categories || [])
+    )
+  ).sort()
+
   const filteredContacts = contacts.filter(c =>
     c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.email?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const filteredSuppliers = suppliers.filter(s =>
-    s.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredSuppliers = suppliers.filter(s => {
+    // Filter by search query
+    const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase())
+
+    // Filter by selected categories (if any selected)
+    const matchesCategories = selectedCategories.length === 0 ||
+      selectedCategories.some(cat => s.trade_categories?.includes(cat))
+
+    return matchesSearch && matchesCategories
+  })
 
   const contactStats = {
     total: contacts.length,
@@ -261,13 +280,23 @@ export default function ContactsPage() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setShowColumnModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-              >
-                <AdjustmentsHorizontalIcon className="h-5 w-5" />
-                Columns
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowColumnModal(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                >
+                  <AdjustmentsHorizontalIcon className="h-5 w-5" />
+                  Columns
+                </button>
+
+                <button
+                  onClick={() => navigate('/suppliers/new')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/30 transition-all duration-200 font-medium"
+                >
+                  <UserPlusIcon className="h-5 w-5" />
+                  New Contact
+                </button>
+              </div>
             </div>
 
             {/* Contacts Table */}
@@ -478,6 +507,46 @@ export default function ContactsPage() {
               </div>
 
               <div className="flex gap-2">
+                {/* Category Filter */}
+                <Listbox value={selectedCategories} onChange={setSelectedCategories} multiple>
+                  <div className="relative">
+                    <ListboxButton className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition min-w-[140px] justify-between">
+                      <span className="truncate">
+                        {selectedCategories.length === 0
+                          ? 'All Categories'
+                          : `${selectedCategories.length} selected`}
+                      </span>
+                      <ChevronDownIcon className="h-5 w-5" />
+                    </ListboxButton>
+                    <ListboxOptions className="absolute z-50 mt-1 max-h-60 w-64 overflow-auto rounded-md bg-white dark:bg-gray-800 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                      {allCategories.map((category) => (
+                        <ListboxOption
+                          key={category}
+                          value={category}
+                          className={({ active }) =>
+                            `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
+                              active ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                            }`
+                          }
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                {category}
+                              </span>
+                              {selected && (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                  <CheckCircleIcon className="h-5 w-5" />
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </ListboxOption>
+                      ))}
+                    </ListboxOptions>
+                  </div>
+                </Listbox>
+
                 <button
                   onClick={() => setShowColumnModal(true)}
                   className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
@@ -486,13 +555,13 @@ export default function ContactsPage() {
                   Columns
                 </button>
 
-                <Link
-                  to="/suppliers"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm hover:shadow-md transition-all duration-200 font-medium"
+                <button
+                  onClick={() => navigate('/suppliers/new')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/30 transition-all duration-200 font-medium"
                 >
                   <UserPlusIcon className="h-5 w-5" />
-                  Manage Suppliers
-                </Link>
+                  New Contact
+                </button>
               </div>
             </div>
 
@@ -505,6 +574,11 @@ export default function ContactsPage() {
                       {visibleClientColumns.supplier && (
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Supplier
+                        </th>
+                      )}
+                      {visibleClientColumns.categories && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Trade Categories
                         </th>
                       )}
                       {visibleClientColumns.rating && (
@@ -545,6 +619,29 @@ export default function ContactsPage() {
                             >
                               {supplier.name}
                             </Link>
+                          </td>
+                        )}
+                        {visibleClientColumns.categories && (
+                          <td className="px-6 py-4">
+                            <div className="flex flex-wrap gap-1.5">
+                              {supplier.trade_categories && supplier.trade_categories.length > 0 ? (
+                                supplier.trade_categories.slice(0, 3).map((category, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200"
+                                  >
+                                    {category}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
+                              )}
+                              {supplier.trade_categories && supplier.trade_categories.length > 3 && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400 self-center">
+                                  +{supplier.trade_categories.length - 3} more
+                                </span>
+                              )}
+                            </div>
                           </td>
                         )}
                         {visibleClientColumns.rating && (
