@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { Menu, Transition } from '@headlessui/react'
 import {
   ChevronDownIcon,
@@ -22,6 +22,16 @@ export default function ColumnHeaderMenu({
   const [searchTerm, setSearchTerm] = useState('')
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
+
+  // Sync local state with filterValue prop
+  useEffect(() => {
+    if (filterType === 'search') {
+      setSearchTerm(filterValue || '')
+    } else if (filterType === 'price-range' && typeof filterValue === 'object') {
+      setMinPrice(filterValue.min || '')
+      setMaxPrice(filterValue.max || '')
+    }
+  }, [filterValue, filterType])
 
   const handleFilterSelect = (value) => {
     onFilter(column, value === filterValue ? '' : value)
