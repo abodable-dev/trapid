@@ -10,15 +10,16 @@ class HealthController < ApplicationController
 
   def version
     render json: {
-      version: heroku_release_version,
+      version: Version.current_version_string,
       timestamp: Time.current
     }
   end
 
-  private
-
-  def heroku_release_version
-    # Heroku sets HEROKU_RELEASE_VERSION env var (e.g., "v96")
-    ENV['HEROKU_RELEASE_VERSION'] || 'unknown'
+  def increment_version
+    new_version = Version.increment!
+    render json: {
+      version: "v#{new_version}",
+      message: "Version incremented successfully"
+    }
   end
 end
