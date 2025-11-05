@@ -75,13 +75,15 @@ module Api
         params.require(:construction).permit(
           :title,
           :contract_value,
-          :live_profit,
-          :profit_percentage,
+          # live_profit and profit_percentage are calculated fields, not user-editable
           :stage,
           :status,
           :ted_number,
           :certifier_job_no,
-          :start_date
+          :start_date,
+          :site_supervisor_name,
+          :site_supervisor_email,
+          :site_supervisor_phone
         )
       end
     end

@@ -70,6 +70,25 @@ class ProjectTask < ApplicationRecord
     is_critical_path
   end
 
+  # Check if task has required materials (linked to a PO)
+  def has_purchase_order?
+    purchase_order_id.present?
+  end
+
+  # Check if materials will arrive on time
+  def materials_on_time?
+    return true unless has_purchase_order?
+    purchase_order.delivery_before_task_start?(self)
+  end
+
+  # Get materials status for this task
+  # Returns: 'no_po', 'on_time', or 'delayed'
+  def materials_status
+    return 'no_po' unless has_purchase_order?
+    return 'on_time' if materials_on_time?
+    'delayed'
+  end
+
   private
 
   def update_actual_dates
