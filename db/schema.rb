@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_04_063833) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_05_003856) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -139,6 +139,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_063833) do
     t.string "lga"
     t.date "date_effective"
     t.index ["created_at"], name: "index_price_histories_on_created_at"
+    t.index ["pricebook_item_id", "supplier_id", "new_price", "created_at"], name: "index_price_histories_on_unique_combination", unique: true, comment: "Prevents duplicate price history entries from race conditions"
     t.index ["pricebook_item_id"], name: "index_price_histories_on_pricebook_item_id"
     t.index ["supplier_id"], name: "index_price_histories_on_supplier_id"
   end
@@ -333,6 +334,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_063833) do
     t.text "trade_categories"
     t.text "is_default_for_trades"
     t.decimal "markup_percentage", precision: 5, scale: 2, default: "0.0"
+    t.integer "purchase_orders_count", default: 0, null: false
     t.index ["contact_id"], name: "index_suppliers_on_contact_id"
     t.index ["is_active"], name: "index_suppliers_on_is_active"
     t.index ["is_verified"], name: "index_suppliers_on_is_verified"
@@ -475,6 +477,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_04_063833) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
+  end
+
+  create_table "xero_credentials", force: :cascade do |t|
+    t.string "access_token", null: false
+    t.string "refresh_token", null: false
+    t.datetime "expires_at", null: false
+    t.string "tenant_id", null: false
+    t.string "tenant_name"
+    t.string "tenant_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tenant_id"], name: "index_xero_credentials_on_tenant_id"
   end
 
   add_foreign_key "columns", "tables"

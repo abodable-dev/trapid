@@ -1,7 +1,7 @@
 class PurchaseOrder < ApplicationRecord
   # Associations
   belongs_to :construction, counter_cache: true
-  belongs_to :supplier, optional: true
+  belongs_to :supplier, optional: true, counter_cache: true
   has_many :line_items, class_name: 'PurchaseOrderLineItem', dependent: :destroy
   has_many :project_tasks, dependent: :nullify
 

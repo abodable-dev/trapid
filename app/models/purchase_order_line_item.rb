@@ -25,6 +25,48 @@ class PurchaseOrderLineItem < ApplicationRecord
     self.total_amount = (line_subtotal + tax_amount).round(2)
   end
 
+  # Price drift detection
+  def price_drift
+    return nil unless pricebook_item && pricebook_item.current_price
+    current = pricebook_item.current_price
+    return 0 if current.nil? || unit_price.nil? || unit_price.zero?
+    ((current - unit_price) / unit_price * 100).round(2)
+  end
+
+  def price_outdated?
+    drift = price_drift
+    drift && drift.abs > 10 # 10% threshold
+  end
+
+  def price_status
+    return 'no_pricebook_item' unless pricebook_item
+    return 'no_current_price' unless pricebook_item.current_price
+
+    drift = price_drift
+    return 'in_sync' if drift.abs < 0.01 # Within 1 cent
+
+    if drift.abs <= 10
+      'minor_drift'
+    else
+      'major_drift'
+    end
+  end
+
+  def price_status_label
+    case price_status
+    when 'no_pricebook_item'
+      'Not linked to pricebook'
+    when 'no_current_price'
+      'Pricebook item has no price'
+    when 'in_sync'
+      'Price up to date'
+    when 'minor_drift'
+      "Price drift: #{price_drift}%"
+    when 'major_drift'
+      "WARNING: Price drift: #{price_drift}%"
+    end
+  end
+
   private
 
   def set_line_number

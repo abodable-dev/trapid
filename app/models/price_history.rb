@@ -20,6 +20,27 @@ class PriceHistory < ApplicationRecord
     allow_nil: true
   }
 
+  # Prevent duplicate entries (custom validation for better error messages)
+  validate :prevent_duplicate_price_history, on: :create
+
+  private
+
+  def prevent_duplicate_price_history
+    # The unique database constraint will prevent duplicates
+    # This validation just provides a friendlier error message
+    duplicate = PriceHistory.where(
+      pricebook_item_id: pricebook_item_id,
+      supplier_id: supplier_id,
+      new_price: new_price
+    ).where('created_at >= ?', 5.seconds.ago).exists?
+
+    if duplicate
+      errors.add(:base, 'A price history entry with these values was just created. Please wait a moment before updating again.')
+    end
+  end
+
+  public
+
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
   scope :for_item, ->(item_id) { where(pricebook_item_id: item_id) }

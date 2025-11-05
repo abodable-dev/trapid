@@ -2,6 +2,7 @@ class Supplier < ApplicationRecord
   # Associations
   has_many :pricebook_items, dependent: :nullify
   has_many :price_histories, dependent: :nullify
+  has_many :purchase_orders, dependent: :restrict_with_exception
   belongs_to :contact, optional: true  # Legacy association
   has_many :supplier_contacts, dependent: :destroy
   has_many :contacts, through: :supplier_contacts
