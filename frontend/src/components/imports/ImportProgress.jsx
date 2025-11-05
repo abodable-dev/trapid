@@ -61,21 +61,21 @@ export default function ImportProgress({ sessionKey, onComplete }) {
   const getStatusColor = () => {
     switch (status) {
       case 'completed':
-        return 'text-green-600'
+        return 'text-green-700 dark:text-green-400'
       case 'failed':
-        return 'text-red-600'
+        return 'text-red-700 dark:text-red-400'
       default:
-        return 'text-blue-600'
+        return 'text-blue-700 dark:text-blue-400'
     }
   }
 
   if (error) {
     return (
       <div className="max-w-2xl mx-auto p-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+        <div className="bg-red-100 dark:bg-red-400/10 border border-red-200 dark:border-red-400/20 rounded-lg p-6">
           <div className="flex items-center gap-3 mb-4">
             <svg
-              className="w-6 h-6 text-red-600"
+              className="w-6 h-6 text-red-700 dark:text-red-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -87,12 +87,12 @@ export default function ImportProgress({ sessionKey, onComplete }) {
                 d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <h2 className="text-xl font-semibold text-red-900">Import Failed</h2>
+            <h2 className="text-xl font-semibold text-red-700 dark:text-red-400">Import Failed</h2>
           </div>
-          <p className="text-red-700">{error}</p>
+          <p className="text-red-700 dark:text-red-400">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            className="mt-4 px-4 py-2 bg-red-600 dark:bg-red-500 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-400"
           >
             Try Again
           </button>
@@ -184,7 +184,7 @@ export default function ImportProgress({ sessionKey, onComplete }) {
           ) : status === 'completed' ? (
             <>
               <svg
-                className="w-5 h-5 text-green-600"
+                className="w-5 h-5 text-green-700 dark:text-green-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -196,7 +196,7 @@ export default function ImportProgress({ sessionKey, onComplete }) {
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              <span className="text-sm text-green-600">Completed successfully!</span>
+              <span className="text-sm text-green-700 dark:text-green-400">Completed successfully!</span>
             </>
           ) : (
             <>

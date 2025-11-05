@@ -102,11 +102,10 @@ export default function PriceBookItemDetailPage() {
 
   const Badge = ({ color, children }) => {
     const colorClasses = {
-      green: 'bg-green-500/15 text-green-700 dark:bg-green-500/10 dark:text-green-400',
-      yellow: 'bg-yellow-400/20 text-yellow-700 dark:bg-yellow-400/10 dark:text-yellow-500',
-      orange: 'bg-orange-400/20 text-orange-700 dark:bg-orange-400/10 dark:text-orange-500',
-      red: 'bg-red-500/15 text-red-700 dark:bg-red-500/10 dark:text-red-400',
-      gray: 'bg-gray-400/20 text-gray-700 dark:bg-gray-400/10 dark:text-gray-400'
+      green: 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400',
+      yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-400/10 dark:text-yellow-500',
+      red: 'bg-red-100 text-red-700 dark:bg-red-400/10 dark:text-red-400',
+      gray: 'bg-gray-100 text-gray-600 dark:bg-gray-400/10 dark:text-gray-400'
     }
 
     return (
@@ -507,10 +506,10 @@ export default function PriceBookItemDetailPage() {
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${
-                          item.risk.score < 25 ? 'bg-green-500' :
-                          item.risk.score < 50 ? 'bg-yellow-500' :
-                          item.risk.score < 75 ? 'bg-orange-500' :
-                          'bg-red-500'
+                          item.risk.score < 25 ? 'bg-green-500 dark:bg-green-400' :
+                          item.risk.score < 50 ? 'bg-yellow-500 dark:bg-yellow-400' :
+                          item.risk.score < 75 ? 'bg-yellow-600 dark:bg-yellow-500' :
+                          'bg-red-500 dark:bg-red-400'
                         }`}
                         style={{ width: `${item.risk.score}%` }}
                       />

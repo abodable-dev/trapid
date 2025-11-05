@@ -293,22 +293,22 @@ export default function JobDocumentsTab({ jobId, jobTitle }) {
       <div className="space-y-6">
         {/* Messages */}
         {error && (
-          <div className="rounded-md bg-red-50 dark:bg-red-900/10 p-4">
+          <div className="rounded-md bg-red-100 dark:bg-red-400/10 p-4">
             <div className="flex">
-              <ExclamationCircleIcon className="h-5 w-5 text-red-400 dark:text-red-500" />
+              <ExclamationCircleIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
               <div className="ml-3">
-                <p className="text-sm text-red-800 dark:text-red-400">{error}</p>
+                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
               </div>
             </div>
           </div>
         )}
 
         {message && (
-          <div className="rounded-md bg-green-50 dark:bg-green-900/10 p-4">
+          <div className="rounded-md bg-green-100 dark:bg-green-400/10 p-4">
             <div className="flex">
-              <CheckCircleIcon className="h-5 w-5 text-green-400 dark:text-green-500" />
+              <CheckCircleIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
               <div className="ml-3">
-                <p className="text-sm text-green-800 dark:text-green-400">{message.text}</p>
+                <p className="text-sm text-green-700 dark:text-green-400">{message.text}</p>
               </div>
             </div>
           </div>
@@ -362,22 +362,22 @@ export default function JobDocumentsTab({ jobId, jobTitle }) {
     <div className="space-y-6">
       {/* Messages */}
       {message && (
-        <div className="rounded-md bg-green-50 dark:bg-green-900/10 p-4">
+        <div className="rounded-md bg-green-100 dark:bg-green-400/10 p-4">
           <div className="flex">
-            <CheckCircleIcon className="h-5 w-5 text-green-400 dark:text-green-500" />
+            <CheckCircleIcon className="h-5 w-5 text-green-700 dark:text-green-400" />
             <div className="ml-3">
-              <p className="text-sm text-green-800 dark:text-green-400">{message.text}</p>
+              <p className="text-sm text-green-700 dark:text-green-400">{message.text}</p>
             </div>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="rounded-md bg-red-50 dark:bg-red-900/10 p-4">
+        <div className="rounded-md bg-red-100 dark:bg-red-400/10 p-4">
           <div className="flex">
-            <ExclamationCircleIcon className="h-5 w-5 text-red-400 dark:text-red-500" />
+            <ExclamationCircleIcon className="h-5 w-5 text-red-700 dark:text-red-400" />
             <div className="ml-3">
-              <p className="text-sm text-red-800 dark:text-red-400">{error}</p>
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             </div>
           </div>
         </div>

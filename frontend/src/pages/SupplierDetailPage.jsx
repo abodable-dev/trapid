@@ -231,7 +231,7 @@ export default function SupplierDetailPage() {
     }
 
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50">
+      <span className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md bg-yellow-100 text-yellow-800 dark:bg-yellow-400/10 dark:text-yellow-500">
         <ExclamationTriangleIcon className="h-3.5 w-3.5" />
         Needs Review
       </span>
@@ -852,12 +852,12 @@ export default function SupplierDetailPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium capitalize border ${
                             po.status === 'approved'
-                              ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50'
+                              ? 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400'
                               : po.status === 'draft'
-                              ? 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800/50'
+                              ? 'bg-gray-100 text-gray-600 dark:bg-gray-400/10 dark:text-gray-400'
                               : po.status === 'ordered'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50'
-                              : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50'
+                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-400/10 dark:text-blue-400'
+                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-400/10 dark:text-yellow-500'
                           }`}>
                             {po.status}
                           </span>

@@ -105,20 +105,20 @@ export default function XeroConnection() {
         <div
           className={`mb-6 rounded-md p-4 ${
             message.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/10'
-              : 'bg-red-50 dark:bg-red-900/10'
+              ? 'bg-green-100 dark:bg-green-400/10'
+              : 'bg-red-100 dark:bg-red-400/10'
           }`}
         >
           <div className="flex">
             <div className="flex-shrink-0">
               {message.type === 'success' ? (
                 <CheckCircleIcon
-                  className="h-5 w-5 text-green-400 dark:text-green-500"
+                  className="h-5 w-5 text-green-700 dark:text-green-400"
                   aria-hidden="true"
                 />
               ) : (
                 <XCircleIcon
-                  className="h-5 w-5 text-red-400 dark:text-red-500"
+                  className="h-5 w-5 text-red-700 dark:text-red-400"
                   aria-hidden="true"
                 />
               )}
@@ -127,8 +127,8 @@ export default function XeroConnection() {
               <p
                 className={`text-sm ${
                   message.type === 'success'
-                    ? 'text-green-800 dark:text-green-400'
-                    : 'text-red-800 dark:text-red-400'
+                    ? 'text-green-700 dark:text-green-400'
+                    : 'text-red-700 dark:text-red-400'
                 }`}
               >
                 {message.text}

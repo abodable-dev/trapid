@@ -471,10 +471,10 @@ export default function ContactsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Needs Review</p>
-                    <p className="text-3xl font-bold text-amber-600 dark:text-amber-400 mt-2">{supplierStats.needsReview}</p>
+                    <p className="text-3xl font-bold text-yellow-800 dark:text-yellow-500 mt-2">{supplierStats.needsReview}</p>
                   </div>
-                  <div className="h-12 w-12 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <CheckCircleIcon className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                  <div className="h-12 w-12 bg-yellow-100 dark:bg-yellow-400/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <CheckCircleIcon className="h-6 w-6 text-yellow-800 dark:text-yellow-500" />
                   </div>
                 </div>
               </div>
@@ -685,7 +685,7 @@ export default function ContactsPage() {
                                 Verified
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50">
+                              <span className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md bg-yellow-100 text-yellow-800 dark:bg-yellow-400/10 dark:text-yellow-500">
                                 <CheckCircleIcon className="h-3.5 w-3.5" />
                                 Needs Review
                               </span>
