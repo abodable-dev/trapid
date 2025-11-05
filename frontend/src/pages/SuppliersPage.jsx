@@ -166,8 +166,8 @@ export default function SuppliersPage() {
   const getMatchBadge = (supplier) => {
     if (!supplier.contact_id) {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-          <XCircleIcon className="h-3 w-3" />
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/50">
+          <XCircleIcon className="h-3.5 w-3.5" />
           Unmatched
         </span>
       )
@@ -175,16 +175,16 @@ export default function SuppliersPage() {
 
     if (supplier.is_verified) {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-          <CheckCircleIcon className="h-3 w-3" />
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50">
+          <CheckCircleIcon className="h-3.5 w-3.5" />
           Verified
         </span>
       )
     }
 
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-        <ExclamationTriangleIcon className="h-3 w-3" />
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50">
+        <ExclamationTriangleIcon className="h-3.5 w-3.5" />
         Needs Review
       </span>
     )
@@ -216,7 +216,7 @@ export default function SuppliersPage() {
         </div>
         <Link
           to="/suppliers/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm hover:shadow-md transition-all duration-200 self-start sm:self-auto font-medium"
         >
           <UserPlusIcon className="h-5 w-5" />
           New Supplier
@@ -224,22 +224,50 @@ export default function SuppliersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Suppliers</p>
-          <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.total}</p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Suppliers</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.total}</p>
+            </div>
+            <div className="h-12 w-12 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+              <UserPlusIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Verified</p>
-          <p className="text-2xl font-semibold text-green-600 dark:text-green-400">{stats.verified}</p>
+        <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Verified</p>
+              <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">{stats.verified}</p>
+            </div>
+            <div className="h-12 w-12 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+              <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Needs Review</p>
-          <p className="text-2xl font-semibold text-yellow-600 dark:text-yellow-400">{stats.needsReview}</p>
+        <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Needs Review</p>
+              <p className="text-3xl font-bold text-amber-600 dark:text-amber-400 mt-2">{stats.needsReview}</p>
+            </div>
+            <div className="h-12 w-12 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+              <ExclamationTriangleIcon className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+            </div>
+          </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Unmatched</p>
-          <p className="text-2xl font-semibold text-red-600 dark:text-red-400">{stats.unmatched}</p>
+        <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unmatched</p>
+              <p className="text-3xl font-bold text-red-600 dark:text-red-400 mt-2">{stats.unmatched}</p>
+            </div>
+            <div className="h-12 w-12 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+              <XCircleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -281,7 +309,7 @@ export default function SuppliersPage() {
           <button
             onClick={runAutoMatch}
             disabled={isMatching}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
             <ArrowPathIcon className={`h-5 w-5 ${isMatching ? 'animate-spin' : ''}`} />
             {isMatching ? 'Matching...' : 'Run Auto-Match'}
@@ -290,10 +318,10 @@ export default function SuppliersPage() {
       </div>
 
       {/* Suppliers List */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
               <tr>
                 {visibleColumns.supplier && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -329,7 +357,7 @@ export default function SuppliersPage() {
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredSuppliers.map((supplier) => (
-                <tr key={supplier.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                <tr key={supplier.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150">
                   {visibleColumns.supplier && (
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Link
