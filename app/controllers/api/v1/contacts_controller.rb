@@ -16,6 +16,18 @@ module Api
           )
         end
 
+        # Filter by contact type
+        if params[:type].present?
+          case params[:type]
+          when 'customers'
+            @contacts = @contacts.customers
+          when 'suppliers'
+            @contacts = @contacts.suppliers
+          when 'both'
+            @contacts = @contacts.where(contact_type: 'both')
+          end
+        end
+
         # Filter by having contact info
         @contacts = @contacts.with_email if params[:with_email] == "true"
         @contacts = @contacts.with_phone if params[:with_phone] == "true"
@@ -25,7 +37,8 @@ module Api
         render json: {
           success: true,
           contacts: @contacts.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website],
+            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_type],
+            methods: [:is_customer?, :is_supplier?, :is_both?],
             include: { suppliers: { only: [:id, :name] } }
           )
         }
@@ -48,8 +61,10 @@ module Api
             only: [
               :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
               :tax_number, :xero_id, :sync_with_xero, :sys_type_id, :deleted, :parent_id, :parent,
-              :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at
-            ]
+              :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
+              :contact_type
+            ],
+            methods: [:is_customer?, :is_supplier?, :is_both?]
           ).merge(
             suppliers: suppliers_with_items
           )
@@ -117,7 +132,8 @@ module Api
           :sync_with_xero,
           :contact_region_id,
           :contact_region,
-          :branch
+          :branch,
+          :contact_type
         )
       end
     end

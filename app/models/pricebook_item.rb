@@ -22,7 +22,17 @@ class PricebookItem < ApplicationRecord
   scope :active, -> { where(is_active: true) }
   scope :needs_pricing, -> { where(needs_pricing_review: true) }
   scope :by_category, ->(category) { where(category: category) if category.present? }
-  scope :by_supplier, ->(supplier_id) { where(supplier_id: supplier_id) if supplier_id.present? }
+  scope :by_supplier, ->(supplier_id) {
+    return all if supplier_id.blank?
+
+    # Search for items where the supplier is either:
+    # 1. The default supplier (default_supplier_id)
+    # 2. OR appears in the price history (price_histories.supplier_id)
+    left_joins(:price_histories)
+      .where('pricebook_items.default_supplier_id = :supplier_id OR price_histories.supplier_id = :supplier_id',
+             supplier_id: supplier_id)
+      .distinct
+  }
   scope :price_range, ->(min_price, max_price) {
     query = all
     query = query.where("current_price >= ?", min_price) if min_price.present?

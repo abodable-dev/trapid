@@ -63,14 +63,38 @@ module Api
         end
 
         # Filter suppliers by category if category filter is active
+        # Include suppliers from both default_supplier_id AND price_histories
         suppliers_list = if params[:category].present?
           # Get suppliers who have items in the selected category
-          Supplier.joins(:pricebook_items)
-                  .where(pricebook_items: { category: params[:category], is_active: true })
-                  .distinct
-                  .pluck(:id, :name)
+          # Check both as default supplier AND in price history
+          default_supplier_ids = Supplier.joins("INNER JOIN pricebook_items ON pricebook_items.default_supplier_id = suppliers.id")
+                                         .where(pricebook_items: { category: params[:category], is_active: true })
+                                         .distinct
+                                         .pluck(:id)
+
+          price_history_supplier_ids = Supplier.joins("INNER JOIN price_histories ON price_histories.supplier_id = suppliers.id")
+                                               .joins("INNER JOIN pricebook_items ON pricebook_items.id = price_histories.pricebook_item_id")
+                                               .where(pricebook_items: { category: params[:category], is_active: true })
+                                               .distinct
+                                               .pluck(:id)
+
+          # Combine both and get distinct
+          combined_ids = (default_supplier_ids + price_history_supplier_ids).uniq
+          Supplier.where(id: combined_ids).order(:name).pluck(:id, :name)
         else
-          Supplier.active.pluck(:id, :name)
+          # Get ALL suppliers that appear in either default_supplier_id or price_histories
+          default_supplier_ids = Supplier.joins("INNER JOIN pricebook_items ON pricebook_items.default_supplier_id = suppliers.id")
+                                         .where(pricebook_items: { is_active: true })
+                                         .distinct
+                                         .pluck(:id)
+
+          price_history_supplier_ids = Supplier.joins(:price_histories)
+                                               .distinct
+                                               .pluck(:id)
+
+          # Combine both and get distinct
+          combined_ids = (default_supplier_ids + price_history_supplier_ids).uniq
+          Supplier.where(id: combined_ids).order(:name).pluck(:id, :name)
         end
 
         render json: {
@@ -360,6 +384,56 @@ module Api
           render json: { success: true, message: 'Price history deleted successfully' }
         else
           render json: { success: false, errors: price_history.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      # GET /api/v1/pricebook/export_price_history
+      def export_price_history
+        supplier_id = params[:supplier_id]
+        category = params[:category]
+
+        export_service = PriceHistoryExportService.new(
+          supplier_id: supplier_id,
+          category: category
+        )
+
+        result = export_service.export
+
+        if result[:success]
+          send_data result[:data],
+            filename: result[:filename],
+            type: result[:content_type],
+            disposition: 'attachment'
+        else
+          render json: {
+            success: false,
+            errors: result[:errors]
+          }, status: :unprocessable_entity
+        end
+      end
+
+      # POST /api/v1/pricebook/import_price_history
+      def import_price_history
+        unless params[:file]
+          return render json: { success: false, error: "No file provided" }, status: :unprocessable_entity
+        end
+
+        file = params[:file]
+        temp_file = Tempfile.new(['price_history_import', File.extname(file.original_filename)])
+
+        begin
+          # Save uploaded file
+          temp_file.write(file.read)
+          temp_file.rewind
+
+          # Run import service
+          import_service = PriceHistoryImportService.new(temp_file.path)
+          result = import_service.import
+
+          render json: result
+        ensure
+          temp_file.close
+          temp_file.unlink
         end
       end
 
