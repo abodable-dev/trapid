@@ -5,6 +5,7 @@ import { api } from '../api'
 import GanttChart from '../components/gantt/GanttChart'
 import TaskTable from '../components/gantt/TaskTable'
 import ColorCustomizationMenu from '../components/gantt/ColorCustomizationMenu'
+import Toast from '../components/Toast'
 import { getStoredColorConfig, saveColorConfig } from '../components/gantt/utils/colorSchemes'
 
 export default function MasterSchedulePage() {
@@ -17,6 +18,8 @@ export default function MasterSchedulePage() {
   const [viewMode, setViewMode] = useState('gantt') // 'gantt' or 'table'
   const [colorBy, setColorBy] = useState('status') // 'status', 'category', or 'type'
   const [colorConfig, setColorConfig] = useState(getStoredColorConfig())
+  const [toast, setToast] = useState(null)
+  const [saving, setSaving] = useState(false)
   const navigate = useNavigate()
 
   // Save color config when it changes
@@ -57,6 +60,67 @@ export default function MasterSchedulePage() {
     }
   }
 
+  const handleTaskUpdate = async (taskId, field, value) => {
+    if (!project || saving) return
+
+    // Store original data for rollback
+    const originalTasks = [...scheduleData.tasks]
+
+    // Optimistic update - update UI immediately
+    const updatedTasks = scheduleData.tasks.map(task => {
+      if (task.id === taskId) {
+        // Map frontend field names to backend field names if needed
+        const fieldMapping = {
+          'planned_start_date': 'start_date',
+          'planned_end_date': 'end_date',
+          'duration_days': 'duration',
+          'progress_percentage': 'progress',
+          'assigned_to': 'assigned_to',
+          'supplier': 'supplier'
+        }
+
+        const displayField = fieldMapping[field] || field
+        return { ...task, [displayField]: value }
+      }
+      return task
+    })
+
+    setScheduleData({ ...scheduleData, tasks: updatedTasks })
+
+    try {
+      setSaving(true)
+
+      // Make API call
+      const response = await api.patch(`/api/v1/projects/${project.id}/tasks/${taskId}`, {
+        project_task: { [field]: value }
+      })
+
+      if (response.success) {
+        // Show success toast
+        setToast({ type: 'success', message: 'Task updated successfully' })
+
+        // Re-fetch the schedule to ensure consistency
+        const scheduleResponse = await api.get(`/api/v1/projects/${project.id}/gantt`)
+        setScheduleData(scheduleResponse)
+      } else {
+        throw new Error(response.errors?.join(', ') || 'Update failed')
+      }
+    } catch (err) {
+      console.error('Failed to update task:', err)
+
+      // Rollback on error
+      setScheduleData({ ...scheduleData, tasks: originalTasks })
+
+      // Show error toast
+      setToast({
+        type: 'error',
+        message: err.message || 'Failed to update task. Please try again.'
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -87,6 +151,13 @@ export default function MasterSchedulePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div className="py-6">
         <header>
           <div className="px-4 sm:px-6 lg:px-8">
@@ -183,10 +254,8 @@ export default function MasterSchedulePage() {
                       tasks={scheduleData.tasks}
                       colorBy={colorBy}
                       colorConfig={colorConfig}
-                      onTaskUpdate={(taskId, field, value) => {
-                        console.log('Update task:', taskId, field, value)
-                        // Will implement API update in Phase 2
-                      }}
+                      onTaskUpdate={handleTaskUpdate}
+                      saving={saving}
                     />
                   )}
                 </>
