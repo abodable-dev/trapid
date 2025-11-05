@@ -163,6 +163,7 @@ Rails.application.routes.draw do
       resources :estimates, only: [:index, :show, :destroy] do
         member do
           patch :match
+          post :generate_purchase_orders
         end
       end
 
