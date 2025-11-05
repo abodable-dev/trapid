@@ -13,6 +13,7 @@ import {
 import { api } from '../api'
 import { formatCurrency, formatPercentage } from '../utils/formatters'
 import { POSummaryCards, POTable, PurchaseOrderModal } from '../components/purchase-orders'
+import JobDocumentsTab from '../components/documents/JobDocumentsTab'
 
 const tabs = [
   { name: 'Overview' },
@@ -409,26 +410,26 @@ export default function JobDetailPage() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Live Profit
+                          <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(Auto-calculated)</span>
                         </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={editedJob.live_profit || ''}
-                          onChange={(e) => handleFieldChange('live_profit', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
+                        <div className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white">
+                          {editedJob.live_profit ? formatCurrency(editedJob.live_profit, false) : '-'}
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Contract Value - Total PO Costs
+                        </p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Profit Percentage
+                          <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(Auto-calculated)</span>
                         </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={editedJob.profit_percentage || ''}
-                          onChange={(e) => handleFieldChange('profit_percentage', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
+                        <div className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white">
+                          {editedJob.profit_percentage ? formatPercentage(editedJob.profit_percentage, 2) : '-'}
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          (Live Profit / Contract Value) × 100
+                        </p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -623,16 +624,7 @@ export default function JobDetailPage() {
           )}
 
           {activeTab === 'Documents' && (
-            <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
-                  Project Documents
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Document management coming soon...
-                </p>
-              </div>
-            </div>
+            <JobDocumentsTab jobId={id} jobTitle={job?.title} />
           )}
 
           {activeTab === 'Team' && (

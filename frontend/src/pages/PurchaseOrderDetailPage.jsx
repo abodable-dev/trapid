@@ -270,13 +270,13 @@ export default function PurchaseOrderDetailPage() {
             <h2 className="sr-only">Summary</h2>
             <div className="rounded-lg bg-gray-50 shadow-sm outline outline-1 outline-gray-900/5 dark:bg-gray-800/50 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10">
               <dl className="flex flex-wrap">
-                <div className="flex-auto pl-6 pt-6">
+                <div className="flex-auto pl-6 pt-6 pb-6">
                   <dt className="text-sm/6 font-semibold text-gray-900 dark:text-white">Amount</dt>
                   <dd className="mt-1 text-base font-semibold text-gray-900 dark:text-white">
                     {formatCurrency(purchaseOrder.total || 0)}
                   </dd>
                 </div>
-                <div className="flex-none self-end px-6 pt-4">
+                <div className="flex-none self-end px-6 pt-4 pb-6">
                   <dt className="sr-only">Status</dt>
                   <dd className={`rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusBadgeClass(purchaseOrder.status)}`}>
                     {purchaseOrder.status.charAt(0).toUpperCase() + purchaseOrder.status.slice(1)}
@@ -328,6 +328,31 @@ export default function PurchaseOrderDetailPage() {
 
           {/* Purchase Order Details */}
           <div className="-mx-4 px-4 py-8 shadow-sm ring-1 ring-gray-900/5 sm:mx-0 sm:rounded-lg sm:px-8 sm:pb-14 lg:col-span-2 lg:row-span-2 lg:row-end-2 xl:px-16 xl:pb-20 xl:pt-16 dark:shadow-none dark:ring-white/10">
+            {/* Tekna Homes Company Header */}
+            <div className="mb-8 pb-6 border-b-2 border-indigo-600 dark:border-indigo-500">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">Tekna Homes</h2>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Quality Construction Services</p>
+                </div>
+                <div className="text-right text-sm">
+                  <p className="font-semibold text-gray-900 dark:text-white">Contact: Robert</p>
+                  <p className="text-gray-600 dark:text-gray-400">robert@tekna.com.au</p>
+                  <p className="text-gray-600 dark:text-gray-400">0407 397 541</p>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">QBCC License:</span>{' '}
+                  <span className="text-gray-600 dark:text-gray-400">15344273</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Service Areas:</span>{' '}
+                  <span className="text-gray-600 dark:text-gray-400">Brisbane, Gold Coast, Sunshine Coast, Ipswich, Logan</span>
+                </div>
+              </div>
+            </div>
+
             <h2 className="text-base font-semibold text-gray-900 dark:text-white">Purchase Order</h2>
             <dl className="mt-6 grid grid-cols-1 text-sm/6 sm:grid-cols-2">
               <div className="sm:pr-4">
@@ -380,25 +405,33 @@ export default function PurchaseOrderDetailPage() {
                     {purchaseOrder.supplier.address && (
                       <>
                         <br />
+                        <span className="text-xs text-gray-400 dark:text-gray-500">Address: </span>
                         {purchaseOrder.supplier.address}
                       </>
                     )}
                     {purchaseOrder.supplier.contact_person && (
                       <>
                         <br />
-                        Contact: {purchaseOrder.supplier.contact_person}
+                        <span className="text-xs text-gray-400 dark:text-gray-500">Contact: </span>
+                        <span className="font-medium">{purchaseOrder.supplier.contact_person}</span>
                       </>
                     )}
                     {purchaseOrder.supplier.email && (
                       <>
                         <br />
-                        {purchaseOrder.supplier.email}
+                        <span className="text-xs text-gray-400 dark:text-gray-500">Email: </span>
+                        <a href={`mailto:${purchaseOrder.supplier.email}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                          {purchaseOrder.supplier.email}
+                        </a>
                       </>
                     )}
                     {purchaseOrder.supplier.phone && (
                       <>
                         <br />
-                        {purchaseOrder.supplier.phone}
+                        <span className="text-xs text-gray-400 dark:text-gray-500">Phone: </span>
+                        <a href={`tel:${purchaseOrder.supplier.phone}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                          {purchaseOrder.supplier.phone}
+                        </a>
                       </>
                     )}
                   </dd>

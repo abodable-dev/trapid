@@ -6,6 +6,7 @@ class Construction < ApplicationRecord
   # Validations
   validates :title, presence: true
   validates :status, presence: true
+  validates :site_supervisor_name, presence: true
 
   # Scopes
   scope :active, -> { where(status: 'Active') }
@@ -23,5 +24,45 @@ class Construction < ApplicationRecord
 
   def schedule_ready?
     purchase_orders.for_schedule.any?
+  end
+
+  # Calculate live profit based on contract value minus all PO totals
+  def calculate_live_profit
+    contract = contract_value || 0
+    po_total = purchase_orders.sum(:total) || 0
+    contract - po_total
+  end
+
+  # Calculate profit percentage
+  def calculate_profit_percentage
+    return 0 if contract_value.nil? || contract_value.zero?
+    ((calculate_live_profit / contract_value) * 100).round(2)
+  end
+
+  # Update live_profit and profit_percentage fields in database
+  def calculate_and_update_profit!
+    update_columns(
+      live_profit: calculate_live_profit,
+      profit_percentage: calculate_profit_percentage
+    )
+  end
+
+  # Override getters to always return calculated values
+  # This ensures values are always fresh even if DB is stale
+  def live_profit
+    calculate_live_profit
+  end
+
+  def profit_percentage
+    calculate_profit_percentage
+  end
+
+  # Site supervisor info for prepopulating POs
+  def site_supervisor_info
+    {
+      name: site_supervisor_name,
+      email: site_supervisor_email,
+      phone: site_supervisor_phone
+    }
   end
 end

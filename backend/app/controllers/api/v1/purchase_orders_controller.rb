@@ -46,14 +46,20 @@ module Api
         @purchase_orders = @purchase_orders.limit(per_page).offset((page - 1) * per_page)
 
         render json: {
-          purchase_orders: @purchase_orders.as_json(include: {
-            supplier: { only: [:id, :name] },
-            construction: { only: [:id, :title] },
-            line_items: {
-              include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price] } },
-              methods: [:price_drift, :price_outdated?, :price_status, :price_status_label]
-            }
-          }),
+          purchase_orders: @purchase_orders.as_json(
+            include: {
+              supplier: { only: [:id, :name] },
+              construction: {
+                only: [:id, :title],
+                methods: [:site_supervisor_info]
+              },
+              line_items: {
+                include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price] } },
+                methods: [:price_drift, :price_outdated?, :price_status, :price_status_label]
+              }
+            },
+            methods: [:timing_warnings, :delivery_aligned_with_tasks?]
+          ),
           pagination: {
             current_page: page,
             total_pages: total_pages,
@@ -68,14 +74,24 @@ module Api
         company_setting = CompanySetting.instance
 
         render json: {
-          **@purchase_order.as_json(include: {
-            supplier: { only: [:id, :name, :contact_person, :email, :phone, :address] },
-            construction: { only: [:id, :title] },
-            line_items: {
-              include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price, :unit_of_measure] } },
-              methods: [:price_drift, :price_outdated?, :price_status, :price_status_label]
-            }
-          }),
+          **@purchase_order.as_json(
+            include: {
+              supplier: { only: [:id, :name, :contact_person, :email, :phone, :address] },
+              construction: {
+                only: [:id, :title],
+                methods: [:site_supervisor_info]
+              },
+              line_items: {
+                include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price, :unit_of_measure] } },
+                methods: [:price_drift, :price_outdated?, :price_status, :price_status_label]
+              },
+              project_tasks: {
+                only: [:id, :name, :planned_start_date, :planned_end_date, :status],
+                methods: [:materials_status]
+              }
+            },
+            methods: [:timing_warnings, :delivery_aligned_with_tasks?]
+          ),
           company_setting: company_setting.as_json(only: [:company_name, :abn, :gst_number, :email, :phone, :address, :logo_url])
         }
       end
@@ -294,6 +310,7 @@ module Api
           :special_instructions,
           :budget,
           :required_date,
+          :required_on_site_date,
           :ordered_date,
           :expected_delivery_date,
           :ted_task,

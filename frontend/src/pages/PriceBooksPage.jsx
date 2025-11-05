@@ -10,6 +10,7 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   Bars3Icon,
+  AdjustmentsHorizontalIcon,
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../utils/formatters'
 import { api } from '../api'
@@ -24,6 +25,10 @@ export default function PriceBooksPage() {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [supplierFilter, setSupplierFilter] = useState('')
   const [riskFilter, setRiskFilter] = useState('')
+  const [minPrice, setMinPrice] = useState('')
+  const [maxPrice, setMaxPrice] = useState('')
+  const [showPricedOnly, setShowPricedOnly] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
   const [categories, setCategories] = useState([])
   const [suppliers, setSuppliers] = useState([])
   const [pagination, setPagination] = useState({
@@ -35,53 +40,26 @@ export default function PriceBooksPage() {
   const [hasMore, setHasMore] = useState(true)
   const [sortBy, setSortBy] = useState('item_code')
   const [sortDirection, setSortDirection] = useState('asc')
-  const [showItemSearch, setShowItemSearch] = useState(false)
-  const [itemSearchQuery, setItemSearchQuery] = useState('')
 
   const observerTarget = useRef(null)
   const searchTimeoutRef = useRef(null)
-  const itemSearchRef = useRef(null)
 
-  // Load all items on mount (no search params)
+  // Debounced search - reload when filters change
   useEffect(() => {
-    loadPriceBook()
-  }, [])
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
 
-  // Client-side filtering
-  const filteredItems = items.filter(item => {
-    if (!searchQuery) return true
+    searchTimeoutRef.current = setTimeout(() => {
+      loadPriceBook(1)
+    }, 300) // 300ms debounce
 
-    const query = searchQuery.toLowerCase()
-    return (
-      item.item_code?.toLowerCase().includes(query) ||
-      item.item_name?.toLowerCase().includes(query) ||
-      item.category?.toLowerCase().includes(query) ||
-      item.supplier?.name?.toLowerCase().includes(query)
-    )
-  })
-
-  // Close item search when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (itemSearchRef.current && !itemSearchRef.current.contains(event.target)) {
-        setShowItemSearch(false)
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  // Listen for global search event from AppLayout
-  useEffect(() => {
-    const handleGlobalSearch = (event) => {
-      setSearchQuery(event.detail)
-    }
-
-    window.addEventListener('global-search', handleGlobalSearch)
-    return () => {
-      window.removeEventListener('global-search', handleGlobalSearch)
-    }
-  }, [])
+  }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly])
 
   const loadPriceBook = async (page = 1) => {
     try {
@@ -91,12 +69,21 @@ export default function PriceBooksPage() {
         setLoadingMore(true)
       }
 
-      const response = await api.get('/api/v1/pricebook', {
-        params: {
-          page,
-          limit: 100  // Load more items per page for better client-side filtering
-        }
-      })
+      // Build query params
+      const params = {
+        page,
+        limit: 50,
+      }
+
+      if (searchQuery) params.search = searchQuery
+      if (categoryFilter) params.category = categoryFilter
+      if (supplierFilter) params.supplier_id = supplierFilter
+      if (riskFilter) params.risk_level = riskFilter
+      if (minPrice) params.min_price = minPrice
+      if (maxPrice) params.max_price = maxPrice
+      if (!showPricedOnly) params.needs_pricing = 'false'
+
+      const response = await api.get('/api/v1/pricebook', { params })
 
       const newItems = response.items || []
 
@@ -115,7 +102,7 @@ export default function PriceBooksPage() {
           setCategories(response.filters.categories)
         }
         if (response.filters?.suppliers) {
-          setSuppliers(response.filters.suppliers)
+          setSuppliers(response.filters.suppliers.map(([id, name]) => ({ id, name })))
         }
       }
     } catch (err) {
@@ -158,12 +145,12 @@ export default function PriceBooksPage() {
     setCategoryFilter('')
     setSupplierFilter('')
     setRiskFilter('')
-    setItems([])
-    setPagination(prev => ({ ...prev, page: 1 }))
-    loadPriceBook(1, '', '', '', '')
+    setMinPrice('')
+    setMaxPrice('')
+    setShowPricedOnly(false)
   }
 
-  const hasActiveFilters = searchQuery || categoryFilter || supplierFilter || riskFilter
+  const hasActiveFilters = searchQuery || categoryFilter || supplierFilter || riskFilter || minPrice || maxPrice || showPricedOnly
 
   const getResultsText = () => {
     const { page, limit, total_count } = pagination
@@ -252,20 +239,157 @@ export default function PriceBooksPage() {
   return (
     <div className="flex h-screen overflow-hidden">
       <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
-        {/* Search bar */}
-        <div className="p-4 bg-white dark:bg-gray-900 sticky top-0 z-20 border-b border-gray-200 dark:border-gray-700">
-          <div className="relative max-w-md">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search items by code, name, category, or supplier..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white"
-            />
-            {searchQuery && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
-                {filteredItems.length} of {items.length} items
+        {/* Header with search */}
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-3">
+                <CurrencyDollarIcon className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+                <div>
+                  <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                    Price Book
+                  </h1>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                    {getResultsText()}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`inline-flex items-center px-3 py-1.5 border rounded-lg text-sm font-medium transition-colors ${
+                  hasActiveFilters
+                    ? 'border-indigo-600 text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-400 dark:text-indigo-400'
+                    : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                }`}
+              >
+                <AdjustmentsHorizontalIcon className="h-4 w-4 mr-2" />
+                Filters
+                {hasActiveFilters && (
+                  <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-indigo-600 dark:bg-indigo-500 rounded-full">
+                    {[searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly].filter(Boolean).length}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Main search bar */}
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder={`Search ${pagination.total_count?.toLocaleString() || ''} items by code, name, category, or supplier...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+
+            {/* Expanded filters */}
+            {showFilters && (
+              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Category filter */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Category
+                    </label>
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">All Categories</option>
+                      {categories.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Supplier filter */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Supplier
+                    </label>
+                    <select
+                      value={supplierFilter}
+                      onChange={(e) => setSupplierFilter(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">All Suppliers</option>
+                      {suppliers.map((supplier) => (
+                        <option key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Price range */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Min Price
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="$0"
+                      value={minPrice}
+                      onChange={(e) => setMinPrice(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Max Price
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="$999,999"
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Toggles and actions */}
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={showPricedOnly}
+                        onChange={(e) => setShowPricedOnly(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        Only show items with prices
+                      </span>
+                    </label>
+                  </div>
+
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearFilters}
+                      className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                    >
+                      <XMarkIcon className="h-4 w-4 mr-1" />
+                      Clear filters
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -328,17 +452,17 @@ export default function PriceBooksPage() {
               </tr>
             </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
-                  {filteredItems.length === 0 ? (
+                  {items.length === 0 && !loading ? (
                     <tr>
                       <td colSpan="7" className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                        {searchQuery
-                          ? 'No items match your search. Try a different search term.'
+                        {hasActiveFilters
+                          ? 'No items match your filters. Try adjusting your search criteria.'
                           : 'No items found in the price book.'}
                       </td>
                     </tr>
                   ) : (
                     <>
-                      {filteredItems.map((item) => (
+                      {items.map((item) => (
                         <tr
                           key={item.id}
                           onClick={() => navigate(`/price-books/${item.id}`)}

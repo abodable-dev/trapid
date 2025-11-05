@@ -227,61 +227,31 @@ export default function ActiveJobsPage() {
                       </td>
 
                       <td className="px-3 py-1.5 text-right">
-                        {editingCell?.jobId === job.id && editingCell?.field === 'live_profit' ? (
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={handleCellBlur}
-                            onKeyDown={handleKeyDown}
-                            autoFocus
-                            className="w-full px-1.5 py-0.5 text-xs text-right border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                          />
-                        ) : (
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCellClick(job.id, 'live_profit', job.live_profit)
-                            }}
-                            className={`text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded ${
-                              job.live_profit >= 0
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-red-600 dark:text-red-400'
-                            }`}
-                          >
-                            {job.live_profit ? formatCurrency(job.live_profit, false) : '-'}
-                          </div>
-                        )}
+                        {/* Live Profit is auto-calculated, not editable */}
+                        <div
+                          className={`text-xs px-1.5 py-0.5 rounded ${
+                            job.live_profit >= 0
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}
+                          title="Auto-calculated: Contract Value - Total PO Costs"
+                        >
+                          {job.live_profit ? formatCurrency(job.live_profit, false) : '-'}
+                        </div>
                       </td>
 
                       <td className="px-3 py-1.5 text-right">
-                        {editingCell?.jobId === job.id && editingCell?.field === 'profit_percentage' ? (
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={handleCellBlur}
-                            onKeyDown={handleKeyDown}
-                            autoFocus
-                            className="w-full px-1.5 py-0.5 text-xs text-right border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                          />
-                        ) : (
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCellClick(job.id, 'profit_percentage', job.profit_percentage)
-                            }}
-                            className={`text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded ${
-                              job.profit_percentage >= 0
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-red-600 dark:text-red-400'
-                            }`}
-                          >
-                            {job.profit_percentage ? formatPercentage(job.profit_percentage, 2) : '-'}
-                          </div>
-                        )}
+                        {/* Profit Percentage is auto-calculated, not editable */}
+                        <div
+                          className={`text-xs px-1.5 py-0.5 rounded ${
+                            job.profit_percentage >= 0
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}
+                          title="Auto-calculated: (Live Profit / Contract Value) * 100"
+                        >
+                          {job.profit_percentage ? formatPercentage(job.profit_percentage, 2) : '-'}
+                        </div>
                       </td>
 
                       <td className="px-3 py-1.5">

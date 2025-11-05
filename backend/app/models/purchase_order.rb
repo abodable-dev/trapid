@@ -42,6 +42,8 @@ class PurchaseOrder < ApplicationRecord
   before_validation :generate_po_number, if: :new_record?
   before_save :calculate_totals
   before_save :calculate_variances
+  after_save :update_construction_profit
+  after_destroy :update_construction_profit
 
   # Scopes
   scope :by_status, ->(status) { where(status: status) if status.present? }
@@ -120,6 +122,30 @@ class PurchaseOrder < ApplicationRecord
     (invoiced_amount / total * 100).round(2)
   end
 
+  # Check if PO delivery timing aligns with linked tasks
+  def delivery_aligned_with_tasks?
+    return true if project_tasks.empty?
+    project_tasks.all? { |task| delivery_before_task_start?(task) }
+  end
+
+  # Check if this PO's delivery date is before a specific task's start date
+  def delivery_before_task_start?(task)
+    return true if required_on_site_date.nil? || task.planned_start_date.nil?
+    required_on_site_date <= task.planned_start_date
+  end
+
+  # Get timing warnings for all linked tasks
+  def timing_warnings
+    warnings = []
+    project_tasks.each do |task|
+      unless delivery_before_task_start?(task)
+        days_late = (required_on_site_date - task.planned_start_date).to_i
+        warnings << "PO delivery is #{days_late} days after #{task.name} starts"
+      end
+    end
+    warnings
+  end
+
   # Determine payment status based on invoice amount
   # Returns the appropriate payment_status based on invoice amount vs PO total
   def determine_payment_status(invoice_amount)
@@ -177,5 +203,10 @@ class PurchaseOrder < ApplicationRecord
     end
 
     self.purchase_order_number = "PO-#{next_number.to_s.rjust(6, '0')}"
+  end
+
+  # Update the construction's live profit when this PO changes
+  def update_construction_profit
+    construction&.calculate_and_update_profit!
   end
 end

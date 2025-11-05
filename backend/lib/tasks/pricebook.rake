@@ -147,6 +147,156 @@ namespace :pricebook do
     puts "\nData successfully imported and linked!"
   end
 
+  desc "Import EasyBuild CSV with categories"
+  task import_easybuild: :environment do
+    require 'csv'
+
+    puts "\n" + "="*60
+    puts "EASYBUILD PRICE BOOK IMPORT WITH CATEGORIES"
+    puts "="*60
+
+    # Path to the CSV file
+    csv_file = ENV['CSV_FILE'] || Rails.root.join('..', 'easybuildapp development Price Books(in).csv')
+
+    unless File.exist?(csv_file)
+      puts "\n❌ ERROR: CSV file not found at: #{csv_file}"
+      puts "Set CSV_FILE environment variable to specify a different path"
+      exit 1
+    end
+
+    puts "\n📁 Importing from: #{csv_file}"
+    puts "\n" + "-"*60
+
+    # Statistics
+    stats = {
+      created: 0,
+      updated: 0,
+      skipped: 0,
+      errors: 0,
+      categories: Set.new,
+      suppliers_created: Set.new,
+      price_changes: 0
+    }
+
+    # Process CSV
+    puts "\nProcessing CSV rows..."
+
+    CSV.foreach(csv_file, headers: true) do |row|
+      begin
+        # Skip if no item code
+        item_code = row['code']&.strip
+        if item_code.blank?
+          stats[:skipped] += 1
+          next
+        end
+
+        # Map CSV columns to model fields
+        item_name = row['description']&.strip
+        unit_of_measure = row['unit']&.strip || 'Each'
+        price = row['price']&.strip
+        current_price = price.present? && !price.empty? ? price.to_f : nil
+        supplier_name = row['default_supplier']&.strip
+        category = row['category']&.strip
+        status = row['status']&.strip
+        is_active = status == 'Active'
+
+        # Track category if present
+        stats[:categories] << category if category.present?
+
+        # Find or create supplier if specified
+        supplier = nil
+        default_supplier = nil
+        if supplier_name.present?
+          supplier = Supplier.find_or_create_by(name: supplier_name) do |s|
+            s.is_active = true
+            stats[:suppliers_created] << supplier_name
+          end
+          default_supplier = supplier
+        end
+
+        # Find or initialize the pricebook item
+        item = PricebookItem.find_or_initialize_by(item_code: item_code)
+
+        # Check if this is an update with price change
+        is_new = item.new_record?
+        old_price = item.current_price
+        price_changed = !is_new && old_price != current_price && current_price.present?
+
+        # Update attributes
+        item.assign_attributes(
+          item_name: item_name,
+          unit_of_measure: unit_of_measure,
+          current_price: current_price,
+          supplier_id: supplier&.id,
+          default_supplier_id: default_supplier&.id,
+          category: category,
+          is_active: is_active
+        )
+
+        # Set price_last_updated_at if price is present and it's a new record
+        if is_new && current_price.present?
+          item.price_last_updated_at = Time.current
+        end
+
+        # Save the item
+        if item.save
+          if is_new
+            stats[:created] += 1
+          else
+            stats[:updated] += 1
+
+            # Track price change
+            if price_changed
+              stats[:price_changes] += 1
+              puts "  💰 Price changed for #{item_code}: $#{old_price} → $#{current_price}"
+            end
+          end
+        else
+          stats[:errors] += 1
+          puts "  ❌ Error saving #{item_code}: #{item.errors.full_messages.join(', ')}"
+        end
+
+      rescue => e
+        stats[:errors] += 1
+        puts "  ❌ Error processing row #{item_code || 'unknown'}: #{e.message}"
+      end
+    end
+
+    # Print summary
+    puts "\n" + "="*60
+    puts "IMPORT COMPLETE"
+    puts "="*60
+    puts "\n📊 Statistics:"
+    puts "  ✅ Created: #{stats[:created]} items"
+    puts "  🔄 Updated: #{stats[:updated]} items"
+    puts "  ⏭️  Skipped: #{stats[:skipped]} items (no item code)"
+    puts "  ❌ Errors: #{stats[:errors]} items"
+    puts "  💰 Price changes tracked: #{stats[:price_changes]}"
+
+    if stats[:suppliers_created].any?
+      puts "\n👥 New suppliers created: #{stats[:suppliers_created].size}"
+      stats[:suppliers_created].each do |name|
+        puts "  • #{name}"
+      end
+    end
+
+    puts "\n📋 Categories found (#{stats[:categories].size} unique):"
+    stats[:categories].to_a.sort.each do |cat|
+      count = PricebookItem.where(category: cat).count
+      puts "  • #{cat} (#{count} items)"
+    end
+
+    puts "\n📈 Final counts:"
+    puts "  Total pricebook items: #{PricebookItem.count}"
+    puts "  Active items: #{PricebookItem.active.count}"
+    puts "  Items with prices: #{PricebookItem.where.not(current_price: nil).count}"
+    puts "  Items needing pricing: #{PricebookItem.needs_pricing.count}"
+    puts "  Total suppliers: #{Supplier.count}"
+
+    puts "\n✅ Import completed successfully!"
+    puts "="*60 + "\n"
+  end
+
   desc "Generate sample CSV templates"
   task generate_templates: :environment do
     puts "Generating CSV templates..."
