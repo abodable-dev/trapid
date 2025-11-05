@@ -7,8 +7,17 @@ const getAuthHeaders = () => {
 };
 
 export const api = {
-  async get(endpoint) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+  async get(endpoint, options = {}) {
+    // Build query string from params if provided
+    let url = `${API_URL}${endpoint}`;
+    if (options.params) {
+      const queryString = new URLSearchParams(options.params).toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+    }
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: getAuthHeaders(),
       credentials: 'include',
