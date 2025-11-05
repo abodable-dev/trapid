@@ -14,6 +14,7 @@ import { api } from '../api'
 import { formatCurrency, formatPercentage } from '../utils/formatters'
 import { POSummaryCards, POTable, PurchaseOrderModal } from '../components/purchase-orders'
 import JobDocumentsTab from '../components/documents/JobDocumentsTab'
+import TeamSettings from '../components/job-detail/TeamSettings'
 
 const tabs = [
   { name: 'Overview' },
@@ -571,6 +572,7 @@ export default function JobDetailPage() {
                 purchaseOrder={editingPO}
                 suppliers={suppliers}
                 constructionId={id}
+                construction={job}
               />
             </div>
           )}
@@ -628,16 +630,24 @@ export default function JobDetailPage() {
           )}
 
           {activeTab === 'Team' && (
-            <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
-                  Team Members
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Team management coming soon...
-                </p>
-              </div>
-            </div>
+            <TeamSettings
+              job={job}
+              onSave={async (teamData) => {
+                try {
+                  setSaving(true)
+                  await api.put(`/api/v1/constructions/${id}`, {
+                    construction: teamData
+                  })
+                  await loadJob()
+                } catch (err) {
+                  console.error('Failed to update team settings:', err)
+                  alert('Failed to update team settings')
+                } finally {
+                  setSaving(false)
+                }
+              }}
+              saving={saving}
+            />
           )}
 
           {activeTab === 'Settings' && (

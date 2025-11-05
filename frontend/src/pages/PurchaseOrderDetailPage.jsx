@@ -437,6 +437,32 @@ export default function PurchaseOrderDetailPage() {
                   </dd>
                 </div>
               )}
+              {purchaseOrder.construction?.site_supervisor_name && (
+                <div className="mt-8 sm:mt-6 sm:border-t sm:border-gray-900/5 sm:pt-6 dark:sm:border-white/10">
+                  <dt className="font-semibold text-gray-900 dark:text-white">Site Supervisor</dt>
+                  <dd className="mt-2 text-gray-500 dark:text-gray-400">
+                    <span className="font-medium text-gray-900 dark:text-white">{purchaseOrder.construction.site_supervisor_name}</span>
+                    {purchaseOrder.construction.site_supervisor_email && (
+                      <>
+                        <br />
+                        <span className="text-xs text-gray-400 dark:text-gray-500">Email: </span>
+                        <a href={`mailto:${purchaseOrder.construction.site_supervisor_email}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                          {purchaseOrder.construction.site_supervisor_email}
+                        </a>
+                      </>
+                    )}
+                    {purchaseOrder.construction.site_supervisor_phone && (
+                      <>
+                        <br />
+                        <span className="text-xs text-gray-400 dark:text-gray-500">Phone: </span>
+                        <a href={`tel:${purchaseOrder.construction.site_supervisor_phone}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                          {purchaseOrder.construction.site_supervisor_phone}
+                        </a>
+                      </>
+                    )}
+                  </dd>
+                </div>
+              )}
               {purchaseOrder.delivery_address && (
                 <div className="mt-8 sm:mt-6 sm:border-t sm:border-gray-900/5 sm:pt-6 dark:sm:border-white/10">
                   <dt className="font-semibold text-gray-900 dark:text-white">Delivery Address</dt>

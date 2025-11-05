@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { XMarkIcon, SparklesIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, SparklesIcon, ExclamationTriangleIcon, UserIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
-export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOrder, suppliers, constructionId }) {
+export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOrder, suppliers, constructionId, construction }) {
   const [formData, setFormData] = useState({
     construction_id: constructionId,
     supplier_id: '',
@@ -142,6 +142,28 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Site Supervisor Info Banner */}
+              {construction?.site_supervisor_name && (
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg p-4">
+                  <div className="flex">
+                    <UserIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400 mr-2 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-indigo-900 dark:text-indigo-200 mb-1">
+                        Site Supervisor: {construction.site_supervisor_name}
+                      </h4>
+                      <div className="text-sm text-indigo-700 dark:text-indigo-300 space-y-0.5">
+                        {construction.site_supervisor_email && (
+                          <div>Email: {construction.site_supervisor_email}</div>
+                        )}
+                        {construction.site_supervisor_phone && (
+                          <div>Phone: {construction.site_supervisor_phone}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Smart Lookup Banner */}
               {lookupWarnings.length > 0 && (
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
