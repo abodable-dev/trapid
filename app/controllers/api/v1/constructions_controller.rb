@@ -45,13 +45,14 @@ module Api
 
         if @construction.save
           # Enqueue OneDrive folder creation if requested
+          folder_creation_enqueued = false
           if params[:create_onedrive_folders] == true || params[:create_onedrive_folders] == "true"
-            @construction.update!(onedrive_folder_creation_status: 'pending')
-            CreateJobFoldersJob.perform_later(@construction.id, params[:template_id])
+            @construction.create_folders_if_needed!(params[:template_id])
+            folder_creation_enqueued = true
           end
 
           render json: @construction.as_json.merge(
-            folder_creation_enqueued: params[:create_onedrive_folders] == true || params[:create_onedrive_folders] == "true"
+            folder_creation_enqueued: folder_creation_enqueued
           ), status: :created
         else
           render json: { errors: @construction.errors.full_messages }, status: :unprocessable_entity

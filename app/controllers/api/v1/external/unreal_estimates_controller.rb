@@ -39,6 +39,9 @@ module Api
 
                 estimate.save!
 
+                # Trigger OneDrive folder creation if not already created
+                construction.create_folders_if_needed!
+
                 render json: {
                   success: true,
                   estimate_id: estimate.id,

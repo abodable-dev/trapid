@@ -46,6 +46,9 @@ module Api
 
         @estimate.match_to_construction!(construction, nil)
 
+        # Trigger OneDrive folder creation if not already created
+        construction.create_folders_if_needed!
+
         render json: {
           success: true,
           data: estimate_json(@estimate),
