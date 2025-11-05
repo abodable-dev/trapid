@@ -5,6 +5,15 @@ class Construction < ApplicationRecord
   has_one :one_drive_credential, dependent: :destroy
   belongs_to :design, optional: true
 
+  # Enums
+  enum :onedrive_folder_creation_status, {
+    not_requested: 'not_requested',
+    pending: 'pending',
+    processing: 'processing',
+    completed: 'completed',
+    failed: 'failed'
+  }, prefix: :folders, default: :not_requested
+
   # Validations
   validates :title, presence: true
   validates :status, presence: true

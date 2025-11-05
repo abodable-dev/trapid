@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_05_031759) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_05_035526) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -71,8 +71,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_031759) do
     t.string "site_supervisor_phone"
     t.bigint "design_id"
     t.string "design_name"
+    t.datetime "onedrive_folders_created_at"
+    t.string "onedrive_folder_creation_status", default: "not_requested"
     t.index ["design_id"], name: "index_constructions_on_design_id"
     t.index ["design_name"], name: "index_constructions_on_design_name"
+    t.index ["onedrive_folder_creation_status"], name: "index_constructions_on_onedrive_folder_creation_status"
     t.index ["status"], name: "index_constructions_on_status"
   end
 
@@ -113,6 +116,49 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_031759) do
     t.datetime "updated_at", null: false
     t.index ["is_active"], name: "index_designs_on_is_active"
     t.index ["name"], name: "index_designs_on_name", unique: true
+  end
+
+  create_table "estimate_line_items", force: :cascade do |t|
+    t.bigint "estimate_id", null: false
+    t.string "category"
+    t.string "item_description", null: false
+    t.decimal "quantity", precision: 15, scale: 3, default: "1.0"
+    t.string "unit", default: "ea"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_estimate_line_items_on_category"
+    t.index ["estimate_id"], name: "index_estimate_line_items_on_estimate_id"
+  end
+
+  create_table "estimates", force: :cascade do |t|
+    t.bigint "construction_id"
+    t.string "source", default: "unreal_engine", null: false
+    t.string "estimator_name"
+    t.string "job_name_from_source", null: false
+    t.boolean "matched_automatically", default: false
+    t.decimal "match_confidence_score", precision: 5, scale: 2
+    t.string "status", default: "pending", null: false
+    t.integer "total_items", default: 0
+    t.datetime "imported_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id"], name: "index_estimates_on_construction_id"
+    t.index ["imported_at"], name: "index_estimates_on_imported_at"
+    t.index ["source"], name: "index_estimates_on_source"
+    t.index ["status"], name: "index_estimates_on_status"
+  end
+
+  create_table "external_integrations", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "api_key_digest", null: false
+    t.boolean "is_active", default: true
+    t.datetime "last_used_at"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["is_active"], name: "index_external_integrations_on_is_active"
+    t.index ["name"], name: "index_external_integrations_on_name", unique: true
   end
 
   create_table "folder_template_items", force: :cascade do |t|
@@ -604,6 +650,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_031759) do
 
   add_foreign_key "columns", "tables"
   add_foreign_key "constructions", "designs"
+  add_foreign_key "estimate_line_items", "estimates"
+  add_foreign_key "estimates", "constructions"
   add_foreign_key "folder_template_items", "folder_templates"
   add_foreign_key "grok_plans", "users"
   add_foreign_key "one_drive_credentials", "constructions"

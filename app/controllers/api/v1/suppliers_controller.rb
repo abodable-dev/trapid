@@ -1,7 +1,7 @@
 module Api
   module V1
     class SuppliersController < ApplicationController
-      before_action :set_supplier, only: [:show, :update, :destroy, :link_contact, :verify_match, :unlink_contact]
+      before_action :set_supplier, only: [:show, :update, :destroy, :link_contact, :verify_match, :unlink_contact, :export_pricebook, :import_pricebook, :update_pricebook_item]
 
       # GET /api/v1/suppliers
       def index
@@ -182,6 +182,202 @@ module Api
         render json: { success: true }
       end
 
+      # GET /api/v1/suppliers/:id/pricebook/export
+      def export_pricebook
+        # Get all pricebook items for this supplier
+        items = @supplier.pricebook_items
+
+        # Generate Excel file
+        package = Axlsx::Package.new
+        workbook = package.workbook
+
+        # Define styles
+        header_style = workbook.styles.add_style(
+          bg_color: "4472C4",
+          fg_color: "FFFFFF",
+          b: true,
+          alignment: { horizontal: :center }
+        )
+
+        workbook.add_worksheet(name: "Price Book") do |sheet|
+          # Add header row
+          sheet.add_row [
+            "Item Code",
+            "Item Name",
+            "Category",
+            "Unit of Measure",
+            "Current Price",
+            "Brand",
+            "Notes"
+          ], style: header_style
+
+          # Add data rows
+          items.each do |item|
+            sheet.add_row [
+              item.item_code,
+              item.item_name,
+              item.category,
+              item.unit_of_measure,
+              item.current_price,
+              item.brand,
+              item.notes
+            ]
+          end
+
+          # Auto-fit columns
+          sheet.column_widths 15, 30, 15, 15, 12, 15, 40
+        end
+
+        # Send file
+        send_data package.to_stream.read,
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          filename: "#{@supplier.name.parameterize}_pricebook_#{Date.today}.xlsx"
+      end
+
+      # POST /api/v1/suppliers/:id/pricebook/import
+      def import_pricebook
+        unless params[:file]
+          return render json: { success: false, error: "No file provided" }, status: :unprocessable_entity
+        end
+
+        file = params[:file]
+        results = {
+          success: true,
+          updated: 0,
+          created: 0,
+          errors: [],
+          price_changes: 0
+        }
+
+        begin
+          # Parse the Excel file using Roo
+          spreadsheet = Roo::Spreadsheet.open(file.path)
+          sheet = spreadsheet.sheet(0)
+
+          # Get header row (first row)
+          headers = sheet.row(1).map(&:to_s).map(&:strip)
+
+          # Validate required columns
+          required_columns = ["Item Code"]
+          missing_columns = required_columns - headers
+          if missing_columns.any?
+            return render json: {
+              success: false,
+              error: "Missing required columns: #{missing_columns.join(', ')}"
+            }, status: :unprocessable_entity
+          end
+
+          # Map column names to indices
+          column_map = {}
+          headers.each_with_index do |header, index|
+            column_map[header.downcase.gsub(/[^a-z0-9]/, '_')] = index
+          end
+
+          # Process each row (skip header)
+          (2..sheet.last_row).each do |row_num|
+            row = sheet.row(row_num)
+            next if row.all?(&:blank?) # Skip empty rows
+
+            item_code = row[column_map['item_code']].to_s.strip
+            next if item_code.blank?
+
+            # Find or initialize item by item_code
+            item = PricebookItem.find_or_initialize_by(item_code: item_code)
+
+            # Track if this is a new record
+            is_new = item.new_record?
+
+            # Prepare attributes to update
+            old_price = item.current_price
+            attributes = {}
+
+            # Map Excel columns to attributes
+            attributes[:item_name] = row[column_map['item_name']].to_s.strip if column_map['item_name'] && row[column_map['item_name']].present?
+            attributes[:category] = row[column_map['category']].to_s.strip if column_map['category'] && row[column_map['category']].present?
+            attributes[:unit_of_measure] = row[column_map['unit_of_measure']].to_s.strip if column_map['unit_of_measure'] && row[column_map['unit_of_measure']].present?
+            attributes[:current_price] = row[column_map['current_price']].to_f if column_map['current_price'] && row[column_map['current_price']].present?
+            attributes[:brand] = row[column_map['brand']].to_s.strip if column_map['brand'] && row[column_map['brand']].present?
+            attributes[:notes] = row[column_map['notes']].to_s.strip if column_map['notes'] && row[column_map['notes']].present?
+
+            # Always set supplier_id to current supplier
+            attributes[:supplier_id] = @supplier.id
+
+            # Assign attributes
+            item.assign_attributes(attributes)
+
+            # Validate and save
+            if item.valid?
+              # Check if price changed
+              price_changed = !is_new && old_price.present? && attributes[:current_price].present? && old_price != attributes[:current_price]
+
+              item.save!
+
+              # Create price history if price changed
+              if price_changed
+                item.price_histories.create!(
+                  old_price: old_price,
+                  new_price: attributes[:current_price],
+                  supplier_id: @supplier.id,
+                  change_reason: "excel_import"
+                )
+                results[:price_changes] += 1
+              end
+
+              if is_new
+                results[:created] += 1
+              else
+                results[:updated] += 1
+              end
+            else
+              results[:errors] << {
+                row: row_num,
+                item_code: item_code,
+                errors: item.errors.full_messages
+              }
+            end
+          end
+
+          render json: results
+        rescue => e
+          render json: {
+            success: false,
+            error: "Failed to process file: #{e.message}"
+          }, status: :unprocessable_entity
+        end
+      end
+
+      # PATCH /api/v1/suppliers/:id/pricebook/:item_id
+      def update_pricebook_item
+        item = @supplier.pricebook_items.find_by(id: params[:item_id])
+
+        unless item
+          return render json: { success: false, error: "Item not found" }, status: :not_found
+        end
+
+        # Track old price for history
+        old_price = item.current_price
+
+        # Update item
+        if item.update(pricebook_item_params)
+          # Create price history if price changed
+          if old_price != item.current_price && item.current_price.present?
+            item.price_histories.create!(
+              old_price: old_price,
+              new_price: item.current_price,
+              supplier_id: @supplier.id,
+              change_reason: "inline_edit"
+            )
+          end
+
+          render json: {
+            success: true,
+            item: item.as_json(only: [:id, :item_code, :item_name, :category, :current_price])
+          }
+        else
+          render json: { success: false, errors: item.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
       private
 
       def set_supplier
@@ -209,6 +405,14 @@ module Api
           :match_type,
           :is_verified,
           :original_name
+        )
+      end
+
+      def pricebook_item_params
+        params.require(:item).permit(
+          :item_name,
+          :category,
+          :current_price
         )
       end
     end
