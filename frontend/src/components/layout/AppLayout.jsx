@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import axios from 'axios'
 import {
   Dialog,
   DialogBackdrop,
@@ -55,23 +54,18 @@ function classNames(...classes) {
 export default function AppLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [version, setVersion] = useState('loading...')
   const location = useLocation()
 
-  useEffect(() => {
-    // Fetch the backend version from the API
-    const fetchVersion = async () => {
-      try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/version`)
-        setVersion(response.data.version)
-      } catch (error) {
-        console.error('Failed to fetch version:', error)
-        setVersion('unknown')
-      }
+  // Use Vercel's git commit SHA as version (short form) - updates with every frontend deploy
+  const getVersion = () => {
+    const commitSha = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA
+    if (commitSha) {
+      return commitSha.substring(0, 7) // Show first 7 chars of SHA
     }
+    return 'dev'
+  }
 
-    fetchVersion()
-  }, [])
+  const version = getVersion()
 
   const isCurrentPath = (href) => {
     if (href === '/dashboard') {
