@@ -2,6 +2,7 @@ class Estimate < ApplicationRecord
   # Associations
   belongs_to :construction, optional: true
   has_many :estimate_line_items, dependent: :destroy
+  has_many :purchase_orders, dependent: :nullify
 
   # Enums
   enum :status, {
@@ -41,9 +42,12 @@ class Estimate < ApplicationRecord
   end
 
   def import_to_purchase_orders!
-    # To be implemented in Phase 3
-    # This will create POs from estimate line items
-    update!(status: :imported)
+    service = EstimateToPurchaseOrderService.new(self)
+    result = service.execute
+
+    raise StandardError, result[:error] unless result[:success]
+
+    result
   end
 
   private

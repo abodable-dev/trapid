@@ -1,7 +1,7 @@
 module Api
   module V1
     class EstimatesController < ApplicationController
-      before_action :set_estimate, only: [:show, :match, :destroy]
+      before_action :set_estimate, only: [:show, :match, :destroy, :generate_purchase_orders]
 
       def index
         estimates = Estimate.includes(:construction, :estimate_line_items)
@@ -67,6 +67,17 @@ module Api
           success: true,
           message: 'Estimate deleted successfully'
         }
+      end
+
+      def generate_purchase_orders
+        service = EstimateToPurchaseOrderService.new(@estimate)
+        result = service.execute
+
+        if result[:success]
+          render json: result, status: :created
+        else
+          render json: { error: result[:error] }, status: :unprocessable_entity
+        end
       end
 
       private

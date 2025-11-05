@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_05_035526) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_05_041725) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -446,8 +446,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_035526) do
     t.decimal "invoiced_amount", precision: 15, scale: 2, default: "0.0"
     t.date "invoice_date"
     t.string "invoice_reference"
+    t.bigint "estimate_id"
     t.index ["construction_id"], name: "index_purchase_orders_on_construction_id"
     t.index ["creates_schedule_tasks"], name: "index_purchase_orders_on_creates_schedule_tasks"
+    t.index ["estimate_id"], name: "index_purchase_orders_on_estimate_id"
     t.index ["payment_status"], name: "index_purchase_orders_on_payment_status"
     t.index ["purchase_order_number"], name: "index_purchase_orders_on_purchase_order_number", unique: true
     t.index ["required_date"], name: "index_purchase_orders_on_required_date"
@@ -669,6 +671,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_035526) do
   add_foreign_key "purchase_order_line_items", "pricebook_items"
   add_foreign_key "purchase_order_line_items", "purchase_orders"
   add_foreign_key "purchase_orders", "constructions"
+  add_foreign_key "purchase_orders", "estimates"
   add_foreign_key "purchase_orders", "suppliers"
   add_foreign_key "supplier_contacts", "contacts"
   add_foreign_key "supplier_contacts", "suppliers"
