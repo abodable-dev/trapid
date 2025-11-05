@@ -115,6 +115,9 @@ Rails.application.routes.draw do
           post :sync_contacts
           get :sync_status
         end
+        member do
+          get :sync_contacts_status
+        end
       end
 
       # Table management

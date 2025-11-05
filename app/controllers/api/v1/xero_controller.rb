@@ -270,54 +270,102 @@ module Api
       end
 
       # POST /api/v1/xero/sync_contacts
-      # Triggers a full two-way contact sync between Trapid and Xero
+      # Queues a background job for full two-way contact sync between Trapid and Xero
       def sync_contacts
         begin
-          Rails.logger.info("Contact sync initiated via API")
+          Rails.logger.info("Contact sync job queued via API")
 
-          sync_service = XeroContactSyncService.new
-          result = sync_service.sync
+          # Check if Xero is authenticated before queuing
+          client = XeroApiClient.new
+          status = client.connection_status
 
-          if result[:success]
-            render json: {
-              success: true,
-              message: 'Contact sync completed successfully',
-              data: {
-                stats: result[:stats],
-                synced_at: result[:synced_at]
-              }
-            }
-          else
-            render json: {
+          unless status[:connected] && !status[:expired]
+            return render json: {
               success: false,
-              error: result[:error],
-              stats: result[:stats]
-            }, status: :unprocessable_entity
+              error: 'Not authenticated with Xero. Please connect to Xero first.'
+            }, status: :unauthorized
           end
+
+          # Queue the background job
+          job = XeroContactSyncJob.perform_later
+          job_id = job.job_id
+
+          # Initialize job metadata
+          Rails.cache.write(
+            "xero_sync_job_#{job_id}",
+            {
+              job_id: job_id,
+              status: 'queued',
+              queued_at: Time.current,
+              total: 0,
+              processed: 0
+            },
+            expires_in: 24.hours
+          )
+
+          render json: {
+            success: true,
+            message: 'Contact sync job queued successfully',
+            data: {
+              job_id: job_id,
+              status: 'queued',
+              queued_at: Time.current
+            }
+          }
         rescue XeroApiClient::AuthenticationError => e
           Rails.logger.error("Xero sync_contacts auth error: #{e.message}")
           render json: {
             success: false,
             error: 'Not authenticated with Xero. Please connect to Xero first.'
           }, status: :unauthorized
-        rescue XeroApiClient::RateLimitError => e
-          Rails.logger.error("Xero sync_contacts rate limit: #{e.message}")
-          render json: {
-            success: false,
-            error: 'Xero API rate limit exceeded. Please try again later.'
-          }, status: :too_many_requests
         rescue StandardError => e
           Rails.logger.error("Xero sync_contacts unexpected error: #{e.message}")
           Rails.logger.error(e.backtrace.join("\n"))
           render json: {
             success: false,
-            error: "Contact sync failed: #{e.message}"
+            error: "Failed to queue contact sync: #{e.message}"
+          }, status: :internal_server_error
+        end
+      end
+
+      # GET /api/v1/xero/sync_contacts/:job_id
+      # Check the status of a contact sync job
+      def sync_contacts_status
+        job_id = params[:id]
+
+        unless job_id.present?
+          return render json: {
+            success: false,
+            error: 'Job ID is required'
+          }, status: :bad_request
+        end
+
+        begin
+          # Retrieve job metadata from cache
+          job_data = Rails.cache.read("xero_sync_job_#{job_id}")
+
+          if job_data.nil?
+            return render json: {
+              success: false,
+              error: 'Job not found or expired'
+            }, status: :not_found
+          end
+
+          render json: {
+            success: true,
+            data: job_data
+          }
+        rescue StandardError => e
+          Rails.logger.error("Xero sync_contacts_status error: #{e.message}")
+          render json: {
+            success: false,
+            error: "Failed to get job status"
           }, status: :internal_server_error
         end
       end
 
       # GET /api/v1/xero/sync_status
-      # Returns the last contact sync time and statistics
+      # Returns the last contact sync time and statistics, plus any active job info
       def sync_status
         begin
           # Get the most recent sync time from contacts
@@ -331,16 +379,24 @@ module Api
           sync_enabled = Contact.where(sync_with_xero: true).count
           contacts_with_errors = Contact.where.not(xero_sync_error: nil).count
 
+          # Check for active sync jobs
+          active_job = find_active_sync_job
+
+          response_data = {
+            last_sync_at: last_synced_contact&.last_synced_at,
+            total_contacts: total_contacts,
+            synced_contacts: synced_contacts,
+            sync_enabled_contacts: sync_enabled,
+            contacts_with_errors: contacts_with_errors,
+            sync_percentage: total_contacts.zero? ? 0 : ((synced_contacts.to_f / total_contacts) * 100).round(2)
+          }
+
+          # Add active job info if present
+          response_data[:active_job] = active_job if active_job
+
           render json: {
             success: true,
-            data: {
-              last_sync_at: last_synced_contact&.last_synced_at,
-              total_contacts: total_contacts,
-              synced_contacts: synced_contacts,
-              sync_enabled_contacts: sync_enabled,
-              contacts_with_errors: contacts_with_errors,
-              sync_percentage: total_contacts.zero? ? 0 : ((synced_contacts.to_f / total_contacts) * 100).round(2)
-            }
+            data: response_data
           }
         rescue StandardError => e
           Rails.logger.error("Xero sync_status error: #{e.message}")
@@ -349,6 +405,25 @@ module Api
             error: "Failed to get sync status"
           }, status: :internal_server_error
         end
+      end
+
+      private
+
+      # Find the most recent active sync job
+      def find_active_sync_job
+        # This is a simple implementation using cache
+        # In production, you might want to use a proper job tracking mechanism
+        cache_keys = Rails.cache.instance_variable_get(:@data)&.keys || []
+        job_keys = cache_keys.select { |k| k.to_s.start_with?('xero_sync_job_') }
+
+        job_keys.each do |key|
+          job_data = Rails.cache.read(key)
+          if job_data && ['queued', 'processing'].include?(job_data[:status])
+            return job_data
+          end
+        end
+
+        nil
       end
     end
   end
