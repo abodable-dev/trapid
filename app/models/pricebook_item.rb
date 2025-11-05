@@ -30,16 +30,18 @@ class PricebookItem < ApplicationRecord
     query
   }
 
-  # Full-text search
+  # Full-text search including supplier names
   scope :search, ->(query) {
     return all if query.blank?
 
-    where(
-      "searchable_text @@ plainto_tsquery('english', ?)",
-      query
+    # Search in both the tsvector column AND supplier name
+    left_joins(:supplier).where(
+      "pricebook_items.searchable_text @@ plainto_tsquery('english', :query) OR suppliers.name ILIKE :like_query",
+      query: query,
+      like_query: "%#{sanitize_sql_like(query)}%"
     ).order(
-      Arel.sql("ts_rank(searchable_text, plainto_tsquery('english', '#{sanitize_sql(query)}')) DESC")
-    )
+      Arel.sql("ts_rank(pricebook_items.searchable_text, plainto_tsquery('english', '#{sanitize_sql(query)}')) DESC")
+    ).distinct
   }
 
   # Class methods
