@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   MagnifyingGlassIcon,
   CurrencyDollarIcon,
@@ -18,17 +18,20 @@ import ColumnHeaderMenu from '../components/pricebook/ColumnHeaderMenu'
 
 export default function PriceBooksPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // Initialize state from URL params
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [searching, setSearching] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
-  const [supplierFilter, setSupplierFilter] = useState('')
-  const [riskFilter, setRiskFilter] = useState('')
-  const [minPrice, setMinPrice] = useState('')
-  const [maxPrice, setMaxPrice] = useState('')
-  const [showPricedOnly, setShowPricedOnly] = useState(false)
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
+  const [categoryFilter, setCategoryFilter] = useState(searchParams.get('category') || '')
+  const [supplierFilter, setSupplierFilter] = useState(searchParams.get('supplier_id') || '')
+  const [riskFilter, setRiskFilter] = useState(searchParams.get('risk_level') || '')
+  const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '')
+  const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '')
+  const [showPricedOnly, setShowPricedOnly] = useState(searchParams.get('needs_pricing') === 'true')
   const [showFilters, setShowFilters] = useState(false)
   const [categories, setCategories] = useState([])
   const [suppliers, setSuppliers] = useState([])
@@ -40,8 +43,8 @@ export default function PriceBooksPage() {
     total_pages: 0
   })
   const [hasMore, setHasMore] = useState(true)
-  const [sortBy, setSortBy] = useState('category')
-  const [sortDirection, setSortDirection] = useState('asc')
+  const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'category')
+  const [sortDirection, setSortDirection] = useState(searchParams.get('sort_direction') || 'asc')
 
   const observerTarget = useRef(null)
   const searchTimeoutRef = useRef(null)
@@ -55,6 +58,23 @@ export default function PriceBooksPage() {
       }
     }
   }, [suppliers])
+
+  // Update URL params when filters change
+  useEffect(() => {
+    const params = new URLSearchParams()
+
+    if (searchQuery) params.set('search', searchQuery)
+    if (categoryFilter) params.set('category', categoryFilter)
+    if (supplierFilter) params.set('supplier_id', supplierFilter)
+    if (riskFilter) params.set('risk_level', riskFilter)
+    if (minPrice) params.set('min_price', minPrice)
+    if (maxPrice) params.set('max_price', maxPrice)
+    if (showPricedOnly) params.set('needs_pricing', 'true')
+    if (sortBy !== 'category') params.set('sort_by', sortBy)
+    if (sortDirection !== 'asc') params.set('sort_direction', sortDirection)
+
+    setSearchParams(params, { replace: true })
+  }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly, sortBy, sortDirection, setSearchParams])
 
   // Debounced search - reload when filters change
   useEffect(() => {
