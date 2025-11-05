@@ -86,6 +86,9 @@ Rails.application.routes.draw do
           post :link_contact
           post :unlink_contact
           post :verify_match
+          get 'pricebook/export', to: 'suppliers#export_pricebook'
+          post 'pricebook/import', to: 'suppliers#import_pricebook'
+          patch 'pricebook/:item_id', to: 'suppliers#update_pricebook_item'
         end
       end
 
@@ -154,6 +157,18 @@ Rails.application.routes.draw do
 
         # Record management for dynamic tables
         resources :records
+      end
+
+      # Estimates management (from Unreal Engine or other sources)
+      resources :estimates, only: [:index, :show, :destroy] do
+        member do
+          patch :match
+        end
+      end
+
+      # External integrations (API endpoints for third-party systems)
+      namespace :external do
+        post 'unreal_estimates', to: 'unreal_estimates#create'
       end
     end
   end

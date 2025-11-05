@@ -74,12 +74,22 @@ export default function ActiveJobsPage() {
 
   const handleCreateJob = async (jobData) => {
     try {
+      // Extract createOneDriveFolders from jobData
+      const { createOneDriveFolders, ...constructionData } = jobData
+
       const response = await api.post('/api/v1/constructions', {
-        construction: jobData
+        construction: constructionData,
+        create_onedrive_folders: createOneDriveFolders,
+        template_id: null  // Use default template
       })
 
       // Refresh the jobs list
       await loadJobs()
+
+      // Show appropriate success message
+      if (createOneDriveFolders) {
+        alert('Job created successfully! OneDrive folders are being created in the background.')
+      }
 
       // Navigate to the new job detail page if we have an ID
       if (response.construction && response.construction.id) {

@@ -17,6 +17,7 @@ import {
   CheckIcon,
   ChevronUpDownIcon,
   LightBulbIcon,
+  FolderIcon,
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
@@ -77,6 +78,7 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
     has_soil_report: false,
     has_energy_report: false,
     land_status: '',
+    createOneDriveFolders: true,
   })
 
   // Client lookup state
@@ -187,6 +189,7 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
         has_soil_report: false,
         has_energy_report: false,
         land_status: '',
+        createOneDriveFolders: true,
       })
       setSelectedClient(null)
       setClientQuery('')
@@ -636,6 +639,32 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                             <span className="text-sm text-gray-700 dark:text-gray-300">Energy Report</span>
                           </label>
                         </div>
+                      </div>
+
+                      {/* OneDrive Folder Creation */}
+                      <div className="group">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                          <div className="rounded-lg bg-blue-100 dark:bg-blue-900/30 p-2">
+                            <FolderIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          OneDrive Integration
+                        </label>
+                        <label className="flex items-start gap-3 p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors bg-blue-50/50 dark:bg-blue-900/10">
+                          <input
+                            type="checkbox"
+                            checked={formData.createOneDriveFolders}
+                            onChange={(e) => handleChange('createOneDriveFolders', e.target.checked)}
+                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mt-0.5"
+                          />
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white block">
+                              Create OneDrive folders automatically
+                            </span>
+                            <span className="text-xs text-gray-600 dark:text-gray-400 block mt-1">
+                              Creates the Tekna Standard folder structure in OneDrive for this job
+                            </span>
+                          </div>
+                        </label>
                       </div>
 
                       {/* Land Status */}

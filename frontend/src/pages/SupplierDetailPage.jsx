@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { api } from '../api'
 import {
@@ -19,7 +19,10 @@ import {
   ArrowPathRoundedSquareIcon,
   CubeIcon,
   CurrencyDollarIcon,
-  TagIcon
+  TagIcon,
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 
@@ -36,6 +39,14 @@ export default function SupplierDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [currentTab, setCurrentTab] = useState('overview')
+  const [editingItemId, setEditingItemId] = useState(null)
+  const [editForm, setEditForm] = useState({})
+  const [savingItemId, setSavingItemId] = useState(null)
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importFile, setImportFile] = useState(null)
+  const [importing, setImporting] = useState(false)
+  const [importResults, setImportResults] = useState(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     loadSupplier()
@@ -76,6 +87,127 @@ export default function SupplierDetailPage() {
     } catch (err) {
       alert('Failed to delete supplier')
       console.error(err)
+    }
+  }
+
+  const handleExportPricebook = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/suppliers/${id}/pricebook/export`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+
+      if (!response.ok) throw new Error('Export failed')
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${supplier.name.replace(/[^a-z0-9]/gi, '_')}_pricebook_${new Date().toISOString().split('T')[0]}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      alert('Failed to export price book')
+      console.error(err)
+    }
+  }
+
+  const handleImportClick = () => {
+    setShowImportModal(true)
+    setImportResults(null)
+    setImportFile(null)
+  }
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setImportFile(file)
+    }
+  }
+
+  const handleImport = async () => {
+    if (!importFile) {
+      alert('Please select a file')
+      return
+    }
+
+    try {
+      setImporting(true)
+      const formData = new FormData()
+      formData.append('file', importFile)
+
+      const response = await api.post(`/api/v1/suppliers/${id}/pricebook/import`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      setImportResults(response)
+
+      // Reload supplier data to get updated pricebook items
+      await loadSupplier()
+
+      // Show success notification
+      if (response.success) {
+        alert(`Import completed!\nCreated: ${response.created}\nUpdated: ${response.updated}\nPrice Changes: ${response.price_changes}${response.errors.length > 0 ? `\nErrors: ${response.errors.length}` : ''}`)
+      }
+    } catch (err) {
+      alert('Failed to import price book')
+      console.error(err)
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const startEdit = (item) => {
+    setEditingItemId(item.id)
+    setEditForm({
+      item_name: item.item_name,
+      category: item.category || '',
+      current_price: item.current_price || ''
+    })
+  }
+
+  const cancelEdit = () => {
+    setEditingItemId(null)
+    setEditForm({})
+  }
+
+  const saveEdit = async (itemId) => {
+    try {
+      setSavingItemId(itemId)
+
+      const response = await api.patch(`/api/v1/suppliers/${id}/pricebook/${itemId}`, {
+        item: {
+          item_name: editForm.item_name,
+          category: editForm.category,
+          current_price: parseFloat(editForm.current_price)
+        }
+      })
+
+      if (response.success) {
+        // Update the supplier state with the new item data
+        setSupplier(prev => ({
+          ...prev,
+          pricebook_items: prev.pricebook_items.map(item =>
+            item.id === itemId ? { ...item, ...response.item } : item
+          )
+        }))
+
+        setEditingItemId(null)
+        setEditForm({})
+      } else {
+        alert(`Failed to update: ${response.errors?.join(', ')}`)
+      }
+    } catch (err) {
+      alert('Failed to save changes')
+      console.error(err)
+    } finally {
+      setSavingItemId(null)
     }
   }
 
@@ -515,12 +647,30 @@ export default function SupplierDetailPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="px-6 py-5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Price Book Items
-                </h3>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50">
-                  {supplier.pricebook_items?.length || 0} items
-                </span>
+                <div className="flex items-center gap-3">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Price Book Items
+                  </h3>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50">
+                    {supplier.pricebook_items?.length || 0} items
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleExportPricebook}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <ArrowDownTrayIcon className="h-4 w-4" />
+                    Export to Excel
+                  </button>
+                  <button
+                    onClick={handleImportClick}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
+                  >
+                    <ArrowUpTrayIcon className="h-4 w-4" />
+                    Import from Excel
+                  </button>
+                </div>
               </div>
             </div>
             {supplier.pricebook_items && supplier.pricebook_items.length > 0 ? (
@@ -540,6 +690,9 @@ export default function SupplierDetailPage() {
                       <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                         Current Price
                       </th>
+                      <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -548,14 +701,72 @@ export default function SupplierDetailPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
                           {item.item_code}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                          {item.item_name}
+                        <td className="px-6 py-4 text-sm">
+                          {editingItemId === item.id ? (
+                            <input
+                              type="text"
+                              value={editForm.item_name}
+                              onChange={(e) => setEditForm({ ...editForm, item_name: e.target.value })}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                          ) : (
+                            <span className="text-gray-900 dark:text-white">{item.item_name}</span>
+                          )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                          {item.category || '—'}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {editingItemId === item.id ? (
+                            <input
+                              type="text"
+                              value={editForm.category}
+                              onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                          ) : (
+                            <span className="text-gray-600 dark:text-gray-400">{item.category || '—'}</span>
+                          )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-white">
-                          ${parseFloat(item.current_price || 0).toFixed(2)}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                          {editingItemId === item.id ? (
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editForm.current_price}
+                              onChange={(e) => setEditForm({ ...editForm, current_price: e.target.value })}
+                              className="w-32 px-2 py-1 text-sm text-right border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                          ) : (
+                            <span className="font-semibold text-gray-900 dark:text-white">
+                              ${parseFloat(item.current_price || 0).toFixed(2)}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                          {editingItemId === item.id ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => saveEdit(item.id)}
+                                disabled={savingItemId === item.id}
+                                className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {savingItemId === item.id ? 'Saving...' : 'Save'}
+                              </button>
+                              <button
+                                onClick={cancelEdit}
+                                disabled={savingItemId === item.id}
+                                className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => startEdit(item)}
+                              className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                            >
+                              <PencilIcon className="h-3 w-3" />
+                              Edit
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -676,6 +887,128 @@ export default function SupplierDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Import Price Book from Excel
+              </h3>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="px-6 py-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Select Excel File
+                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleFileSelect}
+                    className="block w-full text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none"
+                  />
+                  {importFile && (
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      Selected: {importFile.name}
+                    </p>
+                  )}
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
+                    Excel File Format
+                  </h4>
+                  <p className="text-sm text-blue-800 dark:text-blue-400 mb-2">
+                    Your Excel file should have the following columns:
+                  </p>
+                  <ul className="text-sm text-blue-800 dark:text-blue-400 list-disc list-inside space-y-1">
+                    <li><strong>Item Code</strong> (required) - Used to match existing items</li>
+                    <li>Item Name</li>
+                    <li>Category</li>
+                    <li>Unit of Measure</li>
+                    <li>Current Price</li>
+                    <li>Brand</li>
+                    <li>Notes</li>
+                  </ul>
+                  <p className="text-sm text-blue-800 dark:text-blue-400 mt-2">
+                    Price changes will automatically create price history entries.
+                  </p>
+                </div>
+
+                {importResults && (
+                  <div className={`border rounded-lg p-4 ${
+                    importResults.success
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                      : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                  }`}>
+                    <h4 className={`text-sm font-medium mb-2 ${
+                      importResults.success
+                        ? 'text-green-900 dark:text-green-300'
+                        : 'text-red-900 dark:text-red-300'
+                    }`}>
+                      Import Results
+                    </h4>
+                    <div className={`text-sm space-y-1 ${
+                      importResults.success
+                        ? 'text-green-800 dark:text-green-400'
+                        : 'text-red-800 dark:text-red-400'
+                    }`}>
+                      {importResults.success && (
+                        <>
+                          <p>Created: {importResults.created} items</p>
+                          <p>Updated: {importResults.updated} items</p>
+                          <p>Price Changes: {importResults.price_changes}</p>
+                        </>
+                      )}
+                      {importResults.errors?.length > 0 && (
+                        <div className="mt-2">
+                          <p className="font-medium">Errors:</p>
+                          <ul className="list-disc list-inside ml-2 mt-1">
+                            {importResults.errors.map((error, idx) => (
+                              <li key={idx}>
+                                Row {error.row} ({error.item_code}): {error.errors.join(', ')}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {!importResults.success && importResults.error && (
+                        <p>{importResults.error}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+              >
+                Close
+              </button>
+              <button
+                onClick={handleImport}
+                disabled={!importFile || importing}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {importing ? 'Importing...' : 'Import'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
