@@ -38,6 +38,17 @@ module Api
           paginated_items = @items
         end
 
+        # Filter suppliers by category if category filter is active
+        suppliers_list = if params[:category].present?
+          # Get suppliers who have items in the selected category
+          Supplier.joins(:pricebook_items)
+                  .where(pricebook_items: { category: params[:category], deleted: false })
+                  .distinct
+                  .pluck(:id, :name)
+        else
+          Supplier.active.pluck(:id, :name)
+        end
+
         render json: {
           items: paginated_items.map { |item| item_with_risk_data(item) },
           pagination: {
@@ -48,7 +59,7 @@ module Api
           },
           filters: {
             categories: PricebookItem.categories,
-            suppliers: Supplier.active.pluck(:id, :name)
+            suppliers: suppliers_list
           }
         }
       end
