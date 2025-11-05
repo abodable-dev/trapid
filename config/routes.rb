@@ -7,6 +7,7 @@ Rails.application.routes.draw do
 
   # API health check
   get "/health", to: "health#index"
+  get "/version", to: "health#version"
 
   # API routes
   namespace :api do
@@ -30,7 +31,23 @@ Rails.application.routes.draw do
       patch 'grok/plans/:id', to: 'grok#update_plan'
 
       # Construction jobs management
-      resources :constructions
+      resources :constructions do
+        # Schedule tasks (nested under constructions)
+        resources :schedule_tasks, only: [:index] do
+          collection do
+            post :import
+            get :gantt_data
+          end
+        end
+      end
+
+      # Schedule tasks (non-nested routes)
+      resources :schedule_tasks, only: [:show, :update, :destroy] do
+        member do
+          patch :match_po
+          delete :unmatch_po
+        end
+      end
 
       # Master Schedule - Projects
       resources :projects do
