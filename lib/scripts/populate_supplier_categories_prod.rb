@@ -35,8 +35,8 @@ supplier_categories.each do |supplier_id, categories|
   # Find primary category (most items)
   primary_category = categories.max_by { |cat, count| count }&.first
 
-  # Create arrays for the fields
-  all_categories = categories.keys.sort
+  # Create arrays for the fields (filter out nil categories)
+  all_categories = categories.keys.compact.sort
 
   supplier.update!(
     trade_categories: all_categories,
