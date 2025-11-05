@@ -40,7 +40,7 @@ export default function PriceBooksPage() {
     total_pages: 0
   })
   const [hasMore, setHasMore] = useState(true)
-  const [sortBy, setSortBy] = useState('item_code')
+  const [sortBy, setSortBy] = useState('category')
   const [sortDirection, setSortDirection] = useState('asc')
 
   const observerTarget = useRef(null)
@@ -71,7 +71,7 @@ export default function PriceBooksPage() {
         clearTimeout(searchTimeoutRef.current)
       }
     }
-  }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly])
+  }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly, sortBy, sortDirection])
 
   const loadPriceBook = async (page = 1) => {
     try {
@@ -85,6 +85,8 @@ export default function PriceBooksPage() {
       const params = {
         page,
         limit: 50,
+        sort_by: sortBy,
+        sort_direction: sortDirection,
       }
 
       if (searchQuery) params.search = searchQuery
