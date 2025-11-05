@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_05_023834) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_05_030303) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -194,6 +194,25 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_023834) do
     t.index ["construction_id"], name: "index_one_drive_credentials_on_construction_id", unique: true
     t.index ["drive_id"], name: "index_one_drive_credentials_on_drive_id"
     t.index ["token_expires_at"], name: "index_one_drive_credentials_on_token_expires_at"
+  end
+
+  create_table "organization_one_drive_credentials", force: :cascade do |t|
+    t.text "access_token"
+    t.text "refresh_token"
+    t.datetime "token_expires_at"
+    t.string "drive_id"
+    t.string "drive_name"
+    t.string "root_folder_id"
+    t.string "root_folder_path"
+    t.jsonb "metadata", default: {}
+    t.boolean "is_active", default: true
+    t.bigint "connected_by_id"
+    t.datetime "last_synced_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["connected_by_id"], name: "index_organization_one_drive_credentials_on_connected_by_id"
+    t.index ["is_active"], name: "index_organization_one_drive_credentials_on_is_active", unique: true, where: "(is_active = true)"
+    t.index ["token_expires_at"], name: "index_organization_one_drive_credentials_on_token_expires_at"
   end
 
   create_table "price_histories", force: :cascade do |t|
@@ -570,6 +589,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_023834) do
   add_foreign_key "folder_template_items", "folder_templates"
   add_foreign_key "grok_plans", "users"
   add_foreign_key "one_drive_credentials", "constructions"
+  add_foreign_key "organization_one_drive_credentials", "users", column: "connected_by_id"
   add_foreign_key "price_histories", "pricebook_items"
   add_foreign_key "price_histories", "suppliers"
   add_foreign_key "pricebook_items", "suppliers"
