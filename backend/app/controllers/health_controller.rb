@@ -11,7 +11,6 @@ class HealthController < ApplicationController
   def version
     render json: {
       version: heroku_release_version,
-      heroku_env_vars: heroku_environment_variables,
       timestamp: Time.current
     }
   end
@@ -21,9 +20,5 @@ class HealthController < ApplicationController
   def heroku_release_version
     # Heroku sets HEROKU_RELEASE_VERSION env var (e.g., "v96")
     ENV['HEROKU_RELEASE_VERSION'] || 'unknown'
-  end
-
-  def heroku_environment_variables
-    ENV.select { |key, _| key.start_with?('HEROKU_') }
   end
 end

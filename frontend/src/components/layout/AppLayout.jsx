@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import packageJson from '../../../package.json'
+import axios from 'axios'
 import {
   Dialog,
   DialogBackdrop,
@@ -55,7 +55,23 @@ function classNames(...classes) {
 export default function AppLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [version, setVersion] = useState('loading...')
   const location = useLocation()
+
+  useEffect(() => {
+    // Fetch the backend version from the API
+    const fetchVersion = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/version`)
+        setVersion(response.data.version)
+      } catch (error) {
+        console.error('Failed to fetch version:', error)
+        setVersion('unknown')
+      }
+    }
+
+    fetchVersion()
+  }, [])
 
   const isCurrentPath = (href) => {
     if (href === '/dashboard') {
@@ -169,7 +185,7 @@ export default function AppLayout({ children }) {
                     </ul>
                     <div className="px-2 pt-2">
                       <p className="text-xs text-gray-400 dark:text-gray-500">
-                        v{packageJson.version}
+                        {version}
                       </p>
                     </div>
                   </li>
@@ -297,7 +313,7 @@ export default function AppLayout({ children }) {
                 {!sidebarCollapsed && (
                   <div className="px-2 pt-2">
                     <p className="text-xs text-gray-400 dark:text-gray-500">
-                      v{packageJson.version}
+                      {version}
                     </p>
                   </div>
                 )}
