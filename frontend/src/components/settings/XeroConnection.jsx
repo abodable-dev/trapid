@@ -23,11 +23,11 @@ export default function XeroConnection() {
   const fetchStatus = async () => {
     try {
       setStatus(prev => ({ ...prev, loading: true, error: null }))
-      const data = await api.get('/api/v1/xero/status')
+      const response = await api.get('/api/v1/xero/status')
       setStatus({
         loading: false,
-        connected: data.connected,
-        organizationName: data.organization_name,
+        connected: response.data.connected,
+        organizationName: response.data.tenant_name,
         error: null,
       })
     } catch (err) {
