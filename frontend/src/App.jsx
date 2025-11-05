@@ -56,6 +56,7 @@ function App() {
             {({ onOpenGrokChat }) => <Features onOpenGrokChat={onOpenGrokChat} />}
           </AppLayout>
         } />
+        <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
         <Route path="/settings/integrations" element={<AppLayout><SettingsPage /></AppLayout>} />
         <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
       </Routes>
