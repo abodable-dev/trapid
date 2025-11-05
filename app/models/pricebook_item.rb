@@ -34,14 +34,19 @@ class PricebookItem < ApplicationRecord
   scope :search, ->(query) {
     return all if query.blank?
 
+    # Sanitize the query for ILIKE pattern matching
+    sanitized_query = PricebookItem.sanitize_sql_like(query)
+
     # Search in both the tsvector column AND supplier name
-    left_joins(:supplier).where(
-      "pricebook_items.searchable_text @@ plainto_tsquery('english', :query) OR suppliers.name ILIKE :like_query",
-      query: query,
-      like_query: "%#{sanitize_sql_like(query)}%"
-    ).order(
-      Arel.sql("ts_rank(pricebook_items.searchable_text, plainto_tsquery('english', '#{sanitize_sql(query)}')) DESC")
-    ).distinct
+    # We do a simple ILIKE search on supplier name (joined) and tsquery on searchable_text
+    # Note: Using distinct is important because left_joins can create duplicates if multiple suppliers match
+    left_joins(:supplier)
+      .where(
+        "pricebook_items.searchable_text @@ plainto_tsquery('english', :query) OR suppliers.name ILIKE :like_query",
+        query: query,
+        like_query: "%#{sanitized_query}%"
+      )
+      .distinct
   }
 
   # Class methods
