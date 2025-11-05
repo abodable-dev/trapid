@@ -2,7 +2,6 @@ module Api
   module V1
     module External
       class UnrealEstimatesController < ApplicationController
-        skip_before_action :verify_authenticity_token
         before_action :authenticate_api_key!
 
         def create
