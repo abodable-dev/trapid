@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 const secondaryNavigation = [
   { name: 'Profile', href: '/profile' },
   { name: 'Settings', href: '/settings' },
+  { name: 'Integrations', href: '/settings/integrations' },
 ]
 
 export default function AccountsLayout({ children }) {

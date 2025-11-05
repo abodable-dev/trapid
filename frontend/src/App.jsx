@@ -22,6 +22,8 @@ import Features from './pages/designer/Features'
 import Menus from './pages/designer/Menus'
 import Pages from './pages/designer/Pages'
 import Experiences from './pages/designer/Experiences'
+import SettingsPage from './pages/SettingsPage'
+import XeroCallbackPage from './pages/XeroCallbackPage'
 
 function App() {
   return (
@@ -54,6 +56,8 @@ function App() {
             {({ onOpenGrokChat }) => <Features onOpenGrokChat={onOpenGrokChat} />}
           </AppLayout>
         } />
+        <Route path="/settings/integrations" element={<AppLayout><SettingsPage /></AppLayout>} />
+        <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
       </Routes>
     </BrowserRouter>
   )

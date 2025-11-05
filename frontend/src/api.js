@@ -77,4 +77,12 @@ export const api = {
     if (!response.ok) throw new Error('API request failed');
     return response.json();
   },
+
+  // Xero Integration APIs
+  xero: {
+    getAuthUrl: () => api.get('/api/v1/xero/auth_url'),
+    callback: (code) => api.post('/api/v1/xero/callback', { code }),
+    getStatus: () => api.get('/api/v1/xero/status'),
+    disconnect: () => api.delete('/api/v1/xero/disconnect'),
+  },
 };
