@@ -83,7 +83,9 @@ module Api
           :start_date,
           :site_supervisor_name,
           :site_supervisor_email,
-          :site_supervisor_phone
+          :site_supervisor_phone,
+          :design_id,
+          :design_name
         )
       end
     end
