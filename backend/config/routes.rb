@@ -90,6 +90,8 @@ Rails.application.routes.draw do
           post :preview
           post :fetch_all_images
           get :image_stats
+          get :export_price_history
+          post :import_price_history
         end
       end
 

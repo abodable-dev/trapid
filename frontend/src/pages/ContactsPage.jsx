@@ -16,6 +16,7 @@ import {
   ChevronDownIcon
 } from '@heroicons/react/24/outline'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
+import { ContactTypeBadge } from '../components/contacts'
 
 export default function ContactsPage() {
   const navigate = useNavigate()
@@ -27,10 +28,12 @@ export default function ContactsPage() {
   const [showColumnModal, setShowColumnModal] = useState(false)
   const [activeTab, setActiveTab] = useState(0)
   const [selectedCategories, setSelectedCategories] = useState([])
+  const [filter, setFilter] = useState('all') // 'all', 'customers', 'suppliers', 'both'
 
   // Column visibility state for Contacts tab
   const [visibleContactColumns, setVisibleContactColumns] = useState({
     name: true,
+    type: true,
     email: true,
     phone: true,
     website: true,
@@ -52,6 +55,7 @@ export default function ContactsPage() {
   // Define available columns for each tab
   const contactColumns = [
     { key: 'name', label: 'Contact Name' },
+    { key: 'type', label: 'Contact Type' },
     { key: 'email', label: 'Email' },
     { key: 'phone', label: 'Phone Numbers' },
     { key: 'website', label: 'Website' },
@@ -72,7 +76,7 @@ export default function ContactsPage() {
   useEffect(() => {
     loadContacts()
     loadSuppliers()
-  }, [])
+  }, [filter])
 
   // Listen for global search event from AppLayout
   useEffect(() => {
@@ -89,7 +93,10 @@ export default function ContactsPage() {
   const loadContacts = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/api/v1/contacts')
+      const endpoint = filter === 'all'
+        ? '/api/v1/contacts'
+        : `/api/v1/contacts?type=${filter}`
+      const response = await api.get(endpoint)
       setContacts(response.contacts || [])
     } catch (err) {
       setError('Failed to load contacts')
@@ -265,6 +272,59 @@ export default function ContactsPage() {
               </div>
             </div>
 
+            {/* Filter Buttons */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-4">
+                <button
+                  onClick={() => setFilter('all')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    filter === 'all'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  All Contacts
+                </button>
+                <button
+                  onClick={() => setFilter('customers')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    filter === 'customers'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Customers
+                </button>
+                <button
+                  onClick={() => setFilter('suppliers')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    filter === 'suppliers'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Suppliers
+                </button>
+                <button
+                  onClick={() => setFilter('both')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    filter === 'both'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Both
+                </button>
+                <div className="ml-auto">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {filter === 'all'
+                      ? `${contacts.length} total contacts`
+                      : `${contacts.length} ${filter === 'both' ? 'contacts (both types)' : filter}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Actions Bar */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="flex-1">
@@ -310,6 +370,11 @@ export default function ContactsPage() {
                           Contact Name
                         </th>
                       )}
+                      {visibleContactColumns.type && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Contact Type
+                        </th>
+                      )}
                       {visibleContactColumns.email && (
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Email
@@ -353,6 +418,11 @@ export default function ContactsPage() {
                                 {contact.first_name} {contact.last_name}
                               </div>
                             )}
+                          </td>
+                        )}
+                        {visibleContactColumns.type && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <ContactTypeBadge type={contact.contact_type || 'customer'} />
                           </td>
                         )}
                         {visibleContactColumns.email && (

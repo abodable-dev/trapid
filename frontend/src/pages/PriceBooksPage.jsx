@@ -4,6 +4,7 @@ import {
   MagnifyingGlassIcon,
   CurrencyDollarIcon,
   ArrowUpTrayIcon,
+  ArrowDownTrayIcon,
   PlusIcon,
   XMarkIcon,
   FunnelIcon,
@@ -15,6 +16,7 @@ import {
 import { formatCurrency } from '../utils/formatters'
 import { api } from '../api'
 import ColumnHeaderMenu from '../components/pricebook/ColumnHeaderMenu'
+import PriceBookImportModal from '../components/pricebook/PriceBookImportModal'
 
 export default function PriceBooksPage() {
   const navigate = useNavigate()
@@ -46,6 +48,8 @@ export default function PriceBooksPage() {
   const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'category')
   const [sortDirection, setSortDirection] = useState(searchParams.get('sort_direction') || 'asc')
   const [editingCategory, setEditingCategory] = useState(null) // Track which item's category is being edited
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   const observerTarget = useRef(null)
   const searchTimeoutRef = useRef(null)
@@ -302,6 +306,59 @@ export default function PriceBooksPage() {
     }
   }
 
+  const handleExport = async () => {
+    try {
+      setExporting(true)
+
+      // Build query params with current filters
+      const params = new URLSearchParams()
+      if (supplierFilter) params.append('supplier_id', supplierFilter)
+      if (categoryFilter) params.append('category', categoryFilter)
+
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      const url = `${API_URL}/api/v1/pricebook/export_price_history?${params.toString()}`
+
+      // Fetch the file
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+      })
+
+      if (!response.ok) throw new Error('Export failed')
+
+      // Get the blob and create download
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = downloadUrl
+
+      // Create filename with date and filters
+      const date = new Date().toISOString().split('T')[0]
+      let filename = `price_history_${date}`
+      if (supplierFilter) {
+        const supplier = suppliers.find(s => s.id.toString() === supplierFilter.toString())
+        if (supplier) filename += `_${supplier.name.replace(/[^a-z0-9]/gi, '_')}`
+      }
+      if (categoryFilter) filename += `_${categoryFilter.replace(/[^a-z0-9]/gi, '_')}`
+      a.download = `${filename}.xlsx`
+
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(downloadUrl)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('Failed to export data. Please try again.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleImportSuccess = () => {
+    // Refresh the pricebook data
+    loadPriceBook(1)
+  }
+
   const SortIcon = ({ column }) => {
     if (sortBy !== column) return <Bars3Icon className="h-4 w-4 text-gray-400" />
     return sortDirection === 'asc' ?
@@ -338,22 +395,53 @@ export default function PriceBooksPage() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center px-3 py-1.5 border rounded-lg text-sm font-medium transition-colors ${
-                  hasActiveFilters
-                    ? 'border-indigo-600 text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-400 dark:text-indigo-400'
-                    : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-                }`}
-              >
-                <AdjustmentsHorizontalIcon className="h-4 w-4 mr-2" />
-                Filters
-                {hasActiveFilters && (
-                  <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-indigo-600 dark:bg-indigo-500 rounded-full">
-                    {[searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly].filter(Boolean).length}
-                  </span>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Export Button */}
+                <button
+                  onClick={handleExport}
+                  disabled={exporting}
+                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {exporting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+                      Export
+                    </>
+                  )}
+                </button>
+
+                {/* Import Button */}
+                <button
+                  onClick={() => setShowImportModal(true)}
+                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
+                  Import
+                </button>
+
+                {/* Filters Button */}
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`inline-flex items-center px-3 py-1.5 border rounded-lg text-sm font-medium transition-colors ${
+                    hasActiveFilters
+                      ? 'border-indigo-600 text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-400 dark:text-indigo-400'
+                      : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <AdjustmentsHorizontalIcon className="h-4 w-4 mr-2" />
+                  Filters
+                  {hasActiveFilters && (
+                    <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-indigo-600 dark:bg-indigo-500 rounded-full">
+                      {[searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly].filter(Boolean).length}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Main search bar */}
@@ -669,6 +757,13 @@ export default function PriceBooksPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Import Modal */}
+            <PriceBookImportModal
+              isOpen={showImportModal}
+              onClose={() => setShowImportModal(false)}
+              onImportSuccess={handleImportSuccess}
+            />
           </div>
         </div>
   )

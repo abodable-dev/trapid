@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_05_051002) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_05_234119) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -103,6 +103,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_051002) do
     t.datetime "updated_at", null: false
     t.datetime "last_synced_at"
     t.text "xero_sync_error"
+    t.string "contact_type", default: "customer"
+    t.index ["contact_type"], name: "index_contacts_on_contact_type"
   end
 
   create_table "designs", force: :cascade do |t|
@@ -684,6 +686,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_051002) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
+  end
+
+  create_table "versions", force: :cascade do |t|
+    t.integer "current_version", default: 101, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "xero_credentials", force: :cascade do |t|
