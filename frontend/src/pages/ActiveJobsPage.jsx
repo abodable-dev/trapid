@@ -6,6 +6,7 @@ import {
   BriefcaseIcon,
 } from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
+import NewJobModal from '../components/jobs/NewJobModal'
 
 export default function ActiveJobsPage() {
   const navigate = useNavigate()
@@ -14,6 +15,7 @@ export default function ActiveJobsPage() {
   const [error, setError] = useState(null)
   const [editingCell, setEditingCell] = useState(null)
   const [editValue, setEditValue] = useState('')
+  const [showNewJobModal, setShowNewJobModal] = useState(false)
 
   useEffect(() => {
     loadJobs()
@@ -69,19 +71,22 @@ export default function ActiveJobsPage() {
     }
   }
 
-  const handleAddJob = async () => {
+  const handleCreateJob = async (jobData) => {
     try {
-      await api.post('/api/v1/constructions', {
-        construction: {
-          title: 'New Construction Job',
-          status: 'Active',
-          stage: 'Planning'
-        }
+      const response = await api.post('/api/v1/constructions', {
+        construction: jobData
       })
+
+      // Refresh the jobs list
       await loadJobs()
+
+      // Navigate to the new job detail page if we have an ID
+      if (response.construction && response.construction.id) {
+        navigate(`/jobs/${response.construction.id}`)
+      }
     } catch (err) {
-      console.error('Failed to add job:', err)
-      alert('Failed to add job')
+      console.error('Failed to create job:', err)
+      throw err
     }
   }
 
@@ -124,11 +129,11 @@ export default function ActiveJobsPage() {
                 </div>
               </div>
               <button
-                onClick={handleAddJob}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none shadow-sm transition-colors"
+                onClick={() => setShowNewJobModal(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none shadow-lg shadow-indigo-500/30 transition-all"
               >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add Job
+                <PlusIcon className="h-5 w-5 mr-2" />
+                New Job
               </button>
             </div>
           </div>
@@ -227,31 +232,61 @@ export default function ActiveJobsPage() {
                       </td>
 
                       <td className="px-3 py-1.5 text-right">
-                        {/* Live Profit is auto-calculated, not editable */}
-                        <div
-                          className={`text-xs px-1.5 py-0.5 rounded ${
-                            job.live_profit >= 0
-                              ? 'text-green-600 dark:text-green-400'
-                              : 'text-red-600 dark:text-red-400'
-                          }`}
-                          title="Auto-calculated: Contract Value - Total PO Costs"
-                        >
-                          {job.live_profit ? formatCurrency(job.live_profit, false) : '-'}
-                        </div>
+                        {editingCell?.jobId === job.id && editingCell?.field === 'live_profit' ? (
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={handleCellBlur}
+                            onKeyDown={handleKeyDown}
+                            autoFocus
+                            className="w-full px-1.5 py-0.5 text-xs text-right border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                          />
+                        ) : (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCellClick(job.id, 'live_profit', job.live_profit)
+                            }}
+                            className={`text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded ${
+                              job.live_profit >= 0
+                                ? 'text-green-600 dark:text-green-400'
+                                : 'text-red-600 dark:text-red-400'
+                            }`}
+                          >
+                            {job.live_profit ? formatCurrency(job.live_profit, false) : '-'}
+                          </div>
+                        )}
                       </td>
 
                       <td className="px-3 py-1.5 text-right">
-                        {/* Profit Percentage is auto-calculated, not editable */}
-                        <div
-                          className={`text-xs px-1.5 py-0.5 rounded ${
-                            job.profit_percentage >= 0
-                              ? 'text-green-600 dark:text-green-400'
-                              : 'text-red-600 dark:text-red-400'
-                          }`}
-                          title="Auto-calculated: (Live Profit / Contract Value) * 100"
-                        >
-                          {job.profit_percentage ? formatPercentage(job.profit_percentage, 2) : '-'}
-                        </div>
+                        {editingCell?.jobId === job.id && editingCell?.field === 'profit_percentage' ? (
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={handleCellBlur}
+                            onKeyDown={handleKeyDown}
+                            autoFocus
+                            className="w-full px-1.5 py-0.5 text-xs text-right border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                          />
+                        ) : (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCellClick(job.id, 'profit_percentage', job.profit_percentage)
+                            }}
+                            className={`text-xs cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 px-1.5 py-0.5 rounded ${
+                              job.profit_percentage >= 0
+                                ? 'text-green-600 dark:text-green-400'
+                                : 'text-red-600 dark:text-red-400'
+                            }`}
+                          >
+                            {job.profit_percentage ? formatPercentage(job.profit_percentage, 2) : '-'}
+                          </div>
+                        )}
                       </td>
 
                       <td className="px-3 py-1.5">
@@ -285,6 +320,13 @@ export default function ActiveJobsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* New Job Modal */}
+        <NewJobModal
+          isOpen={showNewJobModal}
+          onClose={() => setShowNewJobModal(false)}
+          onSuccess={handleCreateJob}
+        />
       </div>
     </div>
   )
