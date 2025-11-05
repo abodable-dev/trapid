@@ -2,6 +2,7 @@ class Construction < ApplicationRecord
   # Associations
   has_many :purchase_orders, dependent: :destroy
   has_one :project, dependent: :destroy
+  has_one :one_drive_credential, dependent: :destroy
 
   # Validations
   validates :title, presence: true

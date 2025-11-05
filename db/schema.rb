@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_05_022000) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_05_023834) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -151,6 +151,49 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_022000) do
     t.index ["session_key"], name: "index_import_sessions_on_session_key", unique: true
     t.index ["status"], name: "index_import_sessions_on_status"
     t.index ["table_id"], name: "index_import_sessions_on_table_id"
+  end
+
+  create_table "ml_features", id: :serial, force: :cascade do |t|
+    t.string "feature_type", limit: 50, null: false
+    t.integer "entity_id", null: false
+    t.string "entity_type", limit: 50, null: false
+    t.jsonb "features", null: false
+    t.datetime "computed_at", precision: nil, default: -> { "now()" }, null: false
+    t.datetime "created_at", precision: nil, default: -> { "now()" }, null: false
+    t.datetime "updated_at", precision: nil, default: -> { "now()" }, null: false
+    t.index ["computed_at"], name: "idx_features_computed_at"
+    t.index ["entity_type", "entity_id"], name: "idx_features_entity"
+    t.index ["feature_type"], name: "idx_features_type"
+  end
+
+  create_table "ml_predictions", id: :serial, force: :cascade do |t|
+    t.string "model_name", limit: 100, null: false
+    t.string "model_version", limit: 50, null: false
+    t.integer "entity_id", null: false
+    t.string "entity_type", limit: 50, null: false
+    t.jsonb "prediction_value", null: false
+    t.float "confidence_score"
+    t.datetime "predicted_at", precision: nil, default: -> { "now()" }, null: false
+    t.datetime "created_at", precision: nil, default: -> { "now()" }, null: false
+    t.index ["entity_type", "entity_id"], name: "idx_predictions_entity"
+    t.index ["model_name", "model_version"], name: "idx_predictions_model"
+    t.index ["predicted_at"], name: "idx_predictions_predicted_at"
+  end
+
+  create_table "one_drive_credentials", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.text "access_token"
+    t.text "refresh_token"
+    t.datetime "token_expires_at"
+    t.string "drive_id"
+    t.string "root_folder_id"
+    t.string "folder_path"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id"], name: "index_one_drive_credentials_on_construction_id", unique: true
+    t.index ["drive_id"], name: "index_one_drive_credentials_on_drive_id"
+    t.index ["token_expires_at"], name: "index_one_drive_credentials_on_token_expires_at"
   end
 
   create_table "price_histories", force: :cascade do |t|
@@ -526,6 +569,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_022000) do
   add_foreign_key "columns", "tables"
   add_foreign_key "folder_template_items", "folder_templates"
   add_foreign_key "grok_plans", "users"
+  add_foreign_key "one_drive_credentials", "constructions"
   add_foreign_key "price_histories", "pricebook_items"
   add_foreign_key "price_histories", "suppliers"
   add_foreign_key "pricebook_items", "suppliers"

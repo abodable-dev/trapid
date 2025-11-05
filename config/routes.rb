@@ -120,6 +120,16 @@ Rails.application.routes.draw do
         end
       end
 
+      # OneDrive integration
+      get 'onedrive/authorize', to: 'one_drive#authorize'
+      get 'onedrive/callback', to: 'one_drive#callback'
+      get 'onedrive/status', to: 'one_drive#status'
+      delete 'onedrive/disconnect', to: 'one_drive#disconnect'
+      post 'onedrive/create_folders', to: 'one_drive#create_folders'
+      get 'onedrive/folders', to: 'one_drive#list_items'
+      post 'onedrive/upload', to: 'one_drive#upload'
+      get 'onedrive/download', to: 'one_drive#download'
+
       # Table management
       resources :tables do
         # Column management
