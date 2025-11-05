@@ -56,16 +56,8 @@ export default function AppLayout({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const location = useLocation()
 
-  // Use Vercel's git commit SHA as version (short form) - updates with every frontend deploy
-  const getVersion = () => {
-    const commitSha = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA
-    if (commitSha) {
-      return commitSha.substring(0, 7) // Show first 7 chars of SHA
-    }
-    return 'dev'
-  }
-
-  const version = getVersion()
+  // Use version injected at build time from Vercel's git commit SHA
+  const version = __APP_VERSION__
 
   const isCurrentPath = (href) => {
     if (href === '/dashboard') {
