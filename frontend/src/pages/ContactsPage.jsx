@@ -162,7 +162,7 @@ export default function ContactsPage() {
     try {
       const response = await api.patch('/api/v1/contacts/bulk_update', {
         contact_ids: Array.from(selectedContacts),
-        contact_type: bulkContactType
+        contact_types: [bulkContactType]
       })
 
       if (response.success) {

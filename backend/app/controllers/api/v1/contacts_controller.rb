@@ -62,9 +62,9 @@ module Api
               :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
               :tax_number, :xero_id, :sync_with_xero, :sys_type_id, :deleted, :parent_id, :parent,
               :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
-              :contact_type
+              :contact_types, :primary_contact_type
             ],
-            methods: [:is_customer?, :is_supplier?, :is_both?]
+            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
           ).merge(
             suppliers: suppliers_with_items
           )
