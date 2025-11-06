@@ -32,6 +32,7 @@ export default function ContactsPage() {
 
   // Bulk selection state
   const [selectedContacts, setSelectedContacts] = useState(new Set())
+  const [openDropdownId, setOpenDropdownId] = useState(null)
   const [bulkContactType, setBulkContactType] = useState('')
   const [updating, setUpdating] = useState(false)
   const [updatingContactId, setUpdatingContactId] = useState(null)
@@ -162,7 +163,8 @@ export default function ContactsPage() {
     try {
       const response = await api.patch('/api/v1/contacts/bulk_update', {
         contact_ids: Array.from(selectedContacts),
-        contact_type: bulkContactType
+        contact_types: [bulkContactType],
+        primary_contact_type: bulkContactType
       })
 
       if (response.success) {
@@ -494,7 +496,8 @@ export default function ContactsPage() {
                       <option value="">Select type...</option>
                       <option value="customer">Customer</option>
                       <option value="supplier">Supplier</option>
-                      <option value="both">Both</option>
+                      <option value="sales">Sales</option>
+                      <option value="land_agent">Land Agent</option>
                     </select>
                   </div>
                 </div>
@@ -619,59 +622,87 @@ export default function ContactsPage() {
                                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
                                   <span className="text-sm text-gray-500">Updating...</span>
                                 </div>
-                              ) : (
-                                <>
-                                  {/* Show primary type badge */}
-                                  {contact.primary_contact_type && (
-                                    <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${getTypeBadge(contact.primary_contact_type).className}`}>
-                                      {getTypeBadge(contact.primary_contact_type).label}
-                                    </span>
+                              ) : contact.primary_contact_type ? (
+                                <div className="relative">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setOpenDropdownId(openDropdownId === contact.id ? null : contact.id)
+                                    }}
+                                    className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${getTypeBadge(contact.primary_contact_type).className}`}
+                                  >
+                                    {getTypeBadge(contact.primary_contact_type).label}
+                                    <ChevronDownIcon className="ml-1 h-3 w-3" />
+                                  </button>
+                                  {openDropdownId === contact.id && (
+                                    <>
+                                      <div
+                                        className="fixed inset-0 z-10"
+                                        onClick={() => setOpenDropdownId(null)}
+                                      />
+                                      <div className="absolute z-20 mt-1 w-56 bg-white dark:bg-gray-800 shadow-lg rounded-md py-2 text-sm border border-gray-200 dark:border-gray-700">
+                                        <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                                          Select Types
+                                        </div>
+                                        {['customer', 'supplier', 'sales', 'land_agent'].map((type) => {
+                                          const badge = getTypeBadge(type)
+                                          const isSelected = contact.contact_types?.includes(type)
+                                          const isPrimary = contact.primary_contact_type === type
+                                          return (
+                                            <div
+                                              key={type}
+                                              className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                                            >
+                                              <label className="flex items-center gap-2 cursor-pointer flex-1">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isSelected}
+                                                  onChange={() => {
+                                                    const currentTypes = contact.contact_types || []
+                                                    let newTypes
+                                                    let newPrimaryType = contact.primary_contact_type
+
+                                                    if (isSelected) {
+                                                      newTypes = currentTypes.filter(t => t !== type)
+                                                      if (isPrimary) {
+                                                        newPrimaryType = newTypes[0] || null
+                                                      }
+                                                    } else {
+                                                      newTypes = [...currentTypes, type]
+                                                    }
+
+                                                    handleUpdateSingleContact(contact.id, newTypes, newPrimaryType)
+                                                  }}
+                                                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                                />
+                                                <span className={isSelected ? 'font-medium' : 'font-normal'}>
+                                                  {badge.label}
+                                                </span>
+                                              </label>
+                                              {isSelected && (
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    handleUpdateSingleContact(contact.id, contact.contact_types, type)
+                                                  }}
+                                                  className={`text-xs px-2 py-0.5 rounded ${
+                                                    isPrimary
+                                                      ? 'bg-indigo-600 text-white'
+                                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                                  }`}
+                                                >
+                                                  {isPrimary ? 'Primary' : 'Set Primary'}
+                                                </button>
+                                              )}
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+                                    </>
                                   )}
-
-                                  {/* Type selector buttons */}
-                                  {['customer', 'supplier', 'sales', 'land_agent'].map((type) => {
-                                    const badge = getTypeBadge(type)
-                                    const isSelected = contact.contact_types?.includes(type)
-                                    const isPrimary = contact.primary_contact_type === type
-
-                                    return (
-                                      <button
-                                        key={type}
-                                        onClick={() => {
-                                          const currentTypes = contact.contact_types || []
-                                          let newTypes
-                                          let newPrimaryType = contact.primary_contact_type
-
-                                          if (isPrimary) {
-                                            // If clicking the primary type, remove it and set new primary
-                                            newTypes = currentTypes.filter(t => t !== type)
-                                            newPrimaryType = newTypes[0] || null
-                                          } else if (isSelected) {
-                                            // If already selected but not primary, make it primary
-                                            newTypes = currentTypes
-                                            newPrimaryType = type
-                                          } else {
-                                            // If not selected, add it and make it primary
-                                            newTypes = [...currentTypes, type]
-                                            newPrimaryType = type
-                                          }
-
-                                          handleUpdateSingleContact(contact.id, newTypes, newPrimaryType)
-                                        }}
-                                        title={isPrimary ? 'Primary (click to remove)' : isSelected ? 'Click to make primary' : 'Click to add as primary'}
-                                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium transition-all ${
-                                          isPrimary
-                                            ? `${badge.className} ring-2 ring-offset-1 ring-indigo-600 dark:ring-indigo-400`
-                                            : isSelected
-                                            ? `${badge.className} opacity-50`
-                                            : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600'
-                                        }`}
-                                      >
-                                        {badge.label}
-                                      </button>
-                                    )
-                                  })}
-                                </>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">No type</span>
                               )}
                             </div>
                           </td>
