@@ -391,10 +391,12 @@ module Api
       def export_price_history
         supplier_id = params[:supplier_id]
         category = params[:category]
+        item_ids = params[:item_ids]&.split(',')&.map(&:to_i)
 
         export_service = PriceHistoryExportService.new(
           supplier_id: supplier_id,
-          category: category
+          category: category,
+          item_ids: item_ids
         )
 
         result = export_service.export

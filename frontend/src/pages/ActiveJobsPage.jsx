@@ -5,9 +5,13 @@ import {
   PlusIcon,
   BriefcaseIcon,
   ArrowTopRightOnSquareIcon,
+  DocumentArrowUpIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline'
+import { Menu } from '@headlessui/react'
 import { useNavigate } from 'react-router-dom'
 import NewJobModal from '../components/jobs/NewJobModal'
+import CsvImportJobModal from '../components/jobs/CsvImportJobModal'
 
 export default function ActiveJobsPage() {
   const navigate = useNavigate()
@@ -17,6 +21,7 @@ export default function ActiveJobsPage() {
   const [editingCell, setEditingCell] = useState(null)
   const [editValue, setEditValue] = useState('')
   const [showNewJobModal, setShowNewJobModal] = useState(false)
+  const [showCsvImportModal, setShowCsvImportModal] = useState(false)
 
   useEffect(() => {
     loadJobs()
@@ -139,13 +144,22 @@ export default function ActiveJobsPage() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowNewJobModal(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none shadow-lg shadow-indigo-500/30 transition-all"
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                New Job
-              </button>
+              <div className="flex gap-x-2">
+                <button
+                  onClick={() => setShowNewJobModal(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none shadow-lg shadow-indigo-500/30 transition-all"
+                >
+                  <PlusIcon className="h-5 w-5 mr-2" />
+                  New Job
+                </button>
+                <button
+                  onClick={() => setShowCsvImportModal(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none shadow-lg shadow-green-500/30 transition-all"
+                >
+                  <DocumentArrowUpIcon className="h-5 w-5 mr-2" />
+                  Import CSV
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -363,6 +377,16 @@ export default function ActiveJobsPage() {
           isOpen={showNewJobModal}
           onClose={() => setShowNewJobModal(false)}
           onSuccess={handleCreateJob}
+        />
+
+        {/* CSV Import Modal */}
+        <CsvImportJobModal
+          isOpen={showCsvImportModal}
+          onClose={() => setShowCsvImportModal(false)}
+          onSuccess={() => {
+            setShowCsvImportModal(false)
+            loadJobs()
+          }}
         />
       </div>
     </div>

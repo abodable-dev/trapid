@@ -50,6 +50,7 @@ export default function PriceBooksPage() {
   const [editingCategory, setEditingCategory] = useState(null) // Track which item's category is being edited
   const [showImportModal, setShowImportModal] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [selectedItems, setSelectedItems] = useState(new Set()) // Track selected item IDs
 
   const observerTarget = useRef(null)
   const searchTimeoutRef = useRef(null)
@@ -97,6 +98,19 @@ export default function PriceBooksPage() {
       }
     }
   }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly, sortBy, sortDirection])
+
+  // Auto-select all items when filters are applied
+  useEffect(() => {
+    const hasActiveFilters = categoryFilter || supplierFilter || riskFilter || searchQuery || minPrice || maxPrice || showPricedOnly
+
+    if (hasActiveFilters && items.length > 0) {
+      // Automatically select all filtered items
+      setSelectedItems(new Set(items.map(item => item.id)))
+    } else {
+      // Clear selection when filters are cleared
+      setSelectedItems(new Set())
+    }
+  }, [items, categoryFilter, supplierFilter, riskFilter, searchQuery, minPrice, maxPrice, showPricedOnly])
 
   const loadPriceBook = async (page = 1) => {
     try {
@@ -306,14 +320,47 @@ export default function PriceBooksPage() {
     }
   }
 
+  const handleSelectItem = (itemId) => {
+    setSelectedItems(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId)
+      } else {
+        newSet.add(itemId)
+      }
+      return newSet
+    })
+  }
+
+  const handleSelectAll = () => {
+    if (selectedItems.size === items.length) {
+      // Deselect all
+      setSelectedItems(new Set())
+    } else {
+      // Select all visible items
+      setSelectedItems(new Set(items.map(item => item.id)))
+    }
+  }
+
+  const handleClearSelection = () => {
+    setSelectedItems(new Set())
+  }
+
   const handleExport = async () => {
     try {
       setExporting(true)
 
-      // Build query params with current filters
+      // Build query params with current filters or selected items
       const params = new URLSearchParams()
-      if (supplierFilter) params.append('supplier_id', supplierFilter)
-      if (categoryFilter) params.append('category', categoryFilter)
+
+      // If items are selected, export only those
+      if (selectedItems.size > 0) {
+        params.append('item_ids', Array.from(selectedItems).join(','))
+      } else {
+        // Otherwise use filters
+        if (supplierFilter) params.append('supplier_id', supplierFilter)
+        if (categoryFilter) params.append('category', categoryFilter)
+      }
 
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
       const url = `${API_URL}/api/v1/pricebook/export_price_history?${params.toString()}`
@@ -332,14 +379,18 @@ export default function PriceBooksPage() {
       const a = document.createElement('a')
       a.href = downloadUrl
 
-      // Create filename with date and filters
+      // Create filename with date and filters or selection
       const date = new Date().toISOString().split('T')[0]
       let filename = `price_history_${date}`
-      if (supplierFilter) {
-        const supplier = suppliers.find(s => s.id.toString() === supplierFilter.toString())
-        if (supplier) filename += `_${supplier.name.replace(/[^a-z0-9]/gi, '_')}`
+      if (selectedItems.size > 0) {
+        filename += `_selected_${selectedItems.size}_items`
+      } else {
+        if (supplierFilter) {
+          const supplier = suppliers.find(s => s.id.toString() === supplierFilter.toString())
+          if (supplier) filename += `_${supplier.name.replace(/[^a-z0-9]/gi, '_')}`
+        }
+        if (categoryFilter) filename += `_${categoryFilter.replace(/[^a-z0-9]/gi, '_')}`
       }
-      if (categoryFilter) filename += `_${categoryFilter.replace(/[^a-z0-9]/gi, '_')}`
       a.download = `${filename}.xlsx`
 
       document.body.appendChild(a)
@@ -396,6 +447,21 @@ export default function PriceBooksPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {/* Selection Indicator */}
+                {selectedItems.size > 0 && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                    <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                      {selectedItems.size} selected
+                    </span>
+                    <button
+                      onClick={handleClearSelection}
+                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+
                 {/* Export Button */}
                 <button
                   onClick={handleExport}
@@ -570,6 +636,14 @@ export default function PriceBooksPage() {
           <table className="min-w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
               <tr>
+                <th className="px-3 py-2 w-10">
+                  <input
+                    type="checkbox"
+                    checked={items.length > 0 && selectedItems.size === items.length}
+                    onChange={handleSelectAll}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                   <ColumnHeaderMenu
                     label="Code"
@@ -658,7 +732,7 @@ export default function PriceBooksPage() {
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                   {items.length === 0 && !loading ? (
                     <tr>
-                      <td colSpan="7" className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                      <td colSpan="8" className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                         {hasActiveFilters
                           ? 'No items match your filters. Try adjusting your search criteria.'
                           : 'No items found in the price book.'}
@@ -670,8 +744,18 @@ export default function PriceBooksPage() {
                         <tr
                           key={item.id}
                           onClick={() => navigate(`/price-books/${item.id}`)}
-                          className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
+                          className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${
+                            selectedItems.has(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                          }`}
                         >
+                          <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={selectedItems.has(item.id)}
+                              onChange={() => handleSelectItem(item.id)}
+                              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                          </td>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                             {item.item_code}
                           </td>
@@ -729,7 +813,7 @@ export default function PriceBooksPage() {
                       {/* Infinite scroll trigger */}
                       {hasMore && (
                         <tr ref={observerTarget}>
-                          <td colSpan="7" className="px-4 py-4 text-center">
+                          <td colSpan="8" className="px-4 py-4 text-center">
                             {loadingMore ? (
                               <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
@@ -747,7 +831,7 @@ export default function PriceBooksPage() {
                       {/* End of results */}
                       {!hasMore && items.length > 0 && (
                         <tr>
-                          <td colSpan="7" className="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                          <td colSpan="8" className="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                             End of results
                           </td>
                         </tr>

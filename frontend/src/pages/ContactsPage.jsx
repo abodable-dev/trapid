@@ -16,7 +16,7 @@ import {
   ChevronDownIcon
 } from '@heroicons/react/24/outline'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
-import { ContactTypeBadge } from '../components/contacts'
+import Toast from '../components/Toast'
 
 export default function ContactsPage() {
   const navigate = useNavigate()
@@ -29,6 +29,13 @@ export default function ContactsPage() {
   const [activeTab, setActiveTab] = useState(0)
   const [selectedCategories, setSelectedCategories] = useState([])
   const [filter, setFilter] = useState('all') // 'all', 'customers', 'suppliers', 'both'
+
+  // Bulk selection state
+  const [selectedContacts, setSelectedContacts] = useState(new Set())
+  const [bulkContactType, setBulkContactType] = useState('')
+  const [updating, setUpdating] = useState(false)
+  const [updatingContactId, setUpdatingContactId] = useState(null)
+  const [toast, setToast] = useState(null)
 
   // Column visibility state for Contacts tab
   const [visibleContactColumns, setVisibleContactColumns] = useState({
@@ -127,6 +134,80 @@ export default function ContactsPage() {
       ...prev,
       [columnKey]: !prev[columnKey]
     }))
+  }
+
+  // Bulk selection handlers
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedContacts(new Set(filteredContacts.map(c => c.id)))
+    } else {
+      setSelectedContacts(new Set())
+    }
+  }
+
+  const handleSelectContact = (contactId, checked) => {
+    const newSelected = new Set(selectedContacts)
+    if (checked) {
+      newSelected.add(contactId)
+    } else {
+      newSelected.delete(contactId)
+    }
+    setSelectedContacts(newSelected)
+  }
+
+  const handleBulkUpdate = async () => {
+    if (selectedContacts.size === 0) return
+
+    setUpdating(true)
+    try {
+      const response = await api.patch('/api/v1/contacts/bulk_update', {
+        contact_ids: Array.from(selectedContacts),
+        contact_type: bulkContactType
+      })
+
+      if (response.success) {
+        setToast({
+          message: `Successfully updated ${response.updated_count} contact${response.updated_count !== 1 ? 's' : ''} to ${bulkContactType}`,
+          type: 'success'
+        })
+        setSelectedContacts(new Set())
+        loadContacts() // Refresh the list
+      }
+    } catch (error) {
+      console.error('Bulk update error:', error)
+      setToast({
+        message: 'Failed to update contacts. Please try again.',
+        type: 'error'
+      })
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleClearSelection = () => {
+    setSelectedContacts(new Set())
+  }
+
+  const handleUpdateSingleContact = async (contactId, newType) => {
+    setUpdatingContactId(contactId)
+    try {
+      await api.patch(`/api/v1/contacts/${contactId}`, {
+        contact: { contact_type: newType }
+      })
+      setToast({
+        message: `Contact updated to ${newType}`,
+        type: 'success'
+      })
+      loadContacts() // Refresh the list
+    } catch (error) {
+      console.error('Update error:', error)
+      setToast({
+        message: 'Failed to update contact. Please try again.',
+        type: 'error'
+      })
+    } finally {
+      setUpdatingContactId(null)
+    }
   }
 
   // Get unique categories from all suppliers
@@ -283,7 +364,7 @@ export default function ContactsPage() {
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                   }`}
                 >
-                  All Contacts
+                  All
                 </button>
                 <button
                   onClick={() => setFilter('customers')}
@@ -305,21 +386,13 @@ export default function ContactsPage() {
                 >
                   Suppliers
                 </button>
-                <button
-                  onClick={() => setFilter('both')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filter === 'both'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  Both
-                </button>
                 <div className="ml-auto">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {filter === 'all'
                       ? `${contacts.length} total contacts`
-                      : `${contacts.length} ${filter === 'both' ? 'contacts (both types)' : filter}`}
+                      : filter === 'customers'
+                      ? `${contacts.length} customers (includes both)`
+                      : `${contacts.length} suppliers (includes both)`}
                   </p>
                 </div>
               </div>
@@ -359,12 +432,74 @@ export default function ContactsPage() {
               </div>
             </div>
 
+            {/* Bulk Update Toolbar */}
+            {selectedContacts.size > 0 && (
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4 flex-1">
+                  <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+                    {selectedContacts.size} contact{selectedContacts.size !== 1 ? 's' : ''} selected
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="bulk-contact-type" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Change type to:
+                    </label>
+                    <select
+                      id="bulk-contact-type"
+                      value={bulkContactType}
+                      onChange={(e) => setBulkContactType(e.target.value)}
+                      className="block rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 dark:text-white bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    >
+                      <option value="">Select type...</option>
+                      <option value="customer">Customer</option>
+                      <option value="supplier">Supplier</option>
+                      <option value="both">Both</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleBulkUpdate}
+                    disabled={updating || !bulkContactType || selectedContacts.size === 0}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+                  >
+                    {updating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircleIcon className="h-5 w-5" />
+                        Update Type
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleClearSelection}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Contacts Table */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
                     <tr>
+                      <th className="px-6 py-3 text-left">
+                        <input
+                          type="checkbox"
+                          checked={selectedContacts.size === filteredContacts.length && filteredContacts.length > 0}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
+                        />
+                      </th>
                       {visibleContactColumns.name && (
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Contact Name
@@ -404,7 +539,22 @@ export default function ContactsPage() {
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {filteredContacts.map((contact) => (
-                      <tr key={contact.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150">
+                      <tr
+                        key={contact.id}
+                        className={`transition-colors duration-150 ${
+                          selectedContacts.has(contact.id)
+                            ? 'bg-indigo-50 dark:bg-indigo-900/20'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-750'
+                        }`}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedContacts.has(contact.id)}
+                            onChange={(e) => handleSelectContact(contact.id, e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
+                          />
+                        </td>
                         {visibleContactColumns.name && (
                           <td className="px-6 py-4 whitespace-nowrap">
                             <Link
@@ -422,7 +572,16 @@ export default function ContactsPage() {
                         )}
                         {visibleContactColumns.type && (
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <ContactTypeBadge type={contact.contact_type || 'customer'} />
+                            <select
+                              value={contact.contact_type || 'customer'}
+                              onChange={(e) => handleUpdateSingleContact(contact.id, e.target.value)}
+                              disabled={updatingContactId === contact.id}
+                              className="block w-full rounded-md border-0 py-1.5 pl-3 pr-8 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <option value="customer">Customer</option>
+                              <option value="supplier">Supplier</option>
+                              <option value="both">Both</option>
+                            </select>
                           </td>
                         )}
                         {visibleContactColumns.email && (
@@ -790,6 +949,15 @@ export default function ContactsPage() {
         visibleColumns={activeTab === 0 ? visibleContactColumns : visibleClientColumns}
         onToggleColumn={activeTab === 0 ? toggleContactColumn : toggleClientColumn}
       />
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }

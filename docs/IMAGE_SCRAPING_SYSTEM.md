@@ -143,7 +143,7 @@ The system searches for images using:
 ## 📦 Cloudinary Integration
 
 ### Storage
-- **Cloud Name:** dtg6d2c7h
+- **Cloud Name:** (configured in environment variables)
 - **Free Tier:** 25 GB storage, 25 GB bandwidth/month
 - **Current Usage:** 0/5,287 items (~10 GB estimated)
 
@@ -155,7 +155,7 @@ Cloudinary automatically:
 - Generates thumbnails on-demand
 
 ### Image URLs
-Format: `https://res.cloudinary.com/dtg6d2c7h/image/upload/v{version}/pricebook_items/item_{id}.jpg`
+Format: `https://res.cloudinary.com/{cloud_name}/image/upload/v{version}/pricebook_items/item_{id}.jpg`
 
 ## 🔄 Status Tracking
 
@@ -169,10 +169,12 @@ Each item has an `image_fetch_status`:
 
 ### Environment Variables (Already Set on Heroku)
 ```bash
-CLOUDINARY_CLOUD_NAME=dtg6d2c7h
-CLOUDINARY_API_KEY=895213223838643
-CLOUDINARY_API_SECRET=Cl1Ufiux0DQMBnkDSUvfdrG-XVo
+CLOUDINARY_CLOUD_NAME=your_cloud_name_here
+CLOUDINARY_API_KEY=your_api_key_here
+CLOUDINARY_API_SECRET=your_api_secret_here
 ```
+
+**Note:** These are set in Heroku config vars. Never commit actual credentials to git.
 
 ### Required for Image Search
 To enable image scraping, you need EITHER:
