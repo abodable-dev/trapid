@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import axios from 'axios'
+import packageJson from '../../../package.json'
 import {
   Dialog,
   DialogBackdrop,
@@ -55,17 +56,18 @@ function classNames(...classes) {
 export default function AppLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [version, setVersion] = useState('loading...')
+  const [backendVersion, setBackendVersion] = useState('loading...')
+  const frontendVersion = packageJson.version
   const location = useLocation()
 
   useEffect(() => {
     const fetchVersion = async () => {
       try {
         const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/version`)
-        setVersion(response.data.version)
+        setBackendVersion(response.data.version)
       } catch (error) {
         console.error('Failed to fetch version:', error)
-        setVersion('unknown')
+        setBackendVersion('unknown')
       }
     }
     fetchVersion()
@@ -183,7 +185,10 @@ export default function AppLayout({ children }) {
                     </ul>
                     <div className="px-2 pt-2">
                       <p className="text-xs text-gray-400 dark:text-gray-500">
-                        {version}
+                        Frontend: v{frontendVersion}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        Backend: {backendVersion}
                       </p>
                     </div>
                   </li>
@@ -311,7 +316,10 @@ export default function AppLayout({ children }) {
                 {!sidebarCollapsed && (
                   <div className="px-2 pt-2">
                     <p className="text-xs text-gray-400 dark:text-gray-500">
-                      {version}
+                      Frontend: v{frontendVersion}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      Backend: {backendVersion}
                     </p>
                   </div>
                 )}
