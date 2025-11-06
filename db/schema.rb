@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_05_234119) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -103,8 +103,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_05_234119) do
     t.datetime "updated_at", null: false
     t.datetime "last_synced_at"
     t.text "xero_sync_error"
-    t.string "contact_type", default: "customer"
-    t.index ["contact_type"], name: "index_contacts_on_contact_type"
+    t.string "contact_types", default: [], array: true
+    t.string "primary_contact_type"
+    t.index ["contact_types"], name: "index_contacts_on_contact_types", using: :gin
+    t.index ["primary_contact_type"], name: "index_contacts_on_primary_contact_type"
   end
 
   create_table "designs", force: :cascade do |t|
