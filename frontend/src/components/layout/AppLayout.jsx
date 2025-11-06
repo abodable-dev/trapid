@@ -41,6 +41,7 @@ const navigation = [
 // Bottom navigation items
 const bottomNavigation = [
   { name: 'Import Data', href: '/import', icon: ArrowUpTrayIcon },
+  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ]
 
 const userNavigation = [
