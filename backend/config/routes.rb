@@ -43,6 +43,23 @@ Rails.application.routes.draw do
             get :gantt_data
           end
         end
+
+        # Document management (nested under constructions)
+        resources :documents, controller: 'job_documents' do
+          member do
+            post :approve
+            post :archive
+            post :create_version
+            get :download
+            post :analyze
+          end
+          collection do
+            get :pending_approval
+          end
+        end
+
+        # Document AI analyses for this job
+        resources :document_analyses, controller: 'document_ai_analyses', only: [:index, :show]
       end
 
       # Schedule tasks (non-nested routes)
@@ -132,6 +149,13 @@ Rails.application.routes.draw do
       resources :folder_templates do
         member do
           post :duplicate
+        end
+      end
+
+      # Document Categories
+      resources :document_categories, only: [:index, :show, :create, :update, :destroy] do
+        collection do
+          post :seed_defaults
         end
       end
 

@@ -6,6 +6,10 @@ class Construction < ApplicationRecord
   has_one :one_drive_credential, dependent: :destroy
   belongs_to :design, optional: true
 
+  # Document management associations
+  has_many :job_documents, dependent: :destroy
+  has_many :document_ai_analyses, dependent: :destroy
+
   # Enums
   enum :onedrive_folder_creation_status, {
     not_requested: 'not_requested',
