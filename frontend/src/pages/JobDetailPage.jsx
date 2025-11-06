@@ -9,6 +9,7 @@ import {
   XMarkIcon,
   CheckIcon,
   PlusIcon,
+  QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import { formatCurrency, formatPercentage } from '../utils/formatters'
@@ -17,6 +18,8 @@ import JobDocumentsTab from '../components/documents/JobDocumentsTab'
 import TeamSettings from '../components/job-detail/TeamSettings'
 import EstimatesTab from '../components/estimates/EstimatesTab'
 import ScheduleMasterTab from '../components/schedule-master/ScheduleMasterTab'
+import DocumentationTab from '../components/documentation/DocumentationTab'
+import SetupGuideModal from '../components/documentation/SetupGuideModal'
 
 const tabs = [
   { name: 'Overview' },
@@ -28,6 +31,7 @@ const tabs = [
   { name: 'Documents' },
   { name: 'Team' },
   { name: 'Settings' },
+  { name: 'Documentation' },
 ]
 
 function classNames(...classes) {
@@ -52,9 +56,31 @@ export default function JobDetailPage() {
   const [editingPO, setEditingPO] = useState(null)
   const [loadingPOs, setLoadingPOs] = useState(false)
 
+  // Documentation state
+  const [showSetupGuide, setShowSetupGuide] = useState(false)
+
   useEffect(() => {
     loadJob()
   }, [id])
+
+  // Check if this is the first time visiting (for setup guide)
+  useEffect(() => {
+    const hasSeenGuide = localStorage.getItem('trapid_setup_guide_shown')
+    if (!hasSeenGuide) {
+      // Show setup guide for first-time users (with a delay for better UX)
+      const timer = setTimeout(() => {
+        setShowSetupGuide(true)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+
+    // Listen for custom event to open setup guide
+    const handleOpenSetupGuide = () => {
+      setShowSetupGuide(true)
+    }
+    window.addEventListener('openSetupGuide', handleOpenSetupGuide)
+    return () => window.removeEventListener('openSetupGuide', handleOpenSetupGuide)
+  }, [])
 
   const loadJob = async () => {
     try {
@@ -261,12 +287,19 @@ export default function JobDetailPage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-600">
                 <BriefcaseIcon className="h-6 w-6 text-white" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{job.title}</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Construction Job #{job.id}
                 </p>
               </div>
+              <button
+                onClick={() => setShowSetupGuide(true)}
+                className="flex items-center justify-center h-10 w-10 rounded-lg border-2 border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors group"
+                title="Help & Setup Guide"
+              >
+                <QuestionMarkCircleIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300" />
+              </button>
             </div>
 
             {/* Tabs */}
@@ -651,7 +684,17 @@ export default function JobDetailPage() {
               </div>
             </div>
           )}
+
+          {activeTab === 'Documentation' && (
+            <DocumentationTab />
+          )}
         </div>
+
+      {/* Setup Guide Modal */}
+      <SetupGuideModal
+        isOpen={showSetupGuide}
+        onClose={() => setShowSetupGuide(false)}
+      />
       </div>
   )
 }
