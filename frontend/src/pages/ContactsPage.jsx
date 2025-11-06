@@ -531,8 +531,8 @@ export default function ContactsPage() {
             )}
 
             {/* Contacts Table */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="overflow-x-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-visible">
+              <div className="overflow-x-auto overflow-y-visible">
                 <table key={`contacts-${filter}-${contacts.length}`} className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
                     <tr>
