@@ -37,8 +37,8 @@ module Api
         render json: {
           success: true,
           contacts: @contacts.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_type],
-            methods: [:is_customer?, :is_supplier?, :is_both?],
+            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type],
+            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?],
             include: { suppliers: { only: [:id, :name] } }
           )
         }
@@ -85,7 +85,13 @@ module Api
       # PATCH /api/v1/contacts/:id
       def update
         if @contact.update(contact_params)
-          render json: { success: true, contact: @contact }
+          render json: {
+            success: true,
+            contact: @contact.as_json(
+              only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type],
+              methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
+            )
+          }
         else
           render json: { success: false, errors: @contact.errors.full_messages }, status: :unprocessable_entity
         end
@@ -107,7 +113,7 @@ module Api
       # PATCH /api/v1/contacts/bulk_update
       def bulk_update
         contact_ids = params[:contact_ids]
-        contact_type = params[:contact_type]
+        contact_types = params[:contact_types]
 
         # Validate contact_ids is present and is an array
         if contact_ids.blank? || !contact_ids.is_a?(Array)
@@ -117,17 +123,25 @@ module Api
           }, status: :unprocessable_entity
         end
 
-        # Validate contact_type is valid
-        unless %w[customer supplier both].include?(contact_type)
+        # Validate contact_types is valid
+        if contact_types.blank? || !contact_types.is_a?(Array)
           return render json: {
             success: false,
-            error: "Invalid contact type. Must be 'customer', 'supplier', or 'both'"
+            error: "contact_types must be a non-empty array"
+          }, status: :unprocessable_entity
+        end
+
+        invalid_types = contact_types - Contact::CONTACT_TYPES
+        if invalid_types.any?
+          return render json: {
+            success: false,
+            error: "Invalid contact types: #{invalid_types.join(', ')}"
           }, status: :unprocessable_entity
         end
 
         # Update all contacts in a single query using update_all for performance
         # This bypasses validations and callbacks but is much faster for bulk operations
-        updated_count = Contact.where(id: contact_ids).update_all(contact_type: contact_type)
+        updated_count = Contact.where(id: contact_ids).update_all(contact_types: contact_types)
 
         if updated_count > 0
           render json: {
@@ -177,7 +191,8 @@ module Api
           :contact_region_id,
           :contact_region,
           :branch,
-          :contact_type
+          :primary_contact_type,
+          contact_types: []
         )
       end
     end
