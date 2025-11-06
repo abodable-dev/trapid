@@ -116,7 +116,11 @@ Rails.application.routes.draw do
       end
 
       # Contacts management
-      resources :contacts
+      resources :contacts do
+        collection do
+          patch :bulk_update
+        end
+      end
 
       # Designs library
       resources :designs

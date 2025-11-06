@@ -104,6 +104,50 @@ module Api
         end
       end
 
+      # PATCH /api/v1/contacts/bulk_update
+      def bulk_update
+        contact_ids = params[:contact_ids]
+        contact_type = params[:contact_type]
+
+        # Validate contact_ids is present and is an array
+        if contact_ids.blank? || !contact_ids.is_a?(Array)
+          return render json: {
+            success: false,
+            error: "contact_ids must be a non-empty array"
+          }, status: :unprocessable_entity
+        end
+
+        # Validate contact_type is valid
+        unless %w[customer supplier both].include?(contact_type)
+          return render json: {
+            success: false,
+            error: "Invalid contact type. Must be 'customer', 'supplier', or 'both'"
+          }, status: :unprocessable_entity
+        end
+
+        # Update all contacts in a single query using update_all for performance
+        # This bypasses validations and callbacks but is much faster for bulk operations
+        updated_count = Contact.where(id: contact_ids).update_all(contact_type: contact_type)
+
+        if updated_count > 0
+          render json: {
+            success: true,
+            updated_count: updated_count,
+            message: "Successfully updated #{updated_count} contact#{updated_count == 1 ? '' : 's'}"
+          }
+        else
+          render json: {
+            success: false,
+            error: "No contacts found with the provided IDs"
+          }, status: :not_found
+        end
+      rescue => e
+        render json: {
+          success: false,
+          error: "Failed to update contacts: #{e.message}"
+        }, status: :internal_server_error
+      end
+
       private
 
       def set_contact
