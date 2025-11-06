@@ -4,21 +4,23 @@ class Contact < ApplicationRecord
   has_many :supplier_contacts, dependent: :destroy
   has_many :linked_suppliers, through: :supplier_contacts, source: :supplier
 
-  # Enums
-  enum :contact_type, {
-    customer: 'customer',
-    supplier: 'supplier',
-    both: 'both'
-  }, prefix: :is
+  # Constants
+  CONTACT_TYPES = %w[customer supplier sales land_agent].freeze
 
   # Validations
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP, allow_blank: true }
+  validate :contact_types_must_be_valid
+  validates :primary_contact_type, inclusion: { in: CONTACT_TYPES }, allow_nil: true
+  before_save :set_primary_contact_type_if_blank
 
   # Scopes
   scope :with_email, -> { where.not(email: [nil, '']) }
   scope :with_phone, -> { where.not(mobile_phone: [nil, '']).or(where.not(office_phone: [nil, ''])) }
-  scope :customers, -> { where(contact_type: ['customer', 'both']) }
-  scope :suppliers, -> { where(contact_type: ['supplier', 'both']) }
+  scope :with_type, ->(type) { where("? = ANY(contact_types)", type) }
+  scope :customers, -> { with_type('customer') }
+  scope :suppliers, -> { with_type('supplier') }
+  scope :sales, -> { with_type('sales') }
+  scope :land_agents, -> { with_type('land_agent') }
 
   # Instance methods
   def display_name
@@ -31,5 +33,38 @@ class Contact < ApplicationRecord
 
   def has_contact_info?
     email.present? || mobile_phone.present? || office_phone.present?
+  end
+
+  def is_customer?
+    contact_types&.include?('customer')
+  end
+
+  def is_supplier?
+    contact_types&.include?('supplier')
+  end
+
+  def is_sales?
+    contact_types&.include?('sales')
+  end
+
+  def is_land_agent?
+    contact_types&.include?('land_agent')
+  end
+
+  private
+
+  def contact_types_must_be_valid
+    return if contact_types.blank?
+
+    invalid_types = contact_types - CONTACT_TYPES
+    if invalid_types.any?
+      errors.add(:contact_types, "contains invalid types: #{invalid_types.join(', ')}")
+    end
+  end
+
+  def set_primary_contact_type_if_blank
+    if primary_contact_type.blank? && contact_types.present?
+      self.primary_contact_type = contact_types.first
+    end
   end
 end

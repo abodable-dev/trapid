@@ -188,17 +188,20 @@ export default function ContactsPage() {
     setSelectedContacts(new Set())
   }
 
-  const handleUpdateSingleContact = async (contactId, newType) => {
+  const handleUpdateSingleContact = async (contactId, newTypes, newPrimaryType) => {
     setUpdatingContactId(contactId)
     try {
       await api.patch(`/api/v1/contacts/${contactId}`, {
-        contact: { contact_type: newType }
+        contact: {
+          contact_types: newTypes,
+          primary_contact_type: newPrimaryType
+        }
       })
       setToast({
-        message: `Contact updated to ${newType}`,
+        message: `Contact types updated`,
         type: 'success'
       })
-      loadContacts() // Refresh the list
+      await loadContacts() // Refresh the list
     } catch (error) {
       console.error('Update error:', error)
       setToast({
@@ -208,6 +211,28 @@ export default function ContactsPage() {
     } finally {
       setUpdatingContactId(null)
     }
+  }
+
+  const getTypeBadge = (type) => {
+    const badges = {
+      customer: {
+        label: 'Customer',
+        className: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-400'
+      },
+      supplier: {
+        label: 'Supplier',
+        className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-400/10 dark:text-yellow-500'
+      },
+      sales: {
+        label: 'Sales',
+        className: 'bg-green-100 text-green-700 dark:bg-green-400/10 dark:text-green-400'
+      },
+      land_agent: {
+        label: 'Land Agent',
+        className: 'bg-purple-100 text-purple-700 dark:bg-purple-400/10 dark:text-purple-400'
+      }
+    }
+    return badges[type] || badges.customer
   }
 
   // Get unique categories from all suppliers
@@ -355,7 +380,7 @@ export default function ContactsPage() {
 
             {/* Filter Buttons */}
             <div className="mb-6">
-              <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-4">
+              <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-4 flex-wrap">
                 <button
                   onClick={() => setFilter('all')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -386,13 +411,29 @@ export default function ContactsPage() {
                 >
                   Suppliers
                 </button>
+                <button
+                  onClick={() => setFilter('sales')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    filter === 'sales'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Sales
+                </button>
+                <button
+                  onClick={() => setFilter('land_agents')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    filter === 'land_agents'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Land Agents
+                </button>
                 <div className="ml-auto">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {filter === 'all'
-                      ? `${contacts.length} total contacts`
-                      : filter === 'customers'
-                      ? `${contacts.length} customers (includes both)`
-                      : `${contacts.length} suppliers (includes both)`}
+                    {contacts.length} {filter === 'all' ? 'total' : filter} contacts
                   </p>
                 </div>
               </div>
@@ -489,7 +530,7 @@ export default function ContactsPage() {
             {/* Contacts Table */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <table key={`contacts-${filter}-${contacts.length}`} className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
                     <tr>
                       <th className="px-6 py-3 text-left">
@@ -571,17 +612,68 @@ export default function ContactsPage() {
                           </td>
                         )}
                         {visibleContactColumns.type && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <select
-                              value={contact.contact_type || 'customer'}
-                              onChange={(e) => handleUpdateSingleContact(contact.id, e.target.value)}
-                              disabled={updatingContactId === contact.id}
-                              className="block w-full rounded-md border-0 py-1.5 pl-3 pr-8 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <option value="customer">Customer</option>
-                              <option value="supplier">Supplier</option>
-                              <option value="both">Both</option>
-                            </select>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {updatingContactId === contact.id ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+                                  <span className="text-sm text-gray-500">Updating...</span>
+                                </div>
+                              ) : (
+                                <>
+                                  {/* Show primary type badge */}
+                                  {contact.primary_contact_type && (
+                                    <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${getTypeBadge(contact.primary_contact_type).className}`}>
+                                      {getTypeBadge(contact.primary_contact_type).label}
+                                    </span>
+                                  )}
+
+                                  {/* Type selector buttons */}
+                                  {['customer', 'supplier', 'sales', 'land_agent'].map((type) => {
+                                    const badge = getTypeBadge(type)
+                                    const isSelected = contact.contact_types?.includes(type)
+                                    const isPrimary = contact.primary_contact_type === type
+
+                                    return (
+                                      <button
+                                        key={type}
+                                        onClick={() => {
+                                          const currentTypes = contact.contact_types || []
+                                          let newTypes
+                                          let newPrimaryType = contact.primary_contact_type
+
+                                          if (isPrimary) {
+                                            // If clicking the primary type, remove it and set new primary
+                                            newTypes = currentTypes.filter(t => t !== type)
+                                            newPrimaryType = newTypes[0] || null
+                                          } else if (isSelected) {
+                                            // If already selected but not primary, make it primary
+                                            newTypes = currentTypes
+                                            newPrimaryType = type
+                                          } else {
+                                            // If not selected, add it and make it primary
+                                            newTypes = [...currentTypes, type]
+                                            newPrimaryType = type
+                                          }
+
+                                          handleUpdateSingleContact(contact.id, newTypes, newPrimaryType)
+                                        }}
+                                        title={isPrimary ? 'Primary (click to remove)' : isSelected ? 'Click to make primary' : 'Click to add as primary'}
+                                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium transition-all ${
+                                          isPrimary
+                                            ? `${badge.className} ring-2 ring-offset-1 ring-indigo-600 dark:ring-indigo-400`
+                                            : isSelected
+                                            ? `${badge.className} opacity-50`
+                                            : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                        }`}
+                                      >
+                                        {badge.label}
+                                      </button>
+                                    )
+                                  })}
+                                </>
+                              )}
+                            </div>
                           </td>
                         )}
                         {visibleContactColumns.email && (

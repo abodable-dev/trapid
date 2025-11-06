@@ -131,11 +131,11 @@ export default function ContactDetailPage() {
 
           <div className="flex gap-2">
             <button
-              onClick={() => navigate(`/contacts/${id}/edit`)}
+              onClick={() => navigate(`/contacts`)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
-              <PencilIcon className="h-5 w-5" />
-              Edit
+              <ArrowLeftIcon className="h-5 w-5" />
+              Back to Contacts
             </button>
             <button
               onClick={deleteContact}
