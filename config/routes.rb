@@ -23,6 +23,9 @@ Rails.application.routes.draw do
       post 'imports/execute', to: 'imports#execute'
       get 'imports/status/:session_key', to: 'imports#status'
 
+      # CSV Import routes
+      post 'csv_imports/job_with_pos', to: 'csv_imports#import_job_with_pos'
+
       # Grok AI integration
       post 'grok/chat', to: 'grok#chat'
       get 'grok/suggest-features', to: 'grok#suggest_features'
