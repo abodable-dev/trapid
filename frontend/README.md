@@ -116,3 +116,4 @@ This creates an optimized production build in the `dist` directory.
 - React 19
 - Vite 7
 - ESLint
+# Auto-deploy test
