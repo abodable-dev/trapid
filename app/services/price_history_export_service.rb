@@ -1,11 +1,12 @@
 require 'caxlsx'
 
 class PriceHistoryExportService
-  attr_reader :supplier_id, :category, :errors
+  attr_reader :supplier_id, :category, :item_ids, :errors
 
-  def initialize(supplier_id: nil, category: nil)
+  def initialize(supplier_id: nil, category: nil, item_ids: nil)
     @supplier_id = supplier_id
     @category = category
+    @item_ids = item_ids
     @errors = []
   end
 
@@ -41,11 +42,14 @@ class PriceHistoryExportService
   def fetch_items
     items = PricebookItem.includes(:supplier, :default_supplier, price_histories: :supplier).active
 
-    # Apply supplier filter
-    items = items.by_supplier(@supplier_id) if @supplier_id.present?
-
-    # Apply category filter
-    items = items.by_category(@category) if @category.present?
+    # If specific item IDs are provided, filter by them (takes priority)
+    if @item_ids.present?
+      items = items.where(id: @item_ids)
+    else
+      # Otherwise apply supplier and category filters
+      items = items.by_supplier(@supplier_id) if @supplier_id.present?
+      items = items.by_category(@category) if @category.present?
+    end
 
     items
   end
@@ -206,13 +210,17 @@ class PriceHistoryExportService
   def generate_filename
     parts = ["price_history"]
 
-    if @supplier_id.present?
-      supplier = Supplier.find_by(id: @supplier_id)
-      parts << sanitize_filename(supplier.name) if supplier
-    end
+    if @item_ids.present?
+      parts << "selected_#{@item_ids.length}_items"
+    else
+      if @supplier_id.present?
+        supplier = Supplier.find_by(id: @supplier_id)
+        parts << sanitize_filename(supplier.name) if supplier
+      end
 
-    if @category.present?
-      parts << sanitize_filename(@category)
+      if @category.present?
+        parts << sanitize_filename(@category)
+      end
     end
 
     parts << Date.today.strftime("%Y%m%d")
