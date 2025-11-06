@@ -99,6 +99,19 @@ export default function PriceBooksPage() {
     }
   }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly, sortBy, sortDirection])
 
+  // Auto-select all items when filters are applied
+  useEffect(() => {
+    const hasActiveFilters = categoryFilter || supplierFilter || riskFilter || searchQuery || minPrice || maxPrice || showPricedOnly
+
+    if (hasActiveFilters && items.length > 0) {
+      // Automatically select all filtered items
+      setSelectedItems(new Set(items.map(item => item.id)))
+    } else {
+      // Clear selection when filters are cleared
+      setSelectedItems(new Set())
+    }
+  }, [items, categoryFilter, supplierFilter, riskFilter, searchQuery, minPrice, maxPrice, showPricedOnly])
+
   const loadPriceBook = async (page = 1) => {
     try {
       if (page === 1) {

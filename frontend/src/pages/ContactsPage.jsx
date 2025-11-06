@@ -16,7 +16,6 @@ import {
   ChevronDownIcon
 } from '@heroicons/react/24/outline'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
-import { ContactTypeBadge } from '../components/contacts'
 import Toast from '../components/Toast'
 
 export default function ContactsPage() {
@@ -33,8 +32,9 @@ export default function ContactsPage() {
 
   // Bulk selection state
   const [selectedContacts, setSelectedContacts] = useState(new Set())
-  const [bulkContactType, setBulkContactType] = useState('supplier')
+  const [bulkContactType, setBulkContactType] = useState('')
   const [updating, setUpdating] = useState(false)
+  const [updatingContactId, setUpdatingContactId] = useState(null)
   const [toast, setToast] = useState(null)
 
   // Column visibility state for Contacts tab
@@ -186,6 +186,28 @@ export default function ContactsPage() {
 
   const handleClearSelection = () => {
     setSelectedContacts(new Set())
+  }
+
+  const handleUpdateSingleContact = async (contactId, newType) => {
+    setUpdatingContactId(contactId)
+    try {
+      await api.patch(`/api/v1/contacts/${contactId}`, {
+        contact: { contact_type: newType }
+      })
+      setToast({
+        message: `Contact updated to ${newType}`,
+        type: 'success'
+      })
+      loadContacts() // Refresh the list
+    } catch (error) {
+      console.error('Update error:', error)
+      setToast({
+        message: 'Failed to update contact. Please try again.',
+        type: 'error'
+      })
+    } finally {
+      setUpdatingContactId(null)
+    }
   }
 
   // Get unique categories from all suppliers
@@ -342,7 +364,7 @@ export default function ContactsPage() {
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                   }`}
                 >
-                  All Contacts
+                  All
                 </button>
                 <button
                   onClick={() => setFilter('customers')}
@@ -364,21 +386,13 @@ export default function ContactsPage() {
                 >
                   Suppliers
                 </button>
-                <button
-                  onClick={() => setFilter('both')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filter === 'both'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  Both
-                </button>
                 <div className="ml-auto">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {filter === 'all'
                       ? `${contacts.length} total contacts`
-                      : `${contacts.length} ${filter === 'both' ? 'contacts (both types)' : filter}`}
+                      : filter === 'customers'
+                      ? `${contacts.length} customers (includes both)`
+                      : `${contacts.length} suppliers (includes both)`}
                   </p>
                 </div>
               </div>
@@ -436,6 +450,7 @@ export default function ContactsPage() {
                       onChange={(e) => setBulkContactType(e.target.value)}
                       className="block rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 dark:text-white bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
                     >
+                      <option value="">Select type...</option>
                       <option value="customer">Customer</option>
                       <option value="supplier">Supplier</option>
                       <option value="both">Both</option>
@@ -446,7 +461,7 @@ export default function ContactsPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleBulkUpdate}
-                    disabled={updating}
+                    disabled={updating || !bulkContactType || selectedContacts.size === 0}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
                   >
                     {updating ? (
@@ -557,7 +572,16 @@ export default function ContactsPage() {
                         )}
                         {visibleContactColumns.type && (
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <ContactTypeBadge type={contact.contact_type || 'customer'} />
+                            <select
+                              value={contact.contact_type || 'customer'}
+                              onChange={(e) => handleUpdateSingleContact(contact.id, e.target.value)}
+                              disabled={updatingContactId === contact.id}
+                              className="block w-full rounded-md border-0 py-1.5 pl-3 pr-8 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <option value="customer">Customer</option>
+                              <option value="supplier">Supplier</option>
+                              <option value="both">Both</option>
+                            </select>
                           </td>
                         )}
                         {visibleContactColumns.email && (
