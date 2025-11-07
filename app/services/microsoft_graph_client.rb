@@ -432,22 +432,38 @@ class MicrosoftGraphClient
     when 401
       # Token might be expired, try refreshing once
       if @token_refresh_attempted
-        raise AuthenticationError, "Authentication failed after token refresh"
+        error_details = response.parsed_response || {}
+        Rails.logger.error "OneDrive API 401 Error: #{error_details.inspect}"
+        raise AuthenticationError, "Authentication failed after token refresh. Details: #{error_details}"
       end
 
       @token_refresh_attempted = true
       refresh_token!
       raise AuthenticationError, "Token expired, please retry request"
     when 404
-      raise APIError, "Resource not found (404)"
+      error_details = response.parsed_response || {}
+      Rails.logger.error "OneDrive API 404 Error: #{error_details.inspect}"
+      raise APIError, "Resource not found (404). Details: #{error_details}"
     when 429
       retry_after = response.headers['Retry-After']&.to_i || 60
       raise APIError, "Rate limited. Retry after #{retry_after} seconds"
     else
-      error_message = response.parsed_response&.dig('error', 'message') ||
-                     response.parsed_response&.dig('error_description') ||
+      error_details = response.parsed_response || {}
+      error_code = error_details.dig('error', 'code')
+      error_message = error_details.dig('error', 'message') ||
+                     error_details.dig('error_description') ||
                      "API request failed with status #{response.code}"
-      raise APIError, error_message
+
+      Rails.logger.error "OneDrive API Error (#{response.code}): #{error_details.inspect}"
+      Rails.logger.error "Request URL: #{response.request.uri}"
+      Rails.logger.error "Error Code: #{error_code}" if error_code
+
+      full_error = "OneDrive API Error (#{response.code})"
+      full_error += " [#{error_code}]" if error_code
+      full_error += ": #{error_message}"
+      full_error += ". Full response: #{error_details.to_json}"
+
+      raise APIError, full_error
     end
   end
 

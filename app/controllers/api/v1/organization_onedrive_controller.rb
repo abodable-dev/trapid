@@ -29,10 +29,15 @@ module Api
       # Connect OneDrive using client credentials (Application permissions)
       def connect
         begin
+          Rails.logger.info "=== OneDrive Connection Attempt Started ==="
+          Rails.logger.info "Client ID configured: #{ENV['ONEDRIVE_CLIENT_ID'].present?}"
+          Rails.logger.info "Client Secret configured: #{ENV['ONEDRIVE_CLIENT_SECRET'].present?}"
+
           # Check if already connected
           existing_credential = OrganizationOneDriveCredential.active_credential
 
           if existing_credential&.valid_credential?
+            Rails.logger.info "Already connected with existing credential"
             return render json: {
               message: 'OneDrive is already connected',
               credential: existing_credential.as_json(only: [:id, :drive_id, :drive_name, :root_folder_path])
@@ -40,24 +45,33 @@ module Api
           end
 
           # Authenticate using client credentials flow (no user interaction needed!)
+          Rails.logger.info "Attempting authentication as application..."
           token_data = MicrosoftGraphClient.authenticate_as_application
+          Rails.logger.info "Authentication successful, token received"
 
           # Deactivate any existing credentials
           OrganizationOneDriveCredential.where(is_active: true).update_all(is_active: false)
 
           # Create new credential
+          Rails.logger.info "Creating new credential record..."
           credential = OrganizationOneDriveCredential.create!(
             access_token: token_data[:access_token],
             token_expires_at: token_data[:expires_at],
             connected_by: current_user,
             is_active: true
           )
+          Rails.logger.info "Credential created with ID: #{credential.id}"
 
           # Initialize client and set up drive
+          Rails.logger.info "Initializing Microsoft Graph client..."
           client = MicrosoftGraphClient.new(credential)
 
           # Create root folder for all jobs
+          Rails.logger.info "Creating root folder 'Trapid Jobs'..."
           root_folder = client.create_jobs_root_folder("Trapid Jobs")
+          Rails.logger.info "Root folder created successfully"
+
+          Rails.logger.info "=== OneDrive Connection Completed Successfully ==="
 
           render json: {
             message: 'OneDrive connected successfully!',
@@ -71,13 +85,18 @@ module Api
           }
 
         rescue MicrosoftGraphClient::AuthenticationError => e
-          Rails.logger.error "OneDrive authentication failed: #{e.message}"
+          Rails.logger.error "=== OneDrive Authentication Failed ==="
+          Rails.logger.error "Error: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
           render json: { error: "Authentication failed: #{e.message}" }, status: :unauthorized
         rescue MicrosoftGraphClient::APIError => e
-          Rails.logger.error "OneDrive API error: #{e.message}"
+          Rails.logger.error "=== OneDrive API Error ==="
+          Rails.logger.error "Error: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
           render json: { error: "OneDrive API error: #{e.message}" }, status: :bad_gateway
         rescue StandardError => e
-          Rails.logger.error "Failed to connect OneDrive: #{e.message}"
+          Rails.logger.error "=== OneDrive Connection Failed ==="
+          Rails.logger.error "Error: #{e.message}"
           Rails.logger.error e.backtrace.join("\n")
           render json: { error: "Failed to connect to OneDrive: #{e.message}" }, status: :internal_server_error
         end
