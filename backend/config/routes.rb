@@ -168,7 +168,8 @@ Rails.application.routes.draw do
 
       # OneDrive integration (organization-wide)
       get 'organization_onedrive/status', to: 'organization_onedrive#status'
-      post 'organization_onedrive/connect', to: 'organization_onedrive#connect'
+      get 'organization_onedrive/authorize', to: 'organization_onedrive#authorize'
+      get 'organization_onedrive/callback', to: 'organization_onedrive#callback'
       delete 'organization_onedrive/disconnect', to: 'organization_onedrive#disconnect'
       post 'organization_onedrive/create_job_folders', to: 'organization_onedrive#create_job_folders'
       get 'organization_onedrive/job_folders', to: 'organization_onedrive#list_job_items'

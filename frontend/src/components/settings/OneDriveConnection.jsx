@@ -18,9 +18,30 @@ export default function OneDriveConnection() {
   const [connecting, setConnecting] = useState(false)
   const [message, setMessage] = useState(null)
 
-  // Fetch connection status on mount
+  // Fetch connection status on mount and handle OAuth callback
   useEffect(() => {
     fetchStatus()
+
+    // Check if we're returning from OAuth callback
+    const params = new URLSearchParams(window.location.search)
+    const oneDriveStatus = params.get('onedrive')
+
+    if (oneDriveStatus === 'connected') {
+      setMessage({
+        type: 'success',
+        text: 'OneDrive connected successfully!',
+      })
+      // Remove query params from URL
+      window.history.replaceState({}, '', '/settings')
+    } else if (oneDriveStatus === 'error') {
+      const errorMessage = params.get('message') || 'Failed to connect OneDrive'
+      setMessage({
+        type: 'error',
+        text: decodeURIComponent(errorMessage),
+      })
+      // Remove query params from URL
+      window.history.replaceState({}, '', '/settings')
+    }
   }, [])
 
   const fetchStatus = async () => {
@@ -56,22 +77,16 @@ export default function OneDriveConnection() {
       setConnecting(true)
       setMessage(null)
 
-      // Call the connect endpoint - no user interaction needed!
-      const response = await api.post('/api/v1/organization_onedrive/connect')
+      // Get OAuth authorization URL
+      const response = await api.get('/api/v1/organization_onedrive/authorize')
 
-      setMessage({
-        type: 'success',
-        text: response.message || 'OneDrive connected successfully!',
-      })
-
-      // Refresh status
-      await fetchStatus()
+      // Redirect user to Microsoft sign-in
+      window.location.href = response.auth_url
     } catch (err) {
       setMessage({
         type: 'error',
-        text: err.message || 'Failed to connect OneDrive',
+        text: err.message || 'Failed to start OneDrive connection',
       })
-    } finally {
       setConnecting(false)
     }
   }
@@ -239,7 +254,8 @@ export default function OneDriveConnection() {
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">How it works:</h4>
                     <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
                       <li>Click "Connect OneDrive" below</li>
-                      <li>OneDrive will be connected using your Azure app credentials</li>
+                      <li>Sign in with your Microsoft account</li>
+                      <li>Grant permissions for OneDrive access</li>
                       <li>All jobs immediately gain document management capabilities</li>
                       <li>No need to reconnect for individual jobs!</li>
                     </ol>
@@ -264,7 +280,7 @@ export default function OneDriveConnection() {
                   </div>
 
                   <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-                    <strong>Note:</strong> Your Azure app must be configured with Application permissions (not Delegated permissions) for this to work. See setup guide for details.
+                    <strong>Note:</strong> Your Azure app must be configured with Delegated permissions for user sign-in. See setup guide for details.
                   </div>
                 </div>
               )}
