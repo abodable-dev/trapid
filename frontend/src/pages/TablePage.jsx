@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import CurrencyCell from '../components/table/CurrencyCell'
 import AutocompleteLookupCell from '../components/table/AutocompleteLookupCell'
@@ -23,10 +23,15 @@ import {
   ChevronDownIcon,
   LinkIcon,
   DocumentIcon,
+  ChevronUpIcon,
+  TableCellsIcon,
+  CalculatorIcon,
+  EyeSlashIcon,
 } from '@heroicons/react/24/outline'
 
 export default function TablePage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [table, setTable] = useState(null)
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,6 +40,7 @@ export default function TablePage() {
   const [editValue, setEditValue] = useState('')
   const [isAddingRow, setIsAddingRow] = useState(false)
   const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false)
+  const [showColumnInfo, setShowColumnInfo] = useState(false)
 
   useEffect(() => {
     loadTable()
@@ -69,13 +75,37 @@ export default function TablePage() {
   const handleAddRow = async () => {
     if (isAddingRow) return
 
+    // Make sure we have a table with columns
+    if (!table || !table.columns) {
+      console.error('Table or columns not loaded')
+      alert('Please wait for the table to finish loading')
+      return
+    }
+
+    // Check if table has any columns
+    if (table.columns.length === 0) {
+      alert('This table has no columns yet. Please add columns before adding records.')
+      return
+    }
+
     try {
       setIsAddingRow(true)
+
+      // Debug logging
+      console.log('Table object:', table)
+      console.log('Table columns:', table.columns)
+      console.log('Number of columns:', table.columns?.length)
+
       // Create an empty record with all columns
       const newRecordData = {}
       table.columns.forEach(col => {
+        console.log('Processing column:', col)
+        console.log('Column name:', col.column_name)
         newRecordData[col.column_name] = ''
       })
+
+      console.log('Final newRecordData:', newRecordData)
+      console.log('newRecordData keys:', Object.keys(newRecordData))
 
       const response = await api.post(`/api/v1/tables/${id}/records`, {
         record: newRecordData
@@ -227,17 +257,17 @@ export default function TablePage() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 h-screen flex flex-col bg-white dark:bg-gray-900">
       {/* Header - Google Sheets style */}
-      <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3">
+      <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-x-4">
-            <Link
-              to="/dashboard"
+            <button
+              onClick={() => navigate(-1)}
               className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             >
               <ChevronLeftIcon className="h-5 w-5" />
-            </Link>
+            </button>
             <div>
               <h1 className="text-lg font-normal text-gray-900 dark:text-white">
                 {table.name}
@@ -250,6 +280,15 @@ export default function TablePage() {
             </div>
           </div>
           <div className="flex items-center gap-x-1">
+            <button
+              type="button"
+              onClick={() => setShowColumnInfo(!showColumnInfo)}
+              className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+            >
+              <TableCellsIcon className="h-4 w-4" />
+              Columns
+              {showColumnInfo ? <ChevronUpIcon className="h-3 w-3" /> : <ChevronDownIcon className="h-3 w-3" />}
+            </button>
             <button
               type="button"
               className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
@@ -273,7 +312,7 @@ export default function TablePage() {
             <button
               type="button"
               onClick={handleAddRow}
-              disabled={isAddingRow}
+              disabled={isAddingRow || !table || !table.columns || table.columns.length === 0}
               className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <PlusIcon className="h-4 w-4" />
@@ -283,8 +322,157 @@ export default function TablePage() {
         </div>
       </div>
 
-      {/* Table Container - Google Sheets grid */}
-      <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
+      {/* Columns Information Panel */}
+      {showColumnInfo && (
+        <div className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 px-4 py-4">
+          <div className="max-w-7xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Table Columns ({table.columns.length})
+              </h3>
+
+              {/* Summary Stats */}
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <LinkIcon className="h-4 w-4 text-blue-500" />
+                  <span className="text-gray-600 dark:text-gray-400">
+                    {table.columns.filter(c => c.lookup_table_id).length} lookups
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <EyeSlashIcon className="h-4 w-4 text-orange-500" />
+                  <span className="text-gray-600 dark:text-gray-400">
+                    {table.columns.filter(c => isSystemOrHiddenColumn(c.column_name)).length} hidden
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CalculatorIcon className="h-4 w-4 text-purple-500" />
+                  <span className="text-gray-600 dark:text-gray-400">
+                    {table.columns.filter(c => c.column_type === 'computed').length} computed
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {table.columns.map((column) => {
+                const isSystemColumn = isSystemOrHiddenColumn(column.column_name)
+                return (
+                  <div
+                    key={column.id}
+                    className={`rounded-lg border p-3 hover:shadow-sm transition-shadow ${
+                      isSystemColumn
+                        ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700'
+                        : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {getColumnIcon(column.column_type)}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {column.name}
+                        </h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {column.column_name}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
+                      {formatColumnType(column.column_type)}
+                    </span>
+                    {column.column_type === 'computed' && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                        <CalculatorIcon className="h-3 w-3 mr-1" />
+                        Formula
+                      </span>
+                    )}
+                    {column.column_type === 'lookup' && column.lookup_table_id && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                        <LinkIcon className="h-3 w-3 mr-1" />
+                        Lookup
+                      </span>
+                    )}
+                    {column.required && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                        Required
+                      </span>
+                    )}
+                    {column.is_unique && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                        Unique
+                      </span>
+                    )}
+                    {column.is_title && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                        Title
+                      </span>
+                    )}
+                    {isSystemColumn && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                        <EyeSlashIcon className="h-3 w-3 mr-1" />
+                        Hidden
+                      </span>
+                    )}
+                  </div>
+                  {column.description && (
+                    <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                      {column.description}
+                    </p>
+                  )}
+
+                  {/* Relationship information */}
+                  {(column.lookup_table_name || column.referenced_by) && (
+                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                      {column.lookup_table_name && (
+                        <div className="flex items-start gap-2">
+                          <LinkIcon className="h-3 w-3 text-blue-500 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                          <div className="text-xs">
+                            <span className="text-gray-600 dark:text-gray-400">Looks up to: </span>
+                            <span className="font-medium text-blue-600 dark:text-blue-400">
+                              {column.lookup_table_name}
+                            </span>
+                            {column.lookup_display_column && (
+                              <span className="text-gray-500 dark:text-gray-500">
+                                {' '}({column.lookup_display_column})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {column.referenced_by && column.referenced_by.length > 0 && (
+                        <div className="flex items-start gap-2">
+                          <LinkIcon className="h-3 w-3 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                          <div className="text-xs">
+                            <span className="text-gray-600 dark:text-gray-400">Referenced by: </span>
+                            <div className="mt-1 space-y-1">
+                              {column.referenced_by.map((ref, idx) => (
+                                <div key={idx} className="text-green-600 dark:text-green-400 font-medium">
+                                  {ref.table_name} ({ref.column_name})
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Table Container - Google Sheets grid with custom scrollbar */}
+      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-900">
+        <div className="w-full h-full overflow-auto" style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#9CA3AF #E5E7EB'
+        }}>
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -295,43 +483,64 @@ export default function TablePage() {
         ) : records.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">No records yet</h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by adding your first record</p>
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={handleAddRow}
-                  disabled={isAddingRow}
-                  className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                  {isAddingRow ? 'Adding...' : 'Add Record'}
-                </button>
-              </div>
+              {table && table.columns && table.columns.length === 0 ? (
+                <>
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">No columns yet</h3>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Add columns to this table before adding records</p>
+                  <div className="mt-4">
+                    <Link
+                      to={`/settings/tables`}
+                      className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded"
+                    >
+                      <Cog6ToothIcon className="h-4 w-4" />
+                      Manage Columns
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">No records yet</h3>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by adding your first record</p>
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={handleAddRow}
+                      disabled={isAddingRow || !table || !table.columns || table.columns.length === 0}
+                      className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <PlusIcon className="h-4 w-4" />
+                      {isAddingRow ? 'Adding...' : 'Add Record'}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         ) : (
-          <div className="inline-block min-w-full align-middle">
-            <table className="min-w-full border-collapse">
+          <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-800/50">
                   <th className="sticky left-0 z-20 bg-gray-50 dark:bg-gray-800/50 border-r border-b border-gray-200 dark:border-gray-700 px-2 py-1 text-left w-8">
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#</span>
                   </th>
-                  {table.columns.map((column, index) => (
-                    <th
-                      key={column.id}
-                      className={`border-r border-b border-gray-200 dark:border-gray-700 px-2 py-1 text-left min-w-[120px] ${
-                        index === 0 ? 'sticky left-8 z-20 bg-gray-50 dark:bg-gray-800/50' : ''
-                      }`}
-                    >
-                      <ColumnHeader
-                        column={column}
-                        tableId={id}
-                        onTypeChange={handleColumnTypeChange}
-                      />
-                    </th>
-                  ))}
+                  {table.columns.map((column, index) => {
+                    const isSystemColumn = isSystemOrHiddenColumn(column.column_name)
+                    return (
+                      <th
+                        key={column.id}
+                        style={{ minWidth: '200px' }}
+                        className={`border-r border-b border-gray-200 dark:border-gray-700 px-2 py-1 text-left ${
+                          index === 0 ? 'sticky left-8 z-20 bg-gray-50 dark:bg-gray-800/50' : ''
+                        } ${isSystemColumn ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`}
+                      >
+                        <ColumnHeader
+                          column={column}
+                          tableId={id}
+                          onTypeChange={handleColumnTypeChange}
+                        />
+                      </th>
+                    )
+                  })}
                   <th className="border-r border-b border-gray-200 dark:border-gray-700 px-1 py-1 text-center w-8 bg-gray-50 dark:bg-gray-800/50">
                     <button
                       type="button"
@@ -356,14 +565,18 @@ export default function TablePage() {
                     {table.columns.map((column, colIndex) => {
                       const isEditing = editingCell?.recordId === record.id && editingCell?.columnName === column.column_name
                       const isCurrency = column.column_type === 'currency'
+                      const isSystemColumn = isSystemOrHiddenColumn(column.column_name)
 
                       return (
                         <td
                           key={column.id}
+                          style={{ minWidth: '200px' }}
                           className={`border-r border-b border-gray-200 dark:border-gray-700 px-0 py-0 text-xs group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10 ${
                             colIndex === 0
                               ? 'sticky left-8 z-10 bg-white dark:bg-gray-900 group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10'
-                              : 'bg-white dark:bg-gray-900'
+                              : isSystemColumn
+                                ? 'bg-orange-50 dark:bg-orange-900/20 group-hover:bg-orange-100/50 dark:group-hover:bg-orange-900/30'
+                                : 'bg-white dark:bg-gray-900'
                           }`}
                           onClick={() => !isEditing && !isCurrency && handleCellClick(record.id, column.column_name, record[column.column_name])}
                         >
@@ -405,8 +618,8 @@ export default function TablePage() {
                 ))}
               </tbody>
             </table>
-          </div>
         )}
+        </div>
       </div>
 
       {/* Add Column Modal */}
@@ -425,8 +638,9 @@ function getColumnIcon(columnType) {
 
   const icons = {
     'single_line_text': <DocumentTextIcon {...iconProps} />,
-    'multi_line_text': <DocumentIcon {...iconProps} />,
+    'multiple_lines_text': <DocumentIcon {...iconProps} />,
     'number': <HashtagIcon {...iconProps} />,
+    'whole_number': <HashtagIcon {...iconProps} />,
     'email': <EnvelopeIcon {...iconProps} />,
     'phone': <PhoneIcon {...iconProps} />,
     'date': <CalendarIcon {...iconProps} />,
@@ -436,8 +650,70 @@ function getColumnIcon(columnType) {
     'percentage': <HashtagIcon {...iconProps} />,
     'choice': <ChevronDownIcon {...iconProps} />,
     'url': <LinkIcon {...iconProps} />,
+    'lookup': <LinkIcon {...iconProps} />,
+    'multiple_lookups': <LinkIcon {...iconProps} />,
+    'computed': <CalculatorIcon {...iconProps} />,
   }
   return icons[columnType] || <DocumentTextIcon {...iconProps} />
+}
+
+function formatColumnType(columnType) {
+  const typeNames = {
+    'single_line_text': 'Text',
+    'multiple_lines_text': 'Long Text',
+    'number': 'Number',
+    'whole_number': 'Whole Number',
+    'email': 'Email',
+    'phone': 'Phone',
+    'date': 'Date',
+    'date_and_time': 'Date & Time',
+    'boolean': 'Yes/No',
+    'currency': 'Currency',
+    'percentage': 'Percentage',
+    'choice': 'Choice',
+    'url': 'URL',
+    'lookup': 'Lookup',
+    'multiple_lookups': 'Multiple Lookups',
+    'computed': 'Computed',
+    'user': 'User',
+  }
+  return typeNames[columnType] || columnType
+}
+
+// Check if a column is a system column that's typically hidden from end users
+function isSystemOrHiddenColumn(columnName) {
+  const systemColumns = [
+    'id',
+    'sys_type_id',
+    'deleted',
+    'drive_id',
+    'folder_id',
+    'parent_id',
+    'parent$type',
+    'range$type',
+    'colour_spec$type',
+    'tedmodel$type',
+    'pricebook$type',
+    'created_at',
+    'updated_at',
+  ]
+
+  // Check exact matches
+  if (systemColumns.includes(columnName)) {
+    return true
+  }
+
+  // Check for columns ending with $type (relationship type indicators)
+  if (columnName.endsWith('$type')) {
+    return true
+  }
+
+  // Check for columns ending with _id (foreign keys, except user-facing ones)
+  if (columnName.endsWith('_id') && !['product_id', 'contact_id', 'job_id'].includes(columnName)) {
+    return true
+  }
+
+  return false
 }
 
 function formatValue(value, columnType) {
