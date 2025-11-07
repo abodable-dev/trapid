@@ -24,7 +24,8 @@ module Api
           when 'suppliers'
             @contacts = @contacts.suppliers
           when 'both'
-            @contacts = @contacts.where(contact_type: 'both')
+            # Filter for contacts that have both 'customer' and 'supplier' in contact_types array
+            @contacts = @contacts.where("contact_types @> ARRAY['customer', 'supplier']::text[]")
           end
         end
 

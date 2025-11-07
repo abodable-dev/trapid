@@ -122,6 +122,9 @@ Rails.application.routes.draw do
         end
       end
 
+      # Users management
+      resources :users, only: [:index, :show]
+
       # Designs library
       resources :designs
 
