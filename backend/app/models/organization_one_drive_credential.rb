@@ -8,7 +8,8 @@ class OrganizationOneDriveCredential < ApplicationRecord
   # Validations
   validates :access_token, presence: true
   validates :refresh_token, presence: true
-  validates :drive_id, presence: true
+  # drive_id is optional on create, set when client initializes and gets drive info
+  # validates :drive_id, presence: true
 
   # Scopes
   scope :active, -> { where(is_active: true) }
