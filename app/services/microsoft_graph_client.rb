@@ -102,16 +102,26 @@ class MicrosoftGraphClient
 
   # Get user's default drive (or first available drive for app permissions)
   def get_default_drive
-    # For app permissions, we need to get a specific drive
-    # Try to get the organization's default drive
-    response = get('/drives')
+    # For app permissions with client credentials, we need to specify a user
+    # Try to get a specific user's drive (use admin or service account)
 
-    if response['value']&.any?
-      response['value'].first # Return first available drive
-    else
-      # Fallback to /me/drive for delegated permissions
-      get('/me/drive')
+    # Option 1: Try to get the first user's drive
+    users_response = get('/users?$top=1&$filter=accountEnabled eq true')
+
+    if users_response['value']&.any?
+      user_id = users_response['value'].first['id']
+      Rails.logger.info "Using drive for user: #{users_response['value'].first['userPrincipalName']}"
+      return get("/users/#{user_id}/drive")
     end
+
+    # Option 2: Fallback - try to list all drives (requires Sites.Read.All)
+    drives_response = get('/drives')
+    if drives_response['value']&.any?
+      return drives_response['value'].first
+    end
+
+    # Option 3: Last resort - try /me/drive for delegated permissions
+    get('/me/drive')
   end
 
   # Get drive by ID
