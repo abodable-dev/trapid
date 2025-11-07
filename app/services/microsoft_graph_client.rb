@@ -16,15 +16,15 @@ class MicrosoftGraphClient
     ensure_valid_token!
   end
 
-  # OAuth Methods (for per-construction auth - legacy)
+  # OAuth Methods
 
   # Get authorization URL for user to consent
-  def self.authorization_url(redirect_uri, state = nil)
+  def self.authorization_url(client_id:, redirect_uri:, scope:, state: nil)
     params = {
-      client_id: ENV['ONEDRIVE_CLIENT_ID'],
+      client_id: client_id,
       response_type: 'code',
       redirect_uri: redirect_uri,
-      scope: 'Files.ReadWrite.All offline_access',
+      scope: scope,
       response_mode: 'query'
     }
     params[:state] = state if state.present?
@@ -32,12 +32,12 @@ class MicrosoftGraphClient
     "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?#{params.to_query}"
   end
 
-  # Exchange authorization code for access token (for per-construction auth)
-  def self.exchange_code_for_token(code, redirect_uri)
+  # Exchange authorization code for access tokens
+  def self.exchange_code_for_tokens(code:, client_id:, client_secret:, redirect_uri:)
     response = HTTParty.post(TOKEN_URL,
       body: {
-        client_id: ENV['ONEDRIVE_CLIENT_ID'],
-        client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+        client_id: client_id,
+        client_secret: client_secret,
         code: code,
         redirect_uri: redirect_uri,
         grant_type: 'authorization_code'
@@ -46,6 +46,16 @@ class MicrosoftGraphClient
     )
 
     handle_token_response(response)
+  end
+
+  # Legacy method for backward compatibility
+  def self.exchange_code_for_token(code, redirect_uri)
+    exchange_code_for_tokens(
+      code: code,
+      client_id: ENV['ONEDRIVE_CLIENT_ID'],
+      client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+      redirect_uri: redirect_uri
+    )
   end
 
   # Client Credentials Flow (for organization-wide auth)
