@@ -75,35 +75,28 @@ class MicrosoftGraphClient
 
   # Refresh access token
   def refresh_token!
-    # Check if this is organization credential (doesn't use refresh tokens with client credentials)
-    if @credential.is_a?(OrganizationOneDriveCredential)
-      # For organization credentials using client credentials flow, just get a new token
-      token_data = self.class.authenticate_as_application
-
-      @credential.update!(
-        access_token: token_data[:access_token],
-        token_expires_at: token_data[:expires_at]
-      )
-    else
-      # For per-construction credentials, use refresh token
-      response = HTTParty.post(TOKEN_URL,
-        body: {
-          client_id: ENV['ONEDRIVE_CLIENT_ID'],
-          client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
-          refresh_token: @credential.refresh_token,
-          grant_type: 'refresh_token'
-        },
-        headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
-      )
-
-      token_data = self.class.handle_token_response(response)
-
-      @credential.update!(
-        access_token: token_data[:access_token],
-        refresh_token: token_data[:refresh_token] || @credential.refresh_token,
-        token_expires_at: token_data[:expires_at]
-      )
+    # Both organization and per-construction credentials now use refresh tokens with delegated permissions
+    unless @credential.refresh_token
+      raise AuthenticationError, "No refresh token available. Please reconnect OneDrive."
     end
+
+    response = HTTParty.post(TOKEN_URL,
+      body: {
+        client_id: ENV['ONEDRIVE_CLIENT_ID'],
+        client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+        refresh_token: @credential.refresh_token,
+        grant_type: 'refresh_token'
+      },
+      headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
+    )
+
+    token_data = self.class.handle_token_response(response)
+
+    @credential.update!(
+      access_token: token_data[:access_token],
+      refresh_token: token_data[:refresh_token] || @credential.refresh_token,
+      token_expires_at: token_data[:expires_at]
+    )
 
     token_data
   end
