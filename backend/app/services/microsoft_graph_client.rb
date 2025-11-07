@@ -105,26 +105,35 @@ class MicrosoftGraphClient
 
   # Get user's default drive (or first available drive for app permissions)
   def get_default_drive
-    # For app permissions with client credentials, we need to specify a user
-    # Try to get a specific user's drive (use admin or service account)
-
-    # Option 1: Try to get the first user's drive
-    users_response = get('/users?$top=1&$filter=accountEnabled eq true')
-
-    if users_response['value']&.any?
-      user_id = users_response['value'].first['id']
-      Rails.logger.info "Using drive for user: #{users_response['value'].first['userPrincipalName']}"
-      return get("/users/#{user_id}/drive")
+    # For delegated permissions (OAuth), use /me/drive to get the signed-in user's drive
+    # This only requires Files.ReadWrite.All permission
+    begin
+      Rails.logger.info "Attempting to get drive using /me/drive (delegated permissions)"
+      return get('/me/drive')
+    rescue APIError => e
+      Rails.logger.warn "Failed to get /me/drive: #{e.message}"
     end
 
-    # Option 2: Fallback - try to list all drives (requires Sites.Read.All)
+    # Fallback for app permissions with client credentials
+    # Option 1: Try to get the first user's drive (requires User.Read.All)
+    begin
+      users_response = get('/users?$top=1&$filter=accountEnabled eq true')
+      if users_response['value']&.any?
+        user_id = users_response['value'].first['id']
+        Rails.logger.info "Using drive for user: #{users_response['value'].first['userPrincipalName']}"
+        return get("/users/#{user_id}/drive")
+      end
+    rescue APIError => e
+      Rails.logger.warn "Failed to get users: #{e.message}"
+    end
+
+    # Option 2: Last resort - try to list all drives (requires Sites.Read.All)
     drives_response = get('/drives')
     if drives_response['value']&.any?
       return drives_response['value'].first
     end
 
-    # Option 3: Last resort - try /me/drive for delegated permissions
-    get('/me/drive')
+    raise APIError.new("Could not find any accessible drives")
   end
 
   # Get drive by ID
