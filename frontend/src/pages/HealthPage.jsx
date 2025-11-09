@@ -8,6 +8,10 @@ export default function HealthPage() {
     itemsWithoutDefaultSupplier: {
       count: 0,
       items: []
+    },
+    suppliersWithIncompleteCategoryPricing: {
+      count: 0,
+      suppliers: []
     }
   })
 
@@ -65,7 +69,7 @@ export default function HealthPage() {
               </h2>
             </div>
 
-            <div className="p-6">
+            <div className="p-6 space-y-8">
               {/* Items Without Default Supplier */}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -151,6 +155,121 @@ export default function HealthPage() {
                     </span>
                   ) : (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400">
+                      Needs Attention
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Suppliers with Incomplete Category Pricing */}
+              <div className="flex items-start justify-between pt-8 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <div className={`flex items-center justify-center w-12 h-12 rounded-lg ${
+                      healthChecks.suppliersWithIncompleteCategoryPricing.count > 0
+                        ? 'bg-orange-100 dark:bg-orange-900/30'
+                        : 'bg-green-100 dark:bg-green-900/30'
+                    }`}>
+                      <span className={`text-2xl font-bold ${
+                        healthChecks.suppliersWithIncompleteCategoryPricing.count > 0
+                          ? 'text-orange-600 dark:text-orange-400'
+                          : 'text-green-600 dark:text-green-400'
+                      }`}>
+                        {healthChecks.suppliersWithIncompleteCategoryPricing.count}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-medium text-gray-900 dark:text-white">
+                        Suppliers with Incomplete Category Pricing
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Suppliers who have price history for some items in a category but not all
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Supplier List */}
+                  {healthChecks.suppliersWithIncompleteCategoryPricing.count > 0 && (
+                    <div className="mt-4 ml-15">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                          <thead className="bg-gray-50 dark:bg-gray-900">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Supplier
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Category
+                              </th>
+                              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Coverage
+                              </th>
+                              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Items Priced
+                              </th>
+                              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Missing Prices
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            {healthChecks.suppliersWithIncompleteCategoryPricing.suppliers.slice(0, 15).map((entry, idx) => (
+                              <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                                  {entry.supplier.name}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                  {entry.category}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                      <div
+                                        className={`h-2 rounded-full ${
+                                          entry.coverage_percentage >= 75
+                                            ? 'bg-green-500'
+                                            : entry.coverage_percentage >= 50
+                                              ? 'bg-yellow-500'
+                                              : 'bg-orange-500'
+                                        }`}
+                                        style={{ width: `${entry.coverage_percentage}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-gray-600 dark:text-gray-400 text-xs font-medium">
+                                      {entry.coverage_percentage}%
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-center text-gray-600 dark:text-gray-400">
+                                  {entry.items_with_pricing} / {entry.total_items_in_category}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-center">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400">
+                                    {entry.missing_items_count}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {healthChecks.suppliersWithIncompleteCategoryPricing.count > 15 && (
+                          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 text-sm text-gray-600 dark:text-gray-400 text-center">
+                            Showing 15 of {healthChecks.suppliersWithIncompleteCategoryPricing.count} supplier-category combinations
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Status Badge */}
+                <div>
+                  {healthChecks.suppliersWithIncompleteCategoryPricing.count === 0 ? (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
+                      Healthy
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400">
                       Needs Attention
                     </span>
                   )}
