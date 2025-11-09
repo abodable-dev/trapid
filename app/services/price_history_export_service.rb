@@ -164,10 +164,16 @@ class PriceHistoryExportService
   end
 
   def sanitize_cell_value(value)
-    return '' if value.nil? || value.to_s.strip.empty?
+    return nil if value.nil?
+    return nil if value.to_s.strip.empty?
 
     # Convert to string
-    clean_value = value.to_s
+    clean_value = value.to_s.strip
+
+    # For very simple strings (alphanumeric with common punctuation), return as-is
+    if clean_value.match?(/\A[\w\s\-.,\/()&]+\z/)
+      return clean_value
+    end
 
     # Remove any invalid UTF-8 sequences
     clean_value = clean_value.encode('UTF-8', invalid: :replace, undef: :replace, replace: '')
@@ -190,7 +196,7 @@ class PriceHistoryExportService
     # Remove leading/trailing whitespace
     clean_value = clean_value.strip
 
-    # Return empty string if nothing left after sanitization
-    clean_value.empty? ? '' : clean_value
+    # Return nil if nothing left after sanitization (caxlsx handles nil better than empty string)
+    clean_value.empty? ? nil : clean_value
   end
 end
