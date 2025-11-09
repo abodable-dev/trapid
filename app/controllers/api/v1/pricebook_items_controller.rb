@@ -317,6 +317,11 @@ module Api
         @item.current_price = params[:price]
         @item.supplier_id = params[:supplier_id] if params[:supplier_id].present?
 
+        # If item doesn't have a default supplier yet, set this one as default
+        if @item.default_supplier_id.nil? && params[:supplier_id].present?
+          @item.default_supplier_id = params[:supplier_id]
+        end
+
         if @item.save
           # Create price history entry with LGA and date effective
           price_history = @item.price_histories.create!(
