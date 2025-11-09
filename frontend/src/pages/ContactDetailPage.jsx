@@ -366,7 +366,6 @@ export default function ContactDetailPage() {
               )}
             </div>
           )}
-          </div>
         </div>
 
         {/* Sidebar */}

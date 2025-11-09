@@ -5,9 +5,11 @@ class Table < ApplicationRecord
 
   validates :name, presence: true
   validates :database_table_name, presence: true, uniqueness: true
+  validates :slug, presence: true, uniqueness: true
   validate :name_not_reserved
 
   before_validation :generate_database_table_name, if: -> { database_table_name.blank? }
+  before_validation :generate_slug, if: -> { slug.blank? || name_changed? }
 
   # Get the dynamically created ActiveRecord model for this table
   def dynamic_model
@@ -73,6 +75,22 @@ class Table < ApplicationRecord
     # Add a random suffix to avoid collisions
     random_suffix = SecureRandom.hex(4)
     self.database_table_name = "user_#{base_name}_#{random_suffix}"
+  end
+
+  def generate_slug
+    # Generate a URL-friendly slug from the name field
+    # e.g., "Price History" => "price-history"
+    base_slug = name.parameterize
+    slug_candidate = base_slug
+    counter = 1
+
+    # Ensure uniqueness
+    while Table.where(slug: slug_candidate).where.not(id: id).exists?
+      slug_candidate = "#{base_slug}-#{counter}"
+      counter += 1
+    end
+
+    self.slug = slug_candidate
   end
 
   def add_lookup_associations(table_columns)

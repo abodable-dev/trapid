@@ -429,9 +429,9 @@ export default function PriceBooksPage() {
   }
 
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-8 h-screen flex flex-col bg-white dark:bg-gray-900">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -my-10 flex flex-col bg-white dark:bg-gray-900" style={{ height: 'calc(100vh - 4rem)' }}>
       {/* Header with search */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-4">
+      <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-4">
         <div>
             <div className="flex items-center justify-between gap-4 mb-4">
               <div className="flex items-center gap-3">
@@ -633,11 +633,11 @@ export default function PriceBooksPage() {
         </div>
 
       {/* Scroll container for table */}
-      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-900">
-        <div className="w-full h-full overflow-auto" style={{
-          scrollbarWidth: 'thin',
-          scrollbarColor: '#9CA3AF #E5E7EB'
-        }}>
+      <div className="flex-1 overflow-auto bg-white dark:bg-gray-900" style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#9CA3AF #E5E7EB'
+      }}>
+        <div className="w-full h-full">
           <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
               <tr>
@@ -817,7 +817,7 @@ export default function PriceBooksPage() {
                             {item.unit_of_measure}
                           </td>
                           <td style={{ minWidth: '200px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
-                            {item.supplier?.name || '-'}
+                            {item.default_supplier?.name || item.supplier?.name || '-'}
                           </td>
                           <td style={{ minWidth: '150px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
                             {item.brand || '-'}

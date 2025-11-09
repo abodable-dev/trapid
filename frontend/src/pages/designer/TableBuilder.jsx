@@ -130,6 +130,7 @@ export default function TableBuilder() {
       }
 
       const tableId = tableResponse.table.id
+      const tableSlug = tableResponse.table.slug
 
       // Step 2: Create each column
       for (let index = 0; index < columns.length; index++) {
@@ -154,7 +155,7 @@ export default function TableBuilder() {
       }
 
       // Step 3: Navigate to the spreadsheet view
-      navigate(`/tables/${tableId}`)
+      navigate(`/tables/${tableSlug}`)
     } catch (err) {
       console.error('Table creation error:', err)
       setError(err.response?.data?.error || err.message || 'Failed to create table')

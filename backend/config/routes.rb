@@ -34,6 +34,9 @@ Rails.application.routes.draw do
       get 'grok/plans/:id', to: 'grok#show_plan'
       patch 'grok/plans/:id', to: 'grok#update_plan'
 
+      # Health checks
+      get 'health/pricebook', to: 'health#pricebook'
+
       # Construction jobs management
       resources :constructions do
         # Schedule tasks (nested under constructions)

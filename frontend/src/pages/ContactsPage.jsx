@@ -623,11 +623,11 @@ export default function ContactsPage() {
             )}
 
             {/* Contacts Table */}
-            <div className="flex-1 overflow-hidden bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="w-full h-full overflow-auto" style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#9CA3AF #E5E7EB'
-              }}>
+            <div className="flex-1 overflow-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#9CA3AF #E5E7EB'
+            }}>
+              <div className="w-full h-full">
                 <table key={`contacts-${filter}-${contacts.length}`} className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
                   <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
                     <tr>
@@ -1027,11 +1027,11 @@ export default function ContactsPage() {
             </div>
 
             {/* Suppliers Table */}
-            <div className="flex-1 overflow-hidden bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="w-full h-full overflow-auto" style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#9CA3AF #E5E7EB'
-              }}>
+            <div className="flex-1 overflow-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#9CA3AF #E5E7EB'
+            }}>
+              <div className="w-full h-full">
                 <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
                   <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
                     <tr>

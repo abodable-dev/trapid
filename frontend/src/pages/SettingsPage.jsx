@@ -1,14 +1,49 @@
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { RocketLaunchIcon } from '@heroicons/react/24/outline'
 import AccountsLayout from '../components/layout/AccountsLayout'
 import XeroConnection from '../components/settings/XeroConnection'
 import OneDriveConnection from '../components/settings/OneDriveConnection'
 import FolderTemplatesTab from '../components/settings/FolderTemplatesTab'
+import TablesTab from '../components/settings/TablesTab'
+import SchemaPage from './SchemaPage'
 
 export default function SettingsPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  // Map tab names to indices
+  const tabs = ['integrations', 'folder-templates', 'tables', 'schema', 'deployment']
+
+  // Get initial tab index from URL query parameter
+  const getInitialTabIndex = () => {
+    const params = new URLSearchParams(location.search)
+    const tab = params.get('tab')
+    const index = tabs.indexOf(tab)
+    return index >= 0 ? index : 0
+  }
+
+  const [selectedIndex, setSelectedIndex] = useState(getInitialTabIndex())
+
+  // Update URL when tab changes
+  const handleTabChange = (index) => {
+    setSelectedIndex(index)
+    const tabName = tabs[index]
+    navigate(`/settings?tab=${tabName}`, { replace: true })
+  }
+
+  // Update selected tab when URL changes (e.g., browser back/forward)
+  useEffect(() => {
+    const newIndex = getInitialTabIndex()
+    if (newIndex !== selectedIndex) {
+      setSelectedIndex(newIndex)
+    }
+  }, [location.search])
+
   return (
     <AccountsLayout>
-      <TabGroup>
+      <TabGroup selectedIndex={selectedIndex} onChange={handleTabChange}>
         <div className="px-4 sm:px-6 lg:px-8 py-6">
           <TabList className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 max-w-2xl">
             <Tab
@@ -34,6 +69,30 @@ export default function SettingsPage() {
               }
             >
               Folder Templates
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Tables
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Schema
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -73,6 +132,16 @@ export default function SettingsPage() {
             <div className="px-4 sm:px-6 lg:px-8 py-10">
               <FolderTemplatesTab />
             </div>
+          </TabPanel>
+
+          {/* Tables Tab */}
+          <TabPanel>
+            <TablesTab />
+          </TabPanel>
+
+          {/* Schema Tab */}
+          <TabPanel>
+            <SchemaPage />
           </TabPanel>
 
           {/* Deployment Tab */}
