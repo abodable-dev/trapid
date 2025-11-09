@@ -542,17 +542,26 @@ export default function PriceBooksPage() {
   }
 
   const handleDragStart = (e, columnKey) => {
+    e.stopPropagation()
     setDraggedColumn(columnKey)
     e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', columnKey)
   }
 
   const handleDragOver = (e) => {
     e.preventDefault()
+    e.stopPropagation()
     e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDragEnter = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
   }
 
   const handleDrop = (e, targetColumnKey) => {
     e.preventDefault()
+    e.stopPropagation()
 
     if (!draggedColumn || draggedColumn === targetColumnKey) {
       setDraggedColumn(null)
@@ -575,7 +584,8 @@ export default function PriceBooksPage() {
     setDraggedColumn(null)
   }
 
-  const handleDragEnd = () => {
+  const handleDragEnd = (e) => {
+    e.preventDefault()
     setDraggedColumn(null)
   }
 
@@ -855,6 +865,7 @@ export default function PriceBooksPage() {
                         draggable
                         onDragStart={(e) => handleDragStart(e, key)}
                         onDragOver={handleDragOver}
+                        onDragEnter={handleDragEnter}
                         onDrop={(e) => handleDrop(e, key)}
                         onDragEnd={handleDragEnd}
                         className={`flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded border-2 transition-all cursor-move ${
