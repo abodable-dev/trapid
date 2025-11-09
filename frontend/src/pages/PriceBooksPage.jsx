@@ -741,6 +741,9 @@ export default function PriceBooksPage() {
                     className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                   />
                 </th>
+                <th style={{ minWidth: '60px', width: '60px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Image
+                </th>
                 <th style={{ minWidth: '200px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                   <ColumnHeaderMenu
                     label="Code"
@@ -858,6 +861,26 @@ export default function PriceBooksPage() {
                               onChange={() => handleSelectItem(item.id)}
                               className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                             />
+                          </td>
+                          <td style={{ minWidth: '60px', width: '60px' }} className="px-2 py-2 border-r border-gray-200 dark:border-gray-700">
+                            {item.image_url ? (
+                              <div className="flex justify-center">
+                                <img
+                                  src={item.image_url}
+                                  alt={item.item_name}
+                                  className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-600"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none'
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex justify-center">
+                                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 flex items-center justify-center">
+                                  <span className="text-xs text-gray-400">-</span>
+                                </div>
+                              </div>
+                            )}
                           </td>
                           <td style={{ minWidth: '200px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white">
                             {item.item_code}

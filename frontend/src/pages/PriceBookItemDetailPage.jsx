@@ -18,6 +18,9 @@ import {
   PencilIcon,
   EllipsisVerticalIcon,
   TrashIcon,
+  PhotoIcon,
+  QrCodeIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 import AddPriceModal from '../components/modals/AddPriceModal'
 
@@ -31,6 +34,7 @@ export default function PriceBookItemDetailPage() {
   const [isAddPriceModalOpen, setIsAddPriceModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [historyToDelete, setHistoryToDelete] = useState(null)
+  const [enlargedImage, setEnlargedImage] = useState(null)
 
   useEffect(() => {
     loadItem()
@@ -455,6 +459,80 @@ export default function PriceBookItemDetailPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Images Card */}
+            {(item.image_url || item.qr_code_url) && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <PhotoIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  Product Images
+                </h2>
+
+                <div className="space-y-4">
+                  {item.image_url && (
+                    <div>
+                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                        <PhotoIcon className="h-4 w-4" />
+                        Product Photo
+                      </div>
+                      <div className="relative group">
+                        <img
+                          src={item.image_url}
+                          alt={item.item_name}
+                          className="w-full rounded-lg border border-gray-200 dark:border-gray-600 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          style={{ maxHeight: '300px' }}
+                          onClick={() => setEnlargedImage({ url: item.image_url, type: 'photo' })}
+                          onError={(e) => {
+                            e.target.parentElement.innerHTML = '<div class="w-full h-48 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center"><span class="text-sm text-gray-500 dark:text-gray-400">Image not available</span></div>'
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 rounded-lg cursor-pointer pointer-events-none">
+                          <MagnifyingGlassIcon className="h-8 w-8 text-white drop-shadow-lg" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {item.qr_code_url && (
+                    <div>
+                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                        <QrCodeIcon className="h-4 w-4" />
+                        QR Code
+                      </div>
+                      <div className="relative group">
+                        <img
+                          src={item.qr_code_url}
+                          alt={`QR Code for ${item.item_name}`}
+                          className="w-full rounded-lg border border-gray-200 dark:border-gray-600 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          style={{ maxHeight: '300px' }}
+                          onClick={() => setEnlargedImage({ url: item.qr_code_url, type: 'qr' })}
+                          onError={(e) => {
+                            e.target.parentElement.innerHTML = '<div class="w-full h-48 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center"><span class="text-sm text-gray-500 dark:text-gray-400">QR code not available</span></div>'
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 rounded-lg cursor-pointer pointer-events-none">
+                          <MagnifyingGlassIcon className="h-8 w-8 text-white drop-shadow-lg" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {item.requires_photo && !item.image_url && (
+                    <div className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-700">
+                      <ExclamationTriangleIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>This item requires a photo but none has been uploaded yet.</span>
+                    </div>
+                  )}
+
+                  {item.image_source === 'onedrive' && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <ClockIcon className="h-3 w-3" />
+                      <span>Synced from OneDrive {item.image_fetched_at ? `on ${formatDate(item.image_fetched_at)}` : ''}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Supplier Card */}
             {(item.default_supplier || item.supplier) && (
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -580,6 +658,45 @@ export default function PriceBookItemDetailPage() {
         itemId={id}
         onSuccess={loadItem}
       />
+
+      {/* Image Enlargement Modal */}
+      <Dialog open={!!enlargedImage} onClose={() => setEnlargedImage(null)} className="relative z-50">
+        <DialogBackdrop
+          transition
+          className="fixed inset-0 bg-black/90 transition-opacity data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in"
+        />
+
+        <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <DialogPanel
+              transition
+              className="relative transform overflow-hidden transition-all data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in max-w-5xl w-full"
+            >
+              <div className="relative">
+                <img
+                  src={enlargedImage?.url}
+                  alt={enlargedImage?.type === 'qr' ? 'QR Code' : 'Product Photo'}
+                  className="w-full h-auto rounded-lg"
+                  style={{ maxHeight: '90vh', objectFit: 'contain' }}
+                />
+                <button
+                  onClick={() => setEnlargedImage(null)}
+                  className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 backdrop-blur-sm transition-colors"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <div className="absolute bottom-4 left-4 bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-sm">
+                  <div className="text-sm font-medium">
+                    {enlargedImage?.type === 'qr' ? 'QR Code' : 'Product Photo'}: {item.item_name}
+                  </div>
+                </div>
+              </div>
+            </DialogPanel>
+          </div>
+        </div>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} className="relative z-50">

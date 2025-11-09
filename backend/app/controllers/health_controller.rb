@@ -4,7 +4,7 @@ class HealthController < ApplicationController
       status: "ok",
       timestamp: Time.current,
       environment: Rails.env,
-      version: heroku_release_version
+      version: Version.current_version_string
     }
   end
 
