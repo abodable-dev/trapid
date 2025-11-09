@@ -26,30 +26,44 @@
 
 #### `rob` Branch (Development/Staging)
 - **Frontend:** Vercel staging (https://trapid-staging.vercel.app) ✅ Automatic
-- **Backend:** Heroku production (same as main) ✅ Automatic
-- **Note:** Backend changes from `rob` go directly to production
-- **Recommendation:** Test backend changes thoroughly before pushing to `rob`
+- **Backend:** Heroku staging (https://trapid-backend-staging.herokuapp.com) ✅ Automatic
+- **Note:** Completely separate staging environment with copy of production data
+- **Safe for testing:** Changes don't affect production until merged to `main`
 
 ### Development Workflow
 
 **`rob` branch:**
 - Rob works on this branch in Claude Code Web
-- Frontend deploys to staging for safe testing
-- Backend deploys to production (no staging backend environment)
+- Frontend deploys to Vercel staging
+- Backend deploys to Heroku staging (separate environment from production)
+- Both deployments are automatic on push
 - Changes should be reviewed via PR before merging to `main`
 
 ### Manual Deployment Commands
 
 If automatic deployments fail or manual deployment is needed:
 
-**Backend (from any branch to Heroku production):**
+**Backend Production (from main branch):**
 ```bash
 git subtree push --prefix backend heroku main
+```
+
+**Backend Staging (from rob branch):**
+```bash
+git subtree push --prefix backend heroku-staging main
 ```
 
 **Frontend:**
 - Handled automatically by Vercel via GitHub Actions
 - Check deployment status at https://vercel.com/dashboard
+
+### Setting Up Staging Backend
+
+See `SETUP_STAGING_BACKEND.md` for detailed instructions on:
+- Creating the Heroku staging app
+- Copying production database to staging
+- Configuring environment variables
+- Setting up GitHub Actions secrets
 
 ## Code Review Standards
 

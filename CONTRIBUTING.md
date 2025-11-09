@@ -115,7 +115,8 @@ npm run dev
   4. Create PR to merge into `main`
 - **Automatic deployments:**
   - Frontend → Vercel staging (https://trapid-staging.vercel.app)
-  - Backend → Heroku production (same as main, no backend staging)
+  - Backend → Heroku staging (https://trapid-backend-staging.herokuapp.com)
+- **Staging environment:** Completely separate from production, safe for testing
 
 ### Feature Branches (optional)
 For larger features, create a feature branch:
@@ -421,9 +422,17 @@ vercel ls
 
 - ✅ `rob` branch is for active development
 - ✅ Frontend: Auto-deploys to **Vercel staging** (https://trapid-staging.vercel.app)
-- ✅ Backend: Auto-deploys to **Heroku production** (no backend staging environment)
+- ✅ Backend: Auto-deploys to **Heroku staging** (https://trapid-backend-staging.herokuapp.com)
 - ✅ `main` branch deploys both frontend and backend to production
-- ⚠️ Rob's backend changes go straight to production, so test thoroughly!
+- ✅ Completely separate staging environment - safe to test without affecting production!
+
+### Setting Up Staging Backend
+
+If staging backend hasn't been set up yet, see `SETUP_STAGING_BACKEND.md` for complete instructions on:
+- Creating the `trapid-backend-staging` Heroku app
+- Copying production database to staging
+- Configuring environment variables
+- Setting up automatic deployments
 
 ---
 
