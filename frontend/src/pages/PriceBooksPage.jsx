@@ -13,6 +13,7 @@ import {
   Bars3Icon,
   AdjustmentsHorizontalIcon,
   BuildingStorefrontIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../utils/formatters'
 import { api } from '../api'
@@ -59,6 +60,37 @@ export default function PriceBooksPage() {
   }) // Track selected item IDs
   const [showSetDefaultSupplierModal, setShowSetDefaultSupplierModal] = useState(false)
   const [settingDefaultSupplier, setSettingDefaultSupplier] = useState(false)
+  const [showColumnSettings, setShowColumnSettings] = useState(false)
+
+  // Column configuration with defaults
+  const defaultColumnConfig = {
+    checkbox: { visible: true, width: 50, label: 'Select', resizable: false },
+    image: { visible: true, width: 60, label: 'Image', resizable: false },
+    itemCode: { visible: true, width: 200, label: 'Code', resizable: true },
+    itemName: { visible: true, width: 250, label: 'Item Name', resizable: true },
+    status: { visible: true, width: 150, label: 'Status', resizable: true },
+    category: { visible: true, width: 200, label: 'Category', resizable: true },
+    price: { visible: true, width: 150, label: 'Price', resizable: true },
+    unit: { visible: true, width: 100, label: 'Unit', resizable: true },
+    supplier: { visible: true, width: 200, label: 'Supplier', resizable: true },
+    brand: { visible: true, width: 150, label: 'Brand', resizable: true },
+    notes: { visible: true, width: 200, label: 'Notes', resizable: true },
+  }
+
+  const [columnConfig, setColumnConfig] = useState(() => {
+    // Load from localStorage or use defaults
+    const saved = localStorage.getItem('pricebookColumnConfig')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        // Merge with defaults to ensure all columns exist
+        return { ...defaultColumnConfig, ...parsed }
+      } catch (e) {
+        return defaultColumnConfig
+      }
+    }
+    return defaultColumnConfig
+  })
 
   const observerTarget = useRef(null)
   const searchTimeoutRef = useRef(null)
@@ -485,6 +517,29 @@ export default function PriceBooksPage() {
     loadPriceBook(1)
   }
 
+  const handleColumnVisibilityChange = (columnKey, visible) => {
+    const newConfig = {
+      ...columnConfig,
+      [columnKey]: { ...columnConfig[columnKey], visible }
+    }
+    setColumnConfig(newConfig)
+    localStorage.setItem('pricebookColumnConfig', JSON.stringify(newConfig))
+  }
+
+  const handleColumnWidthChange = (columnKey, width) => {
+    const newConfig = {
+      ...columnConfig,
+      [columnKey]: { ...columnConfig[columnKey], width: parseInt(width) || 50 }
+    }
+    setColumnConfig(newConfig)
+    localStorage.setItem('pricebookColumnConfig', JSON.stringify(newConfig))
+  }
+
+  const handleResetColumns = () => {
+    setColumnConfig(defaultColumnConfig)
+    localStorage.removeItem('pricebookColumnConfig')
+  }
+
   const SortIcon = ({ column }) => {
     if (sortBy !== column) return <Bars3Icon className="h-4 w-4 text-gray-400" />
     return sortDirection === 'asc' ?
@@ -598,6 +653,15 @@ export default function PriceBooksPage() {
                     </span>
                   )}
                 </button>
+
+                {/* Column Settings Button */}
+                <button
+                  onClick={() => setShowColumnSettings(!showColumnSettings)}
+                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <Cog6ToothIcon className="h-4 w-4 mr-2" />
+                  Columns
+                </button>
               </div>
             </div>
 
@@ -620,6 +684,60 @@ export default function PriceBooksPage() {
                 </button>
               )}
             </div>
+
+            {/* Column Settings Panel */}
+            {showColumnSettings && (
+              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                    Column Configuration
+                  </h3>
+                  <button
+                    onClick={handleResetColumns}
+                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline"
+                  >
+                    Reset to Defaults
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries(columnConfig).map(([key, config]) => {
+                    // Don't show checkbox and image in settings
+                    if (key === 'checkbox' || key === 'image') return null
+
+                    return (
+                      <div key={key} className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={config.visible}
+                          onChange={(e) => handleColumnVisibilityChange(key, e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {config.label}
+                          </label>
+                          {config.resizable && (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="50"
+                                max="500"
+                                step="10"
+                                value={config.width}
+                                onChange={(e) => handleColumnWidthChange(key, e.target.value)}
+                                disabled={!config.visible}
+                                className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                              />
+                              <span className="text-xs text-gray-500 dark:text-gray-400">px</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Expanded filters */}
             {showFilters && (
@@ -733,106 +851,128 @@ export default function PriceBooksPage() {
           <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
               <tr>
-                <th style={{ minWidth: '50px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={items.length > 0 && selectedItems.size === items.length}
-                    onChange={handleSelectAll}
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                </th>
-                <th style={{ minWidth: '60px', width: '60px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                  Image
-                </th>
-                <th style={{ minWidth: '200px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  <ColumnHeaderMenu
-                    label="Code"
-                    column="item_code"
-                    sortBy={sortBy}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                    onFilter={handleColumnFilter}
-                    filterValue={searchQuery}
-                    filterType="search"
-                  />
-                </th>
-                <th style={{ minWidth: '250px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  <ColumnHeaderMenu
-                    label="Item Name"
-                    column="item_name"
-                    sortBy={sortBy}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                    onFilter={handleColumnFilter}
-                    filterValue={searchQuery}
-                    filterType="search"
-                  />
-                </th>
-                <th style={{ minWidth: '150px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  <ColumnHeaderMenu
-                    label="Status"
-                    column="risk_level"
-                    sortBy={sortBy}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                    onFilter={handleColumnFilter}
-                    filterValue={riskFilter}
-                    filterType="select"
-                    filterOptions={[
-                      { label: 'Low Risk', value: 'low', count: null },
-                      { label: 'Medium Risk', value: 'medium', count: null },
-                      { label: 'High Risk', value: 'high', count: null },
-                      { label: 'Critical', value: 'critical', count: null },
-                    ]}
-                  />
-                </th>
-                <th style={{ minWidth: '200px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  <ColumnHeaderMenu
-                    label="Category"
-                    column="category"
-                    sortBy={sortBy}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                    onFilter={handleColumnFilter}
-                    filterValue={categoryFilter}
-                    filterType="select"
-                    filterOptions={categories.map(cat => ({ label: cat, value: cat, count: null }))}
-                  />
-                </th>
-                <th style={{ minWidth: '150px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
-                  <ColumnHeaderMenu
-                    label="Price"
-                    column="current_price"
-                    sortBy={sortBy}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                    onFilter={handleColumnFilter}
-                    filterValue={minPrice || maxPrice ? { min: minPrice, max: maxPrice } : ''}
-                    filterType="price-range"
-                  />
-                </th>
-                <th style={{ minWidth: '100px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  Unit
-                </th>
-                <th style={{ minWidth: '200px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  <ColumnHeaderMenu
-                    label="Supplier"
-                    column="supplier"
-                    sortBy={sortBy}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                    onFilter={handleColumnFilter}
-                    filterValue={supplierFilter}
-                    filterType="select"
-                    filterOptions={suppliers.map(sup => ({ label: sup.name, value: sup.id.toString(), count: null }))}
-                  />
-                </th>
-                <th style={{ minWidth: '150px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  Brand
-                </th>
-                <th style={{ minWidth: '200px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                  Notes
-                </th>
+                {columnConfig.checkbox.visible && (
+                  <th style={{ minWidth: `${columnConfig.checkbox.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={items.length > 0 && selectedItems.size === items.length}
+                      onChange={handleSelectAll}
+                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                  </th>
+                )}
+                {columnConfig.image.visible && (
+                  <th style={{ minWidth: `${columnConfig.image.width}px`, width: `${columnConfig.image.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Image
+                  </th>
+                )}
+                {columnConfig.itemCode.visible && (
+                  <th style={{ minWidth: `${columnConfig.itemCode.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                    <ColumnHeaderMenu
+                      label="Code"
+                      column="item_code"
+                      sortBy={sortBy}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                      onFilter={handleColumnFilter}
+                      filterValue={searchQuery}
+                      filterType="search"
+                    />
+                  </th>
+                )}
+                {columnConfig.itemName.visible && (
+                  <th style={{ minWidth: `${columnConfig.itemName.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                    <ColumnHeaderMenu
+                      label="Item Name"
+                      column="item_name"
+                      sortBy={sortBy}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                      onFilter={handleColumnFilter}
+                      filterValue={searchQuery}
+                      filterType="search"
+                    />
+                  </th>
+                )}
+                {columnConfig.status.visible && (
+                  <th style={{ minWidth: `${columnConfig.status.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                    <ColumnHeaderMenu
+                      label="Status"
+                      column="risk_level"
+                      sortBy={sortBy}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                      onFilter={handleColumnFilter}
+                      filterValue={riskFilter}
+                      filterType="select"
+                      filterOptions={[
+                        { label: 'Low Risk', value: 'low', count: null },
+                        { label: 'Medium Risk', value: 'medium', count: null },
+                        { label: 'High Risk', value: 'high', count: null },
+                        { label: 'Critical', value: 'critical', count: null },
+                      ]}
+                    />
+                  </th>
+                )}
+                {columnConfig.category.visible && (
+                  <th style={{ minWidth: `${columnConfig.category.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                    <ColumnHeaderMenu
+                      label="Category"
+                      column="category"
+                      sortBy={sortBy}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                      onFilter={handleColumnFilter}
+                      filterValue={categoryFilter}
+                      filterType="select"
+                      filterOptions={categories.map(cat => ({ label: cat, value: cat, count: null }))}
+                    />
+                  </th>
+                )}
+                {columnConfig.price.visible && (
+                  <th style={{ minWidth: `${columnConfig.price.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                    <ColumnHeaderMenu
+                      label="Price"
+                      column="current_price"
+                      sortBy={sortBy}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                      onFilter={handleColumnFilter}
+                      filterValue={minPrice || maxPrice ? { min: minPrice, max: maxPrice } : ''}
+                      filterType="price-range"
+                    />
+                  </th>
+                )}
+                {columnConfig.unit.visible && (
+                  <th style={{ minWidth: `${columnConfig.unit.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Unit
+                  </th>
+                )}
+                {columnConfig.supplier.visible && (
+                  <th style={{ minWidth: `${columnConfig.supplier.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                    <ColumnHeaderMenu
+                      label="Supplier"
+                      column="supplier"
+                      sortBy={sortBy}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                      onFilter={handleColumnFilter}
+                      filterValue={supplierFilter}
+                      filterType="select"
+                      filterOptions={suppliers.map(sup => ({ label: sup.name, value: sup.id.toString(), count: null }))}
+                    />
+                  </th>
+                )}
+                {columnConfig.brand.visible && (
+                  <th style={{ minWidth: `${columnConfig.brand.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Brand
+                  </th>
+                )}
+                {columnConfig.notes.visible && (
+                  <th style={{ minWidth: `${columnConfig.notes.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Notes
+                  </th>
+                )}
               </tr>
             </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
@@ -854,94 +994,116 @@ export default function PriceBooksPage() {
                             selectedItems.has(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
                           }`}
                         >
-                          <td style={{ minWidth: '50px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
-                            <input
-                              type="checkbox"
-                              checked={selectedItems.has(item.id)}
-                              onChange={() => handleSelectItem(item.id)}
-                              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                            />
-                          </td>
-                          <td style={{ minWidth: '60px', width: '60px' }} className="px-2 py-2 border-r border-gray-200 dark:border-gray-700">
-                            {item.image_url ? (
-                              <div className="flex justify-center">
-                                <img
-                                  src={item.image_url}
-                                  alt={item.item_name}
-                                  className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-600"
-                                  onError={(e) => {
-                                    e.target.style.display = 'none'
-                                  }}
-                                />
-                              </div>
-                            ) : (
-                              <div className="flex justify-center">
-                                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 flex items-center justify-center">
-                                  <span className="text-xs text-gray-400">-</span>
+                          {columnConfig.checkbox.visible && (
+                            <td style={{ minWidth: `${columnConfig.checkbox.width}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={selectedItems.has(item.id)}
+                                onChange={() => handleSelectItem(item.id)}
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                              />
+                            </td>
+                          )}
+                          {columnConfig.image.visible && (
+                            <td style={{ minWidth: `${columnConfig.image.width}px`, width: `${columnConfig.image.width}px` }} className="px-2 py-2 border-r border-gray-200 dark:border-gray-700">
+                              {item.image_url ? (
+                                <div className="flex justify-center">
+                                  <img
+                                    src={item.image_url}
+                                    alt={item.item_name}
+                                    className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-600"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none'
+                                    }}
+                                  />
                                 </div>
-                              </div>
-                            )}
-                          </td>
-                          <td style={{ minWidth: '200px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white">
-                            {item.item_code}
-                          </td>
-                          <td style={{ minWidth: '250px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white">
-                            {item.item_name}
-                          </td>
-                          <td style={{ minWidth: '150px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm">
-                            <div className="flex flex-wrap gap-1">
-                              {getRiskBadges(item).length > 0 ? (
-                                getRiskBadges(item)
                               ) : (
-                                <Badge color="green">OK</Badge>
+                                <div className="flex justify-center">
+                                  <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 flex items-center justify-center">
+                                    <span className="text-xs text-gray-400">-</span>
+                                  </div>
+                                </div>
                               )}
-                            </div>
-                          </td>
-                          <td
-                            style={{ minWidth: '200px' }}
-                            className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setEditingCategory(item.id)
-                            }}
-                          >
-                            {editingCategory === item.id ? (
-                              <select
-                                autoFocus
-                                value={item.category || ''}
-                                onChange={(e) => handleCategoryUpdate(item.id, e.target.value)}
-                                onBlur={() => setEditingCategory(null)}
-                                className="w-full px-2 py-1 text-sm border border-indigo-500 rounded focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-indigo-400"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <option value="">Select category...</option>
-                                {categories.map((cat) => (
-                                  <option key={cat} value={cat}>{cat}</option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400">
-                                {item.category || '-'}
-                              </span>
-                            )}
-                          </td>
-                          <td style={{ minWidth: '150px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-right text-gray-900 dark:text-white font-medium">
-                            {item.current_price ? formatCurrency(item.current_price, false) : '-'}
-                          </td>
-                          <td style={{ minWidth: '100px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
-                            {item.unit_of_measure}
-                          </td>
-                          <td style={{ minWidth: '200px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
-                            {item.default_supplier?.name || item.supplier?.name || '-'}
-                          </td>
-                          <td style={{ minWidth: '150px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
-                            {item.brand || '-'}
-                          </td>
-                          <td style={{ minWidth: '200px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
-                            <div className="truncate max-w-xs" title={item.notes}>
-                              {item.notes || '-'}
-                            </div>
-                          </td>
+                            </td>
+                          )}
+                          {columnConfig.itemCode.visible && (
+                            <td style={{ minWidth: `${columnConfig.itemCode.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white">
+                              {item.item_code}
+                            </td>
+                          )}
+                          {columnConfig.itemName.visible && (
+                            <td style={{ minWidth: `${columnConfig.itemName.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white">
+                              {item.item_name}
+                            </td>
+                          )}
+                          {columnConfig.status.visible && (
+                            <td style={{ minWidth: `${columnConfig.status.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm">
+                              <div className="flex flex-wrap gap-1">
+                                {getRiskBadges(item).length > 0 ? (
+                                  getRiskBadges(item)
+                                ) : (
+                                  <Badge color="green">OK</Badge>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                          {columnConfig.category.visible && (
+                            <td
+                              style={{ minWidth: `${columnConfig.category.width}px` }}
+                              className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setEditingCategory(item.id)
+                              }}
+                            >
+                              {editingCategory === item.id ? (
+                                <select
+                                  autoFocus
+                                  value={item.category || ''}
+                                  onChange={(e) => handleCategoryUpdate(item.id, e.target.value)}
+                                  onBlur={() => setEditingCategory(null)}
+                                  className="w-full px-2 py-1 text-sm border border-indigo-500 rounded focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-indigo-400"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <option value="">Select category...</option>
+                                  {categories.map((cat) => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400">
+                                  {item.category || '-'}
+                                </span>
+                              )}
+                            </td>
+                          )}
+                          {columnConfig.price.visible && (
+                            <td style={{ minWidth: `${columnConfig.price.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-right text-gray-900 dark:text-white font-medium">
+                              {item.current_price ? formatCurrency(item.current_price, false) : '-'}
+                            </td>
+                          )}
+                          {columnConfig.unit.visible && (
+                            <td style={{ minWidth: `${columnConfig.unit.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+                              {item.unit_of_measure}
+                            </td>
+                          )}
+                          {columnConfig.supplier.visible && (
+                            <td style={{ minWidth: `${columnConfig.supplier.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+                              {item.default_supplier?.name || item.supplier?.name || '-'}
+                            </td>
+                          )}
+                          {columnConfig.brand.visible && (
+                            <td style={{ minWidth: `${columnConfig.brand.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+                              {item.brand || '-'}
+                            </td>
+                          )}
+                          {columnConfig.notes.visible && (
+                            <td style={{ minWidth: `${columnConfig.notes.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+                              <div className="truncate max-w-xs" title={item.notes}>
+                                {item.notes || '-'}
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       ))}
 
