@@ -1,0 +1,164 @@
+name: Setup Staging Environment (One-Time)
+
+on:
+  workflow_dispatch:
+    inputs:
+      copy_database:
+        description: 'Copy production database to staging?'
+        required: true
+        type: boolean
+        default: true
+      deploy_backend:
+        description: 'Deploy backend to staging immediately?'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  setup-staging:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+
+      - name: Create Heroku staging app
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "Checking if trapid-backend-staging exists..."
+
+          if heroku apps:info -a trapid-backend-staging 2>&1 | grep -q "Couldn't find that app"; then
+            echo "Creating trapid-backend-staging app..."
+            heroku create trapid-backend-staging
+            echo "✅ App created"
+          else
+            echo "✅ App already exists, skipping creation"
+          fi
+
+      - name: Add PostgreSQL database
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "Checking if PostgreSQL addon exists..."
+
+          if heroku addons:info heroku-postgresql -a trapid-backend-staging 2>&1 | grep -q "Couldn't find that addon"; then
+            echo "Adding PostgreSQL database..."
+            heroku addons:create heroku-postgresql:essential-0 -a trapid-backend-staging
+            echo "Waiting for database to provision..."
+            heroku pg:wait -a trapid-backend-staging
+            echo "✅ Database created and ready"
+          else
+            echo "✅ Database already exists, skipping creation"
+          fi
+
+      - name: Copy production database to staging
+        if: ${{ inputs.copy_database }}
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "Capturing production database backup..."
+          heroku pg:backups:capture -a trapid-backend
+
+          echo "Getting backup URL..."
+          BACKUP_URL=$(heroku pg:backups:url -a trapid-backend)
+
+          echo "Restoring backup to staging..."
+          heroku pg:backups:restore "$BACKUP_URL" DATABASE_URL -a trapid-backend-staging --confirm trapid-backend-staging
+
+          echo "✅ Production database copied to staging"
+
+      - name: Copy environment variables
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "Fetching production config..."
+          heroku config -a trapid-backend --shell > /tmp/prod_config.env
+
+          echo "Setting config vars on staging..."
+
+          # Read and set each config var
+          while IFS='=' read -r key value; do
+            # Skip empty lines and comments
+            [[ -z "$key" || "$key" =~ ^# ]] && continue
+
+            # Update FRONTEND_URL to point to staging
+            if [ "$key" = "FRONTEND_URL" ]; then
+              echo "Setting FRONTEND_URL for staging..."
+              heroku config:set FRONTEND_URL=https://trapid-staging.vercel.app -a trapid-backend-staging
+            # Update CORS_ORIGINS to include staging frontend
+            elif [ "$key" = "CORS_ORIGINS" ]; then
+              echo "Setting CORS_ORIGINS for staging..."
+              heroku config:set CORS_ORIGINS="https://trapid-staging.vercel.app,http://localhost:5173" -a trapid-backend-staging
+            else
+              # Set other config vars as-is (but quietly to avoid exposing secrets)
+              heroku config:set "$key=$value" -a trapid-backend-staging > /dev/null 2>&1 || true
+            fi
+          done < /tmp/prod_config.env
+
+          echo "✅ Environment variables configured"
+
+      - name: Add Heroku git remote
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          git remote add heroku-staging https://heroku:$HEROKU_API_KEY@git.heroku.com/trapid-backend-staging.git || true
+          echo "✅ Git remote configured"
+
+      - name: Deploy backend to staging
+        if: ${{ inputs.deploy_backend }}
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "Deploying backend to staging..."
+
+          # Configure git
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "GitHub Actions"
+
+          # Deploy using git subtree
+          git push heroku-staging `git subtree split --prefix backend HEAD`:main --force
+
+          echo "✅ Backend deployed to staging"
+
+      - name: Verify staging setup
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "Staging Environment Setup Complete!"
+          echo "=========================================="
+          echo ""
+          echo "App Status:"
+          heroku ps -a trapid-backend-staging
+          echo ""
+          echo "Database Info:"
+          heroku pg:info -a trapid-backend-staging
+          echo ""
+          echo "=========================================="
+          echo "Staging Backend URL: https://trapid-backend-staging.herokuapp.com"
+          echo "Staging Frontend URL: https://trapid-staging.vercel.app"
+          echo "=========================================="
+          echo ""
+          echo "Next Steps:"
+          echo "1. Configure Vercel staging environment variable:"
+          echo "   VITE_API_URL=https://trapid-backend-staging.herokuapp.com"
+          echo ""
+          echo "2. Test the staging backend:"
+          echo "   curl https://trapid-backend-staging.herokuapp.com/"
+          echo ""
+          echo "3. From now on, pushing to 'rob' branch will auto-deploy!"
+          echo ""
+
+      - name: Test staging backend
+        run: |
+          echo "Testing staging backend endpoint..."
+          sleep 10  # Give the app a moment to boot
+          curl -I https://trapid-backend-staging.herokuapp.com/ || echo "Backend might still be booting..."
