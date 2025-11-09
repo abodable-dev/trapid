@@ -1,0 +1,40 @@
+name: Deploy Backend (Rob's Branch) to Heroku Production
+
+on:
+  push:
+    branches:
+      - rob
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend-staging.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for git subtree
+
+      - name: Deploy backend to Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          HEROKU_APP_NAME: trapid-backend
+        run: |
+          # Configure git
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "GitHub Actions"
+
+          # Add Heroku remote
+          git remote add heroku https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME.git || true
+
+          # Deploy backend subdirectory to Heroku
+          git subtree push --prefix backend heroku main || git push heroku `git subtree split --prefix backend rob`:main --force
+
+      - name: Comment deployment status
+        if: success()
+        run: |
+          echo "✅ Backend deployed to Heroku production successfully"
+          echo "🔗 Backend URL: https://trapid-backend-447058022b51.herokuapp.com"

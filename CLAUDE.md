@@ -15,51 +15,41 @@
 
 ### CRITICAL: Branch-Based Deployment Rules
 
-**ONLY deploy from `main` branch to production.**
+**Automatic deployments are configured for both `main` and `rob` branches.**
 
-Before deploying, the deploy-manager agent MUST:
+#### `main` Branch (Production)
+- **Frontend:** Vercel production (https://trapid.vercel.app)
+- **Backend:** Heroku production (https://trapid-backend-447058022b51.herokuapp.com)
+- **Deploy workflow:**
+  - Backend: `git subtree push --prefix backend heroku main`
+  - Frontend: Automatic via Vercel when pushed to `main`
 
-1. **Check current branch:**
-   ```bash
-   git branch --show-current
-   ```
+#### `rob` Branch (Development/Staging)
+- **Frontend:** Vercel staging (https://trapid-staging.vercel.app) ✅ Automatic
+- **Backend:** Heroku production (same as main) ✅ Automatic
+- **Note:** Backend changes from `rob` go directly to production
+- **Recommendation:** Test backend changes thoroughly before pushing to `rob`
 
-2. **Verify branch is `main`:**
-   - ✅ If on `main` → Proceed with deployment
-   - ❌ If on ANY other branch (including `rob`) → STOP and inform user
+### Development Workflow
 
-3. **Deploy workflow:**
-   - Backend: `git subtree push --prefix backend heroku main`
-   - Frontend: Automatic via Vercel when pushed to `main`
-
-### Development Branch Protection
-
-**`rob` branch** is for development only:
+**`rob` branch:**
 - Rob works on this branch in Claude Code Web
-- Changes must be reviewed via PR before merging to `main`
-- **NO direct deployments from `rob` branch**
-- Deploy-manager should refuse deployment requests when not on `main`
+- Frontend deploys to staging for safe testing
+- Backend deploys to production (no staging backend environment)
+- Changes should be reviewed via PR before merging to `main`
 
-### Exception Handling
+### Manual Deployment Commands
 
-If a user requests deployment while NOT on `main` branch:
+If automatic deployments fail or manual deployment is needed:
 
+**Backend (from any branch to Heroku production):**
+```bash
+git subtree push --prefix backend heroku main
 ```
-⚠️ DEPLOYMENT BLOCKED
 
-Current branch: [branch_name]
-Production deployments are only allowed from the `main` branch.
-
-To deploy these changes:
-1. Create a Pull Request to merge `[branch_name]` → `main`
-2. Review changes for UI/UX consistency
-3. Merge PR to `main`
-4. Switch to `main` branch: git checkout main
-5. Pull latest: git pull origin main
-6. Request deployment again
-
-Would you like me to help create a Pull Request?
-```
+**Frontend:**
+- Handled automatically by Vercel via GitHub Actions
+- Check deployment status at https://vercel.com/dashboard
 
 ## Code Review Standards
 

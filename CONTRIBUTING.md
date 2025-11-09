@@ -113,7 +113,9 @@ npm run dev
   2. Make feature changes
   3. Commit and push to `rob` branch
   4. Create PR to merge into `main`
-- **No deployments:** Changes in `rob` branch do NOT auto-deploy
+- **Automatic deployments:**
+  - Frontend → Vercel staging (https://trapid-staging.vercel.app)
+  - Backend → Heroku production (same as main, no backend staging)
 
 ### Feature Branches (optional)
 For larger features, create a feature branch:
@@ -415,12 +417,13 @@ heroku logs --tail -a trapid-backend
 vercel ls
 ```
 
-### Important: Rob's Branch Does NOT Deploy
+### Rob's Branch Deployment Strategy
 
-- ✅ `rob` branch is for development only
-- ❌ No automatic deployments from `rob` branch
-- ✅ Only `main` branch triggers production deployments
-- ✅ Changes must be merged via PR to reach production
+- ✅ `rob` branch is for active development
+- ✅ Frontend: Auto-deploys to **Vercel staging** (https://trapid-staging.vercel.app)
+- ✅ Backend: Auto-deploys to **Heroku production** (no backend staging environment)
+- ✅ `main` branch deploys both frontend and backend to production
+- ⚠️ Rob's backend changes go straight to production, so test thoroughly!
 
 ---
 
