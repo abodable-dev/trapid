@@ -128,6 +128,7 @@ Rails.application.routes.draw do
         collection do
           patch :bulk_update
           post :merge
+          post :match_supplier
         end
       end
 
