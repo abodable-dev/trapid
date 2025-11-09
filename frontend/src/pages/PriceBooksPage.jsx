@@ -732,12 +732,18 @@ export default function PriceBooksPage() {
                     filterOptions={suppliers.map(sup => ({ label: sup.name, value: sup.id.toString(), count: null }))}
                   />
                 </th>
+                <th style={{ minWidth: '150px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Brand
+                </th>
+                <th style={{ minWidth: '200px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Notes
+                </th>
               </tr>
             </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                   {items.length === 0 && !loading ? (
                     <tr>
-                      <td colSpan="8" className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                      <td colSpan="10" className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                         {hasActiveFilters
                           ? 'No items match your filters. Try adjusting your search criteria.'
                           : 'No items found in the price book.'}
@@ -813,13 +819,21 @@ export default function PriceBooksPage() {
                           <td style={{ minWidth: '200px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
                             {item.supplier?.name || '-'}
                           </td>
+                          <td style={{ minWidth: '150px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+                            {item.brand || '-'}
+                          </td>
+                          <td style={{ minWidth: '200px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+                            <div className="truncate max-w-xs" title={item.notes}>
+                              {item.notes || '-'}
+                            </div>
+                          </td>
                         </tr>
                       ))}
 
                       {/* Infinite scroll trigger */}
                       {hasMore && (
                         <tr ref={observerTarget}>
-                          <td colSpan="8" className="px-4 py-4 text-center">
+                          <td colSpan="10" className="px-4 py-4 text-center">
                             {loadingMore ? (
                               <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
@@ -837,7 +851,7 @@ export default function PriceBooksPage() {
                       {/* End of results */}
                       {!hasMore && items.length > 0 && (
                         <tr>
-                          <td colSpan="8" className="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                          <td colSpan="10" className="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                             End of results
                           </td>
                         </tr>
