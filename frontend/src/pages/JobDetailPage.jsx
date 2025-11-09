@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   BriefcaseIcon,
   CurrencyDollarIcon,
@@ -41,10 +41,11 @@ function classNames(...classes) {
 export default function JobDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [job, setJob] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [activeTab, setActiveTab] = useState('Overview')
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'Overview')
   const [isEditing, setIsEditing] = useState(false)
   const [editedJob, setEditedJob] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -308,7 +309,10 @@ export default function JobDetailPage() {
                 {tabs.map((tab) => (
                   <button
                     key={tab.name}
-                    onClick={() => setActiveTab(tab.name)}
+                    onClick={() => {
+                      setActiveTab(tab.name)
+                      setSearchParams({ tab: tab.name })
+                    }}
                     className={classNames(
                       activeTab === tab.name
                         ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'

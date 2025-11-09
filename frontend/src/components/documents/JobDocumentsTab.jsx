@@ -8,10 +8,14 @@ import {
   CheckCircleIcon,
   ExclamationCircleIcon,
   Cog6ToothIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
+import DocumentCategoryTabs from './DocumentCategoryTabs'
+import DocumentTaskList from './DocumentTaskList'
 
 export default function JobDocumentsTab({ jobId, jobTitle }) {
+  const [viewMode, setViewMode] = useState('tasks') // 'tasks' or 'onedrive'
   const [orgStatus, setOrgStatus] = useState({
     loading: true,
     connected: false,
@@ -238,6 +242,87 @@ export default function JobDocumentsTab({ jobId, jobTitle }) {
     )
   }
 
+  // Main render with toggle between Tasks and OneDrive
+  return (
+    <div className="space-y-6">
+      {/* View Mode Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('tasks')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              viewMode === 'tasks'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <DocumentTextIcon className="h-4 w-4" />
+              Document Tasks
+            </div>
+          </button>
+          <button
+            onClick={() => setViewMode('onedrive')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              viewMode === 'onedrive'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <CloudIcon className="h-4 w-4" />
+              OneDrive Folders
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Render based on view mode */}
+      {viewMode === 'tasks' ? (
+        <DocumentCategoryTabs jobId={jobId}>
+          {(category) => <DocumentTaskList jobId={jobId} category={category} />}
+        </DocumentCategoryTabs>
+      ) : (
+        <OneDriveView
+          orgStatus={orgStatus}
+          jobFolderStatus={jobFolderStatus}
+          folders={folders}
+          jobTitle={jobTitle}
+          creatingFolders={creatingFolders}
+          error={error}
+          message={message}
+          uploading={uploading}
+          handleCreateFolders={handleCreateFolders}
+          handleOpenInOneDrive={handleOpenInOneDrive}
+          handleUpload={handleUpload}
+          checkJobFolderStatus={checkJobFolderStatus}
+          renderFolder={renderFolder}
+          fileInputRef={fileInputRef}
+          handleFileSelect={handleFileSelect}
+        />
+      )}
+    </div>
+  )
+}
+
+// Separate OneDrive View Component
+function OneDriveView({
+  orgStatus,
+  jobFolderStatus,
+  folders,
+  jobTitle,
+  creatingFolders,
+  error,
+  message,
+  uploading,
+  handleCreateFolders,
+  handleOpenInOneDrive,
+  handleUpload,
+  checkJobFolderStatus,
+  renderFolder,
+  fileInputRef,
+  handleFileSelect,
+}) {
   // Loading state
   if (orgStatus.loading) {
     return (
@@ -265,7 +350,7 @@ export default function JobDocumentsTab({ jobId, jobTitle }) {
 
           <div className="mt-6">
             <Link
-              to="/settings"
+              to="/settings?tab=integrations"
               className="inline-flex items-center gap-2 px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <Cog6ToothIcon className="h-5 w-5" />

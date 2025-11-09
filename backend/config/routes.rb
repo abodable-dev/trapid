@@ -43,6 +43,14 @@ Rails.application.routes.draw do
             get :gantt_data
           end
         end
+
+        # Document tasks (nested under constructions)
+        resources :document_tasks, only: [:index] do
+          member do
+            post :upload
+            post :validate
+          end
+        end
       end
 
       # Schedule tasks (non-nested routes)
@@ -176,10 +184,18 @@ Rails.application.routes.draw do
       post 'organization_onedrive/upload', to: 'organization_onedrive#upload'
       get 'organization_onedrive/download', to: 'organization_onedrive#download'
 
+      # Schema information
+      get 'schema', to: 'schema#index'
+      get 'schema/tables', to: 'schema#tables'
+      get 'schema/system_table_columns/:table_name', to: 'schema#system_table_columns'
+
       # Table management
       resources :tables do
         # Column management
         resources :columns, only: [:create, :update, :destroy] do
+          collection do
+            post :test_formula
+          end
           member do
             get :lookup_options
             get :lookup_search
