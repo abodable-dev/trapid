@@ -295,106 +295,77 @@ export default function ContactDetailPage() {
             )}
           </div>
 
-          {/* Price Book */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-3">
-                <CubeIcon className="h-5 w-5 text-gray-400" />
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Price Book Items
-                </h2>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50">
-                  {suppliers.reduce((sum, s) => sum + (s.pricebook_items?.length || 0) + (s.default_pricebook_items?.length || 0), 0)} items
-                </span>
+          {/* Price Book - Only show for supplier contacts */}
+          {contact['is_supplier?'] && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <CubeIcon className="h-5 w-5 text-gray-400" />
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Price Book Items
+                  </h2>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50">
+                    {contact.pricebook_items?.length || 0} items
+                  </span>
+                </div>
               </div>
-            </div>
-            {suppliers.some(s => (s.pricebook_items && s.pricebook_items.length > 0) || (s.default_pricebook_items && s.default_pricebook_items.length > 0)) ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                      <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                        Supplier
-                      </th>
-                      <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                        Code
-                      </th>
-                      <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                        Item Name
-                      </th>
-                      <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                        Category
-                      </th>
-                      <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                        Current Price
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {suppliers.flatMap(supplier => [
-                      ...(supplier.pricebook_items || []).map(item => ({
-                        ...item,
-                        supplierName: supplier.name,
-                        supplierId: supplier.id,
-                        isDefault: false
-                      })),
-                      ...(supplier.default_pricebook_items || []).map(item => ({
-                        ...item,
-                        supplierName: supplier.name,
-                        supplierId: supplier.id,
-                        isDefault: true
-                      }))
-                    ]).map((item) => (
-                      <tr key={`${item.supplierId}-${item.id}-${item.isDefault ? 'default' : 'owned'}`} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Link
-                              to={`/suppliers/${item.supplierId}`}
-                              className="text-sm hover:text-blue-600 dark:hover:text-blue-400 font-medium text-gray-900 dark:text-white"
-                            >
-                              {item.supplierName}
-                            </Link>
-                            {item.isDefault && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200 border border-amber-200 dark:border-amber-800">
-                                <StarIcon className="h-3 w-3" />
-                                Default
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
-                          {item.item_code}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                          {item.item_name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {item.category ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
-                              <TagIcon className="h-3 w-3" />
-                              {item.category}
-                            </span>
-                          ) : (
-                            <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-white">
-                          ${parseFloat(item.current_price || 0).toFixed(2)}
-                        </td>
+              {contact.pricebook_items && contact.pricebook_items.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                          Code
+                        </th>
+                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                          Item Name
+                        </th>
+                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                          Category
+                        </th>
+                        <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                          Current Price
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="px-6 py-16 text-center">
-                <CubeIcon className="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600" />
-                <h3 className="mt-4 text-base font-medium text-gray-900 dark:text-white">No items in price book</h3>
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                  This contact's suppliers don't have any items in their price books yet.
-                </p>
-              </div>
-            )}
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {contact.pricebook_items.map((item) => (
+                        <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
+                            {item.item_code}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                            {item.item_name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {item.category ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+                                <TagIcon className="h-3 w-3" />
+                                {item.category}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-white">
+                            ${parseFloat(item.current_price || 0).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="px-6 py-16 text-center">
+                  <CubeIcon className="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600" />
+                  <h3 className="mt-4 text-base font-medium text-gray-900 dark:text-white">No items in price book</h3>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    This supplier doesn't have any items in their price book yet.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
           </div>
         </div>
 
