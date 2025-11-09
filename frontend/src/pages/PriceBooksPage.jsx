@@ -862,40 +862,36 @@ export default function PriceBooksPage() {
                     return (
                       <div
                         key={key}
+                        draggable="true"
+                        onDragStart={(e) => handleDragStart(e, key)}
+                        onDragEnd={handleDragEnd}
                         onDragOver={handleDragOver}
                         onDragEnter={handleDragEnter}
                         onDrop={(e) => handleDrop(e, key)}
-                        className={`flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded border-2 transition-all ${
+                        className={`flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded border-2 transition-all cursor-move ${
                           draggedColumn === key
                             ? 'border-indigo-500 opacity-50 scale-95'
                             : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'
                         }`}
                       >
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <div
-                            draggable="true"
-                            onDragStart={(e) => handleDragStart(e, key)}
-                            onDragEnd={handleDragEnd}
-                            className="h-5 w-5 text-gray-400 cursor-move select-none"
+                        <div className="flex items-center gap-2 flex-shrink-0 pointer-events-none">
+                          <svg
+                            className="h-5 w-5 text-gray-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                           >
-                            <svg
-                              className="h-5 w-5 pointer-events-none"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                            </svg>
-                          </div>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                          </svg>
                           <input
                             type="checkbox"
                             checked={config.visible}
                             onChange={(e) => handleColumnVisibilityChange(key, e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 pointer-events-auto"
                             onClick={(e) => e.stopPropagation()}
                           />
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 pointer-events-none">
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             {config.label}
                           </label>
@@ -909,7 +905,7 @@ export default function PriceBooksPage() {
                                 value={config.width}
                                 onChange={(e) => handleColumnWidthChange(key, e.target.value)}
                                 disabled={!config.visible}
-                                className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed pointer-events-auto"
                                 onClick={(e) => e.stopPropagation()}
                               />
                               <span className="text-xs text-gray-500 dark:text-gray-400">px</span>
