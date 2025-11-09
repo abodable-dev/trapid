@@ -43,8 +43,20 @@ export default function TablePage() {
   const [showColumnInfo, setShowColumnInfo] = useState(false)
 
   useEffect(() => {
-    loadTable()
-    loadRecords()
+    let cancelled = false
+
+    const loadData = async () => {
+      await loadTable()
+      if (!cancelled) {
+        await loadRecords()
+      }
+    }
+
+    loadData()
+
+    return () => {
+      cancelled = true
+    }
   }, [id])
 
   const loadTable = async () => {

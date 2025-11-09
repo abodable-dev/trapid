@@ -5,11 +5,14 @@ module Api
 
       # GET /api/v1/tables/:table_id/records
       def index
-        page = (params[:page] || 1).to_i
-        per_page = (params[:per_page] || 50).to_i
+        # Sanitize and validate pagination parameters to prevent DoS
+        page = [(params[:page] || 1).to_i, 1].max
+        per_page = [(params[:per_page] || 50).to_i, 1].max
+        per_page = [per_page, 1000].min  # Cap at 1000 to prevent DoS
+
         search = params[:search]
         sort_by = params[:sort_by]
-        sort_direction = params[:sort_direction] || 'asc'
+        sort_direction = params[:sort_direction]&.downcase == 'desc' ? 'desc' : 'asc'
 
         model = @table.dynamic_model
         query = model.all
@@ -23,9 +26,16 @@ module Api
           end
         end
 
-        # Apply sorting
-        if sort_by.present? && @table.columns.exists?(column_name: sort_by)
-          query = query.order("#{sort_by} #{sort_direction}")
+        # Apply sorting with SQL injection prevention
+        if sort_by.present?
+          # Validate that the column exists and get the sanitized column name
+          column = @table.columns.find_by(column_name: sort_by)
+          if column
+            # Use Arel to safely build the order clause
+            query = query.order(Arel.sql("#{ActiveRecord::Base.connection.quote_column_name(column.column_name)} #{sort_direction}"))
+          else
+            query = query.order(created_at: :desc)
+          end
         else
           query = query.order(created_at: :desc)
         end
@@ -34,9 +44,12 @@ module Api
         total_count = query.count
         records = query.offset((page - 1) * per_page).limit(per_page)
 
+        # Build lookup cache to prevent N+1 queries
+        lookup_cache = build_lookup_cache(records)
+
         render json: {
           success: true,
-          records: records.map { |r| record_to_json(r) },
+          records: records.map { |r| record_to_json(r, lookup_cache) },
           pagination: {
             page: page,
             per_page: per_page,
@@ -120,7 +133,12 @@ module Api
       private
 
       def set_table
-        @table = Table.includes(:columns).find(params[:table_id])
+        # Support both ID and slug
+        @table = if params[:table_id].to_i.to_s == params[:table_id]
+          Table.includes(:columns).find(params[:table_id])
+        else
+          Table.includes(:columns).find_by!(slug: params[:table_id])
+        end
       rescue ActiveRecord::RecordNotFound
         render json: { error: 'Table not found' }, status: :not_found
       end
@@ -131,7 +149,7 @@ module Api
         params.require(:record).permit(*column_names)
       end
 
-      def record_to_json(record)
+      def record_to_json(record, lookup_cache = nil)
         json = {
           id: record.id,
           created_at: record.created_at,
@@ -141,7 +159,18 @@ module Api
         # First pass: collect all base column values
         record_data = {}
         @table.columns.includes(:lookup_table).each do |column|
-          record_data[column.column_name] = record.send(column.column_name)
+          begin
+            # Check if the column actually exists on the model
+            if record.respond_to?(column.column_name)
+              record_data[column.column_name] = record.send(column.column_name)
+            else
+              Rails.logger.warn "Column #{column.column_name} not found on table #{@table.name}"
+              record_data[column.column_name] = nil
+            end
+          rescue => e
+            Rails.logger.error "Error reading column #{column.column_name}: #{e.message}"
+            record_data[column.column_name] = nil
+          end
         end
 
         # Second pass: build JSON with computed formula values
@@ -150,18 +179,25 @@ module Api
         @table.columns.includes(:lookup_table).each do |column|
           value = record_data[column.column_name]
 
-          # Handle formula columns - compute the value
-          if column.column_type == 'formula'
+          # Handle computed/formula columns - compute the value
+          if column.column_type == 'computed'
             formula_expression = column.settings&.dig('formula')
             if formula_expression.present?
-              json[column.column_name] = formula_evaluator.evaluate(formula_expression, record_data)
+              # Pass the record instance for cross-table references
+              json[column.column_name] = formula_evaluator.evaluate(formula_expression, record_data, record)
             else
               json[column.column_name] = nil
             end
           # Handle lookup columns - return both ID and display value
           elsif column.column_type == 'lookup' && value.present?
             begin
-              related_record = column.lookup_table.dynamic_model.find_by(id: value)
+              # Use cached lookup data if available, otherwise query
+              related_record = if lookup_cache && lookup_cache[column.id]
+                lookup_cache[column.id][value]
+              else
+                column.lookup_table.dynamic_model.find_by(id: value)
+              end
+
               json[column.column_name] = {
                 id: value,
                 display: related_record ? related_record.send(column.lookup_display_column).to_s : "[Deleted]"
@@ -176,6 +212,31 @@ module Api
         end
 
         json
+      end
+
+      def build_lookup_cache(records)
+        # Preload all lookup data to prevent N+1 queries
+        lookup_columns = @table.columns.where(column_type: 'lookup').includes(:lookup_table)
+        lookup_cache = {}
+
+        lookup_columns.each do |column|
+          next unless column.lookup_table
+
+          # Collect all unique IDs for this lookup column across all records
+          lookup_ids = records.map { |r| r.send(column.column_name) rescue nil }.compact.uniq
+          next if lookup_ids.empty?
+
+          # Batch load all related records
+          begin
+            related_records = column.lookup_table.dynamic_model.where(id: lookup_ids)
+            lookup_cache[column.id] = related_records.index_by(&:id)
+          rescue => e
+            Rails.logger.error "Error preloading lookup data for #{column.column_name}: #{e.message}"
+            lookup_cache[column.id] = {}
+          end
+        end
+
+        lookup_cache
       end
     end
   end

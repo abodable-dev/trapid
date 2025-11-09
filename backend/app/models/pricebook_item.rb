@@ -40,6 +40,33 @@ class PricebookItem < ApplicationRecord
     query
   }
 
+  # Efficient risk level filtering using SQL conditions instead of loading all records
+  scope :by_risk_level, ->(level) {
+    return all if level.blank?
+
+    # Calculate risk using SQL conditions based on price_freshness_status
+    # This is a simplified version optimized for database queries
+    case level
+    when 'critical'
+      # High risk: no price OR price > 6 months old
+      where('current_price IS NULL OR current_price = 0 OR price_last_updated_at IS NULL OR price_last_updated_at < ?', 6.months.ago)
+    when 'high'
+      # Medium-high risk: price 3-6 months old AND has some volatility
+      where('current_price IS NOT NULL AND current_price > 0')
+        .where('price_last_updated_at >= ? AND price_last_updated_at < ?', 6.months.ago, 3.months.ago)
+    when 'medium'
+      # Medium risk: price < 3 months but missing supplier info
+      where('current_price IS NOT NULL AND current_price > 0')
+        .where('price_last_updated_at >= ?', 3.months.ago)
+        .where('supplier_id IS NULL OR brand IS NULL OR category IS NULL')
+    when 'low'
+      # Low risk: recent price AND has supplier info
+      where('current_price IS NOT NULL AND current_price > 0')
+        .where('price_last_updated_at >= ?', 3.months.ago)
+        .where('supplier_id IS NOT NULL')
+    end
+  }
+
   # Full-text search including supplier names
   scope :search, ->(query) {
     return all if query.blank?

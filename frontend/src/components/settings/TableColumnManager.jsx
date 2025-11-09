@@ -8,22 +8,7 @@ import {
   CheckIcon,
 } from '@heroicons/react/24/outline'
 import AddColumnModal from '../table/AddColumnModal'
-
-const EDITABLE_COLUMN_TYPES = [
-  { value: 'single_line_text', label: 'Single line text' },
-  { value: 'multiple_lines_text', label: 'Long text' },
-  { value: 'email', label: 'Email' },
-  { value: 'phone', label: 'Phone number' },
-  { value: 'url', label: 'URL' },
-  { value: 'number', label: 'Number' },
-  { value: 'whole_number', label: 'Whole number' },
-  { value: 'currency', label: 'Currency' },
-  { value: 'percentage', label: 'Percent' },
-  { value: 'date', label: 'Date' },
-  { value: 'date_and_time', label: 'Date & Time' },
-  { value: 'boolean', label: 'Checkbox' },
-  { value: 'choice', label: 'Single select' },
-]
+import { EDITABLE_COLUMN_TYPES } from '../../constants/columnTypes'
 
 export default function TableColumnManager({ table, onClose, onUpdate }) {
   const [columns, setColumns] = useState([])
@@ -76,6 +61,20 @@ export default function TableColumnManager({ table, onClose, onUpdate }) {
 
     try {
       setSaving(true)
+
+      // Optimistic update - update UI immediately
+      const updatedColumns = columns.map(col =>
+        col.id === columnId
+          ? { ...col, name: editingName.trim(), column_type: editingType, required: editingRequired }
+          : col
+      )
+      setColumns(updatedColumns)
+      setEditingColumn(null)
+      setEditingName('')
+      setEditingType('')
+      setEditingRequired(false)
+
+      // Then update on server
       const response = await api.put(`/api/v1/tables/${table.id}/columns/${columnId}`, {
         column: {
           name: editingName.trim(),
@@ -85,15 +84,16 @@ export default function TableColumnManager({ table, onClose, onUpdate }) {
       })
 
       if (response.success) {
-        await loadColumns()
-        setEditingColumn(null)
-        setEditingName('')
-        setEditingType('')
-        setEditingRequired(false)
         if (onUpdate) onUpdate()
+      } else {
+        // Revert on failure
+        await loadColumns()
+        alert('Failed to update column')
       }
     } catch (err) {
       console.error('Failed to update column:', err)
+      // Revert on error
+      await loadColumns()
       alert(err.message || 'Failed to update column')
     } finally {
       setSaving(false)
@@ -106,13 +106,22 @@ export default function TableColumnManager({ table, onClose, onUpdate }) {
     }
 
     try {
+      // Optimistic update - remove from UI immediately
+      const previousColumns = columns
+      setColumns(columns.filter(col => col.id !== column.id))
+
       const response = await api.delete(`/api/v1/tables/${table.id}/columns/${column.id}`)
       if (response.success) {
-        await loadColumns()
         if (onUpdate) onUpdate()
+      } else {
+        // Revert on failure
+        setColumns(previousColumns)
+        alert('Failed to delete column')
       }
     } catch (err) {
       console.error('Failed to delete column:', err)
+      // Revert on error
+      await loadColumns()
       alert(err.message || 'Failed to delete column')
     }
   }

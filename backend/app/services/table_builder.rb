@@ -28,6 +28,10 @@ class TableBuilder
 
             t.timestamps
           end
+
+          # Add indexes for commonly sorted/queried timestamp fields to improve performance
+          add_index table_name.to_sym, :created_at
+          add_index table_name.to_sym, :updated_at
         end
       end
 
@@ -136,10 +140,8 @@ class TableBuilder
   private
 
   def validate_table
-    if @table.columns.empty?
-      @errors << "Table must have at least one column"
-      return false
-    end
+    # Allow tables with no columns - they will have id and timestamps at minimum
+    # Tables can be created empty and columns added later
 
     if @table.database_table_name.blank?
       @errors << "Table must have a database_table_name"
