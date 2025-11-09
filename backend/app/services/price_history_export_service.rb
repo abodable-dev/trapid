@@ -57,82 +57,36 @@ class PriceHistoryExportService
     package = Axlsx::Package.new
 
     package.workbook.add_worksheet(name: "Pricebook") do |sheet|
-      # Define styles
-      header_style = sheet.styles.add_style(
-        bg_color: "0066CC",
-        fg_color: "FFFFFF",
-        b: true,
-        alignment: { horizontal: :center, vertical: :center, wrap_text: true },
-        border: { style: :thin, color: "000000" }
-      )
-
-      data_style = sheet.styles.add_style(
-        alignment: { vertical: :center, wrap_text: false },
-        border: { style: :thin, color: "CCCCCC" }
-      )
-
-      currency_style = sheet.styles.add_style(
-        format_code: '"$"#,##0.00',
-        alignment: { vertical: :center },
-        border: { style: :thin, color: "CCCCCC" }
-      )
-
-      date_style = sheet.styles.add_style(
-        format_code: 'yyyy-mm-dd',
-        alignment: { vertical: :center },
-        border: { style: :thin, color: "CCCCCC" }
-      )
-
-      # Add header row - simplified to show only current price info
-      sheet.add_row(
-        [
-          'Item Code',
-          'Item Name',
-          'Category',
-          'Unit of Measure',
-          'Current Price',
-          'Supplier',
-          'Price Last Updated',
-          'Brand',
-          'Notes'
-        ],
-        style: header_style,
-        height: 30
-      )
+      # Add header row - no styling to avoid corruption
+      sheet.add_row([
+        'Item Code',
+        'Item Name',
+        'Category',
+        'Unit of Measure',
+        'Current Price',
+        'Supplier',
+        'Price Last Updated',
+        'Brand',
+        'Notes'
+      ])
 
       # Add data rows - one row per item with current price only
       items.each do |item|
         # Use default_supplier if available, otherwise fall back to supplier
         supplier_name = item.default_supplier&.name || item.supplier&.name
 
-        sheet.add_row(
-          [
-            sanitize_cell_value(item.item_code),
-            sanitize_cell_value(item.item_name),
-            sanitize_cell_value(item.category),
-            sanitize_cell_value(item.unit_of_measure),
-            item.current_price,
-            sanitize_cell_value(supplier_name),
-            item.price_last_updated_at&.to_date,
-            sanitize_cell_value(item.brand),
-            sanitize_cell_value(item.notes)
-          ],
-          style: [
-            data_style,      # Item Code
-            data_style,      # Item Name
-            data_style,      # Category
-            data_style,      # Unit of Measure
-            currency_style,  # Current Price
-            data_style,      # Supplier
-            date_style,      # Price Last Updated
-            data_style,      # Brand
-            data_style       # Notes
-          ]
-        )
+        sheet.add_row([
+          item.item_code.to_s,
+          item.item_name.to_s,
+          item.category.to_s,
+          item.unit_of_measure.to_s,
+          item.current_price,
+          supplier_name.to_s,
+          item.price_last_updated_at&.to_date,
+          item.brand.to_s,
+          item.notes.to_s
+        ])
       end
-
-      # Auto-fit columns
-      sheet.column_widths 15, 30, 20, 15, 15, 20, 15, 20, 30
     end
 
     package
