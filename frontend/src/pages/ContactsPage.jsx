@@ -14,7 +14,8 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ChevronDownIcon,
-  ArrowsRightLeftIcon
+  ArrowsRightLeftIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
 import MergeContactsModal from '../components/contacts/MergeContactsModal'
@@ -53,6 +54,7 @@ export default function ContactsPage() {
   const [showMergeModal, setShowMergeModal] = useState(false)
   const [updatingContactId, setUpdatingContactId] = useState(null)
   const [toast, setToast] = useState(null)
+  const [deletingContactId, setDeletingContactId] = useState(null)
 
   // Column visibility state for Contacts tab
   const [visibleContactColumns, setVisibleContactColumns] = useState({
@@ -240,6 +242,33 @@ export default function ContactsPage() {
     } catch (error) {
       console.error('Merge error:', error)
       throw error // Re-throw to be handled by the modal
+    }
+  }
+
+  const handleDeleteContact = async (contactId, contactName) => {
+    if (!confirm(`Are you sure you want to delete ${contactName}? This action cannot be undone.`)) {
+      return
+    }
+
+    setDeletingContactId(contactId)
+    try {
+      const response = await api.delete(`/api/v1/contacts/${contactId}`)
+
+      if (response.success) {
+        setToast({
+          message: response.message || 'Contact deleted successfully',
+          type: 'success'
+        })
+        loadContacts() // Refresh the list
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      setToast({
+        message: error.message || 'Failed to delete contact',
+        type: 'error'
+      })
+    } finally {
+      setDeletingContactId(null)
     }
   }
 
@@ -843,12 +872,26 @@ export default function ContactsPage() {
                         )}
                         {visibleContactColumns.actions && (
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <Link
-                              to={`/contacts/${contact.id}`}
-                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                            >
-                              View
-                            </Link>
+                            <div className="flex items-center justify-end gap-3">
+                              <Link
+                                to={`/contacts/${contact.id}`}
+                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                              >
+                                View
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteContact(contact.id, contact.full_name)}
+                                disabled={deletingContactId === contact.id}
+                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
+                                title="Delete contact"
+                              >
+                                {deletingContactId === contact.id ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                                ) : (
+                                  <TrashIcon className="h-4 w-4" />
+                                )}
+                              </button>
+                            </div>
                           </td>
                         )}
                       </tr>
