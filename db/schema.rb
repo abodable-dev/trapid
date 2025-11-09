@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_09_202944) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_09_210752) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -136,8 +136,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_09_202944) do
     t.text "xero_sync_error"
     t.string "contact_types", default: [], array: true
     t.string "primary_contact_type"
+    t.integer "rating", default: 0
+    t.decimal "response_rate", precision: 5, scale: 2, default: "0.0"
+    t.integer "avg_response_time"
+    t.text "notes"
+    t.boolean "is_active", default: true
+    t.string "supplier_code"
+    t.text "address"
     t.index ["contact_types"], name: "index_contacts_on_contact_types", using: :gin
+    t.index ["is_active"], name: "index_contacts_on_is_active"
     t.index ["primary_contact_type"], name: "index_contacts_on_primary_contact_type"
+    t.index ["rating"], name: "index_contacts_on_rating"
+    t.index ["supplier_code"], name: "index_contacts_on_supplier_code", unique: true, where: "(supplier_code IS NOT NULL)"
   end
 
   create_table "designs", force: :cascade do |t|
@@ -1355,9 +1365,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_09_202944) do
   add_foreign_key "grok_plans", "users"
   add_foreign_key "one_drive_credentials", "constructions"
   add_foreign_key "organization_one_drive_credentials", "users", column: "connected_by_id"
+  add_foreign_key "price_histories", "contacts", column: "supplier_id", name: "fk_rails_price_histories_contact"
   add_foreign_key "price_histories", "pricebook_items"
-  add_foreign_key "price_histories", "suppliers"
-  add_foreign_key "pricebook_items", "suppliers"
+  add_foreign_key "pricebook_items", "contacts", column: "supplier_id", name: "fk_rails_pricebook_items_contact"
   add_foreign_key "pricebook_items", "suppliers", column: "default_supplier_id"
   add_foreign_key "project_tasks", "projects"
   add_foreign_key "project_tasks", "purchase_orders"
@@ -1368,8 +1378,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_09_202944) do
   add_foreign_key "purchase_order_line_items", "pricebook_items"
   add_foreign_key "purchase_order_line_items", "purchase_orders"
   add_foreign_key "purchase_orders", "constructions"
+  add_foreign_key "purchase_orders", "contacts", column: "supplier_id", name: "fk_rails_purchase_orders_contact"
   add_foreign_key "purchase_orders", "estimates"
-  add_foreign_key "purchase_orders", "suppliers"
   add_foreign_key "schedule_tasks", "constructions"
   add_foreign_key "schedule_tasks", "purchase_orders"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
