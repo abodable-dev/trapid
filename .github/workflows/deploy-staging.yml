@@ -16,6 +16,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create Vercel project config
+        run: |
+          mkdir -p ./frontend/.vercel
+          echo '{"orgId":"team_0GOp2dbTcdsl9NqDGhtIPY2N","projectId":"${{ secrets.VERCEL_STAGING_PROJECT_ID }}"}' > ./frontend/.vercel/project.json
+
       - name: Deploy to Vercel Staging
         uses: amondnet/vercel-action@v25
         with:
