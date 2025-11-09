@@ -50,13 +50,8 @@ export default function PriceBookItemDetailPage() {
   }
 
   const handleBackClick = () => {
-    // If we have a saved location from the navigation state, use that
-    const from = location.state?.from
-    if (from) {
-      navigate(from)
-    } else {
-      navigate('/price-books')
-    }
+    // Navigate back to price books with this item selected
+    navigate(`/price-books?selected=${id}`)
   }
 
   const handleSetDefaultSupplier = async (e, supplierId) => {

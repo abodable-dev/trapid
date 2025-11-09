@@ -51,7 +51,11 @@ export default function PriceBooksPage() {
   const [editingCategory, setEditingCategory] = useState(null) // Track which item's category is being edited
   const [showImportModal, setShowImportModal] = useState(false)
   const [exporting, setExporting] = useState(false)
-  const [selectedItems, setSelectedItems] = useState(new Set()) // Track selected item IDs
+  const [selectedItems, setSelectedItems] = useState(() => {
+    // Initialize from URL params
+    const selected = searchParams.get('selected')
+    return selected ? new Set(selected.split(',').map(id => parseInt(id))) : new Set()
+  }) // Track selected item IDs
 
   const observerTarget = useRef(null)
   const searchTimeoutRef = useRef(null)
@@ -66,7 +70,18 @@ export default function PriceBooksPage() {
     }
   }, [suppliers])
 
-  // Update URL params when filters change
+  // Sync selectedItems state from URL params (one-way sync: URL -> state)
+  useEffect(() => {
+    const selected = searchParams.get('selected')
+    if (selected) {
+      const selectedIds = selected.split(',').map(id => parseInt(id))
+      setSelectedItems(new Set(selectedIds))
+    } else {
+      setSelectedItems(new Set())
+    }
+  }, [searchParams])
+
+  // Update URL params when filters change (NOT including selectedItems)
   useEffect(() => {
     const params = new URLSearchParams()
 
@@ -79,6 +94,12 @@ export default function PriceBooksPage() {
     if (showPricedOnly) params.set('needs_pricing', 'true')
     if (sortBy !== 'category') params.set('sort_by', sortBy)
     if (sortDirection !== 'asc') params.set('sort_direction', sortDirection)
+
+    // Preserve selected items from current URL
+    const currentSelected = searchParams.get('selected')
+    if (currentSelected) {
+      params.set('selected', currentSelected)
+    }
 
     setSearchParams(params, { replace: true })
   }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly, sortBy, sortDirection, setSearchParams])
@@ -208,6 +229,12 @@ export default function PriceBooksPage() {
 
   const hasActiveFilters = searchQuery || categoryFilter || supplierFilter || riskFilter || minPrice || maxPrice || showPricedOnly
 
+  const handleItemClick = (itemId) => {
+    // Navigate to the item detail page
+    // The browser will automatically preserve the current URL in history
+    navigate(`/price-books/${itemId}`)
+  }
+
   const getResultsText = () => {
     const { page, limit, total_count } = pagination
     if (total_count === 0) return 'No items'
@@ -322,29 +349,43 @@ export default function PriceBooksPage() {
   }
 
   const handleSelectItem = (itemId) => {
-    setSelectedItems(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId)
-      } else {
-        newSet.add(itemId)
-      }
-      return newSet
-    })
+    const newSet = new Set(selectedItems)
+    if (newSet.has(itemId)) {
+      newSet.delete(itemId)
+    } else {
+      newSet.add(itemId)
+    }
+
+    // Update URL with new selection
+    const params = new URLSearchParams(searchParams)
+    if (newSet.size > 0) {
+      params.set('selected', Array.from(newSet).join(','))
+    } else {
+      params.delete('selected')
+    }
+    setSearchParams(params, { replace: true })
   }
 
   const handleSelectAll = () => {
-    if (selectedItems.size === items.length) {
-      // Deselect all
-      setSelectedItems(new Set())
+    const newSet = selectedItems.size === items.length
+      ? new Set()
+      : new Set(items.map(item => item.id))
+
+    // Update URL with new selection
+    const params = new URLSearchParams(searchParams)
+    if (newSet.size > 0) {
+      params.set('selected', Array.from(newSet).join(','))
     } else {
-      // Select all visible items
-      setSelectedItems(new Set(items.map(item => item.id)))
+      params.delete('selected')
     }
+    setSearchParams(params, { replace: true })
   }
 
   const handleClearSelection = () => {
-    setSelectedItems(new Set())
+    // Update URL to remove selection
+    const params = new URLSearchParams(searchParams)
+    params.delete('selected')
+    setSearchParams(params, { replace: true })
   }
 
   const handleExport = async () => {
@@ -755,9 +796,7 @@ export default function PriceBooksPage() {
                       {items.map((item) => (
                         <tr
                           key={item.id}
-                          onClick={() => navigate(`/price-books/${item.id}`, {
-                            state: { from: location.pathname + location.search }
-                          })}
+                          onClick={() => handleItemClick(item.id)}
                           className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${
                             selectedItems.has(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
                           }`}
