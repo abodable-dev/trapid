@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { Switch, Menu, Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import { api } from '../api'
 import { formatCurrency } from '../utils/formatters'
@@ -24,6 +24,7 @@ import AddPriceModal from '../components/modals/AddPriceModal'
 export default function PriceBookItemDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const [item, setItem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -45,6 +46,16 @@ export default function PriceBookItemDetailPage() {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleBackClick = () => {
+    // If we have a saved location from the navigation state, use that
+    const from = location.state?.from
+    if (from) {
+      navigate(from)
+    } else {
+      navigate('/price-books')
     }
   }
 
@@ -172,7 +183,7 @@ export default function PriceBookItemDetailPage() {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{error}</p>
           <div className="mt-6">
             <button
-              onClick={() => navigate('/price-books')}
+              onClick={handleBackClick}
               className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
             >
               <ArrowLeftIcon className="h-4 w-4 mr-2" />
@@ -190,7 +201,7 @@ export default function PriceBookItemDetailPage() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => navigate('/price-books')}
+            onClick={handleBackClick}
             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-4"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-2" />
