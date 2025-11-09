@@ -862,20 +862,25 @@ export default function PriceBooksPage() {
                     return (
                       <div
                         key={key}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, key)}
                         onDragOver={handleDragOver}
                         onDragEnter={handleDragEnter}
                         onDrop={(e) => handleDrop(e, key)}
-                        onDragEnd={handleDragEnd}
-                        className={`flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded border-2 transition-all cursor-move ${
+                        className={`flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded border-2 transition-all ${
                           draggedColumn === key
                             ? 'border-indigo-500 opacity-50 scale-95'
                             : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'
                         }`}
                       >
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, key)}
+                            onDragEnd={handleDragEnd}
+                            className="h-5 w-5 text-gray-400 cursor-move"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
                           </svg>
                           <input
