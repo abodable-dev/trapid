@@ -164,13 +164,17 @@ class PriceHistoryExportService
   end
 
   def sanitize_cell_value(value)
-    return nil if value.nil?
+    return '' if value.nil? || value.to_s.strip.empty?
 
     # Convert to string and clean up problematic characters
     clean_value = value.to_s
 
+    # Remove any invalid UTF-8 sequences
+    clean_value = clean_value.encode('UTF-8', invalid: :replace, undef: :replace, replace: '')
+
     # Remove null bytes and other control characters that can corrupt Excel
-    clean_value = clean_value.gsub(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/, '')
+    # Keep tab (0x09), newline (0x0A), and carriage return (0x0D)
+    clean_value = clean_value.gsub(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/, '')
 
     # Truncate very long text to prevent Excel issues (32,767 character limit per cell)
     clean_value = clean_value[0..32000] if clean_value.length > 32000
@@ -178,6 +182,10 @@ class PriceHistoryExportService
     # Replace multiple consecutive line breaks with double line break
     clean_value = clean_value.gsub(/\n{3,}/, "\n\n")
 
-    clean_value.strip
+    # Remove leading/trailing whitespace
+    clean_value = clean_value.strip
+
+    # Return empty string if nothing left after sanitization
+    clean_value.empty? ? '' : clean_value
   end
 end
