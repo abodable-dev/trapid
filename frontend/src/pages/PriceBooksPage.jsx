@@ -542,6 +542,12 @@ export default function PriceBooksPage() {
   }
 
   const handleDragStart = (e, columnKey) => {
+    // Don't start drag if clicking on interactive elements
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') {
+      e.preventDefault()
+      return
+    }
+
     e.stopPropagation()
     setDraggedColumn(columnKey)
     e.dataTransfer.effectAllowed = 'move'
@@ -563,6 +569,8 @@ export default function PriceBooksPage() {
     e.preventDefault()
     e.stopPropagation()
 
+    console.log('Drop event:', { draggedColumn, targetColumnKey })
+
     if (!draggedColumn || draggedColumn === targetColumnKey) {
       setDraggedColumn(null)
       return
@@ -571,6 +579,8 @@ export default function PriceBooksPage() {
     // Get current orders
     const draggedOrder = columnConfig[draggedColumn].order
     const targetOrder = columnConfig[targetColumnKey].order
+
+    console.log('Swapping orders:', { draggedColumn, draggedOrder, targetColumnKey, targetOrder })
 
     // Create new config with swapped orders
     const newConfig = { ...columnConfig }
@@ -582,6 +592,8 @@ export default function PriceBooksPage() {
     setColumnConfig(newConfig)
     localStorage.setItem('pricebookColumnConfig', JSON.stringify(newConfig))
     setDraggedColumn(null)
+
+    console.log('Updated config:', newConfig)
   }
 
   const handleDragEnd = (e) => {
