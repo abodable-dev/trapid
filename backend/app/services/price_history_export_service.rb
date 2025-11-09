@@ -107,15 +107,15 @@ class PriceHistoryExportService
 
         sheet.add_row(
           [
-            item.item_code,
-            item.item_name,
-            item.category,
-            item.unit_of_measure,
+            sanitize_cell_value(item.item_code),
+            sanitize_cell_value(item.item_name),
+            sanitize_cell_value(item.category),
+            sanitize_cell_value(item.unit_of_measure),
             item.current_price,
-            supplier_name,
+            sanitize_cell_value(supplier_name),
             item.price_last_updated_at&.to_date,
-            item.brand,
-            item.notes
+            sanitize_cell_value(item.brand),
+            sanitize_cell_value(item.notes)
           ],
           style: [
             data_style,      # Item Code
@@ -123,7 +123,7 @@ class PriceHistoryExportService
             data_style,      # Category
             data_style,      # Unit of Measure
             currency_style,  # Current Price
-            data_style,      # Default Supplier
+            data_style,      # Supplier
             date_style,      # Price Last Updated
             data_style,      # Brand
             data_style       # Notes
@@ -161,5 +161,23 @@ class PriceHistoryExportService
 
   def sanitize_filename(name)
     name.to_s.gsub(/[^a-zA-Z0-9_-]/, '_').gsub(/_+/, '_')
+  end
+
+  def sanitize_cell_value(value)
+    return nil if value.nil?
+
+    # Convert to string and clean up problematic characters
+    clean_value = value.to_s
+
+    # Remove null bytes and other control characters that can corrupt Excel
+    clean_value = clean_value.gsub(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/, '')
+
+    # Truncate very long text to prevent Excel issues (32,767 character limit per cell)
+    clean_value = clean_value[0..32000] if clean_value.length > 32000
+
+    # Replace multiple consecutive line breaks with double line break
+    clean_value = clean_value.gsub(/\n{3,}/, "\n\n")
+
+    clean_value.strip
   end
 end
