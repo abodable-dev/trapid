@@ -84,8 +84,15 @@ export default function PriceBooksPage() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
-        // Merge with defaults to ensure all columns exist
-        return { ...defaultColumnConfig, ...parsed }
+        // Merge with defaults to ensure all columns have all required properties
+        const merged = {}
+        Object.keys(defaultColumnConfig).forEach(key => {
+          merged[key] = {
+            ...defaultColumnConfig[key],
+            ...(parsed[key] || {})
+          }
+        })
+        return merged
       } catch (e) {
         return defaultColumnConfig
       }
