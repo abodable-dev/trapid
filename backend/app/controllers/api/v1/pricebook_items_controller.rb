@@ -7,17 +7,23 @@ module Api
       def index
         @items = PricebookItem.includes(:supplier, :default_supplier, :price_histories).active
 
-        # Apply search
-        @items = @items.search(params[:search]) if params[:search].present?
+        # Filter by specific IDs if provided (for viewing selected items)
+        if params[:ids].present?
+          ids = params[:ids].split(',').map(&:to_i)
+          @items = @items.where(id: ids)
+        else
+          # Apply search
+          @items = @items.search(params[:search]) if params[:search].present?
 
-        # Apply filters
-        @items = @items.by_category(params[:category]) if params[:category].present?
-        @items = @items.by_supplier(params[:supplier_id]) if params[:supplier_id].present?
-        @items = @items.price_range(params[:min_price], params[:max_price])
-        @items = @items.needs_pricing if params[:needs_pricing] == "true"
+          # Apply filters
+          @items = @items.by_category(params[:category]) if params[:category].present?
+          @items = @items.by_supplier(params[:supplier_id]) if params[:supplier_id].present?
+          @items = @items.price_range(params[:min_price], params[:max_price])
+          @items = @items.needs_pricing if params[:needs_pricing] == "true"
 
-        # Risk level filter - use scope instead of loading all records
-        @items = @items.by_risk_level(params[:risk_level]) if params[:risk_level].present?
+          # Risk level filter - use scope instead of loading all records
+          @items = @items.by_risk_level(params[:risk_level]) if params[:risk_level].present?
+        end
 
         # Sorting
         if params[:sort_by].present? && !@items.is_a?(Array)

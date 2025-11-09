@@ -12,6 +12,7 @@ import {
   ChevronDownIcon,
   Bars3Icon,
   AdjustmentsHorizontalIcon,
+  BuildingStorefrontIcon,
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../utils/formatters'
 import { api } from '../api'
@@ -56,6 +57,8 @@ export default function PriceBooksPage() {
     const selected = searchParams.get('selected')
     return selected ? new Set(selected.split(',').map(id => parseInt(id))) : new Set()
   }) // Track selected item IDs
+  const [showSetDefaultSupplierModal, setShowSetDefaultSupplierModal] = useState(false)
+  const [settingDefaultSupplier, setSettingDefaultSupplier] = useState(false)
 
   const observerTarget = useRef(null)
   const searchTimeoutRef = useRef(null)
@@ -388,6 +391,36 @@ export default function PriceBooksPage() {
     setSearchParams(params, { replace: true })
   }
 
+  const handleSetDefaultSupplier = async (supplierId) => {
+    try {
+      setSettingDefaultSupplier(true)
+
+      // Get all item IDs to update (either selected or all filtered)
+      const itemIds = selectedItems.size > 0
+        ? Array.from(selectedItems)
+        : items.map(item => item.id)
+
+      // Bulk update default supplier
+      await api.patch('/api/v1/pricebook/bulk_update', {
+        updates: itemIds.map(id => ({
+          id,
+          default_supplier_id: supplierId
+        }))
+      })
+
+      // Reload the items
+      await loadPriceBook()
+
+      setShowSetDefaultSupplierModal(false)
+      alert(`Successfully set default supplier for ${itemIds.length} items`)
+    } catch (error) {
+      console.error('Failed to set default supplier:', error)
+      alert('Failed to set default supplier')
+    } finally {
+      setSettingDefaultSupplier(false)
+    }
+  }
+
   const handleExport = async () => {
     try {
       setExporting(true)
@@ -495,12 +528,29 @@ export default function PriceBooksPage() {
                       {selectedItems.size} selected
                     </span>
                     <button
+                      onClick={() => setShowSetDefaultSupplierModal(true)}
+                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline"
+                    >
+                      Set Supplier
+                    </button>
+                    <button
                       onClick={handleClearSelection}
                       className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline"
                     >
                       Clear
                     </button>
                   </div>
+                )}
+
+                {/* Set Default Supplier button when filters active but nothing selected */}
+                {selectedItems.size === 0 && !loading && (hasActiveFilters || items.length > 0) && (
+                  <button
+                    onClick={() => setShowSetDefaultSupplierModal(true)}
+                    className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <BuildingStorefrontIcon className="h-4 w-4 mr-2" />
+                    Set Default Supplier
+                  </button>
                 )}
 
                 {/* Export Button */}
@@ -911,6 +961,49 @@ export default function PriceBooksPage() {
           onClose={() => setShowImportModal(false)}
           onImportSuccess={handleImportSuccess}
         />
+
+        {/* Set Default Supplier Modal */}
+        {showSetDefaultSupplierModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Set Default Supplier
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {selectedItems.size > 0
+                    ? `Set default supplier for ${selectedItems.size} selected items`
+                    : `Set default supplier for ${items.length} filtered items`}
+                </p>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white mb-4"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleSetDefaultSupplier(parseInt(e.target.value))
+                    }
+                  }}
+                  disabled={settingDefaultSupplier}
+                >
+                  <option value="">Select a supplier...</option>
+                  {suppliers.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowSetDefaultSupplierModal(false)}
+                    disabled={settingDefaultSupplier}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
   )
 }

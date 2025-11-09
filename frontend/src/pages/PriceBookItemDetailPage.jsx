@@ -50,8 +50,8 @@ export default function PriceBookItemDetailPage() {
   }
 
   const handleBackClick = () => {
-    // Navigate back to price books with this item selected
-    navigate(`/price-books?selected=${id}`)
+    // Use browser back to preserve search and filters
+    navigate(-1)
   }
 
   const handleSetDefaultSupplier = async (e, supplierId) => {
