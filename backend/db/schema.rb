@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_09_224244) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_09_225831) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -1370,8 +1370,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_09_224244) do
   add_foreign_key "organization_one_drive_credentials", "users", column: "connected_by_id"
   add_foreign_key "price_histories", "contacts", column: "supplier_id", name: "fk_rails_price_histories_contact"
   add_foreign_key "price_histories", "pricebook_items"
+  add_foreign_key "pricebook_items", "contacts", column: "default_supplier_id"
   add_foreign_key "pricebook_items", "contacts", column: "supplier_id", name: "fk_rails_pricebook_items_contact"
-  add_foreign_key "pricebook_items", "suppliers", column: "default_supplier_id"
   add_foreign_key "project_tasks", "projects"
   add_foreign_key "project_tasks", "purchase_orders"
   add_foreign_key "project_tasks", "task_templates"
