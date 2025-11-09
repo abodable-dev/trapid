@@ -189,10 +189,16 @@ module Api
 
         updates.each do |update|
           item = PricebookItem.find_by(id: update[:id])
-          if item && item.update(update.permit(:current_price, :supplier_id, :notes, :category))
-            results[:success] << item.id
+          if item
+            # Permit the attributes we want to update (excluding :id which is used for lookup)
+            permitted_attrs = update.to_unsafe_h.slice(:current_price, :supplier_id, :default_supplier_id, :notes, :category)
+            if item.update(permitted_attrs)
+              results[:success] << item.id
+            else
+              results[:errors] << { id: update[:id], errors: item.errors.full_messages }
+            end
           else
-            results[:errors] << { id: update[:id], errors: item&.errors&.full_messages || ["Item not found"] }
+            results[:errors] << { id: update[:id], errors: ["Item not found"] }
           end
         end
 
@@ -538,6 +544,7 @@ module Api
           supplier_reliability: item.supplier_reliability_score,
           price_volatility: item.price_volatility,
           image_url: item.image_url,
+          qr_code_url: item.qr_code_url,
           image_fetch_status: item.image_fetch_status
         )
       end
@@ -552,6 +559,7 @@ module Api
 
         item_json.merge(
           image_url: item.image_url,
+          qr_code_url: item.qr_code_url,
           image_source: item.image_source,
           image_fetched_at: item.image_fetched_at,
           image_fetch_status: item.image_fetch_status
