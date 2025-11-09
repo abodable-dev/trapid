@@ -27,6 +27,7 @@ class Column < ApplicationRecord
   }
 
   before_validation :generate_column_name, if: -> { column_name.blank? }
+  before_validation :detect_cross_table_refs, if: -> { column_type == 'computed' }
   validate :lookup_configuration_valid, if: -> { column_type.in?(['lookup', 'multiple_lookups']) }
 
   # Map column types to database column types
@@ -60,6 +61,16 @@ class Column < ApplicationRecord
     # Generate a safe database column name from the name field
     # e.g., "Contact Email" => "contact_email"
     self.column_name = name.parameterize(separator: '_')
+  end
+
+  def detect_cross_table_refs
+    # Check if the formula contains cross-table references
+    formula_expression = settings&.dig('formula')
+    if formula_expression.present?
+      self.has_cross_table_refs = FormulaEvaluator.uses_cross_table_references?(formula_expression)
+    else
+      self.has_cross_table_refs = false
+    end
   end
 
   def lookup_configuration_valid

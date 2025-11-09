@@ -1,7 +1,7 @@
 class PricebookItem < ApplicationRecord
   # Associations
-  belongs_to :supplier, optional: true
-  belongs_to :default_supplier, class_name: 'Supplier', optional: true
+  belongs_to :supplier, class_name: 'Contact', foreign_key: 'supplier_id', optional: true
+  belongs_to :default_supplier, class_name: 'Contact', foreign_key: 'default_supplier_id', optional: true
   has_many :price_histories, dependent: :destroy
 
   # Attribute for skipping price history callback
@@ -74,12 +74,12 @@ class PricebookItem < ApplicationRecord
     # Sanitize the query for ILIKE pattern matching
     sanitized_query = PricebookItem.sanitize_sql_like(query)
 
-    # Search in both the tsvector column AND supplier name
+    # Search in both the tsvector column AND supplier name (contact full_name)
     # We do a simple ILIKE search on supplier name (joined) and tsquery on searchable_text
     # Note: Using distinct is important because left_joins can create duplicates if multiple suppliers match
     left_joins(:supplier)
       .where(
-        "pricebook_items.searchable_text @@ plainto_tsquery('english', :query) OR suppliers.name ILIKE :like_query",
+        "pricebook_items.searchable_text @@ plainto_tsquery('english', :query) OR contacts.full_name ILIKE :like_query",
         query: query,
         like_query: "%#{sanitized_query}%"
       )

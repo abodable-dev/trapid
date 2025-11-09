@@ -127,6 +127,59 @@ module Api
         render json: { error: e.message }, status: :internal_server_error
       end
 
+      # POST /api/v1/tables/:table_id/columns/test_formula
+      def test_formula
+        formula_expression = params[:formula]
+
+        if formula_expression.blank?
+          return render json: { error: 'Formula is required' }, status: :bad_request
+        end
+
+        # Get a sample record to test with (first record or a specific one if provided)
+        record_id = params[:record_id]
+        model = @table.dynamic_model
+
+        if record_id.present?
+          record = model.find_by(id: record_id)
+        else
+          record = model.first
+        end
+
+        unless record
+          return render json: {
+            success: false,
+            error: 'No records available to test the formula. Please add at least one record first.'
+          }
+        end
+
+        # Build record data hash
+        record_data = {}
+        @table.columns.each do |column|
+          record_data[column.column_name] = record.send(column.column_name) if record.respond_to?(column.column_name)
+        end
+
+        # Evaluate the formula
+        evaluator = FormulaEvaluator.new(@table)
+        result = evaluator.evaluate(formula_expression, record_data, record)
+
+        # Check if formula uses cross-table references
+        uses_cross_table = FormulaEvaluator.uses_cross_table_references?(formula_expression)
+
+        render json: {
+          success: true,
+          result: result,
+          uses_cross_table_refs: uses_cross_table,
+          tested_with_record_id: record.id,
+          sample_data: record_data.slice(*record_data.keys.first(5)) # Show first 5 fields as sample
+        }
+      rescue => e
+        Rails.logger.error "Formula test error: #{e.message}"
+        render json: {
+          success: false,
+          error: e.message
+        }, status: :unprocessable_entity
+      end
+
       # GET /api/v1/tables/:table_id/columns/:id/lookup_search?q=search_term
       def lookup_search
         column = @table.columns.find(params[:id])
@@ -266,7 +319,9 @@ module Api
           position: column.position,
           lookup_table_id: column.lookup_table_id,
           lookup_display_column: column.lookup_display_column,
-          is_multiple: column.is_multiple
+          is_multiple: column.is_multiple,
+          has_cross_table_refs: column.has_cross_table_refs,
+          settings: column.settings
         }
       end
     end
