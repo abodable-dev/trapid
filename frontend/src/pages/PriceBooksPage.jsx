@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import {
   MagnifyingGlassIcon,
   CurrencyDollarIcon,
@@ -20,6 +20,7 @@ import PriceBookImportModal from '../components/pricebook/PriceBookImportModal'
 
 export default function PriceBooksPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
 
   // Initialize state from URL params
@@ -743,7 +744,9 @@ export default function PriceBooksPage() {
                       {items.map((item) => (
                         <tr
                           key={item.id}
-                          onClick={() => navigate(`/price-books/${item.id}`)}
+                          onClick={() => navigate(`/price-books/${item.id}`, {
+                            state: { from: location.pathname + location.search }
+                          })}
                           className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${
                             selectedItems.has(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
                           }`}
