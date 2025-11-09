@@ -1,0 +1,50 @@
+name: Deploy Backend Production (Main Branch) to Heroku
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend-production.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for git subtree
+
+      - name: Setup Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+          heroku --version
+
+      - name: Add Heroku remote
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          git remote add heroku https://heroku:$HEROKU_API_KEY@git.heroku.com/trapid-backend.git || true
+
+      - name: Deploy backend to Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          # Create backend-only branch using subtree split
+          git subtree split --prefix backend -b backend-deploy
+
+          # Push to Heroku
+          git push heroku backend-deploy:main --force
+
+          # Clean up temporary branch
+          git branch -D backend-deploy
+
+      - name: Check deployment status
+        if: success()
+        run: |
+          echo "✅ Backend deployed to Heroku successfully"
+          echo "🔗 Backend URL: https://trapid-backend-447058022b51.herokuapp.com/"
+          echo "📊 View logs: heroku logs --tail --app trapid-backend"
