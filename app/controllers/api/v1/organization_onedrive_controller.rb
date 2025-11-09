@@ -321,6 +321,48 @@ module Api
           render json: { error: "Failed to download file: #{e.message}" }, status: :internal_server_error
         end
       end
+
+      # POST /api/v1/organization_onedrive/sync_pricebook_images
+      # Sync images from OneDrive folder to pricebook items
+      def sync_pricebook_images
+        credential = OrganizationOneDriveCredential.active_credential
+
+        unless credential&.valid_credential?
+          return render json: { error: 'OneDrive not connected. Please connect in Settings first.' }, status: :unauthorized
+        end
+
+        folder_path = params[:folder_path] || "Pricebook Images"
+
+        begin
+          # Get organization (you may need to adjust this based on your auth)
+          organization = current_user&.organization || Organization.first
+
+          # Run sync service
+          sync_service = OnedrivePricebookSyncService.new(organization, folder_path)
+          result = sync_service.sync
+
+          if result[:success]
+            render json: {
+              success: true,
+              message: "Synced #{result[:matched]} images successfully",
+              matched: result[:matched],
+              unmatched_files: result[:unmatched_files],
+              unmatched_items: result[:unmatched_items],
+              errors: result[:errors]
+            }
+          else
+            render json: {
+              success: false,
+              error: result[:error]
+            }, status: :unprocessable_entity
+          end
+
+        rescue StandardError => e
+          Rails.logger.error "Failed to sync pricebook images: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: "Failed to sync images: #{e.message}" }, status: :internal_server_error
+        end
+      end
     end
   end
 end
