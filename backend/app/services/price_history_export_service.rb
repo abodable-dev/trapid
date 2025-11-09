@@ -58,14 +58,17 @@ class PriceHistoryExportService
 
     package.workbook.add_worksheet(name: "Pricebook") do |sheet|
       # Add header row - no styling to avoid corruption
+      # Columns match the import format for easy round-trip editing
       sheet.add_row([
+        'Item ID',
         'Item Code',
         'Item Name',
         'Category',
         'Unit of Measure',
-        'Current Price',
+        'Historical Price',
         'Supplier',
-        'Price Last Updated',
+        'Date Effective',
+        'LGA',
         'Brand',
         'Notes'
       ])
@@ -76,6 +79,7 @@ class PriceHistoryExportService
         supplier_name = item.default_supplier&.name || item.supplier&.name
 
         sheet.add_row([
+          item.id,
           item.item_code.to_s,
           item.item_name.to_s,
           item.category.to_s,
@@ -83,6 +87,7 @@ class PriceHistoryExportService
           item.current_price,
           supplier_name.to_s,
           item.price_last_updated_at&.to_date,
+          nil, # LGA - can be filled in by user for import
           item.brand.to_s,
           item.notes.to_s
         ])
