@@ -39,36 +39,33 @@ module Api
           success: true,
           contacts: @contacts.as_json(
             only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes],
-            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?],
-            include: { suppliers: { only: [:id, :name] } }
+            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
           )
         }
       end
 
       # GET /api/v1/contacts/:id
       def show
-        suppliers_with_items = @contact.suppliers.includes(:pricebook_items).map do |supplier|
-          supplier.as_json(
-            only: [:id, :name, :confidence_score, :match_type, :is_verified],
-            methods: [:match_confidence_label]
-          ).merge(
-            pricebook_items: supplier.pricebook_items.map { |item| { id: item.id } }
-          )
+        # If this contact is a supplier, include their supplier-specific data
+        contact_json = @contact.as_json(
+          only: [
+            :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
+            :tax_number, :xero_id, :sync_with_xero, :sys_type_id, :deleted, :parent_id, :parent,
+            :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
+            :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes
+          ],
+          methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
+        )
+
+        # If contact is a supplier, add pricebook items count
+        if @contact.is_supplier?
+          contact_json[:pricebook_items_count] = @contact.pricebook_items.count
+          contact_json[:purchase_orders_count] = @contact.purchase_orders.count
         end
 
         render json: {
           success: true,
-          contact: @contact.as_json(
-            only: [
-              :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
-              :tax_number, :xero_id, :sync_with_xero, :sys_type_id, :deleted, :parent_id, :parent,
-              :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
-              :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes
-            ],
-            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
-          ).merge(
-            suppliers: suppliers_with_items
-          )
+          contact: contact_json
         }
       end
 
@@ -231,13 +228,6 @@ module Api
 
         ActiveRecord::Base.transaction do
           source_contacts.each do |source|
-            # Merge supplier associations
-            source.suppliers.each do |supplier|
-              unless target_contact.suppliers.include?(supplier)
-                target_contact.suppliers << supplier
-              end
-            end
-
             # Merge contact types
             merged_types = (target_contact.contact_types + source.contact_types).uniq
             target_contact.update(contact_types: merged_types)
@@ -247,8 +237,27 @@ module Api
             target_contact.update(mobile_phone: source.mobile_phone) if target_contact.mobile_phone.blank? && source.mobile_phone.present?
             target_contact.update(office_phone: source.office_phone) if target_contact.office_phone.blank? && source.office_phone.present?
             target_contact.update(website: source.website) if target_contact.website.blank? && source.website.present?
+            target_contact.update(address: source.address) if target_contact.address.blank? && source.address.present?
 
-            # Note: Purchase orders are linked through suppliers, which are already merged above
+            # Merge supplier-specific fields (if both are suppliers)
+            if source.is_supplier? && target_contact.is_supplier?
+              # Keep the better rating
+              if source.rating.to_i > target_contact.rating.to_i
+                target_contact.update(rating: source.rating)
+              end
+              # Combine notes if both have them
+              if source.notes.present? && target_contact.notes.present?
+                target_contact.update(notes: "#{target_contact.notes}\n\n--- Merged from contact ##{source.id} ---\n#{source.notes}")
+              elsif source.notes.present?
+                target_contact.update(notes: source.notes)
+              end
+            end
+
+            # Update foreign keys from source to target
+            # These associations now point directly to contacts (supplier_id = contact_id after migration)
+            PricebookItem.where(supplier_id: source.id).update_all(supplier_id: target_id)
+            PurchaseOrder.where(supplier_id: source.id).update_all(supplier_id: target_id)
+            PriceHistory.where(supplier_id: source.id).update_all(supplier_id: target_id)
 
             # Delete the source contact
             source.destroy
@@ -259,8 +268,7 @@ module Api
           success: true,
           message: "Successfully merged #{source_contacts.count} contact(s) into #{target_contact.full_name}",
           contact: target_contact.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types],
-            include: { suppliers: { only: [:id, :name] } }
+            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types]
           )
         }
       rescue ActiveRecord::RecordNotFound => e
