@@ -16,12 +16,8 @@ module Api
         @items = @items.price_range(params[:min_price], params[:max_price])
         @items = @items.needs_pricing if params[:needs_pricing] == "true"
 
-        # Risk level filter
-        if params[:risk_level].present?
-          @items = @items.select do |item|
-            item.risk_level == params[:risk_level]
-          end
-        end
+        # Risk level filter - use scope instead of loading all records
+        @items = @items.by_risk_level(params[:risk_level]) if params[:risk_level].present?
 
         # Sorting
         if params[:sort_by].present? && !@items.is_a?(Array)

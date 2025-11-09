@@ -6,9 +6,16 @@ module Api
       # GET /api/v1/tables
       def index
         tables = Table.includes(:columns).all
+
+        # Preload all referencing columns to prevent N+1 queries
+        table_ids = tables.pluck(:id)
+        referencing_map = Column.where(lookup_table_id: table_ids)
+                                .includes(:table)
+                                .group_by(&:lookup_table_id)
+
         render json: {
           success: true,
-          tables: tables.map { |t| table_json(t, include_record_count: true) }
+          tables: tables.map { |t| table_json(t, include_record_count: true, referencing_map: referencing_map) }
         }
       end
 
@@ -99,19 +106,34 @@ module Api
           }, status: :unprocessable_entity
         end
 
-        # Drop the database table first
-        builder = TableBuilder.new(@table)
-        drop_result = builder.drop_database_table
+        # Wrap deletion in a transaction to ensure atomicity
+        begin
+          ActiveRecord::Base.transaction do
+            # Drop the database table first
+            builder = TableBuilder.new(@table)
+            drop_result = builder.drop_database_table
 
-        unless drop_result[:success]
-          return render json: {
+            unless drop_result[:success]
+              raise ActiveRecord::Rollback, drop_result[:errors].join(', ')
+            end
+
+            # Delete the table record (this will also cascade delete columns via dependent: :destroy)
+            @table.destroy!
+          end
+
+          render json: { success: true }
+        rescue ActiveRecord::Rollback => e
+          render json: {
             success: false,
-            errors: drop_result[:errors]
+            errors: [e.message]
           }, status: :unprocessable_entity
+        rescue => e
+          Rails.logger.error "Error deleting table: #{e.message}"
+          render json: {
+            success: false,
+            errors: ["Failed to delete table: #{e.message}"]
+          }, status: :internal_server_error
         end
-
-        @table.destroy
-        render json: { success: true }
       end
 
       private
@@ -140,7 +162,7 @@ module Api
         )
       end
 
-      def table_json(table, include_columns: false, include_record_count: false)
+      def table_json(table, include_columns: false, include_record_count: false, referencing_map: nil)
         json = {
           id: table.id,
           name: table.name,
@@ -186,8 +208,13 @@ module Api
               column_data[:lookup_table_name] = col.lookup_table&.name
             end
 
-            # Find columns that reference this table
-            referencing_columns = Column.where(lookup_table_id: table.id).includes(:table)
+            # Find columns that reference this table using preloaded data or query
+            referencing_columns = if referencing_map
+              referencing_map[table.id] || []
+            else
+              Column.where(lookup_table_id: table.id).includes(:table)
+            end
+
             if referencing_columns.any?
               column_data[:referenced_by] = referencing_columns.map do |ref_col|
                 {
