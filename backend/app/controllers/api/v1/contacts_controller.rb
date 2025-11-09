@@ -163,6 +163,76 @@ module Api
         }, status: :internal_server_error
       end
 
+      # POST /api/v1/contacts/merge
+      def merge
+        target_id = params[:target_id]
+        source_ids = params[:source_ids]
+
+        if target_id.blank? || source_ids.blank? || !source_ids.is_a?(Array)
+          return render json: {
+            success: false,
+            error: "target_id and source_ids (array) are required"
+          }, status: :bad_request
+        end
+
+        target_contact = Contact.find(target_id)
+        source_contacts = Contact.where(id: source_ids)
+
+        if source_contacts.empty?
+          return render json: {
+            success: false,
+            error: "No source contacts found"
+          }, status: :not_found
+        end
+
+        ActiveRecord::Base.transaction do
+          source_contacts.each do |source|
+            # Merge supplier associations
+            source.suppliers.each do |supplier|
+              unless target_contact.suppliers.include?(supplier)
+                target_contact.suppliers << supplier
+              end
+            end
+
+            # Merge contact types
+            merged_types = (target_contact.contact_types + source.contact_types).uniq
+            target_contact.update(contact_types: merged_types)
+
+            # Fill in missing contact information from source if target is missing it
+            target_contact.update(email: source.email) if target_contact.email.blank? && source.email.present?
+            target_contact.update(mobile_phone: source.mobile_phone) if target_contact.mobile_phone.blank? && source.mobile_phone.present?
+            target_contact.update(office_phone: source.office_phone) if target_contact.office_phone.blank? && source.office_phone.present?
+            target_contact.update(website: source.website) if target_contact.website.blank? && source.website.present?
+            target_contact.update(company: source.company) if target_contact.company.blank? && source.company.present?
+
+            # Update purchase orders to point to target contact
+            PurchaseOrder.where(contact_id: source.id).update_all(contact_id: target_contact.id) if defined?(PurchaseOrder)
+
+            # Delete the source contact
+            source.destroy
+          end
+        end
+
+        render json: {
+          success: true,
+          message: "Successfully merged #{source_contacts.count} contact(s) into #{target_contact.full_name}",
+          contact: target_contact.as_json(
+            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types],
+            include: { suppliers: { only: [:id, :name] } }
+          )
+        }
+      rescue ActiveRecord::RecordNotFound => e
+        render json: {
+          success: false,
+          error: "Contact not found: #{e.message}"
+        }, status: :not_found
+      rescue => e
+        render json: {
+          success: false,
+          error: "Failed to merge contacts: #{e.message}"
+        }, status: :internal_server_error
+      end
+
       private
 
       def set_contact
