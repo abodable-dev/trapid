@@ -166,18 +166,20 @@ class PriceHistoryExportService
   def sanitize_cell_value(value)
     return '' if value.nil? || value.to_s.strip.empty?
 
-    # Convert to string and clean up problematic characters
+    # Convert to string
     clean_value = value.to_s
 
     # Remove any invalid UTF-8 sequences
     clean_value = clean_value.encode('UTF-8', invalid: :replace, undef: :replace, replace: '')
 
-    # Remove null bytes and other control characters that can corrupt Excel
-    # Keep tab (0x09), newline (0x0A), and carriage return (0x0D)
-    # Remove C0 control characters (except tab, newline, carriage return) and DEL
-    clean_value = clean_value.gsub(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/, '')
-    # Remove C1 control characters using Unicode ranges
-    clean_value = clean_value.gsub(/[\u0080-\u009F]/, '')
+    # Remove control characters one by one to avoid regex issues
+    # Keep only printable characters, tabs, newlines, and carriage returns
+    clean_value = clean_value.chars.select do |char|
+      code = char.ord
+      # Allow tab (9), newline (10), carriage return (13), and printable ASCII (32-126)
+      # Also allow Unicode characters (128+)
+      code == 9 || code == 10 || code == 13 || (code >= 32 && code <= 126) || code >= 128
+    end.join
 
     # Truncate very long text to prevent Excel issues (32,767 character limit per cell)
     clean_value = clean_value[0..32000] if clean_value.length > 32000
