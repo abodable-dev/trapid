@@ -91,7 +91,7 @@ class PriceHistoryExportService
           'Category',
           'Unit of Measure',
           'Current Price',
-          'Default Supplier',
+          'Supplier',
           'Price Last Updated',
           'Brand',
           'Notes'
@@ -102,6 +102,9 @@ class PriceHistoryExportService
 
       # Add data rows - one row per item with current price only
       items.each do |item|
+        # Use default_supplier if available, otherwise fall back to supplier
+        supplier_name = item.default_supplier&.name || item.supplier&.name
+
         sheet.add_row(
           [
             item.item_code,
@@ -109,7 +112,7 @@ class PriceHistoryExportService
             item.category,
             item.unit_of_measure,
             item.current_price,
-            item.default_supplier&.name,
+            supplier_name,
             item.price_last_updated_at&.to_date,
             item.brand,
             item.notes
