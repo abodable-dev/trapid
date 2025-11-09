@@ -146,8 +146,7 @@ export default function MergeContactsModal({ isOpen, onClose, selectedContacts, 
                                       }`}
                                     >
                                       <div>{contact.email || 'No email'}</div>
-                                      <div>{contact.phone || 'No phone'}</div>
-                                      {contact.company && <div className="mt-1 text-xs">Company: {contact.company}</div>}
+                                      <div>{contact.mobile_phone || contact.office_phone || 'No phone'}</div>
                                     </RadioGroup.Description>
                                   </div>
                                   {checked && (

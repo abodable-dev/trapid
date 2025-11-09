@@ -203,7 +203,6 @@ module Api
             target_contact.update(mobile_phone: source.mobile_phone) if target_contact.mobile_phone.blank? && source.mobile_phone.present?
             target_contact.update(office_phone: source.office_phone) if target_contact.office_phone.blank? && source.office_phone.present?
             target_contact.update(website: source.website) if target_contact.website.blank? && source.website.present?
-            target_contact.update(company: source.company) if target_contact.company.blank? && source.company.present?
 
             # Update purchase orders to point to target contact
             PurchaseOrder.where(contact_id: source.id).update_all(contact_id: target_contact.id) if defined?(PurchaseOrder)
