@@ -174,9 +174,10 @@ class PriceHistoryExportService
 
     # Remove null bytes and other control characters that can corrupt Excel
     # Keep tab (0x09), newline (0x0A), and carriage return (0x0D)
-    # Remove control characters in two passes due to Ruby regex limitations
+    # Remove C0 control characters (except tab, newline, carriage return) and DEL
     clean_value = clean_value.gsub(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/, '')
-    clean_value = clean_value.gsub(/[\x80-\x9F]/, '')
+    # Remove C1 control characters using Unicode ranges
+    clean_value = clean_value.gsub(/[\u0080-\u009F]/, '')
 
     # Truncate very long text to prevent Excel issues (32,767 character limit per cell)
     clean_value = clean_value[0..32000] if clean_value.length > 32000
