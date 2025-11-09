@@ -17,6 +17,9 @@ export default function OneDriveConnection() {
   const [disconnecting, setDisconnecting] = useState(false)
   const [connecting, setConnecting] = useState(false)
   const [message, setMessage] = useState(null)
+  const [syncingImages, setSyncingImages] = useState(false)
+  const [syncResult, setSyncResult] = useState(null)
+  const [folderPath, setFolderPath] = useState('Pricebook Images')
 
   // Fetch connection status on mount and handle OAuth callback
   useEffect(() => {
@@ -119,6 +122,30 @@ export default function OneDriveConnection() {
       })
     } finally {
       setDisconnecting(false)
+    }
+  }
+
+  const handleSyncPricebookImages = async () => {
+    try {
+      setSyncingImages(true)
+      setSyncResult(null)
+
+      const response = await api.post('/api/v1/organization_onedrive/sync_pricebook_images', {
+        folder_path: folderPath
+      })
+
+      setSyncResult(response)
+      setMessage({
+        type: 'success',
+        text: `Synced ${response.matched} images successfully!`,
+      })
+    } catch (err) {
+      setMessage({
+        type: 'error',
+        text: err.message || 'Failed to sync pricebook images',
+      })
+    } finally {
+      setSyncingImages(false)
     }
   }
 
@@ -225,6 +252,68 @@ export default function OneDriveConnection() {
                       <p className="text-sm text-blue-800 dark:text-blue-400">
                         <strong>All jobs automatically have OneDrive access!</strong> Go to any job's Documents tab to create folder structures and manage files.
                       </p>
+                    </div>
+
+                    {/* Pricebook Image Sync Section */}
+                    <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Pricebook Image Sync</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        Sync product images and QR codes from OneDrive to your pricebook. Files are matched by name to item names.
+                      </p>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label htmlFor="folder-path" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            OneDrive Folder Path
+                          </label>
+                          <input
+                            type="text"
+                            id="folder-path"
+                            value={folderPath}
+                            onChange={(e) => setFolderPath(e.target.value)}
+                            placeholder="Pricebook Images"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          />
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Folder name in your OneDrive where images are stored
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleSyncPricebookImages}
+                          disabled={syncingImages}
+                          className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                        >
+                          {syncingImages ? (
+                            <span className="flex items-center gap-x-2">
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                              Syncing...
+                            </span>
+                          ) : (
+                            'Sync Images Now'
+                          )}
+                        </button>
+
+                        {syncResult && (
+                          <div className="mt-3 rounded-md bg-white p-3 shadow-sm dark:bg-gray-900">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              Sync Results:
+                            </p>
+                            <ul className="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                              <li>✓ {syncResult.matched} images matched and linked</li>
+                              {syncResult.unmatched_files && syncResult.unmatched_files.length > 0 && (
+                                <li>⚠ {syncResult.unmatched_files.length} files couldn't be matched</li>
+                              )}
+                              {syncResult.errors && syncResult.errors.length > 0 && (
+                                <li className="text-red-600 dark:text-red-400">
+                                  ✗ {syncResult.errors.length} errors occurred
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <button
