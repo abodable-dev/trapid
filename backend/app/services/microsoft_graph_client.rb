@@ -16,15 +16,15 @@ class MicrosoftGraphClient
     ensure_valid_token!
   end
 
-  # OAuth Methods (for per-construction auth - legacy)
+  # OAuth Methods
 
   # Get authorization URL for user to consent
-  def self.authorization_url(redirect_uri, state = nil)
+  def self.authorization_url(client_id:, redirect_uri:, scope:, state: nil)
     params = {
-      client_id: ENV['ONEDRIVE_CLIENT_ID'],
+      client_id: client_id,
       response_type: 'code',
       redirect_uri: redirect_uri,
-      scope: 'Files.ReadWrite.All offline_access',
+      scope: scope,
       response_mode: 'query'
     }
     params[:state] = state if state.present?
@@ -32,12 +32,12 @@ class MicrosoftGraphClient
     "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?#{params.to_query}"
   end
 
-  # Exchange authorization code for access token (for per-construction auth)
-  def self.exchange_code_for_token(code, redirect_uri)
+  # Exchange authorization code for access tokens
+  def self.exchange_code_for_tokens(code:, client_id:, client_secret:, redirect_uri:)
     response = HTTParty.post(TOKEN_URL,
       body: {
-        client_id: ENV['ONEDRIVE_CLIENT_ID'],
-        client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+        client_id: client_id,
+        client_secret: client_secret,
         code: code,
         redirect_uri: redirect_uri,
         grant_type: 'authorization_code'
@@ -46,6 +46,16 @@ class MicrosoftGraphClient
     )
 
     handle_token_response(response)
+  end
+
+  # Legacy method for backward compatibility
+  def self.exchange_code_for_token(code, redirect_uri)
+    exchange_code_for_tokens(
+      code: code,
+      client_id: ENV['ONEDRIVE_CLIENT_ID'],
+      client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+      redirect_uri: redirect_uri
+    )
   end
 
   # Client Credentials Flow (for organization-wide auth)
@@ -65,35 +75,28 @@ class MicrosoftGraphClient
 
   # Refresh access token
   def refresh_token!
-    # Check if this is organization credential (doesn't use refresh tokens with client credentials)
-    if @credential.is_a?(OrganizationOneDriveCredential)
-      # For organization credentials using client credentials flow, just get a new token
-      token_data = self.class.authenticate_as_application
-
-      @credential.update!(
-        access_token: token_data[:access_token],
-        token_expires_at: token_data[:expires_at]
-      )
-    else
-      # For per-construction credentials, use refresh token
-      response = HTTParty.post(TOKEN_URL,
-        body: {
-          client_id: ENV['ONEDRIVE_CLIENT_ID'],
-          client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
-          refresh_token: @credential.refresh_token,
-          grant_type: 'refresh_token'
-        },
-        headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
-      )
-
-      token_data = self.class.handle_token_response(response)
-
-      @credential.update!(
-        access_token: token_data[:access_token],
-        refresh_token: token_data[:refresh_token] || @credential.refresh_token,
-        token_expires_at: token_data[:expires_at]
-      )
+    # Both organization and per-construction credentials now use refresh tokens with delegated permissions
+    unless @credential.refresh_token
+      raise AuthenticationError, "No refresh token available. Please reconnect OneDrive."
     end
+
+    response = HTTParty.post(TOKEN_URL,
+      body: {
+        client_id: ENV['ONEDRIVE_CLIENT_ID'],
+        client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+        refresh_token: @credential.refresh_token,
+        grant_type: 'refresh_token'
+      },
+      headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
+    )
+
+    token_data = self.class.handle_token_response(response)
+
+    @credential.update!(
+      access_token: token_data[:access_token],
+      refresh_token: token_data[:refresh_token] || @credential.refresh_token,
+      token_expires_at: token_data[:expires_at]
+    )
 
     token_data
   end
@@ -102,16 +105,35 @@ class MicrosoftGraphClient
 
   # Get user's default drive (or first available drive for app permissions)
   def get_default_drive
-    # For app permissions, we need to get a specific drive
-    # Try to get the organization's default drive
-    response = get('/drives')
-
-    if response['value']&.any?
-      response['value'].first # Return first available drive
-    else
-      # Fallback to /me/drive for delegated permissions
-      get('/me/drive')
+    # For delegated permissions (OAuth), use /me/drive to get the signed-in user's drive
+    # This only requires Files.ReadWrite.All permission
+    begin
+      Rails.logger.info "Attempting to get drive using /me/drive (delegated permissions)"
+      return get('/me/drive')
+    rescue APIError => e
+      Rails.logger.warn "Failed to get /me/drive: #{e.message}"
     end
+
+    # Fallback for app permissions with client credentials
+    # Option 1: Try to get the first user's drive (requires User.Read.All)
+    begin
+      users_response = get('/users?$top=1&$filter=accountEnabled eq true')
+      if users_response['value']&.any?
+        user_id = users_response['value'].first['id']
+        Rails.logger.info "Using drive for user: #{users_response['value'].first['userPrincipalName']}"
+        return get("/users/#{user_id}/drive")
+      end
+    rescue APIError => e
+      Rails.logger.warn "Failed to get users: #{e.message}"
+    end
+
+    # Option 2: Last resort - try to list all drives (requires Sites.Read.All)
+    drives_response = get('/drives')
+    if drives_response['value']&.any?
+      return drives_response['value'].first
+    end
+
+    raise APIError.new("Could not find any accessible drives")
   end
 
   # Get drive by ID
@@ -432,22 +454,38 @@ class MicrosoftGraphClient
     when 401
       # Token might be expired, try refreshing once
       if @token_refresh_attempted
-        raise AuthenticationError, "Authentication failed after token refresh"
+        error_details = response.parsed_response || {}
+        Rails.logger.error "OneDrive API 401 Error: #{error_details.inspect}"
+        raise AuthenticationError, "Authentication failed after token refresh. Details: #{error_details}"
       end
 
       @token_refresh_attempted = true
       refresh_token!
       raise AuthenticationError, "Token expired, please retry request"
     when 404
-      raise APIError, "Resource not found (404)"
+      error_details = response.parsed_response || {}
+      Rails.logger.error "OneDrive API 404 Error: #{error_details.inspect}"
+      raise APIError, "Resource not found (404). Details: #{error_details}"
     when 429
       retry_after = response.headers['Retry-After']&.to_i || 60
       raise APIError, "Rate limited. Retry after #{retry_after} seconds"
     else
-      error_message = response.parsed_response&.dig('error', 'message') ||
-                     response.parsed_response&.dig('error_description') ||
+      error_details = response.parsed_response || {}
+      error_code = error_details.dig('error', 'code')
+      error_message = error_details.dig('error', 'message') ||
+                     error_details.dig('error_description') ||
                      "API request failed with status #{response.code}"
-      raise APIError, error_message
+
+      Rails.logger.error "OneDrive API Error (#{response.code}): #{error_details.inspect}"
+      Rails.logger.error "Request URL: #{response.request.uri}"
+      Rails.logger.error "Error Code: #{error_code}" if error_code
+
+      full_error = "OneDrive API Error (#{response.code})"
+      full_error += " [#{error_code}]" if error_code
+      full_error += ": #{error_message}"
+      full_error += ". Full response: #{error_details.to_json}"
+
+      raise APIError, full_error
     end
   end
 

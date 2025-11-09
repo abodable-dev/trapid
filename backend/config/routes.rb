@@ -34,6 +34,9 @@ Rails.application.routes.draw do
       get 'grok/plans/:id', to: 'grok#show_plan'
       patch 'grok/plans/:id', to: 'grok#update_plan'
 
+      # Health checks
+      get 'health/pricebook', to: 'health#pricebook'
+
       # Construction jobs management
       resources :constructions do
         # Schedule tasks (nested under constructions)
@@ -41,6 +44,14 @@ Rails.application.routes.draw do
           collection do
             post :import
             get :gantt_data
+          end
+        end
+
+        # Document tasks (nested under constructions)
+        resources :document_tasks, only: [:index] do
+          member do
+            post :upload
+            post :validate
           end
         end
       end
@@ -119,6 +130,8 @@ Rails.application.routes.draw do
       resources :contacts do
         collection do
           patch :bulk_update
+          post :merge
+          post :match_supplier
         end
       end
 
@@ -168,17 +181,26 @@ Rails.application.routes.draw do
 
       # OneDrive integration (organization-wide)
       get 'organization_onedrive/status', to: 'organization_onedrive#status'
-      post 'organization_onedrive/connect', to: 'organization_onedrive#connect'
+      get 'organization_onedrive/authorize', to: 'organization_onedrive#authorize'
+      get 'organization_onedrive/callback', to: 'organization_onedrive#callback'
       delete 'organization_onedrive/disconnect', to: 'organization_onedrive#disconnect'
       post 'organization_onedrive/create_job_folders', to: 'organization_onedrive#create_job_folders'
       get 'organization_onedrive/job_folders', to: 'organization_onedrive#list_job_items'
       post 'organization_onedrive/upload', to: 'organization_onedrive#upload'
       get 'organization_onedrive/download', to: 'organization_onedrive#download'
 
+      # Schema information
+      get 'schema', to: 'schema#index'
+      get 'schema/tables', to: 'schema#tables'
+      get 'schema/system_table_columns/:table_name', to: 'schema#system_table_columns'
+
       # Table management
       resources :tables do
         # Column management
         resources :columns, only: [:create, :update, :destroy] do
+          collection do
+            post :test_formula
+          end
           member do
             get :lookup_options
             get :lookup_search

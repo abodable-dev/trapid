@@ -78,6 +78,7 @@ export default function Dashboard() {
       }
 
       const tableId = tableResponse.table.id
+      const tableSlug = tableResponse.table.slug
 
       // Step 2: Create default columns
       const defaultColumns = [
@@ -115,7 +116,7 @@ export default function Dashboard() {
       })
 
       // Step 4: Navigate to the spreadsheet view
-      navigate(`/tables/${tableId}`)
+      navigate(`/tables/${tableSlug}`)
     } catch (err) {
       console.error('Table creation error:', err)
       setCreateError(err.response?.data?.error || err.message || 'Failed to create table')

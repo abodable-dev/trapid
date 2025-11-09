@@ -25,61 +25,80 @@ module Api
         end
       end
 
-      # POST /api/v1/organization_onedrive/connect
-      # Connect OneDrive using client credentials (Application permissions)
-      def connect
+      # GET /api/v1/organization_onedrive/authorize
+      # Start OAuth flow - returns authorization URL
+      def authorize
+        redirect_uri = "#{request.base_url}/api/v1/organization_onedrive/callback"
+
+        auth_url = MicrosoftGraphClient.authorization_url(
+          client_id: ENV['ONEDRIVE_CLIENT_ID'],
+          redirect_uri: redirect_uri,
+          scope: 'Files.ReadWrite.All Sites.ReadWrite.All offline_access'
+        )
+
+        render json: { auth_url: auth_url }
+      end
+
+      # GET /api/v1/organization_onedrive/callback
+      # OAuth callback - exchange code for tokens
+      def callback
+        code = params[:code]
+
+        unless code
+          return render json: { error: 'Authorization code not provided' }, status: :bad_request
+        end
+
         begin
-          # Check if already connected
-          existing_credential = OrganizationOneDriveCredential.active_credential
+          Rails.logger.info "=== OneDrive OAuth Callback Started ==="
 
-          if existing_credential&.valid_credential?
-            return render json: {
-              message: 'OneDrive is already connected',
-              credential: existing_credential.as_json(only: [:id, :drive_id, :drive_name, :root_folder_path])
-            }
-          end
+          redirect_uri = "#{request.base_url}/api/v1/organization_onedrive/callback"
 
-          # Authenticate using client credentials flow (no user interaction needed!)
-          token_data = MicrosoftGraphClient.authenticate_as_application
+          # Exchange authorization code for tokens
+          token_data = MicrosoftGraphClient.exchange_code_for_tokens(
+            code: code,
+            client_id: ENV['ONEDRIVE_CLIENT_ID'],
+            client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+            redirect_uri: redirect_uri
+          )
+
+          Rails.logger.info "Token exchange successful"
 
           # Deactivate any existing credentials
           OrganizationOneDriveCredential.where(is_active: true).update_all(is_active: false)
 
-          # Create new credential
+          # Create new credential with refresh token
           credential = OrganizationOneDriveCredential.create!(
             access_token: token_data[:access_token],
+            refresh_token: token_data[:refresh_token],
             token_expires_at: token_data[:expires_at],
             connected_by: current_user,
             is_active: true
           )
 
+          Rails.logger.info "Credential created with ID: #{credential.id}"
+
           # Initialize client and set up drive
           client = MicrosoftGraphClient.new(credential)
 
           # Create root folder for all jobs
+          Rails.logger.info "Creating root folder 'Trapid Jobs'..."
           root_folder = client.create_jobs_root_folder("Trapid Jobs")
+          Rails.logger.info "Root folder created successfully"
 
-          render json: {
-            message: 'OneDrive connected successfully!',
-            credential: {
-              id: credential.id,
-              drive_id: credential.drive_id,
-              drive_name: credential.drive_name,
-              root_folder_path: credential.root_folder_path,
-              root_folder_web_url: root_folder['webUrl']
-            }
-          }
+          Rails.logger.info "=== OneDrive Connection Completed Successfully ==="
+
+          # Redirect to frontend settings page with success message
+          redirect_to "#{ENV['FRONTEND_URL']}/settings?onedrive=connected", allow_other_host: true
 
         rescue MicrosoftGraphClient::AuthenticationError => e
-          Rails.logger.error "OneDrive authentication failed: #{e.message}"
-          render json: { error: "Authentication failed: #{e.message}" }, status: :unauthorized
-        rescue MicrosoftGraphClient::APIError => e
-          Rails.logger.error "OneDrive API error: #{e.message}"
-          render json: { error: "OneDrive API error: #{e.message}" }, status: :bad_gateway
+          Rails.logger.error "=== OneDrive Authentication Failed ==="
+          Rails.logger.error "Error: #{e.message}"
+          redirect_to "#{ENV['FRONTEND_URL']}/settings?onedrive=error&message=#{CGI.escape(e.message)}", allow_other_host: true
         rescue StandardError => e
-          Rails.logger.error "Failed to connect OneDrive: #{e.message}"
+          Rails.logger.error "=== OneDrive Connection Failed ==="
+          Rails.logger.error "Error: #{e.message}"
           Rails.logger.error e.backtrace.join("\n")
-          render json: { error: "Failed to connect to OneDrive: #{e.message}" }, status: :internal_server_error
+          redirect_to "#{ENV['FRONTEND_URL']}/settings?onedrive=error&message=#{CGI.escape(e.message)}", allow_other_host: true
         end
       end
 

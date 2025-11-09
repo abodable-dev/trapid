@@ -16,12 +16,8 @@ module Api
         @items = @items.price_range(params[:min_price], params[:max_price])
         @items = @items.needs_pricing if params[:needs_pricing] == "true"
 
-        # Risk level filter
-        if params[:risk_level].present?
-          @items = @items.select do |item|
-            item.risk_level == params[:risk_level]
-          end
-        end
+        # Risk level filter - use scope instead of loading all records
+        @items = @items.by_risk_level(params[:risk_level]) if params[:risk_level].present?
 
         # Sorting
         if params[:sort_by].present? && !@items.is_a?(Array)
@@ -34,12 +30,12 @@ module Api
             'item_name' => 'item_name',
             'category' => 'category',
             'current_price' => 'current_price',
-            'supplier' => 'suppliers.name'
+            'supplier' => 'contacts.full_name'
           }
 
           db_column = column_mapping[sort_column] || 'item_code'
 
-          # Join suppliers table if sorting by supplier
+          # Join contacts table if sorting by supplier
           if sort_column == 'supplier'
             @items = @items.left_joins(:supplier)
           end
@@ -65,36 +61,40 @@ module Api
         # Filter suppliers by category if category filter is active
         # Include suppliers from both default_supplier_id AND price_histories
         suppliers_list = if params[:category].present?
-          # Get suppliers who have items in the selected category
+          # Get suppliers (contacts) who have items in the selected category
           # Check both as default supplier AND in price history
-          default_supplier_ids = Supplier.joins("INNER JOIN pricebook_items ON pricebook_items.default_supplier_id = suppliers.id")
-                                         .where(pricebook_items: { category: params[:category], is_active: true })
-                                         .distinct
-                                         .pluck(:id)
+          default_supplier_ids = Contact.joins("INNER JOIN pricebook_items ON pricebook_items.default_supplier_id = contacts.id")
+                                        .where(pricebook_items: { category: params[:category], is_active: true })
+                                        .where("'supplier' = ANY(contacts.contact_types)")
+                                        .distinct
+                                        .pluck(:id)
 
-          price_history_supplier_ids = Supplier.joins("INNER JOIN price_histories ON price_histories.supplier_id = suppliers.id")
-                                               .joins("INNER JOIN pricebook_items ON pricebook_items.id = price_histories.pricebook_item_id")
-                                               .where(pricebook_items: { category: params[:category], is_active: true })
-                                               .distinct
-                                               .pluck(:id)
+          price_history_supplier_ids = Contact.joins("INNER JOIN price_histories ON price_histories.supplier_id = contacts.id")
+                                              .joins("INNER JOIN pricebook_items ON pricebook_items.id = price_histories.pricebook_item_id")
+                                              .where(pricebook_items: { category: params[:category], is_active: true })
+                                              .where("'supplier' = ANY(contacts.contact_types)")
+                                              .distinct
+                                              .pluck(:id)
 
           # Combine both and get distinct
           combined_ids = (default_supplier_ids + price_history_supplier_ids).uniq
-          Supplier.where(id: combined_ids).order(:name).pluck(:id, :name)
+          Contact.where(id: combined_ids).order(:full_name).pluck(:id, :full_name)
         else
-          # Get ALL suppliers that appear in either default_supplier_id or price_histories
-          default_supplier_ids = Supplier.joins("INNER JOIN pricebook_items ON pricebook_items.default_supplier_id = suppliers.id")
-                                         .where(pricebook_items: { is_active: true })
-                                         .distinct
-                                         .pluck(:id)
+          # Get ALL suppliers (contacts) that appear in either default_supplier_id or price_histories
+          default_supplier_ids = Contact.joins("INNER JOIN pricebook_items ON pricebook_items.default_supplier_id = contacts.id")
+                                        .where(pricebook_items: { is_active: true })
+                                        .where("'supplier' = ANY(contacts.contact_types)")
+                                        .distinct
+                                        .pluck(:id)
 
-          price_history_supplier_ids = Supplier.joins(:price_histories)
-                                               .distinct
-                                               .pluck(:id)
+          price_history_supplier_ids = Contact.joins(:price_histories)
+                                              .where("'supplier' = ANY(contacts.contact_types)")
+                                              .distinct
+                                              .pluck(:id)
 
           # Combine both and get distinct
           combined_ids = (default_supplier_ids + price_history_supplier_ids).uniq
-          Supplier.where(id: combined_ids).order(:name).pluck(:id, :name)
+          Contact.where(id: combined_ids).order(:full_name).pluck(:id, :full_name)
         end
 
         render json: {
@@ -114,18 +114,31 @@ module Api
 
       # GET /api/v1/pricebook/:id
       def show
-        render json: item_with_risk_data(@item).merge(
-          @item.as_json(
-            include: {
-              supplier: { only: [:id, :name, :email, :phone, :rating] },
-              default_supplier: { only: [:id, :name] },
-              price_histories: {
-                only: [:id, :old_price, :new_price, :change_reason, :created_at],
-                include: { supplier: { only: [:id, :name] } }
-              }
+        item_json = @item.as_json(
+          include: {
+            supplier: { only: [:id, :full_name, :email, :mobile_phone, :office_phone, :rating] },
+            default_supplier: { only: [:id, :full_name] },
+            price_histories: {
+              only: [:id, :old_price, :new_price, :change_reason, :created_at],
+              include: { supplier: { only: [:id, :full_name] } }
             }
-          )
+          }
         )
+
+        # Map full_name to name for backwards compatibility
+        if item_json['supplier']
+          item_json['supplier']['name'] = item_json['supplier']['full_name']
+        end
+        if item_json['default_supplier']
+          item_json['default_supplier']['name'] = item_json['default_supplier']['full_name']
+        end
+        item_json['price_histories']&.each do |ph|
+          if ph['supplier']
+            ph['supplier']['name'] = ph['supplier']['full_name']
+          end
+        end
+
+        render json: item_with_risk_data(@item).merge(item_json)
       end
 
       # POST /api/v1/pricebook
@@ -157,7 +170,10 @@ module Api
       # GET /api/v1/pricebook/:id/history
       def history
         histories = @item.price_histories.recent.includes(:supplier)
-        render json: histories.as_json(include: { supplier: { only: [:id, :name] } })
+        render json: histories.as_json(include: { supplier: { only: [:id, :full_name], methods: [] } }).map { |h|
+          h['supplier']['name'] = h['supplier']['full_name'] if h['supplier']
+          h
+        }
       end
 
       # PATCH /api/v1/pricebook/bulk_update
@@ -301,6 +317,11 @@ module Api
         @item.current_price = params[:price]
         @item.supplier_id = params[:supplier_id] if params[:supplier_id].present?
 
+        # If item doesn't have a default supplier yet, set this one as default
+        if @item.default_supplier_id.nil? && params[:supplier_id].present?
+          @item.default_supplier_id = params[:supplier_id]
+        end
+
         if @item.save
           # Create price history entry with LGA and date effective
           price_history = @item.price_histories.create!(
@@ -322,7 +343,7 @@ module Api
               new_price: price_history.new_price,
               lga: price_history.lga,
               date_effective: price_history.date_effective,
-              supplier: price_history.supplier ? { id: price_history.supplier.id, name: price_history.supplier.name } : nil,
+              supplier: price_history.supplier ? { id: price_history.supplier.id, name: price_history.supplier.full_name } : nil,
               created_at: price_history.created_at
             }
           }
@@ -481,10 +502,20 @@ module Api
       end
 
       def item_with_risk_data(item)
-        item.as_json(include: {
-          supplier: { only: [:id, :name] },
-          default_supplier: { only: [:id, :name] }
-        }).merge(
+        item_json = item.as_json(include: {
+          supplier: { only: [:id, :full_name] },
+          default_supplier: { only: [:id, :full_name] }
+        })
+
+        # Map full_name to name for backwards compatibility
+        if item_json['supplier']
+          item_json['supplier']['name'] = item_json['supplier']['full_name']
+        end
+        if item_json['default_supplier']
+          item_json['default_supplier']['name'] = item_json['default_supplier']['full_name']
+        end
+
+        item_json.merge(
           price_last_updated_at: item.price_last_updated_at,
           price_age_days: item.price_age_in_days,
           price_freshness: {
@@ -506,7 +537,14 @@ module Api
       end
 
       def item_with_image_data(item)
-        item.as_json(include: { supplier: { only: [:id, :name] } }).merge(
+        item_json = item.as_json(include: { supplier: { only: [:id, :full_name] } })
+
+        # Map full_name to name for backwards compatibility
+        if item_json['supplier']
+          item_json['supplier']['name'] = item_json['supplier']['full_name']
+        end
+
+        item_json.merge(
           image_url: item.image_url,
           image_source: item.image_source,
           image_fetched_at: item.image_fetched_at,

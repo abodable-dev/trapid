@@ -38,37 +38,37 @@ module Api
         render json: {
           success: true,
           contacts: @contacts.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type],
-            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?],
-            include: { suppliers: { only: [:id, :name] } }
+            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes],
+            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
           )
         }
       end
 
       # GET /api/v1/contacts/:id
       def show
-        suppliers_with_items = @contact.suppliers.includes(:pricebook_items).map do |supplier|
-          supplier.as_json(
-            only: [:id, :name, :confidence_score, :match_type, :is_verified],
-            methods: [:match_confidence_label]
-          ).merge(
-            pricebook_items: supplier.pricebook_items.map { |item| { id: item.id } }
+        # If this contact is a supplier, include their supplier-specific data
+        contact_json = @contact.as_json(
+          only: [
+            :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
+            :tax_number, :xero_id, :sync_with_xero, :sys_type_id, :deleted, :parent_id, :parent,
+            :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
+            :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes
+          ],
+          methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
+        )
+
+        # If contact is a supplier, add pricebook items and purchase orders
+        if @contact.is_supplier?
+          contact_json[:pricebook_items_count] = @contact.pricebook_items.count
+          contact_json[:purchase_orders_count] = @contact.purchase_orders.count
+          contact_json[:pricebook_items] = @contact.pricebook_items.as_json(
+            only: [:id, :item_code, :item_name, :category, :current_price, :unit]
           )
         end
 
         render json: {
           success: true,
-          contact: @contact.as_json(
-            only: [
-              :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
-              :tax_number, :xero_id, :sync_with_xero, :sys_type_id, :deleted, :parent_id, :parent,
-              :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
-              :contact_types, :primary_contact_type
-            ],
-            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
-          ).merge(
-            suppliers: suppliers_with_items
-          )
+          contact: contact_json
         }
       end
 
@@ -89,7 +89,7 @@ module Api
           render json: {
             success: true,
             contact: @contact.as_json(
-              only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type],
+              only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes],
               methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
             )
           }
@@ -100,15 +100,59 @@ module Api
 
       # DELETE /api/v1/contacts/:id
       def destroy
+        # Comprehensive safety checks before deletion
+
+        # Check for linked suppliers
         if @contact.suppliers.any?
-          render json: {
+          suppliers_with_pos = @contact.suppliers.joins(:purchase_orders).distinct
+
+          if suppliers_with_pos.any?
+            # Check if any POs have been paid or invoiced
+            paid_pos = PurchaseOrder.where(supplier_id: suppliers_with_pos.pluck(:id))
+                                   .where("status IN (?) OR amount_paid > 0 OR amount_invoiced > 0",
+                                          ['paid', 'invoiced', 'received'])
+
+            if paid_pos.any?
+              return render json: {
+                success: false,
+                error: "Cannot delete contact with purchase orders that have been paid or invoiced. This contact has #{paid_pos.count} critical purchase order(s).",
+                reason: "paid_purchase_orders",
+                count: paid_pos.count
+              }, status: :unprocessable_entity
+            end
+
+            # Check for any purchase orders at all
+            total_pos = PurchaseOrder.where(supplier_id: suppliers_with_pos.pluck(:id)).count
+            if total_pos > 0
+              return render json: {
+                success: false,
+                error: "Cannot delete contact with #{total_pos} purchase order(s). Please reassign or delete purchase orders first.",
+                reason: "has_purchase_orders",
+                count: total_pos
+              }, status: :unprocessable_entity
+            end
+          end
+
+          # If suppliers exist but no POs, just warn
+          return render json: {
             success: false,
-            error: "Cannot delete contact with linked suppliers. Please unlink suppliers first."
+            error: "Cannot delete contact with #{@contact.suppliers.count} linked supplier(s). Please unlink suppliers first.",
+            reason: "has_suppliers",
+            count: @contact.suppliers.count
           }, status: :unprocessable_entity
-        else
-          @contact.destroy
-          render json: { success: true }
         end
+
+        # If all checks pass, delete the contact
+        @contact.destroy
+        render json: {
+          success: true,
+          message: "Contact deleted successfully"
+        }
+      rescue => e
+        render json: {
+          success: false,
+          error: "Failed to delete contact: #{e.message}"
+        }, status: :internal_server_error
       end
 
       # PATCH /api/v1/contacts/bulk_update
@@ -163,6 +207,150 @@ module Api
         }, status: :internal_server_error
       end
 
+      # POST /api/v1/contacts/match_supplier
+      def match_supplier
+        contact_id = params[:contact_id]
+        supplier_name = params[:supplier_name]
+
+        if contact_id.blank? || supplier_name.blank?
+          return render json: {
+            success: false,
+            error: "contact_id and supplier_name are required"
+          }, status: :bad_request
+        end
+
+        contact = Contact.find(contact_id)
+
+        # Find supplier by name (case-insensitive)
+        supplier = Supplier.where("LOWER(name) = ?", supplier_name.downcase).first
+
+        unless supplier
+          return render json: {
+            success: false,
+            error: "No supplier found with name '#{supplier_name}'"
+          }, status: :not_found
+        end
+
+        # Import supplier history into contact
+        contact.update(
+          contact_types: (contact.contact_types + ['supplier']).uniq,
+          rating: supplier.rating || contact.rating,
+          response_rate: supplier.response_rate || contact.response_rate,
+          avg_response_time: supplier.avg_response_time || contact.avg_response_time,
+          is_active: supplier.is_active.nil? ? contact.is_active : supplier.is_active,
+          supplier_code: supplier.supplier_code || contact.supplier_code,
+          address: supplier.address || contact.address,
+          notes: [contact.notes, supplier.notes].compact.join("\n\n")
+        )
+
+        # Link the supplier to this contact
+        supplier.update(contact_id: contact.id)
+
+        render json: {
+          success: true,
+          message: "Successfully matched contact with supplier '#{supplier.name}'",
+          contact: contact.as_json(
+            only: [:id, :full_name, :first_name, :last_name, :email, :contact_types, :rating, :notes]
+          ),
+          imported_fields: {
+            rating: supplier.rating,
+            response_rate: supplier.response_rate,
+            avg_response_time: supplier.avg_response_time,
+            supplier_code: supplier.supplier_code,
+            notes: supplier.notes.present?
+          }
+        }
+      rescue ActiveRecord::RecordNotFound => e
+        render json: {
+          success: false,
+          error: "Contact not found: #{e.message}"
+        }, status: :not_found
+      rescue => e
+        render json: {
+          success: false,
+          error: "Failed to match supplier: #{e.message}"
+        }, status: :internal_server_error
+      end
+
+      # POST /api/v1/contacts/merge
+      def merge
+        target_id = params[:target_id]
+        source_ids = params[:source_ids]
+
+        if target_id.blank? || source_ids.blank? || !source_ids.is_a?(Array)
+          return render json: {
+            success: false,
+            error: "target_id and source_ids (array) are required"
+          }, status: :bad_request
+        end
+
+        target_contact = Contact.find(target_id)
+        source_contacts = Contact.where(id: source_ids)
+
+        if source_contacts.empty?
+          return render json: {
+            success: false,
+            error: "No source contacts found"
+          }, status: :not_found
+        end
+
+        ActiveRecord::Base.transaction do
+          source_contacts.each do |source|
+            # Merge contact types
+            merged_types = (target_contact.contact_types + source.contact_types).uniq
+            target_contact.update(contact_types: merged_types)
+
+            # Fill in missing contact information from source if target is missing it
+            target_contact.update(email: source.email) if target_contact.email.blank? && source.email.present?
+            target_contact.update(mobile_phone: source.mobile_phone) if target_contact.mobile_phone.blank? && source.mobile_phone.present?
+            target_contact.update(office_phone: source.office_phone) if target_contact.office_phone.blank? && source.office_phone.present?
+            target_contact.update(website: source.website) if target_contact.website.blank? && source.website.present?
+            target_contact.update(address: source.address) if target_contact.address.blank? && source.address.present?
+
+            # Merge supplier-specific fields (if both are suppliers)
+            if source.is_supplier? && target_contact.is_supplier?
+              # Keep the better rating
+              if source.rating.to_i > target_contact.rating.to_i
+                target_contact.update(rating: source.rating)
+              end
+              # Combine notes if both have them
+              if source.notes.present? && target_contact.notes.present?
+                target_contact.update(notes: "#{target_contact.notes}\n\n--- Merged from contact ##{source.id} ---\n#{source.notes}")
+              elsif source.notes.present?
+                target_contact.update(notes: source.notes)
+              end
+            end
+
+            # Update foreign keys from source to target
+            # These associations now point directly to contacts (supplier_id = contact_id after migration)
+            PricebookItem.where(supplier_id: source.id).update_all(supplier_id: target_id)
+            PurchaseOrder.where(supplier_id: source.id).update_all(supplier_id: target_id)
+            PriceHistory.where(supplier_id: source.id).update_all(supplier_id: target_id)
+
+            # Delete the source contact
+            source.destroy
+          end
+        end
+
+        render json: {
+          success: true,
+          message: "Successfully merged #{source_contacts.count} contact(s) into #{target_contact.full_name}",
+          contact: target_contact.as_json(
+            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types]
+          )
+        }
+      rescue ActiveRecord::RecordNotFound => e
+        render json: {
+          success: false,
+          error: "Contact not found: #{e.message}"
+        }, status: :not_found
+      rescue => e
+        render json: {
+          success: false,
+          error: "Failed to merge contacts: #{e.message}"
+        }, status: :internal_server_error
+      end
+
       private
 
       def set_contact
@@ -193,6 +381,13 @@ module Api
           :contact_region,
           :branch,
           :primary_contact_type,
+          :rating,
+          :response_rate,
+          :avg_response_time,
+          :is_active,
+          :supplier_code,
+          :address,
+          :notes,
           contact_types: []
         )
       end

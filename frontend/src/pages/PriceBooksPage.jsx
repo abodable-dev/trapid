@@ -41,7 +41,7 @@ export default function PriceBooksPage() {
   const [allSuppliers, setAllSuppliers] = useState([]) // Store all suppliers for filtering
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 50,
+    limit: 1000,
     total_count: 0,
     total_pages: 0
   })
@@ -124,7 +124,7 @@ export default function PriceBooksPage() {
       // Build query params
       const params = {
         page,
-        limit: 50,
+        limit: 1000,
         sort_by: sortBy,
         sort_direction: sortDirection,
       }
@@ -430,17 +430,16 @@ export default function PriceBooksPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
-        {/* Header with search */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20">
-          <div className="px-6 py-4">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -my-10 flex flex-col bg-white dark:bg-gray-900" style={{ height: 'calc(100vh - 4rem)' }}>
+      {/* Header with search */}
+      <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-4">
+        <div>
             <div className="flex items-center justify-between gap-4 mb-4">
               <div className="flex items-center gap-3">
                 <CurrencyDollarIcon className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                    Price Book
+                    Price Book <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(pricebook_items)</span>
                   </h1>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                     {getResultsText()}
@@ -633,11 +632,17 @@ export default function PriceBooksPage() {
             )}
           </div>
         </div>
-        <div className="overflow-x-auto border-l border-r border-b border-gray-200 dark:border-gray-700 rounded-lg">
-          <table className="min-w-full">
+
+      {/* Scroll container for table */}
+      <div className="flex-1 overflow-auto bg-white dark:bg-gray-900" style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#9CA3AF #E5E7EB'
+      }}>
+        <div className="w-full h-full">
+          <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
               <tr>
-                <th className="px-3 py-2 w-10">
+                <th style={{ minWidth: '50px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700">
                   <input
                     type="checkbox"
                     checked={items.length > 0 && selectedItems.size === items.length}
@@ -645,7 +650,7 @@ export default function PriceBooksPage() {
                     className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                   />
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                <th style={{ minWidth: '200px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                   <ColumnHeaderMenu
                     label="Code"
                     column="item_code"
@@ -657,7 +662,7 @@ export default function PriceBooksPage() {
                     filterType="search"
                   />
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                <th style={{ minWidth: '250px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                   <ColumnHeaderMenu
                     label="Item Name"
                     column="item_name"
@@ -669,7 +674,7 @@ export default function PriceBooksPage() {
                     filterType="search"
                   />
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                <th style={{ minWidth: '150px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                   <ColumnHeaderMenu
                     label="Status"
                     column="risk_level"
@@ -687,7 +692,7 @@ export default function PriceBooksPage() {
                     ]}
                   />
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                <th style={{ minWidth: '200px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                   <ColumnHeaderMenu
                     label="Category"
                     column="category"
@@ -700,7 +705,7 @@ export default function PriceBooksPage() {
                     filterOptions={categories.map(cat => ({ label: cat, value: cat, count: null }))}
                   />
                 </th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                <th style={{ minWidth: '150px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
                   <ColumnHeaderMenu
                     label="Price"
                     column="current_price"
@@ -712,10 +717,10 @@ export default function PriceBooksPage() {
                     filterType="price-range"
                   />
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                <th style={{ minWidth: '100px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                   Unit
                 </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                <th style={{ minWidth: '200px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                   <ColumnHeaderMenu
                     label="Supplier"
                     column="supplier"
@@ -728,12 +733,18 @@ export default function PriceBooksPage() {
                     filterOptions={suppliers.map(sup => ({ label: sup.name, value: sup.id.toString(), count: null }))}
                   />
                 </th>
+                <th style={{ minWidth: '150px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Brand
+                </th>
+                <th style={{ minWidth: '200px' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Notes
+                </th>
               </tr>
             </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                   {items.length === 0 && !loading ? (
                     <tr>
-                      <td colSpan="8" className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                      <td colSpan="10" className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                         {hasActiveFilters
                           ? 'No items match your filters. Try adjusting your search criteria.'
                           : 'No items found in the price book.'}
@@ -751,7 +762,7 @@ export default function PriceBooksPage() {
                             selectedItems.has(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
                           }`}
                         >
-                          <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                          <td style={{ minWidth: '50px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
                             <input
                               type="checkbox"
                               checked={selectedItems.has(item.id)}
@@ -759,13 +770,13 @@ export default function PriceBooksPage() {
                               className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                             />
                           </td>
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                          <td style={{ minWidth: '200px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white">
                             {item.item_code}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                          <td style={{ minWidth: '250px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white">
                             {item.item_name}
                           </td>
-                          <td className="px-4 py-3 text-sm">
+                          <td style={{ minWidth: '150px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm">
                             <div className="flex flex-wrap gap-1">
                               {getRiskBadges(item).length > 0 ? (
                                 getRiskBadges(item)
@@ -775,7 +786,8 @@ export default function PriceBooksPage() {
                             </div>
                           </td>
                           <td
-                            className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400"
+                            style={{ minWidth: '200px' }}
+                            className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400"
                             onClick={(e) => {
                               e.stopPropagation()
                               setEditingCategory(item.id)
@@ -801,14 +813,22 @@ export default function PriceBooksPage() {
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white font-medium">
+                          <td style={{ minWidth: '150px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-right text-gray-900 dark:text-white font-medium">
                             {item.current_price ? formatCurrency(item.current_price, false) : '-'}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                          <td style={{ minWidth: '100px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
                             {item.unit_of_measure}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                            {item.supplier?.name || '-'}
+                          <td style={{ minWidth: '200px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+                            {item.default_supplier?.name || item.supplier?.name || '-'}
+                          </td>
+                          <td style={{ minWidth: '150px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+                            {item.brand || '-'}
+                          </td>
+                          <td style={{ minWidth: '200px' }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+                            <div className="truncate max-w-xs" title={item.notes}>
+                              {item.notes || '-'}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -816,7 +836,7 @@ export default function PriceBooksPage() {
                       {/* Infinite scroll trigger */}
                       {hasMore && (
                         <tr ref={observerTarget}>
-                          <td colSpan="8" className="px-4 py-4 text-center">
+                          <td colSpan="10" className="px-4 py-4 text-center">
                             {loadingMore ? (
                               <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
@@ -834,7 +854,7 @@ export default function PriceBooksPage() {
                       {/* End of results */}
                       {!hasMore && items.length > 0 && (
                         <tr>
-                          <td colSpan="8" className="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                          <td colSpan="10" className="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                             End of results
                           </td>
                         </tr>
@@ -844,14 +864,14 @@ export default function PriceBooksPage() {
                 </tbody>
               </table>
             </div>
-
-            {/* Import Modal */}
-            <PriceBookImportModal
-              isOpen={showImportModal}
-              onClose={() => setShowImportModal(false)}
-              onImportSuccess={handleImportSuccess}
-            />
           </div>
-        </div>
+
+        {/* Import Modal */}
+        <PriceBookImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImportSuccess={handleImportSuccess}
+        />
+      </div>
   )
 }

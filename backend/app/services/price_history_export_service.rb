@@ -28,8 +28,7 @@ class PriceHistoryExportService
         filename: generate_filename,
         content_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         data: package.to_stream.read,
-        total_items: items.count,
-        total_history_records: items.sum { |item| item.price_histories.size }
+        total_items: items.count
       }
     rescue => e
       @errors << "Failed to generate Excel file: #{e.message}"
@@ -57,158 +56,49 @@ class PriceHistoryExportService
   def generate_excel(items)
     package = Axlsx::Package.new
 
-    package.workbook.add_worksheet(name: "Price History") do |sheet|
-      # Define styles
-      header_style = sheet.styles.add_style(
-        bg_color: "0066CC",
-        fg_color: "FFFFFF",
-        b: true,
-        alignment: { horizontal: :center, vertical: :center, wrap_text: true },
-        border: { style: :thin, color: "000000" }
-      )
+    package.workbook.add_worksheet(name: "Pricebook") do |sheet|
+      # Add header row - no styling to avoid corruption
+      # Columns match the import format for easy round-trip editing
+      sheet.add_row([
+        'Item ID',
+        'Item Code',
+        'Item Name',
+        'Category',
+        'Unit of Measure',
+        'Historical Price',
+        'Supplier',
+        'Date Effective',
+        'LGA',
+        'Brand',
+        'Notes'
+      ])
 
-      data_style = sheet.styles.add_style(
-        alignment: { vertical: :center, wrap_text: false },
-        border: { style: :thin, color: "CCCCCC" }
-      )
-
-      currency_style = sheet.styles.add_style(
-        format_code: '"$"#,##0.00',
-        alignment: { vertical: :center },
-        border: { style: :thin, color: "CCCCCC" }
-      )
-
-      date_style = sheet.styles.add_style(
-        format_code: 'yyyy-mm-dd',
-        alignment: { vertical: :center },
-        border: { style: :thin, color: "CCCCCC" }
-      )
-
-      # Add header row
-      sheet.add_row(
-        [
-          'Item ID',
-          'Item Code',
-          'Item Name',
-          'Category',
-          'Unit of Measure',
-          'Current Price',
-          'Default Supplier',
-          'Price History ID',
-          'Historical Price',
-          'Previous Price',
-          'Price Date',
-          'Date Effective',
-          'Supplier',
-          'LGA',
-          'Change Reason',
-          'Quote Reference',
-          'Notes'
-        ],
-        style: header_style,
-        height: 30
-      )
-
-      # Add data rows
+      # Add data rows - one row per item with current price only
       items.each do |item|
-        if item.price_histories.any?
-          # Create a row for each price history entry
-          item.price_histories.order(created_at: :desc).each do |history|
-            sheet.add_row(
-              [
-                item.id,
-                item.item_code,
-                item.item_name,
-                item.category,
-                item.unit_of_measure,
-                item.current_price,
-                item.default_supplier&.name,
-                history.id,
-                history.new_price,
-                history.old_price,
-                history.created_at&.to_date,
-                history.date_effective,
-                history.supplier&.name,
-                history.lga,
-                history.change_reason,
-                history.quote_reference,
-                item.notes
-              ],
-              style: [
-                data_style,      # Item ID
-                data_style,      # Item Code
-                data_style,      # Item Name
-                data_style,      # Category
-                data_style,      # Unit of Measure
-                currency_style,  # Current Price
-                data_style,      # Default Supplier
-                data_style,      # Price History ID
-                currency_style,  # Historical Price
-                currency_style,  # Previous Price
-                date_style,      # Price Date
-                date_style,      # Date Effective
-                data_style,      # Supplier
-                data_style,      # LGA
-                data_style,      # Change Reason
-                data_style,      # Quote Reference
-                data_style       # Notes
-              ]
-            )
-          end
-        else
-          # Item has no price history, create a single row
-          sheet.add_row(
-            [
-              item.id,
-              item.item_code,
-              item.item_name,
-              item.category,
-              item.unit_of_measure,
-              item.current_price,
-              item.default_supplier&.name,
-              nil, # No history ID
-              nil, # No historical price
-              nil, # No previous price
-              nil, # No price date
-              nil, # No date effective
-              nil, # No supplier in history
-              nil, # No LGA
-              nil, # No change reason
-              nil, # No quote reference
-              item.notes
-            ],
-            style: [
-              data_style,      # Item ID
-              data_style,      # Item Code
-              data_style,      # Item Name
-              data_style,      # Category
-              data_style,      # Unit of Measure
-              currency_style,  # Current Price
-              data_style,      # Default Supplier
-              data_style,      # Price History ID
-              currency_style,  # Historical Price
-              currency_style,  # Previous Price
-              date_style,      # Price Date
-              date_style,      # Date Effective
-              data_style,      # Supplier
-              data_style,      # LGA
-              data_style,      # Change Reason
-              data_style,      # Quote Reference
-              data_style       # Notes
-            ]
-          )
-        end
-      end
+        # Use default_supplier if available, otherwise fall back to supplier
+        supplier_name = item.default_supplier&.name || item.supplier&.name
 
-      # Auto-fit columns
-      sheet.column_widths 10, 15, 30, 20, 15, 15, 20, 15, 15, 15, 12, 12, 20, 25, 20, 20, 30
+        sheet.add_row([
+          item.id,
+          item.item_code.to_s,
+          item.item_name.to_s,
+          item.category.to_s,
+          item.unit_of_measure.to_s,
+          item.current_price,
+          supplier_name.to_s,
+          item.price_last_updated_at&.to_date,
+          nil, # LGA - can be filled in by user for import
+          item.brand.to_s,
+          item.notes.to_s
+        ])
+      end
     end
 
     package
   end
 
   def generate_filename
-    parts = ["price_history"]
+    parts = ["pricebook"]
 
     if @item_ids.present?
       parts << "selected_#{@item_ids.length}_items"
@@ -230,5 +120,42 @@ class PriceHistoryExportService
 
   def sanitize_filename(name)
     name.to_s.gsub(/[^a-zA-Z0-9_-]/, '_').gsub(/_+/, '_')
+  end
+
+  def sanitize_cell_value(value)
+    return nil if value.nil?
+    return nil if value.to_s.strip.empty?
+
+    # Convert to string
+    clean_value = value.to_s.strip
+
+    # For very simple strings (alphanumeric with common punctuation), return as-is
+    if clean_value.match?(/\A[\w\s\-.,\/()&]+\z/)
+      return clean_value
+    end
+
+    # Remove any invalid UTF-8 sequences
+    clean_value = clean_value.encode('UTF-8', invalid: :replace, undef: :replace, replace: '')
+
+    # Remove control characters one by one to avoid regex issues
+    # Keep only printable characters, tabs, newlines, and carriage returns
+    clean_value = clean_value.chars.select do |char|
+      code = char.ord
+      # Allow tab (9), newline (10), carriage return (13), and printable ASCII (32-126)
+      # Also allow Unicode characters (128+)
+      code == 9 || code == 10 || code == 13 || (code >= 32 && code <= 126) || code >= 128
+    end.join
+
+    # Truncate very long text to prevent Excel issues (32,767 character limit per cell)
+    clean_value = clean_value[0..32000] if clean_value.length > 32000
+
+    # Replace multiple consecutive line breaks with double line break
+    clean_value = clean_value.gsub(/\n{3,}/, "\n\n")
+
+    # Remove leading/trailing whitespace
+    clean_value = clean_value.strip
+
+    # Return nil if nothing left after sanitization (caxlsx handles nil better than empty string)
+    clean_value.empty? ? nil : clean_value
   end
 end

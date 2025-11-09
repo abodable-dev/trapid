@@ -1,57 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import {
-  DocumentTextIcon,
-  HashtagIcon,
-  EnvelopeIcon,
-  PhoneIcon,
-  CalendarIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  CurrencyDollarIcon,
-  LinkIcon,
-  DocumentIcon,
-  PaperClipIcon,
-  Bars3BottomLeftIcon,
-  UserIcon,
-  StarIcon,
-  CalculatorIcon,
-  ArrowPathIcon,
-  MagnifyingGlassIcon,
-  RectangleStackIcon,
-  ArrowsRightLeftIcon,
-} from '@heroicons/react/24/outline'
 import LookupConfigSlideout from './LookupConfigSlideout'
-
-const COLUMN_TYPES = [
-  // Standard Fields
-  { value: 'lookup', label: 'Link to another record', icon: ArrowsRightLeftIcon, category: 'Standard fields', needsConfig: true },
-  { value: 'single_line_text', label: 'Single line text', icon: DocumentTextIcon, category: 'Standard fields' },
-  { value: 'multi_line_text', label: 'Long text', icon: Bars3BottomLeftIcon, category: 'Standard fields' },
-  { value: 'attachment', label: 'Attachment', icon: PaperClipIcon, category: 'Standard fields' },
-  { value: 'boolean', label: 'Checkbox', icon: CheckCircleIcon, category: 'Standard fields' },
-  { value: 'multiple_select', label: 'Multiple select', icon: RectangleStackIcon, category: 'Standard fields' },
-  { value: 'single_select', label: 'Single select', icon: RectangleStackIcon, category: 'Standard fields' },
-  { value: 'user', label: 'User', icon: UserIcon, category: 'Standard fields' },
-  { value: 'date', label: 'Date', icon: CalendarIcon, category: 'Standard fields' },
-  { value: 'phone', label: 'Phone number', icon: PhoneIcon, category: 'Standard fields' },
-  { value: 'email', label: 'Email', icon: EnvelopeIcon, category: 'Standard fields' },
-  { value: 'url', label: 'URL', icon: LinkIcon, category: 'Standard fields' },
-  { value: 'number', label: 'Number', icon: HashtagIcon, category: 'Standard fields' },
-  { value: 'currency', label: 'Currency', icon: CurrencyDollarIcon, category: 'Standard fields' },
-  { value: 'percentage', label: 'Percent', icon: HashtagIcon, category: 'Standard fields' },
-  { value: 'duration', label: 'Duration', icon: ClockIcon, category: 'Standard fields' },
-  { value: 'rating', label: 'Rating', icon: StarIcon, category: 'Standard fields' },
-  { value: 'formula', label: 'Formula', icon: CalculatorIcon, category: 'Standard fields' },
-  { value: 'rollup', label: 'Rollup', icon: ArrowPathIcon, category: 'Standard fields' },
-  { value: 'count', label: 'Count', icon: HashtagIcon, category: 'Standard fields' },
-  { value: 'lookup_field', label: 'Lookup', icon: MagnifyingGlassIcon, category: 'Standard fields' },
-  { value: 'created_time', label: 'Created time', icon: ClockIcon, category: 'Standard fields' },
-  { value: 'last_modified_time', label: 'Last modified time', icon: ClockIcon, category: 'Standard fields' },
-  { value: 'created_by', label: 'Created by', icon: UserIcon, category: 'Standard fields' },
-  { value: 'last_modified_by', label: 'Last modified by', icon: UserIcon, category: 'Standard fields' },
-  { value: 'autonumber', label: 'Autonumber', icon: HashtagIcon, category: 'Standard fields' },
-]
+import { COLUMN_TYPES } from '../../constants/columnTypes'
 
 export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
   const [step, setStep] = useState(1) // 1 = column type, 2 = column name + settings
@@ -65,6 +15,8 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
   const [filteredColumns, setFilteredColumns] = useState([])
   const [cursorPosition, setCursorPosition] = useState(0)
   const textareaRef = useRef(null)
+  const [testingFormula, setTestingFormula] = useState(false)
+  const [testResult, setTestResult] = useState(null)
 
   useEffect(() => {
     if (!isOpen) {
@@ -74,6 +26,7 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
       setFormulaExpression('')
       setIsSubmitting(false)
       setShowColumnSuggestions(false)
+      setTestResult(null)
     } else if (isOpen && tableId) {
       // Fetch available columns for autocomplete
       fetchTableColumns()
@@ -147,13 +100,13 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
     if (!columnName.trim() || isSubmitting) return
 
     // For lookup columns, show the configuration slideout
-    if (columnType === 'lookup') {
+    if (columnType === 'lookup' || columnType === 'multiple_lookups') {
       setShowLookupConfig(true)
       return
     }
 
-    // For formula columns, require a formula expression
-    if (columnType === 'formula' && !formulaExpression.trim()) {
+    // For computed/formula columns, require a formula expression
+    if (columnType === 'computed' && !formulaExpression.trim()) {
       alert('Please enter a formula expression')
       return
     }
@@ -164,8 +117,8 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
       column_type: columnType
     }
 
-    // Add formula expression to settings if it's a formula column
-    if (columnType === 'formula') {
+    // Add formula expression to settings if it's a computed/formula column
+    if (columnType === 'computed') {
       columnData.settings = {
         formula: formulaExpression.trim()
       }
@@ -175,13 +128,65 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
     setIsSubmitting(false)
   }
 
+  const handleTestFormula = async () => {
+    if (!formulaExpression.trim()) {
+      alert('Please enter a formula to test')
+      return
+    }
+
+    try {
+      setTestingFormula(true)
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/tables/${tableId}/columns/test_formula`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            formula: formulaExpression
+          })
+        }
+      )
+
+      const data = await response.json()
+
+      if (data.success) {
+        setTestResult({
+          success: true,
+          result: data.result,
+          uses_cross_table_refs: data.uses_cross_table_refs,
+          tested_with_record_id: data.tested_with_record_id
+        })
+      } else {
+        setTestResult({
+          success: false,
+          error: data.error
+        })
+      }
+    } catch (err) {
+      console.error('Formula test error:', err)
+      setTestResult({
+        success: false,
+        error: err.message || 'Failed to test formula'
+      })
+    } finally {
+      setTestingFormula(false)
+    }
+  }
+
   const handleLookupSave = async (lookupConfig) => {
     setIsSubmitting(true)
     const columnData = {
       name: columnName.trim(),
-      column_type: 'lookup',
+      column_type: columnType, // Use the selected columnType (lookup or multiple_lookups)
       lookup_table_id: lookupConfig.lookup_table_id,
       lookup_display_column: lookupConfig.lookup_display_column
+    }
+
+    // For multiple lookups, set is_multiple flag
+    if (columnType === 'multiple_lookups') {
+      columnData.is_multiple = true
     }
 
     await onAdd(columnData)
@@ -237,34 +242,51 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
               {/* Step 1: Column Type Selection */}
               <div className="w-full flex-shrink-0 p-6">
                 <div className="border border-gray-300 dark:border-gray-600 rounded-lg max-h-96 overflow-y-auto">
-                  {/* Category Header */}
-                  <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0">
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                      Standard fields
-                    </span>
-                  </div>
-
-                  {/* Column Type Options */}
-                  {COLUMN_TYPES.map((type) => {
-                    const Icon = type.icon
-                    const isSelected = columnType === type.value
+                  {/* Group column types by category */}
+                  {['Text', 'Numbers', 'Date & Time', 'Selection', 'Relationships', 'Computed'].map((category) => {
+                    const typesInCategory = COLUMN_TYPES.filter(t => t.category === category)
+                    if (typesInCategory.length === 0) return null
 
                     return (
-                      <button
-                        key={type.value}
-                        type="button"
-                        onClick={() => handleColumnTypeSelect(type.value)}
-                        className={`w-full flex items-center gap-x-3 px-3 py-2.5 text-sm border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors ${
-                          isSelected
-                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                        }`}
-                      >
-                        <Icon className={`h-4 w-4 flex-shrink-0 ${
-                          isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
-                        }`} />
-                        <span className="text-left">{type.label}</span>
-                      </button>
+                      <div key={category}>
+                        {/* Category Header */}
+                        <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0">
+                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                            {category}
+                          </span>
+                        </div>
+
+                        {/* Column Type Options */}
+                        {typesInCategory.map((type) => {
+                          const Icon = type.icon
+                          const isSelected = columnType === type.value
+
+                          return (
+                            <button
+                              key={type.value}
+                              type="button"
+                              onClick={() => handleColumnTypeSelect(type.value)}
+                              className={`w-full flex items-start gap-x-3 px-3 py-2.5 text-sm border-b border-gray-100 dark:border-gray-700 transition-colors ${
+                                isSelected
+                                  ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                              }`}
+                            >
+                              <Icon className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
+                                isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400'
+                              }`} />
+                              <div className="flex-1 text-left">
+                                <div className="font-medium">{type.label}</div>
+                                {type.description && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    {type.description}
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
                     )
                   })}
                 </div>
@@ -289,8 +311,8 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
                   />
                 </div>
 
-                {/* Formula Expression (only shown for formula type) */}
-                {columnType === 'formula' && (
+                {/* Formula Expression (only shown for computed type) */}
+                {columnType === 'computed' && (
                   <div className="relative">
                     <label htmlFor="formula-expression" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Formula
@@ -331,9 +353,56 @@ export default function AddColumnModal({ isOpen, onClose, onAdd, tableId }) {
                       </div>
                     )}
 
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Type {'{'}  to see available columns
-                    </p>
+                    <div className="mt-2 space-y-2">
+                      {/* Test Formula Button */}
+                      <button
+                        type="button"
+                        onClick={handleTestFormula}
+                        disabled={testingFormula || !formulaExpression.trim()}
+                        className="px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {testingFormula ? 'Testing...' : 'Test Formula'}
+                      </button>
+
+                      {/* Test Result Display */}
+                      {testResult && (
+                        <div className={`p-3 rounded-lg border ${
+                          testResult.success
+                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                        }`}>
+                          {testResult.success ? (
+                            <div className="space-y-1">
+                              <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                                Test Result: <span className="font-mono">{testResult.result}</span>
+                              </p>
+                              {testResult.uses_cross_table_refs && (
+                                <p className="text-xs text-green-700 dark:text-green-400">
+                                  ✓ This formula uses cross-table references
+                                </p>
+                              )}
+                              <p className="text-xs text-green-600 dark:text-green-500">
+                                Tested with record #{testResult.tested_with_record_id}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-red-800 dark:text-red-300">
+                              Error: {testResult.error}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                        <p className="font-medium">Tips:</p>
+                        <p>• Type {'{'}  to see available columns from this table</p>
+                        <p>• Use dot notation for cross-table references: {'{'}<span className="font-mono">lookup_column.field_name</span>{'}'}</p>
+                        <p className="font-medium mt-2">Examples:</p>
+                        <p className="font-mono">• {'{'}Price{'}'} * {'{'}Quantity{'}'}</p>
+                        <p className="font-mono">• {'{'}Category.Tax Rate{'}'} * {'{'}Subtotal{'}'}</p>
+                        <p className="font-mono">• ({'{'}Subtotal{'}'} + {'{'}Shipping{'}'}) * 1.1</p>
+                      </div>
+                    </div>
                   </div>
                 )}
 

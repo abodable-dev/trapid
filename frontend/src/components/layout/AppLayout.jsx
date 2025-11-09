@@ -27,6 +27,7 @@ import {
   BookOpenIcon,
   UserGroupIcon,
   UsersIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
@@ -36,12 +37,13 @@ const navigation = [
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
   { name: 'Contacts', href: '/contacts', icon: UsersIcon },
+  { name: 'Health', href: '/health', icon: PlusIcon },
+  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ]
 
 // Bottom navigation items
 const bottomNavigation = [
   { name: 'Import Data', href: '/import', icon: ArrowUpTrayIcon },
-  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ]
 
 const userNavigation = [

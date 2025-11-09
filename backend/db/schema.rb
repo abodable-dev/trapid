@@ -10,9 +10,38 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_09_210752) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+  enable_extension "pg_stat_statements"
+
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
 
   create_table "columns", force: :cascade do |t|
     t.bigint "table_id", null: false
@@ -36,6 +65,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
     t.boolean "is_multiple", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "has_cross_table_refs", default: false, null: false
+    t.index ["has_cross_table_refs"], name: "index_columns_on_has_cross_table_refs"
     t.index ["lookup_table_id"], name: "index_columns_on_lookup_table_id"
     t.index ["table_id", "column_name"], name: "index_columns_on_table_id_and_column_name", unique: true
     t.index ["table_id"], name: "index_columns_on_table_id"
@@ -105,8 +136,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
     t.text "xero_sync_error"
     t.string "contact_types", default: [], array: true
     t.string "primary_contact_type"
+    t.integer "rating", default: 0
+    t.decimal "response_rate", precision: 5, scale: 2, default: "0.0"
+    t.integer "avg_response_time"
+    t.text "notes"
+    t.boolean "is_active", default: true
+    t.string "supplier_code"
+    t.text "address"
     t.index ["contact_types"], name: "index_contacts_on_contact_types", using: :gin
+    t.index ["is_active"], name: "index_contacts_on_is_active"
     t.index ["primary_contact_type"], name: "index_contacts_on_primary_contact_type"
+    t.index ["rating"], name: "index_contacts_on_rating"
+    t.index ["supplier_code"], name: "index_contacts_on_supplier_code", unique: true, where: "(supplier_code IS NOT NULL)"
   end
 
   create_table "designs", force: :cascade do |t|
@@ -120,6 +161,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
     t.datetime "updated_at", null: false
     t.index ["is_active"], name: "index_designs_on_is_active"
     t.index ["name"], name: "index_designs_on_name", unique: true
+  end
+
+  create_table "document_tasks", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.string "category"
+    t.string "name"
+    t.text "description"
+    t.boolean "required"
+    t.boolean "has_document"
+    t.boolean "is_validated"
+    t.datetime "uploaded_at"
+    t.string "uploaded_by"
+    t.datetime "validated_at"
+    t.string "validated_by"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id"], name: "index_document_tasks_on_construction_id"
   end
 
   create_table "estimate_line_items", force: :cascade do |t|
@@ -136,8 +194,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
   end
 
   create_table "estimate_reviews", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
     t.bigint "estimate_id", null: false
     t.string "status", default: "pending", null: false
     t.text "ai_findings"
@@ -148,6 +204,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
     t.integer "items_extra", default: 0
     t.decimal "confidence_score", precision: 5, scale: 2
     t.datetime "reviewed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["estimate_id"], name: "index_estimate_reviews_on_estimate_id"
     t.index ["reviewed_at"], name: "index_estimate_reviews_on_reviewed_at"
     t.index ["status"], name: "index_estimate_reviews_on_status"
@@ -185,24 +243,32 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
 
   create_table "folder_template_items", force: :cascade do |t|
     t.bigint "folder_template_id", null: false
-    t.string "name"
-    t.integer "level"
-    t.integer "order"
-    t.integer "parent_id"
+    t.string "name", null: false
+    t.integer "level", default: 0, null: false
+    t.integer "order", default: 0, null: false
+    t.bigint "parent_id"
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["folder_template_id", "order"], name: "index_folder_template_items_on_folder_template_id_and_order"
     t.index ["folder_template_id"], name: "index_folder_template_items_on_folder_template_id"
+    t.index ["level"], name: "index_folder_template_items_on_level"
+    t.index ["parent_id"], name: "index_folder_template_items_on_parent_id"
   end
 
   create_table "folder_templates", force: :cascade do |t|
-    t.string "name"
+    t.string "name", null: false
     t.string "template_type"
-    t.boolean "is_system_default"
-    t.boolean "is_active"
-    t.integer "created_by_id"
+    t.boolean "is_system_default", default: false, null: false
+    t.boolean "is_active", default: true, null: false
+    t.bigint "created_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_folder_templates_on_created_by_id"
+    t.index ["is_active"], name: "index_folder_templates_on_is_active"
+    t.index ["is_system_default"], name: "index_folder_templates_on_is_system_default"
+    t.index ["name"], name: "index_folder_templates_on_name"
+    t.index ["template_type"], name: "index_folder_templates_on_template_type"
   end
 
   create_table "grok_plans", force: :cascade do |t|
@@ -236,33 +302,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
     t.index ["session_key"], name: "index_import_sessions_on_session_key", unique: true
     t.index ["status"], name: "index_import_sessions_on_status"
     t.index ["table_id"], name: "index_import_sessions_on_table_id"
-  end
-
-  create_table "ml_features", id: :serial, force: :cascade do |t|
-    t.string "feature_type", limit: 50, null: false
-    t.integer "entity_id", null: false
-    t.string "entity_type", limit: 50, null: false
-    t.jsonb "features", null: false
-    t.datetime "computed_at", precision: nil, default: -> { "now()" }, null: false
-    t.datetime "created_at", precision: nil, default: -> { "now()" }, null: false
-    t.datetime "updated_at", precision: nil, default: -> { "now()" }, null: false
-    t.index ["computed_at"], name: "idx_features_computed_at"
-    t.index ["entity_type", "entity_id"], name: "idx_features_entity"
-    t.index ["feature_type"], name: "idx_features_type"
-  end
-
-  create_table "ml_predictions", id: :serial, force: :cascade do |t|
-    t.string "model_name", limit: 100, null: false
-    t.string "model_version", limit: 50, null: false
-    t.integer "entity_id", null: false
-    t.string "entity_type", limit: 50, null: false
-    t.jsonb "prediction_value", null: false
-    t.float "confidence_score"
-    t.datetime "predicted_at", precision: nil, default: -> { "now()" }, null: false
-    t.datetime "created_at", precision: nil, default: -> { "now()" }, null: false
-    t.index ["entity_type", "entity_id"], name: "idx_predictions_entity"
-    t.index ["model_name", "model_version"], name: "idx_predictions_model"
-    t.index ["predicted_at"], name: "idx_predictions_predicted_at"
   end
 
   create_table "one_drive_credentials", force: :cascade do |t|
@@ -510,6 +549,129 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
     t.index ["status"], name: "index_schedule_tasks_on_status"
   end
 
+  create_table "solid_queue_blocked_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.string "queue_name", null: false
+    t.integer "priority", default: 0, null: false
+    t.string "concurrency_key", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["concurrency_key", "priority", "job_id"], name: "index_solid_queue_blocked_executions_for_release"
+    t.index ["expires_at", "concurrency_key"], name: "index_solid_queue_blocked_executions_for_maintenance"
+    t.index ["job_id"], name: "index_solid_queue_blocked_executions_on_job_id", unique: true
+  end
+
+  create_table "solid_queue_claimed_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.bigint "process_id"
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_claimed_executions_on_job_id", unique: true
+    t.index ["process_id", "job_id"], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id"
+  end
+
+  create_table "solid_queue_failed_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_failed_executions_on_job_id", unique: true
+  end
+
+  create_table "solid_queue_jobs", force: :cascade do |t|
+    t.string "queue_name", null: false
+    t.string "class_name", null: false
+    t.text "arguments"
+    t.integer "priority", default: 0, null: false
+    t.string "active_job_id"
+    t.datetime "scheduled_at"
+    t.datetime "finished_at"
+    t.string "concurrency_key"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "key_hash"
+    t.index ["active_job_id"], name: "index_solid_queue_jobs_on_active_job_id"
+    t.index ["class_name"], name: "index_solid_queue_jobs_on_class_name"
+    t.index ["finished_at"], name: "index_solid_queue_jobs_on_finished_at"
+    t.index ["key_hash"], name: "index_solid_queue_jobs_on_key_hash", unique: true
+    t.index ["queue_name", "finished_at"], name: "index_solid_queue_jobs_for_filtering"
+    t.index ["scheduled_at", "finished_at"], name: "index_solid_queue_jobs_for_alerting"
+  end
+
+  create_table "solid_queue_pauses", force: :cascade do |t|
+    t.string "queue_name", null: false
+    t.datetime "created_at", null: false
+    t.index ["queue_name"], name: "index_solid_queue_pauses_on_queue_name", unique: true
+  end
+
+  create_table "solid_queue_processes", force: :cascade do |t|
+    t.string "kind", null: false
+    t.datetime "last_heartbeat_at", null: false
+    t.bigint "supervisor_id"
+    t.integer "pid", null: false
+    t.string "hostname"
+    t.text "metadata"
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.index ["last_heartbeat_at"], name: "index_solid_queue_processes_on_last_heartbeat_at"
+    t.index ["name", "supervisor_id"], name: "index_solid_queue_processes_on_name_and_supervisor_id", unique: true
+    t.index ["supervisor_id"], name: "index_solid_queue_processes_on_supervisor_id"
+  end
+
+  create_table "solid_queue_ready_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.string "queue_name", null: false
+    t.integer "priority", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_ready_executions_on_job_id", unique: true
+    t.index ["priority", "job_id"], name: "index_solid_queue_poll_all"
+    t.index ["queue_name", "priority", "job_id"], name: "index_solid_queue_poll_by_queue"
+  end
+
+  create_table "solid_queue_recurring_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.string "task_key", null: false
+    t.datetime "run_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_recurring_executions_on_job_id", unique: true
+    t.index ["task_key", "run_at"], name: "index_solid_queue_recurring_executions_on_task_key_and_run_at", unique: true
+  end
+
+  create_table "solid_queue_recurring_tasks", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "schedule", null: false
+    t.string "command", limit: 2048
+    t.string "class_name"
+    t.text "arguments"
+    t.string "queue_name"
+    t.integer "priority", default: 0
+    t.boolean "static", default: true, null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_solid_queue_recurring_tasks_on_key", unique: true
+    t.index ["static"], name: "index_solid_queue_recurring_tasks_on_static"
+  end
+
+  create_table "solid_queue_scheduled_executions", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.string "queue_name", null: false
+    t.integer "priority", default: 0, null: false
+    t.datetime "scheduled_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_scheduled_executions_on_job_id", unique: true
+    t.index ["scheduled_at", "priority", "job_id"], name: "index_solid_queue_dispatch_all"
+  end
+
+  create_table "solid_queue_semaphores", force: :cascade do |t|
+    t.string "key", null: false
+    t.integer "value", default: 1, null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_solid_queue_semaphores_on_expires_at"
+    t.index ["key", "value"], name: "index_solid_queue_semaphores_on_key_and_value"
+    t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
+  end
+
   create_table "supplier_contacts", force: :cascade do |t|
     t.bigint "supplier_id", null: false
     t.bigint "contact_id", null: false
@@ -566,7 +728,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "is_live", default: false, null: false
+    t.string "slug"
     t.index ["database_table_name"], name: "index_tables_on_database_table_name", unique: true
+    t.index ["slug"], name: "index_tables_on_slug", unique: true
   end
 
   create_table "task_dependencies", force: :cascade do |t|
@@ -617,7 +781,451 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
     t.index ["user_id"], name: "index_task_updates_on_user_id"
   end
 
-  create_table "user_dog_dog_cat_baf84797", force: :cascade do |t|
+  create_table "user_9_30_upload_4b12581f", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.string "code"
+    t.string "description"
+    t.string "unit"
+    t.decimal "range_id", precision: 15, scale: 2
+    t.string "range"
+    t.decimal "rangetype", precision: 15, scale: 2
+    t.date "colour_spec_id"
+    t.string "colour_spec"
+    t.date "colour_spectype"
+    t.decimal "tedmodel_id", precision: 15, scale: 2
+    t.string "tedmodel"
+    t.date "tedmodeltype"
+    t.decimal "price", precision: 15, scale: 2
+    t.string "default_supplier"
+    t.string "brand_linked"
+    t.string "budget_zone"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_document_tab_3728eb5f", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_document_tab_7a84cd47", force: :cascade do |t|
+    t.decimal "budget", precision: 15, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_document_tab_dd6cfcbf", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1761885699_f0f78b8e7fc2f1fc_78992af1", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.string "code"
+    t.string "description"
+    t.string "unit"
+    t.decimal "range_id", precision: 15, scale: 2
+    t.string "range"
+    t.decimal "rangetype", precision: 15, scale: 2
+    t.date "colour_spec_id"
+    t.string "colour_spec"
+    t.date "colour_spectype"
+    t.decimal "tedmodel_id", precision: 15, scale: 2
+    t.string "tedmodel"
+    t.date "tedmodeltype"
+    t.decimal "price", precision: 15, scale: 2
+    t.string "default_supplier"
+    t.string "brand_linked"
+    t.string "budget_zone"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1761885699_f0f78b8e7fc2f1fc_e3560d09", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.string "code"
+    t.string "description"
+    t.string "unit"
+    t.decimal "range_id", precision: 15, scale: 2
+    t.string "range"
+    t.decimal "rangetype", precision: 15, scale: 2
+    t.date "colour_spec_id"
+    t.string "colour_spec"
+    t.date "colour_spectype"
+    t.decimal "tedmodel_id", precision: 15, scale: 2
+    t.string "tedmodel"
+    t.date "tedmodeltype"
+    t.decimal "price", precision: 15, scale: 2
+    t.string "default_supplier"
+    t.string "brand_linked"
+    t.string "budget_zone"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762054183_c576571c2be177ce_c59dc239", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.string "code"
+    t.string "description"
+    t.string "unit"
+    t.decimal "range_id", precision: 15, scale: 2
+    t.string "range"
+    t.decimal "rangetype", precision: 15, scale: 2
+    t.date "colour_spec_id"
+    t.string "colour_spec"
+    t.date "colour_spectype"
+    t.decimal "tedmodel_id", precision: 15, scale: 2
+    t.string "tedmodel"
+    t.date "tedmodeltype"
+    t.decimal "price", precision: 15, scale: 2
+    t.string "default_supplier"
+    t.string "brand_linked"
+    t.string "budget_zone"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762055288_0481fe89c8986d83_77240a42", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.datetime "start_date"
+    t.string "title"
+    t.string "ba_approval_no"
+    t.string "ba_received_date"
+    t.string "covenant_approval_received"
+    t.string "plumbing_permit_no"
+    t.string "ted_number"
+    t.boolean "locked"
+    t.decimal "contract_value", precision: 15, scale: 2
+    t.decimal "live_profit", precision: 15, scale: 2
+    t.decimal "live", precision: 15, scale: 2
+    t.string "status"
+    t.decimal "certifier_job_no", precision: 15, scale: 2
+    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
+    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
+    t.boolean "xenna_lock"
+    t.boolean "is_kitchen"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762056023_72d2ca00717e243d_deed2265", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.datetime "start_date"
+    t.string "title"
+    t.string "ba_approval_no"
+    t.string "ba_received_date"
+    t.string "covenant_approval_received"
+    t.string "plumbing_permit_no"
+    t.string "ted_number"
+    t.boolean "locked"
+    t.decimal "contract_value", precision: 15, scale: 2
+    t.decimal "live_profit", precision: 15, scale: 2
+    t.decimal "live", precision: 15, scale: 2
+    t.string "status"
+    t.decimal "certifier_job_no", precision: 15, scale: 2
+    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
+    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
+    t.boolean "xenna_lock"
+    t.boolean "is_kitchen"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762056365_8affa6c58b11050f_ab07b46b", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.datetime "start_date"
+    t.string "title"
+    t.string "ba_approval_no"
+    t.string "ba_received_date"
+    t.string "covenant_approval_received"
+    t.string "plumbing_permit_no"
+    t.string "ted_number"
+    t.boolean "locked"
+    t.decimal "contract_value", precision: 15, scale: 2
+    t.decimal "live_profit", precision: 15, scale: 2
+    t.decimal "live", precision: 15, scale: 2
+    t.string "status"
+    t.decimal "certifier_job_no", precision: 15, scale: 2
+    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
+    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
+    t.boolean "xenna_lock"
+    t.boolean "is_kitchen"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762056499_7562a44878bae0dd_dc223e1a", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.datetime "start_date"
+    t.string "title"
+    t.string "ba_approval_no"
+    t.string "ba_received_date"
+    t.string "covenant_approval_received"
+    t.string "plumbing_permit_no"
+    t.string "ted_number"
+    t.boolean "locked"
+    t.decimal "contract_value", precision: 15, scale: 2
+    t.decimal "live_profit", precision: 15, scale: 2
+    t.decimal "live", precision: 15, scale: 2
+    t.string "status"
+    t.decimal "certifier_job_no", precision: 15, scale: 2
+    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
+    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
+    t.boolean "xenna_lock"
+    t.boolean "is_kitchen"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762059420_a11f2f8f92defc9a_d30f6065", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.string "code"
+    t.string "description"
+    t.string "unit"
+    t.decimal "range_id", precision: 15, scale: 2
+    t.string "range"
+    t.decimal "rangetype", precision: 15, scale: 2
+    t.date "colour_spec_id"
+    t.string "colour_spec"
+    t.date "colour_spectype"
+    t.decimal "tedmodel_id", precision: 15, scale: 2
+    t.string "tedmodel"
+    t.date "tedmodeltype"
+    t.decimal "price", precision: 15, scale: 2
+    t.string "default_supplier"
+    t.string "brand_linked"
+    t.string "budget_zone"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762060168_19920751913157a9_6fcf00a3", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.string "code"
+    t.string "description"
+    t.string "unit"
+    t.decimal "range_id", precision: 15, scale: 2
+    t.string "range"
+    t.decimal "rangetype", precision: 15, scale: 2
+    t.date "colour_spec_id"
+    t.string "colour_spec"
+    t.date "colour_spectype"
+    t.decimal "tedmodel_id", precision: 15, scale: 2
+    t.string "tedmodel"
+    t.date "tedmodeltype"
+    t.decimal "price", precision: 15, scale: 2
+    t.string "default_supplier"
+    t.string "brand_linked"
+    t.string "budget_zone"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762125311_b06c355ec069b654_2f8eb576", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.datetime "start_date"
+    t.string "title"
+    t.string "ba_approval_no"
+    t.string "ba_received_date"
+    t.string "covenant_approval_received"
+    t.string "plumbing_permit_no"
+    t.string "ted_number"
+    t.boolean "locked"
+    t.decimal "contract_value", precision: 15, scale: 2
+    t.decimal "live_profit", precision: 15, scale: 2
+    t.decimal "live", precision: 15, scale: 2
+    t.string "status"
+    t.decimal "certifier_job_no", precision: 15, scale: 2
+    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
+    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
+    t.boolean "xenna_lock"
+    t.boolean "is_kitchen"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762125512_3346546a6ffb8b8b_2afd6efb", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.string "code"
+    t.string "description"
+    t.string "unit"
+    t.decimal "range_id", precision: 15, scale: 2
+    t.string "range"
+    t.decimal "rangetype", precision: 15, scale: 2
+    t.date "colour_spec_id"
+    t.string "colour_spec"
+    t.date "colour_spectype"
+    t.decimal "tedmodel_id", precision: 15, scale: 2
+    t.string "tedmodel"
+    t.date "tedmodeltype"
+    t.decimal "price", precision: 15, scale: 2
+    t.string "default_supplier"
+    t.string "brand_linked"
+    t.string "budget_zone"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762125782_81846cbb9a44cbce_a99dc734", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.datetime "start_date"
+    t.string "title"
+    t.string "ba_approval_no"
+    t.string "ba_received_date"
+    t.string "covenant_approval_received"
+    t.string "plumbing_permit_no"
+    t.string "ted_number"
+    t.boolean "locked"
+    t.decimal "contract_value", precision: 15, scale: 2
+    t.decimal "live_profit", precision: 15, scale: 2
+    t.decimal "live", precision: 15, scale: 2
+    t.string "status"
+    t.decimal "certifier_job_no", precision: 15, scale: 2
+    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
+    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
+    t.boolean "xenna_lock"
+    t.boolean "is_kitchen"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762126561_e200f5e7e0826b1e_new_558a778c", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.decimal "parenttype", precision: 15, scale: 2
+    t.string "drive_id"
+    t.date "folder_id"
+    t.string "code"
+    t.string "description"
+    t.string "unit"
+    t.decimal "range_id", precision: 15, scale: 2
+    t.string "range"
+    t.decimal "rangetype", precision: 15, scale: 2
+    t.date "colour_spec_id"
+    t.string "colour_spec"
+    t.date "colour_spectype"
+    t.decimal "tedmodel_id", precision: 15, scale: 2
+    t.string "tedmodel"
+    t.date "tedmodeltype"
+    t.decimal "price", precision: 15, scale: 2
+    t.string "default_supplier"
+    t.string "brand_linked"
+    t.string "budget_zone"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762157582_8e8e2d2b69a47e74_4b7d5585", force: :cascade do |t|
+    t.string "item_code"
+    t.string "item_name"
+    t.string "category"
+    t.string "unit_of_measure"
+    t.decimal "current_price", precision: 15, scale: 2
+    t.string "supplier_name"
+    t.string "brand"
+    t.string "notes"
+    t.date "last_updated"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_import_1762215941_806ddfcf23a9a9f4_b7b8c8ac", force: :cascade do |t|
+    t.decimal "price", precision: 15, scale: 2
+    t.date "effective_date"
+    t.string "display_field"
+    t.string "pricebook_id"
+    t.string "pricebook"
+    t.string "pricebooktype"
+    t.boolean "default_supplier"
+    t.string "supplier_trade_id"
+    t.string "supplier_trade"
+    t.string "product_id"
+    t.string "contact_region"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_jakes_new_test_0e0f1d21", force: :cascade do |t|
     t.string "name"
     t.string "email"
     t.string "phone"
@@ -627,56 +1235,91 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "user_hel_2f4512ee", force: :cascade do |t|
+  create_table "user_newimport_93f20d2d", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.datetime "start_date"
+    t.string "title"
+    t.string "ba_approval_no"
+    t.string "ba_received_date"
+    t.string "covenant_approval_received"
+    t.string "plumbing_permit_no"
+    t.string "ted_number"
+    t.boolean "locked"
+    t.decimal "contract_value", precision: 15, scale: 2
+    t.decimal "live_profit", precision: 15, scale: 2
+    t.decimal "live", precision: 15, scale: 2
+    t.string "status"
+    t.decimal "certifier_job_no", precision: 15, scale: 2
+    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
+    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
+    t.boolean "xenna_lock"
+    t.boolean "is_kitchen"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_price_book_705651a0", force: :cascade do |t|
+    t.string "name", default: "0"
+    t.string "email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_pricinggggg_c9716c90", force: :cascade do |t|
+    t.date "sys_type_id"
+    t.string "deleted"
+    t.string "parent_id"
+    t.string "parent"
+    t.string "parenttype"
+    t.string "drive_id"
+    t.date "folder_id"
+    t.string "code"
+    t.string "description"
+    t.string "unit"
+    t.decimal "range_id", precision: 15, scale: 2
+    t.string "range"
+    t.decimal "rangetype", precision: 15, scale: 2
+    t.date "colour_spec_id"
+    t.string "colour_spec"
+    t.date "colour_spectype"
+    t.decimal "tedmodel_id", precision: 15, scale: 2
+    t.string "tedmodel"
+    t.date "tedmodeltype"
+    t.decimal "price", precision: 15, scale: 2
+    t.string "default_supplier"
+    t.string "brand_linked"
+    t.string "budget_zone"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_testing_table_9297d36e", force: :cascade do |t|
     t.string "name"
     t.string "email"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "user_hello_5c375e87", force: :cascade do |t|
-    t.string "name"
-    t.string "email"
+  create_table "user_untitled_table_3b80ee42", force: :cascade do |t|
+    t.string "address"
+    t.decimal "contract_price", precision: 15, scale: 2
+    t.string "test_phone2"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "user_new2_adc4649b", force: :cascade do |t|
+  create_table "user_untitled_table_61d507e5", force: :cascade do |t|
     t.string "name"
     t.string "email"
     t.string "phone"
     t.string "status"
     t.date "created_date"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_test443_66f3065d", force: :cascade do |t|
-    t.string "name"
-    t.string "email"
-    t.string "phone"
-    t.string "status"
-    t.date "created_date"
-    t.string "column_5"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_test_auto_save_a242d512", force: :cascade do |t|
-    t.string "email_address"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_test_fa0cb4f3", force: :cascade do |t|
-    t.string "name"
-    t.string "email"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_users_7f31c50d", force: :cascade do |t|
-    t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -708,18 +1351,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
     t.index ["tenant_id"], name: "index_xero_credentials_on_tenant_id"
   end
 
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "columns", "tables"
   add_foreign_key "constructions", "designs"
+  add_foreign_key "document_tasks", "constructions"
   add_foreign_key "estimate_line_items", "estimates"
   add_foreign_key "estimate_reviews", "estimates"
   add_foreign_key "estimates", "constructions"
+  add_foreign_key "folder_template_items", "folder_template_items", column: "parent_id"
   add_foreign_key "folder_template_items", "folder_templates"
+  add_foreign_key "folder_templates", "users", column: "created_by_id"
   add_foreign_key "grok_plans", "users"
   add_foreign_key "one_drive_credentials", "constructions"
   add_foreign_key "organization_one_drive_credentials", "users", column: "connected_by_id"
+  add_foreign_key "price_histories", "contacts", column: "supplier_id", name: "fk_rails_price_histories_contact"
   add_foreign_key "price_histories", "pricebook_items"
-  add_foreign_key "price_histories", "suppliers"
-  add_foreign_key "pricebook_items", "suppliers"
+  add_foreign_key "pricebook_items", "contacts", column: "supplier_id", name: "fk_rails_pricebook_items_contact"
   add_foreign_key "pricebook_items", "suppliers", column: "default_supplier_id"
   add_foreign_key "project_tasks", "projects"
   add_foreign_key "project_tasks", "purchase_orders"
@@ -730,10 +1378,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_06_030100) do
   add_foreign_key "purchase_order_line_items", "pricebook_items"
   add_foreign_key "purchase_order_line_items", "purchase_orders"
   add_foreign_key "purchase_orders", "constructions"
+  add_foreign_key "purchase_orders", "contacts", column: "supplier_id", name: "fk_rails_purchase_orders_contact"
   add_foreign_key "purchase_orders", "estimates"
-  add_foreign_key "purchase_orders", "suppliers"
   add_foreign_key "schedule_tasks", "constructions"
   add_foreign_key "schedule_tasks", "purchase_orders"
+  add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "supplier_contacts", "contacts"
   add_foreign_key "supplier_contacts", "suppliers"
   add_foreign_key "task_dependencies", "project_tasks", column: "predecessor_task_id"

@@ -25,6 +25,8 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
+import EditSupplierModal from '../components/suppliers/EditSupplierModal'
+import Toast from '../components/Toast'
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
@@ -47,6 +49,8 @@ export default function SupplierDetailPage() {
   const [importing, setImporting] = useState(false)
   const [importResults, setImportResults] = useState(null)
   const fileInputRef = useRef(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [toast, setToast] = useState(null)
 
   useEffect(() => {
     loadSupplier()
@@ -75,6 +79,26 @@ export default function SupplierDetailPage() {
       console.error('Failed to load purchase orders:', err)
     } finally {
       setLoadingPOs(false)
+    }
+  }
+
+  const handleSaveSupplier = async (supplierId, formData) => {
+    try {
+      const response = await api.patch(`/api/v1/suppliers/${supplierId}`, {
+        supplier: formData
+      })
+
+      if (response.success) {
+        setToast({
+          message: 'Supplier updated successfully',
+          type: 'success'
+        })
+        setShowEditModal(false)
+        await loadSupplier() // Refresh supplier data
+      }
+    } catch (error) {
+      console.error('Update error:', error)
+      throw error // Re-throw to be handled by the modal
     }
   }
 
@@ -338,7 +362,7 @@ export default function SupplierDetailPage() {
 
             <div className="flex gap-3 ml-4">
               <button
-                onClick={() => navigate(`/suppliers/${id}/edit`)}
+                onClick={() => setShowEditModal(true)}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors"
               >
                 <PencilIcon className="h-4 w-4" />
@@ -1008,6 +1032,23 @@ export default function SupplierDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Supplier Modal */}
+      <EditSupplierModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        supplier={supplier}
+        onSave={handleSaveSupplier}
+      />
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   )

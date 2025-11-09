@@ -22,7 +22,11 @@ export const api = {
       headers: getAuthHeaders(),
       credentials: 'include',
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      throw new Error(errorMessage);
+    }
     return response.json();
   },
 
@@ -33,7 +37,11 @@ export const api = {
       credentials: 'include',
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      throw new Error(errorMessage);
+    }
     return response.json();
   },
 
@@ -51,7 +59,11 @@ export const api = {
       credentials: 'include',
       body: formData,
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      throw new Error(errorMessage);
+    }
     return response.json();
   },
 
@@ -62,7 +74,11 @@ export const api = {
       credentials: 'include',
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      throw new Error(errorMessage);
+    }
     return response.json();
   },
 
@@ -73,7 +89,11 @@ export const api = {
       credentials: 'include',
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      throw new Error(errorMessage);
+    }
     return response.json();
   },
 
@@ -83,7 +103,11 @@ export const api = {
       headers: getAuthHeaders(),
       credentials: 'include',
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      throw new Error(errorMessage);
+    }
     return response.json();
   },
 

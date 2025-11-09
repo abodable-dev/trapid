@@ -1,7 +1,7 @@
 class PriceHistory < ApplicationRecord
   # Associations
   belongs_to :pricebook_item
-  belongs_to :supplier, optional: true
+  belongs_to :supplier, class_name: 'Contact', foreign_key: 'supplier_id', optional: true
 
   # Validations
   validates :pricebook_item_id, presence: true

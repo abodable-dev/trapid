@@ -8,9 +8,12 @@ import {
   XCircleIcon,
   ArrowPathIcon,
   UserPlusIcon,
-  AdjustmentsHorizontalIcon
+  AdjustmentsHorizontalIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
+import EditSupplierModal from '../components/suppliers/EditSupplierModal'
+import Toast from '../components/Toast'
 
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState([])
@@ -24,6 +27,9 @@ export default function SuppliersPage() {
   const [selectedContact, setSelectedContact] = useState(null)
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [showColumnModal, setShowColumnModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingSupplier, setEditingSupplier] = useState(null)
+  const [toast, setToast] = useState(null)
 
   // Column visibility state
   const [visibleColumns, setVisibleColumns] = useState({
@@ -68,6 +74,31 @@ export default function SuppliersPage() {
       window.removeEventListener('global-search', handleGlobalSearch)
     }
   }, [])
+
+  const handleEditSupplier = (supplier) => {
+    setEditingSupplier(supplier)
+    setShowEditModal(true)
+  }
+
+  const handleSaveSupplier = async (supplierId, formData) => {
+    try {
+      const response = await api.patch(`/api/v1/suppliers/${supplierId}`, {
+        supplier: formData
+      })
+
+      if (response.success) {
+        setToast({
+          message: 'Supplier updated successfully',
+          type: 'success'
+        })
+        setShowEditModal(false)
+        loadSuppliers() // Refresh the list
+      }
+    } catch (error) {
+      console.error('Update error:', error)
+      throw error // Re-throw to be handled by the modal
+    }
+  }
 
   const loadSuppliers = async () => {
     try {
@@ -207,7 +238,8 @@ export default function SuppliersPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -318,38 +350,41 @@ export default function SuppliersPage() {
       </div>
 
       {/* Suppliers List */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="w-full h-full overflow-auto" style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#9CA3AF #E5E7EB'
+        }}>
+          <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
               <tr>
                 {visibleColumns.supplier && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th style={{ minWidth: '200px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Supplier
                   </th>
                 )}
                 {visibleColumns.rating && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th style={{ minWidth: '100px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Rating
                   </th>
                 )}
                 {visibleColumns.items && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th style={{ minWidth: '100px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Items
                   </th>
                 )}
                 {visibleColumns.contact && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th style={{ minWidth: '250px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Supplier Details
                   </th>
                 )}
                 {visibleColumns.status && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th style={{ minWidth: '150px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
                 )}
                 {visibleColumns.actions && (
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th style={{ minWidth: '150px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 )}
@@ -428,6 +463,13 @@ export default function SuppliersPage() {
                   {visibleColumns.actions && (
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEditSupplier(supplier)}
+                          className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
+                          title="Edit supplier"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
                         {!supplier.contact_id && (
                           <button
                             onClick={() => {
@@ -464,76 +506,94 @@ export default function SuppliersPage() {
           </table>
         </div>
       </div>
+    </div>
 
-      {/* Link Supplier Modal */}
-      {showLinkModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-screen items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowLinkModal(false)} />
+    {/* Link Supplier Modal */}
+    {showLinkModal && (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowLinkModal(false)} />
 
-            <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Link Supplier to Contact
-              </h3>
+          <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Link Supplier to Contact
+            </h3>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Supplier
-                </label>
-                <div className="text-sm text-gray-900 dark:text-white font-medium">
-                  {selectedSupplier?.name}
-                </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Supplier
+              </label>
+              <div className="text-sm text-gray-900 dark:text-white font-medium">
+                {selectedSupplier?.name}
               </div>
+            </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Contact
-                </label>
-                <select
-                  value={selectedContact?.id || ''}
-                  onChange={(e) => {
-                    const contact = contacts.find(c => c.id === parseInt(e.target.value))
-                    setSelectedContact(contact)
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="">Select a contact...</option>
-                  {contacts.map((contact) => (
-                    <option key={contact.id} value={contact.id}>
-                      {contact.full_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Contact
+              </label>
+              <select
+                value={selectedContact?.id || ''}
+                onChange={(e) => {
+                  const contact = contacts.find(c => c.id === parseInt(e.target.value))
+                  setSelectedContact(contact)
+                }}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">Select a contact...</option>
+                {contacts.map((contact) => (
+                  <option key={contact.id} value={contact.id}>
+                    {contact.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setShowLinkModal(false)}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={linkSupplierToContact}
-                  disabled={!selectedContact}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  Link Supplier
-                </button>
-              </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowLinkModal(false)}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={linkSupplierToContact}
+                disabled={!selectedContact}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                Link Supplier
+              </button>
             </div>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
-      {/* Column Visibility Modal */}
-      <ColumnVisibilityModal
-        isOpen={showColumnModal}
-        onClose={() => setShowColumnModal(false)}
-        columns={availableColumns}
-        visibleColumns={visibleColumns}
-        onToggleColumn={toggleColumn}
+    {/* Column Visibility Modal */}
+    <ColumnVisibilityModal
+      isOpen={showColumnModal}
+      onClose={() => setShowColumnModal(false)}
+      columns={availableColumns}
+      visibleColumns={visibleColumns}
+      onToggleColumn={toggleColumn}
+    />
+
+    {/* Edit Supplier Modal */}
+    <EditSupplierModal
+      isOpen={showEditModal}
+      onClose={() => setShowEditModal(false)}
+      supplier={editingSupplier}
+      onSave={handleSaveSupplier}
+    />
+
+    {/* Toast Notification */}
+    {toast && (
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast(null)}
       />
-    </div>
+    )}
+  </div>
   )
 }

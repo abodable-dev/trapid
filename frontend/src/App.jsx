@@ -14,6 +14,7 @@ import SupplierEditPage from './pages/SupplierEditPage'
 import SupplierNewPage from './pages/SupplierNewPage'
 import ContactsPage from './pages/ContactsPage'
 import ContactDetailPage from './pages/ContactDetailPage'
+import HealthPage from './pages/HealthPage'
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage'
 import PurchaseOrderEditPage from './pages/PurchaseOrderEditPage'
 import MasterSchedulePage from './pages/MasterSchedulePage'
@@ -25,6 +26,7 @@ import Menus from './pages/designer/Menus'
 import Pages from './pages/designer/Pages'
 import Experiences from './pages/designer/Experiences'
 import SettingsPage from './pages/SettingsPage'
+import SchemaPage from './pages/SchemaPage'
 import XeroCallbackPage from './pages/XeroCallbackPage'
 
 function App() {
@@ -41,6 +43,7 @@ function App() {
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
         <Route path="/contacts" element={<AppLayout><ContactsPage /></AppLayout>} />
         <Route path="/contacts/:id" element={<AppLayout><ContactDetailPage /></AppLayout>} />
+        <Route path="/health" element={<AppLayout><HealthPage /></AppLayout>} />
         <Route path="/suppliers" element={<Navigate to="/contacts" replace />} />
         <Route path="/suppliers/new" element={<AppLayout><SupplierNewPage /></AppLayout>} />
         <Route path="/suppliers/:id/edit" element={<AppLayout><SupplierEditPage /></AppLayout>} />
@@ -62,6 +65,7 @@ function App() {
         } />
         <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
         <Route path="/settings/integrations" element={<AppLayout><SettingsPage /></AppLayout>} />
+        <Route path="/settings/schema" element={<AppLayout><SchemaPage /></AppLayout>} />
         <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
       </Routes>
     </BrowserRouter>

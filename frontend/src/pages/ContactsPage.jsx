@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels, Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react'
 import { api } from '../api'
 import {
@@ -13,20 +13,36 @@ import {
   UserGroupIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  ArrowsRightLeftIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
+import MergeContactsModal from '../components/contacts/MergeContactsModal'
 import Toast from '../components/Toast'
 
 export default function ContactsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [contacts, setContacts] = useState([])
   const [suppliers, setSuppliers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showColumnModal, setShowColumnModal] = useState(false)
-  const [activeTab, setActiveTab] = useState(0)
+
+  // Map tab names to indices
+  const tabs = ['contacts', 'suppliers']
+
+  // Get initial tab index from URL query parameter
+  const getInitialTabIndex = () => {
+    const params = new URLSearchParams(location.search)
+    const tab = params.get('tab')
+    const index = tabs.indexOf(tab)
+    return index >= 0 ? index : 0
+  }
+
+  const [activeTab, setActiveTab] = useState(getInitialTabIndex())
   const [selectedCategories, setSelectedCategories] = useState([])
   const [filter, setFilter] = useState('all') // 'all', 'customers', 'suppliers', 'both'
 
@@ -35,8 +51,10 @@ export default function ContactsPage() {
   const [openDropdownId, setOpenDropdownId] = useState(null)
   const [bulkContactType, setBulkContactType] = useState('')
   const [updating, setUpdating] = useState(false)
+  const [showMergeModal, setShowMergeModal] = useState(false)
   const [updatingContactId, setUpdatingContactId] = useState(null)
   const [toast, setToast] = useState(null)
+  const [deletingContactId, setDeletingContactId] = useState(null)
 
   // Column visibility state for Contacts tab
   const [visibleContactColumns, setVisibleContactColumns] = useState({
@@ -80,6 +98,21 @@ export default function ContactsPage() {
     { key: 'status', label: 'Status' },
     { key: 'actions', label: 'Actions' }
   ]
+
+  // Update URL when tab changes
+  const handleTabChange = (index) => {
+    setActiveTab(index)
+    const tabName = tabs[index]
+    navigate(`/contacts?tab=${tabName}`, { replace: true })
+  }
+
+  // Update selected tab when URL changes (e.g., browser back/forward)
+  useEffect(() => {
+    const newIndex = getInitialTabIndex()
+    if (newIndex !== activeTab) {
+      setActiveTab(newIndex)
+    }
+  }, [location.search])
 
   useEffect(() => {
     loadContacts()
@@ -190,6 +223,55 @@ export default function ContactsPage() {
     setSelectedContacts(new Set())
   }
 
+  const handleMergeContacts = async (targetId, sourceIds) => {
+    try {
+      const response = await api.post('/api/v1/contacts/merge', {
+        target_id: targetId,
+        source_ids: sourceIds
+      })
+
+      if (response.success) {
+        setToast({
+          message: response.message,
+          type: 'success'
+        })
+        setSelectedContacts(new Set())
+        setShowMergeModal(false)
+        loadContacts() // Refresh the list
+      }
+    } catch (error) {
+      console.error('Merge error:', error)
+      throw error // Re-throw to be handled by the modal
+    }
+  }
+
+  const handleDeleteContact = async (contactId, contactName) => {
+    if (!confirm(`Are you sure you want to delete ${contactName}? This action cannot be undone.`)) {
+      return
+    }
+
+    setDeletingContactId(contactId)
+    try {
+      const response = await api.delete(`/api/v1/contacts/${contactId}`)
+
+      if (response.success) {
+        setToast({
+          message: response.message || 'Contact deleted successfully',
+          type: 'success'
+        })
+        loadContacts() // Refresh the list
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      setToast({
+        message: error.message || 'Failed to delete contact',
+        type: 'error'
+      })
+    } finally {
+      setDeletingContactId(null)
+    }
+  }
+
   const handleUpdateSingleContact = async (contactId, newTypes, newPrimaryType) => {
     setUpdatingContactId(contactId)
     try {
@@ -291,18 +373,19 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="px-4 sm:px-6 lg:px-8 pt-8 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Contacts & Suppliers</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Contacts & Suppliers <span className="text-base font-normal text-gray-500 dark:text-gray-400">(contacts)</span></h1>
           <p className="text-gray-600 dark:text-gray-400">Manage your contacts and supplier relationships</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <TabGroup onChange={setActiveTab}>
-        <TabList className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 mb-8 max-w-md">
+      <div className="px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden flex flex-col">
+        <TabGroup selectedIndex={activeTab} onChange={handleTabChange} className="flex-1 overflow-hidden flex flex-col">
+          <TabList className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 mb-4 max-w-md">
           <Tab
             className={({ selected }) =>
               `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
@@ -329,9 +412,9 @@ export default function ContactsPage() {
           </Tab>
         </TabList>
 
-        <TabPanels>
+        <TabPanels className="flex-1 overflow-hidden flex flex-col">
           {/* Contacts Tab */}
-          <TabPanel>
+          <TabPanel className="flex-1 overflow-hidden flex flex-col">
             {/* Stats for Contacts */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
@@ -503,6 +586,15 @@ export default function ContactsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {selectedContacts.size >= 2 && (
+                    <button
+                      onClick={() => setShowMergeModal(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium shadow-sm"
+                    >
+                      <ArrowsRightLeftIcon className="h-5 w-5" />
+                      Merge Contacts
+                    </button>
+                  )}
                   <button
                     onClick={handleBulkUpdate}
                     disabled={updating || !bulkContactType || selectedContacts.size === 0}
@@ -531,12 +623,15 @@ export default function ContactsPage() {
             )}
 
             {/* Contacts Table */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-visible">
-              <div className="overflow-x-auto overflow-y-visible">
-                <table key={`contacts-${filter}-${contacts.length}`} className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+            <div className="flex-1 overflow-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#9CA3AF #E5E7EB'
+            }}>
+              <div className="w-full h-full">
+                <table key={`contacts-${filter}-${contacts.length}`} className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
                     <tr>
-                      <th className="px-6 py-3 text-left">
+                      <th style={{ minWidth: '50px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left">
                         <input
                           type="checkbox"
                           checked={selectedContacts.size === filteredContacts.length && filteredContacts.length > 0}
@@ -545,37 +640,37 @@ export default function ContactsPage() {
                         />
                       </th>
                       {visibleContactColumns.name && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '200px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Contact Name
                         </th>
                       )}
                       {visibleContactColumns.type && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '150px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Contact Type
                         </th>
                       )}
                       {visibleContactColumns.email && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '250px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Email
                         </th>
                       )}
                       {visibleContactColumns.phone && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '200px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Phone Numbers
                         </th>
                       )}
                       {visibleContactColumns.website && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '150px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Website
                         </th>
                       )}
                       {visibleContactColumns.xero && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '150px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Xero Status
                         </th>
                       )}
                       {visibleContactColumns.actions && (
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '100px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Actions
                         </th>
                       )}
@@ -777,12 +872,26 @@ export default function ContactsPage() {
                         )}
                         {visibleContactColumns.actions && (
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <Link
-                              to={`/contacts/${contact.id}`}
-                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                            >
-                              View
-                            </Link>
+                            <div className="flex items-center justify-end gap-3">
+                              <Link
+                                to={`/contacts/${contact.id}`}
+                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                              >
+                                View
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteContact(contact.id, contact.full_name)}
+                                disabled={deletingContactId === contact.id}
+                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
+                                title="Delete contact"
+                              >
+                                {deletingContactId === contact.id ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                                ) : (
+                                  <TrashIcon className="h-4 w-4" />
+                                )}
+                              </button>
+                            </div>
                           </td>
                         )}
                       </tr>
@@ -794,7 +903,7 @@ export default function ContactsPage() {
           </TabPanel>
 
           {/* Suppliers Tab */}
-          <TabPanel>
+          <TabPanel className="flex-1 overflow-hidden flex flex-col">
             {/* Stats for Suppliers */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
@@ -918,43 +1027,46 @@ export default function ContactsPage() {
             </div>
 
             {/* Suppliers Table */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+            <div className="flex-1 overflow-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#9CA3AF #E5E7EB'
+            }}>
+              <div className="w-full h-full">
+                <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
                     <tr>
                       {visibleClientColumns.supplier && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '200px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Supplier
                         </th>
                       )}
                       {visibleClientColumns.categories && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '250px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Trade Categories
                         </th>
                       )}
                       {visibleClientColumns.rating && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '100px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Rating
                         </th>
                       )}
                       {visibleClientColumns.items && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '100px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Items
                         </th>
                       )}
                       {visibleClientColumns.contact && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '200px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Contact
                         </th>
                       )}
                       {visibleClientColumns.status && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '150px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Status
                         </th>
                       )}
                       {visibleClientColumns.actions && (
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th style={{ minWidth: '100px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Actions
                         </th>
                       )}
@@ -1063,24 +1175,35 @@ export default function ContactsPage() {
           </TabPanel>
         </TabPanels>
       </TabGroup>
-
-      {/* Column Visibility Modal */}
-      <ColumnVisibilityModal
-        isOpen={showColumnModal}
-        onClose={() => setShowColumnModal(false)}
-        columns={activeTab === 0 ? contactColumns : clientColumns}
-        visibleColumns={activeTab === 0 ? visibleContactColumns : visibleClientColumns}
-        onToggleColumn={activeTab === 0 ? toggleContactColumn : toggleClientColumn}
-      />
-
-      {/* Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </div>
+
+    {/* Column Visibility Modal */}
+    <ColumnVisibilityModal
+      isOpen={showColumnModal}
+      onClose={() => setShowColumnModal(false)}
+      columns={activeTab === 0 ? contactColumns : clientColumns}
+      visibleColumns={activeTab === 0 ? visibleContactColumns : visibleClientColumns}
+      onToggleColumn={activeTab === 0 ? toggleContactColumn : toggleClientColumn}
+    />
+
+    {/* Merge Contacts Modal */}
+    <MergeContactsModal
+      isOpen={showMergeModal}
+      onClose={() => setShowMergeModal(false)}
+      selectedContacts={Array.from(selectedContacts)
+        .map(id => filteredContacts.find(c => c.id === id))
+        .filter(Boolean)}
+      onMerge={handleMergeContacts}
+    />
+
+    {/* Toast Notification */}
+    {toast && (
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast(null)}
+      />
+    )}
+  </div>
   )
 }

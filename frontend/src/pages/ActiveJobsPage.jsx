@@ -127,17 +127,16 @@ export default function ActiveJobsPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
-        {/* Header */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
-          <div className="px-6 py-4">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 h-screen flex flex-col bg-white dark:bg-gray-900">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-4">
+        <div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <BriefcaseIcon className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                    Active Jobs
+                    Active Jobs <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(constructions)</span>
                   </h1>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                     {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'}
@@ -164,29 +163,34 @@ export default function ActiveJobsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto border-l border-r border-b border-gray-200 dark:border-gray-700 rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800/50">
+      {/* Scroll container for table */}
+      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-900">
+        <div className="w-full h-full overflow-auto" style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#9CA3AF #E5E7EB'
+        }}>
+          <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+            <thead className="bg-gray-50 dark:bg-gray-800/50 sticky top-0 z-10">
               <tr>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-8">
+                <th style={{ minWidth: '50px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   #
                 </th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th style={{ minWidth: '300px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Job Title
                 </th>
-                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th style={{ minWidth: '150px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Contract Value
                 </th>
-                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th style={{ minWidth: '150px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Live Profit
                 </th>
-                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th style={{ minWidth: '120px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Profit %
                 </th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th style={{ minWidth: '150px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Stage
                 </th>
-                <th className="relative px-3 py-3">
+                <th style={{ minWidth: '120px' }} className="relative px-3 py-3 border-r border-gray-200 dark:border-gray-700">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -371,24 +375,24 @@ export default function ActiveJobsPage() {
             </tbody>
           </table>
         </div>
-
-        {/* New Job Modal */}
-        <NewJobModal
-          isOpen={showNewJobModal}
-          onClose={() => setShowNewJobModal(false)}
-          onSuccess={handleCreateJob}
-        />
-
-        {/* CSV Import Modal */}
-        <CsvImportJobModal
-          isOpen={showCsvImportModal}
-          onClose={() => setShowCsvImportModal(false)}
-          onSuccess={() => {
-            setShowCsvImportModal(false)
-            loadJobs()
-          }}
-        />
       </div>
+
+      {/* New Job Modal */}
+      <NewJobModal
+        isOpen={showNewJobModal}
+        onClose={() => setShowNewJobModal(false)}
+        onSuccess={handleCreateJob}
+      />
+
+      {/* CSV Import Modal */}
+      <CsvImportJobModal
+        isOpen={showCsvImportModal}
+        onClose={() => setShowCsvImportModal(false)}
+        onSuccess={() => {
+          setShowCsvImportModal(false)
+          loadJobs()
+        }}
+      />
     </div>
   )
 }
