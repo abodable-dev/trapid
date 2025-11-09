@@ -150,14 +150,16 @@ class OnedrivePricebookSyncService
         qr_code_url: share_url,
         image_source: 'onedrive',
         image_fetched_at: Time.current,
-        image_fetch_status: 'success'
+        image_fetch_status: 'success',
+        requires_photo: true  # Mark as requiring photo since we found one
       )
     else
       item.update!(
         image_url: share_url,
         image_source: 'onedrive',
         image_fetched_at: Time.current,
-        image_fetch_status: 'success'
+        image_fetch_status: 'success',
+        requires_photo: true  # Mark as requiring photo since we found one
       )
     end
 
