@@ -872,17 +872,21 @@ export default function PriceBooksPage() {
                         }`}
                       >
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <svg
-                            draggable
+                          <div
+                            draggable="true"
                             onDragStart={(e) => handleDragStart(e, key)}
                             onDragEnd={handleDragEnd}
-                            className="h-5 w-5 text-gray-400 cursor-move"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+                            className="h-5 w-5 text-gray-400 cursor-move select-none"
                           >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                          </svg>
+                            <svg
+                              className="h-5 w-5 pointer-events-none"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                            </svg>
+                          </div>
                           <input
                             type="checkbox"
                             checked={config.visible}
