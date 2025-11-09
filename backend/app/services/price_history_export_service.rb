@@ -28,8 +28,7 @@ class PriceHistoryExportService
         filename: generate_filename,
         content_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         data: package.to_stream.read,
-        total_items: items.count,
-        total_history_records: items.sum { |item| item.price_histories.size }
+        total_items: items.count
       }
     rescue => e
       @errors << "Failed to generate Excel file: #{e.message}"
@@ -57,7 +56,7 @@ class PriceHistoryExportService
   def generate_excel(items)
     package = Axlsx::Package.new
 
-    package.workbook.add_worksheet(name: "Price History") do |sheet|
+    package.workbook.add_worksheet(name: "Pricebook") do |sheet|
       # Define styles
       header_style = sheet.styles.add_style(
         bg_color: "0066CC",
@@ -84,131 +83,60 @@ class PriceHistoryExportService
         border: { style: :thin, color: "CCCCCC" }
       )
 
-      # Add header row
+      # Add header row - simplified to show only current price info
       sheet.add_row(
         [
-          'Item ID',
           'Item Code',
           'Item Name',
           'Category',
           'Unit of Measure',
           'Current Price',
           'Default Supplier',
-          'Price History ID',
-          'Historical Price',
-          'Previous Price',
-          'Price Date',
-          'Date Effective',
-          'Supplier',
-          'LGA',
-          'Change Reason',
-          'Quote Reference',
+          'Price Last Updated',
+          'Brand',
           'Notes'
         ],
         style: header_style,
         height: 30
       )
 
-      # Add data rows
+      # Add data rows - one row per item with current price only
       items.each do |item|
-        if item.price_histories.any?
-          # Create a row for each price history entry
-          item.price_histories.order(created_at: :desc).each do |history|
-            sheet.add_row(
-              [
-                item.id,
-                item.item_code,
-                item.item_name,
-                item.category,
-                item.unit_of_measure,
-                item.current_price,
-                item.default_supplier&.name,
-                history.id,
-                history.new_price,
-                history.old_price,
-                history.created_at&.to_date,
-                history.date_effective,
-                history.supplier&.name,
-                history.lga,
-                history.change_reason,
-                history.quote_reference,
-                item.notes
-              ],
-              style: [
-                data_style,      # Item ID
-                data_style,      # Item Code
-                data_style,      # Item Name
-                data_style,      # Category
-                data_style,      # Unit of Measure
-                currency_style,  # Current Price
-                data_style,      # Default Supplier
-                data_style,      # Price History ID
-                currency_style,  # Historical Price
-                currency_style,  # Previous Price
-                date_style,      # Price Date
-                date_style,      # Date Effective
-                data_style,      # Supplier
-                data_style,      # LGA
-                data_style,      # Change Reason
-                data_style,      # Quote Reference
-                data_style       # Notes
-              ]
-            )
-          end
-        else
-          # Item has no price history, create a single row
-          sheet.add_row(
-            [
-              item.id,
-              item.item_code,
-              item.item_name,
-              item.category,
-              item.unit_of_measure,
-              item.current_price,
-              item.default_supplier&.name,
-              nil, # No history ID
-              nil, # No historical price
-              nil, # No previous price
-              nil, # No price date
-              nil, # No date effective
-              nil, # No supplier in history
-              nil, # No LGA
-              nil, # No change reason
-              nil, # No quote reference
-              item.notes
-            ],
-            style: [
-              data_style,      # Item ID
-              data_style,      # Item Code
-              data_style,      # Item Name
-              data_style,      # Category
-              data_style,      # Unit of Measure
-              currency_style,  # Current Price
-              data_style,      # Default Supplier
-              data_style,      # Price History ID
-              currency_style,  # Historical Price
-              currency_style,  # Previous Price
-              date_style,      # Price Date
-              date_style,      # Date Effective
-              data_style,      # Supplier
-              data_style,      # LGA
-              data_style,      # Change Reason
-              data_style,      # Quote Reference
-              data_style       # Notes
-            ]
-          )
-        end
+        sheet.add_row(
+          [
+            item.item_code,
+            item.item_name,
+            item.category,
+            item.unit_of_measure,
+            item.current_price,
+            item.default_supplier&.name,
+            item.price_last_updated_at&.to_date,
+            item.brand,
+            item.notes
+          ],
+          style: [
+            data_style,      # Item Code
+            data_style,      # Item Name
+            data_style,      # Category
+            data_style,      # Unit of Measure
+            currency_style,  # Current Price
+            data_style,      # Default Supplier
+            date_style,      # Price Last Updated
+            data_style,      # Brand
+            data_style       # Notes
+          ]
+        )
       end
 
       # Auto-fit columns
-      sheet.column_widths 10, 15, 30, 20, 15, 15, 20, 15, 15, 15, 12, 12, 20, 25, 20, 20, 30
+      sheet.column_widths 15, 30, 20, 15, 15, 20, 15, 20, 30
     end
 
     package
   end
 
   def generate_filename
-    parts = ["price_history"]
+    parts = ["pricebook"]
 
     if @item_ids.present?
       parts << "selected_#{@item_ids.length}_items"
