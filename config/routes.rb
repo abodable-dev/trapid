@@ -127,6 +127,7 @@ Rails.application.routes.draw do
       resources :contacts do
         collection do
           patch :bulk_update
+          post :merge
         end
       end
 
