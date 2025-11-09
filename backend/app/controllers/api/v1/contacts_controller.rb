@@ -38,7 +38,7 @@ module Api
         render json: {
           success: true,
           contacts: @contacts.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type],
+            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes],
             methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?],
             include: { suppliers: { only: [:id, :name] } }
           )
@@ -63,7 +63,7 @@ module Api
               :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
               :tax_number, :xero_id, :sync_with_xero, :sys_type_id, :deleted, :parent_id, :parent,
               :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
-              :contact_types, :primary_contact_type
+              :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes
             ],
             methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
           ).merge(
@@ -89,7 +89,7 @@ module Api
           render json: {
             success: true,
             contact: @contact.as_json(
-              only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type],
+              only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes],
               methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
             )
           }
@@ -305,6 +305,13 @@ module Api
           :contact_region,
           :branch,
           :primary_contact_type,
+          :rating,
+          :response_rate,
+          :avg_response_time,
+          :is_active,
+          :supplier_code,
+          :address,
+          :notes,
           contact_types: []
         )
       end

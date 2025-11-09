@@ -1,8 +1,14 @@
 class Contact < ApplicationRecord
   # Associations
-  has_many :suppliers, dependent: :nullify  # Legacy association
+  has_many :suppliers, dependent: :nullify  # Legacy association - will be deprecated
   has_many :supplier_contacts, dependent: :destroy
   has_many :linked_suppliers, through: :supplier_contacts, source: :supplier
+
+  # Supplier-specific associations (when contact is a supplier)
+  # After migration, supplier_id in these tables points to contact_id
+  has_many :pricebook_items, foreign_key: :supplier_id, dependent: :destroy
+  has_many :purchase_orders, foreign_key: :supplier_id, dependent: :restrict_with_error
+  has_many :price_histories, foreign_key: :supplier_id, dependent: :destroy
 
   # Constants
   CONTACT_TYPES = %w[customer supplier sales land_agent].freeze
@@ -49,6 +55,23 @@ class Contact < ApplicationRecord
 
   def is_land_agent?
     contact_types&.include?('land_agent')
+  end
+
+  # Supplier-specific helper methods
+  def supplier_name
+    full_name
+  end
+
+  def active_pricebook_items_count
+    pricebook_items.count
+  end
+
+  def total_purchase_orders_count
+    purchase_orders.count
+  end
+
+  def total_purchase_orders_value
+    purchase_orders.sum(:total_price)
   end
 
   private
