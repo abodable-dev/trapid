@@ -477,6 +477,7 @@ class OnedrivePricebookSyncService
           case update_data[:type]
           when :qr_code
             merged_update[:qr_code_url] = update_data[:qr_code_url]
+            merged_update[:requires_spec] = false
             @results[:qr_codes_matched] += 1
             Rails.logger.info "Matched QR code '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
           when :spec
