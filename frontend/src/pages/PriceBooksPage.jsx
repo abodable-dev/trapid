@@ -80,6 +80,9 @@ export default function PriceBooksPage() {
   const [draggedColumn, setDraggedColumn] = useState(null)
   const [pendingBooleanUpdates, setPendingBooleanUpdates] = useState({}) // { itemId: { requires_photo: true, ... } }
   const [savingBooleanUpdates, setSavingBooleanUpdates] = useState(false)
+  const [showBulkGstModal, setShowBulkGstModal] = useState(false)
+  const [selectedGstCode, setSelectedGstCode] = useState('')
+  const [updatingGstCode, setUpdatingGstCode] = useState(false)
 
   // Column configuration with defaults
   const defaultColumnConfig = {
@@ -166,6 +169,8 @@ export default function PriceBooksPage() {
     if (showPricedOnly) params.set('needs_pricing', 'true')
     if (requiresPhotoFilter) params.set('requires_photo', requiresPhotoFilter)
     if (requiresSpecFilter) params.set('requires_spec', requiresSpecFilter)
+    if (photoAttachedFilter) params.set('photo_attached', photoAttachedFilter)
+    if (specAttachedFilter) params.set('spec_attached', specAttachedFilter)
     if (needsPricingReviewFilter) params.set('needs_pricing_review', needsPricingReviewFilter)
     if (sortBy !== 'category') params.set('sort_by', sortBy)
     if (sortDirection !== 'asc') params.set('sort_direction', sortDirection)
@@ -177,7 +182,7 @@ export default function PriceBooksPage() {
     }
 
     setSearchParams(params, { replace: true })
-  }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly, requiresPhotoFilter, requiresSpecFilter, needsPricingReviewFilter, sortBy, sortDirection, setSearchParams])
+  }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly, requiresPhotoFilter, requiresSpecFilter, photoAttachedFilter, specAttachedFilter, needsPricingReviewFilter, sortBy, sortDirection, setSearchParams])
 
   // Debounced search - reload when filters change
   useEffect(() => {
@@ -705,6 +710,54 @@ export default function PriceBooksPage() {
     await handleSetDefaultSupplier(selectedSupplierId)
   }
 
+  const handleBulkGstUpdate = async () => {
+    try {
+      if (!selectedGstCode) {
+        alert('Please select a GST code')
+        return
+      }
+
+      setUpdatingGstCode(true)
+
+      // Get item IDs to update (either selected or all filtered)
+      const itemIds = selectedItems.size > 0
+        ? Array.from(selectedItems)
+        : items.map(item => item.id)
+
+      if (itemIds.length === 0) {
+        alert('No items to update')
+        return
+      }
+
+      // Bulk update GST code
+      await api.patch('/api/v1/pricebook/bulk_update', {
+        updates: itemIds.map(id => ({
+          id,
+          gst_code: selectedGstCode
+        }))
+      })
+
+      // Update local state
+      setItems(items.map(item =>
+        itemIds.includes(item.id)
+          ? { ...item, gst_code: selectedGstCode }
+          : item
+      ))
+
+      // Close modal and reset
+      setShowBulkGstModal(false)
+      setSelectedGstCode('')
+      setSelectedItems(new Set())
+
+      alert(`Successfully updated GST code for ${itemIds.length} items`)
+    } catch (error) {
+      console.error('Failed to update GST code:', error)
+      alert('Failed to update GST code')
+    } finally {
+      setUpdatingGstCode(false)
+    }
+  }
+
   const formatDate = (dateString) => {
     if (!dateString) return '-'
     const date = new Date(dateString)
@@ -1095,6 +1148,12 @@ export default function PriceBooksPage() {
                       className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline"
                     >
                       Set Supplier
+                    </button>
+                    <button
+                      onClick={() => setShowBulkGstModal(true)}
+                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline"
+                    >
+                      Set GST Code
                     </button>
                     <button
                       onClick={handleClearSelection}
@@ -1718,6 +1777,56 @@ export default function PriceBooksPage() {
                     className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
                   >
                     Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk GST Code Update Modal */}
+        {showBulkGstModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Set GST Code
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {selectedItems.size > 0
+                    ? `Update GST code for ${selectedItems.size} selected items`
+                    : `Update GST code for ${items.length} filtered items`}
+                </p>
+                <select
+                  value={selectedGstCode}
+                  onChange={(e) => setSelectedGstCode(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white mb-4"
+                  disabled={updatingGstCode}
+                >
+                  <option value="">Select GST code...</option>
+                  {taxRates.map((rate) => (
+                    <option key={rate.code} value={rate.code}>
+                      {rate.name} ({rate.display_rate})
+                    </option>
+                  ))}
+                </select>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setShowBulkGstModal(false)
+                      setSelectedGstCode('')
+                    }}
+                    disabled={updatingGstCode}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleBulkGstUpdate}
+                    disabled={!selectedGstCode || updatingGstCode}
+                    className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {updatingGstCode ? 'Updating...' : 'Update'}
                   </button>
                 </div>
               </div>
