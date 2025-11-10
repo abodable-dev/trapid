@@ -53,7 +53,7 @@ gem "oauth2", "~> 2.0"  # OAuth2 authentication for Xero API
 gem "fuzzy_match", "~> 2.1"  # Fuzzy string matching for contact sync
 
 # AI integration for plan analysis
-gem "anthropic", "~> 0.1.0"  # Claude API for AI-powered plan review
+gem "anthropic", "~> 1.14.0" # Claude API for AI-powered plan review
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
