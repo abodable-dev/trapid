@@ -19,11 +19,13 @@ import {
 } from '@heroicons/react/24/outline'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import ActivityTimeline from '../components/contacts/ActivityTimeline'
+import LinkXeroContactModal from '../components/contacts/LinkXeroContactModal'
 
 export default function ContactDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [contact, setContact] = useState(null)
+  const [showLinkXeroModal, setShowLinkXeroModal] = useState(false)
   const [allContacts, setAllContacts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -688,13 +690,22 @@ export default function ContactDetailPage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                         <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
                         Not linked to Xero
                       </span>
+                      <button
+                        onClick={() => setShowLinkXeroModal(true)}
+                        className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                        </svg>
+                        Link to Xero
+                      </button>
                     </div>
                   )}
                 </div>
@@ -734,6 +745,66 @@ export default function ContactDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Bank Account Details - from Xero */}
+            {(contact.bank_bsb || contact.bank_account_number || contact.bank_account_name) && (
+              <div className="mt-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Bank Account Details</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {contact.bank_account_name && (
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Account Name</p>
+                      <p className="text-gray-900 dark:text-white font-medium">{contact.bank_account_name}</p>
+                    </div>
+                  )}
+                  {contact.bank_bsb && (
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">BSB</p>
+                      <p className="text-gray-900 dark:text-white font-mono">{contact.bank_bsb}</p>
+                    </div>
+                  )}
+                  {contact.bank_account_number && (
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Account Number</p>
+                      <p className="text-gray-900 dark:text-white font-mono">{contact.bank_account_number}</p>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Synced from Xero
+                </p>
+              </div>
+            )}
+
+            {/* Purchase Account & Payment Terms - from Xero */}
+            {(contact.default_purchase_account || contact.bill_due_day || contact.bill_due_type) && (
+              <div className="mt-4 p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Purchase & Payment Settings</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {contact.default_purchase_account && (
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Default Purchase Account</p>
+                      <p className="text-gray-900 dark:text-white font-medium">{contact.default_purchase_account}</p>
+                    </div>
+                  )}
+                  {contact.bill_due_day && (
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Bill Due Day</p>
+                      <p className="text-gray-900 dark:text-white font-medium">{contact.bill_due_day}</p>
+                    </div>
+                  )}
+                  {contact.bill_due_type && (
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Bill Due Type</p>
+                      <p className="text-gray-900 dark:text-white font-medium">{contact.bill_due_type}</p>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Synced from Xero
+                </p>
+              </div>
+            )}
 
             {/* LGAs - Multi-select for suppliers */}
             {contact['is_supplier?'] && (
@@ -1325,253 +1396,6 @@ export default function ContactDetailPage() {
                   </p>
                 </div>
               )}
-
-              {/* Price History Tab */}
-              {priceBookTab === 'price-history' && contact.pricebook_items && contact.pricebook_items.length > 0 ? (
-              (() => {
-                // Get all unique dates from all price histories across all items
-                const allDates = new Set()
-                contact.pricebook_items.forEach(item => {
-                  if (item.price_histories && item.price_histories.length > 0) {
-                    item.price_histories.forEach(history => {
-                      const date = history.date_effective || history.created_at
-                      if (date) {
-                        allDates.add(new Date(date).toISOString().split('T')[0])
-                      }
-                    })
-                  }
-                })
-
-                // Sort dates chronologically (newest first)
-                const sortedDates = Array.from(allDates).sort((a, b) => new Date(b) - new Date(a))
-
-                // Filter items based on search term
-                const filteredItems = contact.pricebook_items.filter((item) => {
-                  if (!priceBookSearchTerm) return true
-                  const search = priceBookSearchTerm.toLowerCase()
-                  return (
-                    item.item_code?.toLowerCase().includes(search) ||
-                    item.item_name?.toLowerCase().includes(search) ||
-                    item.category?.toLowerCase().includes(search) ||
-                    item.price_histories?.some(h =>
-                      h.new_price?.toString().includes(search)
-                    )
-                  )
-                })
-
-                return (
-                  <div className="overflow-x-scroll">
-                    <table className="min-w-full">
-                      <thead>
-                        <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                          <th scope="col" className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800/50 px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">
-                            Code
-                          </th>
-                          <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                            Item Name
-                          </th>
-                          <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                            Category
-                          </th>
-                          <th scope="col" className="px-6 py-3.5 text-center text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">
-                            Default
-                          </th>
-                          {sortedDates.map(date => (
-                            <th
-                              key={date}
-                              scope="col"
-                              className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider border-l border-gray-200 dark:border-gray-700"
-                            >
-                              <div className="flex items-center justify-end gap-2">
-                                <span>
-                                  {new Date(date).toLocaleDateString('en-AU', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric'
-                                  })}
-                                </span>
-                                <button
-                                  onClick={async () => {
-                                    if (!confirm(`Are you sure you want to delete ALL price histories for ${new Date(date).toLocaleDateString('en-AU')}? This will remove this entire column.`)) {
-                                      return
-                                    }
-                                    try {
-                                      const response = await api.delete(`/api/v1/contacts/${contact.id}/delete_price_column`, {
-                                        params: { date_effective: date }
-                                      })
-                                      if (response.success) {
-                                        alert(response.message)
-                                        await loadContact()
-                                      } else {
-                                        alert(`Failed to delete column: ${response.error}`)
-                                      }
-                                    } catch (error) {
-                                      console.error('Failed to delete column:', error)
-                                      alert('Failed to delete column. Please try again.')
-                                    }
-                                  }}
-                                  className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                                  title="Delete entire column"
-                                >
-                                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {filteredItems.map((item) => {
-                          // Determine which price is currently active (date_effective <= today)
-                          const today = new Date()
-                          today.setHours(0, 0, 0, 0)
-
-                          const activePriceHistory = item.price_histories
-                            ?.filter(h => {
-                              if (!h.date_effective) return true // No date = always active
-                              const effectiveDate = new Date(h.date_effective)
-                              effectiveDate.setHours(0, 0, 0, 0)
-                              return effectiveDate <= today
-                            })
-                            ?.sort((a, b) => {
-                              const dateA = a.date_effective ? new Date(a.date_effective) : new Date(a.created_at)
-                              const dateB = b.date_effective ? new Date(b.date_effective) : new Date(b.created_at)
-                              return dateB - dateA
-                            })[0]
-
-                          const activePriceDate = activePriceHistory ?
-                            new Date(activePriceHistory.date_effective || activePriceHistory.created_at).toISOString().split('T')[0] :
-                            null
-
-                          return (
-                          <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                            <td className="sticky left-0 z-10 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
-                              {item.item_code}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                              {item.item_name}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              {item.category ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
-                                  <TagIcon className="h-3 w-3" />
-                                  {item.category}
-                                </span>
-                              ) : (
-                                <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-center border-r border-gray-200 dark:border-gray-700">
-                              {item.is_default_supplier ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
-                                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                  </svg>
-                                </span>
-                              ) : (
-                                <span className="text-gray-400 dark:text-gray-500">—</span>
-                              )}
-                            </td>
-                            {sortedDates.map(date => {
-                              // Find price history for this date
-                              const history = item.price_histories?.find(h => {
-                                const historyDate = h.date_effective || h.created_at
-                                if (!historyDate) return false
-                                return new Date(historyDate).toISOString().split('T')[0] === date
-                              })
-
-                              const isEditing = editingPriceHistory?.itemId === item.id &&
-                                                editingPriceHistory?.historyId === history?.id
-
-                              // Check if this is the active price
-                              const isActivePrice = date === activePriceDate
-
-                              return (
-                                <td
-                                  key={date}
-                                  className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono border-l border-gray-200 dark:border-gray-700"
-                                >
-                                  {history ? (
-                                    <div className="flex items-center justify-end gap-2">
-                                      {isEditing ? (
-                                        <>
-                                          <input
-                                            type="number"
-                                            step="0.01"
-                                            value={editingPriceHistory.price}
-                                            onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, price: e.target.value })}
-                                            onFocus={(e) => e.target.select()}
-                                            className="w-24 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                                            ref={(input) => {
-                                              if (input) {
-                                                // Focus without scrolling
-                                                input.focus({ preventScroll: true })
-                                                // Select all text for easy editing
-                                                input.select()
-                                              }
-                                            }}
-                                          />
-                                          <button
-                                            onClick={handleSavePriceHistory}
-                                            className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                                            title="Save"
-                                          >
-                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                            </svg>
-                                          </button>
-                                          <button
-                                            onClick={() => handleDeletePriceHistory(item.id, history.id)}
-                                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                                            title="Delete"
-                                          >
-                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                            </svg>
-                                          </button>
-                                          <button
-                                            onClick={() => setEditingPriceHistory(null)}
-                                            className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                                            title="Cancel"
-                                          >
-                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                            </svg>
-                                          </button>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <span
-                                            onClick={() => handleEditPriceHistory(item.id, history)}
-                                            className="font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
-                                            title="Click to edit"
-                                          >
-                                            ${parseFloat(history.new_price || 0).toFixed(2)}
-                                          </span>
-                                          {isActivePrice && (
-                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200" title="Currently active price">
-                                              Active
-                                            </span>
-                                          )}
-                                        </>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <span className="text-gray-400 dark:text-gray-500">—</span>
-                                  )}
-                                </td>
-                              )
-                            })}
-                          </tr>
-                        )})}
-                      </tbody>
-                    </table>
-                  </div>
-                )
-              })()
-            ) : null}
 
               {/* Activity Log Tab */}
               {priceBookTab === 'activity' && (
@@ -2581,6 +2405,17 @@ export default function ContactDetailPage() {
           </div>
         </div>
       </Dialog>
+
+      {/* Link to Xero Modal */}
+      <LinkXeroContactModal
+        isOpen={showLinkXeroModal}
+        onClose={() => setShowLinkXeroModal(false)}
+        contact={contact}
+        onSuccess={(updatedContact) => {
+          setContact({ ...contact, ...updatedContact })
+          fetchContact()
+        }}
+      />
     </div>
   )
 }

@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, FileText, UserPlus, RefreshCw, Edit, Package, Link as LinkIcon } from 'lucide-react';
-import api from '../../api';
+import {
+  ClockIcon,
+  DocumentTextIcon,
+  UserPlusIcon,
+  ArrowPathIcon,
+  PencilIcon,
+  CubeIcon,
+  LinkIcon
+} from '@heroicons/react/24/outline';
+import { api } from '../../api';
 
 const ActivityTimeline = ({ contactId }) => {
   const [activities, setActivities] = useState([]);
@@ -31,21 +39,21 @@ const ActivityTimeline = ({ contactId }) => {
   const getActivityIcon = (activityType) => {
     switch (activityType) {
       case 'created':
-        return <UserPlus className="w-4 h-4" />;
+        return <UserPlusIcon className="w-4 h-4" />;
       case 'updated':
-        return <Edit className="w-4 h-4" />;
+        return <PencilIcon className="w-4 h-4" />;
       case 'synced_from_xero':
-        return <RefreshCw className="w-4 h-4" />;
+        return <ArrowPathIcon className="w-4 h-4" />;
       case 'synced_to_xero':
-        return <RefreshCw className="w-4 h-4" />;
+        return <ArrowPathIcon className="w-4 h-4" />;
       case 'purchase_order_created':
-        return <Package className="w-4 h-4" />;
+        return <CubeIcon className="w-4 h-4" />;
       case 'supplier_linked':
         return <LinkIcon className="w-4 h-4" />;
       case 'contact_merged':
-        return <FileText className="w-4 h-4" />;
+        return <DocumentTextIcon className="w-4 h-4" />;
       default:
-        return <Clock className="w-4 h-4" />;
+        return <ClockIcon className="w-4 h-4" />;
     }
   };
 
@@ -152,7 +160,7 @@ const ActivityTimeline = ({ contactId }) => {
   if (activities.length === 0) {
     return (
       <div className="text-center py-8">
-        <Clock className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+        <ClockIcon className="w-12 h-12 mx-auto text-gray-400 mb-3" />
         <p className="text-gray-500 dark:text-gray-400">No activity history yet</p>
         <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
           Activity will appear here when the contact is synced from Xero or updated
@@ -170,7 +178,7 @@ const ActivityTimeline = ({ contactId }) => {
           className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
           title="Refresh"
         >
-          <RefreshCw className="w-4 h-4" />
+          <ArrowPathIcon className="w-4 h-4" />
         </button>
       </div>
 

@@ -45,6 +45,7 @@ export default function ContactsPage() {
   const [activeTab, setActiveTab] = useState(getInitialTabIndex())
   const [selectedCategories, setSelectedCategories] = useState([])
   const [filter, setFilter] = useState('all') // 'all', 'customers', 'suppliers', 'both'
+  const [xeroSyncFilter, setXeroSyncFilter] = useState('all') // 'all', 'synced', 'not_synced'
 
   // Bulk selection state
   const [selectedContacts, setSelectedContacts] = useState(new Set())
@@ -117,7 +118,7 @@ export default function ContactsPage() {
   useEffect(() => {
     loadContacts()
     loadSuppliers()
-  }, [filter])
+  }, [filter, xeroSyncFilter])
 
   // Listen for global search event from AppLayout
   useEffect(() => {
@@ -134,9 +135,14 @@ export default function ContactsPage() {
   const loadContacts = async () => {
     try {
       setLoading(true)
-      const endpoint = filter === 'all'
-        ? '/api/v1/contacts'
-        : `/api/v1/contacts?type=${filter}`
+      const params = new URLSearchParams()
+      if (filter !== 'all') {
+        params.append('type', filter)
+      }
+      if (xeroSyncFilter !== 'all') {
+        params.append('xero_sync', xeroSyncFilter)
+      }
+      const endpoint = params.toString() ? `/api/v1/contacts?${params.toString()}` : '/api/v1/contacts'
       const response = await api.get(endpoint)
       setContacts(response.contacts || [])
     } catch (err) {
@@ -346,7 +352,7 @@ export default function ContactsPage() {
     total: contacts.length,
     withEmail: contacts.filter(c => c.email).length,
     withPhone: contacts.filter(c => c.mobile_phone || c.office_phone).length,
-    syncedXero: contacts.filter(c => c.sync_with_xero).length
+    syncedXero: contacts.filter(c => c.xero_id).length
   }
 
   const supplierStats = {
@@ -466,6 +472,9 @@ export default function ContactsPage() {
             {/* Filter Buttons */}
             <div className="mb-6">
               <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-4 flex-wrap">
+                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mr-2">
+                  Contact Type:
+                </div>
                 <button
                   onClick={() => setFilter('all')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -516,6 +525,43 @@ export default function ContactsPage() {
                 >
                   Land Agents
                 </button>
+
+                <div className="h-8 w-px bg-gray-300 dark:bg-gray-600 mx-2"></div>
+
+                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mr-2">
+                  Xero Sync:
+                </div>
+                <button
+                  onClick={() => setXeroSyncFilter('all')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    xeroSyncFilter === 'all'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setXeroSyncFilter('synced')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    xeroSyncFilter === 'synced'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Synced with Xero
+                </button>
+                <button
+                  onClick={() => setXeroSyncFilter('not_synced')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    xeroSyncFilter === 'not_synced'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Not Synced
+                </button>
+
                 <div className="ml-auto">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {contacts.length} {filter === 'all' ? 'total' : filter} contacts
@@ -857,7 +903,7 @@ export default function ContactsPage() {
                         )}
                         {visibleContactColumns.xero && (
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {contact.sync_with_xero ? (
+                            {contact.xero_id ? (
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50">
                                 <CheckCircleIcon className="h-3.5 w-3.5" />
                                 Synced
