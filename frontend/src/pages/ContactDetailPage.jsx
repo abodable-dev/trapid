@@ -38,12 +38,28 @@ export default function ContactDetailPage() {
   const [editFormData, setEditFormData] = useState(null)
   const [saving, setSaving] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [supplierSearchTerm, setSupplierSearchTerm] = useState('')
+  const [showSupplierDropdown, setShowSupplierDropdown] = useState(false)
 
   useEffect(() => {
     loadContact()
     loadAllContacts()
     loadCurrentContactCategories()
   }, [id])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showSupplierDropdown && !event.target.closest('#source-contact')) {
+        setShowSupplierDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showSupplierDropdown])
 
   const loadContact = async () => {
     try {
@@ -97,6 +113,18 @@ export default function ContactDetailPage() {
     setCopyResult(null)
     loadSourceCategories(sourceId)
   }
+
+  const handleSupplierSelect = (contactId, contactName) => {
+    setSelectedSourceContact(contactId)
+    setSupplierSearchTerm(contactName)
+    setShowSupplierDropdown(false)
+    setCopyResult(null)
+    loadSourceCategories(contactId)
+  }
+
+  const filteredContacts = allContacts.filter(contact =>
+    contact.full_name.toLowerCase().includes(supplierSearchTerm.toLowerCase())
+  )
 
   const toggleCategory = (category) => {
     setSelectedCategories(prev => {
@@ -552,24 +580,50 @@ export default function ContactDetailPage() {
               </p>
 
               <div className="space-y-4">
-                <div>
+                <div className="relative">
                   <label htmlFor="source-contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Select Supplier to Copy From
                   </label>
-                  <select
+                  <input
+                    type="text"
                     id="source-contact"
-                    value={selectedSourceContact}
-                    onChange={(e) => handleSourceContactChange(e.target.value)}
+                    value={supplierSearchTerm}
+                    onChange={(e) => {
+                      setSupplierSearchTerm(e.target.value)
+                      setShowSupplierDropdown(true)
+                      if (!e.target.value) {
+                        setSelectedSourceContact('')
+                        setSourceCategories([])
+                        setSelectedCategories([])
+                      }
+                    }}
+                    onFocus={() => setShowSupplierDropdown(true)}
+                    placeholder="Search for a supplier..."
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     disabled={copyingHistory}
-                  >
-                    <option value="">-- Select a supplier --</option>
-                    {allContacts.map((contact) => (
-                      <option key={contact.id} value={contact.id}>
-                        {contact.full_name} (#{contact.id})
-                      </option>
-                    ))}
-                  </select>
+                    autoComplete="off"
+                  />
+
+                  {showSupplierDropdown && supplierSearchTerm && filteredContacts.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {filteredContacts.map((contact) => (
+                        <button
+                          key={contact.id}
+                          type="button"
+                          onClick={() => handleSupplierSelect(contact.id, contact.full_name)}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm"
+                        >
+                          {contact.full_name} <span className="text-gray-500 dark:text-gray-400">(#{contact.id})</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {showSupplierDropdown && supplierSearchTerm && filteredContacts.length === 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No suppliers found</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Category Selection */}
