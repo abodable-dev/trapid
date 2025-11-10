@@ -20,6 +20,7 @@ export default function PurchaseOrderEditPage() {
   const [allSupplierItems, setAllSupplierItems] = useState([])
   const searchRefs = useRef({})
   const inputRefs = useRef({})
+  const dropdownRefs = useRef({})
 
   useEffect(() => {
     loadPurchaseOrder()
@@ -28,13 +29,14 @@ export default function PurchaseOrderEditPage() {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      Object.keys(searchRefs.current).forEach(index => {
-        const ref = searchRefs.current[index]
-        if (ref && !ref.contains(event.target)) {
-          setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
-          setShowDescriptionDropdown(prev => ({ ...prev, [index]: false }))
-        }
-      })
+      // Check if click is on any input or dropdown
+      const isClickOnInput = Object.values(inputRefs.current).some(ref => ref && ref.contains(event.target))
+      const isClickOnDropdown = Object.values(dropdownRefs.current).some(ref => ref && ref.contains(event.target))
+
+      if (!isClickOnInput && !isClickOnDropdown) {
+        setShowSearchDropdown({})
+        setShowDescriptionDropdown({})
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
@@ -387,6 +389,7 @@ export default function PurchaseOrderEditPage() {
                           />
                           {showSearchDropdown[index] && dropdownPosition[`code-${index}`] && createPortal(
                             <div
+                              ref={el => dropdownRefs.current[`code-${index}`] = el}
                               className="fixed z-[9999] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-96 overflow-y-auto"
                               style={{
                                 top: `${dropdownPosition[`code-${index}`].top}px`,
@@ -430,6 +433,7 @@ export default function PurchaseOrderEditPage() {
                           />
                           {showDescriptionDropdown[index] && dropdownPosition[`desc-${index}`] && createPortal(
                             <div
+                              ref={el => dropdownRefs.current[`desc-${index}`] = el}
                               className="fixed z-[9999] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-96 overflow-y-auto"
                               style={{
                                 top: `${dropdownPosition[`desc-${index}`].top}px`,
