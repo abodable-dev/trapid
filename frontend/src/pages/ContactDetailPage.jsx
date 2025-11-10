@@ -51,6 +51,9 @@ export default function ContactDetailPage() {
   const [importDate, setImportDate] = useState(new Date().toISOString().split('T')[0])
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState(null)
+  const [priceBookTab, setPriceBookTab] = useState('items') // items, activity, bulk-update
+  const [bulkUpdateDate, setBulkUpdateDate] = useState(new Date().toISOString().split('T')[0])
+  const [bulkUpdating, setBulkUpdating] = useState(false)
 
   useEffect(() => {
     loadContact()
@@ -1260,8 +1263,48 @@ export default function ContactDetailPage() {
                   )}
                 </div>
               )}
+
+              {/* Tab Navigation */}
+              {contact.pricebook_items && contact.pricebook_items.length > 0 && (
+                <div className="border-b border-gray-200 dark:border-gray-700">
+                  <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button
+                      onClick={() => setPriceBookTab('items')}
+                      className={`${
+                        priceBookTab === 'items'
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                      } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                      Items
+                    </button>
+                    <button
+                      onClick={() => setPriceBookTab('activity')}
+                      className={`${
+                        priceBookTab === 'activity'
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                      } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                      Activity Log
+                    </button>
+                    <button
+                      onClick={() => setPriceBookTab('bulk-update')}
+                      className={`${
+                        priceBookTab === 'bulk-update'
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                      } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                    >
+                      Bulk Update
+                    </button>
+                  </nav>
+                </div>
+              )}
             </div>
-            {contact.pricebook_items && contact.pricebook_items.length > 0 ? (
+
+            {/* Tab Content */}
+            {priceBookTab === 'items' && contact.pricebook_items && contact.pricebook_items.length > 0 ? (
               (() => {
                 // Get all unique dates from all price histories across all items
                 const allDates = new Set()
@@ -1363,15 +1406,53 @@ export default function ContactDetailPage() {
                                 return new Date(historyDate).toISOString().split('T')[0] === date
                               })
 
+                              const isEditing = editingPriceHistory?.itemId === item.id &&
+                                                editingPriceHistory?.historyId === history?.id
+
                               return (
                                 <td
                                   key={date}
                                   className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono border-l border-gray-200 dark:border-gray-700"
                                 >
                                   {history ? (
-                                    <span className="font-semibold text-gray-900 dark:text-white">
-                                      ${parseFloat(history.new_price || 0).toFixed(2)}
-                                    </span>
+                                    isEditing ? (
+                                      <div className="flex items-center justify-end gap-2">
+                                        <input
+                                          type="number"
+                                          step="0.01"
+                                          value={editingPriceHistory.price}
+                                          onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, price: e.target.value })}
+                                          className="w-24 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                                          autoFocus
+                                        />
+                                        <button
+                                          onClick={handleSavePriceHistory}
+                                          className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                                          title="Save"
+                                        >
+                                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={() => setEditingPriceHistory(null)}
+                                          className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                          title="Cancel"
+                                        >
+                                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <span
+                                        onClick={() => handleEditPriceHistory(item.id, history)}
+                                        className="font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                                        title="Click to edit"
+                                      >
+                                        ${parseFloat(history.new_price || 0).toFixed(2)}
+                                      </span>
+                                    )
                                   ) : (
                                     <span className="text-gray-400 dark:text-gray-500">—</span>
                                   )}
@@ -1384,14 +1465,308 @@ export default function ContactDetailPage() {
                     </table>
                   </div>
                 )
-              })())
-              ) : (
+              })()
+            ) : (
                 <div className="px-6 py-16 text-center">
                   <CubeIcon className="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600" />
                   <h3 className="mt-4 text-base font-medium text-gray-900 dark:text-white">No items in price book</h3>
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                     This supplier doesn't have any items in their price book yet.
                   </p>
+                </div>
+              )}
+
+              {/* Activity Log Tab */}
+              {priceBookTab === 'activity' && (
+                <div className="px-6 py-8">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">Price Change Activity Log</h3>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      Track all price changes made to items in this supplier's price book
+                    </p>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-900">
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Date & Time
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Item
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            User
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Old Price
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            New Price
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Change
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Reason
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {(() => {
+                          // Collect all price histories from all items
+                          const allHistories = contact.pricebook_items?.flatMap(item =>
+                            (item.price_histories || []).map(history => ({
+                              ...history,
+                              item_name: item.item_name,
+                              item_code: item.item_code
+                            }))
+                          ) || []
+
+                          // Sort by date descending (most recent first)
+                          const sortedHistories = allHistories.sort((a, b) => {
+                            const dateA = new Date(a.date_effective || a.created_at)
+                            const dateB = new Date(b.date_effective || b.created_at)
+                            return dateB - dateA
+                          })
+
+                          if (sortedHistories.length === 0) {
+                            return (
+                              <tr>
+                                <td colSpan="7" className="px-6 py-16 text-center">
+                                  <div className="text-gray-400 dark:text-gray-500">
+                                    <svg className="mx-auto h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <p className="text-sm font-medium">No price changes recorded yet</p>
+                                    <p className="text-xs mt-1">Price change history will appear here</p>
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          }
+
+                          return sortedHistories.map((history, idx) => {
+                            const changePercent = history.old_price && history.new_price
+                              ? (((history.new_price - history.old_price) / history.old_price) * 100).toFixed(1)
+                              : null
+                            const isIncrease = changePercent > 0
+                            const isDecrease = changePercent < 0
+
+                            return (
+                              <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                  {new Date(history.date_effective || history.created_at).toLocaleString()}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                  <div className="font-medium">{history.item_name}</div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">{history.item_code}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                  {history.user_name || 'System'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono text-gray-900 dark:text-white">
+                                  {history.old_price ? `$${parseFloat(history.old_price).toFixed(2)}` : '—'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono font-semibold text-gray-900 dark:text-white">
+                                  ${parseFloat(history.new_price).toFixed(2)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                  {changePercent !== null && (
+                                    <span className={`inline-flex items-center gap-1 ${
+                                      isIncrease ? 'text-red-600 dark:text-red-400' :
+                                      isDecrease ? 'text-green-600 dark:text-green-400' :
+                                      'text-gray-500 dark:text-gray-400'
+                                    }`}>
+                                      {isIncrease && '↑'}
+                                      {isDecrease && '↓'}
+                                      {Math.abs(changePercent)}%
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                  {history.change_reason || '—'}
+                                </td>
+                              </tr>
+                            )
+                          })
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Bulk Update Tab */}
+              {priceBookTab === 'bulk-update' && (
+                <div className="px-6 py-8">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">Bulk Price Update</h3>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      Create a new price column for a specific date and update all items at once
+                    </p>
+                  </div>
+
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                          Bulk Update Mode
+                        </h3>
+                        <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                          <p>
+                            This will create a new price history entry for all items with the specified effective date.
+                            You can edit individual prices in the table below before applying the update.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Date Selector */}
+                  <div className="mb-6">
+                    <label htmlFor="bulk-update-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Effective Date for New Prices
+                    </label>
+                    <input
+                      type="date"
+                      id="bulk-update-date"
+                      value={bulkUpdateDate}
+                      onChange={(e) => setBulkUpdateDate(e.target.value)}
+                      className="block w-64 rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+
+                  {/* Items Table for Bulk Update */}
+                  {contact.pricebook_items && contact.pricebook_items.length > 0 ? (
+                    <div className="overflow-x-auto mb-6">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-900">
+                          <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Item Code
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Item Name
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Current Price
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              New Price
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              Change Reason
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                          {contact.pricebook_items.map((item, idx) => (
+                            <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                {item.item_code}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                {item.item_name}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono text-gray-500 dark:text-gray-400">
+                                ${parseFloat(item.current_price || 0).toFixed(2)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  defaultValue={item.current_price || 0}
+                                  id={`bulk-price-${item.id}`}
+                                  className="w-32 px-3 py-1.5 text-right border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                              </td>
+                              <td className="px-6 py-4 text-sm">
+                                <input
+                                  type="text"
+                                  placeholder="Optional reason"
+                                  id={`bulk-reason-${item.id}`}
+                                  className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500 dark:text-gray-400">No items available for bulk update</p>
+                    </div>
+                  )}
+
+                  {/* Apply Bulk Update Button */}
+                  {contact.pricebook_items && contact.pricebook_items.length > 0 && (
+                    <div className="flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Reset all inputs to current prices
+                          contact.pricebook_items.forEach(item => {
+                            const priceInput = document.getElementById(`bulk-price-${item.id}`)
+                            const reasonInput = document.getElementById(`bulk-reason-${item.id}`)
+                            if (priceInput) priceInput.value = item.current_price || 0
+                            if (reasonInput) reasonInput.value = ''
+                          })
+                        }}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
+                      >
+                        Reset All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setBulkUpdating(true)
+                          try {
+                            // Collect all price updates
+                            const updates = contact.pricebook_items.map(item => {
+                              const priceInput = document.getElementById(`bulk-price-${item.id}`)
+                              const reasonInput = document.getElementById(`bulk-reason-${item.id}`)
+                              return {
+                                item_id: item.id,
+                                new_price: parseFloat(priceInput.value),
+                                change_reason: reasonInput.value || 'bulk_update',
+                                date_effective: bulkUpdateDate
+                              }
+                            }).filter(update => update.new_price > 0)
+
+                            // Call API endpoint
+                            const response = await api.post(`/api/v1/contacts/${contact.id}/bulk_update_prices`, {
+                              updates
+                            })
+
+                            if (response.success) {
+                              alert(`Successfully updated ${response.updated_count} prices`)
+                              // Refresh contact data
+                              window.location.reload()
+                            } else {
+                              alert('Failed to update prices: ' + (response.errors || []).join(', '))
+                            }
+                          } catch (error) {
+                            console.error('Bulk update error:', error)
+                            alert('Failed to update prices: ' + error.message)
+                          } finally {
+                            setBulkUpdating(false)
+                          }
+                        }}
+                        disabled={bulkUpdating}
+                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+                      >
+                        {bulkUpdating ? 'Updating...' : `Apply Update to ${contact.pricebook_items.length} Items`}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
           </div>
