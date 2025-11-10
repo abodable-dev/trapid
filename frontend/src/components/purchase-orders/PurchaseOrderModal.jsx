@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { XMarkIcon, SparklesIcon, ExclamationTriangleIcon, UserIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
 export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOrder, suppliers, constructionId, construction }) {
+  const isMountedRef = useRef(true)
   const [formData, setFormData] = useState({
     construction_id: constructionId,
     supplier_id: '',
@@ -24,13 +25,20 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
   const [smartLookupLoading, setSmartLookupLoading] = useState(false)
   const [lookupWarnings, setLookupWarnings] = useState([])
   const [lookupMetadata, setLookupMetadata] = useState(null)
+  const [errorMessage, setErrorMessage] = useState(null)
 
   useEffect(() => {
+    isMountedRef.current = true
+
     if (purchaseOrder) {
       setFormData({
         ...purchaseOrder,
         line_items_attributes: purchaseOrder.line_items || [{ description: '', quantity: 1, unit_price: 0 }]
       })
+    }
+
+    return () => {
+      isMountedRef.current = false
     }
   }, [purchaseOrder])
 
@@ -63,13 +71,14 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
 
   const handleSmartLookup = async () => {
     if (!formData.description || !formData.line_items_attributes[0]?.description) {
-      alert('Please enter a task description first')
+      setErrorMessage('Please enter a task description first')
       return
     }
 
     setSmartLookupLoading(true)
     setLookupWarnings([])
     setLookupMetadata(null)
+    setErrorMessage(null)
 
     try {
       const taskDescription = formData.description || formData.line_items_attributes[0]?.description
@@ -81,6 +90,8 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
         category: formData.category,
         quantity: quantity
       })
+
+      if (!isMountedRef.current) return
 
       if (result.success && result.supplier) {
         // Auto-populate the form with lookup results
@@ -104,22 +115,46 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
       }
     } catch (error) {
       console.error('Smart lookup error:', error)
-      alert('Failed to perform smart lookup')
+      if (isMountedRef.current) {
+        setErrorMessage('Failed to perform smart lookup')
+      }
     } finally {
-      setSmartLookupLoading(false)
+      if (isMountedRef.current) {
+        setSmartLookupLoading(false)
+      }
     }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // Validate line items
+    const hasEmptyLineItems = formData.line_items_attributes.some(
+      item => !item.description || item.description.trim() === ''
+    )
+
+    if (hasEmptyLineItems) {
+      setErrorMessage('Please fill in all line item descriptions before saving.')
+      return
+    }
+
     setSaving(true)
+    setErrorMessage(null)
     try {
       await onSave(formData)
-      onClose()
+      if (isMountedRef.current) {
+        onClose()
+      }
     } catch (error) {
       console.error('Error saving PO:', error)
+      // Display the error message to the user
+      if (isMountedRef.current) {
+        setErrorMessage(`Failed to save purchase order: ${error.message}`)
+      }
     } finally {
-      setSaving(false)
+      if (isMountedRef.current) {
+        setSaving(false)
+      }
     }
   }
 
@@ -142,6 +177,25 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Error Message Banner */}
+              {errorMessage && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4">
+                  <div className="flex">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm text-red-800 dark:text-red-200">{errorMessage}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setErrorMessage(null)}
+                      className="text-red-400 hover:text-red-600 dark:hover:text-red-300"
+                    >
+                      <XMarkIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Site Supervisor Info Banner */}
               {construction?.site_supervisor_name && (
                 <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg p-4">

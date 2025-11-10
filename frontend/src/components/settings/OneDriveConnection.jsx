@@ -27,27 +27,73 @@ export default function OneDriveConnection() {
 
   // Fetch connection status on mount and handle OAuth callback
   useEffect(() => {
-    fetchStatus()
+    let isMounted = true
 
-    // Check if we're returning from OAuth callback
-    const params = new URLSearchParams(window.location.search)
-    const oneDriveStatus = params.get('onedrive')
+    const loadStatus = async () => {
+      try {
+        if (!isMounted) return
 
-    if (oneDriveStatus === 'connected') {
-      setMessage({
-        type: 'success',
-        text: 'OneDrive connected successfully!',
-      })
-      // Remove query params from URL
-      window.history.replaceState({}, '', '/settings')
-    } else if (oneDriveStatus === 'error') {
-      const errorMessage = params.get('message') || 'Failed to connect OneDrive'
-      setMessage({
-        type: 'error',
-        text: decodeURIComponent(errorMessage),
-      })
-      // Remove query params from URL
-      window.history.replaceState({}, '', '/settings')
+        setStatus(prev => ({ ...prev, loading: true, error: null }))
+        const response = await api.get('/api/v1/organization_onedrive/status')
+
+        if (!isMounted) return
+
+        setStatus({
+          loading: false,
+          connected: response.connected,
+          driveName: response.drive_name,
+          rootFolderPath: response.root_folder_path,
+          rootFolderWebUrl: response.root_folder_web_url,
+          connectedAt: response.connected_at,
+          connectedBy: response.connected_by,
+          metadata: response.metadata,
+          error: null,
+        })
+
+        // Check if we're returning from OAuth callback
+        const params = new URLSearchParams(window.location.search)
+        const oneDriveStatus = params.get('onedrive')
+
+        if (oneDriveStatus === 'connected') {
+          if (isMounted) {
+            setMessage({
+              type: 'success',
+              text: 'OneDrive connected successfully!',
+            })
+          }
+          // Remove query params from URL
+          window.history.replaceState({}, '', '/settings')
+        } else if (oneDriveStatus === 'error') {
+          const errorMessage = params.get('message') || 'Failed to connect OneDrive'
+          if (isMounted) {
+            setMessage({
+              type: 'error',
+              text: decodeURIComponent(errorMessage),
+            })
+          }
+          // Remove query params from URL
+          window.history.replaceState({}, '', '/settings')
+        }
+      } catch (err) {
+        if (!isMounted) return
+
+        setStatus({
+          loading: false,
+          connected: false,
+          driveName: null,
+          rootFolderPath: null,
+          rootFolderWebUrl: null,
+          connectedAt: null,
+          connectedBy: null,
+          error: err.message || 'Failed to fetch connection status',
+        })
+      }
+    }
+
+    loadStatus()
+
+    return () => {
+      isMounted = false
     }
   }, [])
 

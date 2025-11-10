@@ -1,6 +1,9 @@
 module Api
   module V1
     class OrganizationOnedriveController < ApplicationController
+      # Require admin for sensitive operations
+      before_action :require_admin, only: [:disconnect, :change_root_folder, :sync_pricebook_images]
+
       # GET /api/v1/organization_onedrive/status
       # Check if organization has OneDrive connected
       def status
@@ -131,26 +134,43 @@ module Api
           return render json: { error: 'Folder name is required' }, status: :bad_request
         end
 
+        # Validate folder name to prevent path traversal attacks
+        if new_folder_name.include?('..') || new_folder_name.include?('/') || new_folder_name.include?('\\')
+          return render json: { error: 'Invalid folder name. Folder names cannot contain "..", "/", or "\\" characters.' }, status: :bad_request
+        end
+
+        # Validate length and forbidden characters
+        if new_folder_name.length > 255
+          return render json: { error: 'Folder name is too long (maximum 255 characters)' }, status: :bad_request
+        end
+
+        # Remove any potentially dangerous characters (whitelist approach)
+        sanitized_name = new_folder_name.gsub(/[^a-zA-Z0-9\s\-_]/, '').strip
+
+        if sanitized_name.blank?
+          return render json: { error: 'Folder name contains only invalid characters' }, status: :bad_request
+        end
+
         begin
           client = MicrosoftGraphClient.new(credential)
 
           # Try to find existing folder first
-          existing_folder = client.find_folder_by_name(new_folder_name)
+          existing_folder = client.find_folder_by_name(sanitized_name)
 
           if existing_folder
             # Use existing folder
             root_folder = existing_folder
           else
             # Create new folder
-            root_folder = client.create_folder(new_folder_name, drive_id: credential.drive_id)
+            root_folder = client.create_folder(sanitized_name, drive_id: credential.drive_id)
           end
 
           # Update credential with new root folder info
           credential.update!(
             root_folder_id: root_folder['id'],
-            root_folder_path: new_folder_name,
+            root_folder_path: sanitized_name,
             metadata: credential.metadata.merge({
-              root_folder_name: new_folder_name,
+              root_folder_name: sanitized_name,
               root_folder_web_url: root_folder['webUrl'],
               updated_at: Time.current
             })
@@ -158,7 +178,7 @@ module Api
 
           render json: {
             message: 'Root folder updated successfully',
-            root_folder_path: new_folder_name,
+            root_folder_path: sanitized_name,
             root_folder_web_url: root_folder['webUrl']
           }
 
