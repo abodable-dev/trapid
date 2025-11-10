@@ -101,7 +101,7 @@ module Api
         params.require(:schedule_template_row).permit(
           :name,
           :supplier_id,
-          :assigned_user_id,
+          :assigned_role,
           :po_required,
           :create_po_on_job_start,
           :critical_po,
@@ -124,7 +124,7 @@ module Api
         ActionController::Parameters.new(hash).permit(
           :name,
           :supplier_id,
-          :assigned_user_id,
+          :assigned_role,
           :po_required,
           :create_po_on_job_start,
           :critical_po,
@@ -149,8 +149,7 @@ module Api
           name: row.name,
           supplier_id: row.supplier_id,
           supplier_name: row.supplier&.name,
-          assigned_user_id: row.assigned_user_id,
-          assigned_user_name: row.assigned_user&.name,
+          assigned_role: row.assigned_role,
           predecessor_ids: row.predecessor_ids,
           predecessor_display: row.predecessor_display,
           po_required: row.po_required,
