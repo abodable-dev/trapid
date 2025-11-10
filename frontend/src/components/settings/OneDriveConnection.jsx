@@ -9,6 +9,7 @@ export default function OneDriveConnection() {
     connected: false,
     driveName: null,
     rootFolderPath: null,
+    rootFolderWebUrl: null,
     connectedAt: null,
     connectedBy: null,
     error: null,
@@ -57,6 +58,7 @@ export default function OneDriveConnection() {
         connected: response.connected,
         driveName: response.drive_name,
         rootFolderPath: response.root_folder_path,
+        rootFolderWebUrl: response.root_folder_web_url,
         connectedAt: response.connected_at,
         connectedBy: response.connected_by,
         metadata: response.metadata,
@@ -68,6 +70,7 @@ export default function OneDriveConnection() {
         connected: false,
         driveName: null,
         rootFolderPath: null,
+        rootFolderWebUrl: null,
         connectedAt: null,
         connectedBy: null,
         error: err.message || 'Failed to fetch connection status',
@@ -104,6 +107,7 @@ export default function OneDriveConnection() {
         connected: false,
         driveName: null,
         rootFolderPath: null,
+        rootFolderWebUrl: null,
         connectedAt: null,
         connectedBy: null,
         error: null,
@@ -232,9 +236,21 @@ export default function OneDriveConnection() {
                   {status.rootFolderPath && (
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Root Folder</p>
-                      <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">
-                        {status.rootFolderPath}
-                      </p>
+                      <div className="mt-1 flex items-center gap-x-2">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {status.rootFolderPath}
+                        </p>
+                        {status.rootFolderWebUrl && (
+                          <a
+                            href={status.rootFolderWebUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10 hover:bg-indigo-100 dark:bg-indigo-400/10 dark:text-indigo-400 dark:ring-indigo-400/30 dark:hover:bg-indigo-400/20"
+                          >
+                            View in OneDrive
+                          </a>
+                        )}
+                      </div>
                     </div>
                   )}
 
