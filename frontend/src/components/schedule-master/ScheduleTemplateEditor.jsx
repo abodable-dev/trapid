@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   PlusIcon, TrashIcon, PencilIcon, DocumentDuplicateIcon,
-  CheckIcon, ArrowUpIcon, ArrowDownIcon
+  CheckIcon, ArrowUpIcon, ArrowDownIcon, InformationCircleIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import Toast from '../Toast'
@@ -12,6 +12,21 @@ import Toast from '../Toast'
  *          Critical PO, Tags, Photo Required, Certificate Required, Cert Lag Days,
  *          Supervisor Check, Auto-Complete Predecessors, Subtasks
  */
+
+// Tooltip component for column headers
+function ColumnTooltip({ text, tooltip }) {
+  return (
+    <div className="group relative flex items-center gap-1">
+      <span>{text}</span>
+      <InformationCircleIcon className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+      <div className="hidden group-hover:block absolute z-50 bottom-full left-0 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg">
+        {tooltip}
+        <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+      </div>
+    </div>
+  )
+}
+
 export default function ScheduleTemplateEditor() {
   const [templates, setTemplates] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState(null)
@@ -270,20 +285,62 @@ export default function ScheduleTemplateEditor() {
             {/* Header Row */}
             <div className="grid grid-cols-[40px_200px_150px_100px_80px_80px_120px_80px_100px_80px_80px_80px_80px_80px_120px_80px] gap-2 p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300">
               <div>#</div>
-              <div>Task Name</div>
-              <div>Supplier</div>
-              <div>Predecessors</div>
-              <div>PO Req</div>
-              <div>Auto PO</div>
-              <div>Price Items</div>
-              <div>Critical</div>
-              <div>Tags</div>
-              <div>Photo</div>
-              <div>Cert</div>
-              <div>Cert Lag</div>
-              <div>Sup Check</div>
-              <div>Auto ✓</div>
-              <div>Subtasks</div>
+              <ColumnTooltip
+                text="Task Name"
+                tooltip="The name of the task that will appear in the schedule. Be descriptive so builders know exactly what needs to be done."
+              />
+              <ColumnTooltip
+                text="Supplier"
+                tooltip="The supplier responsible for this task. Required if you want to generate purchase orders automatically."
+              />
+              <ColumnTooltip
+                text="Predecessors"
+                tooltip="Tasks that must be completed before this one starts. Supports FS (Finish-to-Start), SS (Start-to-Start), FF (Finish-to-Finish), and SF (Start-to-Finish) dependencies with lag days."
+              />
+              <ColumnTooltip
+                text="PO Req"
+                tooltip="Check if this task requires a purchase order. Must have a supplier selected first."
+              />
+              <ColumnTooltip
+                text="Auto PO"
+                tooltip="Automatically create and send a purchase order to the supplier when the job starts. Requires 'PO Req' to be checked."
+              />
+              <ColumnTooltip
+                text="Price Items"
+                tooltip="Link price book items to this task. These items will be included in the auto-generated purchase order."
+              />
+              <ColumnTooltip
+                text="Critical"
+                tooltip="Mark this PO as critical priority. Critical POs will be highlighted and require immediate attention."
+              />
+              <ColumnTooltip
+                text="Tags"
+                tooltip="Add tags to categorize and filter tasks (e.g., 'electrical', 'foundation', 'inspection'). Useful for filtering views by trade."
+              />
+              <ColumnTooltip
+                text="Photo"
+                tooltip="Automatically spawn a photo task when this task is completed. Use for tasks that need photo documentation."
+              />
+              <ColumnTooltip
+                text="Cert"
+                tooltip="Automatically spawn a certificate task when this task is completed. Used for regulatory certifications and compliance documents."
+              />
+              <ColumnTooltip
+                text="Cert Lag"
+                tooltip="Number of days after task completion when the certificate is due. Default is 10 days."
+              />
+              <ColumnTooltip
+                text="Sup Check"
+                tooltip="Require a supervisor to check in on this task. Supervisor will get a prompt to visit the site and verify quality."
+              />
+              <ColumnTooltip
+                text="Auto ✓"
+                tooltip="Automatically mark all predecessor tasks as complete when this task is completed. Useful for cleanup or milestone tasks."
+              />
+              <ColumnTooltip
+                text="Subtasks"
+                tooltip="Automatically create subtasks when this task starts. Useful for breaking down complex tasks into smaller steps."
+              />
               <div>Actions</div>
             </div>
 
