@@ -71,7 +71,7 @@ module Api
           contact_json[:pricebook_items_count] = all_items.count
           contact_json[:purchase_orders_count] = @contact.purchase_orders.count
           contact_json[:pricebook_items] = all_items.as_json(
-            only: [:id, :item_code, :item_name, :category, :current_price, :unit]
+            only: [:id, :item_code, :item_name, :category, :current_price, :unit, :price_last_updated_at]
           )
         end
 
