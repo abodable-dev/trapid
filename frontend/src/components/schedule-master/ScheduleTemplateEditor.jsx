@@ -1,0 +1,546 @@
+import { useState, useEffect } from 'react'
+import {
+  PlusIcon, TrashIcon, PencilIcon, DocumentDuplicateIcon,
+  CheckIcon, ArrowUpIcon, ArrowDownIcon
+} from '@heroicons/react/24/outline'
+import { api } from '../../api'
+import Toast from '../Toast'
+
+/**
+ * Schedule Template Editor - Full 14-column grid interface for creating/editing schedule templates
+ * Columns: Name, Supplier, Predecessors, PO Required, Create PO on Start, Price Book Items,
+ *          Critical PO, Tags, Photo Required, Certificate Required, Cert Lag Days,
+ *          Supervisor Check, Auto-Complete Predecessors, Subtasks
+ */
+export default function ScheduleTemplateEditor() {
+  const [templates, setTemplates] = useState([])
+  const [selectedTemplate, setSelectedTemplate] = useState(null)
+  const [rows, setRows] = useState([])
+  const [suppliers, setSuppliers] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [toast, setToast] = useState(null)
+  const [showTemplateModal, setShowTemplateModal] = useState(false)
+  const [templateForm, setTemplateForm] = useState({ name: '', description: '', is_default: false })
+
+  useEffect(() => {
+    loadTemplates()
+    loadSuppliers()
+  }, [])
+
+  useEffect(() => {
+    if (selectedTemplate) {
+      loadTemplateRows(selectedTemplate.id)
+    }
+  }, [selectedTemplate])
+
+  const loadTemplates = async () => {
+    try {
+      const response = await api.get('/api/v1/schedule_templates')
+      setTemplates(response)
+      if (response.length > 0 && !selectedTemplate) {
+        setSelectedTemplate(response[0])
+      }
+    } catch (err) {
+      console.error('Failed to load templates:', err)
+      showToast('Failed to load templates', 'error')
+    }
+  }
+
+  const loadTemplateRows = async (templateId) => {
+    try {
+      setLoading(true)
+      const response = await api.get(`/api/v1/schedule_templates/${templateId}`)
+      setRows(response.rows || [])
+    } catch (err) {
+      console.error('Failed to load template rows:', err)
+      showToast('Failed to load template rows', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadSuppliers = async () => {
+    try {
+      const response = await api.get('/api/v1/suppliers')
+      setSuppliers(response.suppliers || [])
+    } catch (err) {
+      console.error('Failed to load suppliers:', err)
+    }
+  }
+
+  const handleCreateTemplate = async () => {
+    try {
+      const response = await api.post('/api/v1/schedule_templates', {
+        schedule_template: templateForm
+      })
+      showToast('Template created successfully', 'success')
+      await loadTemplates()
+      setSelectedTemplate(response)
+      setShowTemplateModal(false)
+      setTemplateForm({ name: '', description: '', is_default: false })
+    } catch (err) {
+      console.error('Failed to create template:', err)
+      showToast('Failed to create template', 'error')
+    }
+  }
+
+  const handleDuplicateTemplate = async () => {
+    if (!selectedTemplate) return
+
+    const newName = prompt('Enter name for duplicated template:', `${selectedTemplate.name} (Copy)`)
+    if (!newName) return
+
+    try {
+      const response = await api.post(`/api/v1/schedule_templates/${selectedTemplate.id}/duplicate`, {
+        new_name: newName
+      })
+      showToast('Template duplicated successfully', 'success')
+      await loadTemplates()
+      setSelectedTemplate(response)
+    } catch (err) {
+      console.error('Failed to duplicate template:', err)
+      showToast('Failed to duplicate template', 'error')
+    }
+  }
+
+  const handleSetAsDefault = async () => {
+    if (!selectedTemplate) return
+
+    try {
+      await api.post(`/api/v1/schedule_templates/${selectedTemplate.id}/set_as_default`)
+      showToast('Template set as default', 'success')
+      await loadTemplates()
+    } catch (err) {
+      console.error('Failed to set default template:', err)
+      showToast('Failed to set default template', 'error')
+    }
+  }
+
+  const handleAddRow = async () => {
+    if (!selectedTemplate) return
+
+    const newRow = {
+      name: 'New Task',
+      supplier_id: null,
+      predecessor_ids: [],
+      po_required: false,
+      create_po_on_job_start: false,
+      price_book_item_ids: [],
+      critical_po: false,
+      tags: [],
+      require_photo: false,
+      require_certificate: false,
+      cert_lag_days: 10,
+      require_supervisor_check: false,
+      auto_complete_predecessors: false,
+      has_subtasks: false,
+      subtask_count: 0,
+      subtask_names: [],
+      sequence_order: rows.length
+    }
+
+    try {
+      const response = await api.post(
+        `/api/v1/schedule_templates/${selectedTemplate.id}/rows`,
+        { schedule_template_row: newRow }
+      )
+      setRows([...rows, response])
+      showToast('Row added', 'success')
+    } catch (err) {
+      console.error('Failed to add row:', err)
+      showToast('Failed to add row', 'error')
+    }
+  }
+
+  const handleUpdateRow = async (rowId, updates) => {
+    try {
+      await api.patch(
+        `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`,
+        { schedule_template_row: updates }
+      )
+      setRows(rows.map(r => r.id === rowId ? { ...r, ...updates } : r))
+    } catch (err) {
+      console.error('Failed to update row:', err)
+      showToast('Failed to update row', 'error')
+    }
+  }
+
+  const handleDeleteRow = async (rowId) => {
+    if (!confirm('Delete this row?')) return
+
+    try {
+      await api.delete(`/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`)
+      setRows(rows.filter(r => r.id !== rowId))
+      showToast('Row deleted', 'success')
+    } catch (err) {
+      console.error('Failed to delete row:', err)
+      showToast('Failed to delete row', 'error')
+    }
+  }
+
+  const handleMoveRow = async (index, direction) => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1
+    if (newIndex < 0 || newIndex >= rows.length) return
+
+    const newRows = [...rows]
+    ;[newRows[index], newRows[newIndex]] = [newRows[newIndex], newRows[index]]
+
+    setRows(newRows)
+
+    try {
+      await api.post(
+        `/api/v1/schedule_templates/${selectedTemplate.id}/rows/reorder`,
+        { row_ids: newRows.map(r => r.id) }
+      )
+    } catch (err) {
+      console.error('Failed to reorder rows:', err)
+      showToast('Failed to reorder rows', 'error')
+    }
+  }
+
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  return (
+    <div className="max-w-full px-4 py-6">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Schedule Templates
+          </h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Create reusable schedule templates with full task dependencies and automation
+          </p>
+        </div>
+        <button
+          onClick={() => setShowTemplateModal(true)}
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+        >
+          <PlusIcon className="h-5 w-5 mr-2" />
+          New Template
+        </button>
+      </div>
+
+      {/* Template Selector */}
+      <div className="mb-4 flex items-center gap-4">
+        <select
+          value={selectedTemplate?.id || ''}
+          onChange={(e) => {
+            const template = templates.find(t => t.id === parseInt(e.target.value))
+            setSelectedTemplate(template)
+          }}
+          className="flex-1 max-w-md px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
+        >
+          {templates.map((template) => (
+            <option key={template.id} value={template.id}>
+              {template.name} {template.is_default ? '(Default)' : ''}
+            </option>
+          ))}
+        </select>
+
+        {selectedTemplate && (
+          <>
+            <button
+              onClick={handleDuplicateTemplate}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+              title="Duplicate Template"
+            >
+              <DocumentDuplicateIcon className="h-5 w-5" />
+            </button>
+            {!selectedTemplate.is_default && (
+              <button
+                onClick={handleSetAsDefault}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400"
+                title="Set as Default"
+              >
+                <CheckIcon className="h-5 w-5" />
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* 14-Column Grid */}
+      {selectedTemplate && (
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+          <div className="min-w-[2000px]">
+            {/* Header Row */}
+            <div className="grid grid-cols-[40px_200px_150px_100px_80px_80px_120px_80px_100px_80px_80px_80px_80px_80px_120px_80px] gap-2 p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300">
+              <div>#</div>
+              <div>Task Name</div>
+              <div>Supplier</div>
+              <div>Predecessors</div>
+              <div>PO Req</div>
+              <div>Auto PO</div>
+              <div>Price Items</div>
+              <div>Critical</div>
+              <div>Tags</div>
+              <div>Photo</div>
+              <div>Cert</div>
+              <div>Cert Lag</div>
+              <div>Sup Check</div>
+              <div>Auto ✓</div>
+              <div>Subtasks</div>
+              <div>Actions</div>
+            </div>
+
+            {/* Data Rows */}
+            {loading ? (
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                Loading...
+              </div>
+            ) : rows.length === 0 ? (
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                No rows yet. Click "Add Row" to start building your template.
+              </div>
+            ) : (
+              rows.map((row, index) => (
+                <ScheduleTemplateRow
+                  key={row.id}
+                  row={row}
+                  index={index}
+                  suppliers={suppliers}
+                  onUpdate={(updates) => handleUpdateRow(row.id, updates)}
+                  onDelete={() => handleDeleteRow(row.id)}
+                  onMoveUp={() => handleMoveRow(index, 'up')}
+                  onMoveDown={() => handleMoveRow(index, 'down')}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < rows.length - 1}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Add Row Button */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={handleAddRow}
+              className="inline-flex items-center px-3 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700"
+            >
+              <PlusIcon className="h-4 w-4 mr-1" />
+              Add Row
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Create Template Modal */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Create New Template
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Template Name
+                </label>
+                <input
+                  type="text"
+                  value={templateForm.name}
+                  onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
+                  placeholder="e.g., Standard House Build"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Description (optional)
+                </label>
+                <textarea
+                  value={templateForm.description}
+                  onChange={(e) => setTemplateForm({ ...templateForm, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
+                  rows="3"
+                />
+              </div>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={templateForm.is_default}
+                  onChange={(e) => setTemplateForm({ ...templateForm, is_default: e.target.checked })}
+                  className="h-4 w-4 text-indigo-600 rounded"
+                />
+                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  Set as default template
+                </span>
+              </label>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowTemplateModal(false)
+                  setTemplateForm({ name: '', description: '', is_default: false })
+                }}
+                className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateTemplate}
+                disabled={!templateForm.name}
+                className="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Create Template
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && <Toast message={toast.message} type={toast.type} />}
+    </div>
+  )
+}
+
+// Individual row component
+function ScheduleTemplateRow({
+  row, index, suppliers, onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown
+}) {
+  const [editing, setEditing] = useState(false)
+
+  const handleFieldChange = (field, value) => {
+    onUpdate({ [field]: value })
+  }
+
+  return (
+    <div className="grid grid-cols-[40px_200px_150px_100px_80px_80px_120px_80px_100px_80px_80px_80px_80px_80px_120px_80px] gap-2 p-4 border-b border-gray-100 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-700/30">
+      {/* Sequence # */}
+      <div className="text-gray-500 dark:text-gray-400">{index + 1}</div>
+
+      {/* Task Name */}
+      <input
+        type="text"
+        value={row.name}
+        onChange={(e) => handleFieldChange('name', e.target.value)}
+        onBlur={() => setEditing(false)}
+        className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+      />
+
+      {/* Supplier */}
+      <select
+        value={row.supplier_id || ''}
+        onChange={(e) => handleFieldChange('supplier_id', e.target.value ? parseInt(e.target.value) : null)}
+        className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+      >
+        <option value="">None</option>
+        {suppliers.map(s => (
+          <option key={s.id} value={s.id}>{s.name}</option>
+        ))}
+      </select>
+
+      {/* Predecessors */}
+      <input
+        type="text"
+        value={row.predecessor_display || 'None'}
+        readOnly
+        className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm bg-gray-50 dark:bg-gray-800"
+        title="Click to edit predecessors"
+      />
+
+      {/* PO Required */}
+      <input
+        type="checkbox"
+        checked={row.po_required}
+        onChange={(e) => handleFieldChange('po_required', e.target.checked)}
+        className="mx-auto"
+      />
+
+      {/* Auto PO */}
+      <input
+        type="checkbox"
+        checked={row.create_po_on_job_start}
+        onChange={(e) => handleFieldChange('create_po_on_job_start', e.target.checked)}
+        disabled={!row.po_required}
+        className="mx-auto"
+      />
+
+      {/* Price Items */}
+      <div className="text-xs text-gray-600 dark:text-gray-400 text-center">
+        {row.price_book_item_ids.length} items
+      </div>
+
+      {/* Critical PO */}
+      <input
+        type="checkbox"
+        checked={row.critical_po}
+        onChange={(e) => handleFieldChange('critical_po', e.target.checked)}
+        className="mx-auto"
+      />
+
+      {/* Tags */}
+      <div className="text-xs text-gray-600 dark:text-gray-400 text-center">
+        {row.tags.length} tags
+      </div>
+
+      {/* Photo */}
+      <input
+        type="checkbox"
+        checked={row.require_photo}
+        onChange={(e) => handleFieldChange('require_photo', e.target.checked)}
+        className="mx-auto"
+      />
+
+      {/* Certificate */}
+      <input
+        type="checkbox"
+        checked={row.require_certificate}
+        onChange={(e) => handleFieldChange('require_certificate', e.target.checked)}
+        className="mx-auto"
+      />
+
+      {/* Cert Lag */}
+      <input
+        type="number"
+        value={row.cert_lag_days}
+        onChange={(e) => handleFieldChange('cert_lag_days', parseInt(e.target.value))}
+        disabled={!row.require_certificate}
+        className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm w-full"
+      />
+
+      {/* Supervisor Check */}
+      <input
+        type="checkbox"
+        checked={row.require_supervisor_check}
+        onChange={(e) => handleFieldChange('require_supervisor_check', e.target.checked)}
+        className="mx-auto"
+      />
+
+      {/* Auto Complete */}
+      <input
+        type="checkbox"
+        checked={row.auto_complete_predecessors}
+        onChange={(e) => handleFieldChange('auto_complete_predecessors', e.target.checked)}
+        className="mx-auto"
+      />
+
+      {/* Subtasks */}
+      <div className="text-xs text-gray-600 dark:text-gray-400 text-center">
+        {row.has_subtasks ? `${row.subtask_count} subs` : '-'}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1">
+        {canMoveUp && (
+          <button onClick={onMoveUp} className="p-1 hover:text-indigo-600" title="Move up">
+            <ArrowUpIcon className="h-4 w-4" />
+          </button>
+        )}
+        {canMoveDown && (
+          <button onClick={onMoveDown} className="p-1 hover:text-indigo-600" title="Move down">
+            <ArrowDownIcon className="h-4 w-4" />
+          </button>
+        )}
+        <button onClick={onDelete} className="p-1 hover:text-red-600" title="Delete">
+          <TrashIcon className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  )
+}
