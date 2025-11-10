@@ -42,7 +42,7 @@ Rails.application.routes.draw do
       # Construction jobs management
       resources :constructions do
         # Schedule tasks (nested under constructions)
-        resources :schedule_tasks, only: [:index] do
+        resources :schedule_tasks, only: [:index, :create] do
           collection do
             post :import
             get :gantt_data
@@ -174,6 +174,7 @@ Rails.application.routes.draw do
           post :webhook
           post :sync_contacts
           get :sync_status
+          get :tax_rates
         end
         member do
           get :sync_contacts_status

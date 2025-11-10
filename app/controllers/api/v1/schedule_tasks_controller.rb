@@ -1,7 +1,7 @@
 module Api
   module V1
     class ScheduleTasksController < ApplicationController
-      before_action :set_construction, only: [:index, :import, :gantt_data]
+      before_action :set_construction, only: [:index, :import, :gantt_data, :create]
       before_action :set_schedule_task, only: [:show, :update, :destroy, :match_po, :unmatch_po]
 
       # GET /api/v1/constructions/:construction_id/schedule_tasks
@@ -24,6 +24,29 @@ module Api
           success: true,
           schedule_task: task_to_json(@schedule_task)
         }
+      end
+
+      # POST /api/v1/constructions/:construction_id/schedule_tasks
+      # Create a single schedule task manually
+      def create
+        @schedule_task = @construction.schedule_tasks.new(schedule_task_params)
+
+        # Set sequence order to be last + 1
+        max_sequence = @construction.schedule_tasks.maximum(:sequence_order) || 0
+        @schedule_task.sequence_order = max_sequence + 1
+
+        if @schedule_task.save
+          render json: {
+            success: true,
+            message: 'Schedule task created successfully',
+            schedule_task: task_to_json(@schedule_task)
+          }, status: :created
+        else
+          render json: {
+            success: false,
+            errors: @schedule_task.errors.full_messages
+          }, status: :unprocessable_entity
+        end
       end
 
       # POST /api/v1/constructions/:construction_id/schedule_tasks/import

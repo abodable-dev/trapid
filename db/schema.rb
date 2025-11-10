@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_10_042814) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_10_060523) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -383,6 +383,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_042814) do
     t.boolean "requires_photo", default: false
     t.boolean "requires_spec", default: false
     t.string "spec_url"
+    t.string "gst_code"
     t.index ["category"], name: "index_pricebook_items_on_category"
     t.index ["default_supplier_id"], name: "index_pricebook_items_on_default_supplier_id"
     t.index ["image_fetch_status"], name: "index_pricebook_items_on_image_fetch_status"
@@ -1357,6 +1358,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_042814) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["tenant_id"], name: "index_xero_credentials_on_tenant_id"
+  end
+
+  create_table "xero_tax_rates", force: :cascade do |t|
+    t.string "code"
+    t.string "name"
+    t.decimal "rate"
+    t.boolean "active"
+    t.string "display_rate"
+    t.string "tax_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
