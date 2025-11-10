@@ -79,7 +79,7 @@ export default function PurchaseOrderEditPage() {
           per_page: 1000 // Get all items for this supplier
         }
       })
-      setAllSupplierItems(response.pricebook_items || [])
+      setAllSupplierItems(response.items || [])
     } catch (err) {
       console.error('Failed to load supplier items:', err)
     }
