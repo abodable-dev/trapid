@@ -110,9 +110,24 @@ export default function PurchaseOrderEditPage() {
     newLineItems[index].item_code = value
     setLineItems(newLineItems)
 
+    // Calculate dropdown position if not already set
+    const inputEl = inputRefs.current[`code-${index}`]
+    if (inputEl && !dropdownPosition[`code-${index}`]) {
+      const rect = inputEl.getBoundingClientRect()
+      setDropdownPosition(prev => ({
+        ...prev,
+        [`code-${index}`]: {
+          top: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width
+        }
+      }))
+    }
+
     // Search as user types
     if (value.length >= 2) {
       searchPricebookItems(value, index)
+      setShowSearchDropdown(prev => ({ ...prev, [index]: true }))
     } else if (value.length === 0) {
       // Show all supplier items when field is empty
       setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
@@ -167,6 +182,20 @@ export default function PurchaseOrderEditPage() {
 
     // Close item code dropdown when typing in description
     setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
+
+    // Calculate dropdown position if not already set
+    const inputEl = inputRefs.current[`desc-${index}`]
+    if (inputEl && !dropdownPosition[`desc-${index}`]) {
+      const rect = inputEl.getBoundingClientRect()
+      setDropdownPosition(prev => ({
+        ...prev,
+        [`desc-${index}`]: {
+          top: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width
+        }
+      }))
+    }
 
     // Search as user types in description
     if (value.length >= 2) {
