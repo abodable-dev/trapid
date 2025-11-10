@@ -1,0 +1,262 @@
+Rails.application.routes.draw do
+  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+
+  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
+  # Can be used by load balancers and uptime monitors to verify that the app is live.
+  get "up" => "rails/health#show", as: :rails_health_check
+
+  # API health check
+  get "/health", to: "health#index"
+  get "/version", to: "health#version"
+  post "/version/increment", to: "health#increment_version"
+
+  # API routes
+  namespace :api do
+    namespace :v1 do
+      # Authentication routes
+      post 'auth/signup', to: 'authentication#signup'
+      post 'auth/login', to: 'authentication#login'
+      get 'auth/me', to: 'authentication#me'
+
+      # Import routes
+      post 'imports/upload', to: 'imports#upload'
+      post 'imports/execute', to: 'imports#execute'
+      get 'imports/status/:session_key', to: 'imports#status'
+
+      # CSV Import routes
+      post 'csv_imports/job_with_pos', to: 'csv_imports#import_job_with_pos'
+
+      # Grok AI integration
+      post 'grok/chat', to: 'grok#chat'
+      get 'grok/suggest-features', to: 'grok#suggest_features'
+      post 'grok/plans', to: 'grok#create_plan'
+      get 'grok/plans', to: 'grok#list_plans'
+      get 'grok/plans/:id', to: 'grok#show_plan'
+      patch 'grok/plans/:id', to: 'grok#update_plan'
+
+      # Health checks
+      get 'health/pricebook', to: 'health#pricebook'
+      get 'health/pricebook/missing_items', to: 'health#missing_items'
+      get 'pricebook/price_health_check', to: 'pricebook_items#price_health_check'
+
+      # Construction jobs management
+      resources :constructions do
+        # Schedule tasks (nested under constructions)
+        resources :schedule_tasks, only: [:index, :create] do
+          collection do
+            post :import
+            post :copy_from_template
+            get :gantt_data
+          end
+        end
+
+        # Document tasks (nested under constructions)
+        resources :document_tasks, only: [:index] do
+          member do
+            post :upload
+            post :validate
+          end
+        end
+      end
+
+      # Schedule tasks (non-nested routes)
+      resources :schedule_tasks, only: [:show, :update, :destroy] do
+        member do
+          patch :match_po
+          delete :unmatch_po
+        end
+      end
+
+      # Master Schedule - Projects
+      resources :projects do
+        member do
+          get :gantt
+        end
+
+        # Project tasks (nested under projects)
+        resources :tasks, controller: 'project_tasks'
+      end
+
+      # Purchase Orders management
+      resources :purchase_orders do
+        collection do
+          post :smart_lookup
+          post :smart_create
+          post :bulk_create
+        end
+        member do
+          post :approve
+          post :send_to_supplier
+          post :mark_received
+        end
+      end
+
+      # Price Book management
+      resources :pricebook, controller: 'pricebook_items', path: 'pricebook' do
+        member do
+          get :history
+          post :fetch_image
+          post :update_image
+          post :add_price
+          post :set_default_supplier
+          delete 'price_histories/:history_id', to: 'pricebook_items#delete_price_history'
+          patch 'price_histories/:history_id', to: 'pricebook_items#update_price_history'
+          get 'proxy_image/:file_type', to: 'pricebook_items#proxy_image', as: :proxy_image
+        end
+        collection do
+          patch :bulk_update
+          post :import
+          post :preview
+          post :fetch_all_images
+          get :image_stats
+          get :export_price_history
+          post :import_price_history
+        end
+      end
+
+      # Suppliers management
+      resources :suppliers do
+        collection do
+          get :unmatched
+          get :needs_review
+          post :auto_match
+        end
+        member do
+          post :link_contact
+          post :unlink_contact
+          post :verify_match
+          get 'pricebook/export', to: 'suppliers#export_pricebook'
+          post 'pricebook/import', to: 'suppliers#import_pricebook'
+          patch 'pricebook/:item_id', to: 'suppliers#update_pricebook_item'
+        end
+      end
+
+      # Contacts management
+      resources :contacts do
+        collection do
+          patch :bulk_update
+          post :merge
+          post :match_supplier
+          get :validate_abn
+        end
+        member do
+          get :categories
+          post :copy_price_history
+          delete :remove_from_categories
+          post :bulk_update_prices
+          delete :delete_price_column
+          get :activities
+          post :link_xero_contact
+        end
+      end
+
+      # Users management
+      resources :users, only: [:index, :show]
+
+      # Designs library
+      resources :designs
+
+      # Company Settings
+      resource :company_settings, only: [:show, :update]
+
+      # Folder Templates for OneDrive sync
+      resources :folder_templates do
+        member do
+          post :duplicate
+        end
+      end
+
+      # Task Templates for Schedule Master
+      resources :task_templates
+
+      # Xero integration
+      resources :xero, only: [] do
+        collection do
+          get :auth_url
+          post :callback
+          get :status
+          delete :disconnect
+          get :invoices
+          post :match_invoice
+          post :webhook
+          post :sync_contacts
+          get :sync_status
+          get :sync_history
+          get :tax_rates
+          get :search_contacts
+        end
+        member do
+          get :sync_contacts_status
+        end
+      end
+
+      # OneDrive integration (per-job - legacy)
+      get 'onedrive/authorize', to: 'one_drive#authorize'
+      get 'onedrive/callback', to: 'one_drive#callback'
+      get 'onedrive/status', to: 'one_drive#status'
+      delete 'onedrive/disconnect', to: 'one_drive#disconnect'
+      post 'onedrive/create_folders', to: 'one_drive#create_folders'
+      get 'onedrive/folders', to: 'one_drive#list_items'
+      post 'onedrive/upload', to: 'one_drive#upload'
+      get 'onedrive/download', to: 'one_drive#download'
+
+      # OneDrive integration (organization-wide)
+      get 'organization_onedrive/status', to: 'organization_onedrive#status'
+      get 'organization_onedrive/authorize', to: 'organization_onedrive#authorize'
+      get 'organization_onedrive/callback', to: 'organization_onedrive#callback'
+      delete 'organization_onedrive/disconnect', to: 'organization_onedrive#disconnect'
+      get 'organization_onedrive/browse_folders', to: 'organization_onedrive#browse_folders'
+      patch 'organization_onedrive/change_root_folder', to: 'organization_onedrive#change_root_folder'
+      post 'organization_onedrive/create_job_folders', to: 'organization_onedrive#create_job_folders'
+      get 'organization_onedrive/job_folders', to: 'organization_onedrive#list_job_items'
+      post 'organization_onedrive/upload', to: 'organization_onedrive#upload'
+      get 'organization_onedrive/download', to: 'organization_onedrive#download'
+      get 'organization_onedrive/preview_pricebook_matches', to: 'organization_onedrive#preview_pricebook_matches'
+      post 'organization_onedrive/apply_pricebook_matches', to: 'organization_onedrive#apply_pricebook_matches'
+      post 'organization_onedrive/sync_pricebook_images', to: 'organization_onedrive#sync_pricebook_images'
+
+      # Schema information
+      get 'schema', to: 'schema#index'
+      get 'schema/tables', to: 'schema#tables'
+      get 'schema/system_table_columns/:table_name', to: 'schema#system_table_columns'
+
+      # Table management
+      resources :tables do
+        # Column management
+        resources :columns, only: [:create, :update, :destroy] do
+          collection do
+            post :test_formula
+          end
+          member do
+            get :lookup_options
+            get :lookup_search
+          end
+        end
+
+        # Record management for dynamic tables
+        resources :records
+      end
+
+      # Estimates management (from Unreal Engine or other sources)
+      resources :estimates, only: [:index, :show, :destroy] do
+        member do
+          patch :match
+          post :generate_purchase_orders
+          post :ai_review, to: 'estimate_reviews#create'
+        end
+        resources :reviews, controller: 'estimate_reviews', only: [:index]
+      end
+
+      # Estimate Reviews (AI Plan Analysis)
+      resources :estimate_reviews, only: [:show, :destroy]
+
+      # External integrations (API endpoints for third-party systems)
+      namespace :external do
+        post 'unreal_estimates', to: 'unreal_estimates#create'
+      end
+    end
+  end
+
+  # Defines the root path route ("/")
+  # root "posts#index"
+end

@@ -1,0 +1,94 @@
+class Contact < ApplicationRecord
+  # Associations
+  has_many :suppliers, dependent: :nullify  # Legacy association - will be deprecated
+  has_many :supplier_contacts, dependent: :destroy
+  has_many :linked_suppliers, through: :supplier_contacts, source: :supplier
+  has_many :contact_activities, dependent: :destroy
+
+  # Supplier-specific associations (when contact is a supplier)
+  # After migration, supplier_id in these tables points to contact_id
+  has_many :pricebook_items, foreign_key: :supplier_id, dependent: :destroy
+  has_many :purchase_orders, foreign_key: :supplier_id, dependent: :restrict_with_error
+  has_many :price_histories, foreign_key: :supplier_id, dependent: :destroy
+
+  # Constants
+  CONTACT_TYPES = %w[customer supplier sales land_agent].freeze
+
+  # Validations
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP, allow_blank: true }
+  validate :contact_types_must_be_valid
+  validates :primary_contact_type, inclusion: { in: CONTACT_TYPES }, allow_nil: true
+  before_save :set_primary_contact_type_if_blank
+
+  # Scopes
+  scope :with_email, -> { where.not(email: [nil, '']) }
+  scope :with_phone, -> { where.not(mobile_phone: [nil, '']).or(where.not(office_phone: [nil, ''])) }
+  scope :with_type, ->(type) { where("? = ANY(contact_types)", type) }
+  scope :customers, -> { with_type('customer') }
+  scope :suppliers, -> { with_type('supplier') }
+  scope :sales, -> { with_type('sales') }
+  scope :land_agents, -> { with_type('land_agent') }
+
+  # Instance methods
+  def display_name
+    full_name.presence || "#{first_name} #{last_name}".strip.presence || email || "Contact ##{id}"
+  end
+
+  def primary_phone
+    mobile_phone.presence || office_phone
+  end
+
+  def has_contact_info?
+    email.present? || mobile_phone.present? || office_phone.present?
+  end
+
+  def is_customer?
+    contact_types&.include?('customer')
+  end
+
+  def is_supplier?
+    contact_types&.include?('supplier')
+  end
+
+  def is_sales?
+    contact_types&.include?('sales')
+  end
+
+  def is_land_agent?
+    contact_types&.include?('land_agent')
+  end
+
+  # Supplier-specific helper methods
+  def supplier_name
+    full_name
+  end
+
+  def active_pricebook_items_count
+    pricebook_items.count
+  end
+
+  def total_purchase_orders_count
+    purchase_orders.count
+  end
+
+  def total_purchase_orders_value
+    purchase_orders.sum(:total_price)
+  end
+
+  private
+
+  def contact_types_must_be_valid
+    return if contact_types.blank?
+
+    invalid_types = contact_types - CONTACT_TYPES
+    if invalid_types.any?
+      errors.add(:contact_types, "contains invalid types: #{invalid_types.join(', ')}")
+    end
+  end
+
+  def set_primary_contact_type_if_blank
+    if primary_contact_type.blank? && contact_types.present?
+      self.primary_contact_type = contact_types.first
+    end
+  end
+end
