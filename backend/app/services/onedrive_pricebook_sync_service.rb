@@ -435,9 +435,16 @@ class OnedrivePricebookSyncService
     # Get direct download URL from the file metadata
     # Note: @microsoft.graph.downloadUrl expires after 1 hour, but it's embeddable
     # We store the file_id so we can refresh the URL later if needed
-    download_url = file['@microsoft.graph.downloadUrl']
     file_id = file['id']
     filename = file['name']
+
+    # The children endpoint doesn't include @microsoft.graph.downloadUrl
+    # We need to fetch it separately using the /content endpoint
+    download_url = file['@microsoft.graph.downloadUrl']
+    if download_url.blank?
+      # Get the download URL by fetching the file's content redirect
+      download_url = "https://graph.microsoft.com/v1.0/me/drive/items/#{file_id}/content"
+    end
 
     Rails.logger.info "Preparing update for #{filename} - File ID: #{file_id}"
 
