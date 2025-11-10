@@ -344,6 +344,7 @@ module Api
       def copy_price_history
         source_id = params[:source_id]
         categories = params[:categories] # Optional array of categories to filter by
+        set_as_default = params[:set_as_default] != false # Default to true unless explicitly false
 
         if source_id.blank?
           return render json: {
@@ -375,9 +376,11 @@ module Api
           end
 
           source_items.each do |item|
-            # Set target as the new default supplier
-            item.update!(default_supplier_id: target_contact.id)
-            updated_count += 1
+            # Only set target as the new default supplier if requested
+            if set_as_default
+              item.update!(default_supplier_id: target_contact.id)
+              updated_count += 1
+            end
 
             # Only copy the most recent price history for this item from the source supplier
             latest_price_history = PriceHistory.where(
@@ -415,14 +418,21 @@ module Api
           ""
         end
 
+        message = if set_as_default
+          "Copied #{copied_count} price histories and set as default supplier for #{updated_count} items#{category_msg}"
+        else
+          "Copied #{copied_count} price histories#{category_msg}"
+        end
+
         render json: {
           success: true,
-          message: "Copied #{copied_count} price histories and set as default supplier for #{updated_count} items#{category_msg}",
+          message: message,
           copied_count: copied_count,
           updated_count: updated_count,
           source_contact: source_contact.full_name,
           target_contact: target_contact.full_name,
-          categories: categories || []
+          categories: categories || [],
+          set_as_default: set_as_default
         }
       rescue ActiveRecord::RecordNotFound => e
         render json: {

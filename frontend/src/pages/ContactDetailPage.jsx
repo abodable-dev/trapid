@@ -40,6 +40,7 @@ export default function ContactDetailPage() {
   const [exporting, setExporting] = useState(false)
   const [supplierSearchTerm, setSupplierSearchTerm] = useState('')
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false)
+  const [setAsDefaultSupplier, setSetAsDefaultSupplier] = useState(true)
 
   useEffect(() => {
     loadContact()
@@ -236,7 +237,11 @@ export default function ContactDetailPage() {
       ? 'all categories'
       : `${selectedCategories.length} selected ${selectedCategories.length === 1 ? 'category' : 'categories'}`
 
-    if (!confirm(`Are you sure? This will copy price histories for ${categoryMsg} and set this contact as the default supplier for those items.`)) {
+    const actionMsg = setAsDefaultSupplier
+      ? `This will copy price histories for ${categoryMsg} and set this contact as the default supplier for those items.`
+      : `This will copy price histories for ${categoryMsg} (without changing the default supplier).`
+
+    if (!confirm(`Are you sure? ${actionMsg}`)) {
       return
     }
 
@@ -245,7 +250,8 @@ export default function ContactDetailPage() {
       setCopyResult(null)
       const response = await api.post(`/api/v1/contacts/${id}/copy_price_history`, {
         source_id: selectedSourceContact,
-        categories: selectedCategories
+        categories: selectedCategories,
+        set_as_default: setAsDefaultSupplier
       })
 
       setCopyResult({
@@ -690,12 +696,28 @@ export default function ContactDetailPage() {
                   </div>
                 )}
 
+                {/* Set as Default Supplier Checkbox */}
+                {selectedSourceContact && (
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <input
+                      type="checkbox"
+                      id="setAsDefault"
+                      checked={setAsDefaultSupplier}
+                      onChange={(e) => setSetAsDefaultSupplier(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="setAsDefault" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                      Set this contact as the default supplier for copied items
+                    </label>
+                  </div>
+                )}
+
                 <button
                   onClick={copyPriceHistory}
                   disabled={!selectedSourceContact || selectedCategories.length === 0 || copyingHistory}
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition"
                 >
-                  {copyingHistory ? 'Copying...' : 'Copy Price History & Set as Default'}
+                  {copyingHistory ? 'Copying...' : (setAsDefaultSupplier ? 'Copy Price History & Set as Default' : 'Copy Price History Only')}
                 </button>
 
                 {copyResult && (
