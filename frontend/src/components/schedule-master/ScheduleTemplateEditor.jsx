@@ -558,6 +558,7 @@ function ScheduleTemplateRow({
         type="text"
         value={localName}
         onChange={(e) => handleTextChange('name', e.target.value)}
+        onFocus={(e) => e.target.select()}
         className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
       />
 
