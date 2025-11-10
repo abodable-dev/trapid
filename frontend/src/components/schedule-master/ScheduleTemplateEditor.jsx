@@ -403,10 +403,39 @@ export default function ScheduleTemplateEditor() {
 function ScheduleTemplateRow({
   row, index, suppliers, onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown
 }) {
-  const [editing, setEditing] = useState(false)
+  const [localName, setLocalName] = useState(row.name)
+  const [updateTimeout, setUpdateTimeout] = useState(null)
 
+  // Debounced update for text fields
+  const handleTextChange = (field, value) => {
+    if (field === 'name') {
+      setLocalName(value)
+    }
+
+    // Clear existing timeout
+    if (updateTimeout) {
+      clearTimeout(updateTimeout)
+    }
+
+    // Set new timeout to update after user stops typing
+    const timeout = setTimeout(() => {
+      if (value && value.trim()) { // Only update if non-empty
+        onUpdate({ [field]: value })
+      }
+    }, 500)
+
+    setUpdateTimeout(timeout)
+  }
+
+  // Immediate update for checkboxes and selects
   const handleFieldChange = (field, value) => {
-    onUpdate({ [field]: value })
+    // Handle interdependent fields
+    if (field === 'po_required' && !value) {
+      // If po_required is unchecked, also uncheck create_po_on_job_start
+      onUpdate({ po_required: false, create_po_on_job_start: false })
+    } else {
+      onUpdate({ [field]: value })
+    }
   }
 
   return (
@@ -417,9 +446,8 @@ function ScheduleTemplateRow({
       {/* Task Name */}
       <input
         type="text"
-        value={row.name}
-        onChange={(e) => handleFieldChange('name', e.target.value)}
-        onBlur={() => setEditing(false)}
+        value={localName}
+        onChange={(e) => handleTextChange('name', e.target.value)}
         className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
       />
 
