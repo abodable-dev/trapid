@@ -44,17 +44,17 @@ export default function POSummaryCards({ purchaseOrders }) {
   ]
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map((card) => (
         <div
           key={card.name}
-          className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg border border-gray-200 dark:border-gray-700"
         >
-          <div className="p-5">
+          <div className="p-3">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <card.icon
-                  className={`h-6 w-6 ${
+                  className={`h-5 w-5 ${
                     card.highlight
                       ? 'text-yellow-600 dark:text-yellow-400'
                       : 'text-gray-400 dark:text-gray-500'
@@ -62,13 +62,13 @@ export default function POSummaryCards({ purchaseOrders }) {
                   aria-hidden="true"
                 />
               </div>
-              <div className="ml-5 w-0 flex-1">
+              <div className="ml-3 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                  <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">
                     {card.name}
                   </dt>
                   <dd>
-                    <div className={`text-lg font-medium ${
+                    <div className={`text-base font-medium mt-0.5 ${
                       card.highlight
                         ? 'text-yellow-600 dark:text-yellow-400'
                         : 'text-gray-900 dark:text-white'

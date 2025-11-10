@@ -57,11 +57,13 @@ function classNames(...classes) {
 }
 
 export default function AppLayout({ children }) {
+  const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    location.pathname === '/active-jobs' || location.pathname.startsWith('/jobs/')
+  )
   const [backendVersion, setBackendVersion] = useState('loading...')
   const frontendVersion = packageJson.version
-  const location = useLocation()
 
   useEffect(() => {
     const fetchVersion = async () => {
@@ -75,6 +77,13 @@ export default function AppLayout({ children }) {
     }
     fetchVersion()
   }, [])
+
+  // Auto-collapse sidebar when navigating to Active Jobs or Job Detail pages
+  useEffect(() => {
+    if (location.pathname === '/active-jobs' || location.pathname.startsWith('/jobs/')) {
+      setSidebarCollapsed(true)
+    }
+  }, [location.pathname])
 
   const isCurrentPath = (href) => {
     if (href === '/dashboard') {
