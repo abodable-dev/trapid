@@ -453,6 +453,81 @@ module Api
         end
       end
 
+      # GET /api/v1/organization_onedrive/preview_pricebook_matches
+      # Preview all files with their suggested matches before syncing
+      def preview_pricebook_matches
+        credential = OrganizationOneDriveCredential.active_credential
+
+        unless credential&.valid_credential?
+          return render json: { error: 'OneDrive not connected. Please connect in Settings first.' }, status: :unauthorized
+        end
+
+        folder_path = params[:folder_path] || "Pricebook Images"
+
+        begin
+          # Run preview service with credential directly
+          sync_service = OnedrivePricebookSyncService.new(credential, folder_path)
+          result = sync_service.preview_matches
+
+          if result[:success]
+            render json: {
+              success: true,
+              matches: result[:matches],
+              total_files: result[:total_files],
+              total_items: result[:total_items]
+            }
+          else
+            render json: {
+              success: false,
+              error: result[:error]
+            }, status: :unprocessable_entity
+          end
+
+        rescue StandardError => e
+          Rails.logger.error "Failed to preview pricebook matches: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: "Failed to preview matches: #{e.message}" }, status: :internal_server_error
+        end
+      end
+
+      # POST /api/v1/organization_onedrive/apply_pricebook_matches
+      # Apply only the accepted matches from the preview
+      def apply_pricebook_matches
+        credential = OrganizationOneDriveCredential.active_credential
+
+        unless credential&.valid_credential?
+          return render json: { error: 'OneDrive not connected. Please connect in Settings first.' }, status: :unauthorized
+        end
+
+        folder_path = params[:folder_path] || "Pricebook Images"
+        accepted_matches = params[:accepted_matches] || []
+
+        begin
+          # Run sync service with only accepted matches
+          sync_service = OnedrivePricebookSyncService.new(credential, folder_path)
+          result = sync_service.apply_matches(accepted_matches)
+
+          if result[:success]
+            render json: {
+              success: true,
+              message: "Synced #{result[:matched]} images successfully",
+              matched: result[:matched],
+              errors: result[:errors]
+            }
+          else
+            render json: {
+              success: false,
+              error: result[:error]
+            }, status: :unprocessable_entity
+          end
+
+        rescue StandardError => e
+          Rails.logger.error "Failed to apply pricebook matches: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: "Failed to apply matches: #{e.message}" }, status: :internal_server_error
+        end
+      end
+
       # POST /api/v1/organization_onedrive/sync_pricebook_images
       # Sync images from OneDrive folder to pricebook items
       def sync_pricebook_images
