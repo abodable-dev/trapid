@@ -15,6 +15,155 @@ class OnedrivePricebookSyncService
     }
   end
 
+  def preview_matches
+    # Get OneDrive client
+    client = get_onedrive_client
+    return { success: false, error: "OneDrive not connected" } unless client
+
+    # Find the folder
+    folder = find_or_create_folder(client, @folder_path)
+    return { success: false, error: "Could not access folder: #{@folder_path}" } unless folder
+
+    # Get all files in the folder
+    files = list_folder_files(client, folder['id'])
+    Rails.logger.info "Found #{files.count} files in folder '#{@folder_path}'"
+
+    # Get all active pricebook items
+    items = PricebookItem.active
+    Rails.logger.info "Found #{items.count} active pricebook items"
+
+    # Build items lookup hash
+    items_by_name = {}
+    items.each do |item|
+      normalized = normalize_name(item.item_name)
+      items_by_name[normalized] ||= []
+      items_by_name[normalized] << item
+    end
+
+    # Preview matches without updating anything
+    matches = []
+    files.each do |file|
+      filename_without_ext = File.basename(file['name'], '.*')
+      normalized_filename = normalize_name(filename_without_ext)
+
+      # Try exact match first
+      matching_items = items_by_name[normalized_filename]
+
+      # If no exact match, try fuzzy matching
+      similarity = nil
+      match_type = 'exact'
+      if matching_items.nil? || matching_items.empty?
+        matching_items = find_fuzzy_matches(normalized_filename, items, items_by_name)
+        if matching_items && matching_items.any?
+          match_type = 'fuzzy'
+          # Calculate similarity for the fuzzy match
+          matched_name = normalize_name(matching_items.first.item_name)
+          similarity = (calculate_similarity(normalized_filename, matched_name) * 100).round
+        end
+      else
+        similarity = 100
+      end
+
+      # Determine file type
+      file_type = if is_qr_code_file?(file['name'])
+        'qr_code'
+      elsif is_spec_file?(file['name']) || is_spec_file_by_name?(file['name'])
+        'spec'
+      else
+        'photo'
+      end
+
+      if matching_items && matching_items.any?
+        matching_items.each do |item|
+          matches << {
+            file_id: file['id'],
+            filename: file['name'],
+            file_type: file_type,
+            item_id: item.id,
+            item_code: item.item_code,
+            item_name: item.item_name,
+            similarity: similarity,
+            match_type: match_type
+          }
+        end
+      else
+        matches << {
+          file_id: file['id'],
+          filename: file['name'],
+          file_type: file_type,
+          item_id: nil,
+          item_code: nil,
+          item_name: nil,
+          similarity: 0,
+          match_type: 'no_match'
+        }
+      end
+    end
+
+    {
+      success: true,
+      matches: matches,
+      total_files: files.count,
+      total_items: items.count
+    }
+  rescue => e
+    Rails.logger.error "OneDrive preview error: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    {
+      success: false,
+      error: e.message
+    }
+  end
+
+  def apply_matches(accepted_matches)
+    # Get OneDrive client
+    client = get_onedrive_client
+    return { success: false, error: "OneDrive not connected" } unless client
+
+    # Find the folder
+    folder = find_or_create_folder(client, @folder_path)
+    return { success: false, error: "Could not access folder: #{@folder_path}" } unless folder
+
+    # Get all files in the folder
+    files_response = list_folder_files(client, folder['id'])
+    files_by_id = files_response.index_by { |f| f['id'] }
+
+    # Collect updates to perform in batch
+    updates_to_perform = []
+
+    accepted_matches.each do |match|
+      file_id = match['file_id']
+      item_id = match['item_id']
+
+      next unless file_id && item_id
+
+      file = files_by_id[file_id]
+      item = PricebookItem.find_by(id: item_id)
+
+      next unless file && item
+
+      # Prepare update data
+      update_data = prepare_item_update(client, item, file)
+      updates_to_perform << update_data if update_data
+    end
+
+    # Perform all updates in batch
+    perform_batch_updates(updates_to_perform)
+
+    {
+      success: true,
+      matched: @results[:matched],
+      errors: @results[:errors]
+    }
+  rescue => e
+    Rails.logger.error "OneDrive apply matches error: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    {
+      success: false,
+      error: e.message
+    }
+  end
+
   def sync
     # Get OneDrive client
     client = get_onedrive_client

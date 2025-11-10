@@ -1023,43 +1023,41 @@ export default function ContactDetailPage() {
                 </div>
               )}
 
-              {/* Tab Navigation */}
-              {contact.pricebook_items && contact.pricebook_items.length > 0 && (
-                <div className="border-b border-gray-200 dark:border-gray-700">
-                  <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button
-                      onClick={() => setPriceBookTab('items')}
-                      className={`${
-                        priceBookTab === 'items'
-                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
-                      } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-                    >
-                      Items
-                    </button>
-                    <button
-                      onClick={() => setPriceBookTab('activity')}
-                      className={`${
-                        priceBookTab === 'activity'
-                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
-                      } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-                    >
-                      Activity Log
-                    </button>
-                    <button
-                      onClick={() => setPriceBookTab('bulk-update')}
-                      className={`${
-                        priceBookTab === 'bulk-update'
-                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
-                      } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-                    >
-                      Bulk Update
-                    </button>
-                  </nav>
-                </div>
-              )}
+              {/* Tab Navigation - Always show for suppliers */}
+              <div className="border-b border-gray-200 dark:border-gray-700">
+                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                  <button
+                    onClick={() => setPriceBookTab('items')}
+                    className={`${
+                      priceBookTab === 'items'
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                  >
+                    Items
+                  </button>
+                  <button
+                    onClick={() => setPriceBookTab('activity')}
+                    className={`${
+                      priceBookTab === 'activity'
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                  >
+                    Activity Log
+                  </button>
+                  <button
+                    onClick={() => setPriceBookTab('bulk-update')}
+                    className={`${
+                      priceBookTab === 'bulk-update'
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                  >
+                    Bulk Update
+                  </button>
+                </nav>
+              </div>
             </div>
 
             {/* Tab Content */}
