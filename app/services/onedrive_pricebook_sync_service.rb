@@ -430,14 +430,14 @@ class OnedrivePricebookSyncService
   end
 
   def prepare_item_update(client, item, file)
-    # Get sharing link for the file
-    share_response = client.post("/me/drive/items/#{file['id']}/createLink", {
-      type: "view",
-      scope: "organization"
-    })
-
-    share_url = share_response.dig('link', 'webUrl')
+    # Get direct download URL from the file metadata
+    # Note: @microsoft.graph.downloadUrl expires after 1 hour, but it's embeddable
+    # We store the file_id so we can refresh the URL later if needed
+    download_url = file['@microsoft.graph.downloadUrl']
+    file_id = file['id']
     filename = file['name']
+
+    Rails.logger.info "Preparing update for #{filename} - File ID: #{file_id}"
 
     # Determine file type and prepare update data
     update_data = {
@@ -451,13 +451,16 @@ class OnedrivePricebookSyncService
     }
 
     if is_qr_code_file?(filename)
-      update_data[:qr_code_url] = share_url
+      update_data[:qr_code_url] = download_url
+      update_data[:qr_code_file_id] = file_id
       update_data[:type] = :qr_code
     elsif is_spec_file?(filename) || is_spec_file_by_name?(filename)
-      update_data[:spec_url] = share_url
+      update_data[:spec_url] = download_url
+      update_data[:spec_file_id] = file_id
       update_data[:type] = :spec
     else
-      update_data[:image_url] = share_url
+      update_data[:image_url] = download_url
+      update_data[:image_file_id] = file_id
       update_data[:type] = :photo
     end
 
@@ -488,16 +491,19 @@ class OnedrivePricebookSyncService
           case update_data[:type]
           when :qr_code
             merged_update[:qr_code_url] = update_data[:qr_code_url]
+            merged_update[:qr_code_file_id] = update_data[:qr_code_file_id]
             merged_update[:spec_attached] = true
             @results[:qr_codes_matched] += 1
             Rails.logger.info "Matched QR code '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
           when :spec
             merged_update[:spec_url] = update_data[:spec_url]
+            merged_update[:spec_file_id] = update_data[:spec_file_id]
             merged_update[:spec_attached] = true
             @results[:specs_matched] += 1
             Rails.logger.info "Matched spec '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
           when :photo
             merged_update[:image_url] = update_data[:image_url]
+            merged_update[:image_file_id] = update_data[:image_file_id]
             merged_update[:photo_attached] = true
             @results[:photos_matched] += 1
             Rails.logger.info "Matched photo '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
