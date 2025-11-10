@@ -40,6 +40,12 @@ class OnedrivePricebookSyncService
       items_by_name[normalized] << item
     end
 
+    # Create fuzzy matcher ONCE for all files (PERFORMANCE OPTIMIZATION)
+    require 'fuzzy_match'
+    item_names = items_by_name.keys
+    fuzzy_matcher = FuzzyMatch.new(item_names, read: ->(name) { name })
+    Rails.logger.info "Created fuzzy matcher for #{item_names.count} unique item names"
+
     # Preview matches without updating anything
     matches = []
     files.each do |file|
@@ -53,7 +59,8 @@ class OnedrivePricebookSyncService
       similarity = nil
       match_type = 'exact'
       if matching_items.nil? || matching_items.empty?
-        matching_items = find_fuzzy_matches(normalized_filename, items, items_by_name)
+        # Use pre-created fuzzy matcher for performance
+        matching_items = find_fuzzy_matches_optimized(normalized_filename, items_by_name, fuzzy_matcher)
         if matching_items && matching_items.any?
           match_type = 'fuzzy'
           # Calculate similarity for the fuzzy match
@@ -357,6 +364,27 @@ class OnedrivePricebookSyncService
     end
   end
 
+  # Optimized fuzzy matching that reuses a pre-created fuzzy matcher
+  # This avoids creating a new FuzzyMatch object for each file (HUGE performance gain)
+  def find_fuzzy_matches_optimized(filename, items_by_name, fuzzy_matcher)
+    # Find best fuzzy match using the pre-created matcher
+    best_match = fuzzy_matcher.find(filename, must_match_at_least_one_word: true)
+
+    if best_match
+      # Calculate similarity score
+      similarity = calculate_similarity(filename, best_match)
+
+      # Only accept matches with 70% or higher similarity
+      if similarity >= 0.70
+        Rails.logger.info "Fuzzy matched '#{filename}' to '#{best_match}' (#{(similarity * 100).round}% similar)"
+        return items_by_name[best_match]
+      end
+    end
+
+    nil
+  end
+
+  # Original fuzzy matching method (kept for backward compatibility with sync method)
   def find_fuzzy_matches(filename, items, items_by_name)
     # Use fuzzy matching with 80% similarity threshold
     # This handles typos, extra spaces, and minor differences
