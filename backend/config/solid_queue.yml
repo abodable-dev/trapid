@@ -7,10 +7,10 @@ production:
       threads: 3
       processes: 1
       polling_interval: 0.1
-  recurring:
+  recurring_tasks:
     apply_price_updates:
       class: ApplyPriceUpdatesJob
-      schedule: "0 0 * * *" # Run daily at midnight
+      schedule: every day at midnight
 
 development:
   dispatchers:
@@ -21,7 +21,7 @@ development:
       threads: 3
       processes: 1
       polling_interval: 0.1
-  recurring:
+  recurring_tasks:
     apply_price_updates:
       class: ApplyPriceUpdatesJob
-      schedule: "0 0 * * *" # Run daily at midnight
+      schedule: every day at midnight
