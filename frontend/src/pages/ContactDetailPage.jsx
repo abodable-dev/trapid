@@ -41,6 +41,7 @@ export default function ContactDetailPage() {
   const [supplierSearchTerm, setSupplierSearchTerm] = useState('')
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false)
   const [setAsDefaultSupplier, setSetAsDefaultSupplier] = useState(true)
+  const [effectiveDate, setEffectiveDate] = useState('')
 
   useEffect(() => {
     loadContact()
@@ -248,11 +249,19 @@ export default function ContactDetailPage() {
     try {
       setCopyingHistory(true)
       setCopyResult(null)
-      const response = await api.post(`/api/v1/contacts/${id}/copy_price_history`, {
+
+      const requestData = {
         source_id: selectedSourceContact,
         categories: selectedCategories,
         set_as_default: setAsDefaultSupplier
-      })
+      }
+
+      // Add effective date if provided
+      if (effectiveDate) {
+        requestData.effective_date = effectiveDate
+      }
+
+      const response = await api.post(`/api/v1/contacts/${id}/copy_price_history`, requestData)
 
       setCopyResult({
         success: true,
@@ -698,17 +707,36 @@ export default function ContactDetailPage() {
 
                 {/* Set as Default Supplier Checkbox */}
                 {selectedSourceContact && (
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <input
-                      type="checkbox"
-                      id="setAsDefault"
-                      checked={setAsDefaultSupplier}
-                      onChange={(e) => setSetAsDefaultSupplier(e.target.checked)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="setAsDefault" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                      Set this contact as the default supplier for copied items
-                    </label>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <input
+                        type="checkbox"
+                        id="setAsDefault"
+                        checked={setAsDefaultSupplier}
+                        onChange={(e) => setSetAsDefaultSupplier(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="setAsDefault" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                        Set this contact as the default supplier for copied items
+                      </label>
+                    </div>
+
+                    {/* Effective Date */}
+                    <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <label htmlFor="effectiveDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Effective Date (Optional)
+                      </label>
+                      <input
+                        type="date"
+                        id="effectiveDate"
+                        value={effectiveDate}
+                        onChange={(e) => setEffectiveDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Leave empty to use today's date, or specify a future date for scheduled price changes
+                      </p>
+                    </div>
                   </div>
                 )}
 
