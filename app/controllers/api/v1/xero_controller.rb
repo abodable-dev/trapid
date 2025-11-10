@@ -407,38 +407,6 @@ module Api
         end
       end
 
-      private
-
-      # Determine what sync action was taken for a contact
-      def determine_sync_action(contact)
-        if contact.xero_sync_error.present?
-          'Sync Failed'
-        elsif contact.xero_id.present? && contact.created_at < contact.last_synced_at
-          'Updated from Xero'
-        elsif contact.xero_id.present?
-          'Created from Xero'
-        else
-          'Synced to Xero'
-        end
-      end
-
-      # Find the most recent active sync job
-      def find_active_sync_job
-        # This is a simple implementation using cache
-        # In production, you might want to use a proper job tracking mechanism
-        cache_keys = Rails.cache.instance_variable_get(:@data)&.keys || []
-        job_keys = cache_keys.select { |k| k.to_s.start_with?('xero_sync_job_') }
-
-        job_keys.each do |key|
-          job_data = Rails.cache.read(key)
-          if job_data && ['queued', 'processing'].include?(job_data[:status])
-            return job_data
-          end
-        end
-
-        nil
-      end
-
       # GET /api/v1/xero/sync_history
       # Returns recent sync activity for contacts
       def sync_history
