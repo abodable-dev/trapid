@@ -635,11 +635,11 @@ module Api
         # Get the file ID based on the file type
         file_id = case file_type
         when 'image'
-          @pricebook_item.image_file_id
+          @item.image_file_id
         when 'spec'
-          @pricebook_item.spec_file_id
+          @item.spec_file_id
         when 'qr_code'
-          @pricebook_item.qr_code_file_id
+          @item.qr_code_file_id
         else
           return render json: { error: 'Invalid file type' }, status: :bad_request
         end
@@ -662,7 +662,7 @@ module Api
           response = client.get_file_content(file_id)
 
           # Detect content type from file extension or default to image/jpeg
-          content_type = case File.extname(@pricebook_item.send("#{file_type}_url") || '').downcase
+          content_type = case File.extname(@item.send("#{file_type}_url") || '').downcase
           when '.jpg', '.jpeg'
             'image/jpeg'
           when '.png'

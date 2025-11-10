@@ -81,11 +81,22 @@ class XeroApiClient
     return { success: false, error: 'No credentials found' } unless credential
 
     begin
+      # Try to access encrypted fields to check if decryption works
+      access_token = credential.access_token
+      refresh_token = credential.refresh_token
+    rescue ActiveRecord::Encryption::Errors::Decryption => e
+      Rails.logger.error("Xero credential decryption failed in refresh_access_token - deleting corrupted credentials: #{e.message}")
+      # Delete the corrupted credential
+      credential.destroy
+      raise AuthenticationError, 'Xero credentials are corrupted. Please reconnect to Xero.'
+    end
+
+    begin
       client = oauth_client
       old_token = OAuth2::AccessToken.new(
         client,
-        credential.access_token,
-        refresh_token: credential.refresh_token
+        access_token,
+        refresh_token: refresh_token
       )
 
       new_token = old_token.refresh!
@@ -132,6 +143,21 @@ class XeroApiClient
       return {
         connected: false,
         message: 'Not connected to Xero'
+      }
+    end
+
+    # Try to access encrypted fields to check if decryption works
+    begin
+      # This will raise ActiveRecord::Encryption::Errors::Decryption if keys are wrong
+      _test_access = credential.access_token
+      _test_refresh = credential.refresh_token
+    rescue ActiveRecord::Encryption::Errors::Decryption => e
+      Rails.logger.error("Xero credential decryption failed in connection_status - deleting corrupted credentials: #{e.message}")
+      # Delete the corrupted credential
+      credential.destroy
+      return {
+        connected: false,
+        message: 'Xero credentials are corrupted. Please reconnect to Xero.'
       }
     end
 
@@ -268,6 +294,17 @@ class XeroApiClient
 
     unless credential
       raise AuthenticationError, 'Not authenticated with Xero'
+    end
+
+    # Try to access encrypted fields to check if decryption works
+    begin
+      # This will raise ActiveRecord::Encryption::Errors::Decryption if keys are wrong
+      _test_access = credential.access_token
+    rescue ActiveRecord::Encryption::Errors::Decryption => e
+      Rails.logger.error("Xero credential decryption failed - deleting corrupted credentials: #{e.message}")
+      # Delete the corrupted credential
+      credential.destroy
+      raise AuthenticationError, 'Xero credentials are corrupted. Please reconnect to Xero.'
     end
 
     # Refresh token if expired
