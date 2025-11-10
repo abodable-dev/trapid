@@ -524,26 +524,46 @@ module Api
       def apply_pricebook_matches
         credential = OrganizationOneDriveCredential.active_credential
 
+        Rails.logger.info "[OneDrive Apply] Starting to apply pricebook matches"
+        Rails.logger.info "[OneDrive Apply] Credential present: #{credential.present?}"
+        Rails.logger.info "[OneDrive Apply] Credential valid: #{credential&.valid_credential?}"
+
         unless credential&.valid_credential?
+          Rails.logger.warn "[OneDrive Apply] No valid credential found"
           return render json: { error: 'OneDrive not connected. Please connect in Settings first.' }, status: :unauthorized
         end
 
         folder_path = params[:folder_path] || "Pricebook Images"
         accepted_matches = params[:accepted_matches] || []
 
+        Rails.logger.info "[OneDrive Apply] Folder path: #{folder_path}"
+        Rails.logger.info "[OneDrive Apply] Accepted matches count: #{accepted_matches.length}"
+
         begin
           # Run sync service with only accepted matches
           sync_service = OnedrivePricebookSyncService.new(credential, folder_path)
           result = sync_service.apply_matches(accepted_matches)
+
+          Rails.logger.info "[OneDrive Apply] Apply completed"
+          Rails.logger.info "[OneDrive Apply] Success: #{result[:success]}"
+          Rails.logger.info "[OneDrive Apply] Matched: #{result[:matched]}"
+          Rails.logger.info "[OneDrive Apply] Photos: #{result[:photos_matched]}"
+          Rails.logger.info "[OneDrive Apply] Specs: #{result[:specs_matched]}"
+          Rails.logger.info "[OneDrive Apply] QR Codes: #{result[:qr_codes_matched]}"
+          Rails.logger.info "[OneDrive Apply] Errors: #{result[:errors]&.length || 0}"
 
           if result[:success]
             render json: {
               success: true,
               message: "Synced #{result[:matched]} images successfully",
               matched: result[:matched],
+              photos_matched: result[:photos_matched],
+              specs_matched: result[:specs_matched],
+              qr_codes_matched: result[:qr_codes_matched],
               errors: result[:errors]
             }
           else
+            Rails.logger.error "[OneDrive Apply] Apply failed: #{result[:error]}"
             render json: {
               success: false,
               error: result[:error]
@@ -551,8 +571,8 @@ module Api
           end
 
         rescue StandardError => e
-          Rails.logger.error "Failed to apply pricebook matches: #{e.message}"
-          Rails.logger.error e.backtrace.join("\n")
+          Rails.logger.error "[OneDrive Apply] Exception occurred: #{e.message}"
+          Rails.logger.error "[OneDrive Apply] Backtrace:\n#{e.backtrace.join("\n")}"
           render json: { error: "Failed to apply matches: #{e.message}" }, status: :internal_server_error
         end
       end

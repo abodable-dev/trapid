@@ -218,24 +218,40 @@ export default function OneDriveConnection() {
 
   const handleApplyMatches = async (acceptedMatches) => {
     try {
+      console.log('[OneDrive Apply] Starting to apply matches:', acceptedMatches.length)
       setSyncingImages(true)
       setMessage(null)
+      setShowMatchPreview(false) // Close the preview modal
 
       const response = await api.post('/api/v1/organization_onedrive/apply_pricebook_matches', {
         folder_path: folderPath.trim(),
         accepted_matches: acceptedMatches
       })
 
+      console.log('[OneDrive Apply] Response received:', response)
+
       setMessage({
         type: 'success',
-        text: response.message || 'Images synced successfully',
+        text: response.message || `Synced ${response.matched || 0} images successfully!`,
       })
 
       setSyncResult({
+        matched: response.matched || 0,
+        photos_matched: response.photos_matched || 0,
+        specs_matched: response.specs_matched || 0,
+        qr_codes_matched: response.qr_codes_matched || 0,
+        errors: response.errors || [],
+        unmatched_files: response.unmatched_files || []
+      })
+
+      console.log('[OneDrive Apply] Sync result set:', {
         matched: response.matched,
-        errors: response.errors || []
+        photos: response.photos_matched,
+        specs: response.specs_matched,
+        qr_codes: response.qr_codes_matched
       })
     } catch (err) {
+      console.error('[OneDrive Apply] Error occurred:', err)
       setMessage({
         type: 'error',
         text: err.message || 'Failed to apply matches',

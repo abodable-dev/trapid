@@ -54,15 +54,24 @@ export default function PricebookMatchPreview({ isOpen, onClose, matches, onAppl
         file_id: match.file_id,
         item_id: match.item_id,
         filename: match.filename,
-        item_code: match.item_code
+        item_code: match.item_code,
+        file_type: match.file_type
       }))
+
+    console.log('[Match Preview] Applying matches:', acceptedMatches.length, 'selected')
+    console.log('[Match Preview] Accepted matches:', acceptedMatches)
 
     setApplying(true)
     try {
       await onApplyMatches(acceptedMatches)
-      onClose()
+      console.log('[Match Preview] Matches applied successfully, closing modal')
+      // Wait a brief moment so user can see the success message
+      setTimeout(() => {
+        onClose()
+      }, 1500)
     } catch (err) {
-      // Error is handled by parent
+      console.error('[Match Preview] Error applying matches:', err)
+      // Don't close modal on error so user can see what went wrong
     } finally {
       setApplying(false)
     }

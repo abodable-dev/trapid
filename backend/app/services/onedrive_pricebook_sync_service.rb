@@ -143,6 +143,9 @@ class OnedrivePricebookSyncService
     {
       success: true,
       matched: @results[:matched],
+      photos_matched: @results[:photos_matched],
+      specs_matched: @results[:specs_matched],
+      qr_codes_matched: @results[:qr_codes_matched],
       errors: @results[:errors]
     }
   rescue => e
