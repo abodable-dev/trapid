@@ -135,12 +135,14 @@ Rails.application.routes.draw do
           patch :bulk_update
           post :merge
           post :match_supplier
+          get :validate_abn
         end
         member do
           get :categories
           post :copy_price_history
           delete :remove_from_categories
           post :bulk_update_prices
+          delete :delete_price_column
         end
       end
 
