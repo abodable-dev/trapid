@@ -316,15 +316,17 @@ export default function OneDriveConnection() {
 
   const handleFolderSelected = (folder) => {
     if (folderPickerMode === 'sync') {
-      // Update pricebook sync folder path
-      setFolderPath(folder.name)
+      // Update pricebook sync folder path - use full path
+      const folderPath = folder.path || folder.name
+      setFolderPath(folderPath)
       setMessage({
         type: 'success',
-        text: `Selected folder: ${folder.name}`,
+        text: `Selected folder: ${folderPath}`,
       })
     } else if (folderPickerMode === 'root') {
-      // Update root folder
-      setNewRootFolderName(folder.name)
+      // Update root folder - use full path
+      const folderPath = folder.path || folder.name
+      setNewRootFolderName(folderPath)
       setEditingRootFolder(true)
     }
 

@@ -178,6 +178,7 @@ Rails.application.routes.draw do
           post :webhook
           post :sync_contacts
           get :sync_status
+          get :sync_history
           get :tax_rates
         end
         member do

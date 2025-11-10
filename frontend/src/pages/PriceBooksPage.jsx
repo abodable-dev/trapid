@@ -56,6 +56,8 @@ export default function PriceBooksPage() {
   const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'category')
   const [sortDirection, setSortDirection] = useState(searchParams.get('sort_direction') || 'asc')
   const [editingCategory, setEditingCategory] = useState(null) // Track which item's category is being edited
+  const [editingGstCode, setEditingGstCode] = useState(null) // Track which item's GST code is being edited
+  const [taxRates, setTaxRates] = useState([]) // Store available tax rates
   const [showImportModal, setShowImportModal] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [selectedItems, setSelectedItems] = useState(() => {
@@ -122,6 +124,11 @@ export default function PriceBooksPage() {
   const searchTimeoutRef = useRef(null)
 
   // Clear supplier filter if it's no longer in the filtered suppliers list
+  // Load tax rates on mount
+  useEffect(() => {
+    loadTaxRates()
+  }, [])
+
   useEffect(() => {
     if (supplierFilter && suppliers.length > 0) {
       const supplierStillExists = suppliers.some(s => s.id.toString() === supplierFilter.toString())
@@ -415,6 +422,36 @@ export default function PriceBooksPage() {
     } catch (error) {
       console.error('Failed to update category:', error)
       alert('Failed to update category')
+    }
+  }
+
+  const handleGstCodeUpdate = async (itemId, newGstCode) => {
+    try {
+      await api.patch(`/api/v1/pricebook/${itemId}`, {
+        pricebook_item: {
+          gst_code: newGstCode
+        }
+      })
+
+      // Update local state
+      setItems(items.map(item =>
+        item.id === itemId ? { ...item, gst_code: newGstCode } : item
+      ))
+
+      setEditingGstCode(null)
+    } catch (error) {
+      console.error('Failed to update GST code:', error)
+      alert('Failed to update GST code')
+    }
+  }
+
+  const loadTaxRates = async () => {
+    try {
+      const response = await api.get('/api/v1/xero/tax_rates')
+      setTaxRates(response.tax_rates || [])
+    } catch (err) {
+      console.error('Failed to load tax rates:', err)
+      // Don't show error to user, just log it
     }
   }
 
@@ -893,8 +930,19 @@ export default function PriceBooksPage() {
         )
       case 'gstCode':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
-            {item.gst_code || '-'}
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400" onClick={(e) => { e.stopPropagation(); setEditingGstCode(item.id) }}>
+            {editingGstCode === item.id ? (
+              <select autoFocus value={item.gst_code || ''} onChange={(e) => handleGstCodeUpdate(item.id, e.target.value)} onBlur={() => setEditingGstCode(null)} onFocus={(e) => e.target.select()} className="w-full px-2 py-1 text-sm border border-indigo-500 rounded focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-indigo-400" onClick={(e) => e.stopPropagation()}>
+                <option value="">Select GST code...</option>
+                {taxRates.map((rate) => (
+                  <option key={rate.code} value={rate.code}>
+                    {rate.name} ({rate.display_rate})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400">{item.gst_code || '-'}</span>
+            )}
           </td>
         )
       case 'unit':

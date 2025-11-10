@@ -409,6 +409,19 @@ module Api
 
       private
 
+      # Determine what sync action was taken for a contact
+      def determine_sync_action(contact)
+        if contact.xero_sync_error.present?
+          'Sync Failed'
+        elsif contact.xero_id.present? && contact.created_at < contact.last_synced_at
+          'Updated from Xero'
+        elsif contact.xero_id.present?
+          'Created from Xero'
+        else
+          'Synced to Xero'
+        end
+      end
+
       # Find the most recent active sync job
       def find_active_sync_job
         # This is a simple implementation using cache
@@ -424,6 +437,42 @@ module Api
         end
 
         nil
+      end
+
+      # GET /api/v1/xero/sync_history
+      # Returns recent sync activity for contacts
+      def sync_history
+        begin
+          # Get recently synced contacts (last 50)
+          recent_syncs = Contact.where.not(last_synced_at: nil)
+                                .order(last_synced_at: :desc)
+                                .limit(50)
+                                .select(:id, :full_name, :first_name, :last_name, :email, :last_synced_at, :xero_sync_error, :xero_id, :created_at, :updated_at)
+
+          history_items = recent_syncs.map do |contact|
+            {
+              id: contact.id,
+              contact_name: contact.full_name || "#{contact.first_name} #{contact.last_name}".strip,
+              email: contact.email,
+              synced_at: contact.last_synced_at,
+              has_error: contact.xero_sync_error.present?,
+              error_message: contact.xero_sync_error,
+              action: determine_sync_action(contact),
+              xero_id: contact.xero_id
+            }
+          end
+
+          render json: {
+            success: true,
+            history: history_items
+          }
+        rescue StandardError => e
+          Rails.logger.error("Xero sync_history error: #{e.message}")
+          render json: {
+            success: false,
+            error: "Failed to fetch sync history"
+          }, status: :internal_server_error
+        end
       end
 
       # GET /api/v1/xero/tax_rates
