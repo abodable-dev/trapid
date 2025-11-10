@@ -18,6 +18,7 @@ import {
   XCircleIcon
 } from '@heroicons/react/24/outline'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
+import ActivityTimeline from '../components/contacts/ActivityTimeline'
 
 export default function ContactDetailPage() {
   const { id } = useParams()
@@ -1055,6 +1056,16 @@ export default function ContactDetailPage() {
                     } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
                   >
                     Bulk Update
+                  </button>
+                  <button
+                    onClick={() => setPriceBookTab('xero-sync')}
+                    className={`${
+                      priceBookTab === 'xero-sync'
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                  >
+                    Xero Sync
                   </button>
                 </nav>
               </div>
@@ -2169,6 +2180,13 @@ export default function ContactDetailPage() {
                       </button>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Xero Sync Tab */}
+              {priceBookTab === 'xero-sync' && (
+                <div className="px-6 py-8">
+                  <ActivityTimeline contactId={contact.id} />
                 </div>
               )}
           </div>

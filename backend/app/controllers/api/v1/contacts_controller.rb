@@ -1,7 +1,7 @@
 module Api
   module V1
     class ContactsController < ApplicationController
-      before_action :set_contact, only: [:show, :update, :destroy]
+      before_action :set_contact, only: [:show, :update, :destroy, :activities]
 
       # GET /api/v1/contacts
       def index
@@ -803,6 +803,23 @@ module Api
 
         result = AbnLookupService.validate(abn)
         render json: result
+      end
+
+      # GET /api/v1/contacts/:id/activities
+      def activities
+        activities = @contact.contact_activities.recent.limit(50)
+
+        render json: {
+          success: true,
+          activities: activities.as_json(
+            only: [:id, :activity_type, :description, :metadata, :occurred_at, :created_at],
+            include: {
+              performed_by: {
+                only: [:id, :type]
+              }
+            }
+          )
+        }
       end
 
       private
