@@ -357,6 +357,57 @@ class MicrosoftGraphClient
     get(path)
   end
 
+  # HTTP Methods (public for API access)
+
+  def get(path)
+    response = HTTParty.get(
+      "#{GRAPH_API_BASE}#{path}",
+      headers: auth_headers
+    )
+
+    handle_response(response)
+  end
+
+  def post(path, body, custom_headers = {})
+    headers = auth_headers.merge(custom_headers)
+
+    # Set content type if body is a hash (JSON)
+    if body.is_a?(Hash)
+      headers['Content-Type'] = 'application/json'
+      body = body.to_json
+    end
+
+    response = HTTParty.post(
+      "#{GRAPH_API_BASE}#{path}",
+      body: body,
+      headers: headers
+    )
+
+    handle_response(response)
+  end
+
+  def patch(path, body)
+    response = HTTParty.patch(
+      "#{GRAPH_API_BASE}#{path}",
+      body: body.to_json,
+      headers: auth_headers.merge({ 'Content-Type' => 'application/json' })
+    )
+
+    handle_response(response)
+  end
+
+  def delete(path)
+    response = HTTParty.delete(
+      "#{GRAPH_API_BASE}#{path}",
+      headers: auth_headers
+    )
+
+    # Delete returns 204 No Content on success
+    return true if response.code == 204
+
+    handle_response(response)
+  end
+
   private
 
   def ensure_valid_token!
@@ -415,57 +466,6 @@ class MicrosoftGraphClient
       expires_in: data['expires_in'],
       expires_at: Time.current + data['expires_in'].to_i.seconds
     }
-  end
-
-  # HTTP Methods
-
-  def get(path)
-    response = HTTParty.get(
-      "#{GRAPH_API_BASE}#{path}",
-      headers: auth_headers
-    )
-
-    handle_response(response)
-  end
-
-  def post(path, body, custom_headers = {})
-    headers = auth_headers.merge(custom_headers)
-
-    # Set content type if body is a hash (JSON)
-    if body.is_a?(Hash)
-      headers['Content-Type'] = 'application/json'
-      body = body.to_json
-    end
-
-    response = HTTParty.post(
-      "#{GRAPH_API_BASE}#{path}",
-      body: body,
-      headers: headers
-    )
-
-    handle_response(response)
-  end
-
-  def patch(path, body)
-    response = HTTParty.patch(
-      "#{GRAPH_API_BASE}#{path}",
-      body: body.to_json,
-      headers: auth_headers.merge({ 'Content-Type' => 'application/json' })
-    )
-
-    handle_response(response)
-  end
-
-  def delete(path)
-    response = HTTParty.delete(
-      "#{GRAPH_API_BASE}#{path}",
-      headers: auth_headers
-    )
-
-    # Delete returns 204 No Content on success
-    return true if response.code == 204
-
-    handle_response(response)
   end
 
   def handle_response(response)
