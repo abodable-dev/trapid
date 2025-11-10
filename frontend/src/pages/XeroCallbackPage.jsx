@@ -21,6 +21,14 @@ export default function XeroCallbackPage() {
     const code = searchParams.get('code')
     const error = searchParams.get('error')
 
+    // Check if we've already processed this code to prevent duplicate OAuth exchanges on refresh
+    const processedCode = sessionStorage.getItem('xero_processed_code')
+    if (code && code === processedCode) {
+      // Already processed this code, redirect immediately
+      navigate('/settings/integrations', { replace: true })
+      return
+    }
+
     // Check for errors from Xero
     if (error) {
       setStatus({
@@ -46,6 +54,9 @@ export default function XeroCallbackPage() {
     try {
       // Exchange the code for tokens
       await api.post('/api/v1/xero/callback', { code })
+
+      // Mark this code as processed to prevent re-execution on refresh
+      sessionStorage.setItem('xero_processed_code', code)
 
       setStatus({
         loading: false,

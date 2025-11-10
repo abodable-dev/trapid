@@ -64,6 +64,10 @@ export default function XeroConnection() {
       setDisconnecting(true)
       await api.delete('/api/v1/xero/disconnect')
 
+      // Clear the processed OAuth code from session storage
+      // This allows the user to reconnect with a new OAuth flow
+      sessionStorage.removeItem('xero_processed_code')
+
       setStatus({
         loading: false,
         connected: false,
