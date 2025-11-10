@@ -116,6 +116,63 @@ module Api
         end
       end
 
+      # PATCH /api/v1/organization_onedrive/change_root_folder
+      # Change the root folder for organization OneDrive
+      def change_root_folder
+        credential = OrganizationOneDriveCredential.active_credential
+
+        unless credential&.valid_credential?
+          return render json: { error: 'OneDrive not connected' }, status: :unauthorized
+        end
+
+        new_folder_name = params[:folder_name]
+
+        if new_folder_name.blank?
+          return render json: { error: 'Folder name is required' }, status: :bad_request
+        end
+
+        begin
+          client = MicrosoftGraphClient.new(credential)
+
+          # Try to find existing folder first
+          existing_folder = client.find_folder_by_name(new_folder_name)
+
+          if existing_folder
+            # Use existing folder
+            root_folder = existing_folder
+          else
+            # Create new folder
+            root_folder = client.create_folder(new_folder_name, drive_id: credential.drive_id)
+          end
+
+          # Update credential with new root folder info
+          credential.update!(
+            root_folder_id: root_folder['id'],
+            root_folder_path: new_folder_name,
+            metadata: credential.metadata.merge({
+              root_folder_name: new_folder_name,
+              root_folder_web_url: root_folder['webUrl'],
+              updated_at: Time.current
+            })
+          )
+
+          render json: {
+            message: 'Root folder updated successfully',
+            root_folder_path: new_folder_name,
+            root_folder_web_url: root_folder['webUrl']
+          }
+
+        rescue MicrosoftGraphClient::AuthenticationError => e
+          render json: { error: "Authentication failed: #{e.message}" }, status: :unauthorized
+        rescue MicrosoftGraphClient::APIError => e
+          render json: { error: "OneDrive API error: #{e.message}" }, status: :bad_gateway
+        rescue StandardError => e
+          Rails.logger.error "Failed to change root folder: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: "Failed to change root folder: #{e.message}" }, status: :internal_server_error
+        end
+      end
+
       # POST /api/v1/organization_onedrive/create_job_folders
       # Create folder structure for a specific job
       def create_job_folders

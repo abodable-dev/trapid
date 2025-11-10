@@ -275,6 +275,15 @@ class MicrosoftGraphClient
     results['value']&.find { |item| item['name'] == search_query && item['folder'] }
   end
 
+  # Search for folder by name in drive root
+  def find_folder_by_name(folder_name)
+    # Search in drive root
+    results = get("/drives/#{@credential.drive_id}/root/children")
+
+    # Find exact match
+    results['value']&.find { |item| item['name'] == folder_name && item['folder'] }
+  end
+
   # File Operations
 
   # Upload small file (< 4MB)
