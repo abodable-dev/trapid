@@ -221,7 +221,7 @@ export default function OneDriveConnection() {
       console.log('[OneDrive Apply] Starting to apply matches:', acceptedMatches.length)
       setSyncingImages(true)
       setMessage(null)
-      setShowMatchPreview(false) // Close the preview modal
+      // Don't close modal here - let user see the success message and close manually
 
       const response = await api.post('/api/v1/organization_onedrive/apply_pricebook_matches', {
         folder_path: folderPath.trim(),
@@ -250,6 +250,9 @@ export default function OneDriveConnection() {
         specs: response.specs_matched,
         qr_codes: response.qr_codes_matched
       })
+
+      // Close the modal after success so results show in parent component
+      setShowMatchPreview(false)
     } catch (err) {
       console.error('[OneDrive Apply] Error occurred:', err)
       setMessage({

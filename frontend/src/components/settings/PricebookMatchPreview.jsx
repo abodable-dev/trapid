@@ -64,11 +64,9 @@ export default function PricebookMatchPreview({ isOpen, onClose, matches, onAppl
     setApplying(true)
     try {
       await onApplyMatches(acceptedMatches)
-      console.log('[Match Preview] Matches applied successfully, closing modal')
-      // Wait a brief moment so user can see the success message
-      setTimeout(() => {
-        onClose()
-      }, 1500)
+      console.log('[Match Preview] Matches applied successfully')
+      // Keep modal open so user can see the success message
+      // User can manually close by clicking X or outside the modal
     } catch (err) {
       console.error('[Match Preview] Error applying matches:', err)
       // Don't close modal on error so user can see what went wrong
