@@ -465,11 +465,8 @@ module Api
         folder_path = params[:folder_path] || "Pricebook Images"
 
         begin
-          # Get organization (you may need to adjust this based on your auth)
-          organization = current_user&.organization || Organization.first
-
-          # Run sync service
-          sync_service = OnedrivePricebookSyncService.new(organization, folder_path)
+          # Run sync service with credential directly
+          sync_service = OnedrivePricebookSyncService.new(credential, folder_path)
           result = sync_service.sync
 
           if result[:success]
