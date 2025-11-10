@@ -562,27 +562,46 @@ module Api
       def sync_pricebook_images
         credential = OrganizationOneDriveCredential.active_credential
 
+        Rails.logger.info "[OneDrive Sync] Starting pricebook image sync"
+        Rails.logger.info "[OneDrive Sync] Credential present: #{credential.present?}"
+        Rails.logger.info "[OneDrive Sync] Credential valid: #{credential&.valid_credential?}"
+
         unless credential&.valid_credential?
+          Rails.logger.warn "[OneDrive Sync] No valid credential found"
           return render json: { error: 'OneDrive not connected. Please connect in Settings first.' }, status: :unauthorized
         end
 
         folder_path = params[:folder_path] || "Pricebook Images"
+        Rails.logger.info "[OneDrive Sync] Folder path: #{folder_path}"
 
         begin
           # Run sync service with credential directly
           sync_service = OnedrivePricebookSyncService.new(credential, folder_path)
           result = sync_service.sync
 
+          Rails.logger.info "[OneDrive Sync] Sync completed"
+          Rails.logger.info "[OneDrive Sync] Success: #{result[:success]}"
+          Rails.logger.info "[OneDrive Sync] Matched: #{result[:matched]}"
+          Rails.logger.info "[OneDrive Sync] Photos: #{result[:photos_matched]}"
+          Rails.logger.info "[OneDrive Sync] Specs: #{result[:specs_matched]}"
+          Rails.logger.info "[OneDrive Sync] QR Codes: #{result[:qr_codes_matched]}"
+          Rails.logger.info "[OneDrive Sync] Unmatched files: #{result[:unmatched_files]&.length || 0}"
+          Rails.logger.info "[OneDrive Sync] Errors: #{result[:errors]&.length || 0}"
+
           if result[:success]
             render json: {
               success: true,
               message: "Synced #{result[:matched]} images successfully",
               matched: result[:matched],
+              photos_matched: result[:photos_matched],
+              specs_matched: result[:specs_matched],
+              qr_codes_matched: result[:qr_codes_matched],
               unmatched_files: result[:unmatched_files],
               unmatched_items: result[:unmatched_items],
               errors: result[:errors]
             }
           else
+            Rails.logger.error "[OneDrive Sync] Sync failed: #{result[:error]}"
             render json: {
               success: false,
               error: result[:error]
@@ -590,8 +609,8 @@ module Api
           end
 
         rescue StandardError => e
-          Rails.logger.error "Failed to sync pricebook images: #{e.message}"
-          Rails.logger.error e.backtrace.join("\n")
+          Rails.logger.error "[OneDrive Sync] Exception occurred: #{e.message}"
+          Rails.logger.error "[OneDrive Sync] Backtrace:\n#{e.backtrace.join("\n")}"
           render json: { error: "Failed to sync images: #{e.message}" }, status: :internal_server_error
         end
       end

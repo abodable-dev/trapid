@@ -248,6 +248,7 @@ export default function OneDriveConnection() {
 
   const handleSyncPricebookImages = async () => {
     try {
+      console.log('[OneDrive Sync] Starting sync with folder path:', folderPath)
       setSyncingImages(true)
       setSyncResult(null)
 
@@ -255,17 +256,31 @@ export default function OneDriveConnection() {
         folder_path: folderPath
       })
 
+      console.log('[OneDrive Sync] Response received:', response)
       setSyncResult(response)
       setMessage({
         type: 'success',
-        text: `Synced ${response.matched} images successfully!`,
+        text: `Synced ${response.matched || 0} images successfully! (${response.photos_matched || 0} photos, ${response.specs_matched || 0} specs, ${response.qr_codes_matched || 0} QR codes)`,
       })
+      console.log('[OneDrive Sync] Success! Matched:', response.matched, 'Photos:', response.photos_matched, 'Specs:', response.specs_matched)
     } catch (err) {
+      console.error('[OneDrive Sync] Error occurred:', err)
+      console.error('[OneDrive Sync] Error message:', err.message)
+      console.error('[OneDrive Sync] Error response:', err.response)
       setMessage({
         type: 'error',
         text: err.message || 'Failed to sync pricebook images',
       })
+      setSyncResult({
+        matched: 0,
+        photos_matched: 0,
+        specs_matched: 0,
+        qr_codes_matched: 0,
+        errors: [err.message || 'Unknown error occurred'],
+        unmatched_files: []
+      })
     } finally {
+      console.log('[OneDrive Sync] Sync completed')
       setSyncingImages(false)
     }
   }
