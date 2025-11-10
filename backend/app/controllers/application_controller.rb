@@ -8,11 +8,18 @@ class ApplicationController < ActionController::API
     @current_user = User.first || User.create!(
       name: "Default User",
       email: "user@example.com",
-      password: "password123"
+      password: "password123",
+      role: "admin"
     )
   end
 
   def current_user
     @current_user
+  end
+
+  def require_admin
+    unless current_user&.admin?
+      render json: { error: 'Unauthorized. Admin access required.' }, status: :forbidden
+    end
   end
 end

@@ -1718,10 +1718,25 @@ export default function PriceBooksPage() {
                       </thead>
                       <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
                         {itemsWithPriceHistories.map((item, idx) => {
-                          // Find the most recent price for the selected supplier
+                          // Find the currently active (live) price for the selected supplier based on effective date
+                          const today = new Date()
+                          today.setHours(0, 0, 0, 0) // Reset to midnight for date comparison
+
                           const selectedSupplierPrice = item.price_histories
                             ?.filter(h => h.supplier?.id === selectedSupplierId)
-                            ?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+                            ?.filter(h => {
+                              // Only include prices with effective date <= today (currently active/live prices)
+                              if (!h.date_effective) return true // If no date_effective, include it
+                              const effectiveDate = new Date(h.date_effective)
+                              effectiveDate.setHours(0, 0, 0, 0)
+                              return effectiveDate <= today
+                            })
+                            ?.sort((a, b) => {
+                              // Sort by date_effective (most recent first), fallback to created_at if no date_effective
+                              const dateA = a.date_effective ? new Date(a.date_effective) : new Date(a.created_at)
+                              const dateB = b.date_effective ? new Date(b.date_effective) : new Date(b.created_at)
+                              return dateB - dateA
+                            })[0]
 
                           // Current default is the item's current_price
                           const currentDefaultPrice = item.current_price

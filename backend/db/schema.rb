@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_10_031305) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_10_042814) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -382,6 +382,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_031305) do
     t.string "qr_code_url"
     t.boolean "requires_photo", default: false
     t.boolean "requires_spec", default: false
+    t.string "spec_url"
     t.index ["category"], name: "index_pricebook_items_on_category"
     t.index ["default_supplier_id"], name: "index_pricebook_items_on_default_supplier_id"
     t.index ["image_fetch_status"], name: "index_pricebook_items_on_image_fetch_status"
@@ -1335,7 +1336,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_031305) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "role", default: "user", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["role"], name: "index_users_on_role"
   end
 
   create_table "versions", force: :cascade do |t|

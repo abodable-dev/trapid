@@ -148,8 +148,19 @@ export default function JobDetailPage() {
 
   const loadSuppliers = async () => {
     try {
-      const response = await api.get('/api/v1/suppliers')
-      setSuppliers(response.suppliers || [])
+      // Load contacts that are marked as suppliers
+      const response = await api.get('/api/v1/contacts', {
+        params: {
+          type: 'suppliers',
+          per_page: 1000
+        }
+      })
+      // Map contacts to match the supplier format expected by the modal
+      const supplierContacts = (response.contacts || []).map(contact => ({
+        id: contact.id,
+        name: contact.full_name || contact.company_name || 'Unnamed Contact'
+      }))
+      setSuppliers(supplierContacts)
     } catch (err) {
       console.error('Failed to load suppliers:', err)
     }
@@ -178,7 +189,7 @@ export default function JobDetailPage() {
       setEditingPO(null)
     } catch (err) {
       console.error('Failed to save purchase order:', err)
-      alert('Failed to save purchase order')
+      // Error will be displayed by the modal
       throw err
     }
   }

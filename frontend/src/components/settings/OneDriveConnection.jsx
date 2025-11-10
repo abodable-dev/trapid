@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import { ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, CloudIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
+import OneDriveFolderPicker from './OneDriveFolderPicker'
 
 export default function OneDriveConnection() {
   const [status, setStatus] = useState({
@@ -9,6 +10,7 @@ export default function OneDriveConnection() {
     connected: false,
     driveName: null,
     rootFolderPath: null,
+    rootFolderWebUrl: null,
     connectedAt: null,
     connectedBy: null,
     error: null,
@@ -20,30 +22,81 @@ export default function OneDriveConnection() {
   const [syncingImages, setSyncingImages] = useState(false)
   const [syncResult, setSyncResult] = useState(null)
   const [folderPath, setFolderPath] = useState('Pricebook Images')
+  const [editingRootFolder, setEditingRootFolder] = useState(false)
+  const [newRootFolderName, setNewRootFolderName] = useState('')
+  const [changingRootFolder, setChangingRootFolder] = useState(false)
+  const [showFolderPicker, setShowFolderPicker] = useState(false)
+  const [folderPickerMode, setFolderPickerMode] = useState(null) // 'sync' or 'root'
 
   // Fetch connection status on mount and handle OAuth callback
   useEffect(() => {
-    fetchStatus()
+    let isMounted = true
 
-    // Check if we're returning from OAuth callback
-    const params = new URLSearchParams(window.location.search)
-    const oneDriveStatus = params.get('onedrive')
+    const loadStatus = async () => {
+      try {
+        if (!isMounted) return
 
-    if (oneDriveStatus === 'connected') {
-      setMessage({
-        type: 'success',
-        text: 'OneDrive connected successfully!',
-      })
-      // Remove query params from URL
-      window.history.replaceState({}, '', '/settings')
-    } else if (oneDriveStatus === 'error') {
-      const errorMessage = params.get('message') || 'Failed to connect OneDrive'
-      setMessage({
-        type: 'error',
-        text: decodeURIComponent(errorMessage),
-      })
-      // Remove query params from URL
-      window.history.replaceState({}, '', '/settings')
+        setStatus(prev => ({ ...prev, loading: true, error: null }))
+        const response = await api.get('/api/v1/organization_onedrive/status')
+
+        if (!isMounted) return
+
+        setStatus({
+          loading: false,
+          connected: response.connected,
+          driveName: response.drive_name,
+          rootFolderPath: response.root_folder_path,
+          rootFolderWebUrl: response.root_folder_web_url,
+          connectedAt: response.connected_at,
+          connectedBy: response.connected_by,
+          metadata: response.metadata,
+          error: null,
+        })
+
+        // Check if we're returning from OAuth callback
+        const params = new URLSearchParams(window.location.search)
+        const oneDriveStatus = params.get('onedrive')
+
+        if (oneDriveStatus === 'connected') {
+          if (isMounted) {
+            setMessage({
+              type: 'success',
+              text: 'OneDrive connected successfully!',
+            })
+          }
+          // Remove query params from URL
+          window.history.replaceState({}, '', '/settings')
+        } else if (oneDriveStatus === 'error') {
+          const errorMessage = params.get('message') || 'Failed to connect OneDrive'
+          if (isMounted) {
+            setMessage({
+              type: 'error',
+              text: decodeURIComponent(errorMessage),
+            })
+          }
+          // Remove query params from URL
+          window.history.replaceState({}, '', '/settings')
+        }
+      } catch (err) {
+        if (!isMounted) return
+
+        setStatus({
+          loading: false,
+          connected: false,
+          driveName: null,
+          rootFolderPath: null,
+          rootFolderWebUrl: null,
+          connectedAt: null,
+          connectedBy: null,
+          error: err.message || 'Failed to fetch connection status',
+        })
+      }
+    }
+
+    loadStatus()
+
+    return () => {
+      isMounted = false
     }
   }, [])
 
@@ -57,6 +110,7 @@ export default function OneDriveConnection() {
         connected: response.connected,
         driveName: response.drive_name,
         rootFolderPath: response.root_folder_path,
+        rootFolderWebUrl: response.root_folder_web_url,
         connectedAt: response.connected_at,
         connectedBy: response.connected_by,
         metadata: response.metadata,
@@ -68,6 +122,7 @@ export default function OneDriveConnection() {
         connected: false,
         driveName: null,
         rootFolderPath: null,
+        rootFolderWebUrl: null,
         connectedAt: null,
         connectedBy: null,
         error: err.message || 'Failed to fetch connection status',
@@ -104,6 +159,7 @@ export default function OneDriveConnection() {
         connected: false,
         driveName: null,
         rootFolderPath: null,
+        rootFolderWebUrl: null,
         connectedAt: null,
         connectedBy: null,
         error: null,
@@ -147,6 +203,68 @@ export default function OneDriveConnection() {
     } finally {
       setSyncingImages(false)
     }
+  }
+
+  const handleChangeRootFolder = async () => {
+    if (!newRootFolderName || newRootFolderName.trim() === '') {
+      setMessage({
+        type: 'error',
+        text: 'Please enter a folder name',
+      })
+      return
+    }
+
+    try {
+      setChangingRootFolder(true)
+      const response = await api.patch('/api/v1/organization_onedrive/change_root_folder', {
+        folder_name: newRootFolderName.trim()
+      })
+
+      // Update status with new folder info
+      setStatus(prev => ({
+        ...prev,
+        rootFolderPath: response.root_folder_path,
+        rootFolderWebUrl: response.root_folder_web_url
+      }))
+
+      setMessage({
+        type: 'success',
+        text: response.message || 'Root folder updated successfully',
+      })
+
+      setEditingRootFolder(false)
+      setNewRootFolderName('')
+    } catch (err) {
+      setMessage({
+        type: 'error',
+        text: err.message || 'Failed to change root folder',
+      })
+    } finally {
+      setChangingRootFolder(false)
+    }
+  }
+
+  const handleOpenFolderPicker = (mode) => {
+    setFolderPickerMode(mode)
+    setShowFolderPicker(true)
+  }
+
+  const handleFolderSelected = (folder) => {
+    if (folderPickerMode === 'sync') {
+      // Update pricebook sync folder path
+      setFolderPath(folder.name)
+      setMessage({
+        type: 'success',
+        text: `Selected folder: ${folder.name}`,
+      })
+    } else if (folderPickerMode === 'root') {
+      // Update root folder
+      setNewRootFolderName(folder.name)
+      setEditingRootFolder(true)
+    }
+
+    setShowFolderPicker(false)
+    setFolderPickerMode(null)
   }
 
   if (status.loading) {
@@ -232,9 +350,73 @@ export default function OneDriveConnection() {
                   {status.rootFolderPath && (
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Root Folder</p>
-                      <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">
-                        {status.rootFolderPath}
-                      </p>
+                      {editingRootFolder ? (
+                        <div className="mt-1 space-y-2">
+                          <div className="flex items-center gap-x-2">
+                            <input
+                              type="text"
+                              value={newRootFolderName}
+                              onChange={(e) => setNewRootFolderName(e.target.value)}
+                              placeholder={status.rootFolderPath}
+                              className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFolderPicker('root')}
+                              className="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                            >
+                              Browse
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-x-2">
+                            <button
+                              type="button"
+                              onClick={handleChangeRootFolder}
+                              disabled={changingRootFolder}
+                              className="inline-flex items-center rounded-md bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                            >
+                              {changingRootFolder ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingRootFolder(false)
+                                setNewRootFolderName('')
+                              }}
+                              disabled={changingRootFolder}
+                              className="inline-flex items-center rounded-md bg-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-1 flex items-center gap-x-2">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {status.rootFolderPath}
+                          </p>
+                          {status.rootFolderWebUrl && (
+                            <a
+                              href={status.rootFolderWebUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10 hover:bg-indigo-100 dark:bg-indigo-400/10 dark:text-indigo-400 dark:ring-indigo-400/30 dark:hover:bg-indigo-400/20"
+                            >
+                              View in OneDrive
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingRootFolder(true)
+                              setNewRootFolderName(status.rootFolderPath)
+                            }}
+                            className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-500/10 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:ring-gray-400/20 dark:hover:bg-gray-600"
+                          >
+                            Change
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -266,14 +448,23 @@ export default function OneDriveConnection() {
                           <label htmlFor="folder-path" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             OneDrive Folder Path
                           </label>
-                          <input
-                            type="text"
-                            id="folder-path"
-                            value={folderPath}
-                            onChange={(e) => setFolderPath(e.target.value)}
-                            placeholder="Pricebook Images"
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                          />
+                          <div className="mt-1 flex items-center gap-x-2">
+                            <input
+                              type="text"
+                              id="folder-path"
+                              value={folderPath}
+                              onChange={(e) => setFolderPath(e.target.value)}
+                              placeholder="Pricebook Images"
+                              className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFolderPicker('sync')}
+                              className="inline-flex items-center rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                            >
+                              Browse
+                            </button>
+                          </div>
                           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             Folder name in your OneDrive where images are stored
                           </p>
@@ -301,9 +492,21 @@ export default function OneDriveConnection() {
                               Sync Results:
                             </p>
                             <ul className="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                              <li>✓ {syncResult.matched} images matched and linked</li>
+                              <li>✓ {syncResult.matched} total files matched and linked</li>
+                              {syncResult.photos_matched > 0 && (
+                                <li className="ml-4">📷 {syncResult.photos_matched} photos</li>
+                              )}
+                              {syncResult.specs_matched > 0 && (
+                                <li className="ml-4">📄 {syncResult.specs_matched} specs</li>
+                              )}
+                              {syncResult.qr_codes_matched > 0 && (
+                                <li className="ml-4">🔲 {syncResult.qr_codes_matched} QR codes</li>
+                              )}
                               {syncResult.unmatched_files && syncResult.unmatched_files.length > 0 && (
                                 <li>⚠ {syncResult.unmatched_files.length} files couldn't be matched</li>
+                              )}
+                              {syncResult.unmatched_items && syncResult.unmatched_items.length > 0 && (
+                                <li>ℹ {syncResult.unmatched_items.length} items without files</li>
                               )}
                               {syncResult.errors && syncResult.errors.length > 0 && (
                                 <li className="text-red-600 dark:text-red-400">
@@ -311,6 +514,34 @@ export default function OneDriveConnection() {
                                 </li>
                               )}
                             </ul>
+
+                            {/* Show unmatched files details */}
+                            {syncResult.unmatched_files && syncResult.unmatched_files.length > 0 && (
+                              <details className="mt-3">
+                                <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  View unmatched files ({syncResult.unmatched_files.length})
+                                </summary>
+                                <ul className="mt-2 ml-4 space-y-1 text-xs text-gray-600 dark:text-gray-400 max-h-40 overflow-y-auto">
+                                  {syncResult.unmatched_files.map((file, idx) => (
+                                    <li key={idx}>• {file}</li>
+                                  ))}
+                                </ul>
+                              </details>
+                            )}
+
+                            {/* Show unmatched items details */}
+                            {syncResult.unmatched_items && syncResult.unmatched_items.length > 0 && (
+                              <details className="mt-3">
+                                <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  View items without files ({syncResult.unmatched_items.length})
+                                </summary>
+                                <ul className="mt-2 ml-4 space-y-1 text-xs text-gray-600 dark:text-gray-400 max-h-40 overflow-y-auto">
+                                  {syncResult.unmatched_items.map((item, idx) => (
+                                    <li key={idx}>• {item.name} ({item.code})</li>
+                                  ))}
+                                </ul>
+                              </details>
+                            )}
                           </div>
                         )}
                       </div>
@@ -377,6 +608,17 @@ export default function OneDriveConnection() {
           </div>
         </div>
       </div>
+
+      {/* Folder Picker Dialog */}
+      <OneDriveFolderPicker
+        isOpen={showFolderPicker}
+        onClose={() => {
+          setShowFolderPicker(false)
+          setFolderPickerMode(null)
+        }}
+        onSelect={handleFolderSelected}
+        title={folderPickerMode === 'sync' ? 'Select Pricebook Images Folder' : 'Select Root Folder'}
+      />
 
       {/* Disconnect Confirmation Dialog */}
       <Dialog open={showDisconnectDialog} onClose={setShowDisconnectDialog} className="relative z-50">

@@ -13,7 +13,9 @@ import {
   TagIcon,
   PencilIcon,
   ArrowDownTrayIcon,
-  ArrowUpTrayIcon
+  ArrowUpTrayIcon,
+  CheckCircleIcon,
+  XCircleIcon
 } from '@heroicons/react/24/outline'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 
@@ -43,6 +45,7 @@ export default function ContactDetailPage() {
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false)
   const [setAsDefaultSupplier, setSetAsDefaultSupplier] = useState(true)
   const [effectiveDate, setEffectiveDate] = useState(new Date().toISOString().split('T')[0])
+  const [copyMode, setCopyMode] = useState('active') // 'active', 'latest', or 'oldest'
   const [priceBookSearchTerm, setPriceBookSearchTerm] = useState('')
   const [editingPriceHistory, setEditingPriceHistory] = useState(null) // { itemId, historyId, price, date }
   const [deletingPriceHistory, setDeletingPriceHistory] = useState(null) // { itemId, historyId }
@@ -54,12 +57,21 @@ export default function ContactDetailPage() {
   const [priceBookTab, setPriceBookTab] = useState('items') // items, activity, bulk-update
   const [bulkUpdateDate, setBulkUpdateDate] = useState(new Date().toISOString().split('T')[0])
   const [bulkUpdating, setBulkUpdating] = useState(false)
+  const [abnValidation, setAbnValidation] = useState(null) // { valid, entity_name, etc. }
+  const [validatingAbn, setValidatingAbn] = useState(false)
 
   useEffect(() => {
     loadContact()
     loadAllContacts()
     loadCurrentContactCategories()
   }, [id])
+
+  // Validate ABN when contact loads
+  useEffect(() => {
+    if (contact?.tax_number) {
+      validateAbn(contact.tax_number)
+    }
+  }, [contact?.tax_number])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -97,6 +109,26 @@ export default function ContactDetailPage() {
       setAllContacts(otherContacts)
     } catch (err) {
       console.error('Failed to load contacts:', err)
+    }
+  }
+
+  const validateAbn = async (abn) => {
+    if (!abn) {
+      setAbnValidation(null)
+      return
+    }
+
+    try {
+      setValidatingAbn(true)
+      const response = await api.get(`/api/v1/contacts/validate_abn`, {
+        params: { abn }
+      })
+      setAbnValidation(response)
+    } catch (err) {
+      console.error('Failed to validate ABN:', err)
+      setAbnValidation({ valid: false, error: 'Validation failed' })
+    } finally {
+      setValidatingAbn(false)
     }
   }
 
@@ -265,13 +297,16 @@ export default function ContactDetailPage() {
       const requestData = {
         source_id: selectedSourceContact,
         categories: selectedCategories,
-        set_as_default: setAsDefaultSupplier
+        set_as_default: setAsDefaultSupplier,
+        copy_mode: copyMode
       }
 
       // Add effective date if provided
       if (effectiveDate) {
         requestData.effective_date = effectiveDate
       }
+
+      console.log('Copy price history request:', requestData)
 
       const response = await api.post(`/api/v1/contacts/${id}/copy_price_history`, requestData)
 
@@ -669,7 +704,23 @@ export default function ContactDetailPage() {
               {contact.tax_number && (
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Tax Number (ABN)</p>
-                  <p className="text-gray-900 dark:text-white font-medium">{contact.tax_number}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-gray-900 dark:text-white font-medium">{contact.tax_number}</p>
+                    {validatingAbn ? (
+                      <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-indigo-600 rounded-full" />
+                    ) : abnValidation?.valid ? (
+                      <div className="flex items-center gap-1">
+                        <CheckCircleIcon className="h-5 w-5 text-green-500" title="Valid ABN" />
+                        {abnValidation.entity_name && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400" title={abnValidation.entity_name}>
+                            ({abnValidation.entity_name.substring(0, 20)}{abnValidation.entity_name.length > 20 ? '...' : ''})
+                          </span>
+                        )}
+                      </div>
+                    ) : abnValidation && !abnValidation.valid ? (
+                      <XCircleIcon className="h-5 w-5 text-red-500" title={abnValidation.error || 'Invalid ABN'} />
+                    ) : null}
+                  </div>
                 </div>
               )}
 
@@ -881,303 +932,11 @@ export default function ContactDetailPage() {
         </div>
       </div>
 
-      {/* Copy Price History & Remove from Categories - Side by side for supplier contacts */}
-      {contact['is_supplier?'] && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          {/* Copy Price History */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Copy Price History & Items
-            </h2>
-
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Copy all price histories from another supplier and set this contact as the default supplier for their items.
-            </p>
-
-              <div className="space-y-4">
-                <div className="relative supplier-search-container">
-                  <label htmlFor="source-contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Select Supplier to Copy From
-                  </label>
-                  <input
-                    type="text"
-                    id="source-contact"
-                    value={supplierSearchTerm}
-                    onChange={(e) => {
-                      setSupplierSearchTerm(e.target.value)
-                      setShowSupplierDropdown(true)
-                      if (!e.target.value) {
-                        setSelectedSourceContact('')
-                        setSourceCategories([])
-                        setSelectedCategories([])
-                      }
-                    }}
-                    onFocus={() => setShowSupplierDropdown(true)}
-                    placeholder="Search for a supplier..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    disabled={copyingHistory}
-                    autoComplete="off"
-                  />
-
-                  {showSupplierDropdown && supplierSearchTerm && filteredContacts.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredContacts.map((contact) => (
-                        <button
-                          key={contact.id}
-                          type="button"
-                          onClick={() => handleSupplierSelect(contact.id, contact.full_name)}
-                          className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm"
-                        >
-                          {contact.full_name} <span className="text-gray-500 dark:text-gray-400">(#{contact.id})</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {showSupplierDropdown && supplierSearchTerm && filteredContacts.length === 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">No suppliers found</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Category Selection */}
-                {selectedSourceContact && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Select Categories to Copy
-                      </label>
-                      {sourceCategories.length > 0 && (
-                        <button
-                          onClick={toggleAllCategories}
-                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                          disabled={loadingCategories || copyingHistory}
-                        >
-                          {selectedCategories.length === sourceCategories.length ? 'Deselect All' : 'Select All'}
-                        </button>
-                      )}
-                    </div>
-
-                    {loadingCategories ? (
-                      <div className="text-sm text-gray-500 dark:text-gray-400 py-2">
-                        Loading categories...
-                      </div>
-                    ) : sourceCategories.length > 0 ? (
-                      <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 max-h-60 overflow-y-auto">
-                        <div className="space-y-2">
-                          {sourceCategories.map((cat) => (
-                            <label
-                              key={cat.category}
-                              className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-750 rounded cursor-pointer"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selectedCategories.includes(cat.category)}
-                                onChange={() => toggleCategory(cat.category)}
-                                disabled={copyingHistory}
-                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                              />
-                              <div className="flex-1">
-                                <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                  {cat.category}
-                                </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                  {cat.total_count} {cat.total_count === 1 ? 'item' : 'items'}
-                                  {cat.default_supplier_count > 0 && ` (${cat.default_supplier_count} as default)`}
-                                </div>
-                              </div>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-gray-500 dark:text-gray-400 py-2">
-                        No categories found for this supplier
-                      </div>
-                    )}
-
-                    {selectedCategories.length > 0 && (
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                        {selectedCategories.length} {selectedCategories.length === 1 ? 'category' : 'categories'} selected
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Set as Default Supplier Checkbox */}
-                {selectedSourceContact && (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <input
-                        type="checkbox"
-                        id="setAsDefault"
-                        checked={setAsDefaultSupplier}
-                        onChange={(e) => setSetAsDefaultSupplier(e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="setAsDefault" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                        Set this contact as the default supplier for copied items
-                      </label>
-                    </div>
-
-                    {/* Effective Date */}
-                    <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <label htmlFor="effectiveDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Effective Date (Optional)
-                      </label>
-                      <input
-                        type="date"
-                        id="effectiveDate"
-                        value={effectiveDate}
-                        onChange={(e) => setEffectiveDate(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Leave empty to use today's date, or specify a future date for scheduled price changes
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <button
-                  onClick={copyPriceHistory}
-                  disabled={!selectedSourceContact || selectedCategories.length === 0 || copyingHistory}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition"
-                >
-                  {copyingHistory ? 'Copying...' : (setAsDefaultSupplier ? 'Copy Price History & Set as Default' : 'Copy Price History Only')}
-                </button>
-
-                {copyResult && (
-                  <div className={`p-4 rounded-lg ${copyResult.success ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
-                    <p className={`text-sm font-medium ${copyResult.success ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
-                      {copyResult.message}
-                    </p>
-                    {copyResult.success && (
-                      <div className="mt-2 text-sm text-green-700 dark:text-green-400">
-                        <p>• Copied {copyResult.copied_count} price histories</p>
-                        <p>• Updated {copyResult.updated_count} items to use this supplier as default</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-            </div>
-          </div>
-
-          {/* Remove from Categories - Only show if has categories */}
-          {currentContactCategories.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Remove from Categories
-              </h2>
-
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Remove this supplier from selected categories. This will unset them as the default supplier AND delete all their price histories for items in those categories. Use this when a supplier has stopped supplying certain products.
-              </p>
-
-              <div className="space-y-4">
-                {/* Category Selection */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Select Categories to Remove From
-                    </label>
-                    {currentContactCategories.length > 0 && (
-                      <button
-                        onClick={toggleAllRemoveCategories}
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                        disabled={loadingCurrentCategories || removingFromCategories}
-                      >
-                        {selectedRemoveCategories.length === currentContactCategories.length ? 'Deselect All' : 'Select All'}
-                      </button>
-                    )}
-                  </div>
-
-                  {loadingCurrentCategories ? (
-                    <div className="text-sm text-gray-500 dark:text-gray-400 py-2">
-                      Loading categories...
-                    </div>
-                  ) : currentContactCategories.length > 0 ? (
-                    <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 max-h-60 overflow-y-auto">
-                      <div className="space-y-2">
-                        {currentContactCategories.map((cat) => (
-                          <label
-                            key={cat.category}
-                            className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-750 rounded cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedRemoveCategories.includes(cat.category)}
-                              onChange={() => toggleRemoveCategory(cat.category)}
-                              disabled={removingFromCategories}
-                              className="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                            />
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                {cat.category}
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {cat.default_supplier_count > 0 && (
-                                  <span>{cat.default_supplier_count} {cat.default_supplier_count === 1 ? 'item' : 'items'} as default</span>
-                                )}
-                                {cat.default_supplier_count > 0 && cat.price_history_count > 0 && <span>, </span>}
-                                {cat.price_history_count > 0 && (
-                                  <span>{cat.price_history_count} price {cat.price_history_count === 1 ? 'history' : 'histories'}</span>
-                                )}
-                              </div>
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-gray-500 dark:text-gray-400 py-2">
-                      This contact is not the default supplier for any categories
-                    </div>
-                  )}
-
-                  {selectedRemoveCategories.length > 0 && (
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      {selectedRemoveCategories.length} {selectedRemoveCategories.length === 1 ? 'category' : 'categories'} selected
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  onClick={removeFromCategories}
-                  disabled={selectedRemoveCategories.length === 0 || removingFromCategories}
-                  className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition"
-                >
-                  {removingFromCategories ? 'Removing...' : 'Remove Supplier & Delete Price Histories'}
-                </button>
-
-                {removeResult && (
-                  <div className={`p-4 rounded-lg ${removeResult.success ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
-                    <p className={`text-sm font-medium ${removeResult.success ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
-                      {removeResult.message}
-                    </p>
-                    {removeResult.success && (
-                      <div className="mt-2 text-sm text-green-700 dark:text-green-400">
-                        {removeResult.removed_from_default_count > 0 && (
-                          <p>• Removed as default supplier from {removeResult.removed_from_default_count} items</p>
-                        )}
-                        {removeResult.deleted_price_histories_count > 0 && (
-                          <p>• Deleted {removeResult.deleted_price_histories_count} price histories</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Price Book Items - Full width for supplier contacts */}
       {contact['is_supplier?'] && (
         <div className="mt-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -1337,7 +1096,7 @@ export default function ContactDetailPage() {
                 })
 
                 return (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-scroll">
                     <table className="min-w-full">
                       <thead>
                         <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
@@ -1359,17 +1118,70 @@ export default function ContactDetailPage() {
                               scope="col"
                               className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider border-l border-gray-200 dark:border-gray-700"
                             >
-                              {new Date(date).toLocaleDateString('en-AU', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
+                              <div className="flex items-center justify-end gap-2">
+                                <span>
+                                  {new Date(date).toLocaleDateString('en-AU', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                  })}
+                                </span>
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm(`Are you sure you want to delete ALL price histories for ${new Date(date).toLocaleDateString('en-AU')}? This will remove this entire column.`)) {
+                                      return
+                                    }
+                                    try {
+                                      const response = await api.delete(`/api/v1/contacts/${contact.id}/delete_price_column`, {
+                                        params: { date_effective: date }
+                                      })
+                                      if (response.success) {
+                                        alert(response.message)
+                                        await loadContact()
+                                      } else {
+                                        alert(`Failed to delete column: ${response.error}`)
+                                      }
+                                    } catch (error) {
+                                      console.error('Failed to delete column:', error)
+                                      alert('Failed to delete column. Please try again.')
+                                    }
+                                  }}
+                                  className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                  title="Delete entire column"
+                                >
+                                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                              </div>
                             </th>
                           ))}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {filteredItems.map((item) => (
+                        {filteredItems.map((item) => {
+                          // Determine which price is currently active (date_effective <= today)
+                          const today = new Date()
+                          today.setHours(0, 0, 0, 0)
+
+                          const activePriceHistory = item.price_histories
+                            ?.filter(h => {
+                              if (!h.date_effective) return true // No date = always active
+                              const effectiveDate = new Date(h.date_effective)
+                              effectiveDate.setHours(0, 0, 0, 0)
+                              return effectiveDate <= today
+                            })
+                            ?.sort((a, b) => {
+                              const dateA = a.date_effective ? new Date(a.date_effective) : new Date(a.created_at)
+                              const dateB = b.date_effective ? new Date(b.date_effective) : new Date(b.created_at)
+                              return dateB - dateA
+                            })[0]
+
+                          const activePriceDate = activePriceHistory ?
+                            new Date(activePriceHistory.date_effective || activePriceHistory.created_at).toISOString().split('T')[0] :
+                            null
+
+                          return (
                           <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                             <td className="sticky left-0 z-10 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
                               {item.item_code}
@@ -1409,50 +1221,78 @@ export default function ContactDetailPage() {
                               const isEditing = editingPriceHistory?.itemId === item.id &&
                                                 editingPriceHistory?.historyId === history?.id
 
+                              // Check if this is the active price
+                              const isActivePrice = date === activePriceDate
+
                               return (
                                 <td
                                   key={date}
                                   className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono border-l border-gray-200 dark:border-gray-700"
                                 >
                                   {history ? (
-                                    isEditing ? (
-                                      <div className="flex items-center justify-end gap-2">
-                                        <input
-                                          type="number"
-                                          step="0.01"
-                                          value={editingPriceHistory.price}
-                                          onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, price: e.target.value })}
-                                          className="w-24 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                                          autoFocus
-                                        />
-                                        <button
-                                          onClick={handleSavePriceHistory}
-                                          className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                                          title="Save"
-                                        >
-                                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                          </svg>
-                                        </button>
-                                        <button
-                                          onClick={() => setEditingPriceHistory(null)}
-                                          className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                                          title="Cancel"
-                                        >
-                                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                          </svg>
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <span
-                                        onClick={() => handleEditPriceHistory(item.id, history)}
-                                        className="font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
-                                        title="Click to edit"
-                                      >
-                                        ${parseFloat(history.new_price || 0).toFixed(2)}
-                                      </span>
-                                    )
+                                    <div className="flex items-center justify-end gap-2">
+                                      {isEditing ? (
+                                        <>
+                                          <input
+                                            type="number"
+                                            step="0.01"
+                                            value={editingPriceHistory.price}
+                                            onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, price: e.target.value })}
+                                            className="w-24 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                                            ref={(input) => {
+                                              if (input) {
+                                                // Focus without scrolling
+                                                input.focus({ preventScroll: true })
+                                                // Select all text for easy editing
+                                                input.select()
+                                              }
+                                            }}
+                                          />
+                                          <button
+                                            onClick={handleSavePriceHistory}
+                                            className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                                            title="Save"
+                                          >
+                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            onClick={() => handleDeletePriceHistory(item.id, history.id)}
+                                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                            title="Delete"
+                                          >
+                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            onClick={() => setEditingPriceHistory(null)}
+                                            className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                            title="Cancel"
+                                          >
+                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span
+                                            onClick={() => handleEditPriceHistory(item.id, history)}
+                                            className="font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                                            title="Click to edit"
+                                          >
+                                            ${parseFloat(history.new_price || 0).toFixed(2)}
+                                          </span>
+                                          {isActivePrice && (
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200" title="Currently active price">
+                                              Active
+                                            </span>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
                                   ) : (
                                     <span className="text-gray-400 dark:text-gray-500">—</span>
                                   )}
@@ -1460,7 +1300,7 @@ export default function ContactDetailPage() {
                               )
                             })}
                           </tr>
-                        ))}
+                        )})}
                       </tbody>
                     </table>
                   </div>
@@ -1475,6 +1315,252 @@ export default function ContactDetailPage() {
                   </p>
                 </div>
               )}
+
+              {/* Price History Tab */}
+              {priceBookTab === 'price-history' && contact.pricebook_items && contact.pricebook_items.length > 0 ? (
+              (() => {
+                // Get all unique dates from all price histories across all items
+                const allDates = new Set()
+                contact.pricebook_items.forEach(item => {
+                  if (item.price_histories && item.price_histories.length > 0) {
+                    item.price_histories.forEach(history => {
+                      const date = history.date_effective || history.created_at
+                      if (date) {
+                        allDates.add(new Date(date).toISOString().split('T')[0])
+                      }
+                    })
+                  }
+                })
+
+                // Sort dates chronologically (newest first)
+                const sortedDates = Array.from(allDates).sort((a, b) => new Date(b) - new Date(a))
+
+                // Filter items based on search term
+                const filteredItems = contact.pricebook_items.filter((item) => {
+                  if (!priceBookSearchTerm) return true
+                  const search = priceBookSearchTerm.toLowerCase()
+                  return (
+                    item.item_code?.toLowerCase().includes(search) ||
+                    item.item_name?.toLowerCase().includes(search) ||
+                    item.category?.toLowerCase().includes(search) ||
+                    item.price_histories?.some(h =>
+                      h.new_price?.toString().includes(search)
+                    )
+                  )
+                })
+
+                return (
+                  <div className="overflow-x-scroll">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                          <th scope="col" className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800/50 px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">
+                            Code
+                          </th>
+                          <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                            Item Name
+                          </th>
+                          <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                            Category
+                          </th>
+                          <th scope="col" className="px-6 py-3.5 text-center text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">
+                            Default
+                          </th>
+                          {sortedDates.map(date => (
+                            <th
+                              key={date}
+                              scope="col"
+                              className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider border-l border-gray-200 dark:border-gray-700"
+                            >
+                              <div className="flex items-center justify-end gap-2">
+                                <span>
+                                  {new Date(date).toLocaleDateString('en-AU', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                  })}
+                                </span>
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm(`Are you sure you want to delete ALL price histories for ${new Date(date).toLocaleDateString('en-AU')}? This will remove this entire column.`)) {
+                                      return
+                                    }
+                                    try {
+                                      const response = await api.delete(`/api/v1/contacts/${contact.id}/delete_price_column`, {
+                                        params: { date_effective: date }
+                                      })
+                                      if (response.success) {
+                                        alert(response.message)
+                                        await loadContact()
+                                      } else {
+                                        alert(`Failed to delete column: ${response.error}`)
+                                      }
+                                    } catch (error) {
+                                      console.error('Failed to delete column:', error)
+                                      alert('Failed to delete column. Please try again.')
+                                    }
+                                  }}
+                                  className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                  title="Delete entire column"
+                                >
+                                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                        {filteredItems.map((item) => {
+                          // Determine which price is currently active (date_effective <= today)
+                          const today = new Date()
+                          today.setHours(0, 0, 0, 0)
+
+                          const activePriceHistory = item.price_histories
+                            ?.filter(h => {
+                              if (!h.date_effective) return true // No date = always active
+                              const effectiveDate = new Date(h.date_effective)
+                              effectiveDate.setHours(0, 0, 0, 0)
+                              return effectiveDate <= today
+                            })
+                            ?.sort((a, b) => {
+                              const dateA = a.date_effective ? new Date(a.date_effective) : new Date(a.created_at)
+                              const dateB = b.date_effective ? new Date(b.date_effective) : new Date(b.created_at)
+                              return dateB - dateA
+                            })[0]
+
+                          const activePriceDate = activePriceHistory ?
+                            new Date(activePriceHistory.date_effective || activePriceHistory.created_at).toISOString().split('T')[0] :
+                            null
+
+                          return (
+                          <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <td className="sticky left-0 z-10 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
+                              {item.item_code}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                              {item.item_name}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {item.category ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+                                  <TagIcon className="h-3 w-3" />
+                                  {item.category}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center border-r border-gray-200 dark:border-gray-700">
+                              {item.is_default_supplier ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
+                                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                  </svg>
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 dark:text-gray-500">—</span>
+                              )}
+                            </td>
+                            {sortedDates.map(date => {
+                              // Find price history for this date
+                              const history = item.price_histories?.find(h => {
+                                const historyDate = h.date_effective || h.created_at
+                                if (!historyDate) return false
+                                return new Date(historyDate).toISOString().split('T')[0] === date
+                              })
+
+                              const isEditing = editingPriceHistory?.itemId === item.id &&
+                                                editingPriceHistory?.historyId === history?.id
+
+                              // Check if this is the active price
+                              const isActivePrice = date === activePriceDate
+
+                              return (
+                                <td
+                                  key={date}
+                                  className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono border-l border-gray-200 dark:border-gray-700"
+                                >
+                                  {history ? (
+                                    <div className="flex items-center justify-end gap-2">
+                                      {isEditing ? (
+                                        <>
+                                          <input
+                                            type="number"
+                                            step="0.01"
+                                            value={editingPriceHistory.price}
+                                            onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, price: e.target.value })}
+                                            className="w-24 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                                            ref={(input) => {
+                                              if (input) {
+                                                // Focus without scrolling
+                                                input.focus({ preventScroll: true })
+                                                // Select all text for easy editing
+                                                input.select()
+                                              }
+                                            }}
+                                          />
+                                          <button
+                                            onClick={handleSavePriceHistory}
+                                            className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                                            title="Save"
+                                          >
+                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            onClick={() => handleDeletePriceHistory(item.id, history.id)}
+                                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                            title="Delete"
+                                          >
+                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            onClick={() => setEditingPriceHistory(null)}
+                                            className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                            title="Cancel"
+                                          >
+                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span
+                                            onClick={() => handleEditPriceHistory(item.id, history)}
+                                            className="font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                                            title="Click to edit"
+                                          >
+                                            ${parseFloat(history.new_price || 0).toFixed(2)}
+                                          </span>
+                                          {isActivePrice && (
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200" title="Currently active price">
+                                              Active
+                                            </span>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400 dark:text-gray-500">—</span>
+                                  )}
+                                </td>
+                              )
+                            })}
+                          </tr>
+                        )})}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              })()
+            ) : null}
 
               {/* Activity Log Tab */}
               {priceBookTab === 'activity' && (
@@ -1642,6 +1728,321 @@ export default function ContactDetailPage() {
                       className="block w-64 rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white"
                     />
                   </div>
+
+                  {/* Tools Section - Copy Price History & Remove from Categories */}
+                  {contact['is_supplier?'] && (
+                    <div className="mb-8">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Copy Price History */}
+                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                            Copy Price History & Items
+                          </h3>
+
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Copy all price histories from another supplier and set this contact as the default supplier for their items.
+                          </p>
+
+                          <div className="space-y-4">
+                            <div className="relative supplier-search-container">
+                              <label htmlFor="source-contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Select Supplier to Copy From
+                              </label>
+                              <input
+                                type="text"
+                                id="source-contact"
+                                value={supplierSearchTerm}
+                                onChange={(e) => {
+                                  setSupplierSearchTerm(e.target.value)
+                                  setShowSupplierDropdown(true)
+                                  if (!e.target.value) {
+                                    setSelectedSourceContact('')
+                                    setSourceCategories([])
+                                    setSelectedCategories([])
+                                  }
+                                }}
+                                onFocus={() => setShowSupplierDropdown(true)}
+                                placeholder="Search for a supplier..."
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                disabled={copyingHistory}
+                                autoComplete="off"
+                              />
+
+                              {showSupplierDropdown && supplierSearchTerm && filteredContacts.length > 0 && (
+                                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                  {filteredContacts.map((contact) => (
+                                    <button
+                                      key={contact.id}
+                                      type="button"
+                                      onClick={() => handleSupplierSelect(contact.id, contact.full_name)}
+                                      className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-sm"
+                                    >
+                                      {contact.full_name} <span className="text-gray-500 dark:text-gray-400">(#{contact.id})</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+
+                              {showSupplierDropdown && supplierSearchTerm && filteredContacts.length === 0 && (
+                                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-3">
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">No suppliers found</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Category Selection */}
+                            {selectedSourceContact && (
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Select Categories to Copy
+                                  </label>
+                                  {sourceCategories.length > 0 && (
+                                    <button
+                                      onClick={toggleAllCategories}
+                                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                                      disabled={loadingCategories || copyingHistory}
+                                    >
+                                      {selectedCategories.length === sourceCategories.length ? 'Deselect All' : 'Select All'}
+                                    </button>
+                                  )}
+                                </div>
+
+                                {loadingCategories ? (
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 py-2">
+                                    Loading categories...
+                                  </div>
+                                ) : sourceCategories.length > 0 ? (
+                                  <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 max-h-60 overflow-y-auto">
+                                    <div className="space-y-2">
+                                      {sourceCategories.map((cat) => (
+                                        <label
+                                          key={cat.category}
+                                          className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-750 rounded cursor-pointer"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={selectedCategories.includes(cat.category)}
+                                            onChange={() => toggleCategory(cat.category)}
+                                            disabled={copyingHistory}
+                                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                          />
+                                          <div className="flex-1">
+                                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                              {cat.category}
+                                            </div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                                              {cat.total_count} {cat.total_count === 1 ? 'item' : 'items'}
+                                              {cat.default_supplier_count > 0 && ` (${cat.default_supplier_count} as default)`}
+                                            </div>
+                                          </div>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 py-2">
+                                    No categories found for this supplier
+                                  </div>
+                                )}
+
+                                {selectedCategories.length > 0 && (
+                                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                                    {selectedCategories.length} {selectedCategories.length === 1 ? 'category' : 'categories'} selected
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Set as Default Supplier Checkbox */}
+                            {selectedSourceContact && (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                  <input
+                                    type="checkbox"
+                                    id="setAsDefault"
+                                    checked={setAsDefaultSupplier}
+                                    onChange={(e) => setSetAsDefaultSupplier(e.target.checked)}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                  />
+                                  <label htmlFor="setAsDefault" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                                    Set this contact as the default supplier for copied items
+                                  </label>
+                                </div>
+
+                                {/* Which Price to Copy */}
+                                <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                  <label htmlFor="copyMode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Which Price to Copy
+                                  </label>
+                                  <select
+                                    id="copyMode"
+                                    value={copyMode}
+                                    onChange={(e) => setCopyMode(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  >
+                                    <option value="active">Active Price (most recent effective date)</option>
+                                    <option value="latest">Latest Price (most recently created)</option>
+                                    <option value="oldest">Oldest Price (original price)</option>
+                                  </select>
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    Choose which price history entry to copy from each item
+                                  </p>
+                                </div>
+
+                                {/* Effective Date */}
+                                <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                  <label htmlFor="effectiveDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Effective Date (Optional)
+                                  </label>
+                                  <input
+                                    type="date"
+                                    id="effectiveDate"
+                                    value={effectiveDate}
+                                    onChange={(e) => setEffectiveDate(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  />
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    Leave empty to use today's date, or specify a future date for scheduled price changes
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            <button
+                              onClick={copyPriceHistory}
+                              disabled={!selectedSourceContact || selectedCategories.length === 0 || copyingHistory}
+                              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition"
+                            >
+                              {copyingHistory ? 'Copying...' : (setAsDefaultSupplier ? 'Copy Price History & Set as Default' : 'Copy Price History Only')}
+                            </button>
+
+                            {copyResult && (
+                              <div className={`p-4 rounded-lg ${copyResult.success ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
+                                <p className={`text-sm font-medium ${copyResult.success ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
+                                  {copyResult.message}
+                                </p>
+                                {copyResult.success && (
+                                  <div className="mt-2 text-sm text-green-700 dark:text-green-400">
+                                    <p>• Copied {copyResult.copied_count} price histories</p>
+                                    <p>• Updated {copyResult.updated_count} items to use this supplier as default</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Remove from Categories - Only show if has categories */}
+                        {currentContactCategories.length > 0 && (
+                          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                              Remove from Categories
+                            </h3>
+
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                              Remove this supplier from selected categories. This will unset them as the default supplier AND delete all their price histories for items in those categories. Use this when a supplier has stopped supplying certain products.
+                            </p>
+
+                            <div className="space-y-4">
+                              {/* Category Selection */}
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Select Categories to Remove From
+                                  </label>
+                                  {currentContactCategories.length > 0 && (
+                                    <button
+                                      onClick={toggleAllRemoveCategories}
+                                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                                      disabled={loadingCurrentCategories || removingFromCategories}
+                                    >
+                                      {selectedRemoveCategories.length === currentContactCategories.length ? 'Deselect All' : 'Select All'}
+                                    </button>
+                                  )}
+                                </div>
+
+                                {loadingCurrentCategories ? (
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 py-2">
+                                    Loading categories...
+                                  </div>
+                                ) : currentContactCategories.length > 0 ? (
+                                  <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 max-h-60 overflow-y-auto">
+                                    <div className="space-y-2">
+                                      {currentContactCategories.map((cat) => (
+                                        <label
+                                          key={cat.category}
+                                          className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-750 rounded cursor-pointer"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={selectedRemoveCategories.includes(cat.category)}
+                                            onChange={() => toggleRemoveCategory(cat.category)}
+                                            disabled={removingFromCategories}
+                                            className="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                                          />
+                                          <div className="flex-1">
+                                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                              {cat.category}
+                                            </div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                                              {cat.default_supplier_count > 0 && (
+                                                <span>{cat.default_supplier_count} {cat.default_supplier_count === 1 ? 'item' : 'items'} as default</span>
+                                              )}
+                                              {cat.default_supplier_count > 0 && cat.price_history_count > 0 && <span>, </span>}
+                                              {cat.price_history_count > 0 && (
+                                                <span>{cat.price_history_count} price {cat.price_history_count === 1 ? 'history' : 'histories'}</span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 py-2">
+                                    This contact is not the default supplier for any categories
+                                  </div>
+                                )}
+
+                                {selectedRemoveCategories.length > 0 && (
+                                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                                    {selectedRemoveCategories.length} {selectedRemoveCategories.length === 1 ? 'category' : 'categories'} selected
+                                  </div>
+                                )}
+                              </div>
+
+                              <button
+                                onClick={removeFromCategories}
+                                disabled={selectedRemoveCategories.length === 0 || removingFromCategories}
+                                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition"
+                              >
+                                {removingFromCategories ? 'Removing...' : 'Remove Supplier & Delete Price Histories'}
+                              </button>
+
+                              {removeResult && (
+                                <div className={`p-4 rounded-lg ${removeResult.success ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
+                                  <p className={`text-sm font-medium ${removeResult.success ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
+                                    {removeResult.message}
+                                  </p>
+                                  {removeResult.success && (
+                                    <div className="mt-2 text-sm text-green-700 dark:text-green-400">
+                                      {removeResult.removed_from_default_count > 0 && (
+                                        <p>• Removed as default supplier from {removeResult.removed_from_default_count} items</p>
+                                      )}
+                                      {removeResult.deleted_price_histories_count > 0 && (
+                                        <p>• Deleted {removeResult.deleted_price_histories_count} price histories</p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Items Table for Bulk Update */}
                   {contact.pricebook_items && contact.pricebook_items.length > 0 ? (
@@ -1899,13 +2300,48 @@ export default function ContactDetailPage() {
                         <label htmlFor="tax_number" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                           Tax Number (ABN)
                         </label>
-                        <input
-                          type="text"
-                          id="tax_number"
-                          value={editFormData?.tax_number || ''}
-                          onChange={(e) => handleEditChange('tax_number', e.target.value)}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            id="tax_number"
+                            value={editFormData?.tax_number || ''}
+                            onChange={(e) => {
+                              handleEditChange('tax_number', e.target.value)
+                              // Validate ABN as user types (debounced)
+                              if (e.target.value) {
+                                clearTimeout(window.abnValidationTimeout)
+                                window.abnValidationTimeout = setTimeout(() => {
+                                  validateAbn(e.target.value)
+                                }, 500)
+                              } else {
+                                setAbnValidation(null)
+                              }
+                            }}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white pr-10"
+                          />
+                          {editFormData?.tax_number && (
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                              {validatingAbn ? (
+                                <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-indigo-600 rounded-full" />
+                              ) : abnValidation?.valid ? (
+                                <CheckCircleIcon className="h-5 w-5 text-green-500" title="Valid ABN" />
+                              ) : abnValidation && !abnValidation.valid ? (
+                                <XCircleIcon className="h-5 w-5 text-red-500" title={abnValidation.error || 'Invalid ABN'} />
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
+                        {abnValidation?.valid && abnValidation.entity_name && (
+                          <p className="mt-1 text-sm text-green-600 dark:text-green-400">
+                            {abnValidation.entity_name}
+                            {abnValidation.gst_registered && ' (GST Registered)'}
+                          </p>
+                        )}
+                        {abnValidation && !abnValidation.valid && abnValidation.error && (
+                          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                            {abnValidation.error}
+                          </p>
+                        )}
                       </div>
 
                       {/* Address */}

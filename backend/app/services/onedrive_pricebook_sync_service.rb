@@ -1,11 +1,14 @@
 class OnedrivePricebookSyncService
-  attr_reader :organization, :folder_path, :results
+  attr_reader :credential, :folder_path, :results
 
-  def initialize(organization, folder_path = nil)
-    @organization = organization
+  def initialize(credential, folder_path = nil)
+    @credential = credential
     @folder_path = folder_path || "Pricebook Images"
     @results = {
       matched: 0,
+      photos_matched: 0,
+      specs_matched: 0,
+      qr_codes_matched: 0,
       unmatched_files: [],
       unmatched_items: [],
       errors: []
@@ -23,16 +26,26 @@ class OnedrivePricebookSyncService
 
     # Get all files in the folder
     files = list_folder_files(client, folder['id'])
+    Rails.logger.info "Found #{files.count} files in folder '#{@folder_path}'"
+    Rails.logger.info "First 10 files: #{files.first(10).map { |f| f['name'] }.join(', ')}" if files.any?
 
     # Get all active pricebook items
     items = PricebookItem.active
+    Rails.logger.info "Found #{items.count} active pricebook items"
+    Rails.logger.info "First 10 items: #{items.first(10).map(&:item_name).join(', ')}" if items.any?
 
     # Match files to items by name
     match_files_to_items(client, files, items)
 
+    # Update boolean flags for all items after sync
+    update_boolean_flags(items)
+
     {
       success: true,
       matched: @results[:matched],
+      photos_matched: @results[:photos_matched],
+      specs_matched: @results[:specs_matched],
+      qr_codes_matched: @results[:qr_codes_matched],
       unmatched_files: @results[:unmatched_files],
       unmatched_items: @results[:unmatched_items],
       errors: @results[:errors]
@@ -49,10 +62,9 @@ class OnedrivePricebookSyncService
   private
 
   def get_onedrive_client
-    credential = @organization.organization_one_drive_credential
-    return nil unless credential
+    return nil unless @credential
 
-    MicrosoftGraphClient.new(credential)
+    MicrosoftGraphClient.new(@credential)
   end
 
   def find_or_create_folder(client, folder_name)
@@ -80,8 +92,8 @@ class OnedrivePricebookSyncService
     response = client.get("/me/drive/items/#{folder_id}/children")
     files = response['value'] || []
 
-    # Filter for image files only
-    files.select { |f| f['file'] && is_image_file?(f['name']) }
+    # Filter for image and document files (specs)
+    files.select { |f| f['file'] && (is_image_file?(f['name']) || is_spec_file?(f['name'])) }
   end
 
   def is_image_file?(filename)
@@ -89,12 +101,22 @@ class OnedrivePricebookSyncService
     extensions.any? { |ext| filename.downcase.end_with?(ext) }
   end
 
+  def is_spec_file?(filename)
+    extensions = %w[.pdf .doc .docx]
+    extensions.any? { |ext| filename.downcase.end_with?(ext) }
+  end
+
   def is_qr_code_file?(filename)
     filename.downcase.include?('qr') || filename.downcase.include?('qrcode')
   end
 
+  def is_spec_file_by_name?(filename)
+    spec_keywords = %w[spec specification datasheet data_sheet manual]
+    spec_keywords.any? { |keyword| filename.downcase.include?(keyword) }
+  end
+
   def match_files_to_items(client, files, items)
-    # Create a hash of items by normalized name for quick lookup
+    # Create a hash of items by normalized name for exact lookup
     items_by_name = {}
     items.each do |item|
       normalized = normalize_name(item.item_name)
@@ -102,26 +124,45 @@ class OnedrivePricebookSyncService
       items_by_name[normalized] << item
     end
 
+    Rails.logger.info "Created lookup hash with #{items_by_name.keys.count} unique normalized names"
+
     # Track which items were matched
     matched_items = Set.new
 
+    # Collect all updates to perform in batch
+    updates_to_perform = []
+
     # Match each file to an item
-    files.each do |file|
+    files.each_with_index do |file, index|
       filename_without_ext = File.basename(file['name'], '.*')
       normalized_filename = normalize_name(filename_without_ext)
 
+      if index < 5
+        Rails.logger.info "Processing file #{index + 1}: '#{file['name']}' -> normalized: '#{normalized_filename}'"
+      end
+
+      # Try exact match first
       matching_items = items_by_name[normalized_filename]
+
+      # If no exact match, try fuzzy matching
+      if matching_items.nil? || matching_items.empty?
+        matching_items = find_fuzzy_matches(normalized_filename, items, items_by_name)
+      end
 
       if matching_items && matching_items.any?
         matching_items.each do |item|
-          update_item_image(client, item, file)
+          # Prepare update data instead of updating immediately
+          update_data = prepare_item_update(client, item, file)
+          updates_to_perform << update_data if update_data
           matched_items.add(item.id)
-          @results[:matched] += 1
         end
       else
         @results[:unmatched_files] << file['name']
       end
     end
+
+    # Perform all updates in batch
+    perform_batch_updates(updates_to_perform)
 
     # Track items that weren't matched
     items.each do |item|
@@ -135,7 +176,68 @@ class OnedrivePricebookSyncService
     end
   end
 
-  def update_item_image(client, item, file)
+  def find_fuzzy_matches(filename, items, items_by_name)
+    # Use fuzzy matching with 80% similarity threshold
+    # This handles typos, extra spaces, and minor differences
+    require 'fuzzy_match'
+
+    # Get all item names
+    item_names = items_by_name.keys
+
+    # Find best fuzzy match
+    fuzzy_matcher = FuzzyMatch.new(item_names, read: ->(name) { name })
+    best_match = fuzzy_matcher.find(filename, must_match_at_least_one_word: true)
+
+    if best_match
+      # Calculate similarity score
+      similarity = calculate_similarity(filename, best_match)
+
+      # Only accept matches with 70% or higher similarity
+      if similarity >= 0.70
+        Rails.logger.info "Fuzzy matched '#{filename}' to '#{best_match}' (#{(similarity * 100).round}% similar)"
+        return items_by_name[best_match]
+      end
+    end
+
+    nil
+  end
+
+  def calculate_similarity(str1, str2)
+    # Levenshtein distance based similarity
+    longer = [str1.length, str2.length].max
+    return 1.0 if longer == 0
+
+    distance = levenshtein_distance(str1, str2)
+    (longer - distance).to_f / longer
+  end
+
+  def levenshtein_distance(str1, str2)
+    # Classic Levenshtein distance algorithm
+    n = str1.length
+    m = str2.length
+    return m if n == 0
+    return n if m == 0
+
+    d = Array.new(n + 1) { Array.new(m + 1) }
+
+    (0..n).each { |i| d[i][0] = i }
+    (0..m).each { |j| d[0][j] = j }
+
+    (1..n).each do |i|
+      (1..m).each do |j|
+        cost = str1[i - 1] == str2[j - 1] ? 0 : 1
+        d[i][j] = [
+          d[i - 1][j] + 1,      # deletion
+          d[i][j - 1] + 1,      # insertion
+          d[i - 1][j - 1] + cost # substitution
+        ].min
+      end
+    end
+
+    d[n][m]
+  end
+
+  def prepare_item_update(client, item, file)
     # Get sharing link for the file
     share_response = client.post("/me/drive/items/#{file['id']}/createLink", {
       type: "view",
@@ -143,30 +245,115 @@ class OnedrivePricebookSyncService
     })
 
     share_url = share_response.dig('link', 'webUrl')
+    filename = file['name']
 
-    # Determine if this is a QR code or regular image
-    if is_qr_code_file?(file['name'])
-      item.update!(
-        qr_code_url: share_url,
-        image_source: 'onedrive',
-        image_fetched_at: Time.current,
-        image_fetch_status: 'success',
-        requires_photo: true  # Mark as requiring photo since we found one
-      )
+    # Determine file type and prepare update data
+    update_data = {
+      item_id: item.id,
+      item_name: item.item_name,
+      item_code: item.item_code,
+      filename: filename,
+      image_source: 'onedrive',
+      image_fetched_at: Time.current,
+      image_fetch_status: 'success'
+    }
+
+    if is_qr_code_file?(filename)
+      update_data[:qr_code_url] = share_url
+      update_data[:type] = :qr_code
+    elsif is_spec_file?(filename) || is_spec_file_by_name?(filename)
+      update_data[:spec_url] = share_url
+      update_data[:type] = :spec
     else
-      item.update!(
-        image_url: share_url,
-        image_source: 'onedrive',
-        image_fetched_at: Time.current,
-        image_fetch_status: 'success',
-        requires_photo: true  # Mark as requiring photo since we found one
-      )
+      update_data[:image_url] = share_url
+      update_data[:type] = :photo
     end
 
-    Rails.logger.info "Matched file '#{file['name']}' to item '#{item.item_name}' (#{item.item_code})"
+    update_data
   rescue => e
-    @results[:errors] << "Error updating item #{item.item_code}: #{e.message}"
-    Rails.logger.error "Error updating item #{item.item_code}: #{e.message}"
+    @results[:errors] << "Error preparing update for item #{item.item_code}: #{e.message}"
+    Rails.logger.error "Error preparing update for item #{item.item_code}: #{e.message}"
+    nil
+  end
+
+  def perform_batch_updates(updates_to_perform)
+    return if updates_to_perform.empty?
+
+    # Group updates by item_id to handle multiple files per item
+    updates_by_item = updates_to_perform.group_by { |u| u[:item_id] }
+
+    # Perform batch update using update_all for better performance
+    updates_by_item.each do |item_id, item_updates|
+      begin
+        # Merge all updates for this item
+        merged_update = {
+          image_source: 'onedrive',
+          image_fetched_at: Time.current,
+          image_fetch_status: 'success'
+        }
+
+        item_updates.each do |update_data|
+          case update_data[:type]
+          when :qr_code
+            merged_update[:qr_code_url] = update_data[:qr_code_url]
+            @results[:qr_codes_matched] += 1
+            Rails.logger.info "Matched QR code '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
+          when :spec
+            merged_update[:spec_url] = update_data[:spec_url]
+            @results[:specs_matched] += 1
+            Rails.logger.info "Matched spec '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
+          when :photo
+            merged_update[:image_url] = update_data[:image_url]
+            @results[:photos_matched] += 1
+            Rails.logger.info "Matched photo '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
+          end
+          @results[:matched] += 1
+        end
+
+        # Perform single update for this item
+        PricebookItem.where(id: item_id).update_all(merged_update)
+      rescue => e
+        @results[:errors] << "Error updating item #{item_id}: #{e.message}"
+        Rails.logger.error "Error updating item #{item_id}: #{e.message}"
+      end
+    end
+  end
+
+  def update_boolean_flags(items)
+    # Reload items to get latest data after batch updates
+    item_ids = items.map(&:id)
+    items_reloaded = PricebookItem.where(id: item_ids).select(:id, :image_url, :spec_url, :requires_photo, :requires_spec)
+
+    # Prepare batch updates for boolean flags
+    updates_needed = []
+
+    items_reloaded.each do |item|
+      has_photo = item.image_url.present?
+      has_spec = item.spec_url.present?
+
+      # Only update if flags have changed
+      if item.requires_photo != has_photo || item.requires_spec != has_spec
+        updates_needed << {
+          id: item.id,
+          requires_photo: has_photo,
+          requires_spec: has_spec
+        }
+      end
+    end
+
+    # Perform batch update for boolean flags
+    unless updates_needed.empty?
+      # Use update_all for each distinct combination
+      updates_by_values = updates_needed.group_by { |u| [u[:requires_photo], u[:requires_spec]] }
+
+      updates_by_values.each do |(photo, spec), items_to_update|
+        item_ids = items_to_update.map { |u| u[:id] }
+        PricebookItem.where(id: item_ids).update_all(
+          requires_photo: photo,
+          requires_spec: spec
+        )
+      end
+    end
   end
 
   def normalize_name(name)

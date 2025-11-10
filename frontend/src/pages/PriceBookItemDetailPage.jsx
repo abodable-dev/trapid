@@ -40,6 +40,7 @@ export default function PriceBookItemDetailPage() {
   const [isSetDefaultModalOpen, setIsSetDefaultModalOpen] = useState(false)
   const [supplierToSetDefault, setSupplierToSetDefault] = useState(null)
   const [savingBooleans, setSavingBooleans] = useState(false)
+  const [showAllPrices, setShowAllPrices] = useState(false)
 
   useEffect(() => {
     loadItem()
@@ -211,16 +212,38 @@ export default function PriceBookItemDetailPage() {
     return `${years} ${years === 1 ? 'year' : 'years'} ago`
   }
 
+  // Get the currently active price history for the default supplier
+  const getActivePriceHistory = () => {
+    if (item && item.default_supplier && item.price_histories) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      const defaultSupplierHistory = item.price_histories
+        .filter(history => history.supplier && history.supplier.id === item.default_supplier.id)
+        .filter(history => {
+          // Only include prices with effective date <= today (currently active/live prices)
+          if (!history.date_effective) return true // If no date_effective, include it
+          const effectiveDate = new Date(history.date_effective)
+          effectiveDate.setHours(0, 0, 0, 0)
+          return effectiveDate <= today
+        })
+        .sort((a, b) => {
+          // Sort by date_effective (most recent first), fallback to created_at if no date_effective
+          const dateA = a.date_effective ? new Date(a.date_effective) : new Date(a.created_at)
+          const dateB = b.date_effective ? new Date(b.date_effective) : new Date(b.created_at)
+          return dateB - dateA
+        })[0]
+
+      return defaultSupplierHistory
+    }
+    return null
+  }
+
   // Get the price from the default supplier or fall back to current price
   const getDisplayPrice = () => {
-    if (item && item.default_supplier && item.price_histories) {
-      // Find the most recent price history for the default supplier
-      const defaultSupplierHistory = item.price_histories.find(
-        history => history.supplier && history.supplier.id === item.default_supplier.id
-      )
-      if (defaultSupplierHistory) {
-        return defaultSupplierHistory.new_price
-      }
+    const activePriceHistory = getActivePriceHistory()
+    if (activePriceHistory) {
+      return activePriceHistory.new_price
     }
     return item?.current_price
   }
@@ -324,9 +347,23 @@ export default function PriceBookItemDetailPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</dt>
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    {item.default_supplier ? 'Price Effective Date' : 'Last Updated'}
+                  </dt>
                   <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                    {formatDate(item.price_last_updated_at)}
+                    {(() => {
+                      const activePriceHistory = getActivePriceHistory()
+                      if (activePriceHistory && activePriceHistory.date_effective) {
+                        // Show the effective date of the currently active price
+                        return formatDate(activePriceHistory.date_effective)
+                      } else if (activePriceHistory && activePriceHistory.created_at) {
+                        // Fallback to created_at if no date_effective
+                        return formatDate(activePriceHistory.created_at)
+                      } else {
+                        // Fallback to the item's price_last_updated_at
+                        return formatDate(item.price_last_updated_at)
+                      }
+                    })()}
                     {item.price_age_days !== null && (
                       <span className="ml-2 text-gray-500 dark:text-gray-400">
                         ({formatTimeAgo(item.price_age_days)})
@@ -388,13 +425,21 @@ export default function PriceBookItemDetailPage() {
                   <ChartBarIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                   Price History
                 </h2>
-                <button
-                  onClick={() => setIsAddPriceModalOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                  Add Price
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowAllPrices(!showAllPrices)}
+                    className="inline-flex items-center gap-2 rounded-md bg-gray-100 dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-200 dark:hover:bg-gray-600"
+                  >
+                    {showAllPrices ? 'Hide Old Prices' : 'Show All Prices'}
+                  </button>
+                  <button
+                    onClick={() => setIsAddPriceModalOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                    Add Price
+                  </button>
+                </div>
               </div>
 
               {item.price_histories && item.price_histories.length > 0 ? (
@@ -412,25 +457,88 @@ export default function PriceBookItemDetailPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                      {item.price_histories.slice(0, 10).map((history, idx) => {
-                        const change = history.new_price - history.old_price
-                        const changePercent = history.old_price ? ((change / history.old_price) * 100).toFixed(1) : 0
+                      {(() => {
+                        // Find the active price history (most recent one for default supplier where date_effective <= today)
+                        const today = new Date()
+                        today.setHours(0, 0, 0, 0)
 
-                        // Find the most recent price history for the default supplier
-                        const mostRecentDefaultHistory = item.default_supplier
-                          ? item.price_histories
-                              .filter(h => h.supplier?.id === item.default_supplier.id)
-                              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
-                          : null
+                        const activePriceHistory = item?.default_supplier_id ? item.price_histories
+                          ?.filter(h => h.supplier?.id === item.default_supplier_id)
+                          ?.filter(h => {
+                            if (!h.date_effective) return true
+                            const effectiveDate = new Date(h.date_effective)
+                            effectiveDate.setHours(0, 0, 0, 0)
+                            return effectiveDate <= today
+                          })
+                          ?.sort((a, b) => {
+                            const dateA = a.date_effective ? new Date(a.date_effective) : new Date(a.created_at)
+                            const dateB = b.date_effective ? new Date(b.date_effective) : new Date(b.created_at)
+                            return dateB - dateA
+                          })[0] : null
 
-                        // Only mark THIS specific entry as default if it's the most recent one for the default supplier
-                        const isDefaultSupplier = mostRecentDefaultHistory && history.id === mostRecentDefaultHistory.id
+                        // Filter: show all if toggle is on, otherwise show only active + future prices (hide old/expired)
+                        const filteredAndSorted = item.price_histories
+                          ?.filter(h => {
+                            if (showAllPrices) return true // Show all prices when toggle is on
 
-                        return (
-                          <tr key={idx}>
-                            <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">
-                              {formatDate(history.created_at)}
-                            </td>
+                            const effectiveDate = h.date_effective ? new Date(h.date_effective) : null
+                            if (effectiveDate) {
+                              effectiveDate.setHours(0, 0, 0, 0)
+                            }
+
+                            // Show all future prices (date_effective > today)
+                            if (effectiveDate && effectiveDate > today) return true
+
+                            // For current/past prices, only show the most recent one per supplier
+                            const mostRecentForSupplier = item.price_histories
+                              ?.filter(ph => ph.supplier?.id === h.supplier?.id)
+                              ?.filter(ph => {
+                                const phDate = ph.date_effective ? new Date(ph.date_effective) : new Date(ph.created_at)
+                                phDate.setHours(0, 0, 0, 0)
+                                return !ph.date_effective || phDate <= today
+                              })
+                              ?.sort((a, b) => {
+                                const dateA = a.date_effective ? new Date(a.date_effective) : new Date(a.created_at)
+                                const dateB = b.date_effective ? new Date(b.date_effective) : new Date(b.created_at)
+                                return dateB - dateA // Most recent first
+                              })[0]
+
+                            return h.id === mostRecentForSupplier?.id
+                          })
+                          ?.sort((a, b) => {
+                            // First sort: default supplier first
+                            const aIsDefault = a.supplier?.id === item?.default_supplier_id ? 1 : 0
+                            const bIsDefault = b.supplier?.id === item?.default_supplier_id ? 1 : 0
+                            if (aIsDefault !== bIsDefault) return bIsDefault - aIsDefault
+
+                            // Second sort: by date ascending (oldest first)
+                            const dateA = a.date_effective ? new Date(a.date_effective) : new Date(a.created_at)
+                            const dateB = b.date_effective ? new Date(b.date_effective) : new Date(b.created_at)
+                            return dateA - dateB
+                          }) || []
+
+                        return filteredAndSorted.slice(0, 10).map((history, idx) => {
+                          const change = history.new_price - history.old_price
+                          const changePercent = history.old_price ? ((change / history.old_price) * 100).toFixed(1) : 0
+
+                          // Check if this supplier is the default supplier
+                          const isDefaultSupplier = history.supplier?.id === item?.default_supplier_id
+
+                          // This is the active price if it matches the activePriceHistory
+                          const isActive = activePriceHistory && history.id === activePriceHistory.id
+
+                          return (
+                            <tr key={idx}>
+                              <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">
+                                <div className="flex items-center gap-2">
+                                  {formatDate(history.date_effective || history.created_at)}
+                                  {isActive && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200" title="Currently active price">
+                                      Active
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
                             <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
                               {history.old_price ? formatCurrency(history.old_price, true) : '-'}
                             </td>
@@ -519,7 +627,7 @@ export default function PriceBookItemDetailPage() {
                             </td>
                           </tr>
                         )
-                      })}
+                      })})()}
                     </tbody>
                   </table>
                 </div>
@@ -885,6 +993,7 @@ export default function PriceBookItemDetailPage() {
                           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
                               <tr>
+                                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Default</th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Date</th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Supplier</th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Old Price</th>
@@ -893,18 +1002,55 @@ export default function PriceBookItemDetailPage() {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                              {item?.price_histories?.map((history, idx) => {
-                                const change = history.new_price - history.old_price
-                                const changePercent = history.old_price ? ((change / history.old_price) * 100).toFixed(1) : 0
-                                const isSelectedSupplier = history.supplier?.id === supplierToSetDefault?.id
+                              {(() => {
+                                // Find the active price history (most recent one for default supplier where date_effective <= today)
+                                const today = new Date()
+                                today.setHours(0, 0, 0, 0)
 
-                                return (
-                                  <tr
-                                    key={idx}
-                                    className={isSelectedSupplier ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}
-                                  >
+                                const activePriceHistory = item?.default_supplier_id ? item.price_histories
+                                  ?.filter(h => h.supplier?.id === item.default_supplier_id)
+                                  ?.filter(h => {
+                                    if (!h.date_effective) return true
+                                    const effectiveDate = new Date(h.date_effective)
+                                    effectiveDate.setHours(0, 0, 0, 0)
+                                    return effectiveDate <= today
+                                  })
+                                  ?.sort((a, b) => {
+                                    const dateA = a.date_effective ? new Date(a.date_effective) : new Date(a.created_at)
+                                    const dateB = b.date_effective ? new Date(b.date_effective) : new Date(b.created_at)
+                                    return dateB - dateA
+                                  })[0] : null
+
+                                return item?.price_histories?.map((history, idx) => {
+                                  const change = history.new_price - history.old_price
+                                  const changePercent = history.old_price ? ((change / history.old_price) * 100).toFixed(1) : 0
+                                  const isSelectedSupplier = history.supplier?.id === supplierToSetDefault?.id
+                                  const isDefaultSupplier = history.supplier?.id === item?.default_supplier_id
+
+                                  // This is the active price if it matches the activePriceHistory
+                                  const isActive = activePriceHistory && history.id === activePriceHistory.id
+
+                                  return (
+                                    <tr
+                                      key={idx}
+                                      className={isSelectedSupplier ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}
+                                    >
+                                      <td className="px-3 py-2 text-center">
+                                        {isDefaultSupplier && (
+                                          <svg className="h-5 w-5 text-green-600 dark:text-green-400 inline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                                          </svg>
+                                      )}
+                                    </td>
                                     <td className="px-3 py-2 text-sm text-gray-900 dark:text-white whitespace-nowrap">
-                                      {formatDate(history.created_at)}
+                                      <div className="flex items-center gap-2">
+                                        {formatDate(history.date_effective || history.created_at)}
+                                        {isActive && (
+                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200" title="Currently active price">
+                                            Active
+                                          </span>
+                                        )}
+                                      </div>
                                     </td>
                                     <td className="px-3 py-2 text-sm">
                                       {history.supplier ? (
@@ -938,7 +1084,7 @@ export default function PriceBookItemDetailPage() {
                                     </td>
                                   </tr>
                                 )
-                              })}
+                              })})()}
                             </tbody>
                           </table>
                         </div>

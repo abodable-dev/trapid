@@ -24,7 +24,13 @@ export const api = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
       throw new Error(errorMessage);
     }
     return response.json();
@@ -39,7 +45,13 @@ export const api = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
       throw new Error(errorMessage);
     }
     return response.json();
@@ -61,7 +73,13 @@ export const api = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
       throw new Error(errorMessage);
     }
     return response.json();
@@ -76,7 +94,13 @@ export const api = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
       throw new Error(errorMessage);
     }
     return response.json();
@@ -91,22 +115,43 @@ export const api = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
       throw new Error(errorMessage);
     }
     return response.json();
   },
 
-  async delete(endpoint, data) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+  async delete(endpoint, options = {}) {
+    // Build query string from params if provided
+    let url = `${API_URL}${endpoint}`;
+    if (options.params) {
+      const queryString = new URLSearchParams(options.params).toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+    }
+
+    const response = await fetch(url, {
       method: 'DELETE',
       headers: getAuthHeaders(),
       credentials: 'include',
-      body: data ? JSON.stringify(data) : undefined,
+      body: options.data ? JSON.stringify(options.data) : undefined,
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
       throw new Error(errorMessage);
     }
     return response.json();

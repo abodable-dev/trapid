@@ -361,6 +361,18 @@ module Api
         set_as_default = params[:set_as_default] != false # Default to true unless explicitly false
         effective_date = params[:effective_date].present? ? Date.parse(params[:effective_date]) : Date.today
 
+        # Which price to copy: 'active' (default), 'latest', or 'oldest'
+        # - active: Most recent date_effective (current active price)
+        # - latest: Most recently created price history
+        # - oldest: Oldest price history (original price)
+        copy_mode = params[:copy_mode].presence || 'active'
+
+        Rails.logger.info "===== COPY PRICE HISTORY DEBUG ====="
+        Rails.logger.info "params[:effective_date] = #{params[:effective_date].inspect}"
+        Rails.logger.info "effective_date after parsing = #{effective_date.inspect}"
+        Rails.logger.info "copy_mode = #{copy_mode.inspect}"
+        Rails.logger.info "======================================="
+
         if source_id.blank?
           return render json: {
             success: false,
@@ -382,47 +394,57 @@ module Api
         updated_count = 0
 
         ActiveRecord::Base.transaction do
-          # Get all pricebook items where source is the default supplier
-          source_items = PricebookItem.where(default_supplier_id: source_id)
+          # Get all pricebook items that have price histories from the source supplier
+          # Order depends on copy_mode parameter
+          order_clause = case copy_mode
+          when 'latest'
+            'pricebook_item_id, created_at DESC'
+          when 'oldest'
+            'pricebook_item_id, created_at ASC'
+          else # 'active' (default)
+            'pricebook_item_id, date_effective DESC NULLS LAST, created_at DESC'
+          end
+
+          source_price_histories = PriceHistory.where(supplier_id: source_id)
+            .joins(:pricebook_item)
+            .select('DISTINCT ON (pricebook_item_id) price_histories.*')
+            .order(order_clause)
 
           # Filter by categories if provided
           if categories.present? && categories.is_a?(Array) && categories.any?
-            source_items = source_items.where(category: categories)
+            source_price_histories = source_price_histories.where(pricebook_items: { category: categories })
           end
 
-          source_items.each do |item|
+          source_price_histories.each do |selected_price_history|
+            item = selected_price_history.pricebook_item
+
             # Only set target as the new default supplier if requested
             if set_as_default
               item.update!(default_supplier_id: target_contact.id)
               updated_count += 1
             end
 
-            # Only copy the most recent price history for this item from the source supplier
-            latest_price_history = PriceHistory.where(
+            # Check if target already has a price history with the same price and effective date
+            # This prevents exact duplicates but allows new price histories with different dates
+            existing_history = PriceHistory.where(
               pricebook_item_id: item.id,
-              supplier_id: source_id
-            ).order(created_at: :desc).first
+              supplier_id: target_contact.id,
+              new_price: selected_price_history.new_price,
+              date_effective: effective_date
+            ).exists?
 
-            if latest_price_history
-              # Check if target already has a price history for this item
-              existing_history = PriceHistory.where(
+            # Only create if this exact price/date combination doesn't exist
+            unless existing_history
+              PriceHistory.create!(
                 pricebook_item_id: item.id,
-                supplier_id: target_contact.id
-              ).exists?
-
-              # Only create if target doesn't already have a price history for this item
-              unless existing_history
-                PriceHistory.create!(
-                  pricebook_item_id: item.id,
-                  old_price: latest_price_history.old_price,
-                  new_price: latest_price_history.new_price,
-                  supplier_id: target_contact.id,
-                  lga: latest_price_history.lga,
-                  date_effective: effective_date,
-                  change_reason: "Copied from #{source_contact.full_name}"
-                )
-                copied_count += 1
-              end
+                old_price: selected_price_history.old_price,
+                new_price: selected_price_history.new_price,
+                supplier_id: target_contact.id,
+                lga: selected_price_history.lga,
+                date_effective: effective_date,
+                change_reason: "Copied from #{source_contact.full_name}"
+              )
+              copied_count += 1
             end
           end
         end
@@ -715,6 +737,72 @@ module Api
           success: false,
           error: "Failed to bulk update prices: #{e.message}"
         }, status: :internal_server_error
+      end
+
+      # DELETE /api/v1/contacts/:id/delete_price_column
+      def delete_price_column
+        # Handle both nested and top-level params (Rails sometimes nests query params)
+        date_effective = params[:date_effective] || params.dig(:params, :date_effective)
+
+        if date_effective.blank?
+          return render json: {
+            success: false,
+            error: "date_effective is required"
+          }, status: :bad_request
+        end
+
+        contact = Contact.find(params[:id])
+
+        unless contact.is_supplier?
+          return render json: {
+            success: false,
+            error: "Contact must be a supplier"
+          }, status: :unprocessable_entity
+        end
+
+        deleted_count = 0
+
+        ActiveRecord::Base.transaction do
+          # Find all price histories for this supplier with the specific effective date
+          price_histories = PriceHistory.where(
+            supplier_id: contact.id,
+            date_effective: Date.parse(date_effective.to_s)
+          )
+
+          deleted_count = price_histories.count
+          price_histories.destroy_all
+        end
+
+        render json: {
+          success: true,
+          message: "Successfully deleted #{deleted_count} price #{deleted_count == 1 ? 'history' : 'histories'} for date #{date_effective}",
+          deleted_count: deleted_count
+        }
+      rescue ActiveRecord::RecordNotFound => e
+        render json: {
+          success: false,
+          error: "Contact not found: #{e.message}"
+        }, status: :not_found
+      rescue => e
+        render json: {
+          success: false,
+          error: "Failed to delete price column: #{e.message}"
+        }, status: :internal_server_error
+      end
+
+      # GET /api/v1/contacts/validate_abn?abn=12345678901
+      def validate_abn
+        abn = params[:abn]
+
+        if abn.blank?
+          return render json: {
+            valid: false,
+            error: "ABN is required"
+          }
+        end
+
+        result = AbnLookupService.validate(abn)
+        render json: result
       end
 
       private

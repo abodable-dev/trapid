@@ -1,6 +1,9 @@
 module Api
   module V1
     class OrganizationOnedriveController < ApplicationController
+      # Require admin for sensitive operations
+      before_action :require_admin, only: [:disconnect, :change_root_folder, :sync_pricebook_images]
+
       # GET /api/v1/organization_onedrive/status
       # Check if organization has OneDrive connected
       def status
@@ -13,6 +16,7 @@ module Api
             drive_name: credential.drive_name,
             root_folder_id: credential.root_folder_id,
             root_folder_path: credential.root_folder_path,
+            root_folder_web_url: credential.metadata&.dig('root_folder_web_url'),
             connected_at: credential.created_at,
             connected_by: credential.connected_by&.as_json(only: [:id, :email]),
             metadata: credential.metadata
@@ -112,6 +116,133 @@ module Api
           render json: { message: 'OneDrive disconnected successfully' }
         else
           render json: { message: 'OneDrive was not connected' }, status: :not_found
+        end
+      end
+
+      # PATCH /api/v1/organization_onedrive/change_root_folder
+      # Change the root folder for organization OneDrive
+      def change_root_folder
+        credential = OrganizationOneDriveCredential.active_credential
+
+        unless credential&.valid_credential?
+          return render json: { error: 'OneDrive not connected' }, status: :unauthorized
+        end
+
+        new_folder_name = params[:folder_name]
+
+        if new_folder_name.blank?
+          return render json: { error: 'Folder name is required' }, status: :bad_request
+        end
+
+        # Validate folder name to prevent path traversal attacks
+        if new_folder_name.include?('..') || new_folder_name.include?('/') || new_folder_name.include?('\\')
+          return render json: { error: 'Invalid folder name. Folder names cannot contain "..", "/", or "\\" characters.' }, status: :bad_request
+        end
+
+        # Validate length and forbidden characters
+        if new_folder_name.length > 255
+          return render json: { error: 'Folder name is too long (maximum 255 characters)' }, status: :bad_request
+        end
+
+        # Remove any potentially dangerous characters (whitelist approach)
+        sanitized_name = new_folder_name.gsub(/[^a-zA-Z0-9\s\-_]/, '').strip
+
+        if sanitized_name.blank?
+          return render json: { error: 'Folder name contains only invalid characters' }, status: :bad_request
+        end
+
+        begin
+          client = MicrosoftGraphClient.new(credential)
+
+          # Try to find existing folder first
+          existing_folder = client.find_folder_by_name(sanitized_name)
+
+          if existing_folder
+            # Use existing folder
+            root_folder = existing_folder
+          else
+            # Create new folder
+            root_folder = client.create_folder(sanitized_name, drive_id: credential.drive_id)
+          end
+
+          # Update credential with new root folder info
+          credential.update!(
+            root_folder_id: root_folder['id'],
+            root_folder_path: sanitized_name,
+            metadata: credential.metadata.merge({
+              root_folder_name: sanitized_name,
+              root_folder_web_url: root_folder['webUrl'],
+              updated_at: Time.current
+            })
+          )
+
+          render json: {
+            message: 'Root folder updated successfully',
+            root_folder_path: sanitized_name,
+            root_folder_web_url: root_folder['webUrl']
+          }
+
+        rescue MicrosoftGraphClient::AuthenticationError => e
+          render json: { error: "Authentication failed: #{e.message}" }, status: :unauthorized
+        rescue MicrosoftGraphClient::APIError => e
+          render json: { error: "OneDrive API error: #{e.message}" }, status: :bad_gateway
+        rescue StandardError => e
+          Rails.logger.error "Failed to change root folder: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: "Failed to change root folder: #{e.message}" }, status: :internal_server_error
+        end
+      end
+
+      # GET /api/v1/organization_onedrive/browse_folders
+      # Browse OneDrive folders - optionally within a specific folder
+      def browse_folders
+        credential = OrganizationOneDriveCredential.active_credential
+
+        unless credential&.valid_credential?
+          return render json: { error: 'OneDrive not connected' }, status: :unauthorized
+        end
+
+        folder_id = params[:folder_id] # Optional - if not provided, browse root
+
+        begin
+          client = MicrosoftGraphClient.new(credential)
+
+          # Get folders in the specified location
+          if folder_id.present?
+            # Browse children of specific folder
+            response = client.list_folder_items(folder_id)
+          else
+            # Browse root drive folders
+            response = client.get('/me/drive/root/children')
+          end
+
+          # Filter to only show folders
+          folders = (response['value'] || []).select { |item| item['folder'] }
+
+          # Format response
+          formatted_folders = folders.map do |folder|
+            {
+              id: folder['id'],
+              name: folder['name'],
+              web_url: folder['webUrl'],
+              created_at: folder['createdDateTime'],
+              child_count: folder.dig('folder', 'childCount') || 0
+            }
+          end
+
+          render json: {
+            folders: formatted_folders,
+            parent_folder_id: folder_id
+          }
+
+        rescue MicrosoftGraphClient::AuthenticationError => e
+          render json: { error: "Authentication failed: #{e.message}" }, status: :unauthorized
+        rescue MicrosoftGraphClient::APIError => e
+          render json: { error: "OneDrive API error: #{e.message}" }, status: :bad_gateway
+        rescue StandardError => e
+          Rails.logger.error "Failed to browse folders: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: "Failed to browse folders: #{e.message}" }, status: :internal_server_error
         end
       end
 
@@ -334,11 +465,8 @@ module Api
         folder_path = params[:folder_path] || "Pricebook Images"
 
         begin
-          # Get organization (you may need to adjust this based on your auth)
-          organization = current_user&.organization || Organization.first
-
-          # Run sync service
-          sync_service = OnedrivePricebookSyncService.new(organization, folder_path)
+          # Run sync service with credential directly
+          sync_service = OnedrivePricebookSyncService.new(credential, folder_path)
           result = sync_service.sync
 
           if result[:success]

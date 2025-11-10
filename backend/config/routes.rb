@@ -37,6 +37,7 @@ Rails.application.routes.draw do
       # Health checks
       get 'health/pricebook', to: 'health#pricebook'
       get 'health/pricebook/missing_items', to: 'health#missing_items'
+      get 'pricebook/price_health_check', to: 'pricebook_items#price_health_check'
 
       # Construction jobs management
       resources :constructions do
@@ -134,12 +135,14 @@ Rails.application.routes.draw do
           patch :bulk_update
           post :merge
           post :match_supplier
+          get :validate_abn
         end
         member do
           get :categories
           post :copy_price_history
           delete :remove_from_categories
           post :bulk_update_prices
+          delete :delete_price_column
         end
       end
 
@@ -192,6 +195,8 @@ Rails.application.routes.draw do
       get 'organization_onedrive/authorize', to: 'organization_onedrive#authorize'
       get 'organization_onedrive/callback', to: 'organization_onedrive#callback'
       delete 'organization_onedrive/disconnect', to: 'organization_onedrive#disconnect'
+      get 'organization_onedrive/browse_folders', to: 'organization_onedrive#browse_folders'
+      patch 'organization_onedrive/change_root_folder', to: 'organization_onedrive#change_root_folder'
       post 'organization_onedrive/create_job_folders', to: 'organization_onedrive#create_job_folders'
       get 'organization_onedrive/job_folders', to: 'organization_onedrive#list_job_items'
       post 'organization_onedrive/upload', to: 'organization_onedrive#upload'

@@ -34,14 +34,20 @@ class MicrosoftGraphClient
 
   # Exchange authorization code for access tokens
   def self.exchange_code_for_tokens(code:, client_id:, client_secret:, redirect_uri:)
+    # Manually encode the body as URL-encoded form data
+    # HTTParty sometimes doesn't encode hashes correctly with x-www-form-urlencoded
+    params = {
+      client_id: client_id,
+      client_secret: client_secret,
+      code: code,
+      redirect_uri: redirect_uri,
+      grant_type: 'authorization_code'
+    }
+
+    encoded_body = URI.encode_www_form(params)
+
     response = HTTParty.post(TOKEN_URL,
-      body: {
-        client_id: client_id,
-        client_secret: client_secret,
-        code: code,
-        redirect_uri: redirect_uri,
-        grant_type: 'authorization_code'
-      },
+      body: encoded_body,
       headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
     )
 
@@ -60,13 +66,17 @@ class MicrosoftGraphClient
 
   # Client Credentials Flow (for organization-wide auth)
   def self.authenticate_as_application
+    params = {
+      client_id: ENV['ONEDRIVE_CLIENT_ID'],
+      client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+      scope: 'https://graph.microsoft.com/.default',
+      grant_type: 'client_credentials'
+    }
+
+    encoded_body = URI.encode_www_form(params)
+
     response = HTTParty.post(TOKEN_URL,
-      body: {
-        client_id: ENV['ONEDRIVE_CLIENT_ID'],
-        client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
-        scope: 'https://graph.microsoft.com/.default',
-        grant_type: 'client_credentials'
-      },
+      body: encoded_body,
       headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
     )
 
@@ -80,13 +90,17 @@ class MicrosoftGraphClient
       raise AuthenticationError, "No refresh token available. Please reconnect OneDrive."
     end
 
+    params = {
+      client_id: ENV['ONEDRIVE_CLIENT_ID'],
+      client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+      refresh_token: @credential.refresh_token,
+      grant_type: 'refresh_token'
+    }
+
+    encoded_body = URI.encode_www_form(params)
+
     response = HTTParty.post(TOKEN_URL,
-      body: {
-        client_id: ENV['ONEDRIVE_CLIENT_ID'],
-        client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
-        refresh_token: @credential.refresh_token,
-        grant_type: 'refresh_token'
-      },
+      body: encoded_body,
       headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
     )
 
@@ -275,6 +289,15 @@ class MicrosoftGraphClient
     results['value']&.find { |item| item['name'] == search_query && item['folder'] }
   end
 
+  # Search for folder by name in drive root
+  def find_folder_by_name(folder_name)
+    # Search in drive root
+    results = get("/drives/#{@credential.drive_id}/root/children")
+
+    # Find exact match
+    results['value']&.find { |item| item['name'] == folder_name && item['folder'] }
+  end
+
   # File Operations
 
   # Upload small file (< 4MB)
@@ -332,6 +355,57 @@ class MicrosoftGraphClient
     end
 
     get(path)
+  end
+
+  # HTTP Methods (public for API access)
+
+  def get(path)
+    response = HTTParty.get(
+      "#{GRAPH_API_BASE}#{path}",
+      headers: auth_headers
+    )
+
+    handle_response(response)
+  end
+
+  def post(path, body, custom_headers = {})
+    headers = auth_headers.merge(custom_headers)
+
+    # Set content type if body is a hash (JSON)
+    if body.is_a?(Hash)
+      headers['Content-Type'] = 'application/json'
+      body = body.to_json
+    end
+
+    response = HTTParty.post(
+      "#{GRAPH_API_BASE}#{path}",
+      body: body,
+      headers: headers
+    )
+
+    handle_response(response)
+  end
+
+  def patch(path, body)
+    response = HTTParty.patch(
+      "#{GRAPH_API_BASE}#{path}",
+      body: body.to_json,
+      headers: auth_headers.merge({ 'Content-Type' => 'application/json' })
+    )
+
+    handle_response(response)
+  end
+
+  def delete(path)
+    response = HTTParty.delete(
+      "#{GRAPH_API_BASE}#{path}",
+      headers: auth_headers
+    )
+
+    # Delete returns 204 No Content on success
+    return true if response.code == 204
+
+    handle_response(response)
   end
 
   private
@@ -392,57 +466,6 @@ class MicrosoftGraphClient
       expires_in: data['expires_in'],
       expires_at: Time.current + data['expires_in'].to_i.seconds
     }
-  end
-
-  # HTTP Methods
-
-  def get(path)
-    response = HTTParty.get(
-      "#{GRAPH_API_BASE}#{path}",
-      headers: auth_headers
-    )
-
-    handle_response(response)
-  end
-
-  def post(path, body, custom_headers = {})
-    headers = auth_headers.merge(custom_headers)
-
-    # Set content type if body is a hash (JSON)
-    if body.is_a?(Hash)
-      headers['Content-Type'] = 'application/json'
-      body = body.to_json
-    end
-
-    response = HTTParty.post(
-      "#{GRAPH_API_BASE}#{path}",
-      body: body,
-      headers: headers
-    )
-
-    handle_response(response)
-  end
-
-  def patch(path, body)
-    response = HTTParty.patch(
-      "#{GRAPH_API_BASE}#{path}",
-      body: body.to_json,
-      headers: auth_headers.merge({ 'Content-Type' => 'application/json' })
-    )
-
-    handle_response(response)
-  end
-
-  def delete(path)
-    response = HTTParty.delete(
-      "#{GRAPH_API_BASE}#{path}",
-      headers: auth_headers
-    )
-
-    # Delete returns 204 No Content on success
-    return true if response.code == 204
-
-    handle_response(response)
   end
 
   def handle_response(response)

@@ -197,14 +197,24 @@ class PurchaseOrder < ApplicationRecord
   def generate_po_number
     return if purchase_order_number.present?
 
-    last_po = PurchaseOrder.order(created_at: :desc).first
-    next_number = if last_po && last_po.purchase_order_number =~ /PO-(\d+)/
-      $1.to_i + 1
-    else
-      1
-    end
+    # Use an advisory lock to prevent race conditions
+    # The lock ensures only one transaction can generate a PO number at a time
+    PurchaseOrder.transaction do
+      # Acquire exclusive lock (lock ID: arbitrary large number for PO generation)
+      PurchaseOrder.connection.execute("SELECT pg_advisory_xact_lock(123456789)")
 
-    self.purchase_order_number = "PO-#{next_number.to_s.rjust(6, '0')}"
+      # Find the highest PO number within the locked transaction
+      max_number = PurchaseOrder.where("purchase_order_number LIKE 'PO-%'")
+                                 .pluck(:purchase_order_number)
+                                 .map { |num| num.match(/PO-(\d+)/)&.captures&.first&.to_i }
+                                 .compact
+                                 .max || 0
+
+      next_number = max_number + 1
+      self.purchase_order_number = "PO-#{next_number.to_s.rjust(6, '0')}"
+
+      # Lock is automatically released at end of transaction
+    end
   end
 
   # Update the construction's live profit when this PO changes
