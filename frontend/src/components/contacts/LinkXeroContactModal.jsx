@@ -88,8 +88,8 @@ export default function LinkXeroContactModal({ isOpen, onClose, contact, onSucce
             </div>
 
             <div className="sm:flex sm:items-start">
-              <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20 sm:mx-0 sm:h-10 sm:w-10">
-                <LinkIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+              <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/20 sm:mx-0 sm:h-10 sm:w-10">
+                <LinkIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
               </div>
               <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
                 <DialogTitle as="h3" className="text-base font-semibold text-gray-900 dark:text-white">
@@ -118,7 +118,7 @@ export default function LinkXeroContactModal({ isOpen, onClose, contact, onSucce
                     <button
                       type="submit"
                       disabled={searching || !searchQuery.trim() || linking}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                     >
                       {searching ? 'Searching...' : 'Search'}
                     </button>
@@ -146,7 +146,7 @@ export default function LinkXeroContactModal({ isOpen, onClose, contact, onSucce
                           disabled={linking}
                           className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
                             selectedXeroContact?.xero_id === xeroContact.xero_id
-                              ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                              ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
                               : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-750'
                           } ${linking ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
@@ -157,7 +157,7 @@ export default function LinkXeroContactModal({ isOpen, onClose, contact, onSucce
                                   {xeroContact.name}
                                 </p>
                                 {selectedXeroContact?.xero_id === xeroContact.xero_id && (
-                                  <CheckCircleIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                  <CheckCircleIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                                 )}
                               </div>
                               {xeroContact.email && (
@@ -188,7 +188,7 @@ export default function LinkXeroContactModal({ isOpen, onClose, contact, onSucce
                 type="button"
                 onClick={handleLink}
                 disabled={!selectedXeroContact || linking}
-                className="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed sm:w-auto"
+                className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:w-auto"
               >
                 {linking ? (
                   <>

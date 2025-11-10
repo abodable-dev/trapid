@@ -528,6 +528,14 @@ module Api
           }, status: :bad_request
         end
 
+        # Require minimum 2 characters for search
+        if query.length < 2
+          return render json: {
+            success: false,
+            error: 'Search query must be at least 2 characters'
+          }, status: :bad_request
+        end
+
         begin
           client = XeroApiClient.new
 
@@ -535,10 +543,14 @@ module Api
           # Search by name, email, or tax number
           where_clause = "Name.Contains(\"#{query}\") OR EmailAddress.Contains(\"#{query}\") OR TaxNumber.Contains(\"#{query}\")"
 
+          Rails.logger.info("Xero contact search - Query: '#{query}', WHERE clause: #{where_clause}")
+
           result = client.get('Contacts', { where: where_clause })
 
           if result[:success]
             contacts = result[:data]['Contacts'] || []
+
+            Rails.logger.info("Xero contact search - Found #{contacts.length} contacts")
 
             # Format contacts for the frontend
             formatted_contacts = contacts.map do |contact|
@@ -572,6 +584,7 @@ module Api
           }, status: :unauthorized
         rescue StandardError => e
           Rails.logger.error("Xero search_contacts error: #{e.message}")
+          Rails.logger.error(e.backtrace.first(5).join("\n"))
           render json: {
             success: false,
             error: "Failed to search contacts: #{e.message}"
