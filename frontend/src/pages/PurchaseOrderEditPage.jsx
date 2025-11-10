@@ -121,11 +121,9 @@ export default function PurchaseOrderEditPage() {
     // Close description dropdown
     setShowDescriptionDropdown(prev => ({ ...prev, [index]: false }))
 
-    // Show all supplier items when focusing on empty field
-    if (!lineItems[index].item_code || lineItems[index].item_code.length === 0) {
-      setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
-      setShowSearchDropdown(prev => ({ ...prev, [index]: true }))
-    }
+    // Always show all supplier items when focusing on item code field
+    setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
+    setShowSearchDropdown(prev => ({ ...prev, [index]: true }))
   }
 
   const handleSelectItem = (index, item) => {
@@ -168,11 +166,9 @@ export default function PurchaseOrderEditPage() {
     // Close item code dropdown
     setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
 
-    // Show all supplier items when focusing on empty field
-    if (!lineItems[index].description || lineItems[index].description.length === 0) {
-      setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
-      setShowDescriptionDropdown(prev => ({ ...prev, [index]: true }))
-    }
+    // Always show all supplier items when focusing on description field
+    setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
+    setShowDescriptionDropdown(prev => ({ ...prev, [index]: true }))
   }
 
   const handleLineItemChange = (index, field, value) => {
