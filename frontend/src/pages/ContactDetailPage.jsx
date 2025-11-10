@@ -43,6 +43,8 @@ export default function ContactDetailPage() {
   const [setAsDefaultSupplier, setSetAsDefaultSupplier] = useState(true)
   const [effectiveDate, setEffectiveDate] = useState(new Date().toISOString().split('T')[0])
   const [priceBookSearchTerm, setPriceBookSearchTerm] = useState('')
+  const [editingPriceHistory, setEditingPriceHistory] = useState(null) // { itemId, historyId, price, date, lga }
+  const [deletingPriceHistory, setDeletingPriceHistory] = useState(null) // { itemId, historyId }
 
   useEffect(() => {
     loadContact()
@@ -376,6 +378,52 @@ export default function ContactDetailPage() {
       alert('Failed to export price history. Please try again.')
     } finally {
       setExporting(false)
+    }
+  }
+
+  const handleEditPriceHistory = (itemId, history) => {
+    setEditingPriceHistory({
+      itemId,
+      historyId: history.id,
+      price: history.new_price,
+      date: history.date_effective || history.created_at?.split('T')[0],
+      lga: history.lga || ''
+    })
+  }
+
+  const handleSavePriceHistory = async () => {
+    if (!editingPriceHistory) return
+
+    try {
+      await api.patch(`/api/v1/pricebook/${editingPriceHistory.itemId}/price_histories/${editingPriceHistory.historyId}`, {
+        new_price: editingPriceHistory.price,
+        date_effective: editingPriceHistory.date,
+        lga: editingPriceHistory.lga
+      })
+
+      // Reload contact data to refresh the table
+      await loadContact()
+      setEditingPriceHistory(null)
+    } catch (err) {
+      console.error('Failed to update price history:', err)
+      alert('Failed to update price history. Please try again.')
+    }
+  }
+
+  const handleDeletePriceHistory = async (itemId, historyId) => {
+    if (!confirm('Are you sure you want to delete this price history entry?')) return
+
+    try {
+      setDeletingPriceHistory({ itemId, historyId })
+      await api.delete(`/api/v1/pricebook/${itemId}/price_histories/${historyId}`)
+
+      // Reload contact data to refresh the table
+      await loadContact()
+    } catch (err) {
+      console.error('Failed to delete price history:', err)
+      alert('Failed to delete price history. Please try again.')
+    } finally {
+      setDeletingPriceHistory(null)
     }
   }
 
@@ -1064,26 +1112,32 @@ export default function ContactDetailPage() {
             </div>
             {contact.pricebook_items && contact.pricebook_items.length > 0 ? (
               <div className="overflow-x-auto">
-                  <table className="min-w-full table-fixed">
+                  <table className="min-w-full">
                     <thead>
                       <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                        <th scope="col" className="w-32 px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Code
                         </th>
-                        <th scope="col" className="w-64 px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Item Name
                         </th>
-                        <th scope="col" className="w-40 px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Category
                         </th>
-                        <th scope="col" className="w-32 px-6 py-3.5 text-center text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                          Default Supplier
+                        <th scope="col" className="px-6 py-3.5 text-center text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                          Default
                         </th>
-                        <th scope="col" className="w-32 px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                          Current Price
+                        <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                          Price
                         </th>
                         <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                          Price History
+                          Date
+                        </th>
+                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                          LGA
+                        </th>
+                        <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                          Actions
                         </th>
                       </tr>
                     </thead>
@@ -1102,76 +1156,197 @@ export default function ContactDetailPage() {
                             )
                           )
                         })
-                        .map((item) => (
-                        <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
-                            {item.item_code}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                            {item.item_name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.category ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
-                                <TagIcon className="h-3 w-3" />
-                                {item.category}
-                              </span>
-                            ) : (
-                              <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            {item.is_default_supplier ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
-                                <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                Yes
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 dark:text-gray-500">—</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-white">
-                            ${parseFloat(item.current_price || 0).toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 text-sm">
-                            {item.price_histories && item.price_histories.length > 0 ? (
-                              <div className="max-h-32 overflow-y-auto overflow-x-auto pr-2 space-y-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
-                                {item.price_histories.map((history, index) => (
-                                  <div key={history.id} className="flex items-center gap-3 text-xs whitespace-nowrap">
-                                    <span className="font-mono text-gray-900 dark:text-white font-medium min-w-[70px]">
-                                      ${parseFloat(history.new_price || 0).toFixed(2)}
-                                    </span>
-                                    <span className="text-gray-500 dark:text-gray-400 min-w-[100px]">
-                                      {history.date_effective ? (
-                                        new Date(history.date_effective).toLocaleDateString('en-AU', {
-                                          year: 'numeric',
-                                          month: 'short',
-                                          day: 'numeric'
-                                        })
-                                      ) : (
-                                        new Date(history.created_at).toLocaleDateString('en-AU', {
-                                          year: 'numeric',
-                                          month: 'short',
-                                          day: 'numeric'
-                                        })
-                                      )}
-                                    </span>
-                                    {history.lga && (
-                                      <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs min-w-fit">
-                                        {history.lga}
+                        .flatMap((item) => {
+                          // If item has price histories, create a row for each history entry
+                          if (item.price_histories && item.price_histories.length > 0) {
+                            return item.price_histories.map((history, historyIndex) => {
+                              const isEditing = editingPriceHistory?.itemId === item.id && editingPriceHistory?.historyId === history.id
+                              const isDeleting = deletingPriceHistory?.itemId === item.id && deletingPriceHistory?.historyId === history.id
+
+                              return (
+                                <tr key={`${item.id}-${history.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                  {/* Show item info only on first history row */}
+                                  {historyIndex === 0 ? (
+                                    <>
+                                      <td rowSpan={item.price_histories.length} className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
+                                        {item.item_code}
+                                      </td>
+                                      <td rowSpan={item.price_histories.length} className="px-6 py-4 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
+                                        {item.item_name}
+                                      </td>
+                                      <td rowSpan={item.price_histories.length} className="px-6 py-4 whitespace-nowrap border-r border-gray-200 dark:border-gray-700">
+                                        {item.category ? (
+                                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+                                            <TagIcon className="h-3 w-3" />
+                                            {item.category}
+                                          </span>
+                                        ) : (
+                                          <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
+                                        )}
+                                      </td>
+                                      <td rowSpan={item.price_histories.length} className="px-6 py-4 whitespace-nowrap text-center border-r border-gray-200 dark:border-gray-700">
+                                        {item.is_default_supplier ? (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
+                                            <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                          </span>
+                                        ) : (
+                                          <span className="text-gray-400 dark:text-gray-500">—</span>
+                                        )}
+                                      </td>
+                                    </>
+                                  ) : null}
+
+                                  {/* Price - editable */}
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                    {isEditing ? (
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        value={editingPriceHistory.price}
+                                        onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, price: e.target.value })}
+                                        className="w-24 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                      />
+                                    ) : (
+                                      <span className="font-mono font-semibold text-gray-900 dark:text-white">
+                                        ${parseFloat(history.new_price || 0).toFixed(2)}
                                       </span>
                                     )}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 dark:text-gray-500">No history</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                                  </td>
+
+                                  {/* Date - editable */}
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                    {isEditing ? (
+                                      <input
+                                        type="date"
+                                        value={editingPriceHistory.date}
+                                        onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, date: e.target.value })}
+                                        className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                      />
+                                    ) : (
+                                      <span className="text-gray-600 dark:text-gray-400">
+                                        {history.date_effective ? (
+                                          new Date(history.date_effective).toLocaleDateString('en-AU', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                          })
+                                        ) : history.created_at ? (
+                                          new Date(history.created_at).toLocaleDateString('en-AU', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                          })
+                                        ) : '—'}
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  {/* LGA - editable */}
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                    {isEditing ? (
+                                      <input
+                                        type="text"
+                                        value={editingPriceHistory.lga}
+                                        onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, lga: e.target.value })}
+                                        placeholder="LGA"
+                                        className="w-32 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                      />
+                                    ) : history.lga ? (
+                                      <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">
+                                        {history.lga}
+                                      </span>
+                                    ) : (
+                                      <span className="text-gray-400 dark:text-gray-500">—</span>
+                                    )}
+                                  </td>
+
+                                  {/* Actions */}
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                    {isEditing ? (
+                                      <div className="flex items-center justify-end gap-2">
+                                        <button
+                                          onClick={handleSavePriceHistory}
+                                          className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                                          title="Save"
+                                        >
+                                          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={() => setEditingPriceHistory(null)}
+                                          className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                          title="Cancel"
+                                        >
+                                          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center justify-end gap-2">
+                                        <button
+                                          onClick={() => handleEditPriceHistory(item.id, history)}
+                                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                          title="Edit"
+                                        >
+                                          <PencilIcon className="h-5 w-5" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeletePriceHistory(item.id, history.id)}
+                                          disabled={isDeleting}
+                                          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
+                                          title="Delete"
+                                        >
+                                          <TrashIcon className="h-5 w-5" />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </td>
+                                </tr>
+                              )
+                            })
+                          } else {
+                            // Item has no price history - show single row
+                            return [(
+                              <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
+                                  {item.item_code}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                  {item.item_name}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  {item.category ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+                                      <TagIcon className="h-3 w-3" />
+                                      {item.category}
+                                    </span>
+                                  ) : (
+                                    <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                  {item.is_default_supplier ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
+                                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                      </svg>
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400 dark:text-gray-500">—</span>
+                                  )}
+                                </td>
+                                <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-400 dark:text-gray-500">
+                                  No price history
+                                </td>
+                              </tr>
+                            )]
+                          }
+                        })
+                      }
                     </tbody>
                   </table>
                 </div>
