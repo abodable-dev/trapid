@@ -3,7 +3,7 @@ class OnedrivePricebookSyncService
 
   def initialize(credential, folder_path = nil)
     @credential = credential
-    @folder_path = folder_path || "Photos for Price Book"
+    @folder_path = folder_path || "00 - Trapid/Photos for Price Book"
     @results = {
       matched: 0,
       photos_matched: 0,
@@ -216,22 +216,36 @@ class OnedrivePricebookSyncService
     MicrosoftGraphClient.new(@credential)
   end
 
-  def find_or_create_folder(client, folder_name)
-    # Try to find existing folder
-    response = client.get("/me/drive/root/children")
-    folders = response['value'] || []
+  def find_or_create_folder(client, folder_path)
+    # Handle nested folder paths like "00 - Trapid/Photos for Price Book"
+    path_parts = folder_path.split('/')
+    current_parent_path = "/me/drive/root"
+    current_folder = nil
 
-    folder = folders.find { |f| f['name'] == folder_name && f['folder'] }
-    return folder if folder
+    path_parts.each do |folder_name|
+      # Get children of current parent
+      response = client.get("#{current_parent_path}/children")
+      folders = response['value'] || []
 
-    # Create folder if it doesn't exist
-    response = client.post("/me/drive/root/children", {
-      name: folder_name,
-      folder: {},
-      '@microsoft.graph.conflictBehavior' => 'fail'
-    })
+      # Find folder in current level
+      folder = folders.find { |f| f['name'] == folder_name && f['folder'] }
 
-    response
+      if folder
+        current_folder = folder
+        current_parent_path = "/me/drive/items/#{folder['id']}"
+      else
+        # Create folder if it doesn't exist
+        response = client.post("#{current_parent_path}/children", {
+          name: folder_name,
+          folder: {},
+          '@microsoft.graph.conflictBehavior' => 'fail'
+        })
+        current_folder = response
+        current_parent_path = "/me/drive/items/#{response['id']}"
+      end
+    end
+
+    current_folder
   rescue => e
     Rails.logger.error "Error finding/creating folder: #{e.message}"
     nil
