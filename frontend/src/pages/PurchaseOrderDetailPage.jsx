@@ -158,6 +158,11 @@ export default function PurchaseOrderDetailPage() {
             display: none !important;
           }
 
+          /* Hide activity feed on print */
+          .print-hide-activity {
+            display: none !important;
+          }
+
           /* Reset colors for print */
           body {
             background: white !important;
@@ -186,6 +191,12 @@ export default function PurchaseOrderDetailPage() {
           /* Add some padding to printed content */
           main {
             padding-top: 0 !important;
+          }
+
+          /* Remove top container padding */
+          .mx-auto.max-w-7xl {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
           }
 
           /* Reduce spacing to fit on one page */
@@ -686,7 +697,7 @@ export default function PurchaseOrderDetailPage() {
             </table>
           </div>
 
-          <div className="lg:col-start-3">
+          <div className="lg:col-start-3 print-hide-activity">
             {/* Activity feed */}
             <h2 className="text-sm/6 font-semibold text-gray-900 dark:text-white">Activity</h2>
             <ul role="list" className="mt-6 space-y-6">
