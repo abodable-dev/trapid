@@ -573,7 +573,22 @@ module Api
         rescue StandardError => e
           Rails.logger.error "[OneDrive Apply] Exception occurred: #{e.message}"
           Rails.logger.error "[OneDrive Apply] Backtrace:\n#{e.backtrace.join("\n")}"
-          render json: { error: "Failed to apply matches: #{e.message}" }, status: :internal_server_error
+
+          # Provide user-friendly error messages
+          user_message = case e.message
+          when /undefined method.*for nil/
+            "Unable to sync images. Some files may have been moved or deleted. Please try again."
+          when /timeout/i, /timed out/i
+            "The sync request timed out. Please try syncing fewer items at once."
+          when /not found/i, /404/
+            "Some OneDrive files could not be found. They may have been moved or deleted."
+          when /unauthorized/i, /401/, /403/
+            "OneDrive access expired. Please reconnect your OneDrive account."
+          else
+            "An error occurred while syncing images. Please try again or contact support if the problem persists."
+          end
+
+          render json: { error: user_message }, status: :internal_server_error
         end
       end
 

@@ -507,11 +507,15 @@ module Api
         begin
           client = XeroApiClient.new
 
+          # Sanitize query to prevent OData injection
+          # Escape double quotes and backslashes in the query string
+          sanitized_query = query.gsub('\\', '\\\\\\\\').gsub('"', '\\"')
+
           # Search Xero contacts with a WHERE clause
           # Search by name, email, or tax number
-          where_clause = "Name.Contains(\"#{query}\") OR EmailAddress.Contains(\"#{query}\") OR TaxNumber.Contains(\"#{query}\")"
+          where_clause = "Name.Contains(\"#{sanitized_query}\") OR EmailAddress.Contains(\"#{sanitized_query}\") OR TaxNumber.Contains(\"#{sanitized_query}\")"
 
-          Rails.logger.info("Xero contact search - Query: '#{query}', WHERE clause: #{where_clause}")
+          Rails.logger.info("Xero contact search - Original query: '#{query}', Sanitized: '#{sanitized_query}'")
 
           result = client.get('Contacts', { where: where_clause })
 

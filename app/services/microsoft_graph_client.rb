@@ -362,7 +362,8 @@ class MicrosoftGraphClient
   def get(path)
     response = HTTParty.get(
       "#{GRAPH_API_BASE}#{path}",
-      headers: auth_headers
+      headers: auth_headers,
+      timeout: 30
     )
 
     handle_response(response)
@@ -380,7 +381,8 @@ class MicrosoftGraphClient
     response = HTTParty.post(
       "#{GRAPH_API_BASE}#{path}",
       body: body,
-      headers: headers
+      headers: headers,
+      timeout: 30
     )
 
     handle_response(response)
@@ -390,7 +392,8 @@ class MicrosoftGraphClient
     response = HTTParty.patch(
       "#{GRAPH_API_BASE}#{path}",
       body: body.to_json,
-      headers: auth_headers.merge({ 'Content-Type' => 'application/json' })
+      headers: auth_headers.merge({ 'Content-Type' => 'application/json' }),
+      timeout: 30
     )
 
     handle_response(response)
@@ -399,7 +402,8 @@ class MicrosoftGraphClient
   def delete(path)
     response = HTTParty.delete(
       "#{GRAPH_API_BASE}#{path}",
-      headers: auth_headers
+      headers: auth_headers,
+      timeout: 30
     )
 
     # Delete returns 204 No Content on success
@@ -415,7 +419,8 @@ class MicrosoftGraphClient
     response = HTTParty.get(
       "#{GRAPH_API_BASE}/me/drive/items/#{file_id}/content",
       headers: auth_headers,
-      follow_redirects: true
+      follow_redirects: true,
+      timeout: 120  # Longer timeout for file downloads
     )
 
     unless response.success?
