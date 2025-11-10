@@ -78,7 +78,7 @@ module Api
             price_histories = item.price_histories
               .where(supplier_id: @contact.id)
               .order(date_effective: :desc, created_at: :desc)
-              .as_json(only: [:id, :old_price, :new_price, :date_effective, :lga, :change_reason, :created_at])
+              .as_json(only: [:id, :old_price, :new_price, :date_effective, :lga, :change_reason, :user_name, :created_at])
 
             item.as_json(
               only: [:id, :item_code, :item_name, :category, :current_price, :unit, :price_last_updated_at]
@@ -613,6 +613,107 @@ module Api
         render json: {
           success: false,
           error: "Failed to merge contacts: #{e.message}"
+        }, status: :internal_server_error
+      end
+
+      # POST /api/v1/contacts/:id/bulk_update_prices
+      def bulk_update_prices
+        updates = params[:updates] # Array of {item_id, new_price, change_reason, date_effective}
+
+        if updates.blank? || !updates.is_a?(Array) || updates.empty?
+          return render json: {
+            success: false,
+            error: "updates (array) is required and must not be empty"
+          }, status: :bad_request
+        end
+
+        contact = Contact.find(params[:id])
+
+        unless contact.is_supplier?
+          return render json: {
+            success: false,
+            error: "Contact must be a supplier"
+          }, status: :unprocessable_entity
+        end
+
+        updated_count = 0
+        errors = []
+
+        ActiveRecord::Base.transaction do
+          updates.each do |update|
+            item_id = update[:item_id]
+            new_price = update[:new_price].to_f
+            change_reason = update[:change_reason].presence || 'bulk_update'
+            date_effective = update[:date_effective].present? ? Date.parse(update[:date_effective].to_s) : Date.today
+
+            # Validate item exists
+            item = PricebookItem.find_by(id: item_id)
+            unless item
+              errors << "Item ID #{item_id} not found"
+              next
+            end
+
+            # Skip if new_price is invalid
+            if new_price <= 0
+              errors << "Invalid price for item #{item.item_code}"
+              next
+            end
+
+            # Get current user from session (if available)
+            current_user = nil # TODO: Implement user authentication
+            user_name = current_user&.name || 'System'
+
+            # Create price history entry
+            begin
+              PriceHistory.create!(
+                pricebook_item_id: item.id,
+                old_price: item.current_price,
+                new_price: new_price,
+                supplier_id: contact.id,
+                date_effective: date_effective,
+                change_reason: change_reason,
+                changed_by_user_id: current_user&.id,
+                user_name: user_name
+              )
+
+              # Update item's current price if this is the default supplier
+              if item.default_supplier_id == contact.id
+                item.update!(
+                  current_price: new_price,
+                  price_last_updated_at: Time.current
+                )
+              end
+
+              updated_count += 1
+            rescue ActiveRecord::RecordInvalid => e
+              errors << "Failed to update #{item.item_code}: #{e.message}"
+            end
+          end
+        end
+
+        if errors.any?
+          render json: {
+            success: false,
+            error: "Some prices failed to update",
+            errors: errors,
+            updated_count: updated_count
+          }, status: :unprocessable_entity
+        else
+          render json: {
+            success: true,
+            message: "Successfully updated #{updated_count} price#{updated_count == 1 ? '' : 's'}",
+            updated_count: updated_count
+          }
+        end
+      rescue ActiveRecord::RecordNotFound => e
+        render json: {
+          success: false,
+          error: "Contact not found: #{e.message}"
+        }, status: :not_found
+      rescue => e
+        render json: {
+          success: false,
+          error: "Failed to bulk update prices: #{e.message}"
         }, status: :internal_server_error
       end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_10_022059) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_10_031305) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -352,6 +352,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_022059) do
     t.datetime "updated_at", null: false
     t.string "lga"
     t.date "date_effective"
+    t.string "user_name"
     t.index ["created_at"], name: "index_price_histories_on_created_at"
     t.index ["pricebook_item_id", "supplier_id", "new_price", "created_at"], name: "index_price_histories_on_unique_combination", unique: true, comment: "Prevents duplicate price history entries from race conditions"
     t.index ["pricebook_item_id"], name: "index_price_histories_on_pricebook_item_id"
