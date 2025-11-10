@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_10_220859) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_10_234030) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -620,6 +620,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_220859) do
     t.integer "sequence_order", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "assigned_user_id"
+    t.index ["assigned_user_id"], name: "index_schedule_template_rows_on_assigned_user_id"
     t.index ["schedule_template_id", "sequence_order"], name: "idx_on_schedule_template_id_sequence_order_1bea5d762b"
     t.index ["schedule_template_id"], name: "index_schedule_template_rows_on_schedule_template_id"
     t.index ["sequence_order"], name: "index_schedule_template_rows_on_sequence_order"
@@ -1490,6 +1492,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_220859) do
   add_foreign_key "schedule_tasks", "purchase_orders"
   add_foreign_key "schedule_template_rows", "schedule_templates"
   add_foreign_key "schedule_template_rows", "suppliers"
+  add_foreign_key "schedule_template_rows", "users", column: "assigned_user_id"
   add_foreign_key "schedule_templates", "users", column: "created_by_id"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

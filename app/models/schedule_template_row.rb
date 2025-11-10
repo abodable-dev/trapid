@@ -1,6 +1,7 @@
 class ScheduleTemplateRow < ApplicationRecord
   belongs_to :schedule_template
   belongs_to :supplier, optional: true  # Supplier is only required if po_required is true
+  belongs_to :assigned_user, class_name: 'User', optional: true  # User assigned when not a PO task
 
   # Validations
   validates :name, presence: true
