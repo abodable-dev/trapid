@@ -193,6 +193,59 @@ module Api
         end
       end
 
+      # GET /api/v1/organization_onedrive/browse_folders
+      # Browse OneDrive folders - optionally within a specific folder
+      def browse_folders
+        credential = OrganizationOneDriveCredential.active_credential
+
+        unless credential&.valid_credential?
+          return render json: { error: 'OneDrive not connected' }, status: :unauthorized
+        end
+
+        folder_id = params[:folder_id] # Optional - if not provided, browse root
+
+        begin
+          client = MicrosoftGraphClient.new(credential)
+
+          # Get folders in the specified location
+          if folder_id.present?
+            # Browse children of specific folder
+            response = client.list_folder_items(folder_id)
+          else
+            # Browse root drive folders
+            response = client.get('/me/drive/root/children')
+          end
+
+          # Filter to only show folders
+          folders = (response['value'] || []).select { |item| item['folder'] }
+
+          # Format response
+          formatted_folders = folders.map do |folder|
+            {
+              id: folder['id'],
+              name: folder['name'],
+              web_url: folder['webUrl'],
+              created_at: folder['createdDateTime'],
+              child_count: folder.dig('folder', 'childCount') || 0
+            }
+          end
+
+          render json: {
+            folders: formatted_folders,
+            parent_folder_id: folder_id
+          }
+
+        rescue MicrosoftGraphClient::AuthenticationError => e
+          render json: { error: "Authentication failed: #{e.message}" }, status: :unauthorized
+        rescue MicrosoftGraphClient::APIError => e
+          render json: { error: "OneDrive API error: #{e.message}" }, status: :bad_gateway
+        rescue StandardError => e
+          Rails.logger.error "Failed to browse folders: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: "Failed to browse folders: #{e.message}" }, status: :internal_server_error
+        end
+      end
+
       # POST /api/v1/organization_onedrive/create_job_folders
       # Create folder structure for a specific job
       def create_job_folders
