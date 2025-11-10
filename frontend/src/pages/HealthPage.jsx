@@ -1145,48 +1145,94 @@ export default function HealthPage() {
                     <div className="mt-4 ml-15">
                       <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                          <thead className="bg-gray-50 dark:bg-gray-900">
+                          <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Code
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Name
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Category
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Default Supplier
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Current Price
-                              </th>
+                              {itemsWithSupplierColumnOrder.map((columnKey) => {
+                                const column = itemsWithSupplierColumns[columnKey]
+                                const width = itemsWithSupplierColumnWidths[columnKey]
+                                const isSorted = sortBy.itemsWithSupplier === columnKey
+                                return (
+                                  <th
+                                    key={columnKey}
+                                    style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                                    className={`px-4 py-2 text-left border-r border-gray-200 dark:border-gray-700 ${draggedColumn === columnKey && draggedTable === 'itemsWithSupplier' ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, columnKey, 'itemsWithSupplier')}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, columnKey, 'itemsWithSupplier')}
+                                  >
+                                    <div
+                                      className="flex items-center gap-2 cursor-pointer"
+                                      onClick={() => handleSort(columnKey, 'itemsWithSupplier')}
+                                    >
+                                      <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        {column.label}
+                                      </span>
+                                      {isSorted && (
+                                        sortDirection.itemsWithSupplier === 'asc' ?
+                                          <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                          <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                      )}
+                                    </div>
+                                    {/* Resize handle */}
+                                    <div
+                                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                                      onMouseDown={(e) => handleResizeStart(e, columnKey, 'itemsWithSupplier')}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </th>
+                                )
+                              })}
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800 divide-y divide-y-gray-200 dark:divide-gray-700">
                             {filterItems(healthChecks.itemsWithDefaultSupplierButNoPriceHistory.items, 'itemsWithDefaultSupplierButNoPriceHistory').slice(0, 15).map((item) => (
                               <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
-                                  <Link
-                                    to={`/price-books/${item.id}`}
-                                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
-                                  >
-                                    {item.item_code}
-                                  </Link>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                  {item.item_name}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                  {item.category || '-'}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                  {item.default_supplier?.name || '-'}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                  {item.current_price ? `$${parseFloat(item.current_price).toFixed(2)}` : '-'}
-                                </td>
+                                {itemsWithSupplierColumnOrder.map((columnKey) => {
+                                  const width = itemsWithSupplierColumnWidths[columnKey]
+                                  const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
+
+                                  switch (columnKey) {
+                                    case 'item_code':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                                          <Link
+                                            to={`/price-books/${item.id}`}
+                                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
+                                          >
+                                            {item.item_code}
+                                          </Link>
+                                        </td>
+                                      )
+                                    case 'item_name':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                          {item.item_name}
+                                        </td>
+                                      )
+                                    case 'category':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                          {item.category || '-'}
+                                        </td>
+                                      )
+                                    case 'default_supplier':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                          {item.default_supplier?.name || '-'}
+                                        </td>
+                                      )
+                                    case 'current_price':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                          {item.current_price ? `$${parseFloat(item.current_price).toFixed(2)}` : '-'}
+                                        </td>
+                                      )
+                                    default:
+                                      return null
+                                  }
+                                })}
                               </tr>
                             ))}
                           </tbody>
@@ -1285,42 +1331,88 @@ export default function HealthPage() {
                     <div className="mt-4 ml-15">
                       <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                          <thead className="bg-gray-50 dark:bg-gray-900">
+                          <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Code
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Name
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Category
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Current Price
-                              </th>
+                              {itemsRequiringPhotoColumnOrder.map((columnKey) => {
+                                const column = itemsRequiringPhotoColumns[columnKey]
+                                const width = itemsRequiringPhotoColumnWidths[columnKey]
+                                const isSorted = sortBy.itemsRequiringPhoto === columnKey
+                                return (
+                                  <th
+                                    key={columnKey}
+                                    style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                                    className={`px-4 py-2 text-left border-r border-gray-200 dark:border-gray-700 ${draggedColumn === columnKey && draggedTable === 'itemsRequiringPhoto' ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, columnKey, 'itemsRequiringPhoto')}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, columnKey, 'itemsRequiringPhoto')}
+                                  >
+                                    <div
+                                      className="flex items-center gap-2 cursor-pointer"
+                                      onClick={() => handleSort(columnKey, 'itemsRequiringPhoto')}
+                                    >
+                                      <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        {column.label}
+                                      </span>
+                                      {isSorted && (
+                                        sortDirection.itemsRequiringPhoto === 'asc' ?
+                                          <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                          <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                      )}
+                                    </div>
+                                    {/* Resize handle */}
+                                    <div
+                                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                                      onMouseDown={(e) => handleResizeStart(e, columnKey, 'itemsRequiringPhoto')}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </th>
+                                )
+                              })}
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {filterItems(healthChecks.itemsRequiringPhotoWithoutImage.items, 'itemsRequiringPhotoWithoutImage').slice(0, 10).map((item) => (
                               <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
-                                  <Link
-                                    to={`/price-books/${item.id}`}
-                                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
-                                  >
-                                    {item.item_code}
-                                  </Link>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                  {item.item_name}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                  {item.category || '-'}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                  {item.current_price ? `$${parseFloat(item.current_price).toFixed(2)}` : '-'}
-                                </td>
+                                {itemsRequiringPhotoColumnOrder.map((columnKey) => {
+                                  const width = itemsRequiringPhotoColumnWidths[columnKey]
+                                  const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
+
+                                  switch (columnKey) {
+                                    case 'item_code':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                                          <Link
+                                            to={`/price-books/${item.id}`}
+                                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
+                                          >
+                                            {item.item_code}
+                                          </Link>
+                                        </td>
+                                      )
+                                    case 'item_name':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                          {item.item_name}
+                                        </td>
+                                      )
+                                    case 'category':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                          {item.category || '-'}
+                                        </td>
+                                      )
+                                    case 'current_price':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                          {item.current_price ? `$${parseFloat(item.current_price).toFixed(2)}` : '-'}
+                                        </td>
+                                      )
+                                    default:
+                                      return null
+                                  }
+                                })}
                               </tr>
                             ))}
                           </tbody>
@@ -1419,26 +1511,46 @@ export default function HealthPage() {
                     <div className="mt-4 ml-15">
                       <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                          <thead className="bg-gray-50 dark:bg-gray-900">
+                          <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Code
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Name
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Default Supplier
-                              </th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Current Price
-                              </th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Active Price
-                              </th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Difference
-                              </th>
+                              {priceMismatchesColumnOrder.map((columnKey) => {
+                                const column = priceMismatchesColumns[columnKey]
+                                const width = priceMismatchesColumnWidths[columnKey]
+                                const isSorted = sortBy.priceMismatches === columnKey
+                                const isRightAlign = ['current_price', 'active_price', 'difference'].includes(columnKey)
+                                return (
+                                  <th
+                                    key={columnKey}
+                                    style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                                    className={`px-4 py-2 ${isRightAlign ? 'text-right' : 'text-left'} border-r border-gray-200 dark:border-gray-700 ${draggedColumn === columnKey && draggedTable === 'priceMismatches' ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, columnKey, 'priceMismatches')}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, columnKey, 'priceMismatches')}
+                                  >
+                                    <div
+                                      className={`flex items-center gap-2 cursor-pointer ${isRightAlign ? 'justify-end' : 'justify-start'}`}
+                                      onClick={() => handleSort(columnKey, 'priceMismatches')}
+                                    >
+                                      <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        {column.label}
+                                      </span>
+                                      {isSorted && (
+                                        sortDirection.priceMismatches === 'asc' ?
+                                          <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                          <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                      )}
+                                    </div>
+                                    {/* Resize handle */}
+                                    <div
+                                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                                      onMouseDown={(e) => handleResizeStart(e, columnKey, 'priceMismatches')}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </th>
+                                )
+                              })}
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -1452,39 +1564,66 @@ export default function HealthPage() {
                               )
                               return filtered.slice(0, 15).map((issue) => (
                                 <tr key={issue.item_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
-                                    <Link
-                                      to={`/price-books/${issue.item_id}`}
-                                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
-                                    >
-                                      {issue.item_code}
-                                    </Link>
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                    {issue.item_name}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                    {issue.default_supplier_name || '-'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                                    {issue.item_current_price ? `$${parseFloat(issue.item_current_price).toFixed(2)}` : '-'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white font-medium">
-                                    {issue.active_price_value ? `$${parseFloat(issue.active_price_value).toFixed(2)}` : '-'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-right">
-                                    {issue.difference !== null && issue.difference !== undefined ? (
-                                      <span className={`font-medium ${
-                                        issue.difference > 0 ? 'text-red-600 dark:text-red-400' :
-                                        issue.difference < 0 ? 'text-green-600 dark:text-green-400' :
-                                        'text-gray-600 dark:text-gray-400'
-                                      }`}>
-                                        {issue.difference > 0 ? '+' : ''}{issue.difference < 0 ? '-' : ''}${Math.abs(issue.difference).toFixed(2)}
-                                      </span>
-                                    ) : (
-                                      <span className="text-gray-600 dark:text-gray-400">-</span>
-                                    )}
-                                  </td>
+                                  {priceMismatchesColumnOrder.map((columnKey) => {
+                                    const width = priceMismatchesColumnWidths[columnKey]
+                                    const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
+
+                                    switch (columnKey) {
+                                      case 'item_code':
+                                        return (
+                                          <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                                            <Link
+                                              to={`/price-books/${issue.item_id}`}
+                                              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
+                                            >
+                                              {issue.item_code}
+                                            </Link>
+                                          </td>
+                                        )
+                                      case 'item_name':
+                                        return (
+                                          <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                            {issue.item_name}
+                                          </td>
+                                        )
+                                      case 'default_supplier':
+                                        return (
+                                          <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                            {issue.default_supplier_name || '-'}
+                                          </td>
+                                        )
+                                      case 'current_price':
+                                        return (
+                                          <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
+                                            {issue.item_current_price ? `$${parseFloat(issue.item_current_price).toFixed(2)}` : '-'}
+                                          </td>
+                                        )
+                                      case 'active_price':
+                                        return (
+                                          <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white font-medium">
+                                            {issue.active_price_value ? `$${parseFloat(issue.active_price_value).toFixed(2)}` : '-'}
+                                          </td>
+                                        )
+                                      case 'difference':
+                                        return (
+                                          <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-right">
+                                            {issue.difference !== null && issue.difference !== undefined ? (
+                                              <span className={`font-medium ${
+                                                issue.difference > 0 ? 'text-red-600 dark:text-red-400' :
+                                                issue.difference < 0 ? 'text-green-600 dark:text-green-400' :
+                                                'text-gray-600 dark:text-gray-400'
+                                              }`}>
+                                                {issue.difference > 0 ? '+' : ''}{issue.difference < 0 ? '-' : ''}${Math.abs(issue.difference).toFixed(2)}
+                                              </span>
+                                            ) : (
+                                              <span className="text-gray-600 dark:text-gray-400">-</span>
+                                            )}
+                                          </td>
+                                        )
+                                      default:
+                                        return null
+                                    }
+                                  })}
                                 </tr>
                               ))
                             })()}
