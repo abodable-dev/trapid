@@ -1,7 +1,7 @@
 module Api
   module V1
     class PricebookItemsController < ApplicationController
-      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image, :add_price, :set_default_supplier, :delete_price_history, :update_price_history]
+      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image, :add_price, :set_default_supplier, :delete_price_history, :update_price_history, :proxy_image]
 
       # GET /api/v1/pricebook
       def index
@@ -625,6 +625,63 @@ module Api
           issues_found: issues.count,
           issues: issues
         }
+      end
+
+      # GET /api/v1/pricebook/:id/proxy_image/:file_type
+      # Proxies OneDrive images through our backend to avoid CORS and expiration issues
+      def proxy_image
+        file_type = params[:file_type] # 'image', 'spec', or 'qr_code'
+
+        # Get the file ID based on the file type
+        file_id = case file_type
+        when 'image'
+          @pricebook_item.image_file_id
+        when 'spec'
+          @pricebook_item.spec_file_id
+        when 'qr_code'
+          @pricebook_item.qr_code_file_id
+        else
+          return render json: { error: 'Invalid file type' }, status: :bad_request
+        end
+
+        if file_id.blank?
+          return render json: { error: 'File not found' }, status: :not_found
+        end
+
+        begin
+          # Get OneDrive credentials
+          credential = OrganizationOneDriveCredential.first
+          unless credential && credential.valid_credential?
+            return render json: { error: 'OneDrive not connected' }, status: :service_unavailable
+          end
+
+          # Initialize Microsoft Graph client
+          client = MicrosoftGraphClient.new(credential)
+
+          # Get file content from OneDrive
+          response = client.get_file_content(file_id)
+
+          # Detect content type from file extension or default to image/jpeg
+          content_type = case File.extname(@pricebook_item.send("#{file_type}_url") || '').downcase
+          when '.jpg', '.jpeg'
+            'image/jpeg'
+          when '.png'
+            'image/png'
+          when '.pdf'
+            'application/pdf'
+          else
+            'application/octet-stream'
+          end
+
+          # Set caching headers (cache for 1 hour)
+          expires_in 1.hour, public: true
+
+          # Stream the file content
+          send_data response, type: content_type, disposition: 'inline'
+        rescue => e
+          Rails.logger.error "Error proxying image: #{e.message}"
+          render json: { error: 'Failed to fetch image' }, status: :internal_server_error
+        end
       end
 
       private
