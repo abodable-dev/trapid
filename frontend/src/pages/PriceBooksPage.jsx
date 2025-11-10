@@ -14,6 +14,8 @@ import {
   AdjustmentsHorizontalIcon,
   BuildingStorefrontIcon,
   Cog6ToothIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../utils/formatters'
 import { api } from '../api'
@@ -37,6 +39,9 @@ export default function PriceBooksPage() {
   const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '')
   const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '')
   const [showPricedOnly, setShowPricedOnly] = useState(searchParams.get('needs_pricing') === 'true')
+  const [requiresPhotoFilter, setRequiresPhotoFilter] = useState(searchParams.get('requires_photo') || '')
+  const [requiresSpecFilter, setRequiresSpecFilter] = useState(searchParams.get('requires_spec') || '')
+  const [needsPricingReviewFilter, setNeedsPricingReviewFilter] = useState(searchParams.get('needs_pricing_review') || '')
   const [showFilters, setShowFilters] = useState(false)
   const [categories, setCategories] = useState([])
   const [suppliers, setSuppliers] = useState([])
@@ -60,8 +65,17 @@ export default function PriceBooksPage() {
   }) // Track selected item IDs
   const [showSetDefaultSupplierModal, setShowSetDefaultSupplierModal] = useState(false)
   const [settingDefaultSupplier, setSettingDefaultSupplier] = useState(false)
+  const [selectedSupplierId, setSelectedSupplierId] = useState(null)
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false)
+  const [loadingPriceHistories, setLoadingPriceHistories] = useState(false)
+  const [itemsWithPriceHistories, setItemsWithPriceHistories] = useState([])
+  const [updatePricesToCurrentDefault, setUpdatePricesToCurrentDefault] = useState(false)
+  const [selectedItemsForUpdate, setSelectedItemsForUpdate] = useState(new Set())
+  const [itemsToCreateUpdatePrice, setItemsToCreateUpdatePrice] = useState({}) // { itemId: { shouldUpdate: true, newPrice: 0 } }
   const [showColumnSettings, setShowColumnSettings] = useState(false)
   const [draggedColumn, setDraggedColumn] = useState(null)
+  const [pendingBooleanUpdates, setPendingBooleanUpdates] = useState({}) // { itemId: { requires_photo: true, ... } }
+  const [savingBooleanUpdates, setSavingBooleanUpdates] = useState(false)
 
   // Column configuration with defaults
   const defaultColumnConfig = {
@@ -75,7 +89,10 @@ export default function PriceBooksPage() {
     unit: { visible: true, width: 100, label: 'Unit', resizable: true, order: 7 },
     supplier: { visible: true, width: 200, label: 'Supplier', resizable: true, order: 8 },
     brand: { visible: true, width: 150, label: 'Brand', resizable: true, order: 9 },
-    notes: { visible: true, width: 200, label: 'Notes', resizable: true, order: 10 },
+    requiresPhoto: { visible: false, width: 120, label: 'Needs Photo', resizable: true, order: 10 },
+    requiresSpec: { visible: false, width: 120, label: 'Needs Spec', resizable: true, order: 11 },
+    needsPricingReview: { visible: false, width: 140, label: 'Pricing Review', resizable: true, order: 12 },
+    notes: { visible: true, width: 200, label: 'Notes', resizable: true, order: 13 },
   }
 
   const [columnConfig, setColumnConfig] = useState(() => {
@@ -135,6 +152,9 @@ export default function PriceBooksPage() {
     if (minPrice) params.set('min_price', minPrice)
     if (maxPrice) params.set('max_price', maxPrice)
     if (showPricedOnly) params.set('needs_pricing', 'true')
+    if (requiresPhotoFilter) params.set('requires_photo', requiresPhotoFilter)
+    if (requiresSpecFilter) params.set('requires_spec', requiresSpecFilter)
+    if (needsPricingReviewFilter) params.set('needs_pricing_review', needsPricingReviewFilter)
     if (sortBy !== 'category') params.set('sort_by', sortBy)
     if (sortDirection !== 'asc') params.set('sort_direction', sortDirection)
 
@@ -145,7 +165,7 @@ export default function PriceBooksPage() {
     }
 
     setSearchParams(params, { replace: true })
-  }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly, sortBy, sortDirection, setSearchParams])
+  }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly, requiresPhotoFilter, requiresSpecFilter, needsPricingReviewFilter, sortBy, sortDirection, setSearchParams])
 
   // Debounced search - reload when filters change
   useEffect(() => {
@@ -162,11 +182,11 @@ export default function PriceBooksPage() {
         clearTimeout(searchTimeoutRef.current)
       }
     }
-  }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly, sortBy, sortDirection])
+  }, [searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly, requiresPhotoFilter, requiresSpecFilter, needsPricingReviewFilter, sortBy, sortDirection])
 
   // Auto-select all items when filters are applied
   useEffect(() => {
-    const hasActiveFilters = categoryFilter || supplierFilter || riskFilter || searchQuery || minPrice || maxPrice || showPricedOnly
+    const hasActiveFilters = categoryFilter || supplierFilter || riskFilter || searchQuery || minPrice || maxPrice || showPricedOnly || requiresPhotoFilter || requiresSpecFilter || needsPricingReviewFilter
 
     if (hasActiveFilters && items.length > 0) {
       // Automatically select all filtered items
@@ -175,7 +195,7 @@ export default function PriceBooksPage() {
       // Clear selection when filters are cleared
       setSelectedItems(new Set())
     }
-  }, [items, categoryFilter, supplierFilter, riskFilter, searchQuery, minPrice, maxPrice, showPricedOnly])
+  }, [items, categoryFilter, supplierFilter, riskFilter, searchQuery, minPrice, maxPrice, showPricedOnly, requiresPhotoFilter, requiresSpecFilter, needsPricingReviewFilter])
 
   const loadPriceBook = async (page = 1) => {
     try {
@@ -200,6 +220,9 @@ export default function PriceBooksPage() {
       if (minPrice) params.min_price = minPrice
       if (maxPrice) params.max_price = maxPrice
       if (!showPricedOnly) params.needs_pricing = 'false'
+      if (requiresPhotoFilter) params.requires_photo = requiresPhotoFilter
+      if (requiresSpecFilter) params.requires_spec = requiresSpecFilter
+      if (needsPricingReviewFilter) params.needs_pricing_review = needsPricingReviewFilter
 
       const response = await api.get('/api/v1/pricebook', { params })
 
@@ -268,9 +291,12 @@ export default function PriceBooksPage() {
     setMinPrice('')
     setMaxPrice('')
     setShowPricedOnly(false)
+    setRequiresPhotoFilter('')
+    setRequiresSpecFilter('')
+    setNeedsPricingReviewFilter('')
   }
 
-  const hasActiveFilters = searchQuery || categoryFilter || supplierFilter || riskFilter || minPrice || maxPrice || showPricedOnly
+  const hasActiveFilters = searchQuery || categoryFilter || supplierFilter || riskFilter || minPrice || maxPrice || showPricedOnly || requiresPhotoFilter || requiresSpecFilter || needsPricingReviewFilter
 
   const handleItemClick = (itemId) => {
     // Navigate to the item detail page
@@ -391,6 +417,87 @@ export default function PriceBooksPage() {
     }
   }
 
+  const handleBooleanFieldToggle = (itemId, fieldName, currentValue) => {
+    const newValue = !currentValue
+
+    // Update local state immediately (optimistic update)
+    setItems(items.map(item =>
+      item.id === itemId ? { ...item, [fieldName]: newValue } : item
+    ))
+
+    // Track pending update
+    setPendingBooleanUpdates(prev => ({
+      ...prev,
+      [itemId]: {
+        ...(prev[itemId] || {}),
+        [fieldName]: newValue
+      }
+    }))
+  }
+
+  const saveBooleanUpdates = async () => {
+    if (Object.keys(pendingBooleanUpdates).length === 0) {
+      return
+    }
+
+    try {
+      setSavingBooleanUpdates(true)
+
+      // Prepare bulk update payload
+      const updates = Object.entries(pendingBooleanUpdates).map(([itemId, fields]) => ({
+        id: parseInt(itemId),
+        ...fields
+      }))
+
+      // Send bulk update request
+      await api.patch('/api/v1/pricebook/bulk_update', {
+        updates
+      })
+
+      // Clear pending updates on success
+      setPendingBooleanUpdates({})
+
+      // Show success message
+      const updateCount = updates.length
+      alert(`Successfully updated ${updateCount} item${updateCount === 1 ? '' : 's'}`)
+    } catch (error) {
+      console.error('Failed to save boolean updates:', error)
+      alert('Failed to save updates. Please try again.')
+
+      // Reload to get correct state from server
+      await loadPriceBook()
+      setPendingBooleanUpdates({})
+    } finally {
+      setSavingBooleanUpdates(false)
+    }
+  }
+
+  const discardBooleanUpdates = async () => {
+    setPendingBooleanUpdates({})
+    await loadPriceBook()
+  }
+
+  const handleBulkBooleanToggle = (fieldName, newValue) => {
+    // Get all visible item IDs
+    const visibleItemIds = items.map(item => item.id)
+
+    // Update local state for all visible items
+    setItems(items.map(item => ({
+      ...item,
+      [fieldName]: newValue
+    })))
+
+    // Track pending updates for all visible items
+    const updates = {}
+    visibleItemIds.forEach(itemId => {
+      updates[itemId] = {
+        ...(pendingBooleanUpdates[itemId] || {}),
+        [fieldName]: newValue
+      }
+    })
+    setPendingBooleanUpdates(prev => ({ ...prev, ...updates }))
+  }
+
   const handleSelectItem = (itemId) => {
     const newSet = new Set(selectedItems)
     if (newSet.has(itemId)) {
@@ -431,34 +538,137 @@ export default function PriceBooksPage() {
     setSearchParams(params, { replace: true })
   }
 
-  const handleSetDefaultSupplier = async (supplierId) => {
-    try {
-      setSettingDefaultSupplier(true)
+  const handleSelectSupplier = async (supplierId) => {
+    if (!supplierId) return
 
-      // Get all item IDs to update (either selected or all filtered)
+    try {
+      setSelectedSupplierId(supplierId)
+      setLoadingPriceHistories(true)
+      setUpdatePricesToCurrentDefault(false) // Reset checkbox
+      setSelectedItemsForUpdate(new Set()) // Reset selected items for update
+      setItemsToCreateUpdatePrice({}) // Reset price update data
+
+      // Get all item IDs to review (either selected or all filtered)
       const itemIds = selectedItems.size > 0
         ? Array.from(selectedItems)
         : items.map(item => item.id)
 
+      // Load detailed information for each item including price histories
+      const itemsWithDetails = await Promise.all(
+        itemIds.map(async (id) => {
+          const response = await api.get(`/api/v1/pricebook/${id}`)
+          return response
+        })
+      )
+
+      setItemsWithPriceHistories(itemsWithDetails)
+      // By default, select all items
+      setSelectedItemsForUpdate(new Set(itemsWithDetails.map(item => item.id)))
+
+      // Initialize price update data - default to using selected supplier's price (or current price if no supplier price)
+      const priceUpdateData = {}
+      itemsWithDetails.forEach(item => {
+        // Find the most recent price for the selected supplier
+        const mostRecentPrice = item.price_histories
+          ?.filter(h => h.supplier?.id === supplierId)
+          ?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+
+        const hasSupplierPrice = !!mostRecentPrice
+        const supplierPrice = parseFloat(mostRecentPrice?.new_price || 0)
+        const currentItemPrice = parseFloat(item.current_price || 0)
+        const pricesDiffer = Math.abs(supplierPrice - currentItemPrice) > 0.009 // Account for floating point precision
+
+        // If prices differ, use supplier's price; otherwise use current default
+        const defaultPrice = (hasSupplierPrice && pricesDiffer) ? supplierPrice : currentItemPrice
+
+        if (!hasSupplierPrice && item.current_price) {
+          // Auto-select items that need price history created, default to current price
+          priceUpdateData[item.id] = {
+            shouldUpdate: true,
+            newPrice: parseFloat(defaultPrice.toFixed(2))
+          }
+        } else if (hasSupplierPrice) {
+          // Items with existing prices: only auto-select if supplier's price differs from current default
+          priceUpdateData[item.id] = {
+            shouldUpdate: pricesDiffer, // Only auto-check if prices differ
+            newPrice: parseFloat(defaultPrice.toFixed(2))
+          }
+        }
+      })
+      setItemsToCreateUpdatePrice(priceUpdateData)
+
+      setShowSetDefaultSupplierModal(false)
+      setShowConfirmationModal(true)
+    } catch (err) {
+      console.error('Failed to load price histories:', err)
+      alert('Failed to load price history data')
+    } finally {
+      setLoadingPriceHistories(false)
+    }
+  }
+
+  const handleSetDefaultSupplier = async (supplierId) => {
+    try {
+      setSettingDefaultSupplier(true)
+
+      // Only update items that are selected in the confirmation modal
+      const itemIds = Array.from(selectedItemsForUpdate)
+
+      if (itemIds.length === 0) {
+        alert('Please select at least one item to update')
+        return
+      }
+
       // Bulk update default supplier
-      await api.patch('/api/v1/pricebook/bulk_update', {
-        updates: itemIds.map(id => ({
-          id,
-          default_supplier_id: supplierId
-        }))
+      const response = await api.patch('/api/v1/pricebook/bulk_update', {
+        updates: itemIds.map(id => {
+          const priceUpdate = itemsToCreateUpdatePrice[id]
+          return {
+            id,
+            default_supplier_id: supplierId,
+            update_price_to_current_default: updatePricesToCurrentDefault,
+            // Include price update data if checkbox is checked
+            create_or_update_price: priceUpdate?.shouldUpdate || false,
+            new_price: priceUpdate?.newPrice || null
+          }
+        })
       })
 
       // Reload the items
       await loadPriceBook()
 
-      setShowSetDefaultSupplierModal(false)
-      alert(`Successfully set default supplier for ${itemIds.length} items`)
+      setShowConfirmationModal(false)
+      setSelectedSupplierId(null)
+      setItemsWithPriceHistories([])
+      setUpdatePricesToCurrentDefault(false)
+      setSelectedItemsForUpdate(new Set())
+      setItemsToCreateUpdatePrice({})
+
+      const priceUpdateMsg = response.prices_updated > 0
+        ? ` and created/updated ${response.prices_updated} price ${response.prices_updated === 1 ? 'history' : 'histories'}`
+        : ''
+      alert(`Successfully set default supplier for ${itemIds.length} items${priceUpdateMsg}`)
     } catch (error) {
       console.error('Failed to set default supplier:', error)
       alert('Failed to set default supplier')
     } finally {
       setSettingDefaultSupplier(false)
     }
+  }
+
+  const confirmSetDefaultSupplier = async () => {
+    if (!selectedSupplierId) return
+    await handleSetDefaultSupplier(selectedSupplierId)
+  }
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-'
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-AU', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
   }
 
   const handleExport = async () => {
@@ -621,13 +831,13 @@ export default function PriceBooksPage() {
     switch (key) {
       case 'checkbox':
         return (
-          <td key={key} style={{ minWidth: `${config.width}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
             <input type="checkbox" checked={selectedItems.has(item.id)} onChange={() => handleSelectItem(item.id)} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
           </td>
         )
       case 'image':
         return (
-          <td key={key} style={{ minWidth: `${config.width}px`, width: `${config.width}px` }} className="px-2 py-2 border-r border-gray-200 dark:border-gray-700">
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-2 py-2 border-r border-gray-200 dark:border-gray-700">
             {item.image_url ? (
               <div className="flex justify-center">
                 <img src={item.image_url} alt={item.item_name} className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-600" onError={(e) => { e.target.style.display = 'none' }} />
@@ -643,19 +853,19 @@ export default function PriceBooksPage() {
         )
       case 'itemCode':
         return (
-          <td key={key} style={{ minWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white">
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white">
             {item.item_code}
           </td>
         )
       case 'itemName':
         return (
-          <td key={key} style={{ minWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white">
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white">
             {item.item_name}
           </td>
         )
       case 'status':
         return (
-          <td key={key} style={{ minWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm">
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm">
             <div className="flex flex-wrap gap-1">
               {getRiskBadges(item).length > 0 ? getRiskBadges(item) : <Badge color="green">OK</Badge>}
             </div>
@@ -663,7 +873,7 @@ export default function PriceBooksPage() {
         )
       case 'category':
         return (
-          <td key={key} style={{ minWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400" onClick={(e) => { e.stopPropagation(); setEditingCategory(item.id) }}>
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400" onClick={(e) => { e.stopPropagation(); setEditingCategory(item.id) }}>
             {editingCategory === item.id ? (
               <select autoFocus value={item.category || ''} onChange={(e) => handleCategoryUpdate(item.id, e.target.value)} onBlur={() => setEditingCategory(null)} className="w-full px-2 py-1 text-sm border border-indigo-500 rounded focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-indigo-400" onClick={(e) => e.stopPropagation()}>
                 <option value="">Select category...</option>
@@ -676,31 +886,76 @@ export default function PriceBooksPage() {
         )
       case 'price':
         return (
-          <td key={key} style={{ minWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-right text-gray-900 dark:text-white font-medium">
-            {item.current_price ? formatCurrency(item.current_price, false) : '-'}
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-right text-gray-900 dark:text-white font-medium">
+            {item.current_price ? formatCurrency(item.current_price, true) : '-'}
           </td>
         )
       case 'unit':
         return (
-          <td key={key} style={{ minWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
             {item.unit_of_measure}
           </td>
         )
       case 'supplier':
         return (
-          <td key={key} style={{ minWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
-            {item.default_supplier?.name || item.supplier?.name || '-'}
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+            {item.default_supplier?.name || '-'}
           </td>
         )
       case 'brand':
         return (
-          <td key={key} style={{ minWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
             {item.brand || '-'}
+          </td>
+        )
+      case 'requiresPhoto':
+        const hasPhotoChange = pendingBooleanUpdates[item.id]?.hasOwnProperty('requires_photo')
+        return (
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-center ${hasPhotoChange ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-center gap-1">
+              <input
+                type="checkbox"
+                checked={item.requires_photo || false}
+                onChange={() => handleBooleanFieldToggle(item.id, 'requires_photo', item.requires_photo)}
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              {hasPhotoChange && <span className="text-xs text-orange-600 dark:text-orange-400">*</span>}
+            </div>
+          </td>
+        )
+      case 'requiresSpec':
+        const hasSpecChange = pendingBooleanUpdates[item.id]?.hasOwnProperty('requires_spec')
+        return (
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-center ${hasSpecChange ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-center gap-1">
+              <input
+                type="checkbox"
+                checked={item.requires_spec || false}
+                onChange={() => handleBooleanFieldToggle(item.id, 'requires_spec', item.requires_spec)}
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              {hasSpecChange && <span className="text-xs text-orange-600 dark:text-orange-400">*</span>}
+            </div>
+          </td>
+        )
+      case 'needsPricingReview':
+        const hasPricingChange = pendingBooleanUpdates[item.id]?.hasOwnProperty('needs_pricing_review')
+        return (
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-center ${hasPricingChange ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-center gap-1">
+              <input
+                type="checkbox"
+                checked={item.needs_pricing_review || false}
+                onChange={() => handleBooleanFieldToggle(item.id, 'needs_pricing_review', item.needs_pricing_review)}
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              {hasPricingChange && <span className="text-xs text-orange-600 dark:text-orange-400">*</span>}
+            </div>
           </td>
         )
       case 'notes':
         return (
-          <td key={key} style={{ minWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
             <div className="truncate max-w-xs" title={item.notes}>{item.notes || '-'}</div>
           </td>
         )
@@ -746,6 +1001,29 @@ export default function PriceBooksPage() {
               </div>
               <div className="flex items-center gap-2">
                 {/* Selection Indicator */}
+                {/* Pending Boolean Updates Save/Discard Bar */}
+                {Object.keys(pendingBooleanUpdates).length > 0 && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg border border-orange-300 dark:border-orange-700">
+                    <span className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                      {Object.keys(pendingBooleanUpdates).length} unsaved change{Object.keys(pendingBooleanUpdates).length === 1 ? '' : 's'}
+                    </span>
+                    <button
+                      onClick={saveBooleanUpdates}
+                      disabled={savingBooleanUpdates}
+                      className="inline-flex items-center px-2 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {savingBooleanUpdates ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    <button
+                      onClick={discardBooleanUpdates}
+                      disabled={savingBooleanUpdates}
+                      className="text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-200 underline disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Discard
+                    </button>
+                  </div>
+                )}
+
                 {selectedItems.size > 0 && (
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
                     <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
@@ -818,7 +1096,7 @@ export default function PriceBooksPage() {
                   Filters
                   {hasActiveFilters && (
                     <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-indigo-600 dark:bg-indigo-500 rounded-full">
-                      {[searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly].filter(Boolean).length}
+                      {[searchQuery, categoryFilter, supplierFilter, riskFilter, minPrice, maxPrice, showPricedOnly, requiresPhotoFilter, requiresSpecFilter, needsPricingReviewFilter].filter(Boolean).length}
                     </span>
                   )}
                 </button>
@@ -980,6 +1258,54 @@ export default function PriceBooksPage() {
                     </select>
                   </div>
 
+                  {/* Needs Photo filter */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Needs Photo
+                    </label>
+                    <select
+                      value={requiresPhotoFilter}
+                      onChange={(e) => setRequiresPhotoFilter(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">All Items</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+
+                  {/* Needs Spec filter */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Needs Spec
+                    </label>
+                    <select
+                      value={requiresSpecFilter}
+                      onChange={(e) => setRequiresSpecFilter(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">All Items</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+
+                  {/* Pricing Review filter */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Pricing Review
+                    </label>
+                    <select
+                      value={needsPricingReviewFilter}
+                      onChange={(e) => setNeedsPricingReviewFilter(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">All Items</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+
                   {/* Price range */}
                   <div>
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1057,7 +1383,7 @@ export default function PriceBooksPage() {
                   switch (key) {
                     case 'checkbox':
                       return (
-                        <th key={key} style={{ minWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700">
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700">
                           <input
                             type="checkbox"
                             checked={items.length > 0 && selectedItems.size === items.length}
@@ -1068,61 +1394,115 @@ export default function PriceBooksPage() {
                       )
                     case 'image':
                       return (
-                        <th key={key} style={{ minWidth: `${config.width}px`, width: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
                           Image
                         </th>
                       )
                     case 'itemCode':
                       return (
-                        <th key={key} style={{ minWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                           <ColumnHeaderMenu label="Code" column="item_code" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={searchQuery} filterType="search" />
                         </th>
                       )
                     case 'itemName':
                       return (
-                        <th key={key} style={{ minWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                           <ColumnHeaderMenu label="Item Name" column="item_name" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={searchQuery} filterType="search" />
                         </th>
                       )
                     case 'status':
                       return (
-                        <th key={key} style={{ minWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                           <ColumnHeaderMenu label="Status" column="risk_level" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={riskFilter} filterType="select" filterOptions={[{ label: 'Low Risk', value: 'low', count: null }, { label: 'Medium Risk', value: 'medium', count: null }, { label: 'High Risk', value: 'high', count: null }, { label: 'Critical', value: 'critical', count: null }]} />
                         </th>
                       )
                     case 'category':
                       return (
-                        <th key={key} style={{ minWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                           <ColumnHeaderMenu label="Category" column="category" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={categoryFilter} filterType="select" filterOptions={categories.map(cat => ({ label: cat, value: cat, count: null }))} />
                         </th>
                       )
                     case 'price':
                       return (
-                        <th key={key} style={{ minWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
                           <ColumnHeaderMenu label="Price" column="current_price" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={minPrice || maxPrice ? { min: minPrice, max: maxPrice } : ''} filterType="price-range" />
                         </th>
                       )
                     case 'unit':
                       return (
-                        <th key={key} style={{ minWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                           Unit
                         </th>
                       )
                     case 'supplier':
                       return (
-                        <th key={key} style={{ minWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                           <ColumnHeaderMenu label="Supplier" column="supplier" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={supplierFilter} filterType="select" filterOptions={suppliers.map(sup => ({ label: sup.name, value: sup.id.toString(), count: null }))} />
                         </th>
                       )
                     case 'brand':
                       return (
-                        <th key={key} style={{ minWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                           Brand
+                        </th>
+                      )
+                    case 'requiresPhoto':
+                      const allRequirePhoto = items.length > 0 && items.every(item => item.requires_photo)
+                      const someRequirePhoto = items.some(item => item.requires_photo) && !allRequirePhoto
+                      return (
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                          <div className="flex flex-col items-center gap-1">
+                            <span>Needs Photo</span>
+                            <input
+                              type="checkbox"
+                              checked={allRequirePhoto}
+                              ref={el => el && (el.indeterminate = someRequirePhoto)}
+                              onChange={(e) => handleBulkBooleanToggle('requires_photo', e.target.checked)}
+                              className="h-3 w-3 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                              title="Toggle all visible items"
+                            />
+                          </div>
+                        </th>
+                      )
+                    case 'requiresSpec':
+                      const allRequireSpec = items.length > 0 && items.every(item => item.requires_spec)
+                      const someRequireSpec = items.some(item => item.requires_spec) && !allRequireSpec
+                      return (
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                          <div className="flex flex-col items-center gap-1">
+                            <span>Needs Spec</span>
+                            <input
+                              type="checkbox"
+                              checked={allRequireSpec}
+                              ref={el => el && (el.indeterminate = someRequireSpec)}
+                              onChange={(e) => handleBulkBooleanToggle('requires_spec', e.target.checked)}
+                              className="h-3 w-3 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                              title="Toggle all visible items"
+                            />
+                          </div>
+                        </th>
+                      )
+                    case 'needsPricingReview':
+                      const allNeedReview = items.length > 0 && items.every(item => item.needs_pricing_review)
+                      const someNeedReview = items.some(item => item.needs_pricing_review) && !allNeedReview
+                      return (
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                          <div className="flex flex-col items-center gap-1">
+                            <span>Pricing Review</span>
+                            <input
+                              type="checkbox"
+                              checked={allNeedReview}
+                              ref={el => el && (el.indeterminate = someNeedReview)}
+                              onChange={(e) => handleBulkBooleanToggle('needs_pricing_review', e.target.checked)}
+                              className="h-3 w-3 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                              title="Toggle all visible items"
+                            />
+                          </div>
                         </th>
                       )
                     case 'notes':
                       return (
-                        <th key={key} style={{ minWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                           Notes
                         </th>
                       )
@@ -1212,10 +1592,10 @@ export default function PriceBooksPage() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white mb-4"
                   onChange={(e) => {
                     if (e.target.value) {
-                      handleSetDefaultSupplier(parseInt(e.target.value))
+                      handleSelectSupplier(parseInt(e.target.value))
                     }
                   }}
-                  disabled={settingDefaultSupplier}
+                  disabled={loadingPriceHistories}
                 >
                   <option value="">Select a supplier...</option>
                   {suppliers.map((supplier) => (
@@ -1224,11 +1604,288 @@ export default function PriceBooksPage() {
                     </option>
                   ))}
                 </select>
+                {loadingPriceHistories && (
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-4 text-center">
+                    Loading price history data...
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowSetDefaultSupplierModal(false)}
-                    disabled={settingDefaultSupplier}
+                    disabled={loadingPriceHistories}
                     className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Confirmation Modal with Price History Review */}
+        {showConfirmationModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full my-8">
+              <div className="p-6 max-h-[90vh] overflow-y-auto">
+                {/* Header */}
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-500/10 flex items-center justify-center">
+                    <CheckCircleIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Confirm Set Default Supplier
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      You are about to set <span className="font-medium text-gray-900 dark:text-white">
+                        {suppliers.find(s => s.id === selectedSupplierId)?.name}
+                      </span> as the default supplier for <span className="font-medium">{itemsWithPriceHistories.length}</span> items.
+                      Please review all price history data below to ensure nothing is missing.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Summary Stats */}
+                <div className="grid grid-cols-5 gap-4 mb-6">
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4">
+                    <div className="text-xs text-indigo-600 dark:text-indigo-400 mb-1">Selected to Update</div>
+                    <div className="text-2xl font-semibold text-indigo-900 dark:text-indigo-300">
+                      {selectedItemsForUpdate.size}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Items</div>
+                    <div className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      {itemsWithPriceHistories.length}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">With Current Price</div>
+                    <div className="text-2xl font-semibold text-gray-900 dark:text-white">
+                      {itemsWithPriceHistories.filter(item => item.current_price).length}
+                    </div>
+                  </div>
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                    <div className="text-xs text-green-600 dark:text-green-400 mb-1">With Supplier Price</div>
+                    <div className="text-2xl font-semibold text-green-900 dark:text-green-300">
+                      {itemsWithPriceHistories.filter(item =>
+                        item.price_histories?.some(h => h.supplier?.id === selectedSupplierId)
+                      ).length}
+                    </div>
+                  </div>
+                  <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
+                    <div className="text-xs text-orange-600 dark:text-orange-400 mb-1">Missing Price</div>
+                    <div className="text-2xl font-semibold text-orange-900 dark:text-orange-300">
+                      {itemsWithPriceHistories.filter(item =>
+                        !item.price_histories?.some(h => h.supplier?.id === selectedSupplierId)
+                      ).length}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items Grid - Simplified Price Comparison */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 dark:bg-gray-900 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">Price Comparison</h4>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
+                        <tr>
+                          <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 w-12">
+                            <input
+                              type="checkbox"
+                              checked={itemsWithPriceHistories.length > 0 && selectedItemsForUpdate.size === itemsWithPriceHistories.length}
+                              onChange={() => {
+                                if (selectedItemsForUpdate.size === itemsWithPriceHistories.length) {
+                                  setSelectedItemsForUpdate(new Set())
+                                } else {
+                                  setSelectedItemsForUpdate(new Set(itemsWithPriceHistories.map(item => item.id)))
+                                }
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Item</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Category</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Current Default Price</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Current Supplier</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-indigo-600 dark:text-indigo-400">Selected Supplier Price</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Difference</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-blue-600 dark:text-blue-400">Create/Update Price</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                        {itemsWithPriceHistories.map((item, idx) => {
+                          // Find the most recent price for the selected supplier
+                          const selectedSupplierPrice = item.price_histories
+                            ?.filter(h => h.supplier?.id === selectedSupplierId)
+                            ?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+
+                          // Current default is the item's current_price
+                          const currentDefaultPrice = item.current_price
+
+                          // Current default supplier
+                          const currentDefaultSupplier = item.default_supplier?.name || '-'
+
+                          // Calculate difference
+                          const selectedPrice = selectedSupplierPrice?.new_price
+                          const priceDiff = selectedPrice && currentDefaultPrice
+                            ? selectedPrice - currentDefaultPrice
+                            : null
+                          const priceDiffPercent = priceDiff && currentDefaultPrice
+                            ? ((priceDiff / currentDefaultPrice) * 100).toFixed(1)
+                            : null
+
+                          return (
+                            <tr key={idx} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${selectedItemsForUpdate.has(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/10' : ''}`}>
+                              <td className="px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedItemsForUpdate.has(item.id)}
+                                  onChange={() => {
+                                    const newSet = new Set(selectedItemsForUpdate)
+                                    if (newSet.has(item.id)) {
+                                      newSet.delete(item.id)
+                                    } else {
+                                      newSet.add(item.id)
+                                    }
+                                    setSelectedItemsForUpdate(newSet)
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                <div className="font-medium text-gray-900 dark:text-white">{item.item_name}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">{item.item_code}</div>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                {item.category || '-'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
+                                {currentDefaultPrice ? formatCurrency(currentDefaultPrice, true) : <span className="text-gray-400">-</span>}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                {currentDefaultSupplier}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-right">
+                                {selectedPrice ? (
+                                  <span className="font-medium text-indigo-900 dark:text-indigo-300">
+                                    {formatCurrency(selectedPrice, true)}
+                                  </span>
+                                ) : (
+                                  <span className="text-orange-600 dark:text-orange-400">No price</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-right">
+                                {priceDiff !== null ? (
+                                  <span className={
+                                    priceDiff > 0
+                                      ? 'text-red-600 dark:text-red-400 font-medium'
+                                      : priceDiff < 0
+                                      ? 'text-green-600 dark:text-green-400 font-medium'
+                                      : 'text-gray-600 dark:text-gray-400'
+                                  }>
+                                    {priceDiff > 0 ? '+' : ''}{formatCurrency(priceDiff, true)}
+                                    {priceDiffPercent !== null && priceDiffPercent !== '0.0' && (
+                                      <span className="text-xs ml-1">
+                                        ({priceDiff > 0 ? '+' : ''}{priceDiffPercent}%)
+                                      </span>
+                                    )}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={itemsToCreateUpdatePrice[item.id]?.shouldUpdate || false}
+                                    onChange={(e) => {
+                                      setItemsToCreateUpdatePrice(prev => ({
+                                        ...prev,
+                                        [item.id]: {
+                                          shouldUpdate: e.target.checked,
+                                          newPrice: prev[item.id]?.newPrice || item.current_price || 0
+                                        }
+                                      }))
+                                    }}
+                                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                  />
+                                  {itemsToCreateUpdatePrice[item.id]?.shouldUpdate && (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-xs text-gray-500 dark:text-gray-400">$</span>
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={(itemsToCreateUpdatePrice[item.id]?.newPrice || 0).toFixed(2)}
+                                        onChange={(e) => {
+                                          setItemsToCreateUpdatePrice(prev => ({
+                                            ...prev,
+                                            [item.id]: {
+                                              ...prev[item.id],
+                                              newPrice: parseFloat(e.target.value) || 0
+                                            }
+                                          }))
+                                        }}
+                                        className="w-24 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Warning if missing supplier prices */}
+                {itemsWithPriceHistories.some(item => !item.price_histories?.some(h => h.supplier?.id === selectedSupplierId)) && (
+                  <div className="mt-6 rounded-md bg-orange-50 dark:bg-orange-900/20 p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <ExclamationTriangleIcon className="h-5 w-5 text-orange-400" />
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-orange-800 dark:text-orange-300">
+                          Missing Supplier Prices Detected
+                        </h3>
+                        <div className="mt-2 text-sm text-orange-700 dark:text-orange-400">
+                          <p>
+                            Some items do not have a price from the selected supplier. You can uncheck these items if you don't want to set this supplier as their default yet.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    type="button"
+                    onClick={confirmSetDefaultSupplier}
+                    disabled={settingDefaultSupplier}
+                    className="flex-1 inline-flex justify-center items-center rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                  >
+                    {settingDefaultSupplier ? 'Setting...' : 'Confirm & Set as Default'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowConfirmationModal(false)
+                      setSelectedSupplierId(null)
+                      setItemsWithPriceHistories([])
+                      setShowSetDefaultSupplierModal(true)
+                    }}
+                    disabled={settingDefaultSupplier}
+                    className="flex-1 inline-flex justify-center rounded-md bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white/10 dark:text-white dark:ring-white/5 dark:hover:bg-white/20"
                   >
                     Cancel
                   </button>

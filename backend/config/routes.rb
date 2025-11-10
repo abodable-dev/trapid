@@ -36,6 +36,7 @@ Rails.application.routes.draw do
 
       # Health checks
       get 'health/pricebook', to: 'health#pricebook'
+      get 'health/pricebook/missing_items', to: 'health#missing_items'
 
       # Construction jobs management
       resources :constructions do
@@ -97,6 +98,7 @@ Rails.application.routes.draw do
           post :add_price
           post :set_default_supplier
           delete 'price_histories/:history_id', to: 'pricebook_items#delete_price_history'
+          patch 'price_histories/:history_id', to: 'pricebook_items#update_price_history'
         end
         collection do
           patch :bulk_update
@@ -132,6 +134,11 @@ Rails.application.routes.draw do
           patch :bulk_update
           post :merge
           post :match_supplier
+        end
+        member do
+          get :categories
+          post :copy_price_history
+          delete :remove_from_categories
         end
       end
 

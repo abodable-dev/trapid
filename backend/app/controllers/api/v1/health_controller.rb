@@ -3,25 +3,87 @@ module Api
     class HealthController < ApplicationController
       def pricebook
         # Get pricebook items without default supplier
-        items_without_default_supplier = PricebookItem.active
+        items_without_default_supplier_query = PricebookItem.active
           .where(default_supplier_id: nil)
+
+        items_without_default_supplier_count = items_without_default_supplier_query.count
+        items_without_default_supplier = items_without_default_supplier_query
           .select(:id, :item_code, :item_name, :category, :current_price)
           .order(:item_code)
+          .limit(100)
 
         # Find suppliers with incomplete category coverage
         # A supplier has incomplete coverage if they have price history for SOME items in a category
         # but not ALL items in that category
         incomplete_suppliers = find_suppliers_with_incomplete_categories
 
+        # Find items with default supplier but no price history
+        items_with_missing_price_history = find_items_with_missing_price_history
+
+        # Find items that require photo but have no image
+        items_requiring_photo_query = PricebookItem.active
+          .where(requires_photo: true)
+          .where("image_url IS NULL OR image_url = ''")
+
+        items_requiring_photo_count = items_requiring_photo_query.count
+        items_requiring_photo_without_image = items_requiring_photo_query
+          .select(:id, :item_code, :item_name, :category, :current_price)
+          .order(:item_code)
+          .limit(100)
+
         render json: {
           itemsWithoutDefaultSupplier: {
-            count: items_without_default_supplier.count,
-            items: items_without_default_supplier.limit(100)
+            count: items_without_default_supplier_count,
+            items: items_without_default_supplier
           },
           suppliersWithIncompleteCategoryPricing: {
             count: incomplete_suppliers.length,
             suppliers: incomplete_suppliers
+          },
+          itemsWithDefaultSupplierButNoPriceHistory: {
+            count: items_with_missing_price_history.length,
+            items: items_with_missing_price_history
+          },
+          itemsRequiringPhotoWithoutImage: {
+            count: items_requiring_photo_count,
+            items: items_requiring_photo_without_image
           }
+        }
+      end
+
+      def missing_items
+        supplier_id = params[:supplier_id]
+        category = params[:category]
+
+        if supplier_id.blank? || category.blank?
+          render json: { error: 'supplier_id and category are required' }, status: :bad_request
+          return
+        end
+
+        # Get all active items in this category
+        all_items_in_category = PricebookItem.active
+          .where(category: category)
+          .pluck(:id)
+
+        # Get items this supplier has price history for
+        items_with_price_history = PriceHistory
+          .where(supplier_id: supplier_id)
+          .joins(:pricebook_item)
+          .where(pricebook_items: { category: category, is_active: true })
+          .pluck(:pricebook_item_id)
+          .uniq
+
+        # Find missing item IDs
+        missing_item_ids = all_items_in_category - items_with_price_history
+
+        # Get the missing items with details
+        missing_items = PricebookItem.active
+          .where(id: missing_item_ids)
+          .select(:id, :item_code, :item_name, :category, :current_price)
+          .order(:item_code)
+
+        render json: {
+          items: missing_items
         }
       end
 
@@ -63,7 +125,7 @@ module Api
               results << {
                 supplier: {
                   id: supplier.id,
-                  name: supplier.name
+                  name: supplier.full_name
                 },
                 category: category,
                 items_with_pricing: supplier_items,
@@ -77,6 +139,36 @@ module Api
 
         # Sort by missing items count (descending) then by category
         results.sort_by { |r| [-r[:missing_items_count], r[:category], r[:supplier][:name]] }
+      end
+
+      def find_items_with_missing_price_history
+        items_with_issues = []
+
+        # Get all active items that have a default supplier set
+        PricebookItem.active.where.not(default_supplier_id: nil).includes(:default_supplier).find_each do |item|
+          # Check if there's a price history entry for this item with the default supplier
+          has_price_history = PriceHistory.exists?(
+            pricebook_item_id: item.id,
+            supplier_id: item.default_supplier_id
+          )
+
+          unless has_price_history
+            items_with_issues << {
+              id: item.id,
+              item_code: item.item_code,
+              item_name: item.item_name,
+              category: item.category,
+              current_price: item.current_price,
+              default_supplier: {
+                id: item.default_supplier&.id,
+                name: item.default_supplier&.full_name
+              }
+            }
+          end
+        end
+
+        # Sort by item_code
+        items_with_issues.sort_by { |item| item[:item_code] }
       end
     end
   end

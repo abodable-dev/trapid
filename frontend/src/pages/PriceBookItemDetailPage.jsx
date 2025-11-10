@@ -34,7 +34,12 @@ export default function PriceBookItemDetailPage() {
   const [isAddPriceModalOpen, setIsAddPriceModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [historyToDelete, setHistoryToDelete] = useState(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [historyToEdit, setHistoryToEdit] = useState(null)
   const [enlargedImage, setEnlargedImage] = useState(null)
+  const [isSetDefaultModalOpen, setIsSetDefaultModalOpen] = useState(false)
+  const [supplierToSetDefault, setSupplierToSetDefault] = useState(null)
+  const [savingBooleans, setSavingBooleans] = useState(false)
 
   useEffect(() => {
     loadItem()
@@ -58,15 +63,26 @@ export default function PriceBookItemDetailPage() {
     navigate(-1)
   }
 
-  const handleSetDefaultSupplier = async (e, supplierId) => {
+  const handleSetDefaultSupplier = (e, supplierId) => {
     if (e) {
       e.preventDefault()
       e.stopPropagation()
     }
 
+    // Find the supplier details
+    const supplier = item.price_histories?.find(h => h.supplier?.id === supplierId)?.supplier
+    if (supplier) {
+      setSupplierToSetDefault(supplier)
+      setIsSetDefaultModalOpen(true)
+    }
+  }
+
+  const confirmSetDefaultSupplier = async () => {
+    if (!supplierToSetDefault) return
+
     try {
       const response = await api.post(`/api/v1/pricebook/${id}/set_default_supplier`, {
-        supplier_id: supplierId
+        supplier_id: supplierToSetDefault.id
       })
 
       // Update the state with the full item data from the response
@@ -78,6 +94,9 @@ export default function PriceBookItemDetailPage() {
           price_histories: prevItem.price_histories
         }))
       }
+
+      setIsSetDefaultModalOpen(false)
+      setSupplierToSetDefault(null)
     } catch (err) {
       console.error('Failed to set default supplier:', err)
       alert(`Failed to set default supplier: ${err.response?.data?.error || err.message}`)
@@ -105,9 +124,50 @@ export default function PriceBookItemDetailPage() {
   }
 
   const handleEditPriceHistory = (history) => {
-    // TODO: Open edit modal with pre-filled data
-    console.log('Edit price history:', history)
-    alert('Edit functionality coming soon!')
+    setHistoryToEdit(history)
+    setIsEditModalOpen(true)
+  }
+
+  const confirmEditPriceHistory = async (updatedData) => {
+    if (!historyToEdit) return
+
+    try {
+      await api.patch(`/api/v1/pricebook/${id}/price_histories/${historyToEdit.id}`, updatedData)
+      setIsEditModalOpen(false)
+      setHistoryToEdit(null)
+      // Reload the item to refresh price histories
+      await loadItem()
+    } catch (err) {
+      console.error('Failed to update price history:', err)
+      alert(`Failed to update price history: ${err.response?.data?.error || err.message}`)
+    }
+  }
+
+  const handleBooleanToggle = async (fieldName, currentValue) => {
+    const newValue = !currentValue
+
+    // Optimistic update
+    setItem(prev => ({
+      ...prev,
+      [fieldName]: newValue
+    }))
+
+    try {
+      setSavingBooleans(true)
+      await api.patch(`/api/v1/pricebook/${id}`, {
+        [fieldName]: newValue
+      })
+    } catch (err) {
+      console.error(`Failed to update ${fieldName}:`, err)
+      alert(`Failed to update ${fieldName}. Please try again.`)
+      // Revert on error
+      setItem(prev => ({
+        ...prev,
+        [fieldName]: currentValue
+      }))
+    } finally {
+      setSavingBooleans(false)
+    }
   }
 
   const Badge = ({ color, children }) => {
@@ -248,7 +308,7 @@ export default function PriceBookItemDetailPage() {
                   </dt>
                   <dd className="mt-1">
                     <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {getDisplayPrice() ? formatCurrency(getDisplayPrice(), false) : 'No price set'}
+                      {getDisplayPrice() ? formatCurrency(getDisplayPrice(), true) : 'No price set'}
                     </div>
                     {item.default_supplier && (
                       <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -355,7 +415,16 @@ export default function PriceBookItemDetailPage() {
                       {item.price_histories.slice(0, 10).map((history, idx) => {
                         const change = history.new_price - history.old_price
                         const changePercent = history.old_price ? ((change / history.old_price) * 100).toFixed(1) : 0
-                        const isDefaultSupplier = history.supplier && item.default_supplier && history.supplier.id === item.default_supplier.id
+
+                        // Find the most recent price history for the default supplier
+                        const mostRecentDefaultHistory = item.default_supplier
+                          ? item.price_histories
+                              .filter(h => h.supplier?.id === item.default_supplier.id)
+                              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+                          : null
+
+                        // Only mark THIS specific entry as default if it's the most recent one for the default supplier
+                        const isDefaultSupplier = mostRecentDefaultHistory && history.id === mostRecentDefaultHistory.id
 
                         return (
                           <tr key={idx}>
@@ -363,14 +432,14 @@ export default function PriceBookItemDetailPage() {
                               {formatDate(history.created_at)}
                             </td>
                             <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
-                              {history.old_price ? formatCurrency(history.old_price, false) : '-'}
+                              {history.old_price ? formatCurrency(history.old_price, true) : '-'}
                             </td>
                             <td className="px-3 py-2 text-sm text-gray-900 dark:text-white font-medium">
-                              {formatCurrency(history.new_price, false)}
+                              {formatCurrency(history.new_price, true)}
                             </td>
                             <td className="px-3 py-2 text-sm">
                               <span className={change > 0 ? 'text-red-600 dark:text-red-400' : change < 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}>
-                                {change > 0 ? '+' : ''}{formatCurrency(change, false)}
+                                {change > 0 ? '+' : ''}{formatCurrency(change, true)}
                                 {changePercent !== 0 && ` (${change > 0 ? '+' : ''}${changePercent}%)`}
                               </span>
                             </td>
@@ -378,13 +447,15 @@ export default function PriceBookItemDetailPage() {
                               {history.supplier ? (
                                 <Switch
                                   checked={isDefaultSupplier}
+                                  disabled={isDefaultSupplier}
                                   onChange={() => {
-                                    // Always allow changing to a different supplier
                                     handleSetDefaultSupplier(null, history.supplier.id)
                                   }}
                                   className={`${
-                                    isDefaultSupplier ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-700'
-                                  } relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer`}
+                                    isDefaultSupplier ? 'bg-indigo-600 opacity-75' : 'bg-gray-200 dark:bg-gray-700'
+                                  } relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                                    isDefaultSupplier ? 'cursor-default' : 'cursor-pointer'
+                                  } disabled:cursor-not-allowed`}
                                 >
                                   <span className="sr-only">Set {history.supplier.name} as default supplier</span>
                                   <span
@@ -397,8 +468,17 @@ export default function PriceBookItemDetailPage() {
                                 <span className="text-gray-400 text-xs">-</span>
                               )}
                             </td>
-                            <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
-                              {history.supplier?.name || '-'}
+                            <td className="px-3 py-2 text-sm">
+                              {history.supplier ? (
+                                <Link
+                                  to={`/contacts/${history.supplier.id}`}
+                                  className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 hover:underline"
+                                >
+                                  {history.supplier.name}
+                                </Link>
+                              ) : (
+                                <span className="text-gray-600 dark:text-gray-400">-</span>
+                              )}
                             </td>
                             <td className="px-3 py-2 text-right">
                               <Menu as="div" className="relative inline-block text-left">
@@ -459,6 +539,73 @@ export default function PriceBookItemDetailPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Data Quality Settings Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <ShieldCheckIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                Data Quality Settings
+              </h2>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label htmlFor="requires_photo" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Needs Photo
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Item requires a product image
+                    </p>
+                  </div>
+                  <input
+                    id="requires_photo"
+                    type="checkbox"
+                    checked={item.requires_photo || false}
+                    onChange={() => handleBooleanToggle('requires_photo', item.requires_photo)}
+                    disabled={savingBooleans}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <div>
+                    <label htmlFor="requires_spec" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Needs Spec
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Item requires specification sheet
+                    </p>
+                  </div>
+                  <input
+                    id="requires_spec"
+                    type="checkbox"
+                    checked={item.requires_spec || false}
+                    onChange={() => handleBooleanToggle('requires_spec', item.requires_spec)}
+                    disabled={savingBooleans}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <div>
+                    <label htmlFor="needs_pricing_review" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Pricing Review
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Price needs to be reviewed
+                    </p>
+                  </div>
+                  <input
+                    id="needs_pricing_review"
+                    type="checkbox"
+                    checked={item.needs_pricing_review || false}
+                    onChange={() => handleBooleanToggle('needs_pricing_review', item.needs_pricing_review)}
+                    disabled={savingBooleans}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Images Card */}
             {(item.image_url || item.qr_code_url) && (
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -698,6 +845,176 @@ export default function PriceBookItemDetailPage() {
         </div>
       </Dialog>
 
+      {/* Set Default Supplier Confirmation Dialog */}
+      <Dialog open={isSetDefaultModalOpen} onClose={() => setIsSetDefaultModalOpen(false)} className="relative z-50">
+        <DialogBackdrop
+          transition
+          className="fixed inset-0 bg-gray-500/75 transition-opacity data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in dark:bg-gray-900/50"
+        />
+
+        <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <DialogPanel
+              transition
+              className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:w-full sm:max-w-4xl data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95 dark:bg-gray-800 dark:outline dark:outline-1 dark:-outline-offset-1 dark:outline-white/10"
+            >
+              <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4 dark:bg-gray-800">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex size-12 shrink-0 items-center justify-center rounded-full bg-indigo-100 sm:mx-0 sm:size-10 dark:bg-indigo-500/10">
+                    <CheckCircleIcon aria-hidden="true" className="size-6 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
+                    <DialogTitle as="h3" className="text-base font-semibold text-gray-900 dark:text-white">
+                      Set Default Supplier
+                    </DialogTitle>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        You are about to set{' '}
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {supplierToSetDefault?.name}
+                        </span>
+                        {' '}as the default supplier for this item. Please review all price history data below to ensure nothing is missing.
+                      </p>
+
+                      {/* Price History Table */}
+                      <div className="mt-4 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                        <div className="bg-gray-50 dark:bg-gray-900 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">All Price History Data</h4>
+                        </div>
+                        <div className="max-h-96 overflow-y-auto">
+                          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
+                              <tr>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Date</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Supplier</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Old Price</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">New Price</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Change</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                              {item?.price_histories?.map((history, idx) => {
+                                const change = history.new_price - history.old_price
+                                const changePercent = history.old_price ? ((change / history.old_price) * 100).toFixed(1) : 0
+                                const isSelectedSupplier = history.supplier?.id === supplierToSetDefault?.id
+
+                                return (
+                                  <tr
+                                    key={idx}
+                                    className={isSelectedSupplier ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}
+                                  >
+                                    <td className="px-3 py-2 text-sm text-gray-900 dark:text-white whitespace-nowrap">
+                                      {formatDate(history.created_at)}
+                                    </td>
+                                    <td className="px-3 py-2 text-sm">
+                                      {history.supplier ? (
+                                        <span className={isSelectedSupplier ? 'font-medium text-indigo-900 dark:text-indigo-300' : 'text-gray-900 dark:text-white'}>
+                                          {history.supplier.name}
+                                          {isSelectedSupplier && (
+                                            <span className="ml-2 inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-400">
+                                              Selected
+                                            </span>
+                                          )}
+                                        </span>
+                                      ) : (
+                                        <span className="text-gray-400 dark:text-gray-500">No supplier</span>
+                                      )}
+                                    </td>
+                                    <td className="px-3 py-2 text-sm">
+                                      {history.old_price ? (
+                                        <span className="text-gray-600 dark:text-gray-400">{formatCurrency(history.old_price, true)}</span>
+                                      ) : (
+                                        <span className="text-orange-600 dark:text-orange-400">Missing</span>
+                                      )}
+                                    </td>
+                                    <td className="px-3 py-2 text-sm font-medium text-gray-900 dark:text-white">
+                                      {formatCurrency(history.new_price, true)}
+                                    </td>
+                                    <td className="px-3 py-2 text-sm">
+                                      <span className={change > 0 ? 'text-red-600 dark:text-red-400' : change < 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}>
+                                        {change > 0 ? '+' : ''}{formatCurrency(change, true)}
+                                        {changePercent !== 0 && ` (${change > 0 ? '+' : ''}${changePercent}%)`}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Summary Stats */}
+                      <div className="mt-4 grid grid-cols-3 gap-4">
+                        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Total Entries</div>
+                          <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                            {item?.price_histories?.length || 0}
+                          </div>
+                        </div>
+                        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Unique Suppliers</div>
+                          <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                            {new Set(item?.price_histories?.map(h => h.supplier?.id).filter(Boolean)).size}
+                          </div>
+                        </div>
+                        <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3">
+                          <div className="text-xs text-indigo-600 dark:text-indigo-400">Selected Supplier Prices</div>
+                          <div className="text-lg font-semibold text-indigo-900 dark:text-indigo-300">
+                            {item?.price_histories?.filter(h => h.supplier?.id === supplierToSetDefault?.id).length || 0}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Warning if missing data */}
+                      {item?.price_histories?.some(h => !h.old_price) && (
+                        <div className="mt-4 rounded-md bg-orange-50 dark:bg-orange-900/20 p-4">
+                          <div className="flex">
+                            <div className="flex-shrink-0">
+                              <ExclamationTriangleIcon className="h-5 w-5 text-orange-400" aria-hidden="true" />
+                            </div>
+                            <div className="ml-3">
+                              <h3 className="text-sm font-medium text-orange-800 dark:text-orange-300">
+                                Missing Data Detected
+                              </h3>
+                              <div className="mt-2 text-sm text-orange-700 dark:text-orange-400">
+                                <p>
+                                  Some price history entries are missing "Old Price" values. Please review the data above before confirming.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 dark:bg-gray-700/25">
+                <button
+                  type="button"
+                  onClick={confirmSetDefaultSupplier}
+                  className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto dark:bg-indigo-500 dark:shadow-none dark:hover:bg-indigo-400"
+                >
+                  Confirm & Set as Default
+                </button>
+                <button
+                  type="button"
+                  data-autofocus
+                  onClick={() => {
+                    setIsSetDefaultModalOpen(false)
+                    setSupplierToSetDefault(null)
+                  }}
+                  className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto dark:bg-white/10 dark:text-white dark:shadow-none dark:ring-white/5 dark:hover:bg-white/20"
+                >
+                  Cancel
+                </button>
+              </div>
+            </DialogPanel>
+          </div>
+        </div>
+      </Dialog>
+
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} className="relative z-50">
         <DialogBackdrop
@@ -726,9 +1043,9 @@ export default function PriceBookItemDetailPage() {
                         {historyToDelete && (
                           <>
                             {' '}This will permanently remove the price change from{' '}
-                            <span className="font-medium">{historyToDelete.old_price ? formatCurrency(historyToDelete.old_price, false) : 'N/A'}</span>
+                            <span className="font-medium">{historyToDelete.old_price ? formatCurrency(historyToDelete.old_price, true) : 'N/A'}</span>
                             {' '}to{' '}
-                            <span className="font-medium">{formatCurrency(historyToDelete.new_price, false)}</span>
+                            <span className="font-medium">{formatCurrency(historyToDelete.new_price, true)}</span>
                             {historyToDelete.supplier && (
                               <>
                                 {' '}for{' '}
@@ -763,6 +1080,119 @@ export default function PriceBookItemDetailPage() {
                   Cancel
                 </button>
               </div>
+            </DialogPanel>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Edit Price History Dialog */}
+      <Dialog open={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} className="relative z-50">
+        <DialogBackdrop
+          transition
+          className="fixed inset-0 bg-gray-500/75 transition-opacity data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in dark:bg-gray-900/50"
+        />
+
+        <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <DialogPanel
+              transition
+              className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:w-full sm:max-w-lg data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95 dark:bg-gray-800 dark:outline dark:outline-1 dark:-outline-offset-1 dark:outline-white/10"
+            >
+              <form onSubmit={(e) => {
+                e.preventDefault()
+                const formData = new FormData(e.target)
+                const updatedData = {
+                  old_price: formData.get('old_price'),
+                  new_price: formData.get('new_price'),
+                  date_effective: formData.get('date_effective'),
+                  change_reason: formData.get('change_reason')
+                }
+                confirmEditPriceHistory(updatedData)
+              }}>
+                <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4 dark:bg-gray-800">
+                  <div className="sm:flex sm:items-start">
+                    <div className="mx-auto flex size-12 shrink-0 items-center justify-center rounded-full bg-indigo-100 sm:mx-0 sm:size-10 dark:bg-indigo-500/10">
+                      <PencilIcon aria-hidden="true" className="size-6 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div className="mt-3 w-full text-center sm:ml-4 sm:mt-0 sm:text-left">
+                      <DialogTitle as="h3" className="text-base font-semibold text-gray-900 dark:text-white">
+                        Edit Price History
+                      </DialogTitle>
+                      <div className="mt-4 space-y-4">
+                        <div>
+                          <label htmlFor="old_price" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Old Price
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            name="old_price"
+                            id="old_price"
+                            defaultValue={historyToEdit?.old_price || ''}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="new_price" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            New Price
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            name="new_price"
+                            id="new_price"
+                            defaultValue={historyToEdit?.new_price || ''}
+                            required
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="date_effective" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Date Effective
+                          </label>
+                          <input
+                            type="date"
+                            name="date_effective"
+                            id="date_effective"
+                            defaultValue={historyToEdit?.date_effective || ''}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="change_reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Change Reason
+                          </label>
+                          <textarea
+                            name="change_reason"
+                            id="change_reason"
+                            rows={3}
+                            defaultValue={historyToEdit?.change_reason || ''}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 dark:bg-gray-700/25">
+                  <button
+                    type="submit"
+                    className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto dark:bg-indigo-500 dark:shadow-none dark:hover:bg-indigo-400"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditModalOpen(false)
+                      setHistoryToEdit(null)
+                    }}
+                    className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto dark:bg-white/10 dark:text-white dark:shadow-none dark:ring-white/5 dark:hover:bg-white/20"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </DialogPanel>
           </div>
         </div>

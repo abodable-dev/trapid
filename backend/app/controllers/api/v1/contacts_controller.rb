@@ -59,9 +59,18 @@ module Api
 
         # If contact is a supplier, add pricebook items and purchase orders
         if @contact.is_supplier?
-          contact_json[:pricebook_items_count] = @contact.pricebook_items.count
+          # Get items where this contact is the supplier OR default_supplier OR has provided a quote (in price_histories)
+          items_as_supplier = @contact.pricebook_items.distinct
+          items_as_default_supplier = PricebookItem.where(default_supplier_id: @contact.id).distinct
+          items_with_price_history = PricebookItem.joins(:price_histories).where(price_histories: { supplier_id: @contact.id }).distinct
+
+          # Combine all three and get unique items
+          all_item_ids = (items_as_supplier.pluck(:id) + items_as_default_supplier.pluck(:id) + items_with_price_history.pluck(:id)).uniq
+          all_items = PricebookItem.where(id: all_item_ids).order(:item_code)
+
+          contact_json[:pricebook_items_count] = all_items.count
           contact_json[:purchase_orders_count] = @contact.purchase_orders.count
-          contact_json[:pricebook_items] = @contact.pricebook_items.as_json(
+          contact_json[:pricebook_items] = all_items.as_json(
             only: [:id, :item_code, :item_name, :category, :current_price, :unit]
           )
         end
@@ -269,6 +278,237 @@ module Api
         render json: {
           success: false,
           error: "Failed to match supplier: #{e.message}"
+        }, status: :internal_server_error
+      end
+
+      # GET /api/v1/contacts/:id/categories
+      def categories
+        contact = Contact.find(params[:id])
+
+        unless contact.is_supplier?
+          return render json: {
+            success: false,
+            error: "Contact must be a supplier"
+          }, status: :unprocessable_entity
+        end
+
+        # Get distinct categories from pricebook items where this contact is the default supplier
+        # or has provided price histories
+        categories_from_default = PricebookItem.where(default_supplier_id: contact.id)
+                                              .where.not(category: nil)
+                                              .distinct
+                                              .pluck(:category)
+
+        categories_from_histories = PricebookItem.joins(:price_histories)
+                                                .where(price_histories: { supplier_id: contact.id })
+                                                .where.not(category: nil)
+                                                .distinct
+                                                .pluck(:category)
+
+        all_categories = (categories_from_default + categories_from_histories).uniq.sort
+
+        # Get item counts per category
+        categories_with_counts = all_categories.map do |category|
+          default_count = PricebookItem.where(default_supplier_id: contact.id, category: category).count
+          history_count = PricebookItem.joins(:price_histories)
+                                      .where(price_histories: { supplier_id: contact.id })
+                                      .where(category: category)
+                                      .distinct
+                                      .count
+
+          {
+            category: category,
+            default_supplier_count: default_count,
+            price_history_count: history_count,
+            total_count: [default_count, history_count].max
+          }
+        end
+
+        render json: {
+          success: true,
+          categories: categories_with_counts
+        }
+      rescue ActiveRecord::RecordNotFound => e
+        render json: {
+          success: false,
+          error: "Contact not found: #{e.message}"
+        }, status: :not_found
+      rescue => e
+        render json: {
+          success: false,
+          error: "Failed to fetch categories: #{e.message}"
+        }, status: :internal_server_error
+      end
+
+      # POST /api/v1/contacts/:id/copy_price_history
+      def copy_price_history
+        source_id = params[:source_id]
+        categories = params[:categories] # Optional array of categories to filter by
+
+        if source_id.blank?
+          return render json: {
+            success: false,
+            error: "source_id is required"
+          }, status: :bad_request
+        end
+
+        target_contact = Contact.find(params[:id])
+        source_contact = Contact.find(source_id)
+
+        unless target_contact.is_supplier? || source_contact.is_supplier?
+          return render json: {
+            success: false,
+            error: "Both contacts must be suppliers"
+          }, status: :unprocessable_entity
+        end
+
+        copied_count = 0
+        updated_count = 0
+
+        ActiveRecord::Base.transaction do
+          # Get all pricebook items where source is the default supplier
+          source_items = PricebookItem.where(default_supplier_id: source_id)
+
+          # Filter by categories if provided
+          if categories.present? && categories.is_a?(Array) && categories.any?
+            source_items = source_items.where(category: categories)
+          end
+
+          source_items.each do |item|
+            # Set target as the new default supplier
+            item.update!(default_supplier_id: target_contact.id)
+            updated_count += 1
+
+            # Only copy the most recent price history for this item from the source supplier
+            latest_price_history = PriceHistory.where(
+              pricebook_item_id: item.id,
+              supplier_id: source_id
+            ).order(created_at: :desc).first
+
+            if latest_price_history
+              # Check if target already has a price history for this item
+              existing_history = PriceHistory.where(
+                pricebook_item_id: item.id,
+                supplier_id: target_contact.id
+              ).exists?
+
+              # Only create if target doesn't already have a price history for this item
+              unless existing_history
+                PriceHistory.create!(
+                  pricebook_item_id: item.id,
+                  old_price: latest_price_history.old_price,
+                  new_price: latest_price_history.new_price,
+                  supplier_id: target_contact.id,
+                  lga: latest_price_history.lga,
+                  date_effective: latest_price_history.date_effective,
+                  change_reason: "Copied from #{source_contact.full_name}"
+                )
+                copied_count += 1
+              end
+            end
+          end
+        end
+
+        category_msg = if categories.present? && categories.any?
+          " for #{categories.join(', ')} categories"
+        else
+          ""
+        end
+
+        render json: {
+          success: true,
+          message: "Copied #{copied_count} price histories and set as default supplier for #{updated_count} items#{category_msg}",
+          copied_count: copied_count,
+          updated_count: updated_count,
+          source_contact: source_contact.full_name,
+          target_contact: target_contact.full_name,
+          categories: categories || []
+        }
+      rescue ActiveRecord::RecordNotFound => e
+        render json: {
+          success: false,
+          error: "Contact not found: #{e.message}"
+        }, status: :not_found
+      rescue => e
+        render json: {
+          success: false,
+          error: "Failed to copy price history: #{e.message}"
+        }, status: :internal_server_error
+      end
+
+      # DELETE /api/v1/contacts/:id/remove_from_categories
+      def remove_from_categories
+        categories = params[:categories] # Array of categories to remove supplier from
+
+        if categories.blank? || !categories.is_a?(Array) || categories.empty?
+          return render json: {
+            success: false,
+            error: "categories (array) is required"
+          }, status: :bad_request
+        end
+
+        contact = Contact.find(params[:id])
+
+        unless contact.is_supplier?
+          return render json: {
+            success: false,
+            error: "Contact must be a supplier"
+          }, status: :unprocessable_entity
+        end
+
+        removed_from_default_count = 0
+        deleted_price_histories_count = 0
+
+        ActiveRecord::Base.transaction do
+          # Find all pricebook items where this contact is the default supplier
+          # and the category is in the provided list
+          default_supplier_items = PricebookItem.where(
+            default_supplier_id: contact.id,
+            category: categories
+          )
+
+          default_supplier_items.each do |item|
+            # Set default_supplier_id to nil (unset the supplier)
+            item.update!(default_supplier_id: nil)
+            removed_from_default_count += 1
+          end
+
+          # Delete all price histories for this supplier in the selected categories
+          # This removes the supplier's pricing from items even if they weren't the default
+          price_histories_to_delete = PriceHistory.joins(:pricebook_item)
+            .where(supplier_id: contact.id)
+            .where(pricebook_items: { category: categories })
+
+          deleted_price_histories_count = price_histories_to_delete.count
+          price_histories_to_delete.delete_all
+        end
+
+        message_parts = []
+        message_parts << "Removed as default supplier from #{removed_from_default_count} items" if removed_from_default_count > 0
+        message_parts << "Deleted #{deleted_price_histories_count} price histories" if deleted_price_histories_count > 0
+
+        message = if message_parts.any?
+          "#{message_parts.join(' and ')} in #{categories.join(', ')}"
+        else
+          "No items or price histories found for this supplier in #{categories.join(', ')}"
+        end
+
+        render json: {
+          success: true,
+          message: message,
+          removed_from_default_count: removed_from_default_count,
+          deleted_price_histories_count: deleted_price_histories_count,
+          categories: categories
+        }
+      rescue ActiveRecord::RecordNotFound => e
+        render json: {
+          success: false,
+          error: "Contact not found: #{e.message}"
+        }, status: :not_found
+      rescue => e
+        render json: {
+          success: false,
+          error: "Failed to remove from categories: #{e.message}"
         }, status: :internal_server_error
       end
 

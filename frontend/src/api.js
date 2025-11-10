@@ -97,11 +97,12 @@ export const api = {
     return response.json();
   },
 
-  async delete(endpoint) {
+  async delete(endpoint, data) {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
       credentials: 'include',
+      body: data ? JSON.stringify(data) : undefined,
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
