@@ -6,6 +6,9 @@ class OnedrivePricebookSyncService
     @folder_path = folder_path || "Pricebook Images"
     @results = {
       matched: 0,
+      photos_matched: 0,
+      specs_matched: 0,
+      qr_codes_matched: 0,
       unmatched_files: [],
       unmatched_items: [],
       errors: []
@@ -30,9 +33,15 @@ class OnedrivePricebookSyncService
     # Match files to items by name
     match_files_to_items(client, files, items)
 
+    # Update boolean flags for all items after sync
+    update_boolean_flags(items)
+
     {
       success: true,
       matched: @results[:matched],
+      photos_matched: @results[:photos_matched],
+      specs_matched: @results[:specs_matched],
+      qr_codes_matched: @results[:qr_codes_matched],
       unmatched_files: @results[:unmatched_files],
       unmatched_items: @results[:unmatched_items],
       errors: @results[:errors]
@@ -80,8 +89,8 @@ class OnedrivePricebookSyncService
     response = client.get("/me/drive/items/#{folder_id}/children")
     files = response['value'] || []
 
-    # Filter for image files only
-    files.select { |f| f['file'] && is_image_file?(f['name']) }
+    # Filter for image and document files (specs)
+    files.select { |f| f['file'] && (is_image_file?(f['name']) || is_spec_file?(f['name'])) }
   end
 
   def is_image_file?(filename)
@@ -89,8 +98,18 @@ class OnedrivePricebookSyncService
     extensions.any? { |ext| filename.downcase.end_with?(ext) }
   end
 
+  def is_spec_file?(filename)
+    extensions = %w[.pdf .doc .docx]
+    extensions.any? { |ext| filename.downcase.end_with?(ext) }
+  end
+
   def is_qr_code_file?(filename)
     filename.downcase.include?('qr') || filename.downcase.include?('qrcode')
+  end
+
+  def is_spec_file_by_name?(filename)
+    spec_keywords = %w[spec specification datasheet data_sheet manual]
+    spec_keywords.any? { |keyword| filename.downcase.include?(keyword) }
   end
 
   def match_files_to_items(client, files, items)
@@ -114,9 +133,8 @@ class OnedrivePricebookSyncService
 
       if matching_items && matching_items.any?
         matching_items.each do |item|
-          update_item_image(client, item, file)
+          update_item_with_file(client, item, file)
           matched_items.add(item.id)
-          @results[:matched] += 1
         end
       else
         @results[:unmatched_files] << file['name']
@@ -135,7 +153,7 @@ class OnedrivePricebookSyncService
     end
   end
 
-  def update_item_image(client, item, file)
+  def update_item_with_file(client, item, file)
     # Get sharing link for the file
     share_response = client.post("/me/drive/items/#{file['id']}/createLink", {
       type: "view",
@@ -143,30 +161,58 @@ class OnedrivePricebookSyncService
     })
 
     share_url = share_response.dig('link', 'webUrl')
+    filename = file['name']
 
-    # Determine if this is a QR code or regular image
-    if is_qr_code_file?(file['name'])
+    # Determine file type and update appropriate field
+    if is_qr_code_file?(filename)
       item.update!(
         qr_code_url: share_url,
         image_source: 'onedrive',
         image_fetched_at: Time.current,
-        image_fetch_status: 'success',
-        requires_photo: true  # Mark as requiring photo since we found one
+        image_fetch_status: 'success'
       )
+      @results[:qr_codes_matched] += 1
+      Rails.logger.info "Matched QR code '#{filename}' to item '#{item.item_name}' (#{item.item_code})"
+    elsif is_spec_file?(filename) || is_spec_file_by_name?(filename)
+      item.update!(
+        spec_url: share_url,
+        image_source: 'onedrive',
+        image_fetched_at: Time.current,
+        image_fetch_status: 'success'
+      )
+      @results[:specs_matched] += 1
+      Rails.logger.info "Matched spec '#{filename}' to item '#{item.item_name}' (#{item.item_code})"
     else
       item.update!(
         image_url: share_url,
         image_source: 'onedrive',
         image_fetched_at: Time.current,
-        image_fetch_status: 'success',
-        requires_photo: true  # Mark as requiring photo since we found one
+        image_fetch_status: 'success'
       )
+      @results[:photos_matched] += 1
+      Rails.logger.info "Matched photo '#{filename}' to item '#{item.item_name}' (#{item.item_code})"
     end
 
-    Rails.logger.info "Matched file '#{file['name']}' to item '#{item.item_name}' (#{item.item_code})"
+    @results[:matched] += 1
   rescue => e
     @results[:errors] << "Error updating item #{item.item_code}: #{e.message}"
     Rails.logger.error "Error updating item #{item.item_code}: #{e.message}"
+  end
+
+  def update_boolean_flags(items)
+    # Update requires_photo and requires_spec flags based on what was found
+    items.each do |item|
+      has_photo = item.image_url.present?
+      has_spec = item.spec_url.present?
+
+      # Only update if flags have changed
+      if item.requires_photo != has_photo || item.requires_spec != has_spec
+        item.update_columns(
+          requires_photo: has_photo,
+          requires_spec: has_spec
+        )
+      end
+    end
   end
 
   def normalize_name(name)

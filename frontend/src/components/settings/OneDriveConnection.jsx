@@ -400,9 +400,21 @@ export default function OneDriveConnection() {
                               Sync Results:
                             </p>
                             <ul className="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                              <li>✓ {syncResult.matched} images matched and linked</li>
+                              <li>✓ {syncResult.matched} total files matched and linked</li>
+                              {syncResult.photos_matched > 0 && (
+                                <li className="ml-4">📷 {syncResult.photos_matched} photos</li>
+                              )}
+                              {syncResult.specs_matched > 0 && (
+                                <li className="ml-4">📄 {syncResult.specs_matched} specs</li>
+                              )}
+                              {syncResult.qr_codes_matched > 0 && (
+                                <li className="ml-4">🔲 {syncResult.qr_codes_matched} QR codes</li>
+                              )}
                               {syncResult.unmatched_files && syncResult.unmatched_files.length > 0 && (
                                 <li>⚠ {syncResult.unmatched_files.length} files couldn't be matched</li>
+                              )}
+                              {syncResult.unmatched_items && syncResult.unmatched_items.length > 0 && (
+                                <li>ℹ {syncResult.unmatched_items.length} items without files</li>
                               )}
                               {syncResult.errors && syncResult.errors.length > 0 && (
                                 <li className="text-red-600 dark:text-red-400">
@@ -410,6 +422,34 @@ export default function OneDriveConnection() {
                                 </li>
                               )}
                             </ul>
+
+                            {/* Show unmatched files details */}
+                            {syncResult.unmatched_files && syncResult.unmatched_files.length > 0 && (
+                              <details className="mt-3">
+                                <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  View unmatched files ({syncResult.unmatched_files.length})
+                                </summary>
+                                <ul className="mt-2 ml-4 space-y-1 text-xs text-gray-600 dark:text-gray-400 max-h-40 overflow-y-auto">
+                                  {syncResult.unmatched_files.map((file, idx) => (
+                                    <li key={idx}>• {file}</li>
+                                  ))}
+                                </ul>
+                              </details>
+                            )}
+
+                            {/* Show unmatched items details */}
+                            {syncResult.unmatched_items && syncResult.unmatched_items.length > 0 && (
+                              <details className="mt-3">
+                                <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  View items without files ({syncResult.unmatched_items.length})
+                                </summary>
+                                <ul className="mt-2 ml-4 space-y-1 text-xs text-gray-600 dark:text-gray-400 max-h-40 overflow-y-auto">
+                                  {syncResult.unmatched_items.map((item, idx) => (
+                                    <li key={idx}>• {item.name} ({item.code})</li>
+                                  ))}
+                                </ul>
+                              </details>
+                            )}
                           </div>
                         )}
                       </div>
