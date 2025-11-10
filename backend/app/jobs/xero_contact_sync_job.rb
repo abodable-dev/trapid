@@ -232,7 +232,9 @@ class XeroContactSyncJob < ApplicationJob
 
   def update_job_metadata(metadata)
     # Store job metadata in Rails cache for progress tracking
-    Rails.cache.write("xero_sync_job_#{job_id}", metadata.merge(job_id: job_id), expires_in: 24.hours)
+    # Note: Temporarily disabled due to solid_cache setup issues
+    # Rails.cache.write("xero_sync_job_#{job_id}", metadata.merge(job_id: job_id), expires_in: 24.hours)
+    Rails.logger.info("Job metadata update: #{metadata.inspect}")
   end
 
   def update_progress
