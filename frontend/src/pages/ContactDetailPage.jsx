@@ -450,6 +450,7 @@ export default function ContactDetailPage() {
         </div>
       </div>
 
+      {/* Contact Information and Business Details in sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
@@ -581,18 +582,122 @@ export default function ContactDetailPage() {
               <p className="text-gray-500 dark:text-gray-400 text-sm mt-4">No additional business details available</p>
             )}
           </div>
+        </div>
 
-
-          {/* Copy Price History - Only show for supplier contacts */}
-          {contact['is_supplier?'] && (
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Location & Region */}
+          {(contact.contact_region || contact.contact_region_id) && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Copy Price History & Items
-              </h2>
+              <div className="flex items-center gap-2 mb-4">
+                <MapPinIcon className="h-5 w-5 text-gray-400" />
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Location</h2>
+              </div>
 
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Copy all price histories from another supplier and set this contact as the default supplier for their items.
-              </p>
+              <div className="space-y-3">
+                {contact.contact_region && (
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Region</p>
+                    <p className="text-gray-900 dark:text-white font-medium">{contact.contact_region}</p>
+                  </div>
+                )}
+
+                {contact.contact_region_id && (
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Region ID</p>
+                    <p className="text-gray-900 dark:text-white font-mono text-sm">{contact.contact_region_id}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* System Information */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <BuildingOfficeIcon className="h-5 w-5 text-gray-400" />
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">System Info</h2>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Contact ID</p>
+                <p className="text-gray-900 dark:text-white font-mono text-sm">#{contact.id}</p>
+              </div>
+
+              {contact.sys_type_id && (
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">System Type ID</p>
+                  <p className="text-gray-900 dark:text-white font-mono text-sm">{contact.sys_type_id}</p>
+                </div>
+              )}
+
+              {contact.drive_id && (
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Drive ID</p>
+                  <p className="text-gray-900 dark:text-white font-mono text-sm break-all">{contact.drive_id}</p>
+                </div>
+              )}
+
+              {contact.folder_id && (
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Folder ID</p>
+                  <p className="text-gray-900 dark:text-white font-mono text-sm break-all">{contact.folder_id}</p>
+                </div>
+              )}
+
+              {contact.deleted && (
+                <div>
+                  <p className="text-sm text-red-500 dark:text-red-400 font-medium">Marked as Deleted</p>
+                </div>
+              )}
+
+              {contact.created_at && (
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Created</p>
+                  <p className="text-gray-900 dark:text-white text-sm">
+                    {new Date(contact.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h2>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Price Book Items</span>
+                <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {contact.pricebook_items?.length || 0}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Categories</span>
+                <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {currentContactCategories.length}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Copy Price History & Remove from Categories - Side by side for supplier contacts */}
+      {contact['is_supplier?'] && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          {/* Copy Price History */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Copy Price History & Items
+            </h2>
+
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Copy all price histories from another supplier and set this contact as the default supplier for their items.
+            </p>
 
               <div className="space-y-4">
                 <div className="relative supplier-search-container">
@@ -761,12 +866,11 @@ export default function ContactDetailPage() {
                     )}
                   </div>
                 )}
-              </div>
             </div>
-          )}
+          </div>
 
-          {/* Remove from Categories - Only show for supplier contacts */}
-          {contact['is_supplier?'] && currentContactCategories.length > 0 && (
+          {/* Remove from Categories - Only show if has categories */}
+          {currentContactCategories.length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 Remove from Categories
@@ -872,10 +976,13 @@ export default function ContactDetailPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
 
-          {/* Price Book - Only show for supplier contacts */}
-          {contact['is_supplier?'] && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      {/* Price Book Items - Full width for supplier contacts */}
+      {contact['is_supplier?'] && (
+        <div className="mt-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1007,111 +1114,9 @@ export default function ContactDetailPage() {
                   </p>
                 </div>
               )}
-            </div>
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Location & Region */}
-          {(contact.contact_region || contact.contact_region_id) && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <MapPinIcon className="h-5 w-5 text-gray-400" />
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Location</h2>
-              </div>
-
-              <div className="space-y-3">
-                {contact.contact_region && (
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Region</p>
-                    <p className="text-gray-900 dark:text-white font-medium">{contact.contact_region}</p>
-                  </div>
-                )}
-
-                {contact.contact_region_id && (
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Region ID</p>
-                    <p className="text-gray-900 dark:text-white font-mono text-sm">{contact.contact_region_id}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* System Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <BuildingOfficeIcon className="h-5 w-5 text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">System Info</h2>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Contact ID</p>
-                <p className="text-gray-900 dark:text-white font-mono text-sm">#{contact.id}</p>
-              </div>
-
-              {contact.sys_type_id && (
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">System Type ID</p>
-                  <p className="text-gray-900 dark:text-white font-mono text-sm">{contact.sys_type_id}</p>
-                </div>
-              )}
-
-              {contact.drive_id && (
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Drive ID</p>
-                  <p className="text-gray-900 dark:text-white font-mono text-sm break-all">{contact.drive_id}</p>
-                </div>
-              )}
-
-              {contact.folder_id && (
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Folder ID</p>
-                  <p className="text-gray-900 dark:text-white font-mono text-sm break-all">{contact.folder_id}</p>
-                </div>
-              )}
-
-              {contact.deleted && (
-                <div>
-                  <p className="text-sm text-red-500 dark:text-red-400 font-medium">Marked as Deleted</p>
-                </div>
-              )}
-
-              {contact.created_at && (
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Created</p>
-                  <p className="text-gray-900 dark:text-white text-sm">
-                    {new Date(contact.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h2>
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Price Book Items</span>
-                <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {contact.pricebook_items?.length || 0}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Categories</span>
-                <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {currentContactCategories.length}
-                </span>
-              </div>
-            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Edit Contact Modal */}
       <Dialog open={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} className="relative z-50">
