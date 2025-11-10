@@ -40,36 +40,19 @@ class OnedrivePricebookSyncService
       items_by_name[normalized] << item
     end
 
-    # Create fuzzy matcher ONCE for all files (PERFORMANCE OPTIMIZATION)
-    require 'fuzzy_match'
-    item_names = items_by_name.keys
-    fuzzy_matcher = FuzzyMatch.new(item_names, read: ->(name) { name })
-    Rails.logger.info "Created fuzzy matcher for #{item_names.count} unique item names"
-
-    # Preview matches without updating anything
+    # Preview matches without updating anything (EXACT MATCHES ONLY for speed)
+    # Fuzzy matching is too slow for 630 files × 5,285 items
+    # We'll only do fuzzy matching during actual sync if needed
     matches = []
     files.each do |file|
       filename_without_ext = File.basename(file['name'], '.*')
       normalized_filename = normalize_name(filename_without_ext)
 
-      # Try exact match first
+      # Only try exact match (instant lookup in hash)
       matching_items = items_by_name[normalized_filename]
 
-      # If no exact match, try fuzzy matching
-      similarity = nil
-      match_type = 'exact'
-      if matching_items.nil? || matching_items.empty?
-        # Use pre-created fuzzy matcher for performance
-        matching_items = find_fuzzy_matches_optimized(normalized_filename, items_by_name, fuzzy_matcher)
-        if matching_items && matching_items.any?
-          match_type = 'fuzzy'
-          # Calculate similarity for the fuzzy match
-          matched_name = normalize_name(matching_items.first.item_name)
-          similarity = (calculate_similarity(normalized_filename, matched_name) * 100).round
-        end
-      else
-        similarity = 100
-      end
+      similarity = matching_items && matching_items.any? ? 100 : 0
+      match_type = matching_items && matching_items.any? ? 'exact' : 'no_match'
 
       # Determine file type
       file_type = if is_qr_code_file?(file['name'])
