@@ -187,6 +187,34 @@ export default function PurchaseOrderDetailPage() {
           main {
             padding-top: 0 !important;
           }
+
+          /* Reduce spacing to fit on one page */
+          .print-full-width {
+            padding: 1rem !important;
+            font-size: 0.875rem !important;
+          }
+
+          /* Compact table spacing */
+          table {
+            font-size: 0.75rem !important;
+          }
+
+          /* Reduce margins and padding */
+          h2, h3 {
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+          }
+
+          dl {
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+          }
+
+          /* Scale down to fit */
+          @page {
+            size: A4;
+            margin: 0.5cm;
+          }
         }
       `}</style>
       <header className="relative isolate print-hide">
@@ -418,7 +446,12 @@ export default function PurchaseOrderDetailPage() {
               </div>
             </div>
 
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Purchase Order</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Purchase Order</h2>
+              <div className="text-right">
+                <p className="text-lg font-bold text-gray-900 dark:text-white">#{purchaseOrder.purchase_order_number}</p>
+              </div>
+            </div>
             <dl className="mt-6 grid grid-cols-1 text-sm/6 sm:grid-cols-2">
               <div className="sm:pr-4">
                 <dt className="inline text-gray-500 dark:text-gray-400">Created on</dt>{' '}
