@@ -161,6 +161,34 @@ class XeroApiClient
     end
   end
 
+  # Fetch tax rates from Xero
+  def get_tax_rates
+    response = make_request(:get, 'TaxRates')
+
+    if response[:success]
+      tax_rates = response[:data]['TaxRates'] || []
+
+      # Update local database
+      tax_rates.each do |rate|
+        XeroTaxRate.find_or_initialize_by(code: rate['TaxType']).tap do |tax_rate|
+          tax_rate.name = rate['Name']
+          tax_rate.rate = rate['EffectiveRate']
+          tax_rate.active = rate['Status'] == 'ACTIVE'
+          tax_rate.display_rate = rate['DisplayTaxRate']
+          tax_rate.tax_type = rate['TaxType']
+          tax_rate.save!
+        end
+      end
+
+      { success: true, tax_rates: XeroTaxRate.where(active: true).order(:name) }
+    else
+      { success: false, error: 'Failed to fetch tax rates from Xero' }
+    end
+  rescue StandardError => e
+    Rails.logger.error("Error fetching Xero tax rates: #{e.message}")
+    { success: false, error: e.message }
+  end
+
   private
 
   def credentials_present?

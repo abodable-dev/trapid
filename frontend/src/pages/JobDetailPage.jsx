@@ -179,14 +179,16 @@ export default function JobDetailPage() {
         await api.put(`/api/v1/purchase_orders/${editingPO.id}`, {
           purchase_order: poData
         })
+        await loadPurchaseOrders()
+        setShowPOModal(false)
+        setEditingPO(null)
       } else {
-        await api.post('/api/v1/purchase_orders', {
+        const response = await api.post('/api/v1/purchase_orders', {
           purchase_order: poData
         })
+        // Navigate to the new PO edit page to add line items
+        navigate(`/purchase-orders/${response.id}/edit`)
       }
-      await loadPurchaseOrders()
-      setShowPOModal(false)
-      setEditingPO(null)
     } catch (err) {
       console.error('Failed to save purchase order:', err)
       // Error will be displayed by the modal

@@ -86,13 +86,14 @@ export default function PriceBooksPage() {
     status: { visible: true, width: 150, label: 'Status', resizable: true, order: 4 },
     category: { visible: true, width: 200, label: 'Category', resizable: true, order: 5 },
     price: { visible: true, width: 150, label: 'Price', resizable: true, order: 6 },
-    unit: { visible: true, width: 100, label: 'Unit', resizable: true, order: 7 },
-    supplier: { visible: true, width: 200, label: 'Supplier', resizable: true, order: 8 },
-    brand: { visible: true, width: 150, label: 'Brand', resizable: true, order: 9 },
-    requiresPhoto: { visible: false, width: 120, label: 'Needs Photo', resizable: true, order: 10 },
-    requiresSpec: { visible: false, width: 120, label: 'Needs Spec', resizable: true, order: 11 },
-    needsPricingReview: { visible: false, width: 140, label: 'Pricing Review', resizable: true, order: 12 },
-    notes: { visible: true, width: 200, label: 'Notes', resizable: true, order: 13 },
+    gstCode: { visible: true, width: 120, label: 'GST Code', resizable: true, order: 7 },
+    unit: { visible: true, width: 100, label: 'Unit', resizable: true, order: 8 },
+    supplier: { visible: true, width: 200, label: 'Supplier', resizable: true, order: 9 },
+    brand: { visible: true, width: 150, label: 'Brand', resizable: true, order: 10 },
+    requiresPhoto: { visible: false, width: 120, label: 'Needs Photo', resizable: true, order: 11 },
+    requiresSpec: { visible: false, width: 120, label: 'Needs Spec', resizable: true, order: 12 },
+    needsPricingReview: { visible: false, width: 140, label: 'Pricing Review', resizable: true, order: 13 },
+    notes: { visible: true, width: 200, label: 'Notes', resizable: true, order: 14 },
   }
 
   const [columnConfig, setColumnConfig] = useState(() => {
@@ -890,6 +891,12 @@ export default function PriceBooksPage() {
             {item.current_price ? formatCurrency(item.current_price, true) : '-'}
           </td>
         )
+      case 'gstCode':
+        return (
+          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+            {item.gst_code || '-'}
+          </td>
+        )
       case 'unit':
         return (
           <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
@@ -1426,6 +1433,12 @@ export default function PriceBooksPage() {
                       return (
                         <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
                           <ColumnHeaderMenu label="Price" column="current_price" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={minPrice || maxPrice ? { min: minPrice, max: maxPrice } : ''} filterType="price-range" />
+                        </th>
+                      )
+                    case 'gstCode':
+                      return (
+                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                          GST Code
                         </th>
                       )
                     case 'unit':

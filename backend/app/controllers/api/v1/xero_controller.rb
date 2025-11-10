@@ -425,6 +425,47 @@ module Api
 
         nil
       end
+
+      # GET /api/v1/xero/tax_rates
+      # Fetches and syncs tax rates from Xero
+      def tax_rates
+        begin
+          client = XeroApiClient.new
+          result = client.get_tax_rates
+
+          if result[:success]
+            render json: {
+              success: true,
+              tax_rates: result[:tax_rates].map { |tr|
+                {
+                  code: tr.code,
+                  name: tr.name,
+                  rate: tr.rate,
+                  display_rate: tr.display_rate,
+                  tax_type: tr.tax_type
+                }
+              }
+            }
+          else
+            render json: {
+              success: false,
+              error: result[:error]
+            }, status: :unprocessable_entity
+          end
+        rescue XeroApiClient::AuthenticationError => e
+          Rails.logger.error("Xero tax_rates auth error: #{e.message}")
+          render json: {
+            success: false,
+            error: 'Not authenticated with Xero'
+          }, status: :unauthorized
+        rescue StandardError => e
+          Rails.logger.error("Xero tax_rates error: #{e.message}")
+          render json: {
+            success: false,
+            error: 'Failed to fetch tax rates'
+          }, status: :internal_server_error
+        end
+      end
     end
   end
 end

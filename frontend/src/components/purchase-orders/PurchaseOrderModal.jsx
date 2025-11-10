@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { XMarkIcon, SparklesIcon, ExclamationTriangleIcon, UserIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, SparklesIcon, ExclamationTriangleIcon, UserIcon, MagnifyingGlassIcon, CheckIcon, ChevronUpDownIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
 export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOrder, suppliers, constructionId, construction }) {
@@ -7,134 +7,112 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
   const [formData, setFormData] = useState({
     construction_id: constructionId,
     supplier_id: '',
-    description: '',
-    required_date: '',
-    delivery_address: '',
-    special_instructions: '',
-    status: 'draft',
-    category: '',
-    line_items_attributes: [
-      {
-        description: '',
-        quantity: 1,
-        unit_price: 0
-      }
-    ]
+    schedule_task_id: '',
+    status: 'draft'
   })
   const [saving, setSaving] = useState(false)
-  const [smartLookupLoading, setSmartLookupLoading] = useState(false)
-  const [lookupWarnings, setLookupWarnings] = useState([])
-  const [lookupMetadata, setLookupMetadata] = useState(null)
   const [errorMessage, setErrorMessage] = useState(null)
+  const [supplierSearch, setSupplierSearch] = useState('')
+  const [showSupplierDropdown, setShowSupplierDropdown] = useState(false)
+  const [scheduleTaskSearch, setScheduleTaskSearch] = useState('')
+  const [showScheduleTaskDropdown, setShowScheduleTaskDropdown] = useState(false)
+  const [scheduleTasks, setScheduleTasks] = useState([])
+  const [loadingTasks, setLoadingTasks] = useState(false)
+  const supplierDropdownRef = useRef(null)
+  const scheduleTaskDropdownRef = useRef(null)
 
   useEffect(() => {
     isMountedRef.current = true
 
     if (purchaseOrder) {
       setFormData({
-        ...purchaseOrder,
-        line_items_attributes: purchaseOrder.line_items || [{ description: '', quantity: 1, unit_price: 0 }]
+        construction_id: constructionId,
+        supplier_id: purchaseOrder.supplier_id || '',
+        schedule_task_id: purchaseOrder.schedule_task_id || '',
+        status: purchaseOrder.status || 'draft'
       })
     }
 
     return () => {
       isMountedRef.current = false
     }
-  }, [purchaseOrder])
+  }, [purchaseOrder, constructionId])
+
+  // Load schedule tasks when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadScheduleTasks()
+    }
+  }, [isOpen, constructionId])
+
+  const loadScheduleTasks = async () => {
+    try {
+      setLoadingTasks(true)
+      const response = await api.get(`/api/v1/constructions/${constructionId}/schedule_tasks`)
+      // Only show unmatched tasks (not already assigned to a PO)
+      const unmatched = (response.schedule_tasks || []).filter(task => !task.purchase_order_id)
+      setScheduleTasks(unmatched)
+    } catch (err) {
+      console.error('Failed to load schedule tasks:', err)
+    } finally {
+      setLoadingTasks(false)
+    }
+  }
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (supplierDropdownRef.current && !supplierDropdownRef.current.contains(event.target)) {
+        setShowSupplierDropdown(false)
+      }
+      if (scheduleTaskDropdownRef.current && !scheduleTaskDropdownRef.current.contains(event.target)) {
+        setShowScheduleTaskDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleLineItemChange = (index, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      line_items_attributes: prev.line_items_attributes.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
-      )
-    }))
+  const handleSupplierSelect = (supplierId) => {
+    handleChange('supplier_id', supplierId)
+    setSupplierSearch('')
+    setShowSupplierDropdown(false)
   }
 
-  const addLineItem = () => {
-    setFormData(prev => ({
-      ...prev,
-      line_items_attributes: [...prev.line_items_attributes, { description: '', quantity: 1, unit_price: 0 }]
-    }))
+  const handleScheduleTaskSelect = (taskId) => {
+    handleChange('schedule_task_id', taskId)
+    setScheduleTaskSearch('')
+    setShowScheduleTaskDropdown(false)
   }
 
-  const removeLineItem = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      line_items_attributes: prev.line_items_attributes.filter((_, i) => i !== index)
-    }))
-  }
+  const filteredSuppliers = suppliers?.filter(supplier =>
+    supplier.name.toLowerCase().includes(supplierSearch.toLowerCase())
+  ) || []
 
-  const handleSmartLookup = async () => {
-    if (!formData.description || !formData.line_items_attributes[0]?.description) {
-      setErrorMessage('Please enter a task description first')
-      return
-    }
+  const filteredScheduleTasks = scheduleTasks?.filter(task =>
+    task.task_name?.toLowerCase().includes(scheduleTaskSearch.toLowerCase()) ||
+    task.description?.toLowerCase().includes(scheduleTaskSearch.toLowerCase())
+  ) || []
 
-    setSmartLookupLoading(true)
-    setLookupWarnings([])
-    setLookupMetadata(null)
-    setErrorMessage(null)
-
-    try {
-      const taskDescription = formData.description || formData.line_items_attributes[0]?.description
-      const quantity = formData.line_items_attributes[0]?.quantity || 1
-
-      const result = await api.post('/api/v1/purchase_orders/smart_lookup', {
-        construction_id: constructionId,
-        task_description: taskDescription,
-        category: formData.category,
-        quantity: quantity
-      })
-
-      if (!isMountedRef.current) return
-
-      if (result.success && result.supplier) {
-        // Auto-populate the form with lookup results
-        setFormData(prev => ({
-          ...prev,
-          supplier_id: result.supplier.id,
-          delivery_address: result.metadata?.delivery_address || prev.delivery_address,
-          line_items_attributes: prev.line_items_attributes.map((item, idx) =>
-            idx === 0 ? {
-              ...item,
-              unit_price: result.unit_price || item.unit_price,
-              pricebook_item_id: result.price_book_item?.id
-            } : item
-          )
-        }))
-
-        setLookupWarnings(result.warnings || [])
-        setLookupMetadata(result.metadata || {})
-      } else {
-        setLookupWarnings(result.warnings || ['Smart lookup failed'])
-      }
-    } catch (error) {
-      console.error('Smart lookup error:', error)
-      if (isMountedRef.current) {
-        setErrorMessage('Failed to perform smart lookup')
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setSmartLookupLoading(false)
-      }
-    }
-  }
+  const selectedSupplier = suppliers?.find(s => s.id === formData.supplier_id)
+  const selectedScheduleTask = scheduleTasks?.find(t => t.id === formData.schedule_task_id)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // Validate line items
-    const hasEmptyLineItems = formData.line_items_attributes.some(
-      item => !item.description || item.description.trim() === ''
-    )
+    // Validate required fields
+    if (!formData.supplier_id) {
+      setErrorMessage('Please select a supplier')
+      return
+    }
 
-    if (hasEmptyLineItems) {
-      setErrorMessage('Please fill in all line item descriptions before saving.')
+    if (!formData.schedule_task_id) {
+      setErrorMessage('Please select a schedule task')
       return
     }
 
@@ -196,174 +174,127 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
                 </div>
               )}
 
-              {/* Site Supervisor Info Banner */}
-              {construction?.site_supervisor_name && (
-                <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg p-4">
-                  <div className="flex">
-                    <UserIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400 mr-2 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-indigo-900 dark:text-indigo-200 mb-1">
-                        Site Supervisor: {construction.site_supervisor_name}
-                      </h4>
-                      <div className="text-sm text-indigo-700 dark:text-indigo-300 space-y-0.5">
-                        {construction.site_supervisor_email && (
-                          <div>Email: {construction.site_supervisor_email}</div>
-                        )}
-                        {construction.site_supervisor_phone && (
-                          <div>Phone: {construction.site_supervisor_phone}</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="space-y-4">
 
-              {/* Smart Lookup Banner */}
-              {lookupWarnings.length > 0 && (
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
-                  <div className="flex">
-                    <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
-                        Smart Lookup Warnings
-                      </h4>
-                      <ul className="text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside">
-                        {lookupWarnings.map((warning, idx) => (
-                          <li key={idx}>{warning}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Category
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => handleChange('category', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
-                  >
-                    <option value="">Select Category</option>
-                    <option value="plumbing">Plumbing</option>
-                    <option value="electrical">Electrical</option>
-                    <option value="carpentry">Carpentry</option>
-                    <option value="painting">Painting</option>
-                    <option value="roofing">Roofing</option>
-                    <option value="concrete">Concrete</option>
-                    <option value="landscaping">Landscaping</option>
-                    <option value="hvac">HVAC</option>
-                    <option value="materials">Materials</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                <div>
+                <div ref={supplierDropdownRef} className="relative">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Supplier
                   </label>
-                  <select
-                    value={formData.supplier_id}
-                    onChange={(e) => handleChange('supplier_id', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
-                  >
-                    <option value="">Select Supplier</option>
-                    {suppliers?.map(supplier => (
-                      <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowSupplierDropdown(!showSupplierDropdown)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white text-left flex items-center justify-between"
+                    >
+                      <span className={selectedSupplier ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}>
+                        {selectedSupplier ? selectedSupplier.name : 'Search for supplier...'}
+                      </span>
+                      <ChevronUpDownIcon className="h-5 w-5 text-gray-400" />
+                    </button>
+
+                    {showSupplierDropdown && (
+                      <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                        <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                          <div className="relative">
+                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            <input
+                              type="text"
+                              value={supplierSearch}
+                              onChange={(e) => setSupplierSearch(e.target.value)}
+                              placeholder="Search suppliers..."
+                              className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto">
+                          {filteredSuppliers.length > 0 ? (
+                            filteredSuppliers.map((supplier) => (
+                              <button
+                                key={supplier.id}
+                                type="button"
+                                onClick={() => handleSupplierSelect(supplier.id)}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between group"
+                              >
+                                <span className="text-gray-900 dark:text-white">{supplier.name}</span>
+                                {formData.supplier_id === supplier.id && (
+                                  <CheckIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                                )}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                              No suppliers found
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div>
+                {/* Schedule Task Dropdown */}
+                <div ref={scheduleTaskDropdownRef} className="relative">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Required Date
+                    Schedule Task
                   </label>
-                  <input
-                    type="date"
-                    value={formData.required_date || ''}
-                    onChange={(e) => handleChange('required_date', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
-                  />
-                </div>
-              </div>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowScheduleTaskDropdown(!showScheduleTaskDropdown)}
+                      disabled={loadingTasks}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white text-left flex items-center justify-between disabled:opacity-50"
+                    >
+                      <span className={selectedScheduleTask ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}>
+                        {loadingTasks ? 'Loading tasks...' : selectedScheduleTask ? selectedScheduleTask.task_name : 'Search for schedule task...'}
+                      </span>
+                      <ChevronUpDownIcon className="h-5 w-5 text-gray-400" />
+                    </button>
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Description
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleSmartLookup}
-                    disabled={smartLookupLoading}
-                    className="inline-flex items-center px-3 py-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 disabled:opacity-50"
-                  >
-                    <SparklesIcon className="h-4 w-4 mr-1" />
-                    {smartLookupLoading ? 'Looking up...' : 'Smart Fill'}
-                  </button>
-                </div>
-                <textarea
-                  value={formData.description || ''}
-                  onChange={(e) => handleChange('description', e.target.value)}
-                  rows={2}
-                  placeholder="e.g., Water Tank, Foundation Concrete, Electrical Rough-In"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Line Items
-                  </label>
-                  <button
-                    type="button"
-                    onClick={addLineItem}
-                    className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
-                  >
-                    + Add Item
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  {formData.line_items_attributes.map((item, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Description"
-                        value={item.description}
-                        onChange={(e) => handleLineItemChange(index, 'description', e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white text-sm"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Qty"
-                        value={item.quantity}
-                        onChange={(e) => handleLineItemChange(index, 'quantity', e.target.value)}
-                        className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white text-sm"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Price"
-                        value={item.unit_price}
-                        onChange={(e) => handleLineItemChange(index, 'unit_price', e.target.value)}
-                        step="0.01"
-                        className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white text-sm"
-                      />
-                      {formData.line_items_attributes.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeLineItem(index)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <XMarkIcon className="h-5 w-5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    {showScheduleTaskDropdown && !loadingTasks && (
+                      <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                        <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                          <div className="relative">
+                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            <input
+                              type="text"
+                              value={scheduleTaskSearch}
+                              onChange={(e) => setScheduleTaskSearch(e.target.value)}
+                              placeholder="Search schedule tasks..."
+                              className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto">
+                          {filteredScheduleTasks.length > 0 ? (
+                            filteredScheduleTasks.map((task) => (
+                              <button
+                                key={task.id}
+                                type="button"
+                                onClick={() => handleScheduleTaskSelect(task.id)}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between group"
+                              >
+                                <div className="flex-1">
+                                  <div className="text-gray-900 dark:text-white font-medium">{task.task_name}</div>
+                                  {task.description && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{task.description}</div>
+                                  )}
+                                </div>
+                                {formData.schedule_task_id === task.id && (
+                                  <CheckIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 ml-2" />
+                                )}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                              {scheduleTasks.length === 0 ? 'No schedule tasks available' : 'No tasks found'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -381,7 +312,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
                   disabled={saving}
                   className="px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  {saving ? 'Saving...' : 'Save Purchase Order'}
+                  {saving ? 'Creating...' : 'Create Purchase Order'}
                 </button>
               </div>
             </form>

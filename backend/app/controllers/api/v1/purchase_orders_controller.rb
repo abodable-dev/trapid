@@ -98,13 +98,26 @@ module Api
 
       # POST /api/v1/purchase_orders
       def create
-        @purchase_order = PurchaseOrder.new(purchase_order_params)
+        schedule_task_id = params[:purchase_order][:schedule_task_id]
+        @purchase_order = PurchaseOrder.new(purchase_order_params.except(:schedule_task_id))
 
-        if @purchase_order.save
-          render json: @purchase_order.as_json(include: :line_items), status: :created
-        else
-          render json: { errors: @purchase_order.errors.full_messages }, status: :unprocessable_entity
+        ActiveRecord::Base.transaction do
+          if @purchase_order.save
+            # Link schedule task to this PO if provided
+            if schedule_task_id.present?
+              schedule_task = ScheduleTask.find(schedule_task_id)
+              schedule_task.update!(purchase_order_id: @purchase_order.id)
+            end
+
+            render json: @purchase_order.as_json(include: :line_items), status: :created
+          else
+            render json: { errors: @purchase_order.errors.full_messages }, status: :unprocessable_entity
+          end
         end
+      rescue ActiveRecord::RecordNotFound
+        render json: { errors: ['Schedule task not found'] }, status: :unprocessable_entity
+      rescue => e
+        render json: { errors: [e.message] }, status: :unprocessable_entity
       end
 
       # PATCH/PUT /api/v1/purchase_orders/:id

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
+import { PlusIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import ScheduleImporter from './ScheduleImporter'
 import ScheduleStats from './ScheduleStats'
 import ScheduleTaskList from './ScheduleTaskList'
 import ScheduleGanttChart from './ScheduleGanttChart'
 import TaskMatchModal from './TaskMatchModal'
+import AddScheduleTaskModal from './AddScheduleTaskModal'
 import Toast from '../Toast'
 
 export default function ScheduleMasterTab({ constructionId }) {
@@ -14,6 +16,7 @@ export default function ScheduleMasterTab({ constructionId }) {
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [showMatchModal, setShowMatchModal] = useState(false)
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [toast, setToast] = useState(null)
   const [ganttData, setGanttData] = useState(null)
@@ -93,6 +96,20 @@ export default function ScheduleMasterTab({ constructionId }) {
     }
   }
 
+  const handleAddTask = async (taskData) => {
+    try {
+      await api.post(`/api/v1/constructions/${constructionId}/schedule_tasks`, {
+        schedule_task: taskData
+      })
+      showToast('Task added successfully!', 'success')
+      await loadScheduleTasks()
+      setShowAddTaskModal(false)
+    } catch (err) {
+      console.error('Failed to add task:', err)
+      throw err
+    }
+  }
+
   const showToast = (message, type = 'info') => {
     setToast({ message, type })
     setTimeout(() => setToast(null), 4000)
@@ -102,10 +119,34 @@ export default function ScheduleMasterTab({ constructionId }) {
   if (!loading && totalCount === 0) {
     return (
       <div>
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Schedule Master</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Import tasks from a spreadsheet or add them manually
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAddTaskModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Add Task
+          </button>
+        </div>
         <ScheduleImporter
           constructionId={constructionId}
           onImportSuccess={handleImportSuccess}
         />
+
+        {/* Add Task Modal */}
+        <AddScheduleTaskModal
+          isOpen={showAddTaskModal}
+          onClose={() => setShowAddTaskModal(false)}
+          onSave={handleAddTask}
+          constructionId={constructionId}
+        />
+
         {toast && <Toast message={toast.message} type={toast.type} />}
       </div>
     )
@@ -120,8 +161,15 @@ export default function ScheduleMasterTab({ constructionId }) {
         totalCount={totalCount}
       />
 
-      {/* Import Button (for re-import) */}
-      <div className="flex justify-end">
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => setShowAddTaskModal(true)}
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+        >
+          <PlusIcon className="h-5 w-5 mr-2" />
+          Add Task
+        </button>
         <ScheduleImporter
           constructionId={constructionId}
           onImportSuccess={handleImportSuccess}
@@ -162,6 +210,14 @@ export default function ScheduleMasterTab({ constructionId }) {
           constructionId={constructionId}
         />
       )}
+
+      {/* Add Task Modal */}
+      <AddScheduleTaskModal
+        isOpen={showAddTaskModal}
+        onClose={() => setShowAddTaskModal(false)}
+        onSave={handleAddTask}
+        constructionId={constructionId}
+      />
 
       {/* Toast Notifications */}
       {toast && <Toast message={toast.message} type={toast.type} />}

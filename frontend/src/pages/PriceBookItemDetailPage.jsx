@@ -41,9 +41,12 @@ export default function PriceBookItemDetailPage() {
   const [supplierToSetDefault, setSupplierToSetDefault] = useState(null)
   const [savingBooleans, setSavingBooleans] = useState(false)
   const [showAllPrices, setShowAllPrices] = useState(false)
+  const [taxRates, setTaxRates] = useState([])
+  const [editingGstCode, setEditingGstCode] = useState(false)
 
   useEffect(() => {
     loadItem()
+    loadTaxRates()
   }, [id])
 
   const loadItem = async () => {
@@ -56,6 +59,35 @@ export default function PriceBookItemDetailPage() {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadTaxRates = async () => {
+    try {
+      const response = await api.get('/api/v1/xero/tax_rates')
+      if (response.success && response.tax_rates) {
+        setTaxRates(response.tax_rates)
+      }
+    } catch (err) {
+      console.error('Failed to load tax rates:', err)
+      // Don't show error to user, just log it
+    }
+  }
+
+  const handleGstCodeUpdate = async (newGstCode) => {
+    try {
+      await api.patch(`/api/v1/pricebook/${id}`, {
+        pricebook_item: {
+          gst_code: newGstCode
+        }
+      })
+
+      // Update local state
+      setItem({ ...item, gst_code: newGstCode })
+      setEditingGstCode(false)
+    } catch (error) {
+      console.error('Failed to update GST code:', error)
+      alert('Failed to update GST code')
     }
   }
 
@@ -405,6 +437,35 @@ export default function PriceBookItemDetailPage() {
                   <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Brand</dt>
                   <dd className="mt-1 text-sm text-gray-900 dark:text-white">
                     {item.brand || '-'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">GST Code</dt>
+                  <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                    {editingGstCode ? (
+                      <select
+                        autoFocus
+                        value={item.gst_code || ''}
+                        onChange={(e) => handleGstCodeUpdate(e.target.value)}
+                        onBlur={() => setEditingGstCode(false)}
+                        className="w-full px-2 py-1 text-sm border border-indigo-500 rounded focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-indigo-400"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <option value="">Select GST code...</option>
+                        {taxRates.map((rate) => (
+                          <option key={rate.code} value={rate.code}>
+                            {rate.name} ({rate.display_rate})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span
+                        className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400"
+                        onClick={() => setEditingGstCode(true)}
+                      >
+                        {item.gst_code ? `${item.gst_code}` : '-'}
+                      </span>
+                    )}
                   </dd>
                 </div>
                 {item.notes && (

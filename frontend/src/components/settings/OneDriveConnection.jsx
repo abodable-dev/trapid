@@ -202,6 +202,8 @@ export default function OneDriveConnection() {
         params: { folder_path: folderPath.trim() }
       })
 
+      console.log('Preview response:', response)
+      console.log('Matches count:', response.matches?.length || 0)
       setPreviewMatches(response.matches || [])
       setShowMatchPreview(true)
     } catch (err) {
