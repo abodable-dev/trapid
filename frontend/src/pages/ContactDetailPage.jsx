@@ -627,7 +627,7 @@ export default function ContactDetailPage() {
             </div>
 
             {/* LGAs - Multi-select for suppliers */}
-            {contact.is_supplier && (
+            {contact['is_supplier?'] && (
               <div className="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Local Government Areas (LGAs)</p>
                 <div className="flex flex-wrap gap-2">
@@ -1592,7 +1592,7 @@ export default function ContactDetailPage() {
                       </div>
 
                       {/* LGAs - Multi-select for suppliers */}
-                      {contact.is_supplier && (
+                      {contact['is_supplier?'] && (
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Local Government Areas (LGAs)
