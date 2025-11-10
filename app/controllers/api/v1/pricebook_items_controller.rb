@@ -1,7 +1,7 @@
 module Api
   module V1
     class PricebookItemsController < ApplicationController
-      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image, :add_price, :set_default_supplier, :delete_price_history]
+      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image, :add_price, :set_default_supplier, :delete_price_history, :update_price_history]
 
       # GET /api/v1/pricebook
       def index
@@ -20,6 +20,11 @@ module Api
           @items = @items.by_supplier(params[:supplier_id]) if params[:supplier_id].present?
           @items = @items.price_range(params[:min_price], params[:max_price])
           @items = @items.needs_pricing if params[:needs_pricing] == "true"
+
+          # Boolean field filters
+          @items = @items.where(requires_photo: params[:requires_photo] == "true") if params[:requires_photo].present?
+          @items = @items.where(requires_spec: params[:requires_spec] == "true") if params[:requires_spec].present?
+          @items = @items.where(needs_pricing_review: params[:needs_pricing_review] == "true") if params[:needs_pricing_review].present?
 
           # Risk level filter - use scope instead of loading all records
           @items = @items.by_risk_level(params[:risk_level]) if params[:risk_level].present?
@@ -185,13 +190,75 @@ module Api
       # PATCH /api/v1/pricebook/bulk_update
       def bulk_update
         updates = params[:updates] || []
-        results = { success: [], errors: [] }
+        results = { success: [], errors: [], prices_updated: 0 }
 
         updates.each do |update|
           item = PricebookItem.find_by(id: update[:id])
           if item
             # Permit the attributes we want to update (excluding :id which is used for lookup)
-            permitted_attrs = update.to_unsafe_h.slice(:current_price, :supplier_id, :default_supplier_id, :notes, :category)
+            permitted_attrs = update.to_unsafe_h.slice(:current_price, :supplier_id, :default_supplier_id, :notes, :category, :requires_photo, :requires_spec, :needs_pricing_review)
+
+            # If update_price_to_current_default is true, create/update price history for the new default supplier
+            if update[:update_price_to_current_default] == true && update[:default_supplier_id].present? && item.current_price.present?
+              new_supplier_id = update[:default_supplier_id]
+
+              # Find the most recent price history for this supplier
+              existing_price = PriceHistory.where(
+                pricebook_item_id: item.id,
+                supplier_id: new_supplier_id
+              ).order(created_at: :desc).first
+
+              # Only create a new price history if the supplier doesn't have a price, or their price is different
+              if existing_price.nil? || existing_price.new_price != item.current_price
+                PriceHistory.create!(
+                  pricebook_item_id: item.id,
+                  supplier_id: new_supplier_id,
+                  old_price: existing_price&.new_price || item.current_price,
+                  new_price: item.current_price,
+                  date_effective: Date.today,
+                  change_reason: "Updated to match current default price when setting as default supplier"
+                )
+                results[:prices_updated] += 1
+              end
+            end
+
+            # Handle create_or_update_price flag - allows creating/updating price history with custom price
+            if update[:create_or_update_price] == true && update[:default_supplier_id].present? && update[:new_price].present?
+              new_supplier_id = update[:default_supplier_id]
+              new_price = update[:new_price].to_f
+
+              # Find the most recent price history for this supplier
+              existing_price = PriceHistory.where(
+                pricebook_item_id: item.id,
+                supplier_id: new_supplier_id
+              ).order(created_at: :desc).first
+
+              # Create/update price history if needed
+              if existing_price.nil?
+                # No existing price - create new price history
+                PriceHistory.create!(
+                  pricebook_item_id: item.id,
+                  supplier_id: new_supplier_id,
+                  old_price: new_price, # For new entries, old and new are the same
+                  new_price: new_price,
+                  date_effective: Date.today,
+                  change_reason: "Initial price set when assigning as default supplier"
+                )
+                results[:prices_updated] += 1
+              elsif existing_price.new_price != new_price
+                # Existing price differs - create new price history entry
+                PriceHistory.create!(
+                  pricebook_item_id: item.id,
+                  supplier_id: new_supplier_id,
+                  old_price: existing_price.new_price,
+                  new_price: new_price,
+                  date_effective: Date.today,
+                  change_reason: "Price updated when setting as default supplier"
+                )
+                results[:prices_updated] += 1
+              end
+            end
+
             if item.update(permitted_attrs)
               results[:success] << item.id
             else
@@ -415,6 +482,35 @@ module Api
 
         if price_history.destroy
           render json: { success: true, message: 'Price history deleted successfully' }
+        else
+          render json: { success: false, errors: price_history.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      # PATCH /api/v1/pricebook/:id/price_histories/:history_id
+      def update_price_history
+        history_id = params[:history_id]
+
+        if history_id.blank?
+          return render json: { success: false, error: 'history_id is required' }, status: :unprocessable_entity
+        end
+
+        price_history = @item.price_histories.find_by(id: history_id)
+
+        if price_history.nil?
+          return render json: { success: false, error: 'Price history not found' }, status: :not_found
+        end
+
+        # Update the price history attributes
+        update_params = {}
+        update_params[:old_price] = params[:old_price] if params[:old_price].present?
+        update_params[:new_price] = params[:new_price] if params[:new_price].present?
+        update_params[:date_effective] = params[:date_effective] if params[:date_effective].present?
+        update_params[:change_reason] = params[:change_reason] if params[:change_reason].present?
+        update_params[:lga] = params[:lga] if params[:lga].present?
+
+        if price_history.update(update_params)
+          render json: { success: true, message: 'Price history updated successfully', price_history: price_history }
         else
           render json: { success: false, errors: price_history.errors.full_messages }, status: :unprocessable_entity
         end
