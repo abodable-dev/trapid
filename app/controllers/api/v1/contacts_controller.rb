@@ -50,7 +50,8 @@ module Api
         contact_json = @contact.as_json(
           only: [
             :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
-            :tax_number, :xero_id, :sync_with_xero, :sys_type_id, :deleted, :parent_id, :parent,
+            :tax_number, :xero_id, :sync_with_xero, :last_synced_at, :xero_sync_error,
+            :sys_type_id, :deleted, :parent_id, :parent,
             :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
             :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas
           ],

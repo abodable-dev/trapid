@@ -15,7 +15,7 @@ module Api
         # Find suppliers with incomplete category coverage
         # A supplier has incomplete coverage if they have price history for SOME items in a category
         # but not ALL items in that category
-        incomplete_suppliers = find_suppliers_with_incomplete_categories
+        incomplete_suppliers_data = find_suppliers_with_incomplete_categories
 
         # Find items with default supplier but no price history
         items_with_missing_price_history = find_items_with_missing_price_history
@@ -32,13 +32,16 @@ module Api
           .limit(100)
 
         render json: {
+          totalPricebookItems: PricebookItem.active.count,
           itemsWithoutDefaultSupplier: {
             count: items_without_default_supplier_count,
             items: items_without_default_supplier
           },
           suppliersWithIncompleteCategoryPricing: {
-            count: incomplete_suppliers.length,
-            suppliers: incomplete_suppliers
+            count: incomplete_suppliers_data[:results].length,
+            suppliersWithIssuesCount: incomplete_suppliers_data[:suppliers_with_issues_count],
+            totalSuppliers: incomplete_suppliers_data[:total_suppliers],
+            suppliers: incomplete_suppliers_data[:results]
           },
           itemsWithDefaultSupplierButNoPriceHistory: {
             count: items_with_missing_price_history.length,
@@ -91,9 +94,11 @@ module Api
 
       def find_suppliers_with_incomplete_categories
         results = []
+        suppliers_with_issues = Set.new
 
         # Get all suppliers who have price history
         supplier_ids = PriceHistory.where.not(supplier_id: nil).distinct.pluck(:supplier_id)
+        total_suppliers = supplier_ids.length
 
         supplier_ids.each do |supplier_id|
           supplier = Contact.find_by(id: supplier_id)
@@ -122,6 +127,7 @@ module Api
 
             # If supplier has some but not all items, flag it
             if supplier_items > 0 && supplier_items < total_items
+              suppliers_with_issues.add(supplier_id)
               results << {
                 supplier: {
                   id: supplier.id,
@@ -138,7 +144,14 @@ module Api
         end
 
         # Sort by missing items count (descending) then by category
-        results.sort_by { |r| [-r[:missing_items_count], r[:category], r[:supplier][:name]] }
+        sorted_results = results.sort_by { |r| [-r[:missing_items_count], r[:category], r[:supplier][:name]] }
+
+        # Return the results, count of suppliers with issues, and total suppliers
+        {
+          results: sorted_results,
+          suppliers_with_issues_count: suppliers_with_issues.length,
+          total_suppliers: total_suppliers
+        }
       end
 
       def find_items_with_missing_price_history
