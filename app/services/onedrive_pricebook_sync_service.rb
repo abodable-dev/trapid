@@ -26,9 +26,13 @@ class OnedrivePricebookSyncService
 
     # Get all files in the folder
     files = list_folder_files(client, folder['id'])
+    Rails.logger.info "Found #{files.count} files in folder '#{@folder_path}'"
+    Rails.logger.info "First 10 files: #{files.first(10).map { |f| f['name'] }.join(', ')}" if files.any?
 
     # Get all active pricebook items
     items = PricebookItem.active
+    Rails.logger.info "Found #{items.count} active pricebook items"
+    Rails.logger.info "First 10 items: #{items.first(10).map(&:item_name).join(', ')}" if items.any?
 
     # Match files to items by name
     match_files_to_items(client, files, items)
@@ -120,6 +124,8 @@ class OnedrivePricebookSyncService
       items_by_name[normalized] << item
     end
 
+    Rails.logger.info "Created lookup hash with #{items_by_name.keys.count} unique normalized names"
+
     # Track which items were matched
     matched_items = Set.new
 
@@ -127,9 +133,13 @@ class OnedrivePricebookSyncService
     updates_to_perform = []
 
     # Match each file to an item
-    files.each do |file|
+    files.each_with_index do |file, index|
       filename_without_ext = File.basename(file['name'], '.*')
       normalized_filename = normalize_name(filename_without_ext)
+
+      if index < 5
+        Rails.logger.info "Processing file #{index + 1}: '#{file['name']}' -> normalized: '#{normalized_filename}'"
+      end
 
       # Try exact match first
       matching_items = items_by_name[normalized_filename]
