@@ -1,4 +1,8 @@
 class XeroCredential < ApplicationRecord
+  # Encrypt sensitive OAuth tokens
+  encrypts :access_token
+  encrypts :refresh_token
+
   validates :access_token, :refresh_token, :expires_at, :tenant_id, presence: true
 
   # Get the current (latest) active credential

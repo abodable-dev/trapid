@@ -486,45 +486,51 @@ class OnedrivePricebookSyncService
     # Group updates by item_id to handle multiple files per item
     updates_by_item = updates_to_perform.group_by { |u| u[:item_id] }
 
-    # Perform batch update using update_all for better performance
-    updates_by_item.each do |item_id, item_updates|
-      begin
-        # Merge all updates for this item
-        merged_update = {
-          image_source: 'onedrive',
-          image_fetched_at: Time.current,
-          image_fetch_status: 'success'
-        }
+    # Wrap all updates in a transaction for atomicity
+    ActiveRecord::Base.transaction do
+      # Perform batch update using update_all for better performance
+      updates_by_item.each do |item_id, item_updates|
+        begin
+          # Merge all updates for this item
+          merged_update = {
+            image_source: 'onedrive',
+            image_fetched_at: Time.current,
+            image_fetch_status: 'success'
+          }
 
-        item_updates.each do |update_data|
-          case update_data[:type]
-          when :qr_code
-            merged_update[:qr_code_url] = update_data[:qr_code_url]
-            merged_update[:qr_code_file_id] = update_data[:qr_code_file_id]
-            merged_update[:spec_attached] = true
-            @results[:qr_codes_matched] += 1
-            Rails.logger.info "Matched QR code '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
-          when :spec
-            merged_update[:spec_url] = update_data[:spec_url]
-            merged_update[:spec_file_id] = update_data[:spec_file_id]
-            merged_update[:spec_attached] = true
-            @results[:specs_matched] += 1
-            Rails.logger.info "Matched spec '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
-          when :photo
-            merged_update[:image_url] = update_data[:image_url]
-            merged_update[:image_file_id] = update_data[:image_file_id]
-            merged_update[:photo_attached] = true
-            @results[:photos_matched] += 1
-            Rails.logger.info "Matched photo '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
+          item_updates.each do |update_data|
+            case update_data[:type]
+            when :qr_code
+              merged_update[:qr_code_url] = update_data[:qr_code_url]
+              merged_update[:qr_code_file_id] = update_data[:qr_code_file_id]
+              merged_update[:spec_attached] = true
+              @results[:qr_codes_matched] += 1
+              Rails.logger.info "Matched QR code '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
+            when :spec
+              merged_update[:spec_url] = update_data[:spec_url]
+              merged_update[:spec_file_id] = update_data[:spec_file_id]
+              merged_update[:spec_attached] = true
+              @results[:specs_matched] += 1
+              Rails.logger.info "Matched spec '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
+            when :photo
+              merged_update[:image_url] = update_data[:image_url]
+              merged_update[:image_file_id] = update_data[:image_file_id]
+              merged_update[:photo_attached] = true
+              @results[:photos_matched] += 1
+              Rails.logger.info "Matched photo '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
+            end
           end
-          @results[:matched] += 1
-        end
 
-        # Perform single update for this item
-        PricebookItem.where(id: item_id).update_all(merged_update)
-      rescue => e
-        @results[:errors] << "Error updating item #{item_id}: #{e.message}"
-        Rails.logger.error "Error updating item #{item_id}: #{e.message}"
+          # Increment matched counter once per item (not per file)
+          @results[:matched] += 1
+
+          # Perform single update for this item
+          PricebookItem.where(id: item_id).update_all(merged_update)
+        rescue => e
+          @results[:errors] << "Error updating item #{item_id}: #{e.message}"
+          Rails.logger.error "Error updating item #{item_id}: #{e.message}"
+          raise # Re-raise to rollback transaction
+        end
       end
     end
   end

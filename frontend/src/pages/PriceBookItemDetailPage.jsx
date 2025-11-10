@@ -46,6 +46,8 @@ export default function PriceBookItemDetailPage() {
   const [showAllPrices, setShowAllPrices] = useState(false)
   const [taxRates, setTaxRates] = useState([])
   const [editingGstCode, setEditingGstCode] = useState(false)
+  const [imageError, setImageError] = useState(false)
+  const [qrCodeError, setQrCodeError] = useState(false)
 
   // Helper function to get the correct image URL (proxy if file_id exists, otherwise direct URL)
   const getImageUrl = (fileType) => {
@@ -810,19 +812,25 @@ export default function PriceBookItemDetailPage() {
                         Product Photo
                       </div>
                       <div className="relative group">
-                        <img
-                          src={getImageUrl('image')}
-                          alt={item.item_name}
-                          className="w-full rounded-lg border border-gray-200 dark:border-gray-600 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                          style={{ maxHeight: '300px' }}
-                          onClick={() => setEnlargedImage({ url: getImageUrl('image'), type: 'photo' })}
-                          onError={(e) => {
-                            e.target.parentElement.innerHTML = '<div class="w-full h-48 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center"><span class="text-sm text-gray-500 dark:text-gray-400">Image not available</span></div>'
-                          }}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 rounded-lg cursor-pointer pointer-events-none">
-                          <MagnifyingGlassIcon className="h-8 w-8 text-white drop-shadow-lg" />
-                        </div>
+                        {!imageError ? (
+                          <>
+                            <img
+                              src={getImageUrl('image')}
+                              alt={item.item_name}
+                              className="w-full rounded-lg border border-gray-200 dark:border-gray-600 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                              style={{ maxHeight: '300px' }}
+                              onClick={() => setEnlargedImage({ url: getImageUrl('image'), type: 'photo' })}
+                              onError={() => setImageError(true)}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 rounded-lg cursor-pointer pointer-events-none">
+                              <MagnifyingGlassIcon className="h-8 w-8 text-white drop-shadow-lg" />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full h-48 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Image not available</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -834,19 +842,25 @@ export default function PriceBookItemDetailPage() {
                         QR Code
                       </div>
                       <div className="relative group">
-                        <img
-                          src={getImageUrl('qr_code')}
-                          alt={`QR Code for ${item.item_name}`}
-                          className="w-full rounded-lg border border-gray-200 dark:border-gray-600 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                          style={{ maxHeight: '300px' }}
-                          onClick={() => setEnlargedImage({ url: getImageUrl('qr_code'), type: 'qr' })}
-                          onError={(e) => {
-                            e.target.parentElement.innerHTML = '<div class="w-full h-48 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center"><span class="text-sm text-gray-500 dark:text-gray-400">QR code not available</span></div>'
-                          }}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 rounded-lg cursor-pointer pointer-events-none">
-                          <MagnifyingGlassIcon className="h-8 w-8 text-white drop-shadow-lg" />
-                        </div>
+                        {!qrCodeError ? (
+                          <>
+                            <img
+                              src={getImageUrl('qr_code')}
+                              alt={`QR Code for ${item.item_name}`}
+                              className="w-full rounded-lg border border-gray-200 dark:border-gray-600 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                              style={{ maxHeight: '300px' }}
+                              onClick={() => setEnlargedImage({ url: getImageUrl('qr_code'), type: 'qr' })}
+                              onError={() => setQrCodeError(true)}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 rounded-lg cursor-pointer pointer-events-none">
+                              <MagnifyingGlassIcon className="h-8 w-8 text-white drop-shadow-lg" />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full h-48 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">QR code not available</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

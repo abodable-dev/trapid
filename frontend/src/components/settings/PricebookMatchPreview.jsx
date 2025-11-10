@@ -1,19 +1,24 @@
-import { useState, Fragment } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon, CheckIcon, XCircleIcon } from '@heroicons/react/24/outline'
 
 export default function PricebookMatchPreview({ isOpen, onClose, matches, onApplyMatches }) {
-  const [selectedMatches, setSelectedMatches] = useState(() => {
-    // By default, select all matches with 70% or higher similarity
-    const initialSelected = {}
-    matches.forEach((match, index) => {
-      if (match.similarity >= 70 && match.item_id) {
-        initialSelected[index] = true
-      }
-    })
-    return initialSelected
-  })
+  const [selectedMatches, setSelectedMatches] = useState({})
   const [applying, setApplying] = useState(false)
+
+  // Reset selection when matches change or modal opens
+  useEffect(() => {
+    if (isOpen && matches.length > 0) {
+      // By default, select all matches with 70% or higher similarity
+      const initialSelected = {}
+      matches.forEach((match, index) => {
+        if (match.similarity >= 70 && match.item_id) {
+          initialSelected[index] = true
+        }
+      })
+      setSelectedMatches(initialSelected)
+    }
+  }, [isOpen, matches])
 
   const toggleMatch = (index) => {
     setSelectedMatches(prev => ({
