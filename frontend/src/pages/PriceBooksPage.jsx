@@ -41,6 +41,8 @@ export default function PriceBooksPage() {
   const [showPricedOnly, setShowPricedOnly] = useState(searchParams.get('needs_pricing') === 'true')
   const [requiresPhotoFilter, setRequiresPhotoFilter] = useState(searchParams.get('requires_photo') || '')
   const [requiresSpecFilter, setRequiresSpecFilter] = useState(searchParams.get('requires_spec') || '')
+  const [photoAttachedFilter, setPhotoAttachedFilter] = useState(searchParams.get('photo_attached') || '')
+  const [specAttachedFilter, setSpecAttachedFilter] = useState(searchParams.get('spec_attached') || '')
   const [needsPricingReviewFilter, setNeedsPricingReviewFilter] = useState(searchParams.get('needs_pricing_review') || '')
   const [showFilters, setShowFilters] = useState(false)
   const [categories, setCategories] = useState([])
@@ -230,6 +232,8 @@ export default function PriceBooksPage() {
       if (!showPricedOnly) params.needs_pricing = 'false'
       if (requiresPhotoFilter) params.requires_photo = requiresPhotoFilter
       if (requiresSpecFilter) params.requires_spec = requiresSpecFilter
+      if (photoAttachedFilter) params.photo_attached = photoAttachedFilter
+      if (specAttachedFilter) params.spec_attached = specAttachedFilter
       if (needsPricingReviewFilter) params.needs_pricing_review = needsPricingReviewFilter
 
       const response = await api.get('/api/v1/pricebook', { params })
@@ -1338,6 +1342,38 @@ export default function PriceBooksPage() {
                     <select
                       value={requiresSpecFilter}
                       onChange={(e) => setRequiresSpecFilter(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">All Items</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+
+                  {/* Photo Attached filter */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Photo Attached
+                    </label>
+                    <select
+                      value={photoAttachedFilter}
+                      onChange={(e) => setPhotoAttachedFilter(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">All Items</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+
+                  {/* Spec Attached filter */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Spec Attached
+                    </label>
+                    <select
+                      value={specAttachedFilter}
+                      onChange={(e) => setSpecAttachedFilter(e.target.value)}
                       className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                     >
                       <option value="">All Items</option>
