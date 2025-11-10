@@ -33,6 +33,7 @@ export default function ScheduleTemplateEditor() {
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [rows, setRows] = useState([])
   const [suppliers, setSuppliers] = useState([])
+  const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState(null)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
@@ -42,6 +43,7 @@ export default function ScheduleTemplateEditor() {
   useEffect(() => {
     loadTemplates()
     loadSuppliers()
+    loadUsers()
   }, [])
 
   useEffect(() => {
@@ -82,6 +84,15 @@ export default function ScheduleTemplateEditor() {
       setSuppliers(response.suppliers || [])
     } catch (err) {
       console.error('Failed to load suppliers:', err)
+    }
+  }
+
+  const loadUsers = async () => {
+    try {
+      const response = await api.get('/api/v1/users')
+      setUsers(response.users || [])
+    } catch (err) {
+      console.error('Failed to load users:', err)
     }
   }
 
@@ -139,6 +150,7 @@ export default function ScheduleTemplateEditor() {
     const newRow = {
       name: 'New Task',
       supplier_id: null,
+      assigned_user_id: null,
       predecessor_ids: [],
       po_required: false,
       create_po_on_job_start: false,
@@ -327,8 +339,8 @@ export default function ScheduleTemplateEditor() {
                 tooltip="The name of the task that will appear in the schedule. Be descriptive so builders know exactly what needs to be done."
               />
               <ColumnTooltip
-                text="Supplier"
-                tooltip="The supplier responsible for this task. Required if you want to generate purchase orders automatically."
+                text="Supplier / User"
+                tooltip="For PO tasks: select a supplier. For internal work: select a user to assign the task to."
               />
               <ColumnTooltip
                 text="Predecessors"
@@ -401,6 +413,7 @@ export default function ScheduleTemplateEditor() {
                   row={row}
                   index={rows.findIndex(r => r.id === row.id)}
                   suppliers={suppliers}
+                  users={users}
                   onUpdate={(updates) => handleUpdateRow(row.id, updates)}
                   onDelete={() => handleDeleteRow(row.id)}
                   onMoveUp={() => handleMoveRow(rows.findIndex(r => r.id === row.id), 'up')}
@@ -499,7 +512,7 @@ export default function ScheduleTemplateEditor() {
 
 // Individual row component
 function ScheduleTemplateRow({
-  row, index, suppliers, onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown
+  row, index, suppliers, users, onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown
 }) {
   const [localName, setLocalName] = useState(row.name)
   const [updateTimeout, setUpdateTimeout] = useState(null)
@@ -530,10 +543,11 @@ function ScheduleTemplateRow({
     // Handle interdependent fields
     if (field === 'po_required') {
       if (!value) {
-        // If po_required is unchecked, also uncheck create_po_on_job_start
-        onUpdate({ po_required: false, create_po_on_job_start: false })
+        // If po_required is unchecked, also uncheck create_po_on_job_start and clear supplier
+        onUpdate({ po_required: false, create_po_on_job_start: false, supplier_id: null })
       } else {
-        onUpdate({ [field]: value })
+        // If po_required is checked, clear assigned_user
+        onUpdate({ po_required: true, assigned_user_id: null })
       }
     } else if (field === 'create_po_on_job_start') {
       if (value && !row.supplier_id) {
@@ -562,17 +576,30 @@ function ScheduleTemplateRow({
         className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
       />
 
-      {/* Supplier */}
-      <select
-        value={row.supplier_id || ''}
-        onChange={(e) => handleFieldChange('supplier_id', e.target.value ? parseInt(e.target.value) : null)}
-        className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
-      >
-        <option value="">None</option>
-        {suppliers.map(s => (
-          <option key={s.id} value={s.id}>{s.name}</option>
-        ))}
-      </select>
+      {/* Supplier / User */}
+      {row.po_required ? (
+        <select
+          value={row.supplier_id || ''}
+          onChange={(e) => handleFieldChange('supplier_id', e.target.value ? parseInt(e.target.value) : null)}
+          className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+        >
+          <option value="">Select supplier...</option>
+          {suppliers.map(s => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
+      ) : (
+        <select
+          value={row.assigned_user_id || ''}
+          onChange={(e) => handleFieldChange('assigned_user_id', e.target.value ? parseInt(e.target.value) : null)}
+          className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+        >
+          <option value="">Assign to...</option>
+          {users.map(u => (
+            <option key={u.id} value={u.id}>{u.name}</option>
+          ))}
+        </select>
+      )}
 
       {/* Predecessors */}
       <input
