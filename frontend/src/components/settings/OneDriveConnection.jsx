@@ -3,6 +3,7 @@ import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/re
 import { ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, CloudIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import OneDriveFolderPicker from './OneDriveFolderPicker'
+import PricebookMatchPreview from './PricebookMatchPreview'
 
 export default function OneDriveConnection() {
   const [status, setStatus] = useState({
@@ -27,6 +28,9 @@ export default function OneDriveConnection() {
   const [changingRootFolder, setChangingRootFolder] = useState(false)
   const [showFolderPicker, setShowFolderPicker] = useState(false)
   const [folderPickerMode, setFolderPickerMode] = useState(null) // 'sync' or 'root'
+  const [showMatchPreview, setShowMatchPreview] = useState(false)
+  const [previewMatches, setPreviewMatches] = useState([])
+  const [loadingPreview, setLoadingPreview] = useState(false)
 
   // Fetch connection status on mount and handle OAuth callback
   useEffect(() => {
@@ -178,6 +182,65 @@ export default function OneDriveConnection() {
       })
     } finally {
       setDisconnecting(false)
+    }
+  }
+
+  const handlePreviewMatches = async () => {
+    if (!folderPath || folderPath.trim() === '') {
+      setMessage({
+        type: 'error',
+        text: 'Please enter a folder path',
+      })
+      return
+    }
+
+    try {
+      setLoadingPreview(true)
+      setMessage(null)
+
+      const response = await api.get('/api/v1/organization_onedrive/preview_pricebook_matches', {
+        params: { folder_path: folderPath.trim() }
+      })
+
+      setPreviewMatches(response.matches || [])
+      setShowMatchPreview(true)
+    } catch (err) {
+      setMessage({
+        type: 'error',
+        text: err.message || 'Failed to preview matches',
+      })
+    } finally {
+      setLoadingPreview(false)
+    }
+  }
+
+  const handleApplyMatches = async (acceptedMatches) => {
+    try {
+      setSyncingImages(true)
+      setMessage(null)
+
+      const response = await api.post('/api/v1/organization_onedrive/apply_pricebook_matches', {
+        folder_path: folderPath.trim(),
+        accepted_matches: acceptedMatches
+      })
+
+      setMessage({
+        type: 'success',
+        text: response.message || 'Images synced successfully',
+      })
+
+      setSyncResult({
+        matched: response.matched,
+        errors: response.errors || []
+      })
+    } catch (err) {
+      setMessage({
+        type: 'error',
+        text: err.message || 'Failed to apply matches',
+      })
+      throw err // Re-throw so the preview component knows
+    } finally {
+      setSyncingImages(false)
     }
   }
 
@@ -470,21 +533,38 @@ export default function OneDriveConnection() {
                           </p>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={handleSyncPricebookImages}
-                          disabled={syncingImages}
-                          className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-                        >
-                          {syncingImages ? (
-                            <span className="flex items-center gap-x-2">
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                              Syncing...
-                            </span>
-                          ) : (
-                            'Sync Images Now'
-                          )}
-                        </button>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={handlePreviewMatches}
+                            disabled={loadingPreview || syncingImages}
+                            className="flex-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                          >
+                            {loadingPreview ? (
+                              <span className="flex items-center justify-center gap-x-2">
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                                Loading...
+                              </span>
+                            ) : (
+                              'Preview & Sync'
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSyncPricebookImages}
+                            disabled={syncingImages || loadingPreview}
+                            className="rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600 disabled:opacity-50 dark:bg-gray-700 dark:hover:bg-gray-600"
+                          >
+                            {syncingImages ? (
+                              <span className="flex items-center gap-x-2">
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                                Syncing...
+                              </span>
+                            ) : (
+                              'Auto Sync'
+                            )}
+                          </button>
+                        </div>
 
                         {syncResult && (
                           <div className="mt-3 rounded-md bg-white p-3 shadow-sm dark:bg-gray-900">
@@ -618,6 +698,14 @@ export default function OneDriveConnection() {
         }}
         onSelect={handleFolderSelected}
         title={folderPickerMode === 'sync' ? 'Select Pricebook Images Folder' : 'Select Root Folder'}
+      />
+
+      {/* Match Preview Dialog */}
+      <PricebookMatchPreview
+        isOpen={showMatchPreview}
+        onClose={() => setShowMatchPreview(false)}
+        matches={previewMatches}
+        onApplyMatches={handleApplyMatches}
       />
 
       {/* Disconnect Confirmation Dialog */}
