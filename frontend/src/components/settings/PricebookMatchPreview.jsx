@@ -37,6 +37,16 @@ export default function PricebookMatchPreview({ isOpen, onClose, matches, onAppl
     }
   }
 
+  const selectHighConfidenceMatches = () => {
+    const newSelected = {}
+    matches.forEach((match, index) => {
+      if (match.item_id && match.similarity >= 90) {
+        newSelected[index] = true
+      }
+    })
+    setSelectedMatches(newSelected)
+  }
+
   const handleApply = async () => {
     const acceptedMatches = matches
       .filter((match, index) => selectedMatches[index])
@@ -128,22 +138,42 @@ export default function PricebookMatchPreview({ isOpen, onClose, matches, onAppl
                     </div>
 
                     {/* Summary Stats */}
-                    <div className="mt-4 flex gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-600 dark:text-gray-400">Total Files:</span>
-                        <span className="font-medium text-gray-900 dark:text-white">{matches.length}</span>
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="flex gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-600 dark:text-gray-400">Total Files:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{matches.length}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-600 dark:text-gray-400">Matched:</span>
+                          <span className="font-medium text-green-600 dark:text-green-400">{matchedCount}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-600 dark:text-gray-400">Unmatched:</span>
+                          <span className="font-medium text-red-600 dark:text-red-400">{unmatchedCount}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-600 dark:text-gray-400">Selected:</span>
+                          <span className="font-medium text-indigo-600 dark:text-indigo-400">{selectedCount}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-600 dark:text-gray-400">Matched:</span>
-                        <span className="font-medium text-green-600 dark:text-green-400">{matchedCount}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-600 dark:text-gray-400">Unmatched:</span>
-                        <span className="font-medium text-red-600 dark:text-red-400">{unmatchedCount}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-600 dark:text-gray-400">Selected:</span>
-                        <span className="font-medium text-indigo-600 dark:text-indigo-400">{selectedCount}</span>
+
+                      {/* Quick Select Buttons */}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={selectHighConfidenceMatches}
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 dark:text-green-400 dark:bg-green-900/20 dark:hover:bg-green-900/30"
+                        >
+                          Select 90%+
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMatches({})}
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
+                        >
+                          Clear All
+                        </button>
                       </div>
                     </div>
 
