@@ -128,11 +128,33 @@ module Api
           return
         end
 
-        if @purchase_order.update(purchase_order_params)
-          render json: @purchase_order.as_json(include: :line_items)
-        else
-          render json: { errors: @purchase_order.errors.full_messages }, status: :unprocessable_entity
+        schedule_task_id = params[:purchase_order][:schedule_task_id]
+
+        ActiveRecord::Base.transaction do
+          # Update the PO
+          if @purchase_order.update(purchase_order_params.except(:schedule_task_id))
+            # Handle schedule task assignment changes
+            if schedule_task_id.present?
+              # Unlink any existing schedule tasks from this PO
+              ScheduleTask.where(purchase_order_id: @purchase_order.id).update_all(purchase_order_id: nil)
+
+              # Link the new schedule task to this PO
+              schedule_task = ScheduleTask.find(schedule_task_id)
+              schedule_task.update!(purchase_order_id: @purchase_order.id)
+            elsif params[:purchase_order].key?(:schedule_task_id) && schedule_task_id.nil?
+              # Explicitly setting to nil - unlink all schedule tasks
+              ScheduleTask.where(purchase_order_id: @purchase_order.id).update_all(purchase_order_id: nil)
+            end
+
+            render json: @purchase_order.as_json(include: :line_items)
+          else
+            render json: { errors: @purchase_order.errors.full_messages }, status: :unprocessable_entity
+          end
         end
+      rescue ActiveRecord::RecordNotFound
+        render json: { errors: ['Schedule task not found'] }, status: :unprocessable_entity
+      rescue => e
+        render json: { errors: [e.message] }, status: :unprocessable_entity
       end
 
       # DELETE /api/v1/purchase_orders/:id
