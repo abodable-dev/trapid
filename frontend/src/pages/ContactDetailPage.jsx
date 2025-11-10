@@ -41,7 +41,7 @@ export default function ContactDetailPage() {
   const [supplierSearchTerm, setSupplierSearchTerm] = useState('')
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false)
   const [setAsDefaultSupplier, setSetAsDefaultSupplier] = useState(true)
-  const [effectiveDate, setEffectiveDate] = useState('')
+  const [effectiveDate, setEffectiveDate] = useState(new Date().toISOString().split('T')[0])
 
   useEffect(() => {
     loadContact()
