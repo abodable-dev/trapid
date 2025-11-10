@@ -13,6 +13,7 @@ module Api
             drive_name: credential.drive_name,
             root_folder_id: credential.root_folder_id,
             root_folder_path: credential.root_folder_path,
+            root_folder_web_url: credential.metadata&.dig('root_folder_web_url'),
             connected_at: credential.created_at,
             connected_by: credential.connected_by&.as_json(only: [:id, :email]),
             metadata: credential.metadata
