@@ -901,22 +901,22 @@ export default function ContactDetailPage() {
               </div>
               {contact.pricebook_items && contact.pricebook_items.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full">
+                  <table className="min-w-full table-fixed">
                     <thead>
                       <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        <th scope="col" className="w-32 px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Code
                         </th>
-                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        <th scope="col" className="w-64 px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Item Name
                         </th>
-                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        <th scope="col" className="w-40 px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Category
                         </th>
-                        <th scope="col" className="px-6 py-3.5 text-center text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        <th scope="col" className="w-32 px-6 py-3.5 text-center text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Default Supplier
                         </th>
-                        <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                        <th scope="col" className="w-32 px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Current Price
                         </th>
                         <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
@@ -960,13 +960,13 @@ export default function ContactDetailPage() {
                           </td>
                           <td className="px-6 py-4 text-sm">
                             {item.price_histories && item.price_histories.length > 0 ? (
-                              <div className="space-y-1">
+                              <div className="max-h-32 overflow-y-auto overflow-x-auto pr-2 space-y-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
                                 {item.price_histories.map((history, index) => (
-                                  <div key={history.id} className="flex items-center gap-2 text-xs">
-                                    <span className="font-mono text-gray-900 dark:text-white font-medium">
+                                  <div key={history.id} className="flex items-center gap-3 text-xs whitespace-nowrap">
+                                    <span className="font-mono text-gray-900 dark:text-white font-medium min-w-[70px]">
                                       ${parseFloat(history.new_price || 0).toFixed(2)}
                                     </span>
-                                    <span className="text-gray-500 dark:text-gray-400">
+                                    <span className="text-gray-500 dark:text-gray-400 min-w-[100px]">
                                       {history.date_effective ? (
                                         new Date(history.date_effective).toLocaleDateString('en-AU', {
                                           year: 'numeric',
@@ -982,7 +982,7 @@ export default function ContactDetailPage() {
                                       )}
                                     </span>
                                     {history.lga && (
-                                      <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">
+                                      <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs min-w-fit">
                                         {history.lga}
                                       </span>
                                     )}
