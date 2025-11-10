@@ -112,7 +112,7 @@ class OnedrivePricebookSyncService
   end
 
   def match_files_to_items(client, files, items)
-    # Create a hash of items by normalized name for quick lookup
+    # Create a hash of items by normalized name for exact lookup
     items_by_name = {}
     items.each do |item|
       normalized = normalize_name(item.item_name)
@@ -131,7 +131,13 @@ class OnedrivePricebookSyncService
       filename_without_ext = File.basename(file['name'], '.*')
       normalized_filename = normalize_name(filename_without_ext)
 
+      # Try exact match first
       matching_items = items_by_name[normalized_filename]
+
+      # If no exact match, try fuzzy matching
+      if matching_items.nil? || matching_items.empty?
+        matching_items = find_fuzzy_matches(normalized_filename, items, items_by_name)
+      end
 
       if matching_items && matching_items.any?
         matching_items.each do |item|
@@ -158,6 +164,67 @@ class OnedrivePricebookSyncService
         }
       end
     end
+  end
+
+  def find_fuzzy_matches(filename, items, items_by_name)
+    # Use fuzzy matching with 80% similarity threshold
+    # This handles typos, extra spaces, and minor differences
+    require 'fuzzy_match'
+
+    # Get all item names
+    item_names = items_by_name.keys
+
+    # Find best fuzzy match
+    fuzzy_matcher = FuzzyMatch.new(item_names, read: ->(name) { name })
+    best_match = fuzzy_matcher.find(filename, must_match_at_least_one_word: true)
+
+    if best_match
+      # Calculate similarity score
+      similarity = calculate_similarity(filename, best_match)
+
+      # Only accept matches with 70% or higher similarity
+      if similarity >= 0.70
+        Rails.logger.info "Fuzzy matched '#{filename}' to '#{best_match}' (#{(similarity * 100).round}% similar)"
+        return items_by_name[best_match]
+      end
+    end
+
+    nil
+  end
+
+  def calculate_similarity(str1, str2)
+    # Levenshtein distance based similarity
+    longer = [str1.length, str2.length].max
+    return 1.0 if longer == 0
+
+    distance = levenshtein_distance(str1, str2)
+    (longer - distance).to_f / longer
+  end
+
+  def levenshtein_distance(str1, str2)
+    # Classic Levenshtein distance algorithm
+    n = str1.length
+    m = str2.length
+    return m if n == 0
+    return n if m == 0
+
+    d = Array.new(n + 1) { Array.new(m + 1) }
+
+    (0..n).each { |i| d[i][0] = i }
+    (0..m).each { |j| d[0][j] = j }
+
+    (1..n).each do |i|
+      (1..m).each do |j|
+        cost = str1[i - 1] == str2[j - 1] ? 0 : 1
+        d[i][j] = [
+          d[i - 1][j] + 1,      # deletion
+          d[i][j - 1] + 1,      # insertion
+          d[i - 1][j - 1] + cost # substitution
+        ].min
+      end
+    end
+
+    d[n][m]
   end
 
   def prepare_item_update(client, item, file)
