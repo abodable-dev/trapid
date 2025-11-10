@@ -715,7 +715,7 @@ export default function HealthPage() {
                   {/* Item List */}
                   {healthChecks.itemsWithoutDefaultSupplier.count > 0 && expandedSections.itemsWithoutDefaultSupplier && (
                     <div className="mt-4 ml-15">
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                           <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
@@ -895,7 +895,7 @@ export default function HealthPage() {
                   {/* Supplier List */}
                   {healthChecks.suppliersWithIncompleteCategoryPricing.count > 0 && expandedSections.suppliersWithIncompleteCategoryPricing && (
                     <div className="mt-4 ml-15">
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                           <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
@@ -1143,7 +1143,7 @@ export default function HealthPage() {
                   {/* Item List */}
                   {healthChecks.itemsWithDefaultSupplierButNoPriceHistory.count > 0 && expandedSections.itemsWithDefaultSupplierButNoPriceHistory && (
                     <div className="mt-4 ml-15">
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                           <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
@@ -1329,7 +1329,7 @@ export default function HealthPage() {
                   {/* Item List */}
                   {healthChecks.itemsRequiringPhotoWithoutImage.count > 0 && expandedSections.itemsRequiringPhotoWithoutImage && (
                     <div className="mt-4 ml-15">
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                           <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
@@ -1509,7 +1509,7 @@ export default function HealthPage() {
                   {/* Item List */}
                   {priceHealthCheck.issues_found > 0 && expandedSections.priceMismatches && (
                     <div className="mt-4 ml-15">
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                           <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
