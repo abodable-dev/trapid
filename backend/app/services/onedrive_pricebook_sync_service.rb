@@ -243,7 +243,9 @@ class OnedrivePricebookSyncService
 
   def list_folder_files(client, folder_id)
     all_files = []
-    next_link = "/me/drive/items/#{folder_id}/children"
+    # Request @microsoft.graph.downloadUrl explicitly via $select parameter
+    # Without this, the API returns webUrl (sharing link) instead of direct download URL
+    next_link = "/me/drive/items/#{folder_id}/children?$select=id,name,file,@microsoft.graph.downloadUrl"
 
     # Follow pagination to get all files
     while next_link
