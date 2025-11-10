@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { api } from '../api'
 import { ArrowLeftIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
@@ -15,8 +16,10 @@ export default function PurchaseOrderEditPage() {
   const [itemSearchResults, setItemSearchResults] = useState({})
   const [showSearchDropdown, setShowSearchDropdown] = useState({})
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState({})
+  const [dropdownPosition, setDropdownPosition] = useState({})
   const [allSupplierItems, setAllSupplierItems] = useState([])
   const searchRefs = useRef({})
+  const inputRefs = useRef({})
 
   useEffect(() => {
     loadPurchaseOrder()
@@ -121,6 +124,20 @@ export default function PurchaseOrderEditPage() {
     // Close description dropdown
     setShowDescriptionDropdown(prev => ({ ...prev, [index]: false }))
 
+    // Calculate dropdown position
+    const inputEl = inputRefs.current[`code-${index}`]
+    if (inputEl) {
+      const rect = inputEl.getBoundingClientRect()
+      setDropdownPosition(prev => ({
+        ...prev,
+        [`code-${index}`]: {
+          top: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width
+        }
+      }))
+    }
+
     // Always show all supplier items when focusing on item code field
     setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
     setShowSearchDropdown(prev => ({ ...prev, [index]: true }))
@@ -165,6 +182,20 @@ export default function PurchaseOrderEditPage() {
   const handleDescriptionFocus = (index) => {
     // Close item code dropdown
     setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
+
+    // Calculate dropdown position
+    const inputEl = inputRefs.current[`desc-${index}`]
+    if (inputEl) {
+      const rect = inputEl.getBoundingClientRect()
+      setDropdownPosition(prev => ({
+        ...prev,
+        [`desc-${index}`]: {
+          top: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width
+        }
+      }))
+    }
 
     // Always show all supplier items when focusing on description field
     setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
@@ -346,6 +377,7 @@ export default function PurchaseOrderEditPage() {
                       <td className="px-6 py-4 overflow-visible">
                         <div className="relative">
                           <input
+                            ref={el => inputRefs.current[`code-${index}`] = el}
                             type="text"
                             value={item.item_code}
                             onChange={(e) => handleItemCodeChange(index, e.target.value)}
@@ -353,8 +385,15 @@ export default function PurchaseOrderEditPage() {
                             placeholder="Type code..."
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           />
-                          {showSearchDropdown[index] && (
-                            <div className="absolute z-[9999] mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-96 overflow-y-auto">
+                          {showSearchDropdown[index] && dropdownPosition[`code-${index}`] && createPortal(
+                            <div
+                              className="fixed z-[9999] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-96 overflow-y-auto"
+                              style={{
+                                top: `${dropdownPosition[`code-${index}`].top}px`,
+                                left: `${dropdownPosition[`code-${index}`].left}px`,
+                                minWidth: '16rem'
+                              }}
+                            >
                               {(itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).length > 0 ? (
                                 (itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).map((searchItem) => (
                                   <button
@@ -373,13 +412,15 @@ export default function PurchaseOrderEditPage() {
                                   {allSupplierItems.length === 0 ? 'Loading items...' : 'No items found'}
                                 </div>
                               )}
-                            </div>
+                            </div>,
+                            document.body
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4 overflow-visible">
                         <div className="relative">
                           <input
+                            ref={el => inputRefs.current[`desc-${index}`] = el}
                             type="text"
                             value={item.description}
                             onChange={(e) => handleDescriptionChange(index, e.target.value)}
@@ -387,8 +428,15 @@ export default function PurchaseOrderEditPage() {
                             placeholder="Description..."
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           />
-                          {showDescriptionDropdown[index] && (
-                            <div className="absolute z-[9999] mt-1 w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-96 overflow-y-auto">
+                          {showDescriptionDropdown[index] && dropdownPosition[`desc-${index}`] && createPortal(
+                            <div
+                              className="fixed z-[9999] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-96 overflow-y-auto"
+                              style={{
+                                top: `${dropdownPosition[`desc-${index}`].top}px`,
+                                left: `${dropdownPosition[`desc-${index}`].left}px`,
+                                minWidth: '24rem'
+                              }}
+                            >
                               {(itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).length > 0 ? (
                                 (itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).map((searchItem) => (
                                   <button
@@ -407,7 +455,8 @@ export default function PurchaseOrderEditPage() {
                                   {allSupplierItems.length === 0 ? 'Loading items...' : 'No items found'}
                                 </div>
                               )}
-                            </div>
+                            </div>,
+                            document.body
                           )}
                         </div>
                       </td>
