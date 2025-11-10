@@ -290,18 +290,22 @@ module Api
           job = XeroContactSyncJob.perform_later
           job_id = job.job_id
 
-          # Initialize job metadata
-          Rails.cache.write(
-            "xero_sync_job_#{job_id}",
-            {
-              job_id: job_id,
-              status: 'queued',
-              queued_at: Time.current,
-              total: 0,
-              processed: 0
-            },
-            expires_in: 24.hours
-          )
+          # Initialize job metadata (skip cache write if cache is not configured)
+          begin
+            Rails.cache.write(
+              "xero_sync_job_#{job_id}",
+              {
+                job_id: job_id,
+                status: 'queued',
+                queued_at: Time.current,
+                total: 0,
+                processed: 0
+              },
+              expires_in: 24.hours
+            )
+          rescue StandardError => cache_error
+            Rails.logger.warn("Failed to write job metadata to cache: #{cache_error.message}")
+          end
 
           render json: {
             success: true,
