@@ -176,9 +176,6 @@ class OnedrivePricebookSyncService
     # Match files to items by name
     match_files_to_items(client, files, items)
 
-    # Update boolean flags for all items after sync
-    update_boolean_flags(items)
-
     {
       success: true,
       matched: @results[:matched],
@@ -488,17 +485,17 @@ class OnedrivePricebookSyncService
           case update_data[:type]
           when :qr_code
             merged_update[:qr_code_url] = update_data[:qr_code_url]
-            merged_update[:requires_spec] = false
+            merged_update[:spec_attached] = true
             @results[:qr_codes_matched] += 1
             Rails.logger.info "Matched QR code '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
           when :spec
             merged_update[:spec_url] = update_data[:spec_url]
-            merged_update[:requires_spec] = false
+            merged_update[:spec_attached] = true
             @results[:specs_matched] += 1
             Rails.logger.info "Matched spec '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
           when :photo
             merged_update[:image_url] = update_data[:image_url]
-            merged_update[:requires_photo] = false
+            merged_update[:photo_attached] = true
             @results[:photos_matched] += 1
             Rails.logger.info "Matched photo '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
           end
@@ -510,43 +507,6 @@ class OnedrivePricebookSyncService
       rescue => e
         @results[:errors] << "Error updating item #{item_id}: #{e.message}"
         Rails.logger.error "Error updating item #{item_id}: #{e.message}"
-      end
-    end
-  end
-
-  def update_boolean_flags(items)
-    # Reload items to get latest data after batch updates
-    item_ids = items.map(&:id)
-    items_reloaded = PricebookItem.where(id: item_ids).select(:id, :image_url, :spec_url, :requires_photo, :requires_spec)
-
-    # Prepare batch updates for boolean flags
-    updates_needed = []
-
-    items_reloaded.each do |item|
-      has_photo = item.image_url.present?
-      has_spec = item.spec_url.present?
-
-      # Only update if flags have changed
-      if item.requires_photo != has_photo || item.requires_spec != has_spec
-        updates_needed << {
-          id: item.id,
-          requires_photo: has_photo,
-          requires_spec: has_spec
-        }
-      end
-    end
-
-    # Perform batch update for boolean flags
-    unless updates_needed.empty?
-      # Use update_all for each distinct combination
-      updates_by_values = updates_needed.group_by { |u| [u[:requires_photo], u[:requires_spec]] }
-
-      updates_by_values.each do |(photo, spec), items_to_update|
-        item_ids = items_to_update.map { |u| u[:id] }
-        PricebookItem.where(id: item_ids).update_all(
-          requires_photo: photo,
-          requires_spec: spec
-        )
       end
     end
   end

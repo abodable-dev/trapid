@@ -24,6 +24,8 @@ module Api
           # Boolean field filters
           @items = @items.where(requires_photo: params[:requires_photo] == "true") if params[:requires_photo].present?
           @items = @items.where(requires_spec: params[:requires_spec] == "true") if params[:requires_spec].present?
+          @items = @items.where(photo_attached: params[:photo_attached] == "true") if params[:photo_attached].present?
+          @items = @items.where(spec_attached: params[:spec_attached] == "true") if params[:spec_attached].present?
           @items = @items.where(needs_pricing_review: params[:needs_pricing_review] == "true") if params[:needs_pricing_review].present?
 
           # Risk level filter - use scope instead of loading all records
@@ -196,7 +198,7 @@ module Api
           item = PricebookItem.find_by(id: update[:id])
           if item
             # Permit the attributes we want to update (excluding :id which is used for lookup)
-            permitted_attrs = update.to_unsafe_h.slice(:current_price, :supplier_id, :default_supplier_id, :notes, :category, :requires_photo, :requires_spec, :needs_pricing_review)
+            permitted_attrs = update.to_unsafe_h.slice(:current_price, :supplier_id, :default_supplier_id, :notes, :category, :requires_photo, :requires_spec, :photo_attached, :spec_attached, :needs_pricing_review)
 
             # If update_price_to_current_default is true, create/update price history for the new default supplier
             if update[:update_price_to_current_default] == true && update[:default_supplier_id].present? && item.current_price.present?
@@ -347,7 +349,8 @@ module Api
             image_url: params[:image_url],
             image_source: 'manual',
             image_fetched_at: Time.current,
-            image_fetch_status: 'success'
+            image_fetch_status: 'success',
+            photo_attached: true
           )
 
           render json: {
