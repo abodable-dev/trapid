@@ -127,12 +127,21 @@ export const api = {
     return response.json();
   },
 
-  async delete(endpoint, data) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+  async delete(endpoint, options = {}) {
+    // Build query string from params if provided
+    let url = `${API_URL}${endpoint}`;
+    if (options.params) {
+      const queryString = new URLSearchParams(options.params).toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+    }
+
+    const response = await fetch(url, {
       method: 'DELETE',
       headers: getAuthHeaders(),
       credentials: 'include',
-      body: data ? JSON.stringify(data) : undefined,
+      body: options.data ? JSON.stringify(options.data) : undefined,
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
