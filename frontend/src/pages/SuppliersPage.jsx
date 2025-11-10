@@ -22,6 +22,7 @@ export default function SuppliersPage() {
   const [error, setError] = useState(null)
   const [matchStatus, setMatchStatus] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [photoAttachedFilter, setPhotoAttachedFilter] = useState('')
   const [isMatching, setIsMatching] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState(null)
   const [selectedContact, setSelectedContact] = useState(null)
@@ -61,7 +62,7 @@ export default function SuppliersPage() {
   useEffect(() => {
     loadSuppliers()
     loadContacts()
-  }, [matchStatus])
+  }, [matchStatus, photoAttachedFilter])
 
   // Listen for global search event from AppLayout
   useEffect(() => {
@@ -105,6 +106,7 @@ export default function SuppliersPage() {
       setLoading(true)
       const params = new URLSearchParams()
       if (matchStatus !== 'all') params.append('match_status', matchStatus)
+      if (photoAttachedFilter) params.append('photo_attached', photoAttachedFilter)
 
       const response = await api.get(`/api/v1/suppliers?${params.toString()}`)
       setSuppliers(response.suppliers || [])
@@ -336,6 +338,16 @@ export default function SuppliersPage() {
             <option value="verified">Verified</option>
             <option value="needs_review">Needs Review</option>
             <option value="unmatched">Unmatched</option>
+          </select>
+
+          <select
+            value={photoAttachedFilter}
+            onChange={(e) => setPhotoAttachedFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+          >
+            <option value="">Photo Attached</option>
+            <option value="true">With Photo</option>
+            <option value="false">No Photo</option>
           </select>
 
           <button
