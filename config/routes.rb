@@ -145,6 +145,7 @@ Rails.application.routes.draw do
           post :bulk_update_prices
           delete :delete_price_column
           get :activities
+          post :link_xero_contact
         end
       end
 
@@ -181,6 +182,7 @@ Rails.application.routes.draw do
           get :sync_status
           get :sync_history
           get :tax_rates
+          get :search_contacts
         end
         member do
           get :sync_contacts_status

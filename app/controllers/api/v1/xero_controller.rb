@@ -515,6 +515,101 @@ module Api
           }, status: :internal_server_error
         end
       end
+
+      # GET /api/v1/xero/search_contacts?query=search_term
+      # Search for Xero contacts by name, email, or tax number
+      def search_contacts
+        query = params[:query]
+
+        if query.blank?
+          return render json: {
+            success: false,
+            error: 'Search query is required'
+          }, status: :bad_request
+        end
+
+        begin
+          client = XeroApiClient.new
+
+          # Search Xero contacts with a WHERE clause
+          # Search by name, email, or tax number
+          where_clause = "Name.Contains(\"#{query}\") OR EmailAddress.Contains(\"#{query}\") OR TaxNumber.Contains(\"#{query}\")"
+
+          result = client.get('Contacts', { where: where_clause })
+
+          if result[:success]
+            contacts = result[:data]['Contacts'] || []
+
+            # Format contacts for the frontend
+            formatted_contacts = contacts.map do |contact|
+              {
+                xero_id: contact['ContactID'],
+                name: contact['Name'],
+                email: contact['EmailAddress'],
+                tax_number: contact['TaxNumber'],
+                first_name: contact['FirstName'],
+                last_name: contact['LastName'],
+                phones: contact['Phones']
+              }
+            end
+
+            render json: {
+              success: true,
+              contacts: formatted_contacts,
+              count: formatted_contacts.length
+            }
+          else
+            render json: {
+              success: false,
+              error: 'Failed to search Xero contacts'
+            }, status: :unprocessable_entity
+          end
+        rescue XeroApiClient::AuthenticationError => e
+          Rails.logger.error("Xero search_contacts auth error: #{e.message}")
+          render json: {
+            success: false,
+            error: 'Not authenticated with Xero. Please connect to Xero first.'
+          }, status: :unauthorized
+        rescue StandardError => e
+          Rails.logger.error("Xero search_contacts error: #{e.message}")
+          render json: {
+            success: false,
+            error: "Failed to search contacts: #{e.message}"
+          }, status: :internal_server_error
+        end
+      end
+
+      private
+
+      # Determine what sync action was taken for a contact
+      def determine_sync_action(contact)
+        if contact.xero_sync_error.present?
+          'Sync Failed'
+        elsif contact.xero_id.present? && contact.created_at < contact.last_synced_at
+          'Updated from Xero'
+        elsif contact.xero_id.present?
+          'Created from Xero'
+        else
+          'Synced to Xero'
+        end
+      end
+
+      # Find the most recent active sync job
+      def find_active_sync_job
+        # This is a simple implementation using cache
+        # In production, you might want to use a proper job tracking mechanism
+        cache_keys = Rails.cache.instance_variable_get(:@data)&.keys || []
+        job_keys = cache_keys.select { |k| k.to_s.start_with?('xero_sync_job_') }
+
+        job_keys.each do |key|
+          job_data = Rails.cache.read(key)
+          if job_data && ['queued', 'processing'].include?(job_data[:status])
+            return job_data
+          end
+        end
+
+        nil
+      end
     end
   end
 end

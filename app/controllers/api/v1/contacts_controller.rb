@@ -1,7 +1,7 @@
 module Api
   module V1
     class ContactsController < ApplicationController
-      before_action :set_contact, only: [:show, :update, :destroy, :activities]
+      before_action :set_contact, only: [:show, :update, :destroy, :activities, :link_xero_contact]
 
       # GET /api/v1/contacts
       def index
@@ -29,6 +29,16 @@ module Api
           end
         end
 
+        # Filter by Xero sync status
+        if params[:xero_sync].present?
+          case params[:xero_sync]
+          when 'synced'
+            @contacts = @contacts.where.not(xero_id: nil)
+          when 'not_synced'
+            @contacts = @contacts.where(xero_id: nil)
+          end
+        end
+
         # Filter by having contact info
         @contacts = @contacts.with_email if params[:with_email] == "true"
         @contacts = @contacts.with_phone if params[:with_phone] == "true"
@@ -38,7 +48,7 @@ module Api
         render json: {
           success: true,
           contacts: @contacts.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas],
+            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas, :xero_id, :sync_with_xero, :last_synced_at],
             methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
           )
         }
@@ -820,6 +830,88 @@ module Api
             }
           )
         }
+      end
+
+      # POST /api/v1/contacts/:id/link_xero_contact
+      # Manually link a Trapid contact to a Xero contact
+      def link_xero_contact
+        xero_id = params[:xero_id]
+
+        if xero_id.blank?
+          return render json: {
+            success: false,
+            error: "xero_id is required"
+          }, status: :bad_request
+        end
+
+        begin
+          # Fetch the Xero contact to verify it exists and get its details
+          client = XeroApiClient.new
+          result = client.get("Contacts/#{xero_id}")
+
+          unless result[:success]
+            return render json: {
+              success: false,
+              error: "Failed to fetch Xero contact"
+            }, status: :unprocessable_entity
+          end
+
+          xero_contact = result[:data]['Contacts']&.first
+
+          unless xero_contact
+            return render json: {
+              success: false,
+              error: "Xero contact not found"
+            }, status: :not_found
+          end
+
+          # Update the contact with the Xero ID and sync timestamp
+          @contact.update!(
+            xero_id: xero_contact['ContactID'],
+            last_synced_at: Time.current,
+            xero_sync_error: nil,
+            sync_with_xero: true
+          )
+
+          # Log the manual link activity
+          ContactActivity.create!(
+            contact: @contact,
+            activity_type: 'linked_to_xero',
+            description: "Manually linked to Xero contact: #{xero_contact['Name']}",
+            metadata: {
+              xero_contact_id: xero_contact['ContactID'],
+              xero_contact_name: xero_contact['Name'],
+              linked_via: 'manual'
+            },
+            performed_by: @contact,
+            occurred_at: Time.current
+          )
+
+          render json: {
+            success: true,
+            message: "Successfully linked contact to Xero: #{xero_contact['Name']}",
+            contact: @contact.as_json(
+              only: [:id, :full_name, :xero_id, :last_synced_at, :sync_with_xero]
+            ),
+            xero_contact: {
+              xero_id: xero_contact['ContactID'],
+              name: xero_contact['Name'],
+              email: xero_contact['EmailAddress'],
+              tax_number: xero_contact['TaxNumber']
+            }
+          }
+        rescue ActiveRecord::RecordInvalid => e
+          render json: {
+            success: false,
+            error: "Failed to link contact: #{e.message}"
+          }, status: :unprocessable_entity
+        rescue => e
+          Rails.logger.error("Link Xero contact error: #{e.message}")
+          render json: {
+            success: false,
+            error: "Failed to link contact: #{e.message}"
+          }, status: :internal_server_error
+        end
       end
 
       private
