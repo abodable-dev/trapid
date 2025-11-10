@@ -19,7 +19,7 @@ function ColumnTooltip({ text, tooltip }) {
     <div className="group relative flex items-center gap-1">
       <span>{text}</span>
       <InformationCircleIcon className="h-3.5 w-3.5 text-gray-400 cursor-help" />
-      <div className="hidden group-hover:block absolute z-50 bottom-full left-0 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg">
+      <div className="invisible group-hover:visible absolute z-[9999] bottom-full left-0 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-xl border border-gray-700">
         {tooltip}
         <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
       </div>

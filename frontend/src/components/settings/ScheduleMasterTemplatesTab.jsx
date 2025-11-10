@@ -10,7 +10,7 @@ function FieldTooltip({ text, tooltip }) {
       <span>{text}</span>
       <div className="group relative">
         <InformationCircleIcon className="h-4 w-4 text-gray-400 cursor-help" />
-        <div className="hidden group-hover:block absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg">
+        <div className="invisible group-hover:visible absolute z-[9999] bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-xl border border-gray-700">
           {tooltip}
           <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
         </div>
@@ -258,7 +258,7 @@ export default function ScheduleMasterTemplatesTab() {
                   </label>
                   <div className="group relative">
                     <InformationCircleIcon className="h-4 w-4 text-gray-400 cursor-help" />
-                    <div className="hidden group-hover:block absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg">
+                    <div className="invisible group-hover:visible absolute z-[9999] bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-xl border border-gray-700">
                       Mark this task as a milestone. Milestones are key checkpoints in the project timeline and are typically shown with special visual indicators.
                       <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
                     </div>
@@ -277,7 +277,7 @@ export default function ScheduleMasterTemplatesTab() {
                   </label>
                   <div className="group relative">
                     <InformationCircleIcon className="h-4 w-4 text-gray-400 cursor-help" />
-                    <div className="hidden group-hover:block absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg">
+                    <div className="invisible group-hover:visible absolute z-[9999] bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-xl border border-gray-700">
                       Automatically create a photo documentation task when this task is completed. Useful for quality control and compliance.
                       <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
                     </div>
