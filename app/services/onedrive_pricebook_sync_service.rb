@@ -124,6 +124,9 @@ class OnedrivePricebookSyncService
     # Track which items were matched
     matched_items = Set.new
 
+    # Collect all updates to perform in batch
+    updates_to_perform = []
+
     # Match each file to an item
     files.each do |file|
       filename_without_ext = File.basename(file['name'], '.*')
@@ -133,13 +136,18 @@ class OnedrivePricebookSyncService
 
       if matching_items && matching_items.any?
         matching_items.each do |item|
-          update_item_with_file(client, item, file)
+          # Prepare update data instead of updating immediately
+          update_data = prepare_item_update(client, item, file)
+          updates_to_perform << update_data if update_data
           matched_items.add(item.id)
         end
       else
         @results[:unmatched_files] << file['name']
       end
     end
+
+    # Perform all updates in batch
+    perform_batch_updates(updates_to_perform)
 
     # Track items that weren't matched
     items.each do |item|
@@ -153,7 +161,7 @@ class OnedrivePricebookSyncService
     end
   end
 
-  def update_item_with_file(client, item, file)
+  def prepare_item_update(client, item, file)
     # Get sharing link for the file
     share_response = client.post("/me/drive/items/#{file['id']}/createLink", {
       type: "view",
@@ -163,53 +171,110 @@ class OnedrivePricebookSyncService
     share_url = share_response.dig('link', 'webUrl')
     filename = file['name']
 
-    # Determine file type and update appropriate field
+    # Determine file type and prepare update data
+    update_data = {
+      item_id: item.id,
+      item_name: item.item_name,
+      item_code: item.item_code,
+      filename: filename,
+      image_source: 'onedrive',
+      image_fetched_at: Time.current,
+      image_fetch_status: 'success'
+    }
+
     if is_qr_code_file?(filename)
-      item.update!(
-        qr_code_url: share_url,
-        image_source: 'onedrive',
-        image_fetched_at: Time.current,
-        image_fetch_status: 'success'
-      )
-      @results[:qr_codes_matched] += 1
-      Rails.logger.info "Matched QR code '#{filename}' to item '#{item.item_name}' (#{item.item_code})"
+      update_data[:qr_code_url] = share_url
+      update_data[:type] = :qr_code
     elsif is_spec_file?(filename) || is_spec_file_by_name?(filename)
-      item.update!(
-        spec_url: share_url,
-        image_source: 'onedrive',
-        image_fetched_at: Time.current,
-        image_fetch_status: 'success'
-      )
-      @results[:specs_matched] += 1
-      Rails.logger.info "Matched spec '#{filename}' to item '#{item.item_name}' (#{item.item_code})"
+      update_data[:spec_url] = share_url
+      update_data[:type] = :spec
     else
-      item.update!(
-        image_url: share_url,
-        image_source: 'onedrive',
-        image_fetched_at: Time.current,
-        image_fetch_status: 'success'
-      )
-      @results[:photos_matched] += 1
-      Rails.logger.info "Matched photo '#{filename}' to item '#{item.item_name}' (#{item.item_code})"
+      update_data[:image_url] = share_url
+      update_data[:type] = :photo
     end
 
-    @results[:matched] += 1
+    update_data
   rescue => e
-    @results[:errors] << "Error updating item #{item.item_code}: #{e.message}"
-    Rails.logger.error "Error updating item #{item.item_code}: #{e.message}"
+    @results[:errors] << "Error preparing update for item #{item.item_code}: #{e.message}"
+    Rails.logger.error "Error preparing update for item #{item.item_code}: #{e.message}"
+    nil
+  end
+
+  def perform_batch_updates(updates_to_perform)
+    return if updates_to_perform.empty?
+
+    # Group updates by item_id to handle multiple files per item
+    updates_by_item = updates_to_perform.group_by { |u| u[:item_id] }
+
+    # Perform batch update using update_all for better performance
+    updates_by_item.each do |item_id, item_updates|
+      begin
+        # Merge all updates for this item
+        merged_update = {
+          image_source: 'onedrive',
+          image_fetched_at: Time.current,
+          image_fetch_status: 'success'
+        }
+
+        item_updates.each do |update_data|
+          case update_data[:type]
+          when :qr_code
+            merged_update[:qr_code_url] = update_data[:qr_code_url]
+            @results[:qr_codes_matched] += 1
+            Rails.logger.info "Matched QR code '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
+          when :spec
+            merged_update[:spec_url] = update_data[:spec_url]
+            @results[:specs_matched] += 1
+            Rails.logger.info "Matched spec '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
+          when :photo
+            merged_update[:image_url] = update_data[:image_url]
+            @results[:photos_matched] += 1
+            Rails.logger.info "Matched photo '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
+          end
+          @results[:matched] += 1
+        end
+
+        # Perform single update for this item
+        PricebookItem.where(id: item_id).update_all(merged_update)
+      rescue => e
+        @results[:errors] << "Error updating item #{item_id}: #{e.message}"
+        Rails.logger.error "Error updating item #{item_id}: #{e.message}"
+      end
+    end
   end
 
   def update_boolean_flags(items)
-    # Update requires_photo and requires_spec flags based on what was found
-    items.each do |item|
+    # Reload items to get latest data after batch updates
+    item_ids = items.map(&:id)
+    items_reloaded = PricebookItem.where(id: item_ids).select(:id, :image_url, :spec_url, :requires_photo, :requires_spec)
+
+    # Prepare batch updates for boolean flags
+    updates_needed = []
+
+    items_reloaded.each do |item|
       has_photo = item.image_url.present?
       has_spec = item.spec_url.present?
 
       # Only update if flags have changed
       if item.requires_photo != has_photo || item.requires_spec != has_spec
-        item.update_columns(
+        updates_needed << {
+          id: item.id,
           requires_photo: has_photo,
           requires_spec: has_spec
+        }
+      end
+    end
+
+    # Perform batch update for boolean flags
+    unless updates_needed.empty?
+      # Use update_all for each distinct combination
+      updates_by_values = updates_needed.group_by { |u| [u[:requires_photo], u[:requires_spec]] }
+
+      updates_by_values.each do |(photo, spec), items_to_update|
+        item_ids = items_to_update.map { |u| u[:id] }
+        PricebookItem.where(id: item_ids).update_all(
+          requires_photo: photo,
+          requires_spec: spec
         )
       end
     end
