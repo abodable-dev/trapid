@@ -213,3 +213,12 @@ end
 
 puts "Created #{Design.count} designs"
 puts "Designs seed complete!"
+
+# Folder Templates Seed Data
+puts "\n" + "="*50
+puts "Seeding Folder Templates..."
+
+FolderTemplate.seed_defaults
+
+puts "Created #{FolderTemplate.count} folder templates"
+puts "Folder Templates seed complete!"
