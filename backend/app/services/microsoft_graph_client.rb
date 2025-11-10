@@ -34,14 +34,20 @@ class MicrosoftGraphClient
 
   # Exchange authorization code for access tokens
   def self.exchange_code_for_tokens(code:, client_id:, client_secret:, redirect_uri:)
+    # Manually encode the body as URL-encoded form data
+    # HTTParty sometimes doesn't encode hashes correctly with x-www-form-urlencoded
+    params = {
+      client_id: client_id,
+      client_secret: client_secret,
+      code: code,
+      redirect_uri: redirect_uri,
+      grant_type: 'authorization_code'
+    }
+
+    encoded_body = URI.encode_www_form(params)
+
     response = HTTParty.post(TOKEN_URL,
-      body: {
-        client_id: client_id,
-        client_secret: client_secret,
-        code: code,
-        redirect_uri: redirect_uri,
-        grant_type: 'authorization_code'
-      },
+      body: encoded_body,
       headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
     )
 
@@ -60,13 +66,17 @@ class MicrosoftGraphClient
 
   # Client Credentials Flow (for organization-wide auth)
   def self.authenticate_as_application
+    params = {
+      client_id: ENV['ONEDRIVE_CLIENT_ID'],
+      client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+      scope: 'https://graph.microsoft.com/.default',
+      grant_type: 'client_credentials'
+    }
+
+    encoded_body = URI.encode_www_form(params)
+
     response = HTTParty.post(TOKEN_URL,
-      body: {
-        client_id: ENV['ONEDRIVE_CLIENT_ID'],
-        client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
-        scope: 'https://graph.microsoft.com/.default',
-        grant_type: 'client_credentials'
-      },
+      body: encoded_body,
       headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
     )
 
@@ -80,13 +90,17 @@ class MicrosoftGraphClient
       raise AuthenticationError, "No refresh token available. Please reconnect OneDrive."
     end
 
+    params = {
+      client_id: ENV['ONEDRIVE_CLIENT_ID'],
+      client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+      refresh_token: @credential.refresh_token,
+      grant_type: 'refresh_token'
+    }
+
+    encoded_body = URI.encode_www_form(params)
+
     response = HTTParty.post(TOKEN_URL,
-      body: {
-        client_id: ENV['ONEDRIVE_CLIENT_ID'],
-        client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
-        refresh_token: @credential.refresh_token,
-        grant_type: 'refresh_token'
-      },
+      body: encoded_body,
       headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
     )
 
