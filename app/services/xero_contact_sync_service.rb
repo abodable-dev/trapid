@@ -267,9 +267,27 @@ class XeroContactSyncService
       updates[:bill_due_type] = bills['Type'] if bills['Type'].present?
     end
 
+    # Track changes for activity logging
+    changed_fields = updates.keys - [:xero_id, :last_synced_at, :xero_sync_error]
+    changes_made = changed_fields.each_with_object({}) do |field, hash|
+      old_value = trapid_contact.send(field)
+      new_value = updates[field]
+      hash[field] = { from: old_value, to: new_value } if old_value != new_value
+    end
+
     trapid_contact.update!(updates)
     @stats[:updated] += 1
     Rails.logger.info("Updated Trapid contact ##{trapid_contact.id}")
+
+    # Log activity if there were changes
+    if changes_made.any?
+      ContactActivity.log_xero_sync(
+        contact: trapid_contact,
+        action: 'updated',
+        changes: changes_made,
+        xero_data: xero_contact
+      )
+    end
   rescue StandardError => e
     error_msg = "Failed to update Trapid contact: #{e.message}"
     trapid_contact.update(xero_sync_error: error_msg)
@@ -302,8 +320,16 @@ class XeroContactSyncService
       end
     end
 
-    Contact.create!(contact_data.compact)
+    new_contact = Contact.create!(contact_data.compact)
     Rails.logger.info("Created Trapid contact from Xero: #{xero_contact['Name']}")
+
+    # Log activity for new contact creation
+    ContactActivity.log_xero_sync(
+      contact: new_contact,
+      action: 'created',
+      changes: {},
+      xero_data: xero_contact
+    )
   rescue StandardError => e
     error_msg = "Failed to create Trapid contact from Xero: #{e.message}"
     Rails.logger.error(error_msg)

@@ -144,6 +144,7 @@ Rails.application.routes.draw do
           delete :remove_from_categories
           post :bulk_update_prices
           delete :delete_price_column
+          get :activities
         end
       end
 

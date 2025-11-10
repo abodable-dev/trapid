@@ -3,6 +3,7 @@ class Contact < ApplicationRecord
   has_many :suppliers, dependent: :nullify  # Legacy association - will be deprecated
   has_many :supplier_contacts, dependent: :destroy
   has_many :linked_suppliers, through: :supplier_contacts, source: :supplier
+  has_many :contact_activities, dependent: :destroy
 
   # Supplier-specific associations (when contact is a supplier)
   # After migration, supplier_id in these tables points to contact_id

@@ -121,6 +121,7 @@ module Api
 
       # PATCH /api/v1/organization_onedrive/change_root_folder
       # Change the root folder for organization OneDrive
+      # Supports nested folder paths like "00 - Trapid/Photos for Price Book"
       def change_root_folder
         credential = OrganizationOneDriveCredential.active_credential
 
@@ -128,58 +129,86 @@ module Api
           return render json: { error: 'OneDrive not connected' }, status: :unauthorized
         end
 
-        new_folder_name = params[:folder_name]
+        folder_path = params[:folder_name]
 
-        if new_folder_name.blank?
+        if folder_path.blank?
           return render json: { error: 'Folder name is required' }, status: :bad_request
         end
 
-        # Validate folder name to prevent path traversal attacks
-        if new_folder_name.include?('..') || new_folder_name.include?('/') || new_folder_name.include?('\\')
-          return render json: { error: 'Invalid folder name. Folder names cannot contain "..", "/", or "\\" characters.' }, status: :bad_request
+        # Validate folder path to prevent path traversal attacks
+        # Allow forward slashes for nested paths, but block ".." and backslashes
+        if folder_path.include?('..') || folder_path.include?('\\')
+          return render json: { error: 'Invalid folder path. Folder paths cannot contain ".." or "\\" characters.' }, status: :bad_request
         end
 
-        # Validate length and forbidden characters
-        if new_folder_name.length > 255
-          return render json: { error: 'Folder name is too long (maximum 255 characters)' }, status: :bad_request
+        # Validate length
+        if folder_path.length > 1000
+          return render json: { error: 'Folder path is too long (maximum 1000 characters)' }, status: :bad_request
         end
 
-        # Remove any potentially dangerous characters (whitelist approach)
-        sanitized_name = new_folder_name.gsub(/[^a-zA-Z0-9\s\-_]/, '').strip
-
-        if sanitized_name.blank?
-          return render json: { error: 'Folder name contains only invalid characters' }, status: :bad_request
+        # Validate each path segment
+        path_segments = folder_path.split('/')
+        if path_segments.any?(&:blank?)
+          return render json: { error: 'Invalid folder path. Empty path segments are not allowed.' }, status: :bad_request
         end
+
+        # Sanitize each path segment (allow alphanumeric, spaces, hyphens, underscores)
+        sanitized_segments = path_segments.map do |segment|
+          segment.gsub(/[^a-zA-Z0-9\s\-_]/, '').strip
+        end
+
+        if sanitized_segments.any?(&:blank?)
+          return render json: { error: 'Folder path contains invalid characters' }, status: :bad_request
+        end
+
+        sanitized_path = sanitized_segments.join('/')
 
         begin
           client = MicrosoftGraphClient.new(credential)
 
-          # Try to find existing folder first
-          existing_folder = client.find_folder_by_name(sanitized_name)
+          # Navigate through nested folder path, creating folders as needed
+          current_parent_path = "/me/drive/root"
+          current_folder = nil
 
-          if existing_folder
-            # Use existing folder
-            root_folder = existing_folder
-          else
-            # Create new folder
-            root_folder = client.create_folder(sanitized_name, drive_id: credential.drive_id)
+          sanitized_segments.each do |folder_name|
+            # Get children of current parent
+            response = client.get("#{current_parent_path}/children")
+            folders = response['value'] || []
+
+            # Find folder in current level
+            folder = folders.find { |f| f['name'] == folder_name && f['folder'] }
+
+            if folder
+              # Folder exists, use it
+              current_folder = folder
+              current_parent_path = "/me/drive/items/#{folder['id']}"
+            else
+              # Create folder at this level
+              folder = client.post("#{current_parent_path}/children", {
+                name: folder_name,
+                folder: {},
+                '@microsoft.graph.conflictBehavior' => 'fail'
+              })
+              current_folder = folder
+              current_parent_path = "/me/drive/items/#{folder['id']}"
+            end
           end
 
           # Update credential with new root folder info
           credential.update!(
-            root_folder_id: root_folder['id'],
-            root_folder_path: sanitized_name,
+            root_folder_id: current_folder['id'],
+            root_folder_path: sanitized_path,
             metadata: credential.metadata.merge({
-              root_folder_name: sanitized_name,
-              root_folder_web_url: root_folder['webUrl'],
+              root_folder_name: sanitized_segments.last,
+              root_folder_web_url: current_folder['webUrl'],
               updated_at: Time.current
             })
           )
 
           render json: {
             message: 'Root folder updated successfully',
-            root_folder_path: sanitized_name,
-            root_folder_web_url: root_folder['webUrl']
+            root_folder_path: sanitized_path,
+            root_folder_web_url: current_folder['webUrl']
           }
 
         rescue MicrosoftGraphClient::AuthenticationError => e
