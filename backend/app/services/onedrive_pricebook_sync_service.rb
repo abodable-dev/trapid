@@ -479,10 +479,12 @@ class OnedrivePricebookSyncService
             Rails.logger.info "Matched QR code '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
           when :spec
             merged_update[:spec_url] = update_data[:spec_url]
+            merged_update[:requires_spec] = false
             @results[:specs_matched] += 1
             Rails.logger.info "Matched spec '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
           when :photo
             merged_update[:image_url] = update_data[:image_url]
+            merged_update[:requires_photo] = false
             @results[:photos_matched] += 1
             Rails.logger.info "Matched photo '#{update_data[:filename]}' to item '#{update_data[:item_name]}' (#{update_data[:item_code]})"
           end
