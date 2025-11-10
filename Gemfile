@@ -46,7 +46,7 @@ gem "caxlsx_rails", "~> 0.6.3"  # Rails integration for Excel export
 # Image management and scraping
 gem "cloudinary", "~> 2.1"  # Cloud image storage and CDN
 gem "httparty", "~> 0.22"  # HTTP requests for image scraping
-gem "mini_magick", "~> 4.12"  # Image processing
+gem "mini_magick", "~> 5.3"   # Image processing
 
 # OAuth2 for Xero integration
 gem "oauth2", "~> 2.0"  # OAuth2 authentication for Xero API
