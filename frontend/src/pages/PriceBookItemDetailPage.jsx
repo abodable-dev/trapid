@@ -3,6 +3,9 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { Switch, Menu, Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import { api } from '../api'
 import { formatCurrency } from '../utils/formatters'
+
+// Get API URL for proxy endpoints
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 import {
   ArrowLeftIcon,
   CurrencyDollarIcon,
@@ -43,6 +46,22 @@ export default function PriceBookItemDetailPage() {
   const [showAllPrices, setShowAllPrices] = useState(false)
   const [taxRates, setTaxRates] = useState([])
   const [editingGstCode, setEditingGstCode] = useState(false)
+
+  // Helper function to get the correct image URL (proxy if file_id exists, otherwise direct URL)
+  const getImageUrl = (fileType) => {
+    if (!item) return null
+
+    const fileIdField = `${fileType}_file_id`
+    const urlField = `${fileType}_url`
+
+    // If we have a file_id, use the proxy endpoint (never expires, no CORS issues)
+    if (item[fileIdField]) {
+      return `${API_URL}/api/v1/pricebook/${id}/proxy_image/${fileType}`
+    }
+
+    // Otherwise fall back to direct URL (may be SharePoint link or old data)
+    return item[urlField]
+  }
 
   useEffect(() => {
     loadItem()
@@ -776,7 +795,7 @@ export default function PriceBookItemDetailPage() {
             </div>
 
             {/* Images Card */}
-            {(item.image_url || item.qr_code_url) && (
+            {(item.image_url || item.image_file_id || item.qr_code_url || item.qr_code_file_id) && (
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <PhotoIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
@@ -784,7 +803,7 @@ export default function PriceBookItemDetailPage() {
                 </h2>
 
                 <div className="space-y-4">
-                  {item.image_url && (
+                  {(item.image_url || item.image_file_id) && (
                     <div>
                       <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
                         <PhotoIcon className="h-4 w-4" />
@@ -792,11 +811,11 @@ export default function PriceBookItemDetailPage() {
                       </div>
                       <div className="relative group">
                         <img
-                          src={item.image_url}
+                          src={getImageUrl('image')}
                           alt={item.item_name}
                           className="w-full rounded-lg border border-gray-200 dark:border-gray-600 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                           style={{ maxHeight: '300px' }}
-                          onClick={() => setEnlargedImage({ url: item.image_url, type: 'photo' })}
+                          onClick={() => setEnlargedImage({ url: getImageUrl('image'), type: 'photo' })}
                           onError={(e) => {
                             e.target.parentElement.innerHTML = '<div class="w-full h-48 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center"><span class="text-sm text-gray-500 dark:text-gray-400">Image not available</span></div>'
                           }}
@@ -808,7 +827,7 @@ export default function PriceBookItemDetailPage() {
                     </div>
                   )}
 
-                  {item.qr_code_url && (
+                  {(item.qr_code_url || item.qr_code_file_id) && (
                     <div>
                       <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
                         <QrCodeIcon className="h-4 w-4" />
@@ -816,11 +835,11 @@ export default function PriceBookItemDetailPage() {
                       </div>
                       <div className="relative group">
                         <img
-                          src={item.qr_code_url}
+                          src={getImageUrl('qr_code')}
                           alt={`QR Code for ${item.item_name}`}
                           className="w-full rounded-lg border border-gray-200 dark:border-gray-600 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                           style={{ maxHeight: '300px' }}
-                          onClick={() => setEnlargedImage({ url: item.qr_code_url, type: 'qr' })}
+                          onClick={() => setEnlargedImage({ url: getImageUrl('qr_code'), type: 'qr' })}
                           onError={(e) => {
                             e.target.parentElement.innerHTML = '<div class="w-full h-48 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center"><span class="text-sm text-gray-500 dark:text-gray-400">QR code not available</span></div>'
                           }}
@@ -832,7 +851,7 @@ export default function PriceBookItemDetailPage() {
                     </div>
                   )}
 
-                  {item.requires_photo && !item.image_url && (
+                  {item.requires_photo && !item.image_url && !item.image_file_id && (
                     <div className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-700">
                       <ExclamationTriangleIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
                       <span>This item requires a photo but none has been uploaded yet.</span>
