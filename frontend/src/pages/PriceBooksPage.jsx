@@ -555,6 +555,9 @@ export default function PriceBooksPage() {
       newSet.add(itemId)
     }
 
+    // Update state immediately for responsive UI
+    setSelectedItems(newSet)
+
     // Update URL with new selection
     const params = new URLSearchParams(searchParams)
     if (newSet.size > 0) {
@@ -570,6 +573,9 @@ export default function PriceBooksPage() {
       ? new Set()
       : new Set(items.map(item => item.id))
 
+    // Update state immediately for responsive UI
+    setSelectedItems(newSet)
+
     // Update URL with new selection
     const params = new URLSearchParams(searchParams)
     if (newSet.size > 0) {
@@ -581,6 +587,9 @@ export default function PriceBooksPage() {
   }
 
   const handleClearSelection = () => {
+    // Update state immediately for responsive UI
+    setSelectedItems(new Set())
+
     // Update URL to remove selection
     const params = new URLSearchParams(searchParams)
     params.delete('selected')
