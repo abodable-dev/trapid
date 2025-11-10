@@ -204,6 +204,7 @@ export default function TaskTable({ tasks = [], onTaskUpdate, colorConfig, color
           min={min}
           max={max}
           onChange={(e) => setEditValue(e.target.value)}
+          onFocus={(e) => e.target.select()}
           onBlur={() => saveEdit(task.id, field)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') saveEdit(task.id, field)

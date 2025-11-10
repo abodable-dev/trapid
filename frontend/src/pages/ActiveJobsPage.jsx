@@ -253,6 +253,7 @@ export default function ActiveJobsPage() {
                             step="0.01"
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
+                            onFocus={(e) => e.target.select()}
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus
@@ -279,6 +280,7 @@ export default function ActiveJobsPage() {
                             step="0.01"
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
+                            onFocus={(e) => e.target.select()}
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus
@@ -309,6 +311,7 @@ export default function ActiveJobsPage() {
                             step="0.01"
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
+                            onFocus={(e) => e.target.select()}
                             onBlur={handleCellBlur}
                             onKeyDown={handleKeyDown}
                             autoFocus

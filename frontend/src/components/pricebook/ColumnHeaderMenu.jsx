@@ -216,6 +216,7 @@ export default function ColumnHeaderMenu({
                           type="number"
                           value={minPrice}
                           onChange={(e) => setMinPrice(e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           placeholder="Min price"
                           step="0.01"
                           className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
@@ -224,6 +225,7 @@ export default function ColumnHeaderMenu({
                           type="number"
                           value={maxPrice}
                           onChange={(e) => setMaxPrice(e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           placeholder="Max price"
                           step="0.01"
                           className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"

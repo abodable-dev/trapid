@@ -1236,6 +1236,7 @@ export default function ContactDetailPage() {
                                             step="0.01"
                                             value={editingPriceHistory.price}
                                             onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, price: e.target.value })}
+                                            onFocus={(e) => e.target.select()}
                                             className="w-24 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
                                             ref={(input) => {
                                               if (input) {
@@ -1490,6 +1491,7 @@ export default function ContactDetailPage() {
                                             step="0.01"
                                             value={editingPriceHistory.price}
                                             onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, price: e.target.value })}
+                                            onFocus={(e) => e.target.select()}
                                             className="w-24 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
                                             ref={(input) => {
                                               if (input) {
@@ -2080,6 +2082,7 @@ export default function ContactDetailPage() {
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                                 <input
                                   type="number"
+                          onFocus={(e) => e.target.select()}
                                   step="0.01"
                                   defaultValue={item.current_price || 0}
                                   id={`bulk-price-${item.id}`}

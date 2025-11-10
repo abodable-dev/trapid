@@ -293,6 +293,7 @@ export default function CsvImportJobModal({ isOpen, onClose, onSuccess }) {
                         step="0.01"
                         value={formData.contractValue}
                         onChange={(e) => handleChange('contractValue', e.target.value)}
+                        onFocus={(e) => e.target.select()}
                         placeholder="Leave blank to use sum of POs"
                         className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                       />

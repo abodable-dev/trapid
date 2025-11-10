@@ -1332,6 +1332,7 @@ export default function PriceBookItemDetailPage() {
                           </label>
                           <input
                             type="number"
+                          onFocus={(e) => e.target.select()}
                             step="0.01"
                             name="old_price"
                             id="old_price"
@@ -1345,6 +1346,7 @@ export default function PriceBookItemDetailPage() {
                           </label>
                           <input
                             type="number"
+                          onFocus={(e) => e.target.select()}
                             step="0.01"
                             name="new_price"
                             id="new_price"

@@ -18,6 +18,8 @@ export default function PurchaseOrderEditPage() {
   const [showDescriptionDropdown, setShowDescriptionDropdown] = useState({})
   const [dropdownPosition, setDropdownPosition] = useState({})
   const [allSupplierItems, setAllSupplierItems] = useState([])
+  const [scheduleTasks, setScheduleTasks] = useState([])
+  const [selectedScheduleTaskId, setSelectedScheduleTaskId] = useState(null)
   const searchRefs = useRef({})
   const inputRefs = useRef({})
   const dropdownRefs = useRef({})
@@ -54,6 +56,16 @@ export default function PurchaseOrderEditPage() {
         loadAllSupplierItems(response.supplier_id)
       }
 
+      // Load schedule tasks for this construction
+      if (response.construction_id) {
+        loadScheduleTasks(response.construction_id)
+      }
+
+      // Set the currently selected schedule task
+      if (response.schedule_tasks && response.schedule_tasks.length > 0) {
+        setSelectedScheduleTaskId(response.schedule_tasks[0].id)
+      }
+
       // Initialize line items - if none exist, add one empty row
       if (response.line_items && response.line_items.length > 0) {
         setLineItems(response.line_items.map(item => ({
@@ -87,6 +99,15 @@ export default function PurchaseOrderEditPage() {
       setAllSupplierItems(response.items || [])
     } catch (err) {
       console.error('Failed to load supplier items:', err)
+    }
+  }
+
+  const loadScheduleTasks = async (constructionId) => {
+    try {
+      const response = await api.get(`/api/v1/constructions/${constructionId}/schedule_tasks`)
+      setScheduleTasks(response.schedule_tasks || [])
+    } catch (err) {
+      console.error('Failed to load schedule tasks:', err)
     }
   }
 
@@ -285,6 +306,7 @@ export default function PurchaseOrderEditPage() {
     try {
       await api.put(`/api/v1/purchase_orders/${id}`, {
         purchase_order: {
+          schedule_task_id: selectedScheduleTaskId || null,
           line_items_attributes: lineItems.map(item => ({
             id: item.id,
             pricebook_item_id: item.pricebook_item_id,
@@ -344,16 +366,21 @@ export default function PurchaseOrderEditPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Supplier: {purchaseOrder?.supplier?.name || 'No supplier selected'}
               </p>
-              {purchaseOrder?.schedule_tasks && purchaseOrder.schedule_tasks.length > 0 && (
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Schedule Task: <Link
-                    to={`/jobs/${purchaseOrder.construction_id}?tab=Schedule+Master`}
-                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 hover:underline"
-                  >
-                    {purchaseOrder.schedule_tasks[0].title}
-                  </Link>
-                </p>
-              )}
+              <div className="flex items-center gap-x-2 text-sm text-gray-600 dark:text-gray-400">
+                <span>Schedule Task:</span>
+                <select
+                  value={selectedScheduleTaskId || ''}
+                  onChange={(e) => setSelectedScheduleTaskId(e.target.value || null)}
+                  className="inline-flex px-2 py-0.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Select schedule task...</option>
+                  {scheduleTasks.map((task) => (
+                    <option key={task.id} value={task.id}>
+                      {task.title} {task.supplier_category && `(${task.supplier_category})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -498,6 +525,7 @@ export default function PurchaseOrderEditPage() {
                           type="number"
                           value={item.quantity}
                           onChange={(e) => handleLineItemChange(index, 'quantity', e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           min="0"
                           step="1"
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-right bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -508,6 +536,7 @@ export default function PurchaseOrderEditPage() {
                           type="number"
                           value={item.unit_price}
                           onChange={(e) => handleLineItemChange(index, 'unit_price', e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           min="0"
                           step="0.01"
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-right bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"

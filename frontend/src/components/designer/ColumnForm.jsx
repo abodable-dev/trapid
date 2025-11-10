@@ -361,6 +361,7 @@ export default function ColumnForm({ table, column, onClose }) {
                               type="number"
                               value={formData.min_length}
                               onChange={(e) => setFormData({ ...formData, min_length: e.target.value })}
+                              onFocus={(e) => e.target.select()}
                               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-white/5 dark:border-white/10 dark:text-white"
                             />
                           </div>
@@ -372,6 +373,7 @@ export default function ColumnForm({ table, column, onClose }) {
                               type="number"
                               value={formData.max_length}
                               onChange={(e) => setFormData({ ...formData, max_length: e.target.value })}
+                              onFocus={(e) => e.target.select()}
                               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-white/5 dark:border-white/10 dark:text-white"
                             />
                           </div>
@@ -389,6 +391,7 @@ export default function ColumnForm({ table, column, onClose }) {
                               step="any"
                               value={formData.min_value}
                               onChange={(e) => setFormData({ ...formData, min_value: e.target.value })}
+                              onFocus={(e) => e.target.select()}
                               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-white/5 dark:border-white/10 dark:text-white"
                             />
                           </div>
@@ -401,6 +404,7 @@ export default function ColumnForm({ table, column, onClose }) {
                               step="any"
                               value={formData.max_value}
                               onChange={(e) => setFormData({ ...formData, max_value: e.target.value })}
+                              onFocus={(e) => e.target.select()}
                               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-white/5 dark:border-white/10 dark:text-white"
                             />
                           </div>

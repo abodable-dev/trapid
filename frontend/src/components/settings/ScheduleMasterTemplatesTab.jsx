@@ -188,6 +188,7 @@ export default function ScheduleMasterTemplatesTab() {
                   min="1"
                   value={formData.default_duration_days}
                   onChange={(e) => setFormData({ ...formData, default_duration_days: parseInt(e.target.value) })}
+                  onFocus={(e) => e.target.select()}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -202,6 +203,7 @@ export default function ScheduleMasterTemplatesTab() {
                   min="0"
                   value={formData.sequence_order}
                   onChange={(e) => setFormData({ ...formData, sequence_order: parseInt(e.target.value) })}
+                  onFocus={(e) => e.target.select()}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>

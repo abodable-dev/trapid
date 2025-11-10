@@ -756,6 +756,7 @@ export default function SupplierDetailPage() {
                               step="0.01"
                               value={editForm.current_price}
                               onChange={(e) => setEditForm({ ...editForm, current_price: e.target.value })}
+                              onFocus={(e) => e.target.select()}
                               className="w-32 px-2 py-1 text-sm text-right border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                             />
                           ) : (

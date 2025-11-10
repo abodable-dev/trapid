@@ -1208,6 +1208,7 @@ export default function PriceBooksPage() {
                                 step="10"
                                 value={config.width}
                                 onChange={(e) => handleColumnWidthChange(key, e.target.value)}
+                                onFocus={(e) => e.target.select()}
                                 disabled={!config.visible}
                                 className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed pointer-events-auto"
                                 onClick={(e) => e.stopPropagation()}
@@ -1324,6 +1325,7 @@ export default function PriceBooksPage() {
                       placeholder="$0"
                       value={minPrice}
                       onChange={(e) => setMinPrice(e.target.value)}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
@@ -1338,6 +1340,7 @@ export default function PriceBooksPage() {
                       placeholder="$999,999"
                       value={maxPrice}
                       onChange={(e) => setMaxPrice(e.target.value)}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
@@ -1859,6 +1862,7 @@ export default function PriceBooksPage() {
                                             }
                                           }))
                                         }}
+                                        onFocus={(e) => e.target.select()}
                                         className="w-24 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                                       />
                                     </div>

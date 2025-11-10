@@ -507,6 +507,7 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                             step="0.01"
                             value={formData.contract_value}
                             onChange={(e) => handleChange('contract_value', e.target.value)}
+                            onFocus={(e) => e.target.select()}
                             placeholder="0.00"
                             className="w-full pl-8 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white transition-all"
                           />

@@ -265,6 +265,7 @@ export default function EditJobDrawer({ isOpen, onClose, job, onSuccess }) {
                                 step="0.01"
                                 value={formData.contract_value}
                                 onChange={(e) => handleChange('contract_value', e.target.value)}
+                                onFocus={(e) => e.target.select()}
                                 className={`text-sm text-gray-600 dark:text-gray-400 bg-transparent border-b border-gray-200 dark:border-gray-700 hover:border-indigo-500 focus:border-indigo-500 focus:outline-none py-1 ${
                                   errors.contract_value ? 'border-red-500' : ''
                                 }`}

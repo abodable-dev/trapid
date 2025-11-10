@@ -18,6 +18,7 @@ import {
   CalendarDaysIcon,
   BuildingStorefrontIcon,
   PaperClipIcon,
+  PrinterIcon,
   FaceSmileIcon,
   FireIcon,
   HeartIcon,
@@ -145,7 +146,50 @@ export default function PurchaseOrderDetailPage() {
 
   return (
     <main>
-      <header className="relative isolate">
+      <style>{`
+        @media print {
+          /* Hide navigation and action buttons */
+          .print-hide {
+            display: none !important;
+          }
+
+          /* Hide the sidebar summary on print */
+          .print-hide-sidebar {
+            display: none !important;
+          }
+
+          /* Reset colors for print */
+          body {
+            background: white !important;
+          }
+
+          /* Full width for main content on print */
+          .print-full-width {
+            grid-column: span 3 !important;
+          }
+
+          /* Remove shadows and borders that don't print well */
+          .shadow, .shadow-sm, .shadow-lg {
+            box-shadow: none !important;
+          }
+
+          /* Ensure page breaks are clean */
+          .print-page-break {
+            page-break-before: always;
+          }
+
+          /* Hide decorative elements */
+          header {
+            display: none !important;
+          }
+
+          /* Add some padding to printed content */
+          main {
+            padding-top: 0 !important;
+          }
+        }
+      `}</style>
+      <header className="relative isolate print-hide">
         <div aria-hidden="true" className="absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute left-16 top-full -mt-16 transform-gpu opacity-50 blur-3xl xl:left-1/2 xl:-ml-80 dark:opacity-30">
             <div
@@ -185,6 +229,14 @@ export default function PurchaseOrderDetailPage() {
               </h1>
             </div>
             <div className="flex items-center gap-x-4 sm:gap-x-6">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-x-1.5 text-sm/6 font-semibold text-gray-900 dark:text-white"
+              >
+                <PrinterIcon className="h-5 w-5" />
+                Print/PDF
+              </button>
               <button
                 type="button"
                 onClick={() => navigate(`/jobs/${purchaseOrder.construction_id}`)}
@@ -262,7 +314,7 @@ export default function PurchaseOrderDetailPage() {
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 items-start gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
           {/* PO Summary */}
-          <div className="lg:col-start-3 lg:row-end-1">
+          <div className="lg:col-start-3 lg:row-end-1 print-hide-sidebar">
             <h2 className="sr-only">Summary</h2>
             <div className="rounded-lg bg-gray-50 shadow-sm outline outline-1 outline-gray-900/5 dark:bg-gray-800/50 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10">
               <dl className="flex flex-wrap">
@@ -300,6 +352,23 @@ export default function PurchaseOrderDetailPage() {
                     )}
                   </dd>
                 </div>
+                {purchaseOrder.schedule_tasks && purchaseOrder.schedule_tasks.length > 0 && (
+                  <div className="mt-4 flex w-full flex-none gap-x-4 px-6">
+                    <dt className="flex-none">
+                      <span className="sr-only">Schedule Task</span>
+                      <CalendarDaysIcon aria-hidden="true" className="h-6 w-5 text-gray-400 dark:text-gray-500" />
+                    </dt>
+                    <dd className="text-sm/6 text-gray-500 dark:text-gray-400">
+                      {purchaseOrder.schedule_tasks.map((task, index) => (
+                        <div key={task.id}>
+                          {task.title}
+                          {task.supplier_category && ` (${task.supplier_category})`}
+                          {index < purchaseOrder.schedule_tasks.length - 1 && <br />}
+                        </div>
+                      ))}
+                    </dd>
+                  </div>
+                )}
                 {purchaseOrder.budget && (
                   <div className="mt-4 flex w-full flex-none gap-x-4 px-6">
                     <dt className="flex-none">
@@ -323,7 +392,7 @@ export default function PurchaseOrderDetailPage() {
           </div>
 
           {/* Purchase Order Details */}
-          <div className="-mx-4 px-4 py-8 shadow-sm ring-1 ring-gray-900/5 sm:mx-0 sm:rounded-lg sm:px-8 sm:pb-14 lg:col-span-2 lg:row-span-2 lg:row-end-2 xl:px-16 xl:pb-20 xl:pt-16 dark:shadow-none dark:ring-white/10">
+          <div className="-mx-4 px-4 py-8 shadow-sm ring-1 ring-gray-900/5 sm:mx-0 sm:rounded-lg sm:px-8 sm:pb-14 lg:col-span-2 lg:row-span-2 lg:row-end-2 xl:px-16 xl:pb-20 xl:pt-16 dark:shadow-none dark:ring-white/10 print-full-width">
             {/* Tekna Homes Company Header */}
             <div className="mb-8 pb-6 border-b-2 border-indigo-600 dark:border-indigo-500">
               <div className="flex items-start justify-between">
