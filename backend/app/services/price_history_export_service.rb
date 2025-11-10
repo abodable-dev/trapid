@@ -65,7 +65,7 @@ class PriceHistoryExportService
         'Item Name',
         'Category',
         'Unit of Measure',
-        'Historical Price',
+        'Current Price',
         'Supplier',
         'Date Effective',
         'LGA',

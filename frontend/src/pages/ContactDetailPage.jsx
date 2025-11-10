@@ -12,7 +12,8 @@ import {
   CubeIcon,
   TagIcon,
   PencilIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon
 } from '@heroicons/react/24/outline'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 
@@ -45,6 +46,11 @@ export default function ContactDetailPage() {
   const [priceBookSearchTerm, setPriceBookSearchTerm] = useState('')
   const [editingPriceHistory, setEditingPriceHistory] = useState(null) // { itemId, historyId, price, date }
   const [deletingPriceHistory, setDeletingPriceHistory] = useState(null) // { itemId, historyId }
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importFile, setImportFile] = useState(null)
+  const [importDate, setImportDate] = useState(new Date().toISOString().split('T')[0])
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState(null)
 
   useEffect(() => {
     loadContact()
@@ -423,6 +429,54 @@ export default function ContactDetailPage() {
       alert('Failed to delete price history. Please try again.')
     } finally {
       setDeletingPriceHistory(null)
+    }
+  }
+
+  const handleImportPriceHistory = async () => {
+    if (!importFile) {
+      alert('Please select a file to import')
+      return
+    }
+
+    try {
+      setImporting(true)
+      setImportResult(null)
+
+      const formData = new FormData()
+      formData.append('file', importFile)
+      formData.append('effective_date', importDate)
+
+      const response = await fetch(`${api.API_URL || 'http://localhost:3001'}/api/v1/pricebook/import_price_history`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setImportResult({
+          success: true,
+          message: 'Import completed successfully',
+          stats: result.stats,
+          warnings: result.warnings
+        })
+        // Reload contact data to show updated prices
+        await loadContact()
+      } else {
+        setImportResult({
+          success: false,
+          errors: result.errors || ['Import failed']
+        })
+      }
+    } catch (err) {
+      console.error('Failed to import price history:', err)
+      setImportResult({
+        success: false,
+        errors: ['Failed to import price history. Please try again.']
+      })
+    } finally {
+      setImporting(false)
     }
   }
 
@@ -1147,14 +1201,23 @@ export default function ContactDetailPage() {
                   </span>
                 </div>
                 {contact.pricebook_items && contact.pricebook_items.length > 0 && (
-                  <button
-                    onClick={handleExportPriceHistory}
-                    disabled={exporting}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ArrowDownTrayIcon className="h-4 w-4" />
-                    {exporting ? 'Exporting...' : 'Export to Excel'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowImportModal(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+                    >
+                      <ArrowUpTrayIcon className="h-4 w-4" />
+                      Import from Excel
+                    </button>
+                    <button
+                      onClick={handleExportPriceHistory}
+                      disabled={exporting}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ArrowDownTrayIcon className="h-4 w-4" />
+                      {exporting ? 'Exporting...' : 'Export to Excel'}
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -1199,222 +1262,129 @@ export default function ContactDetailPage() {
               )}
             </div>
             {contact.pricebook_items && contact.pricebook_items.length > 0 ? (
-              <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead>
-                      <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                          Code
-                        </th>
-                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                          Item Name
-                        </th>
-                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                          Category
-                        </th>
-                        <th scope="col" className="px-6 py-3.5 text-center text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                          Default
-                        </th>
-                        <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                          Price
-                        </th>
-                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                      {contact.pricebook_items
-                        .filter((item) => {
-                          if (!priceBookSearchTerm) return true
-                          const search = priceBookSearchTerm.toLowerCase()
-                          return (
-                            item.item_code?.toLowerCase().includes(search) ||
-                            item.item_name?.toLowerCase().includes(search) ||
-                            item.category?.toLowerCase().includes(search) ||
-                            item.price_histories?.some(h =>
-                              h.new_price?.toString().includes(search)
-                            )
-                          )
-                        })
-                        .flatMap((item) => {
-                          // If item has price histories, create a row for each history entry
-                          if (item.price_histories && item.price_histories.length > 0) {
-                            return item.price_histories.map((history, historyIndex) => {
-                              const isEditing = editingPriceHistory?.itemId === item.id && editingPriceHistory?.historyId === history.id
-                              const isDeleting = deletingPriceHistory?.itemId === item.id && deletingPriceHistory?.historyId === history.id
+              (() => {
+                // Get all unique dates from all price histories across all items
+                const allDates = new Set()
+                contact.pricebook_items.forEach(item => {
+                  if (item.price_histories && item.price_histories.length > 0) {
+                    item.price_histories.forEach(history => {
+                      const date = history.date_effective || history.created_at
+                      if (date) {
+                        allDates.add(new Date(date).toISOString().split('T')[0])
+                      }
+                    })
+                  }
+                })
+
+                // Sort dates chronologically (newest first)
+                const sortedDates = Array.from(allDates).sort((a, b) => new Date(b) - new Date(a))
+
+                // Filter items based on search term
+                const filteredItems = contact.pricebook_items.filter((item) => {
+                  if (!priceBookSearchTerm) return true
+                  const search = priceBookSearchTerm.toLowerCase()
+                  return (
+                    item.item_code?.toLowerCase().includes(search) ||
+                    item.item_name?.toLowerCase().includes(search) ||
+                    item.category?.toLowerCase().includes(search) ||
+                    item.price_histories?.some(h =>
+                      h.new_price?.toString().includes(search)
+                    )
+                  )
+                })
+
+                return (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                          <th scope="col" className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800/50 px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">
+                            Code
+                          </th>
+                          <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                            Item Name
+                          </th>
+                          <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                            Category
+                          </th>
+                          <th scope="col" className="px-6 py-3.5 text-center text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">
+                            Default
+                          </th>
+                          {sortedDates.map(date => (
+                            <th
+                              key={date}
+                              scope="col"
+                              className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider border-l border-gray-200 dark:border-gray-700"
+                            >
+                              {new Date(date).toLocaleDateString('en-AU', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                        {filteredItems.map((item) => (
+                          <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <td className="sticky left-0 z-10 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
+                              {item.item_code}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                              {item.item_name}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {item.category ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+                                  <TagIcon className="h-3 w-3" />
+                                  {item.category}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center border-r border-gray-200 dark:border-gray-700">
+                              {item.is_default_supplier ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
+                                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                  </svg>
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 dark:text-gray-500">—</span>
+                              )}
+                            </td>
+                            {sortedDates.map(date => {
+                              // Find price history for this date
+                              const history = item.price_histories?.find(h => {
+                                const historyDate = h.date_effective || h.created_at
+                                if (!historyDate) return false
+                                return new Date(historyDate).toISOString().split('T')[0] === date
+                              })
 
                               return (
-                                <tr key={`${item.id}-${history.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                                  {/* Show item info only on first history row */}
-                                  {historyIndex === 0 ? (
-                                    <>
-                                      <td rowSpan={item.price_histories.length} className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
-                                        {item.item_code}
-                                      </td>
-                                      <td rowSpan={item.price_histories.length} className="px-6 py-4 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
-                                        {item.item_name}
-                                      </td>
-                                      <td rowSpan={item.price_histories.length} className="px-6 py-4 whitespace-nowrap border-r border-gray-200 dark:border-gray-700">
-                                        {item.category ? (
-                                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
-                                            <TagIcon className="h-3 w-3" />
-                                            {item.category}
-                                          </span>
-                                        ) : (
-                                          <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
-                                        )}
-                                      </td>
-                                      <td rowSpan={item.price_histories.length} className="px-6 py-4 whitespace-nowrap text-center border-r border-gray-200 dark:border-gray-700">
-                                        {item.is_default_supplier ? (
-                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
-                                            <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                            </svg>
-                                          </span>
-                                        ) : (
-                                          <span className="text-gray-400 dark:text-gray-500">—</span>
-                                        )}
-                                      </td>
-                                    </>
-                                  ) : null}
-
-                                  {/* Price - editable */}
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                    {isEditing ? (
-                                      <input
-                                        type="number"
-                                        step="0.01"
-                                        value={editingPriceHistory.price}
-                                        onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, price: e.target.value })}
-                                        className="w-24 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                      />
-                                    ) : (
-                                      <span className="font-mono font-semibold text-gray-900 dark:text-white">
-                                        ${parseFloat(history.new_price || 0).toFixed(2)}
-                                      </span>
-                                    )}
-                                  </td>
-
-                                  {/* Date - editable */}
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    {isEditing ? (
-                                      <input
-                                        type="date"
-                                        value={editingPriceHistory.date}
-                                        onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, date: e.target.value })}
-                                        className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                      />
-                                    ) : (
-                                      <span className="text-gray-600 dark:text-gray-400">
-                                        {history.date_effective ? (
-                                          new Date(history.date_effective).toLocaleDateString('en-AU', {
-                                            year: 'numeric',
-                                            month: 'short',
-                                            day: 'numeric'
-                                          })
-                                        ) : history.created_at ? (
-                                          new Date(history.created_at).toLocaleDateString('en-AU', {
-                                            year: 'numeric',
-                                            month: 'short',
-                                            day: 'numeric'
-                                          })
-                                        ) : '—'}
-                                      </span>
-                                    )}
-                                  </td>
-
-                                  {/* Actions */}
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                    {isEditing ? (
-                                      <div className="flex items-center justify-end gap-2">
-                                        <button
-                                          onClick={handleSavePriceHistory}
-                                          className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                                          title="Save"
-                                        >
-                                          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                          </svg>
-                                        </button>
-                                        <button
-                                          onClick={() => setEditingPriceHistory(null)}
-                                          className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                                          title="Cancel"
-                                        >
-                                          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                          </svg>
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center justify-end gap-2">
-                                        <button
-                                          onClick={() => handleEditPriceHistory(item.id, history)}
-                                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                                          title="Edit"
-                                        >
-                                          <PencilIcon className="h-5 w-5" />
-                                        </button>
-                                        <button
-                                          onClick={() => handleDeletePriceHistory(item.id, history.id)}
-                                          disabled={isDeleting}
-                                          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
-                                          title="Delete"
-                                        >
-                                          <TrashIcon className="h-5 w-5" />
-                                        </button>
-                                      </div>
-                                    )}
-                                  </td>
-                                </tr>
-                              )
-                            })
-                          } else {
-                            // Item has no price history - show single row
-                            return [(
-                              <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
-                                  {item.item_code}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                                  {item.item_name}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  {item.category ? (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
-                                      <TagIcon className="h-3 w-3" />
-                                      {item.category}
-                                    </span>
-                                  ) : (
-                                    <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-center">
-                                  {item.is_default_supplier ? (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
-                                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                      </svg>
+                                <td
+                                  key={date}
+                                  className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono border-l border-gray-200 dark:border-gray-700"
+                                >
+                                  {history ? (
+                                    <span className="font-semibold text-gray-900 dark:text-white">
+                                      ${parseFloat(history.new_price || 0).toFixed(2)}
                                     </span>
                                   ) : (
                                     <span className="text-gray-400 dark:text-gray-500">—</span>
                                   )}
                                 </td>
-                                <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-400 dark:text-gray-500">
-                                  No price history
-                                </td>
-                              </tr>
-                            )]
-                          }
-                        })
-                      }
-                    </tbody>
-                  </table>
-                </div>
+                              )
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              })())
               ) : (
                 <div className="px-6 py-16 text-center">
                   <CubeIcon className="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600" />
@@ -1648,6 +1618,133 @@ export default function ContactDetailPage() {
                   className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white/10 dark:text-white dark:shadow-none dark:ring-white/5 dark:hover:bg-white/20"
                 >
                   Cancel
+                </button>
+              </div>
+            </DialogPanel>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Import Price History Modal */}
+      <Dialog open={showImportModal} onClose={() => setShowImportModal(false)} className="relative z-50">
+        <DialogBackdrop
+          transition
+          className="fixed inset-0 bg-gray-500/75 transition-opacity data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in dark:bg-gray-900/50"
+        />
+
+        <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <DialogPanel
+              transition
+              className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:w-full sm:max-w-lg data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95 dark:bg-gray-800 dark:outline dark:outline-1 dark:-outline-offset-1 dark:outline-white/10"
+            >
+              <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4 dark:bg-gray-800">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex size-12 shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:size-10 dark:bg-blue-500/10">
+                    <ArrowUpTrayIcon aria-hidden="true" className="size-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="mt-3 w-full text-center sm:ml-4 sm:mt-0 sm:text-left">
+                    <DialogTitle as="h3" className="text-base font-semibold text-gray-900 dark:text-white">
+                      Import Price History
+                    </DialogTitle>
+                    <div className="mt-4 space-y-4">
+                      {/* File Upload */}
+                      <div>
+                        <label htmlFor="import-file" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Select Excel File
+                        </label>
+                        <input
+                          type="file"
+                          id="import-file"
+                          accept=".xlsx,.xls,.csv"
+                          onChange={(e) => setImportFile(e.target.files[0])}
+                          className="block w-full text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none"
+                        />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Accepts .xlsx, .xls, or .csv files
+                        </p>
+                      </div>
+
+                      {/* Effective Date */}
+                      <div>
+                        <label htmlFor="import-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Effective Date
+                        </label>
+                        <input
+                          type="date"
+                          id="import-date"
+                          value={importDate}
+                          onChange={(e) => setImportDate(e.target.value)}
+                          className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          This date will be used for all imported prices (overrides dates in the file)
+                        </p>
+                      </div>
+
+                      {/* Import Result */}
+                      {importResult && (
+                        <div className={`p-4 rounded-lg ${importResult.success ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
+                          <p className={`text-sm font-medium ${importResult.success ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
+                            {importResult.message}
+                          </p>
+                          {importResult.success && importResult.stats && (
+                            <div className="mt-2 text-sm text-green-700 dark:text-green-400">
+                              <p>• Total rows: {importResult.stats.total_rows}</p>
+                              <p>• Created: {importResult.stats.created}</p>
+                              <p>• Updated: {importResult.stats.updated}</p>
+                              <p>• Skipped: {importResult.stats.skipped}</p>
+                              {importResult.stats.errors > 0 && <p>• Errors: {importResult.stats.errors}</p>}
+                            </div>
+                          )}
+                          {importResult.warnings && importResult.warnings.length > 0 && (
+                            <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-400">
+                              <p className="font-medium">Warnings:</p>
+                              <ul className="list-disc list-inside">
+                                {importResult.warnings.slice(0, 5).map((warning, i) => (
+                                  <li key={i}>{warning}</li>
+                                ))}
+                                {importResult.warnings.length > 5 && (
+                                  <li>... and {importResult.warnings.length - 5} more</li>
+                                )}
+                              </ul>
+                            </div>
+                          )}
+                          {!importResult.success && importResult.errors && (
+                            <div className="mt-2 text-sm text-red-700 dark:text-red-400">
+                              <ul className="list-disc list-inside">
+                                {importResult.errors.map((error, i) => (
+                                  <li key={i}>{error}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 dark:bg-gray-700/25">
+                <button
+                  type="button"
+                  onClick={handleImportPriceHistory}
+                  disabled={importing || !importFile}
+                  className="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:shadow-none dark:hover:bg-blue-400"
+                >
+                  {importing ? 'Importing...' : 'Import'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImportModal(false)
+                    setImportFile(null)
+                    setImportResult(null)
+                  }}
+                  disabled={importing}
+                  className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white/10 dark:text-white dark:shadow-none dark:ring-white/5 dark:hover:bg-white/20"
+                >
+                  Close
                 </button>
               </div>
             </DialogPanel>
