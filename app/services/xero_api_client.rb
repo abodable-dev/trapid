@@ -1,5 +1,6 @@
 require 'oauth2'
 require 'httparty'
+require 'base64'
 
 class XeroApiClient
   include HTTParty
@@ -149,15 +150,56 @@ class XeroApiClient
     return { success: false, error: 'Not connected' } unless credential
 
     begin
-      # Xero doesn't have a revoke endpoint, so we just delete our stored credentials
+      # Revoke the refresh token with Xero
+      # This will invalidate all tokens and disconnect the app
+      revoke_token(credential.refresh_token)
+
+      # Delete our stored credentials
       credential.destroy
 
-      Rails.logger.info("Xero disconnected successfully")
+      Rails.logger.info("Xero disconnected successfully - tokens revoked and credentials deleted")
 
       { success: true, message: 'Disconnected from Xero' }
     rescue StandardError => e
       Rails.logger.error("Xero disconnect error: #{e.message}")
+
+      # Even if revocation fails, delete the local credentials
+      begin
+        credential.destroy
+        Rails.logger.warn("Xero token revocation failed but local credentials deleted")
+      rescue => deletion_error
+        Rails.logger.error("Failed to delete credentials: #{deletion_error.message}")
+      end
+
       { success: false, error: e.message }
+    end
+  end
+
+  # Revoke a Xero OAuth2 token
+  def revoke_token(token)
+    return if token.blank?
+
+    begin
+      auth_header = Base64.strict_encode64("#{@client_id}:#{@client_secret}")
+
+      response = HTTParty.post(
+        'https://identity.xero.com/connect/revocation',
+        headers: {
+          'Authorization' => "Basic #{auth_header}",
+          'Content-Type' => 'application/x-www-form-urlencoded'
+        },
+        body: "token=#{token}",
+        timeout: 10
+      )
+
+      if response.code == 200
+        Rails.logger.info("Xero token revoked successfully")
+      else
+        Rails.logger.warn("Xero token revocation returned #{response.code}: #{response.body}")
+      end
+    rescue StandardError => e
+      Rails.logger.error("Failed to revoke Xero token: #{e.message}")
+      raise
     end
   end
 
@@ -276,8 +318,16 @@ class XeroApiClient
       }
     when 401
       # Unauthorized - token may be invalid
-      Rails.logger.error("Xero API unauthorized: #{response.body}")
-      raise AuthenticationError, 'Authentication failed'
+      Rails.logger.error("Xero API unauthorized (401): #{response.body}")
+      error_body = JSON.parse(response.body) rescue {}
+      error_detail = error_body['Detail'] || error_body['message'] || 'Authentication failed'
+      raise AuthenticationError, "Authentication failed: #{error_detail}"
+    when 404
+      # Not Found - endpoint or resource doesn't exist
+      Rails.logger.error("Xero API not found (404): #{response.body}")
+      error_body = JSON.parse(response.body) rescue {}
+      error_detail = error_body['Detail'] || error_body['message'] || 'Resource not found'
+      raise ApiError, "Not found: #{error_detail}"
     when 429
       # Rate limit exceeded
       retry_after = response.headers['Retry-After'] || 60
@@ -286,15 +336,24 @@ class XeroApiClient
     when 400..499
       # Client error
       error_body = JSON.parse(response.body) rescue {}
-      error_message = error_body['Message'] || error_body['message'] || 'Client error'
-      Rails.logger.error("Xero API client error: #{response.code} - #{error_message}")
-      raise ApiError, error_message
+      error_message = error_body['Message'] || error_body['message'] || error_body['Detail'] || 'Client error'
+      error_details = error_body['Elements'] || []
+
+      full_error = "#{error_message}"
+      if error_details.any?
+        detail_messages = error_details.map { |e| e['ValidationErrors']&.map { |v| v['Message'] } }.flatten.compact
+        full_error += ": #{detail_messages.join(', ')}" if detail_messages.any?
+      end
+
+      Rails.logger.error("Xero API client error (#{response.code}): #{full_error}")
+      Rails.logger.error("Response body: #{response.body}")
+      raise ApiError, full_error
     when 500..599
       # Server error
-      Rails.logger.error("Xero API server error: #{response.code}")
-      raise ApiError, 'Xero server error'
+      Rails.logger.error("Xero API server error (#{response.code}): #{response.body}")
+      raise ApiError, "Xero server error (#{response.code})"
     else
-      Rails.logger.error("Xero API unexpected response: #{response.code}")
+      Rails.logger.error("Xero API unexpected response (#{response.code}): #{response.body}")
       raise ApiError, "Unexpected response code: #{response.code}"
     end
   end
