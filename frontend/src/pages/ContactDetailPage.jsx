@@ -916,6 +916,9 @@ export default function ContactDetailPage() {
                         <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Current Price
                         </th>
+                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                          Price Updated
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -939,6 +942,17 @@ export default function ContactDetailPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-white">
                             ${parseFloat(item.current_price || 0).toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                            {item.price_last_updated_at ? (
+                              new Date(item.price_last_updated_at).toLocaleDateString('en-AU', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-500">—</span>
+                            )}
                           </td>
                         </tr>
                       ))}
