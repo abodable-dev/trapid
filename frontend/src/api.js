@@ -24,7 +24,13 @@ export const api = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
       throw new Error(errorMessage);
     }
     return response.json();
@@ -39,7 +45,13 @@ export const api = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
       throw new Error(errorMessage);
     }
     return response.json();
@@ -61,7 +73,13 @@ export const api = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
       throw new Error(errorMessage);
     }
     return response.json();
@@ -76,7 +94,13 @@ export const api = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
       throw new Error(errorMessage);
     }
     return response.json();
@@ -91,7 +115,13 @@ export const api = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
       throw new Error(errorMessage);
     }
     return response.json();
@@ -106,7 +136,13 @@ export const api = {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
       throw new Error(errorMessage);
     }
     return response.json();

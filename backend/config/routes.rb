@@ -37,6 +37,7 @@ Rails.application.routes.draw do
       # Health checks
       get 'health/pricebook', to: 'health#pricebook'
       get 'health/pricebook/missing_items', to: 'health#missing_items'
+      get 'pricebook/price_health_check', to: 'pricebook_items#price_health_check'
 
       # Construction jobs management
       resources :constructions do

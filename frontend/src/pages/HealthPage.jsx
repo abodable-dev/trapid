@@ -26,6 +26,11 @@ export default function HealthPage() {
       items: []
     }
   })
+  const [priceHealthCheck, setPriceHealthCheck] = useState({
+    total_items_checked: 0,
+    issues_found: 0,
+    issues: []
+  })
   const [expandedSupplierCategory, setExpandedSupplierCategory] = useState(null)
   const [loadingMissingItems, setLoadingMissingItems] = useState(false)
   const [missingItems, setMissingItems] = useState({})
@@ -33,13 +38,15 @@ export default function HealthPage() {
     itemsWithoutDefaultSupplier: false,
     suppliersWithIncompleteCategoryPricing: false,
     itemsWithDefaultSupplierButNoPriceHistory: false,
-    itemsRequiringPhotoWithoutImage: false
+    itemsRequiringPhotoWithoutImage: false,
+    priceMismatches: false
   })
   const [searchQueries, setSearchQueries] = useState({
     itemsWithoutDefaultSupplier: '',
     suppliersWithIncompleteCategoryPricing: '',
     itemsWithDefaultSupplierButNoPriceHistory: '',
-    itemsRequiringPhotoWithoutImage: ''
+    itemsRequiringPhotoWithoutImage: '',
+    priceMismatches: ''
   })
 
   const toggleSection = (sectionName) => {
@@ -81,6 +88,7 @@ export default function HealthPage() {
 
   useEffect(() => {
     loadHealthData()
+    loadPriceHealthCheck()
   }, [])
 
   const loadHealthData = async () => {
@@ -92,6 +100,15 @@ export default function HealthPage() {
       console.error('Failed to load health data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadPriceHealthCheck = async () => {
+    try {
+      const response = await api.get('/api/v1/pricebook/price_health_check')
+      setPriceHealthCheck(response)
+    } catch (error) {
+      console.error('Failed to load price health check:', error)
     }
   }
 
@@ -152,6 +169,11 @@ export default function HealthPage() {
     totalPricebookItems
   )
 
+  const priceMismatchesPct = calculateHealthPercentage(
+    priceHealthCheck.issues_found,
+    priceHealthCheck.total_items_checked
+  )
+
   // Suppliers percentage - calculate health percentage for suppliers
   // Based on unique suppliers with issues vs total suppliers
   const suppliersHealthPct = calculateHealthPercentage(
@@ -164,7 +186,8 @@ export default function HealthPage() {
     (itemsWithoutDefaultSupplierPct +
      suppliersHealthPct +
      itemsWithDefaultSupplierButNoPriceHistoryPct +
-     itemsRequiringPhotoWithoutImagePct) / 4
+     itemsRequiringPhotoWithoutImagePct +
+     priceMismatchesPct) / 5
   )
 
   const getHealthColor = (percentage) => {
@@ -874,6 +897,171 @@ export default function HealthPage() {
                 {/* Status Badge */}
                 <div>
                   {healthChecks.itemsRequiringPhotoWithoutImage.count === 0 ? (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
+                      Healthy
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400">
+                      Needs Attention
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Price Mismatches */}
+              <div className="flex items-start justify-between pt-8 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex-1">
+                  <div className="flex items-start gap-3 p-2 -ml-2">
+                    <button
+                      onClick={() => toggleSection('priceMismatches')}
+                      className="flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors flex-shrink-0"
+                    >
+                      <div className={`flex items-center justify-center w-12 h-12 rounded-lg ${
+                        getHealthColor(priceMismatchesPct) === 'green' ? 'bg-green-100 dark:bg-green-900/30' :
+                        getHealthColor(priceMismatchesPct) === 'orange' ? 'bg-orange-100 dark:bg-orange-900/30' :
+                        'bg-red-100 dark:bg-red-900/30'
+                      }`}>
+                        <span className={`text-2xl font-bold ${
+                          getHealthColor(priceMismatchesPct) === 'green' ? 'text-green-600 dark:text-green-400' :
+                          getHealthColor(priceMismatchesPct) === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                          'text-red-600 dark:text-red-400'
+                        }`}>
+                          {priceHealthCheck.issues_found}
+                        </span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <h3 className="text-base font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                          Price Mismatches (Active vs Current)
+                          <span className={`text-sm font-bold ${
+                            getHealthColor(priceMismatchesPct) === 'green' ? 'text-green-600 dark:text-green-400' :
+                            getHealthColor(priceMismatchesPct) === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' :
+                            getHealthColor(priceMismatchesPct) === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                            'text-red-600 dark:text-red-400'
+                          }`}>
+                            ({priceMismatchesPct}%)
+                          </span>
+                          {priceHealthCheck.issues_found > 0 && (
+                            expandedSections.priceMismatches ? (
+                              <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+                            )
+                          )}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          Items where the active price from default supplier doesn't match the item's current price
+                        </p>
+                      </div>
+                    </button>
+                    {priceHealthCheck.issues_found > 0 && (
+                      <div className="relative flex-1 max-w-xs">
+                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search..."
+                          value={searchQueries.priceMismatches}
+                          onChange={(e) => updateSearchQuery('priceMismatches', e.target.value)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (!expandedSections.priceMismatches) {
+                              toggleSection('priceMismatches')
+                            }
+                          }}
+                          className="w-full pl-9 pr-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Item List */}
+                  {priceHealthCheck.issues_found > 0 && expandedSections.priceMismatches && (
+                    <div className="mt-4 ml-15">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                          <thead className="bg-gray-50 dark:bg-gray-900">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Item Code
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Item Name
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Default Supplier
+                              </th>
+                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Current Price
+                              </th>
+                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Active Price
+                              </th>
+                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                Difference
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            {(() => {
+                              const query = searchQueries.priceMismatches.toLowerCase()
+                              const filtered = priceHealthCheck.issues.filter(issue =>
+                                !query.trim() ||
+                                issue.item_code?.toLowerCase().includes(query) ||
+                                issue.item_name?.toLowerCase().includes(query) ||
+                                issue.default_supplier_name?.toLowerCase().includes(query)
+                              )
+                              return filtered.slice(0, 15).map((issue) => (
+                                <tr key={issue.item_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                                    <Link
+                                      to={`/price-books/${issue.item_id}`}
+                                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
+                                    >
+                                      {issue.item_code}
+                                    </Link>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                    {issue.item_name}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                    {issue.default_supplier_name || '-'}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
+                                    {issue.item_current_price ? `$${parseFloat(issue.item_current_price).toFixed(2)}` : '-'}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white font-medium">
+                                    {issue.active_price_value ? `$${parseFloat(issue.active_price_value).toFixed(2)}` : '-'}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-right">
+                                    {issue.difference !== null && issue.difference !== undefined ? (
+                                      <span className={`font-medium ${
+                                        issue.difference > 0 ? 'text-red-600 dark:text-red-400' :
+                                        issue.difference < 0 ? 'text-green-600 dark:text-green-400' :
+                                        'text-gray-600 dark:text-gray-400'
+                                      }`}>
+                                        {issue.difference > 0 ? '+' : ''}{issue.difference < 0 ? '-' : ''}${Math.abs(issue.difference).toFixed(2)}
+                                      </span>
+                                    ) : (
+                                      <span className="text-gray-600 dark:text-gray-400">-</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))
+                            })()}
+                          </tbody>
+                        </table>
+                        {priceHealthCheck.issues_found > 15 && (
+                          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 text-sm text-gray-600 dark:text-gray-400 text-center">
+                            Showing 15 of {priceHealthCheck.issues_found} items
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Status Badge */}
+                <div>
+                  {priceHealthCheck.issues_found === 0 ? (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
                       Healthy
                     </span>

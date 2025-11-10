@@ -273,6 +273,8 @@ export default function ContactDetailPage() {
         requestData.effective_date = effectiveDate
       }
 
+      console.log('Copy price history request:', requestData)
+
       const response = await api.post(`/api/v1/contacts/${id}/copy_price_history`, requestData)
 
       setCopyResult({
@@ -1369,7 +1371,29 @@ export default function ContactDetailPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {filteredItems.map((item) => (
+                        {filteredItems.map((item) => {
+                          // Determine which price is currently active (date_effective <= today)
+                          const today = new Date()
+                          today.setHours(0, 0, 0, 0)
+
+                          const activePriceHistory = item.price_histories
+                            ?.filter(h => {
+                              if (!h.date_effective) return true // No date = always active
+                              const effectiveDate = new Date(h.date_effective)
+                              effectiveDate.setHours(0, 0, 0, 0)
+                              return effectiveDate <= today
+                            })
+                            ?.sort((a, b) => {
+                              const dateA = a.date_effective ? new Date(a.date_effective) : new Date(a.created_at)
+                              const dateB = b.date_effective ? new Date(b.date_effective) : new Date(b.created_at)
+                              return dateB - dateA
+                            })[0]
+
+                          const activePriceDate = activePriceHistory ?
+                            new Date(activePriceHistory.date_effective || activePriceHistory.created_at).toISOString().split('T')[0] :
+                            null
+
+                          return (
                           <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                             <td className="sticky left-0 z-10 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
                               {item.item_code}
@@ -1409,50 +1433,69 @@ export default function ContactDetailPage() {
                               const isEditing = editingPriceHistory?.itemId === item.id &&
                                                 editingPriceHistory?.historyId === history?.id
 
+                              // Check if this is the active price
+                              const isActivePrice = date === activePriceDate
+
                               return (
                                 <td
                                   key={date}
                                   className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono border-l border-gray-200 dark:border-gray-700"
                                 >
                                   {history ? (
-                                    isEditing ? (
-                                      <div className="flex items-center justify-end gap-2">
-                                        <input
-                                          type="number"
-                                          step="0.01"
-                                          value={editingPriceHistory.price}
-                                          onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, price: e.target.value })}
-                                          className="w-24 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                                          autoFocus
-                                        />
-                                        <button
-                                          onClick={handleSavePriceHistory}
-                                          className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                                          title="Save"
-                                        >
-                                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                          </svg>
-                                        </button>
-                                        <button
-                                          onClick={() => setEditingPriceHistory(null)}
-                                          className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                                          title="Cancel"
-                                        >
-                                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                          </svg>
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <span
-                                        onClick={() => handleEditPriceHistory(item.id, history)}
-                                        className="font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
-                                        title="Click to edit"
-                                      >
-                                        ${parseFloat(history.new_price || 0).toFixed(2)}
-                                      </span>
-                                    )
+                                    <div className="flex items-center justify-end gap-2">
+                                      {isEditing ? (
+                                        <>
+                                          <input
+                                            type="number"
+                                            step="0.01"
+                                            value={editingPriceHistory.price}
+                                            onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, price: e.target.value })}
+                                            className="w-24 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                                            ref={(input) => {
+                                              if (input) {
+                                                // Focus without scrolling
+                                                input.focus({ preventScroll: true })
+                                                // Select all text for easy editing
+                                                input.select()
+                                              }
+                                            }}
+                                          />
+                                          <button
+                                            onClick={handleSavePriceHistory}
+                                            className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                                            title="Save"
+                                          >
+                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            onClick={() => setEditingPriceHistory(null)}
+                                            className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                            title="Cancel"
+                                          >
+                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span
+                                            onClick={() => handleEditPriceHistory(item.id, history)}
+                                            className="font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                                            title="Click to edit"
+                                          >
+                                            ${parseFloat(history.new_price || 0).toFixed(2)}
+                                          </span>
+                                          {isActivePrice && (
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200" title="Currently active price">
+                                              Active
+                                            </span>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
                                   ) : (
                                     <span className="text-gray-400 dark:text-gray-500">—</span>
                                   )}
@@ -1460,7 +1503,7 @@ export default function ContactDetailPage() {
                               )
                             })}
                           </tr>
-                        ))}
+                        )})}
                       </tbody>
                     </table>
                   </div>
