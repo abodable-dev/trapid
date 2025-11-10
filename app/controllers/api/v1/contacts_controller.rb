@@ -345,6 +345,7 @@ module Api
         source_id = params[:source_id]
         categories = params[:categories] # Optional array of categories to filter by
         set_as_default = params[:set_as_default] != false # Default to true unless explicitly false
+        effective_date = params[:effective_date].present? ? Date.parse(params[:effective_date]) : Date.today
 
         if source_id.blank?
           return render json: {
@@ -403,7 +404,7 @@ module Api
                   new_price: latest_price_history.new_price,
                   supplier_id: target_contact.id,
                   lga: latest_price_history.lga,
-                  date_effective: latest_price_history.date_effective,
+                  date_effective: effective_date,
                   change_reason: "Copied from #{source_contact.full_name}"
                 )
                 copied_count += 1
