@@ -45,6 +45,7 @@ Rails.application.routes.draw do
         resources :schedule_tasks, only: [:index, :create] do
           collection do
             post :import
+            post :copy_from_template
             get :gantt_data
           end
         end
@@ -161,6 +162,9 @@ Rails.application.routes.draw do
           post :duplicate
         end
       end
+
+      # Task Templates for Schedule Master
+      resources :task_templates
 
       # Xero integration
       resources :xero, only: [] do

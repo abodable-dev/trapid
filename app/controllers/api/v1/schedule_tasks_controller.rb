@@ -1,7 +1,7 @@
 module Api
   module V1
     class ScheduleTasksController < ApplicationController
-      before_action :set_construction, only: [:index, :import, :gantt_data, :create]
+      before_action :set_construction, only: [:index, :import, :gantt_data, :create, :copy_from_template]
       before_action :set_schedule_task, only: [:show, :update, :destroy, :match_po, :unmatch_po]
 
       # GET /api/v1/constructions/:construction_id/schedule_tasks
@@ -39,6 +39,51 @@ module Api
           render json: {
             success: true,
             message: 'Schedule task created successfully',
+            schedule_task: task_to_json(@schedule_task)
+          }, status: :created
+        else
+          render json: {
+            success: false,
+            errors: @schedule_task.errors.full_messages
+          }, status: :unprocessable_entity
+        end
+      end
+
+      # POST /api/v1/constructions/:construction_id/schedule_tasks/copy_from_template
+      # Copy a task template to create a new schedule task
+      def copy_from_template
+        unless params[:template_id].present?
+          return render json: {
+            success: false,
+            error: 'Template ID is required'
+          }, status: :unprocessable_entity
+        end
+
+        template = TaskTemplate.find_by(id: params[:template_id])
+
+        unless template
+          return render json: {
+            success: false,
+            error: 'Template not found'
+          }, status: :not_found
+        end
+
+        # Get the next sequence order
+        max_sequence = @construction.schedule_tasks.maximum(:sequence_order) || 0
+
+        # Create schedule task from template
+        @schedule_task = @construction.schedule_tasks.new(
+          title: template.name,
+          status: 'Not Started',
+          duration: "#{template.default_duration_days}d",
+          supplier_category: template.category,
+          sequence_order: max_sequence + 1
+        )
+
+        if @schedule_task.save
+          render json: {
+            success: true,
+            message: 'Task created from template successfully',
             schedule_task: task_to_json(@schedule_task)
           }, status: :created
         else
