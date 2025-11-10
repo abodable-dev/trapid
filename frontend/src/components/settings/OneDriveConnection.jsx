@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import { ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, CloudIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
+import OneDriveFolderPicker from './OneDriveFolderPicker'
 
 export default function OneDriveConnection() {
   const [status, setStatus] = useState({
@@ -24,6 +25,8 @@ export default function OneDriveConnection() {
   const [editingRootFolder, setEditingRootFolder] = useState(false)
   const [newRootFolderName, setNewRootFolderName] = useState('')
   const [changingRootFolder, setChangingRootFolder] = useState(false)
+  const [showFolderPicker, setShowFolderPicker] = useState(false)
+  const [folderPickerMode, setFolderPickerMode] = useState(null) // 'sync' or 'root'
 
   // Fetch connection status on mount and handle OAuth callback
   useEffect(() => {
@@ -241,6 +244,29 @@ export default function OneDriveConnection() {
     }
   }
 
+  const handleOpenFolderPicker = (mode) => {
+    setFolderPickerMode(mode)
+    setShowFolderPicker(true)
+  }
+
+  const handleFolderSelected = (folder) => {
+    if (folderPickerMode === 'sync') {
+      // Update pricebook sync folder path
+      setFolderPath(folder.name)
+      setMessage({
+        type: 'success',
+        text: `Selected folder: ${folder.name}`,
+      })
+    } else if (folderPickerMode === 'root') {
+      // Update root folder
+      setNewRootFolderName(folder.name)
+      setEditingRootFolder(true)
+    }
+
+    setShowFolderPicker(false)
+    setFolderPickerMode(null)
+  }
+
   if (status.loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -325,33 +351,44 @@ export default function OneDriveConnection() {
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Root Folder</p>
                       {editingRootFolder ? (
-                        <div className="mt-1 flex items-center gap-x-2">
-                          <input
-                            type="text"
-                            value={newRootFolderName}
-                            onChange={(e) => setNewRootFolderName(e.target.value)}
-                            placeholder={status.rootFolderPath}
-                            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleChangeRootFolder}
-                            disabled={changingRootFolder}
-                            className="inline-flex items-center rounded-md bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-                          >
-                            {changingRootFolder ? 'Saving...' : 'Save'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingRootFolder(false)
-                              setNewRootFolderName('')
-                            }}
-                            disabled={changingRootFolder}
-                            className="inline-flex items-center rounded-md bg-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
-                          >
-                            Cancel
-                          </button>
+                        <div className="mt-1 space-y-2">
+                          <div className="flex items-center gap-x-2">
+                            <input
+                              type="text"
+                              value={newRootFolderName}
+                              onChange={(e) => setNewRootFolderName(e.target.value)}
+                              placeholder={status.rootFolderPath}
+                              className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFolderPicker('root')}
+                              className="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                            >
+                              Browse
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-x-2">
+                            <button
+                              type="button"
+                              onClick={handleChangeRootFolder}
+                              disabled={changingRootFolder}
+                              className="inline-flex items-center rounded-md bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                            >
+                              {changingRootFolder ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingRootFolder(false)
+                                setNewRootFolderName('')
+                              }}
+                              disabled={changingRootFolder}
+                              className="inline-flex items-center rounded-md bg-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <div className="mt-1 flex items-center gap-x-2">
@@ -411,14 +448,23 @@ export default function OneDriveConnection() {
                           <label htmlFor="folder-path" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             OneDrive Folder Path
                           </label>
-                          <input
-                            type="text"
-                            id="folder-path"
-                            value={folderPath}
-                            onChange={(e) => setFolderPath(e.target.value)}
-                            placeholder="Pricebook Images"
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                          />
+                          <div className="mt-1 flex items-center gap-x-2">
+                            <input
+                              type="text"
+                              id="folder-path"
+                              value={folderPath}
+                              onChange={(e) => setFolderPath(e.target.value)}
+                              placeholder="Pricebook Images"
+                              className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFolderPicker('sync')}
+                              className="inline-flex items-center rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                            >
+                              Browse
+                            </button>
+                          </div>
                           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             Folder name in your OneDrive where images are stored
                           </p>
@@ -562,6 +608,17 @@ export default function OneDriveConnection() {
           </div>
         </div>
       </div>
+
+      {/* Folder Picker Dialog */}
+      <OneDriveFolderPicker
+        isOpen={showFolderPicker}
+        onClose={() => {
+          setShowFolderPicker(false)
+          setFolderPickerMode(null)
+        }}
+        onSelect={handleFolderSelected}
+        title={folderPickerMode === 'sync' ? 'Select Pricebook Images Folder' : 'Select Root Folder'}
+      />
 
       {/* Disconnect Confirmation Dialog */}
       <Dialog open={showDisconnectDialog} onClose={setShowDisconnectDialog} className="relative z-50">
