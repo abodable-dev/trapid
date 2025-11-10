@@ -32,12 +32,13 @@ module Api
           @items = @items.by_risk_level(params[:risk_level]) if params[:risk_level].present?
         end
 
-        # Sorting
+        # Sorting - Fixed SQL injection vulnerability
         if params[:sort_by].present? && !@items.is_a?(Array)
           sort_column = params[:sort_by]
-          sort_direction = params[:sort_direction]&.downcase == 'desc' ? :desc : :asc
+          # Validate sort_direction to prevent SQL injection
+          sort_direction = params[:sort_direction]&.downcase == 'desc' ? 'desc' : 'asc'
 
-          # Map frontend column names to database columns
+          # Map frontend column names to database columns (whitelist)
           column_mapping = {
             'item_code' => 'item_code',
             'item_name' => 'item_name',
@@ -51,14 +52,18 @@ module Api
           # Join contacts table if sorting by supplier
           if sort_column == 'supplier'
             @items = @items.left_joins(:supplier)
+            # Use Arel to safely construct the query
+            @items = @items.order(Arel.sql("#{Contact.connection.quote_column_name('contacts')}.#{Contact.connection.quote_column_name('full_name')} #{sort_direction}"))
+          else
+            # Use Arel to safely construct the query with sanitized column name
+            @items = @items.order(Arel.sql("#{PricebookItem.connection.quote_column_name(db_column)} #{sort_direction}"))
           end
-
-          @items = @items.order("#{db_column} #{sort_direction}")
         end
 
-        # Pagination
-        page = params[:page]&.to_i || 1
+        # Pagination - Added DoS protection by capping limit at 1000
+        page = [params[:page]&.to_i || 1, 1].max # Ensure page is at least 1
         limit = (params[:limit] || params[:per_page])&.to_i || 100
+        limit = [[limit, 1].max, 1000].min # Cap between 1 and 1000
         offset = (page - 1) * limit
 
         total_count = @items.is_a?(Array) ? @items.count : @items.count

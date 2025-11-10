@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_10_121612) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -412,6 +412,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_121612) do
     t.index ["category"], name: "index_pricebook_items_on_category"
     t.index ["default_supplier_id"], name: "index_pricebook_items_on_default_supplier_id"
     t.index ["image_fetch_status"], name: "index_pricebook_items_on_image_fetch_status"
+    t.index ["is_active"], name: "index_pricebook_items_on_is_active"
     t.index ["item_code"], name: "index_pricebook_items_on_item_code", unique: true
     t.index ["needs_pricing_review"], name: "index_pricebook_items_on_needs_pricing_review"
     t.index ["price_last_updated_at"], name: "index_pricebook_items_on_price_last_updated_at"
