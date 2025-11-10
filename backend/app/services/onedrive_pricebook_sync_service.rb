@@ -1,8 +1,8 @@
 class OnedrivePricebookSyncService
-  attr_reader :organization, :folder_path, :results
+  attr_reader :credential, :folder_path, :results
 
-  def initialize(organization, folder_path = nil)
-    @organization = organization
+  def initialize(credential, folder_path = nil)
+    @credential = credential
     @folder_path = folder_path || "Pricebook Images"
     @results = {
       matched: 0,
@@ -58,10 +58,9 @@ class OnedrivePricebookSyncService
   private
 
   def get_onedrive_client
-    credential = @organization.organization_one_drive_credential
-    return nil unless credential
+    return nil unless @credential
 
-    MicrosoftGraphClient.new(credential)
+    MicrosoftGraphClient.new(@credential)
   end
 
   def find_or_create_folder(client, folder_name)
