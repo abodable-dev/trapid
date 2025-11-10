@@ -732,8 +732,74 @@ export default function ContactDetailPage() {
                   </p>
                 </div>
               )}
+
+              {contact.updated_at && (
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Last Updated</p>
+                  <p className="text-gray-900 dark:text-white text-sm">
+                    {new Date(contact.updated_at).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Xero Integration */}
+          {(contact.xero_id || contact.sync_with_xero || contact.last_synced_at || contact.xero_sync_error) && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Xero Integration</h2>
+              </div>
+
+              <div className="space-y-3">
+                {contact.xero_id && (
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Xero Contact ID</p>
+                    <p className="text-gray-900 dark:text-white font-mono text-sm break-all">{contact.xero_id}</p>
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Sync with Xero</p>
+                  <p className="text-gray-900 dark:text-white text-sm">
+                    {contact.sync_with_xero ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
+                        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Enabled
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                        Disabled
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                {contact.last_synced_at && (
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Last Synced</p>
+                    <p className="text-gray-900 dark:text-white text-sm">
+                      {new Date(contact.last_synced_at).toLocaleDateString()} at {new Date(contact.last_synced_at).toLocaleTimeString()}
+                    </p>
+                  </div>
+                )}
+
+                {contact.xero_sync_error && (
+                  <div>
+                    <p className="text-sm text-red-500 dark:text-red-400 font-medium mb-1">Sync Error</p>
+                    <p className="text-sm text-gray-900 dark:text-white bg-red-50 dark:bg-red-900/20 p-2 rounded border border-red-200 dark:border-red-800">
+                      {contact.xero_sync_error}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Quick Stats */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">

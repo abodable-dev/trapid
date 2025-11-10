@@ -6,12 +6,15 @@ import { api } from '../api'
 export default function HealthPage() {
   const [loading, setLoading] = useState(true)
   const [healthChecks, setHealthChecks] = useState({
+    totalPricebookItems: 0,
     itemsWithoutDefaultSupplier: {
       count: 0,
       items: []
     },
     suppliersWithIncompleteCategoryPricing: {
       count: 0,
+      suppliersWithIssuesCount: 0,
+      totalSuppliers: 0,
       suppliers: []
     },
     itemsWithDefaultSupplierButNoPriceHistory: {
@@ -117,6 +120,63 @@ export default function HealthPage() {
     }
   }
 
+  // Calculate health percentage for each health check
+  // Returns the percentage of items that are HEALTHY (correct)
+  const calculateHealthPercentage = (issueCount, totalItems) => {
+    if (totalItems === 0) return 100 // No items = 100% healthy
+    if (issueCount === 0) return 100 // No issues = 100% healthy
+
+    const healthyCount = totalItems - issueCount
+    const percentage = (healthyCount / totalItems) * 100
+
+    // If there's at least one issue, cap at 99% (never show 100%)
+    return Math.min(99, Math.round(percentage))
+  }
+
+  // Use the real total from the backend
+  const totalPricebookItems = healthChecks.totalPricebookItems || 0
+
+  // Calculate individual health percentages
+  const itemsWithoutDefaultSupplierPct = calculateHealthPercentage(
+    healthChecks.itemsWithoutDefaultSupplier.count,
+    totalPricebookItems
+  )
+
+  const itemsWithDefaultSupplierButNoPriceHistoryPct = calculateHealthPercentage(
+    healthChecks.itemsWithDefaultSupplierButNoPriceHistory.count,
+    totalPricebookItems
+  )
+
+  const itemsRequiringPhotoWithoutImagePct = calculateHealthPercentage(
+    healthChecks.itemsRequiringPhotoWithoutImage.count,
+    totalPricebookItems
+  )
+
+  // Suppliers percentage - calculate health percentage for suppliers
+  // Based on unique suppliers with issues vs total suppliers
+  const suppliersHealthPct = calculateHealthPercentage(
+    healthChecks.suppliersWithIncompleteCategoryPricing.suppliersWithIssuesCount || 0,
+    healthChecks.suppliersWithIncompleteCategoryPricing.totalSuppliers || 0
+  )
+
+  // Overall health is the average of all health percentages
+  const overallHealthPercentage = Math.round(
+    (itemsWithoutDefaultSupplierPct +
+     suppliersHealthPct +
+     itemsWithDefaultSupplierButNoPriceHistoryPct +
+     itemsRequiringPhotoWithoutImagePct) / 4
+  )
+
+  const getHealthColor = (percentage) => {
+    if (percentage === 100) return 'green'
+    if (percentage >= 75) return 'orange'
+    return 'red'
+  }
+
+
+  const healthPercentage = overallHealthPercentage
+  const healthColor = getHealthColor(healthPercentage)
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -130,7 +190,7 @@ export default function HealthPage() {
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <div className="flex items-center justify-center w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg">
               <PlusIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
             </div>
@@ -143,14 +203,63 @@ export default function HealthPage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={loadHealthData}
-            disabled={loading}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <ArrowPathIcon className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
+          <div className="flex items-center gap-4">
+            {/* Health Percentage Display */}
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Overall Health
+                </div>
+                <div className={`text-3xl font-bold ${
+                  healthColor === 'green' ? 'text-green-600 dark:text-green-400' :
+                  healthColor === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' :
+                  healthColor === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                  'text-red-600 dark:text-red-400'
+                }`}>
+                  {healthPercentage}%
+                </div>
+              </div>
+              <div className="w-16 h-16">
+                <svg className="transform -rotate-90" viewBox="0 0 100 100">
+                  {/* Background circle */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="12"
+                    className="text-gray-200 dark:text-gray-700"
+                  />
+                  {/* Progress circle */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="12"
+                    strokeDasharray={`${(healthPercentage / 100) * 264} 264`}
+                    strokeLinecap="round"
+                    className={
+                      healthColor === 'green' ? 'text-green-600 dark:text-green-400' :
+                      healthColor === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' :
+                      healthColor === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                      'text-red-600 dark:text-red-400'
+                    }
+                  />
+                </svg>
+              </div>
+            </div>
+            <button
+              onClick={loadHealthData}
+              disabled={loading}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ArrowPathIcon className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
 
@@ -175,14 +284,14 @@ export default function HealthPage() {
                       className="flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors flex-shrink-0"
                     >
                       <div className={`flex items-center justify-center w-12 h-12 rounded-lg ${
-                        healthChecks.itemsWithoutDefaultSupplier.count > 0
-                          ? 'bg-yellow-100 dark:bg-yellow-900/30'
-                          : 'bg-green-100 dark:bg-green-900/30'
+                        getHealthColor(itemsWithoutDefaultSupplierPct) === 'green' ? 'bg-green-100 dark:bg-green-900/30' :
+                        getHealthColor(itemsWithoutDefaultSupplierPct) === 'orange' ? 'bg-orange-100 dark:bg-orange-900/30' :
+                        'bg-red-100 dark:bg-red-900/30'
                       }`}>
                         <span className={`text-2xl font-bold ${
-                          healthChecks.itemsWithoutDefaultSupplier.count > 0
-                            ? 'text-yellow-600 dark:text-yellow-400'
-                            : 'text-green-600 dark:text-green-400'
+                          getHealthColor(itemsWithoutDefaultSupplierPct) === 'green' ? 'text-green-600 dark:text-green-400' :
+                          getHealthColor(itemsWithoutDefaultSupplierPct) === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                          'text-red-600 dark:text-red-400'
                         }`}>
                           {healthChecks.itemsWithoutDefaultSupplier.count}
                         </span>
@@ -190,6 +299,14 @@ export default function HealthPage() {
                       <div className="flex-1 text-left">
                         <h3 className="text-base font-medium text-gray-900 dark:text-white flex items-center gap-2">
                           Items Without Default Supplier
+                          <span className={`text-sm font-bold ${
+                            getHealthColor(itemsWithoutDefaultSupplierPct) === 'green' ? 'text-green-600 dark:text-green-400' :
+                            getHealthColor(itemsWithoutDefaultSupplierPct) === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' :
+                            getHealthColor(itemsWithoutDefaultSupplierPct) === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                            'text-red-600 dark:text-red-400'
+                          }`}>
+                            ({itemsWithoutDefaultSupplierPct}%)
+                          </span>
                           {healthChecks.itemsWithoutDefaultSupplier.count > 0 && (
                             expandedSections.itemsWithoutDefaultSupplier ? (
                               <ChevronDownIcon className="h-5 w-5 text-gray-400" />
@@ -301,14 +418,14 @@ export default function HealthPage() {
                       className="flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors flex-shrink-0"
                     >
                       <div className={`flex items-center justify-center w-12 h-12 rounded-lg ${
-                        healthChecks.suppliersWithIncompleteCategoryPricing.count > 0
-                          ? 'bg-orange-100 dark:bg-orange-900/30'
-                          : 'bg-green-100 dark:bg-green-900/30'
+                        getHealthColor(suppliersHealthPct) === 'green' ? 'bg-green-100 dark:bg-green-900/30' :
+                        getHealthColor(suppliersHealthPct) === 'orange' ? 'bg-orange-100 dark:bg-orange-900/30' :
+                        'bg-red-100 dark:bg-red-900/30'
                       }`}>
                         <span className={`text-2xl font-bold ${
-                          healthChecks.suppliersWithIncompleteCategoryPricing.count > 0
-                            ? 'text-orange-600 dark:text-orange-400'
-                            : 'text-green-600 dark:text-green-400'
+                          getHealthColor(suppliersHealthPct) === 'green' ? 'text-green-600 dark:text-green-400' :
+                          getHealthColor(suppliersHealthPct) === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                          'text-red-600 dark:text-red-400'
                         }`}>
                           {healthChecks.suppliersWithIncompleteCategoryPricing.count}
                         </span>
@@ -316,6 +433,14 @@ export default function HealthPage() {
                       <div className="flex-1 text-left">
                         <h3 className="text-base font-medium text-gray-900 dark:text-white flex items-center gap-2">
                           Suppliers with Incomplete Category Pricing
+                          <span className={`text-sm font-bold ${
+                            getHealthColor(suppliersHealthPct) === 'green' ? 'text-green-600 dark:text-green-400' :
+                            getHealthColor(suppliersHealthPct) === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' :
+                            getHealthColor(suppliersHealthPct) === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                            'text-red-600 dark:text-red-400'
+                          }`}>
+                            ({suppliersHealthPct}%)
+                          </span>
                           {healthChecks.suppliersWithIncompleteCategoryPricing.count > 0 && (
                             expandedSections.suppliersWithIncompleteCategoryPricing ? (
                               <ChevronDownIcon className="h-5 w-5 text-gray-400" />
@@ -495,14 +620,14 @@ export default function HealthPage() {
                       className="flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors flex-shrink-0"
                     >
                       <div className={`flex items-center justify-center w-12 h-12 rounded-lg ${
-                        healthChecks.itemsWithDefaultSupplierButNoPriceHistory.count > 0
-                          ? 'bg-red-100 dark:bg-red-900/30'
-                          : 'bg-green-100 dark:bg-green-900/30'
+                        getHealthColor(itemsWithDefaultSupplierButNoPriceHistoryPct) === 'green' ? 'bg-green-100 dark:bg-green-900/30' :
+                        getHealthColor(itemsWithDefaultSupplierButNoPriceHistoryPct) === 'orange' ? 'bg-orange-100 dark:bg-orange-900/30' :
+                        'bg-red-100 dark:bg-red-900/30'
                       }`}>
                         <span className={`text-2xl font-bold ${
-                          healthChecks.itemsWithDefaultSupplierButNoPriceHistory.count > 0
-                            ? 'text-red-600 dark:text-red-400'
-                            : 'text-green-600 dark:text-green-400'
+                          getHealthColor(itemsWithDefaultSupplierButNoPriceHistoryPct) === 'green' ? 'text-green-600 dark:text-green-400' :
+                          getHealthColor(itemsWithDefaultSupplierButNoPriceHistoryPct) === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                          'text-red-600 dark:text-red-400'
                         }`}>
                           {healthChecks.itemsWithDefaultSupplierButNoPriceHistory.count}
                         </span>
@@ -510,6 +635,14 @@ export default function HealthPage() {
                       <div className="flex-1 text-left">
                         <h3 className="text-base font-medium text-gray-900 dark:text-white flex items-center gap-2">
                           Items with Default Supplier but No Price History
+                          <span className={`text-sm font-bold ${
+                            getHealthColor(itemsWithDefaultSupplierButNoPriceHistoryPct) === 'green' ? 'text-green-600 dark:text-green-400' :
+                            getHealthColor(itemsWithDefaultSupplierButNoPriceHistoryPct) === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' :
+                            getHealthColor(itemsWithDefaultSupplierButNoPriceHistoryPct) === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                            'text-red-600 dark:text-red-400'
+                          }`}>
+                            ({itemsWithDefaultSupplierButNoPriceHistoryPct}%)
+                          </span>
                           {healthChecks.itemsWithDefaultSupplierButNoPriceHistory.count > 0 && (
                             expandedSections.itemsWithDefaultSupplierButNoPriceHistory ? (
                               <ChevronDownIcon className="h-5 w-5 text-gray-400" />
@@ -627,14 +760,14 @@ export default function HealthPage() {
                       className="flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors flex-shrink-0"
                     >
                       <div className={`flex items-center justify-center w-12 h-12 rounded-lg ${
-                        healthChecks.itemsRequiringPhotoWithoutImage.count > 0
-                          ? 'bg-red-100 dark:bg-red-900/30'
-                          : 'bg-green-100 dark:bg-green-900/30'
+                        getHealthColor(itemsRequiringPhotoWithoutImagePct) === 'green' ? 'bg-green-100 dark:bg-green-900/30' :
+                        getHealthColor(itemsRequiringPhotoWithoutImagePct) === 'orange' ? 'bg-orange-100 dark:bg-orange-900/30' :
+                        'bg-red-100 dark:bg-red-900/30'
                       }`}>
                         <span className={`text-2xl font-bold ${
-                          healthChecks.itemsRequiringPhotoWithoutImage.count > 0
-                            ? 'text-red-600 dark:text-red-400'
-                            : 'text-green-600 dark:text-green-400'
+                          getHealthColor(itemsRequiringPhotoWithoutImagePct) === 'green' ? 'text-green-600 dark:text-green-400' :
+                          getHealthColor(itemsRequiringPhotoWithoutImagePct) === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                          'text-red-600 dark:text-red-400'
                         }`}>
                           {healthChecks.itemsRequiringPhotoWithoutImage.count}
                         </span>
@@ -642,6 +775,14 @@ export default function HealthPage() {
                       <div className="flex-1 text-left">
                         <h3 className="text-base font-medium text-gray-900 dark:text-white flex items-center gap-2">
                           Items Requiring Photo Without Image
+                          <span className={`text-sm font-bold ${
+                            getHealthColor(itemsRequiringPhotoWithoutImagePct) === 'green' ? 'text-green-600 dark:text-green-400' :
+                            getHealthColor(itemsRequiringPhotoWithoutImagePct) === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' :
+                            getHealthColor(itemsRequiringPhotoWithoutImagePct) === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                            'text-red-600 dark:text-red-400'
+                          }`}>
+                            ({itemsRequiringPhotoWithoutImagePct}%)
+                          </span>
                           {healthChecks.itemsRequiringPhotoWithoutImage.count > 0 && (
                             expandedSections.itemsRequiringPhotoWithoutImage ? (
                               <ChevronDownIcon className="h-5 w-5 text-gray-400" />
