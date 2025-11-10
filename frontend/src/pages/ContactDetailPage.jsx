@@ -913,11 +913,14 @@ export default function ContactDetailPage() {
                         <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Category
                         </th>
+                        <th scope="col" className="px-6 py-3.5 text-center text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                          Default Supplier
+                        </th>
                         <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Current Price
                         </th>
                         <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                          Price Updated
+                          Price History
                         </th>
                       </tr>
                     </thead>
@@ -940,18 +943,54 @@ export default function ContactDetailPage() {
                               <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
                             )}
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            {item.is_default_supplier ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
+                                <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                Yes
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-500">—</span>
+                            )}
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-white">
                             ${parseFloat(item.current_price || 0).toFixed(2)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                            {item.price_last_updated_at ? (
-                              new Date(item.price_last_updated_at).toLocaleDateString('en-AU', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              })
+                          <td className="px-6 py-4 text-sm">
+                            {item.price_histories && item.price_histories.length > 0 ? (
+                              <div className="space-y-1">
+                                {item.price_histories.map((history, index) => (
+                                  <div key={history.id} className="flex items-center gap-2 text-xs">
+                                    <span className="font-mono text-gray-900 dark:text-white font-medium">
+                                      ${parseFloat(history.new_price || 0).toFixed(2)}
+                                    </span>
+                                    <span className="text-gray-500 dark:text-gray-400">
+                                      {history.date_effective ? (
+                                        new Date(history.date_effective).toLocaleDateString('en-AU', {
+                                          year: 'numeric',
+                                          month: 'short',
+                                          day: 'numeric'
+                                        })
+                                      ) : (
+                                        new Date(history.created_at).toLocaleDateString('en-AU', {
+                                          year: 'numeric',
+                                          month: 'short',
+                                          day: 'numeric'
+                                        })
+                                      )}
+                                    </span>
+                                    {history.lga && (
+                                      <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">
+                                        {history.lga}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                             ) : (
-                              <span className="text-gray-400 dark:text-gray-500">—</span>
+                              <span className="text-gray-400 dark:text-gray-500">No history</span>
                             )}
                           </td>
                         </tr>

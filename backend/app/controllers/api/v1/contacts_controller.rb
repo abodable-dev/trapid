@@ -70,9 +70,22 @@ module Api
 
           contact_json[:pricebook_items_count] = all_items.count
           contact_json[:purchase_orders_count] = @contact.purchase_orders.count
-          contact_json[:pricebook_items] = all_items.as_json(
-            only: [:id, :item_code, :item_name, :category, :current_price, :unit, :price_last_updated_at]
-          )
+
+          # Build items with price histories specific to this contact
+          contact_json[:pricebook_items] = all_items.map do |item|
+            # Get price histories for this contact only
+            price_histories = item.price_histories
+              .where(supplier_id: @contact.id)
+              .order(date_effective: :desc, created_at: :desc)
+              .as_json(only: [:id, :old_price, :new_price, :date_effective, :lga, :change_reason, :created_at])
+
+            item.as_json(
+              only: [:id, :item_code, :item_name, :category, :current_price, :unit, :price_last_updated_at]
+            ).merge(
+              is_default_supplier: item.default_supplier_id == @contact.id,
+              price_histories: price_histories
+            )
+          end
         end
 
         render json: {
