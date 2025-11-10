@@ -15,7 +15,9 @@ import {
   XCircleIcon,
   ChevronDownIcon,
   ArrowsRightLeftIcon,
-  TrashIcon
+  TrashIcon,
+  Bars3Icon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
 import MergeContactsModal from '../components/contacts/MergeContactsModal'
@@ -57,6 +59,47 @@ export default function ContactsPage() {
   const [toast, setToast] = useState(null)
   const [deletingContactId, setDeletingContactId] = useState(null)
 
+  // Column order state for Contacts tab with localStorage persistence
+  const [contactColumnOrder, setContactColumnOrder] = useState(() => {
+    const saved = localStorage.getItem('contacts_columnOrder')
+    return saved ? JSON.parse(saved) : ['name', 'type', 'email', 'phone', 'website', 'xero', 'actions']
+  })
+
+  // Column order state for Suppliers tab with localStorage persistence
+  const [supplierColumnOrder, setSupplierColumnOrder] = useState(() => {
+    const saved = localStorage.getItem('suppliers_columnOrder')
+    return saved ? JSON.parse(saved) : ['supplier', 'categories', 'rating', 'items', 'contact', 'status', 'actions']
+  })
+
+  // Column-specific search filters
+  const [columnFilters, setColumnFilters] = useState({})
+  const [draggedColumn, setDraggedColumn] = useState(null)
+
+  // Sort state with primary and secondary sorting
+  const [sortBy, setSortBy] = useState('name')
+  const [sortDirection, setSortDirection] = useState('asc')
+  const [secondarySortBy, setSecondarySortBy] = useState('type')
+  const [secondarySortDirection, setSecondarySortDirection] = useState('asc')
+
+  // Column widths with localStorage persistence
+  const [columnWidths, setColumnWidths] = useState(() => {
+    const saved = localStorage.getItem('contacts_columnWidths')
+    return saved ? JSON.parse(saved) : {
+      name: 200,
+      type: 150,
+      email: 250,
+      phone: 200,
+      website: 150,
+      xero: 150,
+      actions: 100
+    }
+  })
+
+  // Column resize state
+  const [resizingColumn, setResizingColumn] = useState(null)
+  const [resizeStartX, setResizeStartX] = useState(0)
+  const [resizeStartWidth, setResizeStartWidth] = useState(0)
+
   // Column visibility state for Contacts tab
   const [visibleContactColumns, setVisibleContactColumns] = useState({
     name: true,
@@ -80,25 +123,29 @@ export default function ContactsPage() {
   })
 
   // Define available columns for each tab
-  const contactColumns = [
-    { key: 'name', label: 'Contact Name' },
-    { key: 'type', label: 'Contact Type' },
-    { key: 'email', label: 'Email' },
-    { key: 'phone', label: 'Phone Numbers' },
-    { key: 'website', label: 'Website' },
-    { key: 'xero', label: 'Xero Status' },
-    { key: 'actions', label: 'Actions' }
-  ]
+  const contactColumnsConfig = {
+    name: { key: 'name', label: 'Contact Name', searchable: true, filterType: 'search' },
+    type: { key: 'type', label: 'Contact Type', searchable: true, filterType: 'dropdown' },
+    email: { key: 'email', label: 'Email', searchable: true, filterType: 'search' },
+    phone: { key: 'phone', label: 'Phone Numbers', searchable: true, filterType: 'search' },
+    website: { key: 'website', label: 'Website', searchable: false },
+    xero: { key: 'xero', label: 'Xero Status', searchable: true, filterType: 'dropdown' },
+    actions: { key: 'actions', label: 'Actions', searchable: false }
+  }
 
-  const clientColumns = [
-    { key: 'supplier', label: 'Supplier Name' },
-    { key: 'categories', label: 'Trade Categories' },
-    { key: 'rating', label: 'Rating' },
-    { key: 'items', label: 'Items Count' },
-    { key: 'contact', label: 'Supplier Details' },
-    { key: 'status', label: 'Status' },
-    { key: 'actions', label: 'Actions' }
-  ]
+  const contactColumns = contactColumnOrder.map(key => contactColumnsConfig[key])
+
+  const clientColumnsConfig = {
+    supplier: { key: 'supplier', label: 'Supplier Name', searchable: true },
+    categories: { key: 'categories', label: 'Trade Categories', searchable: true },
+    rating: { key: 'rating', label: 'Rating', searchable: false },
+    items: { key: 'items', label: 'Items Count', searchable: false },
+    contact: { key: 'contact', label: 'Supplier Details', searchable: true },
+    status: { key: 'status', label: 'Status', searchable: false },
+    actions: { key: 'actions', label: 'Actions', searchable: false }
+  }
+
+  const clientColumns = supplierColumnOrder.map(key => clientColumnsConfig[key])
 
   // Update URL when tab changes
   const handleTabChange = (index) => {
@@ -131,6 +178,20 @@ export default function ContactsPage() {
       window.removeEventListener('global-search', handleGlobalSearch)
     }
   }, [])
+
+  // Persist column widths to localStorage
+  useEffect(() => {
+    localStorage.setItem('contacts_columnWidths', JSON.stringify(columnWidths))
+  }, [columnWidths])
+
+  // Persist column order to localStorage
+  useEffect(() => {
+    localStorage.setItem('contacts_columnOrder', JSON.stringify(contactColumnOrder))
+  }, [contactColumnOrder])
+
+  useEffect(() => {
+    localStorage.setItem('suppliers_columnOrder', JSON.stringify(supplierColumnOrder))
+  }, [supplierColumnOrder])
 
   const loadContacts = async () => {
     try {
@@ -174,6 +235,134 @@ export default function ContactsPage() {
       ...prev,
       [columnKey]: !prev[columnKey]
     }))
+  }
+
+  // Column reordering handlers
+  const handleDragStart = (e, columnKey) => {
+    setDraggedColumn(columnKey)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e, targetColumnKey) => {
+    e.preventDefault()
+
+    if (!draggedColumn || draggedColumn === targetColumnKey) {
+      setDraggedColumn(null)
+      return
+    }
+
+    const currentOrder = activeTab === 0 ? contactColumnOrder : supplierColumnOrder
+    const setOrder = activeTab === 0 ? setContactColumnOrder : setSupplierColumnOrder
+
+    const draggedIndex = currentOrder.indexOf(draggedColumn)
+    const targetIndex = currentOrder.indexOf(targetColumnKey)
+
+    const newOrder = [...currentOrder]
+    newOrder.splice(draggedIndex, 1)
+    newOrder.splice(targetIndex, 0, draggedColumn)
+
+    setOrder(newOrder)
+    setDraggedColumn(null)
+  }
+
+  // Column filter handler
+  const handleColumnFilterChange = (columnKey, value) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnKey]: value
+    }))
+  }
+
+  // Sort handler
+  const handleSort = (columnKey) => {
+    if (sortBy === columnKey) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(columnKey)
+      setSortDirection('asc')
+    }
+  }
+
+  // Column resize handlers
+  const handleResizeStart = (e, columnKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingColumn(columnKey)
+    setResizeStartX(e.clientX)
+    setResizeStartWidth(columnWidths[columnKey])
+  }
+
+  const handleResizeMove = (e) => {
+    if (!resizingColumn) return
+    const diff = e.clientX - resizeStartX
+    const newWidth = Math.max(100, resizeStartWidth + diff)
+    setColumnWidths(prev => ({
+      ...prev,
+      [resizingColumn]: newWidth
+    }))
+  }
+
+  const handleResizeEnd = () => {
+    setResizingColumn(null)
+  }
+
+  // Add mouse move and mouse up listeners for column resizing
+  useEffect(() => {
+    if (resizingColumn) {
+      window.addEventListener('mousemove', handleResizeMove)
+      window.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove)
+        window.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [resizingColumn, resizeStartX, resizeStartWidth])
+
+  // Apply column filters to contacts
+  const applyColumnFilters = (items) => {
+    if (Object.keys(columnFilters).length === 0) return items
+
+    return items.filter(item => {
+      return Object.entries(columnFilters).every(([key, filterValue]) => {
+        if (!filterValue || filterValue.trim() === '') return true
+
+        const lowerFilter = filterValue.toLowerCase()
+
+        switch (key) {
+          case 'name':
+            return item.full_name?.toLowerCase().includes(lowerFilter)
+          case 'type':
+            return item.primary_contact_type?.toLowerCase().includes(lowerFilter)
+          case 'email':
+            return item.email?.toLowerCase().includes(lowerFilter)
+          case 'phone':
+            return item.mobile_phone?.toLowerCase().includes(lowerFilter) ||
+                   item.office_phone?.toLowerCase().includes(lowerFilter)
+          case 'xero':
+            if (filterValue === 'synced') {
+              return !!item.xero_id
+            } else if (filterValue === 'not_synced') {
+              return !item.xero_id
+            }
+            return true
+          case 'supplier':
+            return item.name?.toLowerCase().includes(lowerFilter)
+          case 'categories':
+            return item.trade_categories?.some(cat =>
+              cat.toLowerCase().includes(lowerFilter)
+            )
+          case 'contact':
+            return item.contact?.full_name?.toLowerCase().includes(lowerFilter)
+          default:
+            return true
+        }
+      })
+    })
   }
 
   // Bulk selection handlers
@@ -278,6 +467,52 @@ export default function ContactsPage() {
     }
   }
 
+  const handleBulkDelete = async () => {
+    if (selectedContacts.size === 0) return
+
+    const count = selectedContacts.size
+    const contactWord = count === 1 ? 'contact' : 'contacts'
+
+    if (!confirm(`Are you sure you want to delete ${count} ${contactWord}? This action cannot be undone.`)) {
+      return
+    }
+
+    setUpdating(true)
+    try {
+      const deletePromises = Array.from(selectedContacts).map(contactId =>
+        api.delete(`/api/v1/contacts/${contactId}`)
+      )
+
+      const results = await Promise.allSettled(deletePromises)
+
+      const succeeded = results.filter(r => r.status === 'fulfilled').length
+      const failed = results.filter(r => r.status === 'rejected').length
+
+      if (succeeded > 0) {
+        setToast({
+          message: `Successfully deleted ${succeeded} ${succeeded === 1 ? 'contact' : 'contacts'}${failed > 0 ? `. ${failed} failed.` : ''}`,
+          type: succeeded === count ? 'success' : 'warning'
+        })
+      } else {
+        setToast({
+          message: 'Failed to delete contacts. Please try again.',
+          type: 'error'
+        })
+      }
+
+      setSelectedContacts(new Set())
+      loadContacts() // Refresh the list
+    } catch (error) {
+      console.error('Bulk delete error:', error)
+      setToast({
+        message: 'Failed to delete contacts. Please try again.',
+        type: 'error'
+      })
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   const handleUpdateSingleContact = async (contactId, newTypes, newPrimaryType) => {
     setUpdatingContactId(contactId)
     try {
@@ -325,6 +560,233 @@ export default function ContactsPage() {
     return badges[type] || badges.customer
   }
 
+  // Helper function to render contact table cells in the correct order
+  const renderContactCell = (contact, columnKey) => {
+    if (!visibleContactColumns[columnKey]) return null
+
+    const width = columnWidths[columnKey]
+    const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
+
+    switch (columnKey) {
+      case 'name':
+        return (
+          <td key="name" style={cellStyle} className="px-6 py-4 whitespace-nowrap">
+            <Link
+              to={`/contacts/${contact.id}`}
+              className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              {contact.full_name}
+            </Link>
+            {(contact.first_name || contact.last_name) && (
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {contact.first_name} {contact.last_name}
+              </div>
+            )}
+          </td>
+        )
+
+      case 'type':
+        return (
+          <td key="type" style={cellStyle} className="px-6 py-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              {updatingContactId === contact.id ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+                  <span className="text-sm text-gray-500">Updating...</span>
+                </div>
+              ) : contact.primary_contact_type ? (
+                <div className="relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setOpenDropdownId(openDropdownId === contact.id ? null : contact.id)
+                    }}
+                    className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${getTypeBadge(contact.primary_contact_type).className}`}
+                  >
+                    {getTypeBadge(contact.primary_contact_type).label}
+                    <ChevronDownIcon className="ml-1 h-3 w-3" />
+                  </button>
+                  {openDropdownId === contact.id && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setOpenDropdownId(null)}
+                      />
+                      <div className="absolute z-20 mt-1 w-56 bg-white dark:bg-gray-800 shadow-lg rounded-md py-2 text-sm border border-gray-200 dark:border-gray-700">
+                        <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                          Select Types
+                        </div>
+                        {['customer', 'supplier', 'sales', 'land_agent'].map((type) => {
+                          const badge = getTypeBadge(type)
+                          const isSelected = contact.contact_types?.includes(type)
+                          const isPrimary = contact.primary_contact_type === type
+                          return (
+                            <div
+                              key={type}
+                              className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                            >
+                              <label className="flex items-center gap-2 cursor-pointer flex-1">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    const currentTypes = contact.contact_types || []
+                                    let newTypes
+                                    let newPrimaryType = contact.primary_contact_type
+
+                                    if (isSelected) {
+                                      newTypes = currentTypes.filter(t => t !== type)
+                                      if (isPrimary) {
+                                        newPrimaryType = newTypes[0] || null
+                                      }
+                                    } else {
+                                      newTypes = [...currentTypes, type]
+                                    }
+
+                                    handleUpdateSingleContact(contact.id, newTypes, newPrimaryType)
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                />
+                                <span className={isSelected ? 'font-medium' : 'font-normal'}>
+                                  {badge.label}
+                                </span>
+                              </label>
+                              {isSelected && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleUpdateSingleContact(contact.id, contact.contact_types, type)
+                                  }}
+                                  className={`text-xs px-2 py-0.5 rounded ${
+                                    isPrimary
+                                      ? 'bg-indigo-600 text-white'
+                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                  }`}
+                                >
+                                  {isPrimary ? 'Primary' : 'Set Primary'}
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <span className="text-sm text-gray-400">No type</span>
+              )}
+            </div>
+          </td>
+        )
+
+      case 'email':
+        return (
+          <td key="email" style={cellStyle} className="px-6 py-4">
+            {contact.email ? (
+              <a
+                href={`mailto:${contact.email}`}
+                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+              >
+                <EnvelopeIcon className="h-4 w-4" />
+                {contact.email}
+              </a>
+            ) : (
+              <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
+            )}
+          </td>
+        )
+
+      case 'phone':
+        return (
+          <td key="phone" style={cellStyle} className="px-6 py-4">
+            <div className="space-y-1">
+              {contact.mobile_phone && (
+                <div className="text-sm text-gray-900 dark:text-white flex items-center gap-1">
+                  <PhoneIcon className="h-4 w-4" />
+                  {contact.mobile_phone}
+                </div>
+              )}
+              {contact.office_phone && (
+                <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                  <BuildingOfficeIcon className="h-4 w-4" />
+                  {contact.office_phone}
+                </div>
+              )}
+              {!contact.mobile_phone && !contact.office_phone && (
+                <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
+              )}
+            </div>
+          </td>
+        )
+
+      case 'website':
+        return (
+          <td key="website" style={cellStyle} className="px-6 py-4">
+            {contact.website ? (
+              <a
+                href={contact.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+              >
+                <GlobeAltIcon className="h-4 w-4" />
+                Visit
+              </a>
+            ) : (
+              <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
+            )}
+          </td>
+        )
+
+      case 'xero':
+        return (
+          <td key="xero" style={cellStyle} className="px-6 py-4 whitespace-nowrap">
+            {contact.xero_id ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50">
+                <CheckCircleIcon className="h-3.5 w-3.5" />
+                Synced
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800/50">
+                <XCircleIcon className="h-3.5 w-3.5" />
+                Not Synced
+              </span>
+            )}
+          </td>
+        )
+
+      case 'actions':
+        return (
+          <td key="actions" style={cellStyle} className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <div className="flex items-center justify-end gap-3">
+              <Link
+                to={`/contacts/${contact.id}`}
+                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                View
+              </Link>
+              <button
+                onClick={() => handleDeleteContact(contact.id, contact.full_name)}
+                disabled={deletingContactId === contact.id}
+                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
+                title="Delete contact"
+              >
+                {deletingContactId === contact.id ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                ) : (
+                  <TrashIcon className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </td>
+        )
+
+      default:
+        return null
+    }
+  }
+
   // Get unique categories from all suppliers
   const allCategories = Array.from(
     new Set(
@@ -332,21 +794,62 @@ export default function ContactsPage() {
     )
   ).sort()
 
-  const filteredContacts = contacts.filter(c =>
-    c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Helper function to get sort value for a contact by column key
+  const getSortValue = (contact, columnKey) => {
+    switch (columnKey) {
+      case 'name':
+        return contact.full_name?.toLowerCase() || ''
+      case 'type':
+        return contact.primary_contact_type?.toLowerCase() || ''
+      case 'email':
+        return contact.email?.toLowerCase() || ''
+      case 'phone':
+        return contact.mobile_phone?.toLowerCase() || contact.office_phone?.toLowerCase() || ''
+      case 'website':
+        return contact.website?.toLowerCase() || ''
+      case 'xero':
+        return contact.xero_id ? '1' : '0'
+      default:
+        return ''
+    }
+  }
 
-  const filteredSuppliers = suppliers.filter(s => {
-    // Filter by search query
-    const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredContacts = applyColumnFilters(
+    contacts.filter(c =>
+      c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  ).sort((a, b) => {
+    // Primary sort
+    const aPrimaryVal = getSortValue(a, sortBy)
+    const bPrimaryVal = getSortValue(b, sortBy)
 
-    // Filter by selected categories (if any selected)
-    const matchesCategories = selectedCategories.length === 0 ||
-      selectedCategories.some(cat => s.trade_categories?.includes(cat))
+    if (aPrimaryVal !== bPrimaryVal) {
+      if (aPrimaryVal < bPrimaryVal) return sortDirection === 'asc' ? -1 : 1
+      if (aPrimaryVal > bPrimaryVal) return sortDirection === 'asc' ? 1 : -1
+    }
 
-    return matchesSearch && matchesCategories
+    // Secondary sort (if primary values are equal)
+    const aSecondaryVal = getSortValue(a, secondarySortBy)
+    const bSecondaryVal = getSortValue(b, secondarySortBy)
+
+    if (aSecondaryVal < bSecondaryVal) return secondarySortDirection === 'asc' ? -1 : 1
+    if (aSecondaryVal > bSecondaryVal) return secondarySortDirection === 'asc' ? 1 : -1
+    return 0
   })
+
+  const filteredSuppliers = applyColumnFilters(
+    suppliers.filter(s => {
+      // Filter by search query
+      const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase())
+
+      // Filter by selected categories (if any selected)
+      const matchesCategories = selectedCategories.length === 0 ||
+        selectedCategories.some(cat => s.trade_categories?.includes(cat))
+
+      return matchesSearch && matchesCategories
+    })
+  )
 
   const contactStats = {
     total: contacts.length,
@@ -632,6 +1135,23 @@ export default function ContactsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={updating || selectedContacts.size === 0}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+                  >
+                    {updating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <TrashIcon className="h-5 w-5" />
+                        Delete
+                      </>
+                    )}
+                  </button>
                   {selectedContacts.size >= 2 && (
                     <button
                       onClick={() => setShowMergeModal(true)}
@@ -685,41 +1205,77 @@ export default function ContactsPage() {
                           className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
                         />
                       </th>
-                      {visibleContactColumns.name && (
-                        <th style={{ minWidth: '200px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Contact Name
-                        </th>
-                      )}
-                      {visibleContactColumns.type && (
-                        <th style={{ minWidth: '150px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Contact Type
-                        </th>
-                      )}
-                      {visibleContactColumns.email && (
-                        <th style={{ minWidth: '250px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Email
-                        </th>
-                      )}
-                      {visibleContactColumns.phone && (
-                        <th style={{ minWidth: '200px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Phone Numbers
-                        </th>
-                      )}
-                      {visibleContactColumns.website && (
-                        <th style={{ minWidth: '150px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Website
-                        </th>
-                      )}
-                      {visibleContactColumns.xero && (
-                        <th style={{ minWidth: '150px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Xero Status
-                        </th>
-                      )}
-                      {visibleContactColumns.actions && (
-                        <th style={{ minWidth: '100px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      )}
+                      {contactColumns.map((column) => {
+                        if (!visibleContactColumns[column.key]) return null
+                        const width = columnWidths[column.key]
+                        const isSortable = column.key !== 'actions'
+                        const isSorted = sortBy === column.key
+                        return (
+                          <th
+                            key={column.key}
+                            style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                            className={`px-6 py-2 border-r border-gray-200 dark:border-gray-700 ${column.key === 'actions' ? 'text-right' : 'text-left'} ${draggedColumn === column.key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, column.key)}
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDrop(e, column.key)}
+                          >
+                            <div
+                              className={`flex items-center gap-2 ${isSortable ? 'cursor-pointer' : 'cursor-move'}`}
+                              onClick={() => isSortable && handleSort(column.key)}
+                            >
+                              <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{column.label}</span>
+                              {isSortable && isSorted && (
+                                sortDirection === 'asc' ?
+                                  <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                  <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                              )}
+                            </div>
+                            {column.searchable && (
+                              column.filterType === 'dropdown' ? (
+                                <select
+                                  value={columnFilters[column.key] || ''}
+                                  onChange={(e) => handleColumnFilterChange(column.key, e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                                >
+                                  {column.key === 'type' ? (
+                                    <>
+                                      <option value="">All Types</option>
+                                      <option value="customer">Customer</option>
+                                      <option value="supplier">Supplier</option>
+                                      <option value="sales">Sales</option>
+                                      <option value="land_agent">Land Agent</option>
+                                    </>
+                                  ) : column.key === 'xero' ? (
+                                    <>
+                                      <option value="">All Status</option>
+                                      <option value="synced">Synced</option>
+                                      <option value="not_synced">Not Synced</option>
+                                    </>
+                                  ) : null}
+                                </select>
+                              ) : (
+                                <input
+                                  type="text"
+                                  placeholder={`Search...`}
+                                  value={columnFilters[column.key] || ''}
+                                  onChange={(e) => handleColumnFilterChange(column.key, e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                                />
+                              )
+                            )}
+                            {/* Resize handle */}
+                            <div
+                              className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                              onMouseDown={(e) => handleResizeStart(e, column.key)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </th>
+                        )
+                      })}
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -740,206 +1296,7 @@ export default function ContactsPage() {
                             className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
                           />
                         </td>
-                        {visibleContactColumns.name && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Link
-                              to={`/contacts/${contact.id}`}
-                              className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
-                            >
-                              {contact.full_name}
-                            </Link>
-                            {(contact.first_name || contact.last_name) && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {contact.first_name} {contact.last_name}
-                              </div>
-                            )}
-                          </td>
-                        )}
-                        {visibleContactColumns.type && (
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {updatingContactId === contact.id ? (
-                                <div className="flex items-center gap-2">
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
-                                  <span className="text-sm text-gray-500">Updating...</span>
-                                </div>
-                              ) : contact.primary_contact_type ? (
-                                <div className="relative">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setOpenDropdownId(openDropdownId === contact.id ? null : contact.id)
-                                    }}
-                                    className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${getTypeBadge(contact.primary_contact_type).className}`}
-                                  >
-                                    {getTypeBadge(contact.primary_contact_type).label}
-                                    <ChevronDownIcon className="ml-1 h-3 w-3" />
-                                  </button>
-                                  {openDropdownId === contact.id && (
-                                    <>
-                                      <div
-                                        className="fixed inset-0 z-10"
-                                        onClick={() => setOpenDropdownId(null)}
-                                      />
-                                      <div className="absolute z-20 mt-1 w-56 bg-white dark:bg-gray-800 shadow-lg rounded-md py-2 text-sm border border-gray-200 dark:border-gray-700">
-                                        <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                                          Select Types
-                                        </div>
-                                        {['customer', 'supplier', 'sales', 'land_agent'].map((type) => {
-                                          const badge = getTypeBadge(type)
-                                          const isSelected = contact.contact_types?.includes(type)
-                                          const isPrimary = contact.primary_contact_type === type
-                                          return (
-                                            <div
-                                              key={type}
-                                              className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                                            >
-                                              <label className="flex items-center gap-2 cursor-pointer flex-1">
-                                                <input
-                                                  type="checkbox"
-                                                  checked={isSelected}
-                                                  onChange={() => {
-                                                    const currentTypes = contact.contact_types || []
-                                                    let newTypes
-                                                    let newPrimaryType = contact.primary_contact_type
-
-                                                    if (isSelected) {
-                                                      newTypes = currentTypes.filter(t => t !== type)
-                                                      if (isPrimary) {
-                                                        newPrimaryType = newTypes[0] || null
-                                                      }
-                                                    } else {
-                                                      newTypes = [...currentTypes, type]
-                                                    }
-
-                                                    handleUpdateSingleContact(contact.id, newTypes, newPrimaryType)
-                                                  }}
-                                                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                                                />
-                                                <span className={isSelected ? 'font-medium' : 'font-normal'}>
-                                                  {badge.label}
-                                                </span>
-                                              </label>
-                                              {isSelected && (
-                                                <button
-                                                  onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    handleUpdateSingleContact(contact.id, contact.contact_types, type)
-                                                  }}
-                                                  className={`text-xs px-2 py-0.5 rounded ${
-                                                    isPrimary
-                                                      ? 'bg-indigo-600 text-white'
-                                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                                                  }`}
-                                                >
-                                                  {isPrimary ? 'Primary' : 'Set Primary'}
-                                                </button>
-                                              )}
-                                            </div>
-                                          )
-                                        })}
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-sm text-gray-400">No type</span>
-                              )}
-                            </div>
-                          </td>
-                        )}
-                        {visibleContactColumns.email && (
-                          <td className="px-6 py-4">
-                            {contact.email ? (
-                              <a
-                                href={`mailto:${contact.email}`}
-                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                              >
-                                <EnvelopeIcon className="h-4 w-4" />
-                                {contact.email}
-                              </a>
-                            ) : (
-                              <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
-                            )}
-                          </td>
-                        )}
-                        {visibleContactColumns.phone && (
-                          <td className="px-6 py-4">
-                            <div className="space-y-1">
-                              {contact.mobile_phone && (
-                                <div className="text-sm text-gray-900 dark:text-white flex items-center gap-1">
-                                  <PhoneIcon className="h-4 w-4" />
-                                  {contact.mobile_phone}
-                                </div>
-                              )}
-                              {contact.office_phone && (
-                                <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                                  <BuildingOfficeIcon className="h-4 w-4" />
-                                  {contact.office_phone}
-                                </div>
-                              )}
-                              {!contact.mobile_phone && !contact.office_phone && (
-                                <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
-                              )}
-                            </div>
-                          </td>
-                        )}
-                        {visibleContactColumns.website && (
-                          <td className="px-6 py-4">
-                            {contact.website ? (
-                              <a
-                                href={contact.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                              >
-                                <GlobeAltIcon className="h-4 w-4" />
-                                Visit
-                              </a>
-                            ) : (
-                              <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
-                            )}
-                          </td>
-                        )}
-                        {visibleContactColumns.xero && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {contact.xero_id ? (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50">
-                                <CheckCircleIcon className="h-3.5 w-3.5" />
-                                Synced
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800/50">
-                                <XCircleIcon className="h-3.5 w-3.5" />
-                                Not Synced
-                              </span>
-                            )}
-                          </td>
-                        )}
-                        {visibleContactColumns.actions && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end gap-3">
-                              <Link
-                                to={`/contacts/${contact.id}`}
-                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                              >
-                                View
-                              </Link>
-                              <button
-                                onClick={() => handleDeleteContact(contact.id, contact.full_name)}
-                                disabled={deletingContactId === contact.id}
-                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
-                                title="Delete contact"
-                              >
-                                {deletingContactId === contact.id ? (
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
-                                ) : (
-                                  <TrashIcon className="h-4 w-4" />
-                                )}
-                              </button>
-                            </div>
-                          </td>
-                        )}
+                        {contactColumns.map((column) => renderContactCell(contact, column.key))}
                       </tr>
                     ))}
                   </tbody>

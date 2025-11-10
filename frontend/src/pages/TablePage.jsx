@@ -27,6 +27,8 @@ import {
   TableCellsIcon,
   CalculatorIcon,
   EyeSlashIcon,
+  Bars3Icon,
+  AdjustmentsHorizontalIcon,
 } from '@heroicons/react/24/outline'
 
 export default function TablePage() {
@@ -41,6 +43,90 @@ export default function TablePage() {
   const [isAddingRow, setIsAddingRow] = useState(false)
   const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false)
   const [showColumnInfo, setShowColumnInfo] = useState(false)
+
+  // Unified table pattern state
+  const [draggedColumn, setDraggedColumn] = useState(null)
+  const [sortBy, setSortBy] = useState(null)
+  const [sortDirection, setSortDirection] = useState('asc')
+  const [columnFilters, setColumnFilters] = useState({})
+  const [showColumnSettings, setShowColumnSettings] = useState(false)
+
+  // Column order with localStorage persistence (dynamic per table)
+  const [columnOrder, setColumnOrder] = useState(() => {
+    const saved = localStorage.getItem(`table_${id}_columnOrder`)
+    return saved ? JSON.parse(saved) : []
+  })
+
+  // Column widths with localStorage persistence (dynamic per table)
+  const [columnWidths, setColumnWidths] = useState(() => {
+    const saved = localStorage.getItem(`table_${id}_columnWidths`)
+    return saved ? JSON.parse(saved) : {}
+  })
+
+  // Column visibility state (dynamic per table)
+  const [columnVisibility, setColumnVisibility] = useState({})
+
+  // Column resize state
+  const [resizingColumn, setResizingColumn] = useState(null)
+  const [resizeStartX, setResizeStartX] = useState(0)
+  const [resizeStartWidth, setResizeStartWidth] = useState(0)
+
+  // Initialize column order and widths when table data loads
+  useEffect(() => {
+    if (table && table.columns) {
+      // Initialize column order from localStorage or default
+      const savedOrder = localStorage.getItem(`table_${id}_columnOrder`)
+      if (!savedOrder) {
+        const defaultOrder = table.columns
+          .filter(col => !isSystemOrHiddenColumn(col.column_name))
+          .map(col => col.column_name)
+        setColumnOrder(defaultOrder)
+      }
+
+      // Initialize column widths from localStorage or default
+      const savedWidths = localStorage.getItem(`table_${id}_columnWidths`)
+      if (!savedWidths) {
+        const defaultWidths = {}
+        table.columns.forEach(col => {
+          defaultWidths[col.column_name] = 200
+        })
+        setColumnWidths(defaultWidths)
+      }
+
+      // Initialize column visibility
+      const visibility = {}
+      table.columns.forEach(col => {
+        visibility[col.column_name] = !isSystemOrHiddenColumn(col.column_name)
+      })
+      setColumnVisibility(visibility)
+    }
+  }, [table, id])
+
+  // Persist column order to localStorage
+  useEffect(() => {
+    if (columnOrder.length > 0) {
+      localStorage.setItem(`table_${id}_columnOrder`, JSON.stringify(columnOrder))
+    }
+  }, [columnOrder, id])
+
+  // Persist column widths to localStorage
+  useEffect(() => {
+    if (Object.keys(columnWidths).length > 0) {
+      localStorage.setItem(`table_${id}_columnWidths`, JSON.stringify(columnWidths))
+    }
+  }, [columnWidths, id])
+
+  // Add mouse move and mouse up listeners for column resizing
+  useEffect(() => {
+    if (resizingColumn) {
+      window.addEventListener('mousemove', handleResizeMove)
+      window.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove)
+        window.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [resizingColumn, resizeStartX, resizeStartWidth])
 
   useEffect(() => {
     let cancelled = false
@@ -246,6 +332,161 @@ export default function TablePage() {
     }
   }
 
+  // Unified table pattern handlers
+  const handleDragStart = (e, columnKey) => {
+    setDraggedColumn(columnKey)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e, targetColumnKey) => {
+    e.preventDefault()
+
+    if (!draggedColumn || draggedColumn === targetColumnKey) {
+      setDraggedColumn(null)
+      return
+    }
+
+    const draggedIndex = columnOrder.indexOf(draggedColumn)
+    const targetIndex = columnOrder.indexOf(targetColumnKey)
+
+    const newOrder = [...columnOrder]
+    newOrder.splice(draggedIndex, 1)
+    newOrder.splice(targetIndex, 0, draggedColumn)
+
+    setColumnOrder(newOrder)
+    setDraggedColumn(null)
+  }
+
+  const handleSort = (columnKey) => {
+    if (sortBy === columnKey) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(columnKey)
+      setSortDirection('asc')
+    }
+  }
+
+  const handleResizeStart = (e, columnKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingColumn(columnKey)
+    setResizeStartX(e.clientX)
+    setResizeStartWidth(columnWidths[columnKey] || 200)
+  }
+
+  const handleResizeMove = (e) => {
+    if (!resizingColumn) return
+    const diff = e.clientX - resizeStartX
+    const newWidth = Math.max(100, resizeStartWidth + diff)
+    setColumnWidths(prev => ({
+      ...prev,
+      [resizingColumn]: newWidth
+    }))
+  }
+
+  const handleResizeEnd = () => {
+    setResizingColumn(null)
+  }
+
+  const handleColumnFilter = (columnKey, value) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnKey]: value
+    }))
+  }
+
+  const toggleColumnVisibility = (columnKey) => {
+    setColumnVisibility(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey]
+    }))
+  }
+
+  const resetColumnSettings = () => {
+    if (table && table.columns) {
+      const defaultOrder = table.columns
+        .filter(col => !isSystemOrHiddenColumn(col.column_name))
+        .map(col => col.column_name)
+      setColumnOrder(defaultOrder)
+
+      const defaultWidths = {}
+      table.columns.forEach(col => {
+        defaultWidths[col.column_name] = 200
+      })
+      setColumnWidths(defaultWidths)
+
+      const defaultVisibility = {}
+      table.columns.forEach(col => {
+        defaultVisibility[col.column_name] = !isSystemOrHiddenColumn(col.column_name)
+      })
+      setColumnVisibility(defaultVisibility)
+
+      localStorage.removeItem(`table_${id}_columnOrder`)
+      localStorage.removeItem(`table_${id}_columnWidths`)
+    }
+  }
+
+  // Get sorted and filtered columns based on order and visibility
+  const getVisibleColumns = () => {
+    if (!table || !table.columns) return []
+
+    return columnOrder
+      .map(colName => table.columns.find(col => col.column_name === colName))
+      .filter(col => col && columnVisibility[col.column_name])
+  }
+
+  // Apply filters to records
+  const applyFilters = (recordsToFilter) => {
+    if (Object.keys(columnFilters).length === 0) return recordsToFilter
+
+    return recordsToFilter.filter(record => {
+      return Object.entries(columnFilters).every(([key, filterValue]) => {
+        if (!filterValue || filterValue.trim() === '') return true
+
+        const value = record[key]
+        if (value === null || value === undefined) return false
+
+        const strValue = typeof value === 'object' ? value.display : String(value)
+        return strValue.toLowerCase().includes(filterValue.toLowerCase())
+      })
+    })
+  }
+
+  // Apply sorting to records
+  const applySorting = (recordsToSort) => {
+    if (!sortBy) return recordsToSort
+
+    return [...recordsToSort].sort((a, b) => {
+      const aValue = a[sortBy]
+      const bValue = b[sortBy]
+
+      // Handle null/undefined
+      if (aValue === null || aValue === undefined) return 1
+      if (bValue === null || bValue === undefined) return -1
+
+      // Handle objects (like lookup values)
+      const aCompare = typeof aValue === 'object' ? aValue.display : aValue
+      const bCompare = typeof bValue === 'object' ? bValue.display : bValue
+
+      if (aCompare < bCompare) return sortDirection === 'asc' ? -1 : 1
+      if (aCompare > bCompare) return sortDirection === 'asc' ? 1 : -1
+      return 0
+    })
+  }
+
+  // Get filtered and sorted records
+  const getProcessedRecords = () => {
+    let processed = [...records]
+    processed = applyFilters(processed)
+    processed = applySorting(processed)
+    return processed
+  }
+
   if (error) {
     return (
       <div className="text-center py-12">
@@ -298,8 +539,16 @@ export default function TablePage() {
               className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
             >
               <TableCellsIcon className="h-4 w-4" />
-              Columns
+              Info
               {showColumnInfo ? <ChevronUpIcon className="h-3 w-3" /> : <ChevronDownIcon className="h-3 w-3" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowColumnSettings(true)}
+              className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+            >
+              <AdjustmentsHorizontalIcon className="h-4 w-4" />
+              Columns
             </button>
             <button
               type="button"
@@ -530,25 +779,68 @@ export default function TablePage() {
           </div>
         ) : (
           <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
-              <thead>
-                <tr className="bg-gray-50 dark:bg-gray-800/50">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+                <tr>
                   <th className="sticky left-0 z-20 bg-gray-50 dark:bg-gray-800/50 border-r border-b border-gray-200 dark:border-gray-700 px-2 py-1 text-left w-8">
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#</span>
                   </th>
-                  {table.columns.map((column, index) => {
+                  {getVisibleColumns().map((column, index) => {
                     const isSystemColumn = isSystemOrHiddenColumn(column.column_name)
+                    const width = columnWidths[column.column_name] || 200
+                    const isSorted = sortBy === column.column_name
+                    const isSortable = !['computed'].includes(column.column_type)
+
                     return (
                       <th
                         key={column.id}
-                        style={{ minWidth: '200px' }}
-                        className={`border-r border-b border-gray-200 dark:border-gray-700 px-2 py-1 text-left ${
+                        style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                        className={`border-r border-b border-gray-200 dark:border-gray-700 px-2 py-2 text-left ${
                           index === 0 ? 'sticky left-8 z-20 bg-gray-50 dark:bg-gray-800/50' : ''
-                        } ${isSystemColumn ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`}
+                        } ${isSystemColumn ? 'bg-orange-50 dark:bg-orange-900/20' : ''} ${
+                          draggedColumn === column.column_name ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''
+                        }`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, column.column_name)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, column.column_name)}
                       >
-                        <ColumnHeader
-                          column={column}
-                          tableId={id}
-                          onTypeChange={handleColumnTypeChange}
+                        <div
+                          className={`flex items-center gap-2 ${isSortable ? 'cursor-pointer' : 'cursor-move'}`}
+                          onClick={() => isSortable && handleSort(column.column_name)}
+                        >
+                          {/* Drag handle */}
+                          <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+
+                          {/* Column label */}
+                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            {column.name}
+                          </span>
+
+                          {/* Sort indicators */}
+                          {isSortable && isSorted && (
+                            sortDirection === 'asc' ?
+                              <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                              <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                          )}
+                        </div>
+
+                        {/* Inline filter */}
+                        {!isSystemColumn && (
+                          <input
+                            type="text"
+                            placeholder="Search..."
+                            value={columnFilters[column.column_name] || ''}
+                            onChange={(e) => handleColumnFilter(column.column_name, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                          />
+                        )}
+
+                        {/* Resize handle */}
+                        <div
+                          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                          onMouseDown={(e) => handleResizeStart(e, column.column_name)}
+                          onClick={(e) => e.stopPropagation()}
                         />
                       </th>
                     )
@@ -566,7 +858,7 @@ export default function TablePage() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900">
-                {records.map((record, idx) => (
+                {getProcessedRecords().map((record, idx) => (
                   <tr
                     key={record.id}
                     className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
@@ -574,15 +866,16 @@ export default function TablePage() {
                     <td className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800/50 group-hover:bg-blue-100/50 dark:group-hover:bg-blue-900/20 border-r border-b border-gray-200 dark:border-gray-700 px-2 py-1 w-8">
                       <span className="text-xs text-gray-500 dark:text-gray-400">{idx + 1}</span>
                     </td>
-                    {table.columns.map((column, colIndex) => {
+                    {getVisibleColumns().map((column, colIndex) => {
                       const isEditing = editingCell?.recordId === record.id && editingCell?.columnName === column.column_name
                       const isCurrency = column.column_type === 'currency'
                       const isSystemColumn = isSystemOrHiddenColumn(column.column_name)
+                      const width = columnWidths[column.column_name] || 200
 
                       return (
                         <td
                           key={column.id}
-                          style={{ minWidth: '200px' }}
+                          style={{ width: `${width}px`, minWidth: `${width}px` }}
                           className={`border-r border-b border-gray-200 dark:border-gray-700 px-0 py-0 text-xs group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10 ${
                             colIndex === 0
                               ? 'sticky left-8 z-10 bg-white dark:bg-gray-900 group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10'
@@ -641,6 +934,75 @@ export default function TablePage() {
         onAdd={handleAddColumn}
         tableId={id}
       />
+
+      {/* Column Settings Modal */}
+      {showColumnSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/30"
+            onClick={() => setShowColumnSettings(false)}
+          />
+
+          {/* Modal */}
+          <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6 m-4">
+            <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Column Settings
+            </h2>
+
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Toggle column visibility and drag to reorder
+            </p>
+
+            {/* Column list */}
+            <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
+              {columnOrder.map((columnName) => {
+                const column = table?.columns.find(col => col.column_name === columnName)
+                if (!column) return null
+
+                return (
+                  <label
+                    key={columnName}
+                    className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={columnVisibility[columnName] || false}
+                      onChange={() => toggleColumnVisibility(columnName)}
+                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <Bars3Icon className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm text-gray-900 dark:text-white flex-1">
+                      {column.name}
+                    </span>
+                    {isSystemOrHiddenColumn(columnName) && (
+                      <span className="text-xs text-orange-600 dark:text-orange-400">
+                        (Hidden)
+                      </span>
+                    )}
+                  </label>
+                )
+              })}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={resetColumnSettings}
+                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                Reset to defaults
+              </button>
+              <button
+                onClick={() => setShowColumnSettings(false)}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

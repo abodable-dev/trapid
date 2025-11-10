@@ -19,7 +19,6 @@ import {
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../utils/formatters'
 import { api } from '../api'
-import ColumnHeaderMenu from '../components/pricebook/ColumnHeaderMenu'
 import PriceBookImportModal from '../components/pricebook/PriceBookImportModal'
 
 export default function PriceBooksPage() {
@@ -127,8 +126,54 @@ export default function PriceBooksPage() {
     return defaultColumnConfig
   })
 
+  // Column widths with localStorage persistence (separate from columnConfig for unified pattern)
+  const [columnWidths, setColumnWidths] = useState(() => {
+    const saved = localStorage.getItem('pricebooks_columnWidths')
+    return saved ? JSON.parse(saved) : {
+      checkbox: 50,
+      image: 60,
+      itemCode: 200,
+      itemName: 250,
+      status: 150,
+      category: 200,
+      price: 150,
+      gstCode: 120,
+      unit: 100,
+      supplier: 200,
+      brand: 150,
+      requiresPhoto: 120,
+      requiresSpec: 120,
+      photoAttached: 120,
+      specAttached: 120,
+      needsPricingReview: 140,
+      notes: 200,
+    }
+  })
+
+  // Column resize state
+  const [resizingColumn, setResizingColumn] = useState(null)
+  const [resizeStartX, setResizeStartX] = useState(0)
+  const [resizeStartWidth, setResizeStartWidth] = useState(0)
+
   const observerTarget = useRef(null)
   const searchTimeoutRef = useRef(null)
+
+  // Persist column widths to localStorage
+  useEffect(() => {
+    localStorage.setItem('pricebooks_columnWidths', JSON.stringify(columnWidths))
+  }, [columnWidths])
+
+  // Add mouse move and mouse up listeners for column resizing
+  useEffect(() => {
+    if (resizingColumn) {
+      window.addEventListener('mousemove', handleResizeMove)
+      window.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove)
+        window.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [resizingColumn])
 
   // Clear supplier filter if it's no longer in the filtered suppliers list
   // Load tax rates on mount
@@ -387,6 +432,29 @@ export default function PriceBooksPage() {
     // Don't clear items - the useEffect will reload and pagination reset happens in loadPriceBook
     setPagination(prev => ({ ...prev, page: 1 }))
   }
+
+  // Column resize handlers
+  const handleResizeStart = (e, columnKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingColumn(columnKey)
+    setResizeStartX(e.clientX)
+    setResizeStartWidth(columnWidths[columnKey])
+  }
+
+  const handleResizeMove = useCallback((e) => {
+    if (!resizingColumn) return
+    const diff = e.clientX - resizeStartX
+    const newWidth = Math.max(100, resizeStartWidth + diff)
+    setColumnWidths(prev => ({
+      ...prev,
+      [resizingColumn]: newWidth
+    }))
+  }, [resizingColumn, resizeStartX, resizeStartWidth])
+
+  const handleResizeEnd = useCallback(() => {
+    setResizingColumn(null)
+  }, [])
 
   const handleColumnFilter = (column, value) => {
     switch (column) {
@@ -934,16 +1002,19 @@ export default function PriceBooksPage() {
   const renderTableCell = (key, config, item) => {
     if (!config.visible) return null
 
+    const cellWidth = columnWidths[key]
+    const cellStyle = { width: `${cellWidth}px`, minWidth: `${cellWidth}px`, maxWidth: `${cellWidth}px` }
+
     switch (key) {
       case 'checkbox':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+          <td key={key} style={cellStyle} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
             <input type="checkbox" checked={selectedItems.has(item.id)} onChange={() => handleSelectItem(item.id)} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
           </td>
         )
       case 'image':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-2 py-2 border-r border-gray-200 dark:border-gray-700">
+          <td key={key} style={cellStyle} className="px-2 py-2 border-r border-gray-200 dark:border-gray-700">
             {item.image_url ? (
               <div className="flex justify-center">
                 <img src={item.image_url} alt={item.item_name} className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-600" onError={(e) => { e.target.style.display = 'none' }} />
@@ -959,19 +1030,19 @@ export default function PriceBooksPage() {
         )
       case 'itemCode':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white">
+          <td key={key} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white">
             {item.item_code}
           </td>
         )
       case 'itemName':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white">
+          <td key={key} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white">
             {item.item_name}
           </td>
         )
       case 'status':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm">
+          <td key={key} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm">
             <div className="flex flex-wrap gap-1">
               {getRiskBadges(item).length > 0 ? getRiskBadges(item) : <Badge color="green">OK</Badge>}
             </div>
@@ -979,7 +1050,7 @@ export default function PriceBooksPage() {
         )
       case 'category':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400" onClick={(e) => { e.stopPropagation(); setEditingCategory(item.id) }}>
+          <td key={key} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400" onClick={(e) => { e.stopPropagation(); setEditingCategory(item.id) }}>
             {editingCategory === item.id ? (
               <select autoFocus value={item.category || ''} onChange={(e) => handleCategoryUpdate(item.id, e.target.value)} onBlur={() => setEditingCategory(null)} className="w-full px-2 py-1 text-sm border border-indigo-500 rounded focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-indigo-400" onClick={(e) => e.stopPropagation()}>
                 <option value="">Select category...</option>
@@ -992,13 +1063,13 @@ export default function PriceBooksPage() {
         )
       case 'price':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-right text-gray-900 dark:text-white font-medium">
+          <td key={key} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-right text-gray-900 dark:text-white font-medium">
             {item.current_price ? formatCurrency(item.current_price, true) : '-'}
           </td>
         )
       case 'gstCode':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400" onClick={(e) => { e.stopPropagation(); setEditingGstCode(item.id) }}>
+          <td key={key} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400" onClick={(e) => { e.stopPropagation(); setEditingGstCode(item.id) }}>
             {editingGstCode === item.id ? (
               <select autoFocus value={item.gst_code || ''} onChange={(e) => handleGstCodeUpdate(item.id, e.target.value)} onBlur={() => setEditingGstCode(null)} onFocus={(e) => e.target.select()} className="w-full px-2 py-1 text-sm border border-indigo-500 rounded focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-indigo-400" onClick={(e) => e.stopPropagation()}>
                 <option value="">Select GST code...</option>
@@ -1015,26 +1086,26 @@ export default function PriceBooksPage() {
         )
       case 'unit':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+          <td key={key} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
             {item.unit_of_measure}
           </td>
         )
       case 'supplier':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+          <td key={key} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
             {item.default_supplier?.name || '-'}
           </td>
         )
       case 'brand':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+          <td key={key} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
             {item.brand || '-'}
           </td>
         )
       case 'requiresPhoto':
         const hasPhotoChange = pendingBooleanUpdates[item.id]?.hasOwnProperty('requires_photo')
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-center ${hasPhotoChange ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`} onClick={(e) => e.stopPropagation()}>
+          <td key={key} style={cellStyle} className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-center ${hasPhotoChange ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-center gap-1">
               <input
                 type="checkbox"
@@ -1049,7 +1120,7 @@ export default function PriceBooksPage() {
       case 'requiresSpec':
         const hasSpecChange = pendingBooleanUpdates[item.id]?.hasOwnProperty('requires_spec')
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-center ${hasSpecChange ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`} onClick={(e) => e.stopPropagation()}>
+          <td key={key} style={cellStyle} className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-center ${hasSpecChange ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-center gap-1">
               <input
                 type="checkbox"
@@ -1064,7 +1135,7 @@ export default function PriceBooksPage() {
       case 'needsPricingReview':
         const hasPricingChange = pendingBooleanUpdates[item.id]?.hasOwnProperty('needs_pricing_review')
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-center ${hasPricingChange ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`} onClick={(e) => e.stopPropagation()}>
+          <td key={key} style={cellStyle} className={`px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-center ${hasPricingChange ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-center gap-1">
               <input
                 type="checkbox"
@@ -1078,7 +1149,7 @@ export default function PriceBooksPage() {
         )
       case 'notes':
         return (
-          <td key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+          <td key={key} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
             <div className="truncate max-w-xs" title={item.notes}>{item.notes || '-'}</div>
           </td>
         )
@@ -1546,8 +1617,9 @@ export default function PriceBooksPage() {
                   // Render each column header based on its key
                   switch (key) {
                     case 'checkbox':
+                      const checkboxWidth = columnWidths[key]
                       return (
-                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700">
+                        <th key={key} style={{ width: `${checkboxWidth}px`, minWidth: `${checkboxWidth}px`, position: 'relative' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700">
                           <input
                             type="checkbox"
                             checked={items.length > 0 && selectedItems.size === items.length}
@@ -1557,63 +1629,348 @@ export default function PriceBooksPage() {
                         </th>
                       )
                     case 'image':
+                      const imageWidth = columnWidths[key]
                       return (
-                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <th key={key} style={{ width: `${imageWidth}px`, minWidth: `${imageWidth}px`, position: 'relative' }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
                           Image
                         </th>
                       )
                     case 'itemCode':
+                      const width = columnWidths[key]
+                      const isSorted = sortBy === 'item_code'
                       return (
-                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                          <ColumnHeaderMenu label="Code" column="item_code" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={searchQuery} filterType="search" />
+                        <th
+                          key={key}
+                          style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                          className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left ${draggedColumn === key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, key)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, key)}
+                        >
+                          <div
+                            className="flex items-center gap-2 cursor-pointer"
+                            onClick={() => handleSort('item_code')}
+                          >
+                            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code</span>
+                            {isSorted && (
+                              sortDirection === 'asc' ?
+                                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Search..."
+                            value={searchQuery}
+                            onChange={(e) => handleColumnFilter('item_code', e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                          />
+                          {/* Resize handle */}
+                          <div
+                            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                            onMouseDown={(e) => handleResizeStart(e, key)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         </th>
                       )
                     case 'itemName':
+                      const itemNameWidth = columnWidths[key]
+                      const itemNameSorted = sortBy === 'item_name'
                       return (
-                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                          <ColumnHeaderMenu label="Item Name" column="item_name" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={searchQuery} filterType="search" />
+                        <th
+                          key={key}
+                          style={{ width: `${itemNameWidth}px`, minWidth: `${itemNameWidth}px`, position: 'relative' }}
+                          className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left ${draggedColumn === key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, key)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, key)}
+                        >
+                          <div
+                            className="flex items-center gap-2 cursor-pointer"
+                            onClick={() => handleSort('item_name')}
+                          >
+                            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Item Name</span>
+                            {itemNameSorted && (
+                              sortDirection === 'asc' ?
+                                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Search..."
+                            value={searchQuery}
+                            onChange={(e) => handleColumnFilter('item_name', e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                          />
+                          {/* Resize handle */}
+                          <div
+                            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                            onMouseDown={(e) => handleResizeStart(e, key)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         </th>
                       )
                     case 'status':
+                      const statusWidth = columnWidths[key]
+                      const statusSorted = sortBy === 'risk_level'
                       return (
-                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                          <ColumnHeaderMenu label="Status" column="risk_level" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={riskFilter} filterType="select" filterOptions={[{ label: 'Low Risk', value: 'low', count: null }, { label: 'Medium Risk', value: 'medium', count: null }, { label: 'High Risk', value: 'high', count: null }, { label: 'Critical', value: 'critical', count: null }]} />
+                        <th
+                          key={key}
+                          style={{ width: `${statusWidth}px`, minWidth: `${statusWidth}px`, position: 'relative' }}
+                          className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left ${draggedColumn === key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, key)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, key)}
+                        >
+                          <div
+                            className="flex items-center gap-2 cursor-pointer"
+                            onClick={() => handleSort('risk_level')}
+                          >
+                            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</span>
+                            {statusSorted && (
+                              sortDirection === 'asc' ?
+                                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                            )}
+                          </div>
+                          <select
+                            value={riskFilter}
+                            onChange={(e) => handleColumnFilter('risk_level', e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                          >
+                            <option value="">All Status</option>
+                            <option value="low">Low Risk</option>
+                            <option value="medium">Medium Risk</option>
+                            <option value="high">High Risk</option>
+                            <option value="critical">Critical</option>
+                          </select>
+                          {/* Resize handle */}
+                          <div
+                            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                            onMouseDown={(e) => handleResizeStart(e, key)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         </th>
                       )
                     case 'category':
+                      const categoryWidth = columnWidths[key]
+                      const categorySorted = sortBy === 'category'
                       return (
-                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                          <ColumnHeaderMenu label="Category" column="category" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={categoryFilter} filterType="select" filterOptions={categories.map(cat => ({ label: cat, value: cat, count: null }))} />
+                        <th
+                          key={key}
+                          style={{ width: `${categoryWidth}px`, minWidth: `${categoryWidth}px`, position: 'relative' }}
+                          className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left ${draggedColumn === key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, key)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, key)}
+                        >
+                          <div
+                            className="flex items-center gap-2 cursor-pointer"
+                            onClick={() => handleSort('category')}
+                          >
+                            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</span>
+                            {categorySorted && (
+                              sortDirection === 'asc' ?
+                                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                            )}
+                          </div>
+                          <select
+                            value={categoryFilter}
+                            onChange={(e) => handleColumnFilter('category', e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                          >
+                            <option value="">All Categories</option>
+                            {categories.map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                          {/* Resize handle */}
+                          <div
+                            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                            onMouseDown={(e) => handleResizeStart(e, key)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         </th>
                       )
                     case 'price':
+                      const priceWidth = columnWidths[key]
+                      const priceSorted = sortBy === 'current_price'
                       return (
-                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
-                          <ColumnHeaderMenu label="Price" column="current_price" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={minPrice || maxPrice ? { min: minPrice, max: maxPrice } : ''} filterType="price-range" />
+                        <th
+                          key={key}
+                          style={{ width: `${priceWidth}px`, minWidth: `${priceWidth}px`, position: 'relative' }}
+                          className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-right ${draggedColumn === key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, key)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, key)}
+                        >
+                          <div
+                            className="flex items-center gap-2 cursor-pointer justify-end"
+                            onClick={() => handleSort('current_price')}
+                          >
+                            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price</span>
+                            {priceSorted && (
+                              sortDirection === 'asc' ?
+                                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                            )}
+                          </div>
+                          <div className="flex gap-1 mt-1">
+                            <input
+                              type="number"
+                              placeholder="Min"
+                              value={minPrice}
+                              onChange={(e) => setMinPrice(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-1/2 text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                            />
+                            <input
+                              type="number"
+                              placeholder="Max"
+                              value={maxPrice}
+                              onChange={(e) => setMaxPrice(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-1/2 text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                            />
+                          </div>
+                          {/* Resize handle */}
+                          <div
+                            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                            onMouseDown={(e) => handleResizeStart(e, key)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         </th>
                       )
                     case 'gstCode':
+                      const gstCodeWidth = columnWidths[key]
                       return (
-                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                          GST Code
+                        <th
+                          key={key}
+                          style={{ width: `${gstCodeWidth}px`, minWidth: `${gstCodeWidth}px`, position: 'relative' }}
+                          className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left ${draggedColumn === key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, key)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, key)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">GST Code</span>
+                          </div>
+                          {/* Resize handle */}
+                          <div
+                            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                            onMouseDown={(e) => handleResizeStart(e, key)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         </th>
                       )
                     case 'unit':
+                      const unitWidth = columnWidths[key]
                       return (
-                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                          Unit
+                        <th
+                          key={key}
+                          style={{ width: `${unitWidth}px`, minWidth: `${unitWidth}px`, position: 'relative' }}
+                          className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left ${draggedColumn === key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, key)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, key)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit</span>
+                          </div>
+                          {/* Resize handle */}
+                          <div
+                            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                            onMouseDown={(e) => handleResizeStart(e, key)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         </th>
                       )
                     case 'supplier':
+                      const supplierWidth = columnWidths[key]
+                      const supplierSorted = sortBy === 'supplier'
                       return (
-                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                          <ColumnHeaderMenu label="Supplier" column="supplier" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} onFilter={handleColumnFilter} filterValue={supplierFilter} filterType="select" filterOptions={suppliers.map(sup => ({ label: sup.name, value: sup.id.toString(), count: null }))} />
+                        <th
+                          key={key}
+                          style={{ width: `${supplierWidth}px`, minWidth: `${supplierWidth}px`, position: 'relative' }}
+                          className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left ${draggedColumn === key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, key)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, key)}
+                        >
+                          <div
+                            className="flex items-center gap-2 cursor-pointer"
+                            onClick={() => handleSort('supplier')}
+                          >
+                            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Supplier</span>
+                            {supplierSorted && (
+                              sortDirection === 'asc' ?
+                                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                            )}
+                          </div>
+                          <select
+                            value={supplierFilter}
+                            onChange={(e) => handleColumnFilter('supplier', e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                          >
+                            <option value="">All Suppliers</option>
+                            {suppliers.map(sup => (
+                              <option key={sup.id} value={sup.id.toString()}>{sup.name}</option>
+                            ))}
+                          </select>
+                          {/* Resize handle */}
+                          <div
+                            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                            onMouseDown={(e) => handleResizeStart(e, key)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         </th>
                       )
                     case 'brand':
+                      const brandWidth = columnWidths[key]
                       return (
-                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                          Brand
+                        <th
+                          key={key}
+                          style={{ width: `${brandWidth}px`, minWidth: `${brandWidth}px`, position: 'relative' }}
+                          className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left ${draggedColumn === key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, key)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, key)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Brand</span>
+                          </div>
+                          {/* Resize handle */}
+                          <div
+                            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                            onMouseDown={(e) => handleResizeStart(e, key)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         </th>
                       )
                     case 'requiresPhoto':
@@ -1671,9 +2028,27 @@ export default function PriceBooksPage() {
                         </th>
                       )
                     case 'notes':
+                      const notesWidth = columnWidths[key]
                       return (
-                        <th key={key} style={{ width: `${config.width}px`, minWidth: `${config.width}px`, maxWidth: `${config.width}px` }} className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                          Notes
+                        <th
+                          key={key}
+                          style={{ width: `${notesWidth}px`, minWidth: `${notesWidth}px`, position: 'relative' }}
+                          className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left ${draggedColumn === key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, key)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, key)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Notes</span>
+                          </div>
+                          {/* Resize handle */}
+                          <div
+                            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                            onMouseDown={(e) => handleResizeStart(e, key)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
                         </th>
                       )
                     default:
