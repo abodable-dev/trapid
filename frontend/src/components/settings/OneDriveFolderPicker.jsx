@@ -22,8 +22,8 @@ export default function OneDriveFolderPicker({ isOpen, onClose, onSelect, title 
     setError(null)
 
     try {
-      const params = folderId ? { folder_id: folderId } : {}
-      const response = await api.get('/api/v1/organization_onedrive/browse_folders', params)
+      const options = folderId ? { params: { folder_id: folderId } } : {}
+      const response = await api.get('/api/v1/organization_onedrive/browse_folders', options)
 
       setFolders(response.folders || [])
       setCurrentFolderId(folderId)
