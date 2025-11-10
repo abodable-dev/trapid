@@ -238,6 +238,7 @@ export default function ScheduleTemplateEditor() {
     return (
       row.name.toLowerCase().includes(query) ||
       (row.supplier_name && row.supplier_name.toLowerCase().includes(query)) ||
+      (row.assigned_role && row.assigned_role.toLowerCase().includes(query)) ||
       (row.tags && row.tags.some(tag => tag.toLowerCase().includes(query)))
     )
   })
@@ -309,7 +310,7 @@ export default function ScheduleTemplateEditor() {
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder={`Search ${rows.length} task${rows.length !== 1 ? 's' : ''} by name, supplier, or tags...`}
+              placeholder={`Search ${rows.length} task${rows.length !== 1 ? 's' : ''} by name, supplier, group, or tags...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
