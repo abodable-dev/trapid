@@ -159,7 +159,7 @@ export default function PricebookMatchPreview({ isOpen, onClose, matches, onAppl
                             No files were found in the selected OneDrive folder.
                           </p>
                           <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                            Make sure you have image files (jpg, png, etc.) in your "Pricebook Images" folder.
+                            Make sure you have image files (jpg, png, etc.) in your "Photos for Price Book" folder.
                           </p>
                         </div>
                       ) : (

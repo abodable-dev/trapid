@@ -3,7 +3,7 @@ class OnedrivePricebookSyncService
 
   def initialize(credential, folder_path = nil)
     @credential = credential
-    @folder_path = folder_path || "Pricebook Images"
+    @folder_path = folder_path || "Photos for Price Book"
     @results = {
       matched: 0,
       photos_matched: 0,
