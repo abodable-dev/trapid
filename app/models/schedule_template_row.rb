@@ -47,8 +47,8 @@ class ScheduleTemplateRow < ApplicationRecord
   private
 
   def supplier_required_if_po_required
-    if po_required? && supplier_id.blank?
-      errors.add(:supplier_id, "must be present when PO is required")
+    if create_po_on_job_start? && supplier_id.blank?
+      errors.add(:supplier_id, "must be present when Auto PO is enabled")
     end
   end
 
