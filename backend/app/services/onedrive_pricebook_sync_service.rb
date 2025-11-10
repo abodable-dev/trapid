@@ -252,11 +252,27 @@ class OnedrivePricebookSyncService
   end
 
   def list_folder_files(client, folder_id)
-    response = client.get("/me/drive/items/#{folder_id}/children")
-    files = response['value'] || []
+    all_files = []
+    next_link = "/me/drive/items/#{folder_id}/children"
+
+    # Follow pagination to get all files
+    while next_link
+      response = client.get(next_link)
+      files = response['value'] || []
+      all_files.concat(files)
+
+      # Check for next page
+      next_link = response['@odata.nextLink']
+      # If nextLink is a full URL, extract the path
+      if next_link && next_link.start_with?('https://')
+        next_link = URI.parse(next_link).request_uri
+      end
+    end
+
+    Rails.logger.info "Retrieved #{all_files.length} total files from OneDrive"
 
     # Filter for image and document files (specs)
-    files.select { |f| f['file'] && (is_image_file?(f['name']) || is_spec_file?(f['name'])) }
+    all_files.select { |f| f['file'] && (is_image_file?(f['name']) || is_spec_file?(f['name'])) }
   end
 
   def is_image_file?(filename)
