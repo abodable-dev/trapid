@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_09_231613) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_10_022059) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -143,6 +143,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_09_231613) do
     t.boolean "is_active", default: true
     t.string "supplier_code"
     t.text "address"
+    t.text "lgas", default: [], array: true
     t.index ["contact_types"], name: "index_contacts_on_contact_types", using: :gin
     t.index ["is_active"], name: "index_contacts_on_is_active"
     t.index ["primary_contact_type"], name: "index_contacts_on_primary_contact_type"
