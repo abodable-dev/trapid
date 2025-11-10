@@ -42,6 +42,7 @@ export default function ContactDetailPage() {
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false)
   const [setAsDefaultSupplier, setSetAsDefaultSupplier] = useState(true)
   const [effectiveDate, setEffectiveDate] = useState(new Date().toISOString().split('T')[0])
+  const [priceBookSearchTerm, setPriceBookSearchTerm] = useState('')
 
   useEffect(() => {
     loadContact()
@@ -983,31 +984,86 @@ export default function ContactDetailPage() {
       {contact['is_supplier?'] && (
         <div className="mt-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <CubeIcon className="h-5 w-5 text-gray-400" />
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      Price Book Items
-                    </h2>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50">
-                      {contact.pricebook_items?.length || 0} items
-                    </span>
-                  </div>
-                  {contact.pricebook_items && contact.pricebook_items.length > 0 && (
+            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <CubeIcon className="h-5 w-5 text-gray-400" />
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Price Book Items
+                  </h2>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50">
+                    {(() => {
+                      const filtered = contact.pricebook_items?.filter((item) => {
+                        if (!priceBookSearchTerm) return true
+                        const search = priceBookSearchTerm.toLowerCase()
+                        return (
+                          item.item_code?.toLowerCase().includes(search) ||
+                          item.item_name?.toLowerCase().includes(search) ||
+                          item.category?.toLowerCase().includes(search) ||
+                          item.price_histories?.some(h =>
+                            h.new_price?.toString().includes(search) ||
+                            h.lga?.toLowerCase().includes(search)
+                          )
+                        )
+                      }) || []
+                      return `${filtered.length} ${priceBookSearchTerm ? 'of ' + (contact.pricebook_items?.length || 0) : ''} items`
+                    })()}
+                  </span>
+                </div>
+                {contact.pricebook_items && contact.pricebook_items.length > 0 && (
+                  <button
+                    onClick={handleExportPriceHistory}
+                    disabled={exporting}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ArrowDownTrayIcon className="h-4 w-4" />
+                    {exporting ? 'Exporting...' : 'Export to Excel'}
+                  </button>
+                )}
+              </div>
+
+              {/* Search Input */}
+              {contact.pricebook_items && contact.pricebook_items.length > 0 && (
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={priceBookSearchTerm}
+                    onChange={(e) => setPriceBookSearchTerm(e.target.value)}
+                    placeholder="Search by code, name, category, price, or LGA..."
+                    className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <svg
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  {priceBookSearchTerm && (
                     <button
-                      onClick={handleExportPriceHistory}
-                      disabled={exporting}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => setPriceBookSearchTerm('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     >
-                      <ArrowDownTrayIcon className="h-4 w-4" />
-                      {exporting ? 'Exporting...' : 'Export to Excel'}
+                      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
                     </button>
                   )}
                 </div>
-              </div>
-              {contact.pricebook_items && contact.pricebook_items.length > 0 ? (
-                <div className="overflow-x-auto">
+              )}
+            </div>
+            {contact.pricebook_items && contact.pricebook_items.length > 0 ? (
+              <div className="overflow-x-auto">
                   <table className="min-w-full table-fixed">
                     <thead>
                       <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
@@ -1032,7 +1088,21 @@ export default function ContactDetailPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                      {contact.pricebook_items.map((item) => (
+                      {contact.pricebook_items
+                        .filter((item) => {
+                          if (!priceBookSearchTerm) return true
+                          const search = priceBookSearchTerm.toLowerCase()
+                          return (
+                            item.item_code?.toLowerCase().includes(search) ||
+                            item.item_name?.toLowerCase().includes(search) ||
+                            item.category?.toLowerCase().includes(search) ||
+                            item.price_histories?.some(h =>
+                              h.new_price?.toString().includes(search) ||
+                              h.lga?.toLowerCase().includes(search)
+                            )
+                          )
+                        })
+                        .map((item) => (
                         <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
                             {item.item_code}
