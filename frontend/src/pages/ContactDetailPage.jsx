@@ -1072,8 +1072,7 @@ export default function ContactDetailPage() {
                           item.item_name?.toLowerCase().includes(search) ||
                           item.category?.toLowerCase().includes(search) ||
                           item.price_histories?.some(h =>
-                            h.new_price?.toString().includes(search) ||
-                            h.lga?.toLowerCase().includes(search)
+                            h.new_price?.toString().includes(search)
                           )
                         )
                       }) || []
