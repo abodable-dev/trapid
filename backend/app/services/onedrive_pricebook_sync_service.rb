@@ -263,9 +263,11 @@ class OnedrivePricebookSyncService
 
       # Check for next page
       next_link = response['@odata.nextLink']
-      # If nextLink is a full URL, extract the path
+      # If nextLink is a full URL, extract the path and remove /v1.0 prefix
       if next_link && next_link.start_with?('https://')
         next_link = URI.parse(next_link).request_uri
+        # Remove /v1.0 prefix since client.get will add it via GRAPH_API_BASE
+        next_link = next_link.sub(%r{^/v1\.0}, '')
       end
     end
 
