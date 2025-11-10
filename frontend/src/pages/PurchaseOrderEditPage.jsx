@@ -343,7 +343,7 @@ export default function PurchaseOrderEditPage() {
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {lineItems.filter(item => !item._destroy).map((item, index) => (
                     <tr key={index} ref={el => searchRefs.current[index] = el}>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 overflow-visible">
                         <div className="relative">
                           <input
                             type="text"
@@ -354,7 +354,7 @@ export default function PurchaseOrderEditPage() {
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           />
                           {showSearchDropdown[index] && (
-                            <div className="absolute z-50 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            <div className="absolute z-[9999] mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-96 overflow-y-auto">
                               {(itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).length > 0 ? (
                                 (itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).map((searchItem) => (
                                   <button
@@ -377,7 +377,7 @@ export default function PurchaseOrderEditPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 overflow-visible">
                         <div className="relative">
                           <input
                             type="text"
@@ -388,7 +388,7 @@ export default function PurchaseOrderEditPage() {
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           />
                           {showDescriptionDropdown[index] && (
-                            <div className="absolute z-50 mt-1 w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            <div className="absolute z-[9999] mt-1 w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-96 overflow-y-auto">
                               {(itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).length > 0 ? (
                                 (itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).map((searchItem) => (
                                   <button
