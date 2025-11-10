@@ -469,6 +469,10 @@ export default function PriceBookItemDetailPage() {
                         value={item.gst_code || ''}
                         onChange={(e) => handleGstCodeUpdate(e.target.value)}
                         onBlur={() => setEditingGstCode(false)}
+                        onFocus={(e) => {
+                          // Prevent any parent handlers from calling .select() on this select element
+                          e.stopPropagation()
+                        }}
                         className="w-full px-2 py-1 text-sm border border-indigo-500 rounded focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-indigo-400"
                         onClick={(e) => e.stopPropagation()}
                       >
