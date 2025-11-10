@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_10_060523) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_10_092329) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -110,6 +110,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_060523) do
     t.index ["status"], name: "index_constructions_on_status"
   end
 
+  create_table "contact_activities", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.string "activity_type"
+    t.text "description"
+    t.jsonb "metadata"
+    t.string "performed_by_type", null: false
+    t.bigint "performed_by_id", null: false
+    t.datetime "occurred_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id"], name: "index_contact_activities_on_contact_id"
+    t.index ["performed_by_type", "performed_by_id"], name: "index_contact_activities_on_performed_by"
+  end
+
   create_table "contacts", force: :cascade do |t|
     t.integer "sys_type_id"
     t.boolean "deleted"
@@ -144,6 +158,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_060523) do
     t.string "supplier_code"
     t.text "address"
     t.text "lgas", default: [], array: true
+    t.string "bank_bsb"
+    t.string "bank_account_number"
+    t.string "bank_account_name"
+    t.string "default_purchase_account"
+    t.integer "bill_due_day"
+    t.string "bill_due_type"
     t.index ["contact_types"], name: "index_contacts_on_contact_types", using: :gin
     t.index ["is_active"], name: "index_contacts_on_is_active"
     t.index ["primary_contact_type"], name: "index_contacts_on_primary_contact_type"
@@ -1375,6 +1395,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_060523) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "columns", "tables"
   add_foreign_key "constructions", "designs"
+  add_foreign_key "contact_activities", "contacts"
   add_foreign_key "document_tasks", "constructions"
   add_foreign_key "estimate_line_items", "estimates"
   add_foreign_key "estimate_reviews", "estimates"

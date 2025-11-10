@@ -235,6 +235,38 @@ class XeroContactSyncService
       end
     end
 
+    # Extract bank account details
+    if xero_contact['BankAccountDetails'].present?
+      # BankAccountDetails is a string in format "BSB: 123456, Account Number: 98765432, Account Name: Business Account"
+      bank_details = xero_contact['BankAccountDetails']
+
+      # Try to parse BSB
+      if bank_details.match(/BSB[:\s]+(\d{6})/)
+        updates[:bank_bsb] = $1
+      end
+
+      # Try to parse account number
+      if bank_details.match(/Account Number[:\s]+([\d\s]+)/)
+        updates[:bank_account_number] = $1.gsub(/\s/, '')
+      end
+
+      # Try to parse account name
+      if bank_details.match(/Account Name[:\s]+([^,\n]+)/)
+        updates[:bank_account_name] = $1.strip
+      end
+    end
+
+    # Extract purchase account and payment terms
+    if xero_contact['PurchaseDetails'].present? && xero_contact['PurchaseDetails']['AccountCode'].present?
+      updates[:default_purchase_account] = xero_contact['PurchaseDetails']['AccountCode']
+    end
+
+    if xero_contact['PaymentTerms'].present? && xero_contact['PaymentTerms']['Bills'].present?
+      bills = xero_contact['PaymentTerms']['Bills']
+      updates[:bill_due_day] = bills['Day'] if bills['Day'].present?
+      updates[:bill_due_type] = bills['Type'] if bills['Type'].present?
+    end
+
     trapid_contact.update!(updates)
     @stats[:updated] += 1
     Rails.logger.info("Updated Trapid contact ##{trapid_contact.id}")
