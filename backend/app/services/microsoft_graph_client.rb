@@ -408,6 +408,23 @@ class MicrosoftGraphClient
     handle_response(response)
   end
 
+  # Get file content (binary data) from OneDrive
+  def get_file_content(file_id)
+    ensure_valid_token!
+
+    response = HTTParty.get(
+      "#{GRAPH_API_BASE}/me/drive/items/#{file_id}/content",
+      headers: auth_headers,
+      follow_redirects: true
+    )
+
+    unless response.success?
+      raise "Failed to fetch file content: #{response.code} - #{response.body}"
+    end
+
+    response.body
+  end
+
   private
 
   def ensure_valid_token!

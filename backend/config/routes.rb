@@ -101,6 +101,7 @@ Rails.application.routes.draw do
           post :set_default_supplier
           delete 'price_histories/:history_id', to: 'pricebook_items#delete_price_history'
           patch 'price_histories/:history_id', to: 'pricebook_items#update_price_history'
+          get 'proxy_image/:file_type', to: 'pricebook_items#proxy_image', as: :proxy_image
         end
         collection do
           patch :bulk_update
