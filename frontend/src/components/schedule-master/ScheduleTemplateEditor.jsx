@@ -430,9 +430,17 @@ function ScheduleTemplateRow({
   // Immediate update for checkboxes and selects
   const handleFieldChange = (field, value) => {
     // Handle interdependent fields
-    if (field === 'po_required' && !value) {
-      // If po_required is unchecked, also uncheck create_po_on_job_start
-      onUpdate({ po_required: false, create_po_on_job_start: false })
+    if (field === 'po_required') {
+      if (!value) {
+        // If po_required is unchecked, also uncheck create_po_on_job_start
+        onUpdate({ po_required: false, create_po_on_job_start: false })
+      } else if (!row.supplier_id) {
+        // If checking po_required but no supplier, show error and don't update
+        alert('Please select a supplier first before requiring a PO')
+        return
+      } else {
+        onUpdate({ [field]: value })
+      }
     } else {
       onUpdate({ [field]: value })
     }
