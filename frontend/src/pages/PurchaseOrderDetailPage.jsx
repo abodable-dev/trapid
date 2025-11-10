@@ -192,15 +192,13 @@ export default function PurchaseOrderDetailPage() {
               >
                 View Job
               </button>
-              {purchaseOrder.can_edit && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/purchase-orders/${id}/edit`)}
-                  className="hidden text-sm/6 font-semibold text-gray-900 sm:block dark:text-white"
-                >
-                  Edit
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => navigate(`/purchase-orders/${id}/edit`)}
+                className="hidden text-sm/6 font-semibold text-gray-900 sm:block dark:text-white"
+              >
+                Edit
+              </button>
               {purchaseOrder.status === 'draft' && (
                 <button
                   onClick={handleApprove}
@@ -245,17 +243,15 @@ export default function PurchaseOrderDetailPage() {
                       View Job
                     </button>
                   </MenuItem>
-                  {purchaseOrder.can_edit && (
-                    <MenuItem>
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/purchase-orders/${id}/edit`)}
-                        className="block w-full px-3 py-1 text-left text-sm/6 text-gray-900 data-[focus]:bg-gray-50 data-[focus]:outline-none dark:text-white dark:data-[focus]:bg-white/5"
-                      >
-                        Edit
-                      </button>
-                    </MenuItem>
-                  )}
+                  <MenuItem>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/purchase-orders/${id}/edit`)}
+                      className="block w-full px-3 py-1 text-left text-sm/6 text-gray-900 data-[focus]:bg-gray-50 data-[focus]:outline-none dark:text-white dark:data-[focus]:bg-white/5"
+                    >
+                      Edit
+                    </button>
+                  </MenuItem>
                 </MenuItems>
               </Menu>
             </div>

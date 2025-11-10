@@ -56,7 +56,7 @@ module Api
 
         # Pagination
         page = params[:page]&.to_i || 1
-        limit = params[:limit]&.to_i || 100
+        limit = (params[:limit] || params[:per_page])&.to_i || 100
         offset = (page - 1) * limit
 
         total_count = @items.is_a?(Array) ? @items.count : @items.count

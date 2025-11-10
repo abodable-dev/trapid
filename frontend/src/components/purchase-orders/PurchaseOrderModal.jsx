@@ -49,9 +49,12 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
     try {
       setLoadingTasks(true)
       const response = await api.get(`/api/v1/constructions/${constructionId}/schedule_tasks`)
-      // Only show unmatched tasks (not already assigned to a PO)
-      const unmatched = (response.schedule_tasks || []).filter(task => !task.purchase_order_id)
-      setScheduleTasks(unmatched)
+      // Show unmatched tasks OR the task currently assigned to this PO (if editing)
+      const currentPoTaskId = purchaseOrder?.schedule_task_id
+      const filtered = (response.schedule_tasks || []).filter(task =>
+        !task.purchase_order_id || task.id === currentPoTaskId
+      )
+      setScheduleTasks(filtered)
     } catch (err) {
       console.error('Failed to load schedule tasks:', err)
     } finally {
@@ -95,8 +98,8 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
   ) || []
 
   const filteredScheduleTasks = scheduleTasks?.filter(task =>
-    task.task_name?.toLowerCase().includes(scheduleTaskSearch.toLowerCase()) ||
-    task.description?.toLowerCase().includes(scheduleTaskSearch.toLowerCase())
+    task.title?.toLowerCase().includes(scheduleTaskSearch.toLowerCase()) ||
+    task.supplier_category?.toLowerCase().includes(scheduleTaskSearch.toLowerCase())
   ) || []
 
   const selectedSupplier = suppliers?.find(s => s.id === formData.supplier_id)
@@ -246,7 +249,7 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white text-left flex items-center justify-between disabled:opacity-50"
                     >
                       <span className={selectedScheduleTask ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}>
-                        {loadingTasks ? 'Loading tasks...' : selectedScheduleTask ? selectedScheduleTask.task_name : 'Search for schedule task...'}
+                        {loadingTasks ? 'Loading tasks...' : selectedScheduleTask ? selectedScheduleTask.title : 'Search for schedule task...'}
                       </span>
                       <ChevronUpDownIcon className="h-5 w-5 text-gray-400" />
                     </button>
@@ -276,9 +279,9 @@ export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOr
                                 className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between group"
                               >
                                 <div className="flex-1">
-                                  <div className="text-gray-900 dark:text-white font-medium">{task.task_name}</div>
-                                  {task.description && (
-                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{task.description}</div>
+                                  <div className="text-gray-900 dark:text-white font-medium">{task.title}</div>
+                                  {task.supplier_category && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{task.supplier_category}</div>
                                   )}
                                 </div>
                                 {formData.schedule_task_id === task.id && (

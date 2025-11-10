@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { PlusIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import ScheduleImporter from './ScheduleImporter'
 import ScheduleStats from './ScheduleStats'
@@ -7,6 +7,7 @@ import ScheduleTaskList from './ScheduleTaskList'
 import ScheduleGanttChart from './ScheduleGanttChart'
 import TaskMatchModal from './TaskMatchModal'
 import AddScheduleTaskModal from './AddScheduleTaskModal'
+import CopyFromTemplateModal from './CopyFromTemplateModal'
 import Toast from '../Toast'
 
 export default function ScheduleMasterTab({ constructionId }) {
@@ -17,6 +18,7 @@ export default function ScheduleMasterTab({ constructionId }) {
   const [loading, setLoading] = useState(false)
   const [showMatchModal, setShowMatchModal] = useState(false)
   const [showAddTaskModal, setShowAddTaskModal] = useState(false)
+  const [showCopyFromTemplateModal, setShowCopyFromTemplateModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [toast, setToast] = useState(null)
   const [ganttData, setGanttData] = useState(null)
@@ -110,6 +112,20 @@ export default function ScheduleMasterTab({ constructionId }) {
     }
   }
 
+  const handleCopyFromTemplate = async (templateId) => {
+    try {
+      await api.post(`/api/v1/constructions/${constructionId}/schedule_tasks/copy_from_template`, {
+        template_id: templateId
+      })
+      showToast('Task created from template successfully!', 'success')
+      await loadScheduleTasks()
+      setShowCopyFromTemplateModal(false)
+    } catch (err) {
+      console.error('Failed to copy from template:', err)
+      throw err
+    }
+  }
+
   const showToast = (message, type = 'info') => {
     setToast({ message, type })
     setTimeout(() => setToast(null), 4000)
@@ -126,17 +142,34 @@ export default function ScheduleMasterTab({ constructionId }) {
               Import tasks from a spreadsheet or add them manually
             </p>
           </div>
-          <button
-            onClick={() => setShowAddTaskModal(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-          >
-            <PlusIcon className="h-5 w-5 mr-2" />
-            Add Task
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowCopyFromTemplateModal(true)}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <DocumentDuplicateIcon className="h-5 w-5 mr-2" />
+              Copy from Template
+            </button>
+            <button
+              onClick={() => setShowAddTaskModal(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Add Task
+            </button>
+          </div>
         </div>
         <ScheduleImporter
           constructionId={constructionId}
           onImportSuccess={handleImportSuccess}
+        />
+
+        {/* Copy from Template Modal */}
+        <CopyFromTemplateModal
+          isOpen={showCopyFromTemplateModal}
+          onClose={() => setShowCopyFromTemplateModal(false)}
+          onCopy={handleCopyFromTemplate}
+          constructionId={constructionId}
         />
 
         {/* Add Task Modal */}
@@ -163,6 +196,13 @@ export default function ScheduleMasterTab({ constructionId }) {
 
       {/* Action Buttons */}
       <div className="flex justify-end gap-3">
+        <button
+          onClick={() => setShowCopyFromTemplateModal(true)}
+          className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          <DocumentDuplicateIcon className="h-5 w-5 mr-2" />
+          Copy from Template
+        </button>
         <button
           onClick={() => setShowAddTaskModal(true)}
           className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
@@ -210,6 +250,14 @@ export default function ScheduleMasterTab({ constructionId }) {
           constructionId={constructionId}
         />
       )}
+
+      {/* Copy from Template Modal */}
+      <CopyFromTemplateModal
+        isOpen={showCopyFromTemplateModal}
+        onClose={() => setShowCopyFromTemplateModal(false)}
+        onCopy={handleCopyFromTemplate}
+        constructionId={constructionId}
+      />
 
       {/* Add Task Modal */}
       <AddScheduleTaskModal

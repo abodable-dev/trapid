@@ -6,6 +6,7 @@ import AccountsLayout from '../components/layout/AccountsLayout'
 import XeroConnection from '../components/settings/XeroConnection'
 import OneDriveConnection from '../components/settings/OneDriveConnection'
 import FolderTemplatesTab from '../components/settings/FolderTemplatesTab'
+import ScheduleMasterTemplatesTab from '../components/settings/ScheduleMasterTemplatesTab'
 import TablesTab from '../components/settings/TablesTab'
 import SchemaPage from './SchemaPage'
 
@@ -14,7 +15,7 @@ export default function SettingsPage() {
   const location = useLocation()
 
   // Map tab names to indices
-  const tabs = ['integrations', 'folder-templates', 'tables', 'schema', 'deployment']
+  const tabs = ['integrations', 'folder-templates', 'schedule-master', 'tables', 'schema', 'deployment']
 
   // Get initial tab index from URL query parameter
   const getInitialTabIndex = () => {
@@ -80,6 +81,18 @@ export default function SettingsPage() {
                 }`
               }
             >
+              Schedule Master
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
               Tables
             </Tab>
             <Tab
@@ -132,6 +145,11 @@ export default function SettingsPage() {
             <div className="px-4 sm:px-6 lg:px-8 py-10">
               <FolderTemplatesTab />
             </div>
+          </TabPanel>
+
+          {/* Schedule Master Templates Tab */}
+          <TabPanel>
+            <ScheduleMasterTemplatesTab />
           </TabPanel>
 
           {/* Tables Tab */}

@@ -81,6 +81,7 @@ module Api
                 only: [:id, :title],
                 methods: [:site_supervisor_info]
               },
+              schedule_tasks: { only: [:id, :title, :supplier_category] },
               line_items: {
                 include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price, :unit_of_measure] } },
                 methods: [:price_drift, :price_outdated?, :price_status, :price_status_label]

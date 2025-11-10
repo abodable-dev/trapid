@@ -12,9 +12,10 @@ export default function PurchaseOrderEditPage() {
   const [error, setError] = useState(null)
   const [purchaseOrder, setPurchaseOrder] = useState(null)
   const [lineItems, setLineItems] = useState([])
-  const [searchingItems, setSearchingItems] = useState({})
   const [itemSearchResults, setItemSearchResults] = useState({})
   const [showSearchDropdown, setShowSearchDropdown] = useState({})
+  const [showDescriptionDropdown, setShowDescriptionDropdown] = useState({})
+  const [allSupplierItems, setAllSupplierItems] = useState([])
   const searchRefs = useRef({})
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function PurchaseOrderEditPage() {
         const ref = searchRefs.current[index]
         if (ref && !ref.contains(event.target)) {
           setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
+          setShowDescriptionDropdown(prev => ({ ...prev, [index]: false }))
         }
       })
     }
@@ -41,6 +43,11 @@ export default function PurchaseOrderEditPage() {
       setLoading(true)
       const response = await api.get(`/api/v1/purchase_orders/${id}`)
       setPurchaseOrder(response)
+
+      // Load all items for this supplier
+      if (response.supplier_id) {
+        loadAllSupplierItems(response.supplier_id)
+      }
 
       // Initialize line items - if none exist, add one empty row
       if (response.line_items && response.line_items.length > 0) {
@@ -64,25 +71,33 @@ export default function PurchaseOrderEditPage() {
     }
   }
 
-  const searchPricebookItems = async (searchTerm, index) => {
-    if (!searchTerm || !purchaseOrder?.supplier_id) return
-
+  const loadAllSupplierItems = async (supplierId) => {
     try {
-      setSearchingItems(prev => ({ ...prev, [index]: true }))
       const response = await api.get('/api/v1/pricebook', {
         params: {
-          search: searchTerm,
-          supplier_id: purchaseOrder.supplier_id,
-          per_page: 10
+          supplier_id: supplierId,
+          per_page: 1000 // Get all items for this supplier
         }
       })
-      setItemSearchResults(prev => ({ ...prev, [index]: response.pricebook_items || [] }))
-      setShowSearchDropdown(prev => ({ ...prev, [index]: true }))
+      setAllSupplierItems(response.pricebook_items || [])
     } catch (err) {
-      console.error('Failed to search items:', err)
-    } finally {
-      setSearchingItems(prev => ({ ...prev, [index]: false }))
+      console.error('Failed to load supplier items:', err)
     }
+  }
+
+  const searchPricebookItems = (searchTerm, index) => {
+    if (!searchTerm) {
+      setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
+      return
+    }
+
+    // Filter the already-loaded supplier items client-side
+    const searchLower = searchTerm.toLowerCase()
+    const filtered = allSupplierItems.filter(item =>
+      item.item_code?.toLowerCase().includes(searchLower) ||
+      item.item_name?.toLowerCase().includes(searchLower)
+    )
+    setItemSearchResults(prev => ({ ...prev, [index]: filtered }))
   }
 
   const handleItemCodeChange = (index, value) => {
@@ -93,8 +108,23 @@ export default function PurchaseOrderEditPage() {
     // Search as user types
     if (value.length >= 2) {
       searchPricebookItems(value, index)
+    } else if (value.length === 0) {
+      // Show all supplier items when field is empty
+      setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
+      setShowSearchDropdown(prev => ({ ...prev, [index]: true }))
     } else {
       setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
+    }
+  }
+
+  const handleItemCodeFocus = (index) => {
+    // Close description dropdown
+    setShowDescriptionDropdown(prev => ({ ...prev, [index]: false }))
+
+    // Show all supplier items when focusing on empty field
+    if (!lineItems[index].item_code || lineItems[index].item_code.length === 0) {
+      setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
+      setShowSearchDropdown(prev => ({ ...prev, [index]: true }))
     }
   }
 
@@ -108,7 +138,41 @@ export default function PurchaseOrderEditPage() {
       unit_price: item.current_price || 0
     }
     setLineItems(newLineItems)
+    // Close both dropdowns
     setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
+    setShowDescriptionDropdown(prev => ({ ...prev, [index]: false }))
+  }
+
+  const handleDescriptionChange = (index, value) => {
+    const newLineItems = [...lineItems]
+    newLineItems[index].description = value
+    setLineItems(newLineItems)
+
+    // Close item code dropdown when typing in description
+    setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
+
+    // Search as user types in description
+    if (value.length >= 2) {
+      searchPricebookItems(value, index)
+      setShowDescriptionDropdown(prev => ({ ...prev, [index]: true }))
+    } else if (value.length === 0) {
+      // Show all supplier items when field is empty
+      setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
+      setShowDescriptionDropdown(prev => ({ ...prev, [index]: true }))
+    } else {
+      setShowDescriptionDropdown(prev => ({ ...prev, [index]: false }))
+    }
+  }
+
+  const handleDescriptionFocus = (index) => {
+    // Close item code dropdown
+    setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
+
+    // Show all supplier items when focusing on empty field
+    if (!lineItems[index].description || lineItems[index].description.length === 0) {
+      setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
+      setShowDescriptionDropdown(prev => ({ ...prev, [index]: true }))
+    }
   }
 
   const handleLineItemChange = (index, field, value) => {
@@ -222,6 +286,16 @@ export default function PurchaseOrderEditPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Supplier: {purchaseOrder?.supplier?.name || 'No supplier selected'}
               </p>
+              {purchaseOrder?.schedule_tasks && purchaseOrder.schedule_tasks.length > 0 && (
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Schedule Task: <Link
+                    to={`/jobs/${purchaseOrder.construction_id}?tab=Schedule+Master`}
+                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 hover:underline"
+                  >
+                    {purchaseOrder.schedule_tasks[0].title}
+                  </Link>
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -238,15 +312,15 @@ export default function PurchaseOrderEditPage() {
           )}
 
           {/* Line Items Table */}
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-visible">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Line Items</h2>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Type an item code to search the price book for this supplier
+                Click on item code field to see all items, or type to search
               </p>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overflow-y-visible">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
@@ -272,42 +346,74 @@ export default function PurchaseOrderEditPage() {
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {lineItems.filter(item => !item._destroy).map((item, index) => (
-                    <tr key={index}>
+                    <tr key={index} ref={el => searchRefs.current[index] = el}>
                       <td className="px-6 py-4">
-                        <div ref={el => searchRefs.current[index] = el} className="relative">
+                        <div className="relative">
                           <input
                             type="text"
                             value={item.item_code}
                             onChange={(e) => handleItemCodeChange(index, e.target.value)}
+                            onFocus={() => handleItemCodeFocus(index)}
                             placeholder="Type code..."
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           />
-                          {showSearchDropdown[index] && itemSearchResults[index]?.length > 0 && (
-                            <div className="absolute z-10 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                              {itemSearchResults[index].map((searchItem) => (
-                                <button
-                                  key={searchItem.id}
-                                  type="button"
-                                  onClick={() => handleSelectItem(index, searchItem)}
-                                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                                >
-                                  <div className="font-medium text-gray-900 dark:text-white">{searchItem.item_code}</div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{searchItem.item_name}</div>
-                                  <div className="text-xs text-gray-600 dark:text-gray-300">{formatCurrency(searchItem.current_price)}</div>
-                                </button>
-                              ))}
+                          {showSearchDropdown[index] && (
+                            <div className="absolute z-50 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                              {(itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).length > 0 ? (
+                                (itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).map((searchItem) => (
+                                  <button
+                                    key={searchItem.id}
+                                    type="button"
+                                    onClick={() => handleSelectItem(index, searchItem)}
+                                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                                  >
+                                    <div className="font-medium text-gray-900 dark:text-white">{searchItem.item_code}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{searchItem.item_name}</div>
+                                    <div className="text-xs text-gray-600 dark:text-gray-300">{formatCurrency(searchItem.current_price)}</div>
+                                  </button>
+                                ))
+                              ) : (
+                                <div className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+                                  {allSupplierItems.length === 0 ? 'Loading items...' : 'No items found'}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <input
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => handleLineItemChange(index, 'description', e.target.value)}
-                          placeholder="Description..."
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => handleDescriptionChange(index, e.target.value)}
+                            onFocus={() => handleDescriptionFocus(index)}
+                            placeholder="Description..."
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                          {showDescriptionDropdown[index] && (
+                            <div className="absolute z-50 mt-1 w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                              {(itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).length > 0 ? (
+                                (itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).map((searchItem) => (
+                                  <button
+                                    key={searchItem.id}
+                                    type="button"
+                                    onClick={() => handleSelectItem(index, searchItem)}
+                                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                                  >
+                                    <div className="font-medium text-gray-900 dark:text-white">{searchItem.item_code}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{searchItem.item_name}</div>
+                                    <div className="text-xs text-gray-600 dark:text-gray-300">{formatCurrency(searchItem.current_price)}</div>
+                                  </button>
+                                ))
+                              ) : (
+                                <div className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+                                  {allSupplierItems.length === 0 ? 'Loading items...' : 'No items found'}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <input
