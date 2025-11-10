@@ -14,17 +14,11 @@ export default function XeroConnection() {
   const [disconnecting, setDisconnecting] = useState(false)
   const [connecting, setConnecting] = useState(false)
   const [message, setMessage] = useState(null)
-  const [syncStatus, setSyncStatus] = useState(null)
-  const [syncing, setSyncing] = useState(false)
-  const [showFieldMapping, setShowFieldMapping] = useState(false)
 
-  // Fetch connection status and sync status on mount
+  // Fetch connection status on mount
   useEffect(() => {
     fetchStatus()
-    if (status.connected) {
-      fetchSyncStatus()
-    }
-  }, [status.connected])
+  }, [])
 
   const fetchStatus = async () => {
     try {
