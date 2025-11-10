@@ -50,7 +50,7 @@ export default function ContactDetailPage() {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showSupplierDropdown && !event.target.closest('#source-contact')) {
+      if (showSupplierDropdown && !event.target.closest('.supplier-search-container')) {
         setShowSupplierDropdown(false)
       }
     }
@@ -580,7 +580,7 @@ export default function ContactDetailPage() {
               </p>
 
               <div className="space-y-4">
-                <div className="relative">
+                <div className="relative supplier-search-container">
                   <label htmlFor="source-contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Select Supplier to Copy From
                   </label>
