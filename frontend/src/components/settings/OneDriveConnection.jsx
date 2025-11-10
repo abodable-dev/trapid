@@ -21,6 +21,9 @@ export default function OneDriveConnection() {
   const [syncingImages, setSyncingImages] = useState(false)
   const [syncResult, setSyncResult] = useState(null)
   const [folderPath, setFolderPath] = useState('Pricebook Images')
+  const [editingRootFolder, setEditingRootFolder] = useState(false)
+  const [newRootFolderName, setNewRootFolderName] = useState('')
+  const [changingRootFolder, setChangingRootFolder] = useState(false)
 
   // Fetch connection status on mount and handle OAuth callback
   useEffect(() => {
@@ -153,6 +156,45 @@ export default function OneDriveConnection() {
     }
   }
 
+  const handleChangeRootFolder = async () => {
+    if (!newRootFolderName || newRootFolderName.trim() === '') {
+      setMessage({
+        type: 'error',
+        text: 'Please enter a folder name',
+      })
+      return
+    }
+
+    try {
+      setChangingRootFolder(true)
+      const response = await api.patch('/api/v1/organization_onedrive/change_root_folder', {
+        folder_name: newRootFolderName.trim()
+      })
+
+      // Update status with new folder info
+      setStatus(prev => ({
+        ...prev,
+        rootFolderPath: response.root_folder_path,
+        rootFolderWebUrl: response.root_folder_web_url
+      }))
+
+      setMessage({
+        type: 'success',
+        text: response.message || 'Root folder updated successfully',
+      })
+
+      setEditingRootFolder(false)
+      setNewRootFolderName('')
+    } catch (err) {
+      setMessage({
+        type: 'error',
+        text: err.message || 'Failed to change root folder',
+      })
+    } finally {
+      setChangingRootFolder(false)
+    }
+  }
+
   if (status.loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -236,21 +278,62 @@ export default function OneDriveConnection() {
                   {status.rootFolderPath && (
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Root Folder</p>
-                      <div className="mt-1 flex items-center gap-x-2">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {status.rootFolderPath}
-                        </p>
-                        {status.rootFolderWebUrl && (
-                          <a
-                            href={status.rootFolderWebUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10 hover:bg-indigo-100 dark:bg-indigo-400/10 dark:text-indigo-400 dark:ring-indigo-400/30 dark:hover:bg-indigo-400/20"
+                      {editingRootFolder ? (
+                        <div className="mt-1 flex items-center gap-x-2">
+                          <input
+                            type="text"
+                            value={newRootFolderName}
+                            onChange={(e) => setNewRootFolderName(e.target.value)}
+                            placeholder={status.rootFolderPath}
+                            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleChangeRootFolder}
+                            disabled={changingRootFolder}
+                            className="inline-flex items-center rounded-md bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
                           >
-                            View in OneDrive
-                          </a>
-                        )}
-                      </div>
+                            {changingRootFolder ? 'Saving...' : 'Save'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingRootFolder(false)
+                              setNewRootFolderName('')
+                            }}
+                            disabled={changingRootFolder}
+                            className="inline-flex items-center rounded-md bg-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="mt-1 flex items-center gap-x-2">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {status.rootFolderPath}
+                          </p>
+                          {status.rootFolderWebUrl && (
+                            <a
+                              href={status.rootFolderWebUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10 hover:bg-indigo-100 dark:bg-indigo-400/10 dark:text-indigo-400 dark:ring-indigo-400/30 dark:hover:bg-indigo-400/20"
+                            >
+                              View in OneDrive
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingRootFolder(true)
+                              setNewRootFolderName(status.rootFolderPath)
+                            }}
+                            className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-500/10 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:ring-gray-400/20 dark:hover:bg-gray-600"
+                          >
+                            Change
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 
