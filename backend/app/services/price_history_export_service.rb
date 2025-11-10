@@ -39,7 +39,7 @@ class PriceHistoryExportService
   private
 
   def fetch_items
-    items = PricebookItem.includes(:supplier, :default_supplier, price_histories: :supplier).active
+    items = PricebookItem.includes(:default_supplier, price_histories: :supplier).active
 
     # If specific item IDs are provided, filter by them (takes priority)
     if @item_ids.present?
@@ -75,8 +75,8 @@ class PriceHistoryExportService
 
       # Add data rows - one row per item with current price only
       items.each do |item|
-        # Use default_supplier if available, otherwise fall back to supplier
-        supplier_name = item.default_supplier&.name || item.supplier&.name
+        # Use default_supplier (Contact with supplier type)
+        supplier_name = item.default_supplier&.full_name
 
         sheet.add_row([
           item.id,
@@ -104,8 +104,9 @@ class PriceHistoryExportService
       parts << "selected_#{@item_ids.length}_items"
     else
       if @supplier_id.present?
-        supplier = Supplier.find_by(id: @supplier_id)
-        parts << sanitize_filename(supplier.name) if supplier
+        # Find Contact with supplier type
+        supplier = Contact.find_by(id: @supplier_id)
+        parts << sanitize_filename(supplier.full_name) if supplier
       end
 
       if @category.present?
