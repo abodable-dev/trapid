@@ -1,7 +1,7 @@
 module Api
   module V1
     class EstimatesController < ApplicationController
-      before_action :set_estimate, only: [:show, :match, :destroy, :generate_purchase_orders]
+      before_action :set_estimate, only: [ :show, :match, :destroy, :generate_purchase_orders ]
 
       def index
         estimates = Estimate.includes(:construction, :estimate_line_items)

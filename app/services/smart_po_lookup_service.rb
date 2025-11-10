@@ -52,14 +52,14 @@ class SmartPoLookupService
       result[:metadata][:risk_level] = price_book_item.risk_level
 
       # Add warnings for stale prices
-      if price_book_item.price_freshness_status == 'outdated'
+      if price_book_item.price_freshness_status == "outdated"
         result[:warnings] << "Price is #{price_book_item.price_age_in_days} days old (outdated)"
-      elsif price_book_item.price_freshness_status == 'needs_confirmation'
+      elsif price_book_item.price_freshness_status == "needs_confirmation"
         result[:warnings] << "Price is #{price_book_item.price_age_in_days} days old (needs confirmation)"
       end
 
       # Check price volatility
-      if price_book_item.price_volatility == 'volatile'
+      if price_book_item.price_volatility == "volatile"
         result[:warnings] << "This item has volatile pricing history"
       end
     else

@@ -21,13 +21,13 @@ class Contact < ApplicationRecord
   before_save :set_primary_contact_type_if_blank
 
   # Scopes
-  scope :with_email, -> { where.not(email: [nil, '']) }
-  scope :with_phone, -> { where.not(mobile_phone: [nil, '']).or(where.not(office_phone: [nil, ''])) }
+  scope :with_email, -> { where.not(email: [ nil, "" ]) }
+  scope :with_phone, -> { where.not(mobile_phone: [ nil, "" ]).or(where.not(office_phone: [ nil, "" ])) }
   scope :with_type, ->(type) { where("? = ANY(contact_types)", type) }
-  scope :customers, -> { with_type('customer') }
-  scope :suppliers, -> { with_type('supplier') }
-  scope :sales, -> { with_type('sales') }
-  scope :land_agents, -> { with_type('land_agent') }
+  scope :customers, -> { with_type("customer") }
+  scope :suppliers, -> { with_type("supplier") }
+  scope :sales, -> { with_type("sales") }
+  scope :land_agents, -> { with_type("land_agent") }
 
   # Instance methods
   def display_name
@@ -43,19 +43,19 @@ class Contact < ApplicationRecord
   end
 
   def is_customer?
-    contact_types&.include?('customer')
+    contact_types&.include?("customer")
   end
 
   def is_supplier?
-    contact_types&.include?('supplier')
+    contact_types&.include?("supplier")
   end
 
   def is_sales?
-    contact_types&.include?('sales')
+    contact_types&.include?("sales")
   end
 
   def is_land_agent?
-    contact_types&.include?('land_agent')
+    contact_types&.include?("land_agent")
   end
 
   # Supplier-specific helper methods

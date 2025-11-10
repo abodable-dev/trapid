@@ -1,7 +1,7 @@
 module Api
   module V1
     class TablesController < ApplicationController
-      before_action :set_table, only: [:show, :update, :destroy]
+      before_action :set_table, only: [ :show, :update, :destroy ]
 
       # GET /api/v1/tables
       def index
@@ -79,7 +79,7 @@ module Api
         if @table.is_live
           return render json: {
             success: false,
-            errors: ['Cannot delete a live table. Set it to draft first.']
+            errors: [ "Cannot delete a live table. Set it to draft first." ]
           }, status: :unprocessable_entity
         end
 
@@ -89,7 +89,7 @@ module Api
           if record_count > 0
             return render json: {
               success: false,
-              errors: ["Cannot delete a table that contains #{record_count} record(s). Delete all records first."]
+              errors: [ "Cannot delete a table that contains #{record_count} record(s). Delete all records first." ]
             }, status: :unprocessable_entity
           end
         rescue => e
@@ -99,10 +99,10 @@ module Api
         # Check if other tables have lookup columns referencing this table
         referencing_columns = Column.where(lookup_table_id: @table.id).includes(:table)
         if referencing_columns.any?
-          table_names = referencing_columns.map { |col| col.table.name }.uniq.join(', ')
+          table_names = referencing_columns.map { |col| col.table.name }.uniq.join(", ")
           return render json: {
             success: false,
-            errors: ["Cannot delete this table because it is referenced by lookup columns in: #{table_names}. Remove those lookup columns first."]
+            errors: [ "Cannot delete this table because it is referenced by lookup columns in: #{table_names}. Remove those lookup columns first." ]
           }, status: :unprocessable_entity
         end
 
@@ -114,7 +114,7 @@ module Api
             drop_result = builder.drop_database_table
 
             unless drop_result[:success]
-              raise ActiveRecord::Rollback, drop_result[:errors].join(', ')
+              raise ActiveRecord::Rollback, drop_result[:errors].join(", ")
             end
 
             # Delete the table record (this will also cascade delete columns via dependent: :destroy)
@@ -125,13 +125,13 @@ module Api
         rescue ActiveRecord::Rollback => e
           render json: {
             success: false,
-            errors: [e.message]
+            errors: [ e.message ]
           }, status: :unprocessable_entity
         rescue => e
           Rails.logger.error "Error deleting table: #{e.message}"
           render json: {
             success: false,
-            errors: ["Failed to delete table: #{e.message}"]
+            errors: [ "Failed to delete table: #{e.message}" ]
           }, status: :internal_server_error
         end
       end
@@ -146,7 +146,7 @@ module Api
           Table.includes(:columns).find_by!(slug: params[:id])
         end
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Table not found' }, status: :not_found
+        render json: { error: "Table not found" }, status: :not_found
       end
 
       def table_params

@@ -65,7 +65,7 @@ class PriceHistoryImportService
     end
 
     extension = File.extname(@file_path).downcase
-    unless ['.csv', '.xlsx', '.xls'].include?(extension)
+    unless [ '.csv', '.xlsx', '.xls' ].include?(extension)
       @errors << "Invalid file format. Please upload CSV or Excel files only."
       return false
     end

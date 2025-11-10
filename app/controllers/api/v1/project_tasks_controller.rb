@@ -2,7 +2,7 @@ module Api
   module V1
     class ProjectTasksController < ApplicationController
       before_action :set_project
-      before_action :set_task, only: [:show, :update, :destroy]
+      before_action :set_task, only: [ :show, :update, :destroy ]
 
       # GET /api/v1/projects/:project_id/tasks
       def index
@@ -14,10 +14,10 @@ module Api
           tasks: tasks.as_json(
             include: {
               purchase_order: {
-                only: [:id, :purchase_order_number, :required_on_site_date, :expected_delivery_date, :status]
+                only: [ :id, :purchase_order_number, :required_on_site_date, :expected_delivery_date, :status ]
               }
             },
-            methods: [:materials_status]
+            methods: [ :materials_status ]
           )
         }
       end
@@ -73,13 +73,13 @@ module Api
       def set_project
         @project = Project.find(params[:project_id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Project not found' }, status: :not_found
+        render json: { error: "Project not found" }, status: :not_found
       end
 
       def set_task
         @task = @project.project_tasks.find(params[:id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Task not found' }, status: :not_found
+        render json: { error: "Task not found" }, status: :not_found
       end
 
       def task_params

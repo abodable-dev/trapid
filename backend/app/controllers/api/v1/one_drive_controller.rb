@@ -1,7 +1,7 @@
 module Api
   module V1
     class OneDriveController < ApplicationController
-      before_action :set_construction, only: [:authorize, :callback, :status, :disconnect]
+      before_action :set_construction, only: [ :authorize, :callback, :status, :disconnect ]
 
       # GET /api/v1/onedrive/authorize?construction_id=123
       # Redirects user to Microsoft OAuth consent page

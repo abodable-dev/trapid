@@ -1,7 +1,7 @@
 module Api
   module V1
     class ContactsController < ApplicationController
-      before_action :set_contact, only: [:show, :update, :destroy, :activities, :link_xero_contact]
+      before_action :set_contact, only: [ :show, :update, :destroy, :activities, :link_xero_contact ]
 
       # GET /api/v1/contacts
       def index
@@ -19,11 +19,11 @@ module Api
         # Filter by contact type
         if params[:type].present?
           case params[:type]
-          when 'customers'
+          when "customers"
             @contacts = @contacts.customers
-          when 'suppliers'
+          when "suppliers"
             @contacts = @contacts.suppliers
-          when 'both'
+          when "both"
             # Filter for contacts that have both 'customer' and 'supplier' in contact_types array
             @contacts = @contacts.where("contact_types @> ARRAY['customer', 'supplier']::text[]")
           end
@@ -32,9 +32,9 @@ module Api
         # Filter by Xero sync status
         if params[:xero_sync].present?
           case params[:xero_sync]
-          when 'synced'
+          when "synced"
             @contacts = @contacts.where.not(xero_id: nil)
-          when 'not_synced'
+          when "not_synced"
             @contacts = @contacts.where(xero_id: nil)
           end
         end
@@ -48,8 +48,8 @@ module Api
         render json: {
           success: true,
           contacts: @contacts.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas, :xero_id, :sync_with_xero, :last_synced_at],
-            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
+            only: [ :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas, :xero_id, :sync_with_xero, :last_synced_at ],
+            methods: [ :is_customer?, :is_supplier?, :is_sales?, :is_land_agent? ]
           )
         }
       end
@@ -65,7 +65,7 @@ module Api
             :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
             :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas
           ],
-          methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
+          methods: [ :is_customer?, :is_supplier?, :is_sales?, :is_land_agent? ]
         )
 
         # If contact is a supplier, add pricebook items and purchase orders
@@ -88,10 +88,10 @@ module Api
             price_histories = item.price_histories
               .where(supplier_id: @contact.id)
               .order(date_effective: :desc, created_at: :desc)
-              .as_json(only: [:id, :old_price, :new_price, :date_effective, :lga, :change_reason, :user_name, :created_at])
+              .as_json(only: [ :id, :old_price, :new_price, :date_effective, :lga, :change_reason, :user_name, :created_at ])
 
             item.as_json(
-              only: [:id, :item_code, :item_name, :category, :current_price, :unit, :price_last_updated_at]
+              only: [ :id, :item_code, :item_name, :category, :current_price, :unit, :price_last_updated_at ]
             ).merge(
               is_default_supplier: item.default_supplier_id == @contact.id,
               price_histories: price_histories
@@ -122,8 +122,8 @@ module Api
           render json: {
             success: true,
             contact: @contact.as_json(
-              only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas],
-              methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
+              only: [ :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas ],
+              methods: [ :is_customer?, :is_supplier?, :is_sales?, :is_land_agent? ]
             )
           }
         else
@@ -143,7 +143,7 @@ module Api
             # Check if any POs have been paid or invoiced
             paid_pos = PurchaseOrder.where(supplier_id: suppliers_with_pos.pluck(:id))
                                    .where("status IN (?) OR amount_paid > 0 OR amount_invoiced > 0",
-                                          ['paid', 'invoiced', 'received'])
+                                          [ "paid", "invoiced", "received" ])
 
             if paid_pos.any?
               return render json: {
@@ -266,14 +266,14 @@ module Api
 
         # Import supplier history into contact
         contact.update(
-          contact_types: (contact.contact_types + ['supplier']).uniq,
+          contact_types: (contact.contact_types + [ "supplier" ]).uniq,
           rating: supplier.rating || contact.rating,
           response_rate: supplier.response_rate || contact.response_rate,
           avg_response_time: supplier.avg_response_time || contact.avg_response_time,
           is_active: supplier.is_active.nil? ? contact.is_active : supplier.is_active,
           supplier_code: supplier.supplier_code || contact.supplier_code,
           address: supplier.address || contact.address,
-          notes: [contact.notes, supplier.notes].compact.join("\n\n")
+          notes: [ contact.notes, supplier.notes ].compact.join("\n\n")
         )
 
         # Link the supplier to this contact
@@ -283,7 +283,7 @@ module Api
           success: true,
           message: "Successfully matched contact with supplier '#{supplier.name}'",
           contact: contact.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :contact_types, :rating, :notes]
+            only: [ :id, :full_name, :first_name, :last_name, :email, :contact_types, :rating, :notes ]
           ),
           imported_fields: {
             rating: supplier.rating,
@@ -344,7 +344,7 @@ module Api
             category: category,
             default_supplier_count: default_count,
             price_history_count: history_count,
-            total_count: [default_count, history_count].max
+            total_count: [ default_count, history_count ].max
           }
         end
 
@@ -375,7 +375,7 @@ module Api
         # - active: Most recent date_effective (current active price)
         # - latest: Most recently created price history
         # - oldest: Oldest price history (original price)
-        copy_mode = params[:copy_mode].presence || 'active'
+        copy_mode = params[:copy_mode].presence || "active"
 
         Rails.logger.info "===== COPY PRICE HISTORY DEBUG ====="
         Rails.logger.info "params[:effective_date] = #{params[:effective_date].inspect}"
@@ -407,17 +407,17 @@ module Api
           # Get all pricebook items that have price histories from the source supplier
           # Order depends on copy_mode parameter
           order_clause = case copy_mode
-          when 'latest'
-            'pricebook_item_id, created_at DESC'
-          when 'oldest'
-            'pricebook_item_id, created_at ASC'
+          when "latest"
+            "pricebook_item_id, created_at DESC"
+          when "oldest"
+            "pricebook_item_id, created_at ASC"
           else # 'active' (default)
-            'pricebook_item_id, date_effective DESC NULLS LAST, created_at DESC'
+            "pricebook_item_id, date_effective DESC NULLS LAST, created_at DESC"
           end
 
           source_price_histories = PriceHistory.where(supplier_id: source_id)
             .joins(:pricebook_item)
-            .select('DISTINCT ON (pricebook_item_id) price_histories.*')
+            .select("DISTINCT ON (pricebook_item_id) price_histories.*")
             .order(order_clause)
 
           # Filter by categories if provided
@@ -633,7 +633,7 @@ module Api
           success: true,
           message: "Successfully merged #{source_contacts.count} contact(s) into #{target_contact.full_name}",
           contact: target_contact.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types]
+            only: [ :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types ]
           )
         }
       rescue ActiveRecord::RecordNotFound => e
@@ -675,7 +675,7 @@ module Api
           updates.each do |update|
             item_id = update[:item_id]
             new_price = update[:new_price].to_f
-            change_reason = update[:change_reason].presence || 'bulk_update'
+            change_reason = update[:change_reason].presence || "bulk_update"
             date_effective = update[:date_effective].present? ? Date.parse(update[:date_effective].to_s) : Date.today
 
             # Validate item exists
@@ -693,7 +693,7 @@ module Api
 
             # Get current user from session (if available)
             current_user = nil # TODO: Implement user authentication
-            user_name = current_user&.name || 'System'
+            user_name = current_user&.name || "System"
 
             # Create price history entry
             begin
@@ -822,10 +822,10 @@ module Api
         render json: {
           success: true,
           activities: activities.as_json(
-            only: [:id, :activity_type, :description, :metadata, :occurred_at, :created_at],
+            only: [ :id, :activity_type, :description, :metadata, :occurred_at, :created_at ],
             include: {
               performed_by: {
-                only: [:id, :type]
+                only: [ :id, :type ]
               }
             }
           )
@@ -856,7 +856,7 @@ module Api
             }, status: :unprocessable_entity
           end
 
-          xero_contact = result[:data]['Contacts']&.first
+          xero_contact = result[:data]["Contacts"]&.first
 
           unless xero_contact
             return render json: {
@@ -867,7 +867,7 @@ module Api
 
           # Update the contact with the Xero ID and sync timestamp
           @contact.update!(
-            xero_id: xero_contact['ContactID'],
+            xero_id: xero_contact["ContactID"],
             last_synced_at: Time.current,
             xero_sync_error: nil,
             sync_with_xero: true
@@ -876,12 +876,12 @@ module Api
           # Log the manual link activity
           ContactActivity.create!(
             contact: @contact,
-            activity_type: 'linked_to_xero',
+            activity_type: "linked_to_xero",
             description: "Manually linked to Xero contact: #{xero_contact['Name']}",
             metadata: {
-              xero_contact_id: xero_contact['ContactID'],
-              xero_contact_name: xero_contact['Name'],
-              linked_via: 'manual'
+              xero_contact_id: xero_contact["ContactID"],
+              xero_contact_name: xero_contact["Name"],
+              linked_via: "manual"
             },
             performed_by: @contact,
             occurred_at: Time.current
@@ -891,13 +891,13 @@ module Api
             success: true,
             message: "Successfully linked contact to Xero: #{xero_contact['Name']}",
             contact: @contact.as_json(
-              only: [:id, :full_name, :xero_id, :last_synced_at, :sync_with_xero]
+              only: [ :id, :full_name, :xero_id, :last_synced_at, :sync_with_xero ]
             ),
             xero_contact: {
-              xero_id: xero_contact['ContactID'],
-              name: xero_contact['Name'],
-              email: xero_contact['EmailAddress'],
-              tax_number: xero_contact['TaxNumber']
+              xero_id: xero_contact["ContactID"],
+              name: xero_contact["Name"],
+              email: xero_contact["EmailAddress"],
+              tax_number: xero_contact["TaxNumber"]
             }
           }
         rescue ActiveRecord::RecordInvalid => e

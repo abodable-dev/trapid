@@ -1,7 +1,7 @@
 module Api
   module V1
     class PurchaseOrdersController < ApplicationController
-      before_action :set_purchase_order, only: [:show, :update, :destroy, :approve, :send_to_supplier, :mark_received]
+      before_action :set_purchase_order, only: [ :show, :update, :destroy, :approve, :send_to_supplier, :mark_received ]
 
       # GET /api/v1/purchase_orders
       # Params: construction_id, supplier_id, status, search, sort_by, sort_direction, page, per_page
@@ -48,17 +48,17 @@ module Api
         render json: {
           purchase_orders: @purchase_orders.as_json(
             include: {
-              supplier: { only: [:id, :name] },
+              supplier: { only: [ :id, :name ] },
               construction: {
-                only: [:id, :title],
-                methods: [:site_supervisor_info]
+                only: [ :id, :title ],
+                methods: [ :site_supervisor_info ]
               },
               line_items: {
-                include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price] } },
-                methods: [:price_drift, :price_outdated?, :price_status, :price_status_label]
+                include: { pricebook_item: { only: [ :id, :item_code, :item_name, :current_price ] } },
+                methods: [ :price_drift, :price_outdated?, :price_status, :price_status_label ]
               }
             },
-            methods: [:timing_warnings, :delivery_aligned_with_tasks?]
+            methods: [ :timing_warnings, :delivery_aligned_with_tasks? ]
           ),
           pagination: {
             current_page: page,
@@ -76,24 +76,24 @@ module Api
         render json: {
           **@purchase_order.as_json(
             include: {
-              supplier: { only: [:id, :name, :contact_person, :email, :phone, :address] },
+              supplier: { only: [ :id, :name, :contact_person, :email, :phone, :address ] },
               construction: {
-                only: [:id, :title],
-                methods: [:site_supervisor_info]
+                only: [ :id, :title ],
+                methods: [ :site_supervisor_info ]
               },
-              schedule_tasks: { only: [:id, :title, :supplier_category] },
+              schedule_tasks: { only: [ :id, :title, :supplier_category ] },
               line_items: {
-                include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price, :unit_of_measure] } },
-                methods: [:price_drift, :price_outdated?, :price_status, :price_status_label]
+                include: { pricebook_item: { only: [ :id, :item_code, :item_name, :current_price, :unit_of_measure ] } },
+                methods: [ :price_drift, :price_outdated?, :price_status, :price_status_label ]
               },
               project_tasks: {
-                only: [:id, :name, :planned_start_date, :planned_end_date, :status],
-                methods: [:materials_status]
+                only: [ :id, :name, :planned_start_date, :planned_end_date, :status ],
+                methods: [ :materials_status ]
               }
             },
-            methods: [:timing_warnings, :delivery_aligned_with_tasks?]
+            methods: [ :timing_warnings, :delivery_aligned_with_tasks? ]
           ),
-          company_setting: company_setting.as_json(only: [:company_name, :abn, :gst_number, :email, :phone, :address, :logo_url])
+          company_setting: company_setting.as_json(only: [ :company_name, :abn, :gst_number, :email, :phone, :address, :logo_url ])
         }
       end
 
@@ -116,9 +116,9 @@ module Api
           end
         end
       rescue ActiveRecord::RecordNotFound
-        render json: { errors: ['Schedule task not found'] }, status: :unprocessable_entity
+        render json: { errors: [ 'Schedule task not found' ] }, status: :unprocessable_entity
       rescue => e
-        render json: { errors: [e.message] }, status: :unprocessable_entity
+        render json: { errors: [ e.message ] }, status: :unprocessable_entity
       end
 
       # PATCH/PUT /api/v1/purchase_orders/:id
@@ -152,9 +152,9 @@ module Api
           end
         end
       rescue ActiveRecord::RecordNotFound
-        render json: { errors: ['Schedule task not found'] }, status: :unprocessable_entity
+        render json: { errors: [ 'Schedule task not found' ] }, status: :unprocessable_entity
       rescue => e
-        render json: { errors: [e.message] }, status: :unprocessable_entity
+        render json: { errors: [ e.message ] }, status: :unprocessable_entity
       end
 
       # DELETE /api/v1/purchase_orders/:id

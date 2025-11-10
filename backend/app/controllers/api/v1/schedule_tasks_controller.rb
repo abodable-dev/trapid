@@ -1,8 +1,8 @@
 module Api
   module V1
     class ScheduleTasksController < ApplicationController
-      before_action :set_construction, only: [:index, :import, :gantt_data, :create, :copy_from_template]
-      before_action :set_schedule_task, only: [:show, :update, :destroy, :match_po, :unmatch_po]
+      before_action :set_construction, only: [ :index, :import, :gantt_data, :create, :copy_from_template ]
+      before_action :set_schedule_task, only: [ :show, :update, :destroy, :match_po, :unmatch_po ]
 
       # GET /api/v1/constructions/:construction_id/schedule_tasks
       # Returns all schedule tasks for a construction job
@@ -268,7 +268,7 @@ module Api
       end
 
       def save_temp_file(uploaded_file)
-        temp_file = Tempfile.new(['schedule_import', File.extname(uploaded_file.original_filename)])
+        temp_file = Tempfile.new([ 'schedule_import', File.extname(uploaded_file.original_filename) ])
         temp_file.binmode
         temp_file.write(uploaded_file.read)
         temp_file.rewind
@@ -358,7 +358,7 @@ module Api
         if value.is_a?(TrueClass) || value.is_a?(FalseClass)
           value
         elsif value.is_a?(String)
-          ['yes', 'true', '1', 'y'].include?(value.downcase.strip)
+          [ 'yes', 'true', '1', 'y' ].include?(value.downcase.strip)
         else
           !!value
         end
@@ -373,7 +373,7 @@ module Api
         elsif value.is_a?(Array)
           value
         else
-          [value.to_i].reject(&:zero?)
+          [ value.to_i ].reject(&:zero?)
         end
       end
 

@@ -31,35 +31,35 @@ class XeroContactSyncJob < ApplicationJob
       Rails.logger.info("Processing #{xero_contacts.length} Xero contacts and #{trapid_contacts.length} Trapid contacts")
 
       # Update job metadata
-      update_job_metadata(status: 'processing', total: total_contacts, processed: 0)
+      update_job_metadata(status: "processing", total: total_contacts, processed: 0)
 
       # Process contacts in batches
       process_contacts_in_batches(xero_contacts, trapid_contacts)
 
       # Mark job as completed
       update_job_metadata(
-        status: 'completed',
+        status: "completed",
         completed_at: Time.current,
         stats: @stats
       )
 
       Rails.logger.info("XeroContactSyncJob completed: #{@stats.inspect}")
     rescue XeroApiClient::AuthenticationError => e
-      handle_job_error('Authentication error', e)
+      handle_job_error("Authentication error", e)
     rescue XeroApiClient::RateLimitError => e
-      handle_job_error('Rate limit exceeded', e)
+      handle_job_error("Rate limit exceeded", e)
     rescue StandardError => e
-      handle_job_error('Sync failed', e)
+      handle_job_error("Sync failed", e)
     end
   end
 
   private
 
   def fetch_xero_contacts
-    result = @xero_client.get('Contacts')
+    result = @xero_client.get("Contacts")
 
     if result[:success]
-      contacts = result[:data]['Contacts'] || []
+      contacts = result[:data]["Contacts"] || []
       Rails.logger.info("Successfully fetched #{contacts.length} contacts from Xero")
       contacts
     else
@@ -139,13 +139,13 @@ class XeroContactSyncJob < ApplicationJob
       if trapid_contact
         # Match found - update both systems
         matched_trapid_ids.add(trapid_contact.id)
-        matched_xero_ids.add(xero_contact['ContactID'])
+        matched_xero_ids.add(xero_contact["ContactID"])
         update_trapid_from_xero(trapid_contact, xero_contact)
         @stats[:matched] += 1
       else
         # No match - create in Trapid
         create_trapid_contact_from_xero(xero_contact)
-        matched_xero_ids.add(xero_contact['ContactID'])
+        matched_xero_ids.add(xero_contact["ContactID"])
         @stats[:created_in_trapid] += 1
       end
 
@@ -182,13 +182,13 @@ class XeroContactSyncJob < ApplicationJob
         ]
       }
 
-      result = @xero_client.post('Contacts', xero_payload)
+      result = @xero_client.post("Contacts", xero_payload)
 
       if result[:success]
-        created_contact = result[:data]['Contacts']&.first
+        created_contact = result[:data]["Contacts"]&.first
         if created_contact
           trapid_contact.update!(
-            xero_id: created_contact['ContactID'],
+            xero_id: created_contact["ContactID"],
             last_synced_at: @sync_timestamp,
             xero_sync_error: nil
           )
@@ -241,7 +241,7 @@ class XeroContactSyncJob < ApplicationJob
     # Update progress every 10 contacts
     if @stats[:total_processed] % 10 == 0
       update_job_metadata(
-        status: 'processing',
+        status: "processing",
         processed: @stats[:total_processed],
         stats: @stats
       )
@@ -255,7 +255,7 @@ class XeroContactSyncJob < ApplicationJob
     @stats[:errors] << error_msg
 
     update_job_metadata(
-      status: 'failed',
+      status: "failed",
       error: error_msg,
       stats: @stats,
       failed_at: Time.current
@@ -264,10 +264,10 @@ class XeroContactSyncJob < ApplicationJob
 
   # Contact matching and processing helper methods
   def find_matching_trapid_contact(xero_contact, by_xero_id, by_tax_number, by_email, remaining_contacts)
-    xero_id = xero_contact['ContactID']
-    xero_tax = xero_contact['TaxNumber']
+    xero_id = xero_contact["ContactID"]
+    xero_tax = xero_contact["TaxNumber"]
     xero_email = extract_xero_email(xero_contact)
-    xero_name = xero_contact['Name']
+    xero_name = xero_contact["Name"]
 
     # Priority 1: Match by xero_id
     return by_xero_id[xero_id] if by_xero_id[xero_id]
@@ -298,7 +298,7 @@ class XeroContactSyncJob < ApplicationJob
     return nil if contacts.empty?
 
     # Create fuzzy matcher with contact names
-    contact_names = contacts.map { |c| [c.display_name, c] }.to_h
+    contact_names = contacts.map { |c| [ c.display_name, c ] }.to_h
     matcher = FuzzyMatch.new(contact_names.keys)
 
     # Find best match
@@ -309,29 +309,29 @@ class XeroContactSyncJob < ApplicationJob
 
   def update_trapid_from_xero(trapid_contact, xero_contact)
     updates = {
-      xero_id: xero_contact['ContactID'],
+      xero_id: xero_contact["ContactID"],
       last_synced_at: @sync_timestamp,
       xero_sync_error: nil
     }
 
     # Update fields if Xero has data and Trapid doesn't, or if explicitly syncing
-    updates[:full_name] = xero_contact['Name'] if xero_contact['Name'].present?
-    updates[:first_name] = xero_contact['FirstName'] if xero_contact['FirstName'].present?
-    updates[:last_name] = xero_contact['LastName'] if xero_contact['LastName'].present?
-    updates[:tax_number] = normalize_tax_number(xero_contact['TaxNumber']) if xero_contact['TaxNumber'].present?
+    updates[:full_name] = xero_contact["Name"] if xero_contact["Name"].present?
+    updates[:first_name] = xero_contact["FirstName"] if xero_contact["FirstName"].present?
+    updates[:last_name] = xero_contact["LastName"] if xero_contact["LastName"].present?
+    updates[:tax_number] = normalize_tax_number(xero_contact["TaxNumber"]) if xero_contact["TaxNumber"].present?
 
     # Extract email from Xero contact
     xero_email = extract_xero_email(xero_contact)
     updates[:email] = xero_email if xero_email.present?
 
     # Extract phone numbers
-    if xero_contact['Phones'].present?
-      xero_contact['Phones'].each do |phone|
-        case phone['PhoneType']
-        when 'MOBILE'
-          updates[:mobile_phone] = phone['PhoneNumber'] if phone['PhoneNumber'].present?
-        when 'DEFAULT', 'DDI'
-          updates[:office_phone] = phone['PhoneNumber'] if phone['PhoneNumber'].present?
+    if xero_contact["Phones"].present?
+      xero_contact["Phones"].each do |phone|
+        case phone["PhoneType"]
+        when "MOBILE"
+          updates[:mobile_phone] = phone["PhoneNumber"] if phone["PhoneNumber"].present?
+        when "DEFAULT", "DDI"
+          updates[:office_phone] = phone["PhoneNumber"] if phone["PhoneNumber"].present?
         end
       end
     end
@@ -349,24 +349,24 @@ class XeroContactSyncJob < ApplicationJob
     Rails.logger.info("Creating Trapid contact from Xero: #{xero_contact['Name']}")
 
     contact_data = {
-      xero_id: xero_contact['ContactID'],
-      full_name: xero_contact['Name'],
-      first_name: xero_contact['FirstName'],
-      last_name: xero_contact['LastName'],
-      tax_number: normalize_tax_number(xero_contact['TaxNumber']),
+      xero_id: xero_contact["ContactID"],
+      full_name: xero_contact["Name"],
+      first_name: xero_contact["FirstName"],
+      last_name: xero_contact["LastName"],
+      tax_number: normalize_tax_number(xero_contact["TaxNumber"]),
       email: extract_xero_email(xero_contact),
       sync_with_xero: true,
       last_synced_at: @sync_timestamp
     }
 
     # Extract phone numbers
-    if xero_contact['Phones'].present?
-      xero_contact['Phones'].each do |phone|
-        case phone['PhoneType']
-        when 'MOBILE'
-          contact_data[:mobile_phone] = phone['PhoneNumber']
-        when 'DEFAULT', 'DDI'
-          contact_data[:office_phone] = phone['PhoneNumber']
+    if xero_contact["Phones"].present?
+      xero_contact["Phones"].each do |phone|
+        case phone["PhoneType"]
+        when "MOBILE"
+          contact_data[:mobile_phone] = phone["PhoneNumber"]
+        when "DEFAULT", "DDI"
+          contact_data[:office_phone] = phone["PhoneNumber"]
         end
       end
     end
@@ -393,13 +393,13 @@ class XeroContactSyncJob < ApplicationJob
     phones = []
     if trapid_contact.mobile_phone.present?
       phones << {
-        PhoneType: 'MOBILE',
+        PhoneType: "MOBILE",
         PhoneNumber: trapid_contact.mobile_phone
       }
     end
     if trapid_contact.office_phone.present?
       phones << {
-        PhoneType: 'DEFAULT',
+        PhoneType: "DEFAULT",
         PhoneNumber: trapid_contact.office_phone
       }
     end
@@ -410,12 +410,12 @@ class XeroContactSyncJob < ApplicationJob
 
   def extract_xero_email(xero_contact)
     # Xero can have email in EmailAddress field or in Addresses array
-    return xero_contact['EmailAddress'] if xero_contact['EmailAddress'].present?
+    return xero_contact["EmailAddress"] if xero_contact["EmailAddress"].present?
 
     # Check addresses for email
-    if xero_contact['Addresses'].present?
-      xero_contact['Addresses'].each do |address|
-        return address['EmailAddress'] if address['EmailAddress'].present?
+    if xero_contact["Addresses"].present?
+      xero_contact["Addresses"].each do |address|
+        return address["EmailAddress"] if address["EmailAddress"].present?
       end
     end
 
@@ -425,6 +425,6 @@ class XeroContactSyncJob < ApplicationJob
   def normalize_tax_number(tax_number)
     return nil if tax_number.blank?
     # Remove spaces, dashes, and other formatting
-    tax_number.to_s.gsub(/[\s\-]/, '').upcase
+    tax_number.to_s.gsub(/[\s\-]/, "").upcase
   end
 end

@@ -1,7 +1,7 @@
 module Api
   module V1
     class ProjectsController < ApplicationController
-      before_action :set_project, only: [:show, :update, :destroy, :gantt]
+      before_action :set_project, only: [ :show, :update, :destroy, :gantt ]
 
       # GET /api/v1/projects
       def index
@@ -10,10 +10,10 @@ module Api
         render json: {
           projects: @projects.as_json(
             include: {
-              project_manager: { only: [:id, :name, :email] },
-              construction: { only: [:id, :title] }
+              project_manager: { only: [ :id, :name, :email ] },
+              construction: { only: [ :id, :title ] }
             },
-            methods: [:total_tasks, :completed_tasks]
+            methods: [ :total_tasks, :completed_tasks ]
           )
         }
       end
@@ -23,10 +23,10 @@ module Api
         render json: {
           project: @project.as_json(
             include: {
-              project_manager: { only: [:id, :name, :email] },
-              construction: { only: [:id, :title] }
+              project_manager: { only: [ :id, :name, :email ] },
+              construction: { only: [ :id, :title ] }
             },
-            methods: [:total_tasks, :completed_tasks, :progress_percentage]
+            methods: [ :total_tasks, :completed_tasks, :progress_percentage ]
           )
         }
       end

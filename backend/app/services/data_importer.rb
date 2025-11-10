@@ -54,7 +54,7 @@ class DataImporter
 
           # Call progress callback if provided
           if progress_callback
-            current_progress = [(batch_index + 1) * batch_size, total_rows].min
+            current_progress = [ (batch_index + 1) * batch_size, total_rows ].min
             progress_callback.call(current_progress, total_rows)
           end
         rescue => e
@@ -127,7 +127,7 @@ class DataImporter
   end
 
   def convert_to_boolean(value)
-    true_values = ['true', 'yes', '1', 't', 'y']
+    true_values = [ 'true', 'yes', '1', 't', 'y' ]
     true_values.include?(value.to_s.downcase.strip)
   end
 

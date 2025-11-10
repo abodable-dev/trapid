@@ -87,26 +87,26 @@ if po_count > 0
   # Test various invoice formats that should match this PO
   test_invoices = [
     {
-      'InvoiceNumber' => sample_po.purchase_order_number,
-      'InvoiceID' => 'TEST-001',
-      'Total' => sample_po.total,
-      'Date' => Time.current.to_s,
-      'Contact' => { 'Name' => sample_po.supplier&.name || 'Test Supplier' }
+      "InvoiceNumber" => sample_po.purchase_order_number,
+      "InvoiceID" => "TEST-001",
+      "Total" => sample_po.total,
+      "Date" => Time.current.to_s,
+      "Contact" => { "Name" => sample_po.supplier&.name || "Test Supplier" }
     },
     {
-      'InvoiceNumber' => "Invoice-#{rand(1000..9999)}",
-      'Reference' => sample_po.purchase_order_number,
-      'InvoiceID' => 'TEST-002',
-      'Total' => sample_po.total,
-      'Date' => Time.current.to_s,
-      'Contact' => { 'Name' => sample_po.supplier&.name || 'Test Supplier' }
+      "InvoiceNumber" => "Invoice-#{rand(1000..9999)}",
+      "Reference" => sample_po.purchase_order_number,
+      "InvoiceID" => "TEST-002",
+      "Total" => sample_po.total,
+      "Date" => Time.current.to_s,
+      "Contact" => { "Name" => sample_po.supplier&.name || "Test Supplier" }
     }
   ]
 
   test_invoices.each_with_index do |invoice, idx|
     puts "\n  Test Invoice #{idx + 1}:"
     puts "    InvoiceNumber: #{invoice['InvoiceNumber']}"
-    puts "    Reference: #{invoice['Reference']}" if invoice['Reference']
+    puts "    Reference: #{invoice['Reference']}" if invoice["Reference"]
     puts "    Total: $#{invoice['Total']}"
 
     result = InvoiceMatchingService.call(invoice_data: invoice)

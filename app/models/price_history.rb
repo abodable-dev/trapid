@@ -1,7 +1,7 @@
 class PriceHistory < ApplicationRecord
   # Associations
   belongs_to :pricebook_item
-  belongs_to :supplier, class_name: 'Contact', foreign_key: 'supplier_id', optional: true
+  belongs_to :supplier, class_name: "Contact", foreign_key: "supplier_id", optional: true
 
   # Validations
   validates :pricebook_item_id, presence: true
@@ -9,13 +9,13 @@ class PriceHistory < ApplicationRecord
   validates :old_price, numericality: { allow_nil: true }  # Allow negative prices for rebates/credits
   validates :lga, inclusion: {
     in: [
-      'Toowoomba Regional Council',
-      'Lockyer Valley Regional Council',
-      'City of Gold Coast',
-      'Brisbane City Council',
-      'Sunshine Coast Regional Council',
-      'Redland City Council',
-      'Scenic Rim Regional Council'
+      "Toowoomba Regional Council",
+      "Lockyer Valley Regional Council",
+      "City of Gold Coast",
+      "Brisbane City Council",
+      "Sunshine Coast Regional Council",
+      "Redland City Council",
+      "Scenic Rim Regional Council"
     ],
     allow_nil: true
   }
@@ -32,10 +32,10 @@ class PriceHistory < ApplicationRecord
       pricebook_item_id: pricebook_item_id,
       supplier_id: supplier_id,
       new_price: new_price
-    ).where('created_at >= ?', 5.seconds.ago).exists?
+    ).where("created_at >= ?", 5.seconds.ago).exists?
 
     if duplicate
-      errors.add(:base, 'A price history entry with these values was just created. Please wait a moment before updating again.')
+      errors.add(:base, "A price history entry with these values was just created. Please wait a moment before updating again.")
     end
   end
 

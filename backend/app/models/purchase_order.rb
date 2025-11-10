@@ -51,7 +51,7 @@ class PurchaseOrder < ApplicationRecord
   scope :by_status, ->(status) { where(status: status) if status.present? }
   scope :by_construction, ->(construction_id) { where(construction_id: construction_id) if construction_id.present? }
   scope :recent, -> { order(created_at: :desc) }
-  scope :overdue, -> { where('required_date < ? AND status NOT IN (?)', Date.today, ['received', 'cancelled']) }
+  scope :overdue, -> { where('required_date < ? AND status NOT IN (?)', Date.today, [ 'received', 'cancelled' ]) }
   scope :pending_approval, -> { where(status: 'pending') }
   scope :for_schedule, -> { where(creates_schedule_tasks: true) }
 

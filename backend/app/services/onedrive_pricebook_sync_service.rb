@@ -398,7 +398,7 @@ class OnedrivePricebookSyncService
 
   def calculate_similarity(str1, str2)
     # Levenshtein distance based similarity
-    longer = [str1.length, str2.length].max
+    longer = [ str1.length, str2.length ].max
     return 1.0 if longer == 0
 
     distance = levenshtein_distance(str1, str2)

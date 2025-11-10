@@ -15,12 +15,12 @@ class Supplier < ApplicationRecord
 
   # Helper method to get all contact emails
   def contact_emails
-    ([email] + contacts.pluck(:email)).compact.uniq
+    ([ email ] + contacts.pluck(:email)).compact.uniq
   end
 
   # Helper method to get all contact phones
   def contact_phones
-    ([phone, contact_number] + contacts.pluck(:mobile_phone, :office_phone).flatten).compact.uniq
+    ([ phone, contact_number ] + contacts.pluck(:mobile_phone, :office_phone).flatten).compact.uniq
   end
 
   # Serialization

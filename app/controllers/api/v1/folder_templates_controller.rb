@@ -1,7 +1,7 @@
 module Api
   module V1
     class FolderTemplatesController < ApplicationController
-      before_action :set_folder_template, only: [:show, :update, :destroy, :duplicate]
+      before_action :set_folder_template, only: [ :show, :update, :destroy, :duplicate ]
 
       # GET /api/v1/folder_templates
       def index
@@ -13,10 +13,10 @@ module Api
           folder_templates: @folder_templates.as_json(
             include: {
               folder_template_items: {
-                only: [:id, :name, :level, :order, :parent_id, :description]
+                only: [ :id, :name, :level, :order, :parent_id, :description ]
               },
               created_by: {
-                only: [:id, :name, :email]
+                only: [ :id, :name, :email ]
               }
             }
           )
@@ -29,10 +29,10 @@ module Api
           folder_template: @folder_template.as_json(
             include: {
               folder_template_items: {
-                only: [:id, :name, :level, :order, :parent_id, :description]
+                only: [ :id, :name, :level, :order, :parent_id, :description ]
               }
             },
-            methods: [:folder_hierarchy]
+            methods: [ :folder_hierarchy ]
           )
         }
       end
@@ -52,7 +52,7 @@ module Api
       # PATCH/PUT /api/v1/folder_templates/:id
       def update
         unless @folder_template.can_edit?(current_user)
-          return render json: { error: 'Unauthorized' }, status: :forbidden
+          return render json: { error: "Unauthorized" }, status: :forbidden
         end
 
         if @folder_template.update(folder_template_params)
@@ -65,11 +65,11 @@ module Api
       # DELETE /api/v1/folder_templates/:id
       def destroy
         unless @folder_template.can_edit?(current_user)
-          return render json: { error: 'Unauthorized' }, status: :forbidden
+          return render json: { error: "Unauthorized" }, status: :forbidden
         end
 
         if @folder_template.is_system_default
-          return render json: { error: 'Cannot delete system default template' }, status: :forbidden
+          return render json: { error: "Cannot delete system default template" }, status: :forbidden
         end
 
         @folder_template.destroy
@@ -93,7 +93,7 @@ module Api
       def set_folder_template
         @folder_template = FolderTemplate.find(params[:id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Template not found' }, status: :not_found
+        render json: { error: "Template not found" }, status: :not_found
       end
 
       def folder_template_params

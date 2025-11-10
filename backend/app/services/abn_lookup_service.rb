@@ -57,7 +57,7 @@ class AbnLookupService
   def self.valid_abn_checksum?(abn)
     return false unless abn.length == 11 && abn.match?(/^\d{11}$/)
 
-    weights = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+    weights = [ 10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19 ]
     digits = abn.chars.map(&:to_i)
 
     # Subtract 1 from the first digit

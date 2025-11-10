@@ -84,48 +84,48 @@ class SupplierMatcher
 
   # Normalize company/contact name for better matching
   def normalize_name(name)
-    return '' if name.blank?
+    return "" if name.blank?
 
     normalized = name.dup
 
     # Remove common business suffixes
     suffixes = [
-      'Pty Ltd',
-      'PTY LTD',
-      'Pty. Ltd.',
-      'Limited',
-      'Ltd',
-      'LTD',
-      'Incorporated',
-      'Inc',
-      'INC',
-      'Corporation',
-      'Corp',
-      'CORP',
-      'Company',
-      'Co',
-      'CO',
-      'Services',
-      'Service',
-      'Group',
-      'Australia',
-      'Australian',
-      'Qld',
-      'QLD',
-      'Queensland',
-      '& Associates',
-      '&Associates',
-      '& Sons',
-      '&Sons'
+      "Pty Ltd",
+      "PTY LTD",
+      "Pty. Ltd.",
+      "Limited",
+      "Ltd",
+      "LTD",
+      "Incorporated",
+      "Inc",
+      "INC",
+      "Corporation",
+      "Corp",
+      "CORP",
+      "Company",
+      "Co",
+      "CO",
+      "Services",
+      "Service",
+      "Group",
+      "Australia",
+      "Australian",
+      "Qld",
+      "QLD",
+      "Queensland",
+      "& Associates",
+      "&Associates",
+      "& Sons",
+      "&Sons"
     ]
 
     suffixes.each do |suffix|
-      normalized = normalized.gsub(/\b#{Regexp.escape(suffix)}\b/i, '')
+      normalized = normalized.gsub(/\b#{Regexp.escape(suffix)}\b/i, "")
     end
 
     # Remove special characters and extra spaces
-    normalized = normalized.gsub(/[^a-z0-9\s]/i, ' ')
-    normalized = normalized.gsub(/\s+/, ' ')
+    normalized = normalized.gsub(/[^a-z0-9\s]/i, " ")
+    normalized = normalized.gsub(/\s+/, " ")
     normalized.strip.downcase
   end
 
@@ -136,7 +136,7 @@ class SupplierMatcher
 
     # Use Damerau-Levenshtein distance
     distance = levenshtein_distance(str1, str2)
-    max_length = [str1.length, str2.length].max
+    max_length = [ str1.length, str2.length ].max
 
     # Convert distance to similarity score (0-1)
     1.0 - (distance.to_f / max_length)

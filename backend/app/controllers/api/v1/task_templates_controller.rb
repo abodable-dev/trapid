@@ -1,7 +1,7 @@
 module Api
   module V1
     class TaskTemplatesController < ApplicationController
-      before_action :set_task_template, only: [:show, :update, :destroy]
+      before_action :set_task_template, only: [ :show, :update, :destroy ]
 
       # GET /api/v1/task_templates
       def index

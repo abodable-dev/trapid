@@ -2,7 +2,7 @@ module Api
   module V1
     class OrganizationOnedriveController < ApplicationController
       # Require admin for sensitive operations
-      before_action :require_admin, only: [:disconnect, :change_root_folder, :sync_pricebook_images]
+      before_action :require_admin, only: [ :disconnect, :change_root_folder, :sync_pricebook_images ]
 
       # GET /api/v1/organization_onedrive/status
       # Check if organization has OneDrive connected
@@ -18,7 +18,7 @@ module Api
             root_folder_path: credential.root_folder_path,
             root_folder_web_url: credential.metadata&.dig('root_folder_web_url'),
             connected_at: credential.created_at,
-            connected_by: credential.connected_by&.as_json(only: [:id, :email]),
+            connected_by: credential.connected_by&.as_json(only: [ :id, :email ]),
             metadata: credential.metadata
           }
         else

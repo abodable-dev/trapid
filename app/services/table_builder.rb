@@ -22,7 +22,7 @@ class TableBuilder
             # Add columns from the table definition
             # Skip 'id' column as Rails creates it automatically as the primary key
             columns.each do |column|
-              next if column.column_name == 'id'
+              next if column.column_name == "id"
               builder.send(:add_column_to_migration, t, column)
             end
 
@@ -58,7 +58,7 @@ class TableBuilder
       end
 
       # Add index for lookup columns
-      if column.column_type == 'lookup'
+      if column.column_type == "lookup"
         ActiveRecord::Migration.add_index(
           @table.database_table_name.to_sym,
           column.column_name.to_sym
@@ -66,7 +66,7 @@ class TableBuilder
       end
 
       # Add foreign key for lookup columns
-      if column.column_type == 'lookup' && column.lookup_table
+      if column.column_type == "lookup" && column.lookup_table
         begin
           ActiveRecord::Migration.add_foreign_key(
             @table.database_table_name.to_sym,
@@ -184,7 +184,7 @@ class TableBuilder
     end
 
     # Add index for lookup columns
-    if column.column_type == 'lookup'
+    if column.column_type == "lookup"
       table_definition.index column.column_name.to_sym
     end
   end

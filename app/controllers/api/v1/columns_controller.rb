@@ -2,7 +2,7 @@ module Api
   module V1
     class ColumnsController < ApplicationController
       before_action :set_table
-      before_action :set_column, only: [:update, :destroy]
+      before_action :set_column, only: [ :update, :destroy ]
 
       # POST /api/v1/tables/:table_id/columns
       def create
@@ -98,12 +98,12 @@ module Api
       def lookup_options
         column = @table.columns.find(params[:id])
 
-        unless column.column_type.in?(['lookup', 'multiple_lookups'])
-          return render json: { error: 'Not a lookup column' }, status: :bad_request
+        unless column.column_type.in?([ "lookup", "multiple_lookups" ])
+          return render json: { error: "Not a lookup column" }, status: :bad_request
         end
 
         unless column.lookup_table
-          return render json: { error: 'Lookup table not configured' }, status: :unprocessable_entity
+          return render json: { error: "Lookup table not configured" }, status: :unprocessable_entity
         end
 
         target_table = column.lookup_table
@@ -132,7 +132,7 @@ module Api
         formula_expression = params[:formula]
 
         if formula_expression.blank?
-          return render json: { error: 'Formula is required' }, status: :bad_request
+          return render json: { error: "Formula is required" }, status: :bad_request
         end
 
         # Get a sample record to test with (first record or a specific one if provided)
@@ -148,7 +148,7 @@ module Api
         unless record
           return render json: {
             success: false,
-            error: 'No records available to test the formula. Please add at least one record first.'
+            error: "No records available to test the formula. Please add at least one record first."
           }
         end
 
@@ -184,12 +184,12 @@ module Api
       def lookup_search
         column = @table.columns.find(params[:id])
 
-        unless column.column_type.in?(['lookup', 'multiple_lookups'])
-          return render json: { error: 'Not a lookup column' }, status: :bad_request
+        unless column.column_type.in?([ "lookup", "multiple_lookups" ])
+          return render json: { error: "Not a lookup column" }, status: :bad_request
         end
 
         unless column.lookup_table
-          return render json: { error: 'Lookup table not configured' }, status: :unprocessable_entity
+          return render json: { error: "Lookup table not configured" }, status: :unprocessable_entity
         end
 
         search_term = params[:q].to_s.strip
@@ -208,13 +208,13 @@ module Api
           # If no searchable columns defined, search all text/string columns
           if searchable_columns.empty?
             searchable_columns = target_table.columns
-              .where(column_type: ['single_line_text', 'email', 'phone', 'url', 'multiple_lines_text'])
+              .where(column_type: [ "single_line_text", "email", "phone", "url", "multiple_lines_text" ])
               .pluck(:column_name)
           end
 
           # Build search query across all searchable columns
           if searchable_columns.any?
-            search_conditions = searchable_columns.map { |col| "#{col} ILIKE :search" }.join(' OR ')
+            search_conditions = searchable_columns.map { |col| "#{col} ILIKE :search" }.join(" OR ")
             records = model.where(search_conditions, search: "%#{search_term}%")
               .limit(20)
               .order(:id)
@@ -232,7 +232,7 @@ module Api
           # Get all text columns for context
           context_fields = {}
           target_table.columns
-            .where(column_type: ['single_line_text', 'email', 'phone', 'url'])
+            .where(column_type: [ "single_line_text", "email", "phone", "url" ])
             .limit(3)
             .each do |col|
               value = record.send(col.column_name)
@@ -268,13 +268,13 @@ module Api
       def set_table
         @table = Table.includes(:columns).find(params[:table_id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Table not found' }, status: :not_found
+        render json: { error: "Table not found" }, status: :not_found
       end
 
       def set_column
         @column = @table.columns.find(params[:id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Column not found' }, status: :not_found
+        render json: { error: "Column not found" }, status: :not_found
       end
 
       def column_params

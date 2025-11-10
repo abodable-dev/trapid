@@ -15,9 +15,9 @@ class EasybuildCsvParser
   def initialize(csv_file_path_or_content)
     @csv_content = if csv_file_path_or_content.is_a?(String) && File.exist?(csv_file_path_or_content)
                      File.read(csv_file_path_or_content)
-                   else
+    else
                      csv_file_path_or_content
-                   end
+    end
     @errors = []
     @warnings = []
   end

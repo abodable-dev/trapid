@@ -1,13 +1,13 @@
-require 'httparty'
-require 'cloudinary'
-require 'open-uri'
+require "httparty"
+require "cloudinary"
+require "open-uri"
 
 class ProductImageScraper
   include HTTParty
 
-  GOOGLE_SEARCH_API_KEY = ENV['GOOGLE_SEARCH_API_KEY'] # Optional - for better results
-  GOOGLE_CX = ENV['GOOGLE_SEARCH_CX'] # Optional - Custom Search Engine ID
-  ANTHROPIC_API_KEY = ENV['ANTHROPIC_API_KEY'] # For Claude AI image selection
+  GOOGLE_SEARCH_API_KEY = ENV["GOOGLE_SEARCH_API_KEY"] # Optional - for better results
+  GOOGLE_CX = ENV["GOOGLE_SEARCH_CX"] # Optional - Custom Search Engine ID
+  ANTHROPIC_API_KEY = ENV["ANTHROPIC_API_KEY"] # For Claude AI image selection
 
   def initialize(pricebook_item)
     @item = pricebook_item
@@ -16,7 +16,7 @@ class ProductImageScraper
 
   # Main method to fetch and upload image
   def fetch_and_upload_image
-    @item.update(image_fetch_status: 'fetching')
+    @item.update(image_fetch_status: "fetching")
 
     # Step 1: Search for images using Google
     image_urls = search_google_images
@@ -33,9 +33,9 @@ class ProductImageScraper
     # Step 4: Save to database
     @item.update(
       image_url: cloudinary_url,
-      image_source: 'google_cloudinary',
+      image_source: "google_cloudinary",
       image_fetched_at: Time.current,
-      image_fetch_status: 'success'
+      image_fetch_status: "success"
     )
 
     { success: true, image_url: cloudinary_url }
@@ -66,24 +66,24 @@ class ProductImageScraper
     parts << @item.item_code if @item.item_code.present?
     parts << @item.item_name
 
-    query = parts.join(' ')
+    query = parts.join(" ")
     # Add "product image" to filter out irrelevant results
     "#{query} product"
   end
 
   def search_with_google_api(query)
-    response = HTTParty.get('https://www.googleapis.com/customsearch/v1', query: {
+    response = HTTParty.get("https://www.googleapis.com/customsearch/v1", query: {
       key: GOOGLE_SEARCH_API_KEY,
       cx: GOOGLE_CX,
       q: query,
-      searchType: 'image',
+      searchType: "image",
       num: 10,
-      imgSize: 'medium',
-      safe: 'active'
+      imgSize: "medium",
+      safe: "active"
     })
 
-    if response.success? && response['items']
-      response['items'].map { |item| item.dig('link') }.compact
+    if response.success? && response["items"]
+      response["items"].map { |item| item.dig("link") }.compact
     else
       []
     end
@@ -101,7 +101,7 @@ class ProductImageScraper
         @item.brand,
         @item.item_code,
         @item.item_name&.split(/[\(\-]/)&.first&.strip
-      ].compact.join(' ').gsub(/\s+/, ' ').strip
+      ].compact.join(" ").gsub(/\s+/, " ").strip
 
       Rails.logger.info "Searching for: #{clean_query}"
 
@@ -166,20 +166,20 @@ class ProductImageScraper
         Respond with ONLY the number (1-#{candidates.length}) of the best image, or 0 if none are suitable.
       PROMPT
 
-      response = HTTParty.post('https://api.anthropic.com/v1/messages',
+      response = HTTParty.post("https://api.anthropic.com/v1/messages",
         headers: {
-          'Content-Type' => 'application/json',
-          'x-api-key' => ANTHROPIC_API_KEY,
-          'anthropic-version' => '2023-06-01'
+          "Content-Type" => "application/json",
+          "x-api-key" => ANTHROPIC_API_KEY,
+          "anthropic-version" => "2023-06-01"
         },
         body: {
-          model: 'claude-3-haiku-20240307',
+          model: "claude-3-haiku-20240307",
           max_tokens: 10,
           messages: [
             {
-              role: 'user',
+              role: "user",
               content: [
-                { type: 'text', text: prompt },
+                { type: "text", text: prompt },
                 *candidates
               ]
             }
@@ -187,8 +187,8 @@ class ProductImageScraper
         }.to_json
       )
 
-      if response.success? && response['content']
-        selection = response['content'].first['text'].to_i
+      if response.success? && response["content"]
+        selection = response["content"].first["text"].to_i
         if selection > 0 && selection <= candidates.length
           Rails.logger.info "Claude AI selected image #{selection} for #{@item.item_name}"
           return image_urls[selection - 1]
@@ -211,7 +211,7 @@ class ProductImageScraper
       begin
         # Test if image is accessible (HEAD request)
         response = HTTParty.head(url, timeout: 5, follow_redirects: true)
-        return url if response.success? && response.headers['content-type']&.include?('image')
+        return url if response.success? && response.headers["content-type"]&.include?("image")
       rescue StandardError
         next
       end
@@ -229,18 +229,18 @@ class ProductImageScraper
       # Upload to Cloudinary
       result = Cloudinary::Uploader.upload(
         temp_file.path,
-        folder: 'pricebook_items',
+        folder: "pricebook_items",
         public_id: "item_#{@item.id}",
         overwrite: true,
-        resource_type: 'image',
+        resource_type: "image",
         transformation: [
           { width: 800, height: 800, crop: :limit },
-          { quality: 'auto:good' },
+          { quality: "auto:good" },
           { fetch_format: :auto }
         ]
       )
 
-      result['secure_url']
+      result["secure_url"]
     rescue StandardError => e
       Rails.logger.error "Cloudinary upload failed: #{e.message}"
       nil
@@ -250,12 +250,12 @@ class ProductImageScraper
   end
 
   def download_image(url)
-    require 'tempfile'
+    require "tempfile"
 
-    temp_file = Tempfile.new(['product_image', '.jpg'])
+    temp_file = Tempfile.new([ "product_image", ".jpg" ])
     temp_file.binmode
 
-    URI.open(url, 'rb', read_timeout: 10) do |source|
+    URI.open(url, "rb", read_timeout: 10) do |source|
       temp_file.write(source.read)
     end
 
@@ -269,7 +269,7 @@ class ProductImageScraper
 
   def fail_with_error(message)
     @item.update(
-      image_fetch_status: 'failed',
+      image_fetch_status: "failed",
       notes: "Image fetch failed: #{message}"
     )
 
@@ -280,7 +280,7 @@ class ProductImageScraper
   def self.fetch_images_for_all_items(limit: 100)
     items = PricebookItem
             .where(image_url: nil)
-            .where("image_fetch_status IS NULL OR image_fetch_status != ?", 'fetching')
+            .where("image_fetch_status IS NULL OR image_fetch_status != ?", "fetching")
             .limit(limit)
             .to_a # Convert to array to respect limit
 
@@ -318,7 +318,7 @@ class ProductImageScraper
     items = PricebookItem
             .where(supplier_id: supplier_id)
             .where(image_url: nil)
-            .where("image_fetch_status IS NULL OR image_fetch_status != ?", 'fetching')
+            .where("image_fetch_status IS NULL OR image_fetch_status != ?", "fetching")
             .limit(limit)
             .to_a # Convert to array to respect limit
 

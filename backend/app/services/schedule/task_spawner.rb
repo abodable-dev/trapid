@@ -12,7 +12,7 @@ module Schedule
 
     # Spawn all required child tasks based on template configuration
     def spawn_all
-      return { success: false, errors: ['Task has no template row'] } unless parent_task.schedule_template_row
+      return { success: false, errors: [ 'Task has no template row' ] } unless parent_task.schedule_template_row
 
       spawned = []
 

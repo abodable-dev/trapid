@@ -2,13 +2,13 @@ class ProjectTask < ApplicationRecord
   belongs_to :project
   belongs_to :task_template, optional: true
   belongs_to :purchase_order, optional: true
-  belongs_to :assigned_to, class_name: 'User', optional: true
+  belongs_to :assigned_to, class_name: "User", optional: true
 
   # Dependency relationships
-  has_many :successor_dependencies, class_name: 'TaskDependency',
-           foreign_key: 'predecessor_task_id', dependent: :destroy
-  has_many :predecessor_dependencies, class_name: 'TaskDependency',
-           foreign_key: 'successor_task_id', dependent: :destroy
+  has_many :successor_dependencies, class_name: "TaskDependency",
+           foreign_key: "predecessor_task_id", dependent: :destroy
+  has_many :predecessor_dependencies, class_name: "TaskDependency",
+           foreign_key: "successor_task_id", dependent: :destroy
 
   has_many :successor_tasks, through: :successor_dependencies, source: :successor_task
   has_many :predecessor_tasks, through: :predecessor_dependencies, source: :predecessor_task
@@ -24,14 +24,14 @@ class ProjectTask < ApplicationRecord
   validates :duration_days, presence: true, numericality: { greater_than: 0 }
 
   scope :by_status, ->(status) { where(status: status) }
-  scope :not_started, -> { where(status: 'not_started') }
-  scope :in_progress, -> { where(status: 'in_progress') }
-  scope :completed, -> { where(status: 'complete') }
-  scope :on_hold, -> { where(status: 'on_hold') }
+  scope :not_started, -> { where(status: "not_started") }
+  scope :in_progress, -> { where(status: "in_progress") }
+  scope :completed, -> { where(status: "complete") }
+  scope :on_hold, -> { where(status: "on_hold") }
   scope :critical_path, -> { where(is_critical_path: true) }
   scope :milestones, -> { where(is_milestone: true) }
-  scope :overdue, -> { where('planned_end_date < ? AND status != ?', Date.current, 'complete') }
-  scope :upcoming, -> { where('planned_start_date <= ? AND status = ?', 1.week.from_now, 'not_started') }
+  scope :overdue, -> { where("planned_end_date < ? AND status != ?", Date.current, "complete") }
+  scope :upcoming, -> { where("planned_start_date <= ? AND status = ?", 1.week.from_now, "not_started") }
   scope :by_category, ->(category) { where(category: category) }
 
   before_save :update_actual_dates
@@ -39,7 +39,7 @@ class ProjectTask < ApplicationRecord
 
   def complete!
     update!(
-      status: 'complete',
+      status: "complete",
       progress_percentage: 100,
       actual_end_date: Date.current
     )
@@ -47,17 +47,17 @@ class ProjectTask < ApplicationRecord
 
   def start!
     update!(
-      status: 'in_progress',
+      status: "in_progress",
       actual_start_date: actual_start_date || Date.current
     )
   end
 
   def can_start?
-    predecessor_tasks.all? { |pred| pred.status == 'complete' }
+    predecessor_tasks.all? { |pred| pred.status == "complete" }
   end
 
   def blocked_by
-    predecessor_tasks.where.not(status: 'complete')
+    predecessor_tasks.where.not(status: "complete")
   end
 
   def total_float
@@ -84,18 +84,18 @@ class ProjectTask < ApplicationRecord
   # Get materials status for this task
   # Returns: 'no_po', 'on_time', or 'delayed'
   def materials_status
-    return 'no_po' unless has_purchase_order?
-    return 'on_time' if materials_on_time?
-    'delayed'
+    return "no_po" unless has_purchase_order?
+    return "on_time" if materials_on_time?
+    "delayed"
   end
 
   private
 
   def update_actual_dates
     case status
-    when 'in_progress'
+    when "in_progress"
       self.actual_start_date ||= Date.current
-    when 'complete'
+    when "complete"
       self.actual_start_date ||= Date.current
       self.actual_end_date = Date.current
       self.progress_percentage = 100

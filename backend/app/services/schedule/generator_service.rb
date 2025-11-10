@@ -104,28 +104,28 @@ module Schedule
     def find_matching_tasks_for_po(po)
       # Map PO categories to task categories and types
       category_mapping = {
-        'CONCRETE' => { categories: ['CONCRETE'], types: ['DO', 'ORDER'] },
-        'CARPENTER' => { categories: ['CARPENTER'], types: ['DO', 'ORDER'] },
-        'PLUMBER' => { categories: ['PLUMBER'], types: ['DO', 'ORDER'] },
-        'ELECTRICAL' => { categories: ['ELECTRICAL'], types: ['DO', 'ORDER'] },
-        'PAINTER' => { categories: ['PAINTER'], types: ['DO', 'ORDER'] },
-        'PLASTERER' => { categories: ['PLASTERER'], types: ['DO', 'ORDER'] },
-        'TILER' => { categories: ['TILER'], types: ['DO', 'ORDER'] },
-        'ROOFING' => { categories: ['ROOFING'], types: ['DO', 'ORDER'] },
-        'KITCHEN' => { categories: ['KITCHEN'], types: ['DO', 'ORDER'] },
-        'MATERIALS' => { categories: ['MATERIALS'], types: ['ORDER'] },
-        'SURVEYOR' => { categories: ['SURVEYOR'], types: ['DO', 'ORDER'] },
-        'SITE_PREP' => { categories: ['SITE_PREP'], types: ['DO'] },
-        'TERMITE' => { categories: ['TERMITE'], types: ['DO'] },
-        'WATERPROOF' => { categories: ['WATERPROOF'], types: ['DO'] },
-        'AIRCON' => { categories: ['AIRCON'], types: ['DO'] },
-        'FENCING' => { categories: ['FENCING'], types: ['DO'] },
-        'LANDSCAPING' => { categories: ['LANDSCAPING'], types: ['DO'] },
-        'CLEANING' => { categories: ['CLEANING'], types: ['DO'] },
-        'ADMIN' => { categories: ['ADMIN'], types: ['DO', 'GET', 'CREATE', 'CHECK'] }
+        'CONCRETE' => { categories: [ 'CONCRETE' ], types: [ 'DO', 'ORDER' ] },
+        'CARPENTER' => { categories: [ 'CARPENTER' ], types: [ 'DO', 'ORDER' ] },
+        'PLUMBER' => { categories: [ 'PLUMBER' ], types: [ 'DO', 'ORDER' ] },
+        'ELECTRICAL' => { categories: [ 'ELECTRICAL' ], types: [ 'DO', 'ORDER' ] },
+        'PAINTER' => { categories: [ 'PAINTER' ], types: [ 'DO', 'ORDER' ] },
+        'PLASTERER' => { categories: [ 'PLASTERER' ], types: [ 'DO', 'ORDER' ] },
+        'TILER' => { categories: [ 'TILER' ], types: [ 'DO', 'ORDER' ] },
+        'ROOFING' => { categories: [ 'ROOFING' ], types: [ 'DO', 'ORDER' ] },
+        'KITCHEN' => { categories: [ 'KITCHEN' ], types: [ 'DO', 'ORDER' ] },
+        'MATERIALS' => { categories: [ 'MATERIALS' ], types: [ 'ORDER' ] },
+        'SURVEYOR' => { categories: [ 'SURVEYOR' ], types: [ 'DO', 'ORDER' ] },
+        'SITE_PREP' => { categories: [ 'SITE_PREP' ], types: [ 'DO' ] },
+        'TERMITE' => { categories: [ 'TERMITE' ], types: [ 'DO' ] },
+        'WATERPROOF' => { categories: [ 'WATERPROOF' ], types: [ 'DO' ] },
+        'AIRCON' => { categories: [ 'AIRCON' ], types: [ 'DO' ] },
+        'FENCING' => { categories: [ 'FENCING' ], types: [ 'DO' ] },
+        'LANDSCAPING' => { categories: [ 'LANDSCAPING' ], types: [ 'DO' ] },
+        'CLEANING' => { categories: [ 'CLEANING' ], types: [ 'DO' ] },
+        'ADMIN' => { categories: [ 'ADMIN' ], types: [ 'DO', 'GET', 'CREATE', 'CHECK' ] }
       }
 
-      mapping = category_mapping[po.task_category] || { categories: [po.task_category], types: ['DO', 'ORDER'] }
+      mapping = category_mapping[po.task_category] || { categories: [ po.task_category ], types: [ 'DO', 'ORDER' ] }
 
       # Find tasks that haven't been mapped yet and match the category/type
       @project.project_tasks

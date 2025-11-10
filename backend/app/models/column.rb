@@ -28,7 +28,7 @@ class Column < ApplicationRecord
 
   before_validation :generate_column_name, if: -> { column_name.blank? }
   before_validation :detect_cross_table_refs, if: -> { column_type == 'computed' }
-  validate :lookup_configuration_valid, if: -> { column_type.in?(['lookup', 'multiple_lookups']) }
+  validate :lookup_configuration_valid, if: -> { column_type.in?([ 'lookup', 'multiple_lookups' ]) }
 
   # Map column types to database column types
   COLUMN_TYPE_MAP = {

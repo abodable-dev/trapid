@@ -98,7 +98,7 @@ class PriceHistoryExportService
   end
 
   def generate_filename
-    parts = ["pricebook"]
+    parts = [ "pricebook" ]
 
     if @item_ids.present?
       parts << "selected_#{@item_ids.length}_items"

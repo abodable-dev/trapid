@@ -6,13 +6,13 @@ module Api
       # GET /api/v1/tables/:table_id/records
       def index
         # Sanitize and validate pagination parameters to prevent DoS
-        page = [(params[:page] || 1).to_i, 1].max
-        per_page = [(params[:per_page] || 50).to_i, 1].max
-        per_page = [per_page, 1000].min  # Cap at 1000 to prevent DoS
+        page = [ (params[:page] || 1).to_i, 1 ].max
+        per_page = [ (params[:per_page] || 50).to_i, 1 ].max
+        per_page = [ per_page, 1000 ].min  # Cap at 1000 to prevent DoS
 
         search = params[:search]
         sort_by = params[:sort_by]
-        sort_direction = params[:sort_direction]&.downcase == 'desc' ? 'desc' : 'asc'
+        sort_direction = params[:sort_direction]&.downcase == "desc" ? "desc" : "asc"
 
         model = @table.dynamic_model
         query = model.all
@@ -21,7 +21,7 @@ module Api
         if search.present?
           searchable_columns = @table.columns.where(searchable: true).pluck(:column_name)
           if searchable_columns.any?
-            search_conditions = searchable_columns.map { |col| "#{col} ILIKE :search" }.join(' OR ')
+            search_conditions = searchable_columns.map { |col| "#{col} ILIKE :search" }.join(" OR ")
             query = query.where(search_conditions, search: "%#{search}%")
           end
         end
@@ -71,7 +71,7 @@ module Api
           record: record_to_json(record)
         }
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Record not found' }, status: :not_found
+        render json: { error: "Record not found" }, status: :not_found
       end
 
       # POST /api/v1/tables/:table_id/records
@@ -114,7 +114,7 @@ module Api
           }, status: :unprocessable_entity
         end
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Record not found' }, status: :not_found
+        render json: { error: "Record not found" }, status: :not_found
       rescue => e
         render json: { error: e.message }, status: :unprocessable_entity
       end
@@ -127,7 +127,7 @@ module Api
         record.destroy
         render json: { success: true }
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Record not found' }, status: :not_found
+        render json: { error: "Record not found" }, status: :not_found
       end
 
       private
@@ -140,7 +140,7 @@ module Api
           Table.includes(:columns).find_by!(slug: params[:table_id])
         end
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Table not found' }, status: :not_found
+        render json: { error: "Table not found" }, status: :not_found
       end
 
       def record_params
@@ -180,8 +180,8 @@ module Api
           value = record_data[column.column_name]
 
           # Handle computed/formula columns - compute the value
-          if column.column_type == 'computed'
-            formula_expression = column.settings&.dig('formula')
+          if column.column_type == "computed"
+            formula_expression = column.settings&.dig("formula")
             if formula_expression.present?
               # Pass the record instance for cross-table references
               json[column.column_name] = formula_evaluator.evaluate(formula_expression, record_data, record)
@@ -189,7 +189,7 @@ module Api
               json[column.column_name] = nil
             end
           # Handle lookup columns - return both ID and display value
-          elsif column.column_type == 'lookup' && value.present?
+          elsif column.column_type == "lookup" && value.present?
             begin
               # Use cached lookup data if available, otherwise query
               related_record = if lookup_cache && lookup_cache[column.id]
@@ -216,7 +216,7 @@ module Api
 
       def build_lookup_cache(records)
         # Preload all lookup data to prevent N+1 queries
-        lookup_columns = @table.columns.where(column_type: 'lookup').includes(:lookup_table)
+        lookup_columns = @table.columns.where(column_type: "lookup").includes(:lookup_table)
         lookup_cache = {}
 
         lookup_columns.each do |column|

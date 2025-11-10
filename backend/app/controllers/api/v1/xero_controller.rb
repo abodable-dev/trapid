@@ -588,7 +588,7 @@ module Api
 
         job_keys.each do |key|
           job_data = Rails.cache.read(key)
-          if job_data && ['queued', 'processing'].include?(job_data[:status])
+          if job_data && [ 'queued', 'processing' ].include?(job_data[:status])
             return job_data
           end
         end

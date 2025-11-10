@@ -1,7 +1,7 @@
 module Api
   module V1
     class SuppliersController < ApplicationController
-      before_action :set_supplier, only: [:show, :update, :destroy, :link_contact, :verify_match, :unlink_contact, :export_pricebook, :import_pricebook, :update_pricebook_item]
+      before_action :set_supplier, only: [ :show, :update, :destroy, :link_contact, :verify_match, :unlink_contact, :export_pricebook, :import_pricebook, :update_pricebook_item ]
 
       # GET /api/v1/suppliers
       def index
@@ -43,12 +43,12 @@ module Api
           success: true,
           suppliers: @suppliers.as_json(
             include: {
-              contact: { only: [:id, :full_name, :email, :mobile_phone] },
-              contacts: { only: [:id, :full_name, :email, :mobile_phone, :office_phone] },
-              pricebook_items: { only: [:id, :item_code, :item_name, :current_price] },
-              default_pricebook_items: { only: [:id, :item_code, :item_name, :current_price, :supplier_id] }
+              contact: { only: [ :id, :full_name, :email, :mobile_phone ] },
+              contacts: { only: [ :id, :full_name, :email, :mobile_phone, :office_phone ] },
+              pricebook_items: { only: [ :id, :item_code, :item_name, :current_price ] },
+              default_pricebook_items: { only: [ :id, :item_code, :item_name, :current_price, :supplier_id ] }
             },
-            methods: [:match_confidence_label, :match_status, :contact_emails, :contact_phones]
+            methods: [ :match_confidence_label, :match_status, :contact_emails, :contact_phones ]
           )
         }
       end
@@ -60,7 +60,7 @@ module Api
         render json: {
           success: true,
           suppliers: @suppliers.as_json(
-            include: { pricebook_items: { only: [:id, :item_code] } }
+            include: { pricebook_items: { only: [ :id, :item_code ] } }
           ),
           count: @suppliers.count
         }
@@ -73,8 +73,8 @@ module Api
         render json: {
           success: true,
           suppliers: @suppliers.as_json(
-            include: { contact: { only: [:id, :full_name, :email, :mobile_phone] } },
-            methods: [:match_confidence_label]
+            include: { contact: { only: [ :id, :full_name, :email, :mobile_phone ] } },
+            methods: [ :match_confidence_label ]
           ),
           count: @suppliers.count
         }
@@ -112,7 +112,7 @@ module Api
           render json: {
             success: true,
             supplier: @supplier.as_json(
-              include: { contact: { only: [:id, :full_name, :email, :mobile_phone] } }
+              include: { contact: { only: [ :id, :full_name, :email, :mobile_phone ] } }
             )
           }
         else
@@ -149,11 +149,11 @@ module Api
           success: true,
           supplier: @supplier.as_json(
             include: {
-              contact: { only: [:id, :full_name, :email, :mobile_phone, :office_phone, :website, :tax_number, :xero_id, :sync_with_xero] },
-              pricebook_items: { only: [:id, :item_code, :item_name, :category, :current_price] },
-              default_pricebook_items: { only: [:id, :item_code, :item_name, :category, :current_price, :supplier_id] }
+              contact: { only: [ :id, :full_name, :email, :mobile_phone, :office_phone, :website, :tax_number, :xero_id, :sync_with_xero ] },
+              pricebook_items: { only: [ :id, :item_code, :item_name, :category, :current_price ] },
+              default_pricebook_items: { only: [ :id, :item_code, :item_name, :category, :current_price, :supplier_id ] }
             },
-            methods: [:match_confidence_label, :match_status]
+            methods: [ :match_confidence_label, :match_status ]
           )
         }
       end
@@ -270,7 +270,7 @@ module Api
           headers = sheet.row(1).map(&:to_s).map(&:strip)
 
           # Validate required columns
-          required_columns = ["Item Code"]
+          required_columns = [ "Item Code" ]
           missing_columns = required_columns - headers
           if missing_columns.any?
             return render json: {
@@ -383,7 +383,7 @@ module Api
 
           render json: {
             success: true,
-            item: item.as_json(only: [:id, :item_code, :item_name, :category, :current_price])
+            item: item.as_json(only: [ :id, :item_code, :item_name, :category, :current_price ])
           }
         else
           render json: { success: false, errors: item.errors.full_messages }, status: :unprocessable_entity

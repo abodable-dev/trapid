@@ -23,7 +23,7 @@ namespace :test do
       { number: "PO-000001", total: 1000.00 },
       { number: "PO-000123", total: 2500.00 },
       { number: "PO-123456", total: 5000.00 },
-      { number: "PO-000999", total: 750.00 },
+      { number: "PO-000999", total: 750.00 }
     ]
 
     created_pos = []

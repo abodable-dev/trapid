@@ -8,11 +8,11 @@ class Construction < ApplicationRecord
 
   # Enums
   enum :onedrive_folder_creation_status, {
-    not_requested: 'not_requested',
-    pending: 'pending',
-    processing: 'processing',
-    completed: 'completed',
-    failed: 'failed'
+    not_requested: "not_requested",
+    pending: "pending",
+    processing: "processing",
+    completed: "completed",
+    failed: "failed"
   }, prefix: :folders, default: :not_requested
 
   # Validations
@@ -21,7 +21,7 @@ class Construction < ApplicationRecord
   validates :site_supervisor_name, presence: true
 
   # Scopes
-  scope :active, -> { where(status: 'Active') }
+  scope :active, -> { where(status: "Active") }
 
   # Methods
   def create_project!(project_manager:, name: nil)
@@ -29,7 +29,7 @@ class Construction < ApplicationRecord
       name: name || "#{title} - Master Schedule",
       project_code: "PROJ-#{id}",
       project_manager: project_manager,
-      status: 'planning',
+      status: "planning",
       start_date: Date.current
     )
   end
@@ -80,14 +80,14 @@ class Construction < ApplicationRecord
 
   # Check if OneDrive folders have not been requested yet
   def folders_not_requested?
-    onedrive_folder_creation_status == 'not_requested'
+    onedrive_folder_creation_status == "not_requested"
   end
 
   # Trigger OneDrive folder creation if not already created
   def create_folders_if_needed!(template_id = nil)
     return unless folders_not_requested?
 
-    update!(onedrive_folder_creation_status: 'pending')
+    update!(onedrive_folder_creation_status: "pending")
     CreateJobFoldersJob.perform_later(id, template_id)
   end
 end

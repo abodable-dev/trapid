@@ -14,35 +14,35 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       # Authentication routes
-      post 'auth/signup', to: 'authentication#signup'
-      post 'auth/login', to: 'authentication#login'
-      get 'auth/me', to: 'authentication#me'
+      post "auth/signup", to: "authentication#signup"
+      post "auth/login", to: "authentication#login"
+      get "auth/me", to: "authentication#me"
 
       # Import routes
-      post 'imports/upload', to: 'imports#upload'
-      post 'imports/execute', to: 'imports#execute'
-      get 'imports/status/:session_key', to: 'imports#status'
+      post "imports/upload", to: "imports#upload"
+      post "imports/execute", to: "imports#execute"
+      get "imports/status/:session_key", to: "imports#status"
 
       # CSV Import routes
-      post 'csv_imports/job_with_pos', to: 'csv_imports#import_job_with_pos'
+      post "csv_imports/job_with_pos", to: "csv_imports#import_job_with_pos"
 
       # Grok AI integration
-      post 'grok/chat', to: 'grok#chat'
-      get 'grok/suggest-features', to: 'grok#suggest_features'
-      post 'grok/plans', to: 'grok#create_plan'
-      get 'grok/plans', to: 'grok#list_plans'
-      get 'grok/plans/:id', to: 'grok#show_plan'
-      patch 'grok/plans/:id', to: 'grok#update_plan'
+      post "grok/chat", to: "grok#chat"
+      get "grok/suggest-features", to: "grok#suggest_features"
+      post "grok/plans", to: "grok#create_plan"
+      get "grok/plans", to: "grok#list_plans"
+      get "grok/plans/:id", to: "grok#show_plan"
+      patch "grok/plans/:id", to: "grok#update_plan"
 
       # Health checks
-      get 'health/pricebook', to: 'health#pricebook'
-      get 'health/pricebook/missing_items', to: 'health#missing_items'
-      get 'pricebook/price_health_check', to: 'pricebook_items#price_health_check'
+      get "health/pricebook", to: "health#pricebook"
+      get "health/pricebook/missing_items", to: "health#missing_items"
+      get "pricebook/price_health_check", to: "pricebook_items#price_health_check"
 
       # Construction jobs management
       resources :constructions do
         # Schedule tasks (nested under constructions)
-        resources :schedule_tasks, only: [:index, :create] do
+        resources :schedule_tasks, only: [ :index, :create ] do
           collection do
             post :import
             post :copy_from_template
@@ -51,7 +51,7 @@ Rails.application.routes.draw do
         end
 
         # Document tasks (nested under constructions)
-        resources :document_tasks, only: [:index] do
+        resources :document_tasks, only: [ :index ] do
           member do
             post :upload
             post :validate
@@ -60,7 +60,7 @@ Rails.application.routes.draw do
       end
 
       # Schedule tasks (non-nested routes)
-      resources :schedule_tasks, only: [:show, :update, :destroy] do
+      resources :schedule_tasks, only: [ :show, :update, :destroy ] do
         member do
           patch :match_po
           delete :unmatch_po
@@ -74,7 +74,7 @@ Rails.application.routes.draw do
         end
 
         # Project tasks (nested under projects)
-        resources :tasks, controller: 'project_tasks'
+        resources :tasks, controller: "project_tasks"
       end
 
       # Purchase Orders management
@@ -92,16 +92,16 @@ Rails.application.routes.draw do
       end
 
       # Price Book management
-      resources :pricebook, controller: 'pricebook_items', path: 'pricebook' do
+      resources :pricebook, controller: "pricebook_items", path: "pricebook" do
         member do
           get :history
           post :fetch_image
           post :update_image
           post :add_price
           post :set_default_supplier
-          delete 'price_histories/:history_id', to: 'pricebook_items#delete_price_history'
-          patch 'price_histories/:history_id', to: 'pricebook_items#update_price_history'
-          get 'proxy_image/:file_type', to: 'pricebook_items#proxy_image', as: :proxy_image
+          delete "price_histories/:history_id", to: "pricebook_items#delete_price_history"
+          patch "price_histories/:history_id", to: "pricebook_items#update_price_history"
+          get "proxy_image/:file_type", to: "pricebook_items#proxy_image", as: :proxy_image
         end
         collection do
           patch :bulk_update
@@ -125,9 +125,9 @@ Rails.application.routes.draw do
           post :link_contact
           post :unlink_contact
           post :verify_match
-          get 'pricebook/export', to: 'suppliers#export_pricebook'
-          post 'pricebook/import', to: 'suppliers#import_pricebook'
-          patch 'pricebook/:item_id', to: 'suppliers#update_pricebook_item'
+          get "pricebook/export", to: "suppliers#export_pricebook"
+          post "pricebook/import", to: "suppliers#import_pricebook"
+          patch "pricebook/:item_id", to: "suppliers#update_pricebook_item"
         end
       end
 
@@ -151,13 +151,13 @@ Rails.application.routes.draw do
       end
 
       # Users management
-      resources :users, only: [:index, :show]
+      resources :users, only: [ :index, :show ]
 
       # Designs library
       resources :designs
 
       # Company Settings
-      resource :company_settings, only: [:show, :update]
+      resource :company_settings, only: [ :show, :update ]
 
       # Folder Templates for OneDrive sync
       resources :folder_templates do
@@ -191,39 +191,39 @@ Rails.application.routes.draw do
       end
 
       # OneDrive integration (per-job - legacy)
-      get 'onedrive/authorize', to: 'one_drive#authorize'
-      get 'onedrive/callback', to: 'one_drive#callback'
-      get 'onedrive/status', to: 'one_drive#status'
-      delete 'onedrive/disconnect', to: 'one_drive#disconnect'
-      post 'onedrive/create_folders', to: 'one_drive#create_folders'
-      get 'onedrive/folders', to: 'one_drive#list_items'
-      post 'onedrive/upload', to: 'one_drive#upload'
-      get 'onedrive/download', to: 'one_drive#download'
+      get "onedrive/authorize", to: "one_drive#authorize"
+      get "onedrive/callback", to: "one_drive#callback"
+      get "onedrive/status", to: "one_drive#status"
+      delete "onedrive/disconnect", to: "one_drive#disconnect"
+      post "onedrive/create_folders", to: "one_drive#create_folders"
+      get "onedrive/folders", to: "one_drive#list_items"
+      post "onedrive/upload", to: "one_drive#upload"
+      get "onedrive/download", to: "one_drive#download"
 
       # OneDrive integration (organization-wide)
-      get 'organization_onedrive/status', to: 'organization_onedrive#status'
-      get 'organization_onedrive/authorize', to: 'organization_onedrive#authorize'
-      get 'organization_onedrive/callback', to: 'organization_onedrive#callback'
-      delete 'organization_onedrive/disconnect', to: 'organization_onedrive#disconnect'
-      get 'organization_onedrive/browse_folders', to: 'organization_onedrive#browse_folders'
-      patch 'organization_onedrive/change_root_folder', to: 'organization_onedrive#change_root_folder'
-      post 'organization_onedrive/create_job_folders', to: 'organization_onedrive#create_job_folders'
-      get 'organization_onedrive/job_folders', to: 'organization_onedrive#list_job_items'
-      post 'organization_onedrive/upload', to: 'organization_onedrive#upload'
-      get 'organization_onedrive/download', to: 'organization_onedrive#download'
-      get 'organization_onedrive/preview_pricebook_matches', to: 'organization_onedrive#preview_pricebook_matches'
-      post 'organization_onedrive/apply_pricebook_matches', to: 'organization_onedrive#apply_pricebook_matches'
-      post 'organization_onedrive/sync_pricebook_images', to: 'organization_onedrive#sync_pricebook_images'
+      get "organization_onedrive/status", to: "organization_onedrive#status"
+      get "organization_onedrive/authorize", to: "organization_onedrive#authorize"
+      get "organization_onedrive/callback", to: "organization_onedrive#callback"
+      delete "organization_onedrive/disconnect", to: "organization_onedrive#disconnect"
+      get "organization_onedrive/browse_folders", to: "organization_onedrive#browse_folders"
+      patch "organization_onedrive/change_root_folder", to: "organization_onedrive#change_root_folder"
+      post "organization_onedrive/create_job_folders", to: "organization_onedrive#create_job_folders"
+      get "organization_onedrive/job_folders", to: "organization_onedrive#list_job_items"
+      post "organization_onedrive/upload", to: "organization_onedrive#upload"
+      get "organization_onedrive/download", to: "organization_onedrive#download"
+      get "organization_onedrive/preview_pricebook_matches", to: "organization_onedrive#preview_pricebook_matches"
+      post "organization_onedrive/apply_pricebook_matches", to: "organization_onedrive#apply_pricebook_matches"
+      post "organization_onedrive/sync_pricebook_images", to: "organization_onedrive#sync_pricebook_images"
 
       # Schema information
-      get 'schema', to: 'schema#index'
-      get 'schema/tables', to: 'schema#tables'
-      get 'schema/system_table_columns/:table_name', to: 'schema#system_table_columns'
+      get "schema", to: "schema#index"
+      get "schema/tables", to: "schema#tables"
+      get "schema/system_table_columns/:table_name", to: "schema#system_table_columns"
 
       # Table management
       resources :tables do
         # Column management
-        resources :columns, only: [:create, :update, :destroy] do
+        resources :columns, only: [ :create, :update, :destroy ] do
           collection do
             post :test_formula
           end
@@ -238,21 +238,21 @@ Rails.application.routes.draw do
       end
 
       # Estimates management (from Unreal Engine or other sources)
-      resources :estimates, only: [:index, :show, :destroy] do
+      resources :estimates, only: [ :index, :show, :destroy ] do
         member do
           patch :match
           post :generate_purchase_orders
-          post :ai_review, to: 'estimate_reviews#create'
+          post :ai_review, to: "estimate_reviews#create"
         end
-        resources :reviews, controller: 'estimate_reviews', only: [:index]
+        resources :reviews, controller: "estimate_reviews", only: [ :index ]
       end
 
       # Estimate Reviews (AI Plan Analysis)
-      resources :estimate_reviews, only: [:show, :destroy]
+      resources :estimate_reviews, only: [ :show, :destroy ]
 
       # External integrations (API endpoints for third-party systems)
       namespace :external do
-        post 'unreal_estimates', to: 'unreal_estimates#create'
+        post "unreal_estimates", to: "unreal_estimates#create"
       end
     end
   end

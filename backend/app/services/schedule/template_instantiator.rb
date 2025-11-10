@@ -39,7 +39,7 @@ module Schedule
       @errors << e.message
       Rails.logger.error("ScheduleTemplateInstantiator failed: #{e.message}")
       Rails.logger.error(e.backtrace.join("\n"))
-      return { success: false, errors: @errors }
+      { success: false, errors: @errors }
     end
 
     private
@@ -169,17 +169,17 @@ module Schedule
       task.predecessor_dependencies.includes(:predecessor_task).each do |dep|
         pred = dep.predecessor_task
         pred_date = case dep.dependency_type
-                    when 'FS'  # Finish-to-Start
+        when 'FS'  # Finish-to-Start
                       pred.planned_end_date
-                    when 'SS'  # Start-to-Start
+        when 'SS'  # Start-to-Start
                       pred.planned_start_date
-                    when 'FF'  # Finish-to-Finish (rare for start calc)
+        when 'FF'  # Finish-to-Finish (rare for start calc)
                       pred.planned_end_date - task.duration_days.days
-                    when 'SF'  # Start-to-Finish (rare)
+        when 'SF'  # Start-to-Finish (rare)
                       pred.planned_start_date
-                    else
+        else
                       pred.planned_end_date
-                    end
+        end
 
         # Apply lag
         pred_date += dep.lag_days.days if pred_date && dep.lag_days

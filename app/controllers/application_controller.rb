@@ -19,7 +19,7 @@ class ApplicationController < ActionController::API
 
   def require_admin
     unless current_user&.admin?
-      render json: { error: 'Unauthorized. Admin access required.' }, status: :forbidden
+      render json: { error: "Unauthorized. Admin access required." }, status: :forbidden
     end
   end
 end

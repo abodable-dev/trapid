@@ -1,4 +1,4 @@
-require 'fuzzy_match'
+require "fuzzy_match"
 
 class XeroContactSyncService
   attr_reader :stats
@@ -61,10 +61,10 @@ class XeroContactSyncService
 
   # Make methods public for use by XeroContactSyncJob
   def fetch_xero_contacts
-    result = @xero_client.get('Contacts')
+    result = @xero_client.get("Contacts")
 
     if result[:success]
-      contacts = result[:data]['Contacts'] || []
+      contacts = result[:data]["Contacts"] || []
       Rails.logger.info("Successfully fetched #{contacts.length} contacts from Xero")
       contacts
     else
@@ -99,13 +99,13 @@ class XeroContactSyncService
         if trapid_contact
           # Match found - update both systems
           matched_trapid_ids.add(trapid_contact.id)
-          matched_xero_ids.add(xero_contact['ContactID'])
+          matched_xero_ids.add(xero_contact["ContactID"])
           sync_matched_contact(trapid_contact, xero_contact)
           @stats[:matched] += 1
         else
           # No match - create in Trapid
           create_trapid_contact_from_xero(xero_contact)
-          matched_xero_ids.add(xero_contact['ContactID'])
+          matched_xero_ids.add(xero_contact["ContactID"])
           @stats[:created_in_trapid] += 1
         end
 
@@ -137,10 +137,10 @@ class XeroContactSyncService
   end
 
   def find_matching_trapid_contact(xero_contact, by_xero_id, by_tax_number, by_email, remaining_contacts)
-    xero_id = xero_contact['ContactID']
-    xero_tax = xero_contact['TaxNumber']
+    xero_id = xero_contact["ContactID"]
+    xero_tax = xero_contact["TaxNumber"]
     xero_email = extract_xero_email(xero_contact)
-    xero_name = xero_contact['Name']
+    xero_name = xero_contact["Name"]
 
     # Priority 1: Match by xero_id
     if by_xero_id[xero_id]
@@ -184,7 +184,7 @@ class XeroContactSyncService
     return nil if contacts.empty?
 
     # Create fuzzy matcher with contact names
-    contact_names = contacts.map { |c| [c.display_name, c] }.to_h
+    contact_names = contacts.map { |c| [ c.display_name, c ] }.to_h
     matcher = FuzzyMatch.new(contact_names.keys)
 
     # Find best match
@@ -208,37 +208,37 @@ class XeroContactSyncService
 
   def update_trapid_from_xero(trapid_contact, xero_contact)
     updates = {
-      xero_id: xero_contact['ContactID'],
+      xero_id: xero_contact["ContactID"],
       last_synced_at: @sync_timestamp,
       xero_sync_error: nil
     }
 
     # Update fields if Xero has data and Trapid doesn't, or if explicitly syncing
-    updates[:full_name] = xero_contact['Name'] if xero_contact['Name'].present?
-    updates[:first_name] = xero_contact['FirstName'] if xero_contact['FirstName'].present?
-    updates[:last_name] = xero_contact['LastName'] if xero_contact['LastName'].present?
-    updates[:tax_number] = normalize_tax_number(xero_contact['TaxNumber']) if xero_contact['TaxNumber'].present?
+    updates[:full_name] = xero_contact["Name"] if xero_contact["Name"].present?
+    updates[:first_name] = xero_contact["FirstName"] if xero_contact["FirstName"].present?
+    updates[:last_name] = xero_contact["LastName"] if xero_contact["LastName"].present?
+    updates[:tax_number] = normalize_tax_number(xero_contact["TaxNumber"]) if xero_contact["TaxNumber"].present?
 
     # Extract email from Xero contact
     xero_email = extract_xero_email(xero_contact)
     updates[:email] = xero_email if xero_email.present?
 
     # Extract phone numbers
-    if xero_contact['Phones'].present?
-      xero_contact['Phones'].each do |phone|
-        case phone['PhoneType']
-        when 'MOBILE'
-          updates[:mobile_phone] = phone['PhoneNumber'] if phone['PhoneNumber'].present?
-        when 'DEFAULT', 'DDI'
-          updates[:office_phone] = phone['PhoneNumber'] if phone['PhoneNumber'].present?
+    if xero_contact["Phones"].present?
+      xero_contact["Phones"].each do |phone|
+        case phone["PhoneType"]
+        when "MOBILE"
+          updates[:mobile_phone] = phone["PhoneNumber"] if phone["PhoneNumber"].present?
+        when "DEFAULT", "DDI"
+          updates[:office_phone] = phone["PhoneNumber"] if phone["PhoneNumber"].present?
         end
       end
     end
 
     # Extract bank account details
-    if xero_contact['BankAccountDetails'].present?
+    if xero_contact["BankAccountDetails"].present?
       # BankAccountDetails is a string in format "BSB: 123456, Account Number: 98765432, Account Name: Business Account"
-      bank_details = xero_contact['BankAccountDetails']
+      bank_details = xero_contact["BankAccountDetails"]
 
       # Try to parse BSB
       if bank_details.match(/BSB[:\s]+(\d{6})/)
@@ -247,7 +247,7 @@ class XeroContactSyncService
 
       # Try to parse account number
       if bank_details.match(/Account Number[:\s]+([\d\s]+)/)
-        updates[:bank_account_number] = $1.gsub(/\s/, '')
+        updates[:bank_account_number] = $1.gsub(/\s/, "")
       end
 
       # Try to parse account name
@@ -257,18 +257,18 @@ class XeroContactSyncService
     end
 
     # Extract purchase account and payment terms
-    if xero_contact['PurchaseDetails'].present? && xero_contact['PurchaseDetails']['AccountCode'].present?
-      updates[:default_purchase_account] = xero_contact['PurchaseDetails']['AccountCode']
+    if xero_contact["PurchaseDetails"].present? && xero_contact["PurchaseDetails"]["AccountCode"].present?
+      updates[:default_purchase_account] = xero_contact["PurchaseDetails"]["AccountCode"]
     end
 
-    if xero_contact['PaymentTerms'].present? && xero_contact['PaymentTerms']['Bills'].present?
-      bills = xero_contact['PaymentTerms']['Bills']
-      updates[:bill_due_day] = bills['Day'] if bills['Day'].present?
-      updates[:bill_due_type] = bills['Type'] if bills['Type'].present?
+    if xero_contact["PaymentTerms"].present? && xero_contact["PaymentTerms"]["Bills"].present?
+      bills = xero_contact["PaymentTerms"]["Bills"]
+      updates[:bill_due_day] = bills["Day"] if bills["Day"].present?
+      updates[:bill_due_type] = bills["Type"] if bills["Type"].present?
     end
 
     # Track changes for activity logging
-    changed_fields = updates.keys - [:xero_id, :last_synced_at, :xero_sync_error]
+    changed_fields = updates.keys - [ :xero_id, :last_synced_at, :xero_sync_error ]
     changes_made = changed_fields.each_with_object({}) do |field, hash|
       old_value = trapid_contact.send(field)
       new_value = updates[field]
@@ -283,7 +283,7 @@ class XeroContactSyncService
     if changes_made.any?
       ContactActivity.log_xero_sync(
         contact: trapid_contact,
-        action: 'updated',
+        action: "updated",
         changes: changes_made,
         xero_data: xero_contact
       )
@@ -298,24 +298,24 @@ class XeroContactSyncService
     Rails.logger.info("Creating Trapid contact from Xero: #{xero_contact['Name']}")
 
     contact_data = {
-      xero_id: xero_contact['ContactID'],
-      full_name: xero_contact['Name'],
-      first_name: xero_contact['FirstName'],
-      last_name: xero_contact['LastName'],
-      tax_number: normalize_tax_number(xero_contact['TaxNumber']),
+      xero_id: xero_contact["ContactID"],
+      full_name: xero_contact["Name"],
+      first_name: xero_contact["FirstName"],
+      last_name: xero_contact["LastName"],
+      tax_number: normalize_tax_number(xero_contact["TaxNumber"]),
       email: extract_xero_email(xero_contact),
       sync_with_xero: true,
       last_synced_at: @sync_timestamp
     }
 
     # Extract phone numbers
-    if xero_contact['Phones'].present?
-      xero_contact['Phones'].each do |phone|
-        case phone['PhoneType']
-        when 'MOBILE'
-          contact_data[:mobile_phone] = phone['PhoneNumber']
-        when 'DEFAULT', 'DDI'
-          contact_data[:office_phone] = phone['PhoneNumber']
+    if xero_contact["Phones"].present?
+      xero_contact["Phones"].each do |phone|
+        case phone["PhoneType"]
+        when "MOBILE"
+          contact_data[:mobile_phone] = phone["PhoneNumber"]
+        when "DEFAULT", "DDI"
+          contact_data[:office_phone] = phone["PhoneNumber"]
         end
       end
     end
@@ -326,7 +326,7 @@ class XeroContactSyncService
     # Log activity for new contact creation
     ContactActivity.log_xero_sync(
       contact: new_contact,
-      action: 'created',
+      action: "created",
       changes: {},
       xero_data: xero_contact
     )
@@ -346,13 +346,13 @@ class XeroContactSyncService
       ]
     }
 
-    result = @xero_client.post('Contacts', xero_payload)
+    result = @xero_client.post("Contacts", xero_payload)
 
     if result[:success]
-      created_contact = result[:data]['Contacts']&.first
+      created_contact = result[:data]["Contacts"]&.first
       if created_contact
         trapid_contact.update!(
-          xero_id: created_contact['ContactID'],
+          xero_id: created_contact["ContactID"],
           last_synced_at: @sync_timestamp,
           xero_sync_error: nil
         )
@@ -381,13 +381,13 @@ class XeroContactSyncService
     phones = []
     if trapid_contact.mobile_phone.present?
       phones << {
-        PhoneType: 'MOBILE',
+        PhoneType: "MOBILE",
         PhoneNumber: trapid_contact.mobile_phone
       }
     end
     if trapid_contact.office_phone.present?
       phones << {
-        PhoneType: 'DEFAULT',
+        PhoneType: "DEFAULT",
         PhoneNumber: trapid_contact.office_phone
       }
     end
@@ -398,12 +398,12 @@ class XeroContactSyncService
 
   def extract_xero_email(xero_contact)
     # Xero can have email in EmailAddress field or in Addresses array
-    return xero_contact['EmailAddress'] if xero_contact['EmailAddress'].present?
+    return xero_contact["EmailAddress"] if xero_contact["EmailAddress"].present?
 
     # Check addresses for email
-    if xero_contact['Addresses'].present?
-      xero_contact['Addresses'].each do |address|
-        return address['EmailAddress'] if address['EmailAddress'].present?
+    if xero_contact["Addresses"].present?
+      xero_contact["Addresses"].each do |address|
+        return address["EmailAddress"] if address["EmailAddress"].present?
       end
     end
 
@@ -413,7 +413,7 @@ class XeroContactSyncService
   def normalize_tax_number(tax_number)
     return nil if tax_number.blank?
     # Remove spaces, dashes, and other formatting
-    tax_number.to_s.gsub(/[\s\-]/, '').upcase
+    tax_number.to_s.gsub(/[\s\-]/, "").upcase
   end
 
   # Helper to set sync timestamp (useful for job)

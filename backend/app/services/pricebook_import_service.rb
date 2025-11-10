@@ -85,7 +85,7 @@ class PricebookImportService
 
     # Validate CSV headers
     headers = CSV.open(@file_path, &:readline)
-    required_headers = ['item_code', 'item_name']
+    required_headers = [ 'item_code', 'item_name' ]
 
     missing_headers = required_headers - headers.map(&:downcase)
     unless missing_headers.empty?

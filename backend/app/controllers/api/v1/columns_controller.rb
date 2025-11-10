@@ -2,7 +2,7 @@ module Api
   module V1
     class ColumnsController < ApplicationController
       before_action :set_table
-      before_action :set_column, only: [:update, :destroy]
+      before_action :set_column, only: [ :update, :destroy ]
 
       # POST /api/v1/tables/:table_id/columns
       def create
@@ -98,7 +98,7 @@ module Api
       def lookup_options
         column = @table.columns.find(params[:id])
 
-        unless column.column_type.in?(['lookup', 'multiple_lookups'])
+        unless column.column_type.in?([ 'lookup', 'multiple_lookups' ])
           return render json: { error: 'Not a lookup column' }, status: :bad_request
         end
 
@@ -184,7 +184,7 @@ module Api
       def lookup_search
         column = @table.columns.find(params[:id])
 
-        unless column.column_type.in?(['lookup', 'multiple_lookups'])
+        unless column.column_type.in?([ 'lookup', 'multiple_lookups' ])
           return render json: { error: 'Not a lookup column' }, status: :bad_request
         end
 
@@ -208,7 +208,7 @@ module Api
           # If no searchable columns defined, search all text/string columns
           if searchable_columns.empty?
             searchable_columns = target_table.columns
-              .where(column_type: ['single_line_text', 'email', 'phone', 'url', 'multiple_lines_text'])
+              .where(column_type: [ 'single_line_text', 'email', 'phone', 'url', 'multiple_lines_text' ])
               .pluck(:column_name)
           end
 
@@ -232,7 +232,7 @@ module Api
           # Get all text columns for context
           context_fields = {}
           target_table.columns
-            .where(column_type: ['single_line_text', 'email', 'phone', 'url'])
+            .where(column_type: [ 'single_line_text', 'email', 'phone', 'url' ])
             .limit(3)
             .each do |col|
               value = record.send(col.column_name)

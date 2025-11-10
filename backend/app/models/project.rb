@@ -8,7 +8,7 @@ class Project < ApplicationRecord
   validates :project_code, presence: true, uniqueness: true
   validates :status, inclusion: { in: %w[planning active complete on_hold] }
 
-  scope :active, -> { where(status: ['planning', 'active']) }
+  scope :active, -> { where(status: [ 'planning', 'active' ]) }
   scope :completed, -> { where(status: 'complete') }
 
   def total_tasks

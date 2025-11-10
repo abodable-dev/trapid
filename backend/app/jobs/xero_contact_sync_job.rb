@@ -298,7 +298,7 @@ class XeroContactSyncJob < ApplicationJob
     return nil if contacts.empty?
 
     # Create fuzzy matcher with contact names
-    contact_names = contacts.map { |c| [c.display_name, c] }.to_h
+    contact_names = contacts.map { |c| [ c.display_name, c ] }.to_h
     matcher = FuzzyMatch.new(contact_names.keys)
 
     # Find best match

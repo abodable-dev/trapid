@@ -144,7 +144,7 @@ module Api
         end
 
         # Sort by missing items count (descending) then by category
-        sorted_results = results.sort_by { |r| [-r[:missing_items_count], r[:category], r[:supplier][:name]] }
+        sorted_results = results.sort_by { |r| [ -r[:missing_items_count], r[:category], r[:supplier][:name] ] }
 
         # Return the results, count of suppliers with issues, and total suppliers
         {

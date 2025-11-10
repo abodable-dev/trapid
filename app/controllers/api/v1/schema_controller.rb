@@ -8,7 +8,7 @@ module Api
 
         # Build relationships map for user tables
         user_relationships = []
-        Column.where(column_type: 'lookup').includes(:table, :lookup_table).each do |col|
+        Column.where(column_type: "lookup").includes(:table, :lookup_table).each do |col|
           next unless col.lookup_table
 
           user_relationships << {
@@ -20,7 +20,7 @@ module Api
             to_table_id: "user_#{col.lookup_table_id}",
             to_table_name: col.lookup_table.name,
             to_table_slug: col.lookup_table.slug,
-            relationship_type: col.is_multiple ? 'many_to_many' : 'many_to_one',
+            relationship_type: col.is_multiple ? "many_to_many" : "many_to_one",
             required: col.required
           }
         end
@@ -56,26 +56,26 @@ module Api
 
         # Get system tables and their foreign keys
         excluded_tables = [
-          'ar_internal_metadata',
-          'schema_migrations',
-          'solid_queue_blocked_executions',
-          'solid_queue_claimed_executions',
-          'solid_queue_failed_executions',
-          'solid_queue_jobs',
-          'solid_queue_pauses',
-          'solid_queue_processes',
-          'solid_queue_ready_executions',
-          'solid_queue_recurring_executions',
-          'solid_queue_recurring_tasks',
-          'solid_queue_scheduled_executions',
-          'solid_queue_semaphores',
-          'tables',
-          'columns',
-          'versions'
+          "ar_internal_metadata",
+          "schema_migrations",
+          "solid_queue_blocked_executions",
+          "solid_queue_claimed_executions",
+          "solid_queue_failed_executions",
+          "solid_queue_jobs",
+          "solid_queue_pauses",
+          "solid_queue_processes",
+          "solid_queue_ready_executions",
+          "solid_queue_recurring_executions",
+          "solid_queue_recurring_tasks",
+          "solid_queue_scheduled_executions",
+          "solid_queue_semaphores",
+          "tables",
+          "columns",
+          "versions"
         ]
 
         all_db_tables = ActiveRecord::Base.connection.tables
-        system_tables = all_db_tables.reject { |t| t.start_with?('user_') || excluded_tables.include?(t) }
+        system_tables = all_db_tables.reject { |t| t.start_with?("user_") || excluded_tables.include?(t) }
 
         system_tables_data = system_tables.map do |table_name|
           columns = get_system_table_columns(table_name)
@@ -134,7 +134,7 @@ module Api
             rescue
               0
             end,
-            type: table.database_table_name.include?('_import_') ? 'import' : 'user',
+            type: table.database_table_name.include?("_import_") ? "import" : "user",
             created_at: table.created_at,
             updated_at: table.updated_at
           }
@@ -142,26 +142,26 @@ module Api
 
         # Get system tables (exclude Rails internal and SolidQueue tables)
         excluded_tables = [
-          'ar_internal_metadata',
-          'schema_migrations',
-          'solid_queue_blocked_executions',
-          'solid_queue_claimed_executions',
-          'solid_queue_failed_executions',
-          'solid_queue_jobs',
-          'solid_queue_pauses',
-          'solid_queue_processes',
-          'solid_queue_ready_executions',
-          'solid_queue_recurring_executions',
-          'solid_queue_recurring_tasks',
-          'solid_queue_scheduled_executions',
-          'solid_queue_semaphores',
-          'tables',
-          'columns',
-          'versions'
+          "ar_internal_metadata",
+          "schema_migrations",
+          "solid_queue_blocked_executions",
+          "solid_queue_claimed_executions",
+          "solid_queue_failed_executions",
+          "solid_queue_jobs",
+          "solid_queue_pauses",
+          "solid_queue_processes",
+          "solid_queue_ready_executions",
+          "solid_queue_recurring_executions",
+          "solid_queue_recurring_tasks",
+          "solid_queue_scheduled_executions",
+          "solid_queue_semaphores",
+          "tables",
+          "columns",
+          "versions"
         ]
 
         all_db_tables = ActiveRecord::Base.connection.tables
-        system_tables = all_db_tables.reject { |t| t.start_with?('user_') || excluded_tables.include?(t) }
+        system_tables = all_db_tables.reject { |t| t.start_with?("user_") || excluded_tables.include?(t) }
 
         system_table_data = system_tables.map do |table_name|
           # Get column count
@@ -188,7 +188,7 @@ module Api
             is_live: true,
             columns_count: columns_count,
             record_count: record_count,
-            type: 'system',
+            type: "system",
             created_at: nil,
             updated_at: nil
           }
@@ -208,31 +208,31 @@ module Api
 
         # Security: Validate that the table exists and is not in excluded list
         excluded_tables = [
-          'ar_internal_metadata',
-          'schema_migrations',
-          'solid_queue_blocked_executions',
-          'solid_queue_claimed_executions',
-          'solid_queue_failed_executions',
-          'solid_queue_jobs',
-          'solid_queue_pauses',
-          'solid_queue_processes',
-          'solid_queue_ready_executions',
-          'solid_queue_recurring_executions',
-          'solid_queue_recurring_tasks',
-          'solid_queue_scheduled_executions',
-          'solid_queue_semaphores',
-          'tables',
-          'columns',
-          'versions'
+          "ar_internal_metadata",
+          "schema_migrations",
+          "solid_queue_blocked_executions",
+          "solid_queue_claimed_executions",
+          "solid_queue_failed_executions",
+          "solid_queue_jobs",
+          "solid_queue_pauses",
+          "solid_queue_processes",
+          "solid_queue_ready_executions",
+          "solid_queue_recurring_executions",
+          "solid_queue_recurring_tasks",
+          "solid_queue_scheduled_executions",
+          "solid_queue_semaphores",
+          "tables",
+          "columns",
+          "versions"
         ]
 
         unless ActiveRecord::Base.connection.table_exists?(table_name)
-          render json: { error: 'Table not found' }, status: :not_found
+          render json: { error: "Table not found" }, status: :not_found
           return
         end
 
-        if table_name.start_with?('user_') || excluded_tables.include?(table_name)
-          render json: { error: 'Access denied' }, status: :forbidden
+        if table_name.start_with?("user_") || excluded_tables.include?(table_name)
+          render json: { error: "Access denied" }, status: :forbidden
           return
         end
 
@@ -252,7 +252,7 @@ module Api
         }
       rescue => e
         Rails.logger.error "Failed to fetch columns for #{table_name}: #{e.message}"
-        render json: { error: 'Failed to fetch table columns' }, status: :internal_server_error
+        render json: { error: "Failed to fetch table columns" }, status: :internal_server_error
       end
 
       private
@@ -278,7 +278,7 @@ module Api
             column_type: map_sql_type_to_display(col.sql_type),
             required: !col.null,
             is_unique: false,
-            is_title: col.name == 'name' || col.name == 'title',
+            is_title: col.name == "name" || col.name == "title",
             is_multiple: false
           }
         end
@@ -306,7 +306,7 @@ module Api
               to_table_id: "system_#{fk.to_table}",
               to_table_name: fk.to_table.titleize,
               to_table_slug: fk.to_table.parameterize,
-              relationship_type: 'many_to_one',
+              relationship_type: "many_to_one",
               required: true # Foreign keys are typically required
             }
           end
@@ -320,22 +320,22 @@ module Api
 
       def get_system_table_icon(table_name)
         icons = {
-          'constructions' => '🏗️',
-          'designs' => '📐',
-          'estimates' => '📊',
-          'purchase_orders' => '📦',
-          'suppliers' => '🏭',
-          'contacts' => '👤',
-          'pricebook_items' => '💰',
-          'price_histories' => '📈',
-          'projects' => '📋',
-          'project_tasks' => '✓',
-          'schedule_tasks' => '📅',
-          'users' => '👥',
-          'import_sessions' => '📥',
-          'grok_plans' => '🤖',
-          'xero_credentials' => '🔐',
-          'one_drive_credentials' => '☁️'
+          "constructions" => "\u{1F3D7}\uFE0F",
+          "designs" => "\u{1F4D0}",
+          "estimates" => "\u{1F4CA}",
+          "purchase_orders" => "\u{1F4E6}",
+          "suppliers" => "\u{1F3ED}",
+          "contacts" => "\u{1F464}",
+          "pricebook_items" => "\u{1F4B0}",
+          "price_histories" => "\u{1F4C8}",
+          "projects" => "\u{1F4CB}",
+          "project_tasks" => "\u2713",
+          "schedule_tasks" => "\u{1F4C5}",
+          "users" => "\u{1F465}",
+          "import_sessions" => "\u{1F4E5}",
+          "grok_plans" => "\u{1F916}",
+          "xero_credentials" => "\u{1F510}",
+          "one_drive_credentials" => "\u2601\uFE0F"
         }
 
         icons[table_name]
@@ -344,21 +344,21 @@ module Api
       def map_sql_type_to_display(sql_type)
         case sql_type
         when /^character varying/, /^varchar/, /^text/
-          'text'
+          "text"
         when /^integer/, /^bigint/, /^smallint/
-          'number'
+          "number"
         when /^numeric/, /^decimal/, /^real/, /^double/
-          'number'
+          "number"
         when /^boolean/
-          'boolean'
+          "boolean"
         when /^date$/
-          'date'
+          "date"
         when /^timestamp/, /^datetime/
-          'datetime'
+          "datetime"
         when /^json/
-          'json'
+          "json"
         else
-          'text'
+          "text"
         end
       end
     end

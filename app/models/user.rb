@@ -13,10 +13,10 @@ class User < ApplicationRecord
 
   # Role helper methods
   def admin?
-    role == 'admin'
+    role == "admin"
   end
 
   def user?
-    role == 'user'
+    role == "user"
   end
 end

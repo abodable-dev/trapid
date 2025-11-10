@@ -102,7 +102,7 @@ class EstimateToPurchaseOrderService
   end
 
   def build_po_notes(category, supplier_id, needs_review)
-    notes = ["Category: #{category}"]
+    notes = [ "Category: #{category}" ]
 
     if needs_review
       notes << "NEEDS REVIEW: No supplier found for this category"

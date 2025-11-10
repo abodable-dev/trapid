@@ -21,8 +21,8 @@ class Contact < ApplicationRecord
   before_save :set_primary_contact_type_if_blank
 
   # Scopes
-  scope :with_email, -> { where.not(email: [nil, '']) }
-  scope :with_phone, -> { where.not(mobile_phone: [nil, '']).or(where.not(office_phone: [nil, ''])) }
+  scope :with_email, -> { where.not(email: [ nil, '' ]) }
+  scope :with_phone, -> { where.not(mobile_phone: [ nil, '' ]).or(where.not(office_phone: [ nil, '' ])) }
   scope :with_type, ->(type) { where("? = ANY(contact_types)", type) }
   scope :customers, -> { with_type('customer') }
   scope :suppliers, -> { with_type('supplier') }

@@ -2,9 +2,9 @@ module Api
   module V1
     class ScheduleTemplatesController < ApplicationController
       before_action :authorize_request
-      before_action :set_schedule_template, only: [:show, :update, :destroy, :duplicate, :set_as_default]
-      before_action :check_can_create_templates, only: [:create, :duplicate]
-      before_action :check_can_edit_templates, only: [:update, :destroy, :set_as_default]
+      before_action :set_schedule_template, only: [ :show, :update, :destroy, :duplicate, :set_as_default ]
+      before_action :check_can_create_templates, only: [ :create, :duplicate ]
+      before_action :check_can_edit_templates, only: [ :update, :destroy, :set_as_default ]
 
       # GET /api/v1/schedule_templates
       def index

@@ -136,7 +136,7 @@ class SupplierMatcher
 
     # Use Damerau-Levenshtein distance
     distance = levenshtein_distance(str1, str2)
-    max_length = [str1.length, str2.length].max
+    max_length = [ str1.length, str2.length ].max
 
     # Convert distance to similarity score (0-1)
     1.0 - (distance.to_f / max_length)

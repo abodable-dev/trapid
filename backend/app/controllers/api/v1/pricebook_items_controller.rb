@@ -1,7 +1,7 @@
 module Api
   module V1
     class PricebookItemsController < ApplicationController
-      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image, :add_price, :set_default_supplier, :delete_price_history, :update_price_history, :proxy_image]
+      before_action :set_pricebook_item, only: [ :show, :update, :destroy, :history, :fetch_image, :update_image, :add_price, :set_default_supplier, :delete_price_history, :update_price_history, :proxy_image ]
 
       # GET /api/v1/pricebook
       def index
@@ -61,9 +61,9 @@ module Api
         end
 
         # Pagination - Added DoS protection by capping limit at 1000
-        page = [params[:page]&.to_i || 1, 1].max # Ensure page is at least 1
+        page = [ params[:page]&.to_i || 1, 1 ].max # Ensure page is at least 1
         limit = (params[:limit] || params[:per_page])&.to_i || 100
-        limit = [[limit, 1].max, 1000].min # Cap between 1 and 1000
+        limit = [ [ limit, 1 ].max, 1000 ].min # Cap between 1 and 1000
         offset = (page - 1) * limit
 
         total_count = @items.is_a?(Array) ? @items.count : @items.count
@@ -134,11 +134,11 @@ module Api
       def show
         item_json = @item.as_json(
           include: {
-            supplier: { only: [:id, :full_name, :email, :mobile_phone, :office_phone, :rating] },
-            default_supplier: { only: [:id, :full_name] },
+            supplier: { only: [ :id, :full_name, :email, :mobile_phone, :office_phone, :rating ] },
+            default_supplier: { only: [ :id, :full_name ] },
             price_histories: {
-              only: [:id, :old_price, :new_price, :change_reason, :created_at, :date_effective],
-              include: { supplier: { only: [:id, :full_name] } }
+              only: [ :id, :old_price, :new_price, :change_reason, :created_at, :date_effective ],
+              include: { supplier: { only: [ :id, :full_name ] } }
             }
           }
         )
@@ -188,7 +188,7 @@ module Api
       # GET /api/v1/pricebook/:id/history
       def history
         histories = @item.price_histories.recent.includes(:supplier)
-        render json: histories.as_json(include: { supplier: { only: [:id, :full_name], methods: [] } }).map { |h|
+        render json: histories.as_json(include: { supplier: { only: [ :id, :full_name ], methods: [] } }).map { |h|
           h['supplier']['name'] = h['supplier']['full_name'] if h['supplier']
           h
         }
@@ -272,7 +272,7 @@ module Api
               results[:errors] << { id: update[:id], errors: item.errors.full_messages }
             end
           else
-            results[:errors] << { id: update[:id], errors: ["Item not found"] }
+            results[:errors] << { id: update[:id], errors: [ "Item not found" ] }
           end
         end
 
@@ -286,7 +286,7 @@ module Api
         end
 
         file = params[:file]
-        temp_file = Tempfile.new(['pricebook_import', '.csv'])
+        temp_file = Tempfile.new([ 'pricebook_import', '.csv' ])
 
         begin
           # Save uploaded file
@@ -319,7 +319,7 @@ module Api
         end
 
         file = params[:file]
-        temp_file = Tempfile.new(['pricebook_preview', '.csv'])
+        temp_file = Tempfile.new([ 'pricebook_preview', '.csv' ])
 
         begin
           temp_file.write(file.read)
@@ -558,7 +558,7 @@ module Api
         end
 
         file = params[:file]
-        temp_file = Tempfile.new(['price_history_import', File.extname(file.original_filename)], binmode: true)
+        temp_file = Tempfile.new([ 'price_history_import', File.extname(file.original_filename) ], binmode: true)
 
         begin
           # Save uploaded file in binary mode to avoid encoding issues
@@ -732,8 +732,8 @@ module Api
 
       def item_with_risk_data(item)
         item_json = item.as_json(include: {
-          supplier: { only: [:id, :full_name] },
-          default_supplier: { only: [:id, :full_name] }
+          supplier: { only: [ :id, :full_name ] },
+          default_supplier: { only: [ :id, :full_name ] }
         })
 
         # Map full_name to name for backwards compatibility
@@ -767,7 +767,7 @@ module Api
       end
 
       def item_with_image_data(item)
-        item_json = item.as_json(include: { supplier: { only: [:id, :full_name] } })
+        item_json = item.as_json(include: { supplier: { only: [ :id, :full_name ] } })
 
         # Map full_name to name for backwards compatibility
         if item_json['supplier']

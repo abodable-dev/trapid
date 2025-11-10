@@ -1,6 +1,6 @@
 class Column < ApplicationRecord
   belongs_to :table
-  belongs_to :lookup_table, class_name: 'Table', optional: true, foreign_key: :lookup_table_id
+  belongs_to :lookup_table, class_name: "Table", optional: true, foreign_key: :lookup_table_id
 
   validates :name, presence: true
   validates :column_name, presence: true, uniqueness: { scope: :table_id }
@@ -27,28 +27,28 @@ class Column < ApplicationRecord
   }
 
   before_validation :generate_column_name, if: -> { column_name.blank? }
-  before_validation :detect_cross_table_refs, if: -> { column_type == 'computed' }
-  validate :lookup_configuration_valid, if: -> { column_type.in?(['lookup', 'multiple_lookups']) }
+  before_validation :detect_cross_table_refs, if: -> { column_type == "computed" }
+  validate :lookup_configuration_valid, if: -> { column_type.in?([ "lookup", "multiple_lookups" ]) }
 
   # Map column types to database column types
   COLUMN_TYPE_MAP = {
-    'single_line_text' => :string,
-    'email' => :string,
-    'phone' => :string,
-    'url' => :string,
-    'multiple_lines_text' => :text,
-    'date' => :date,
-    'date_and_time' => :datetime,
-    'number' => :decimal,
-    'percentage' => :decimal,
-    'currency' => :decimal,
-    'whole_number' => :integer,
-    'boolean' => :boolean,
-    'lookup' => :integer,  # foreign key
-    'choice' => :string,
-    'computed' => :string,  # stored as string
-    'user' => :integer,  # foreign key to users
-    'multiple_lookups' => :text  # stored as JSON array
+    "single_line_text" => :string,
+    "email" => :string,
+    "phone" => :string,
+    "url" => :string,
+    "multiple_lines_text" => :text,
+    "date" => :date,
+    "date_and_time" => :datetime,
+    "number" => :decimal,
+    "percentage" => :decimal,
+    "currency" => :decimal,
+    "whole_number" => :integer,
+    "boolean" => :boolean,
+    "lookup" => :integer,  # foreign key
+    "choice" => :string,
+    "computed" => :string,  # stored as string
+    "user" => :integer,  # foreign key to users
+    "multiple_lookups" => :text  # stored as JSON array
   }.freeze
 
   def db_type
@@ -60,12 +60,12 @@ class Column < ApplicationRecord
   def generate_column_name
     # Generate a safe database column name from the name field
     # e.g., "Contact Email" => "contact_email"
-    self.column_name = name.parameterize(separator: '_')
+    self.column_name = name.parameterize(separator: "_")
   end
 
   def detect_cross_table_refs
     # Check if the formula contains cross-table references
-    formula_expression = settings&.dig('formula')
+    formula_expression = settings&.dig("formula")
     if formula_expression.present?
       self.has_cross_table_refs = FormulaEvaluator.uses_cross_table_references?(formula_expression)
     else

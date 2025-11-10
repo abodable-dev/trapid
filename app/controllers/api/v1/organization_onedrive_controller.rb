@@ -2,7 +2,7 @@ module Api
   module V1
     class OrganizationOnedriveController < ApplicationController
       # Require admin for sensitive operations
-      before_action :require_admin, only: [:disconnect, :change_root_folder, :sync_pricebook_images]
+      before_action :require_admin, only: [ :disconnect, :change_root_folder, :sync_pricebook_images ]
 
       # GET /api/v1/organization_onedrive/status
       # Check if organization has OneDrive connected
@@ -16,15 +16,15 @@ module Api
             drive_name: credential.drive_name,
             root_folder_id: credential.root_folder_id,
             root_folder_path: credential.root_folder_path,
-            root_folder_web_url: credential.metadata&.dig('root_folder_web_url'),
+            root_folder_web_url: credential.metadata&.dig("root_folder_web_url"),
             connected_at: credential.created_at,
-            connected_by: credential.connected_by&.as_json(only: [:id, :email]),
+            connected_by: credential.connected_by&.as_json(only: [ :id, :email ]),
             metadata: credential.metadata
           }
         else
           render json: {
             connected: false,
-            message: credential ? 'Credential expired or invalid' : 'Not connected'
+            message: credential ? "Credential expired or invalid" : "Not connected"
           }
         end
       end
@@ -35,9 +35,9 @@ module Api
         redirect_uri = "#{request.base_url}/api/v1/organization_onedrive/callback"
 
         auth_url = MicrosoftGraphClient.authorization_url(
-          client_id: ENV['ONEDRIVE_CLIENT_ID'],
+          client_id: ENV["ONEDRIVE_CLIENT_ID"],
           redirect_uri: redirect_uri,
-          scope: 'Files.ReadWrite.All Sites.ReadWrite.All offline_access'
+          scope: "Files.ReadWrite.All Sites.ReadWrite.All offline_access"
         )
 
         render json: { auth_url: auth_url }
@@ -49,7 +49,7 @@ module Api
         code = params[:code]
 
         unless code
-          return render json: { error: 'Authorization code not provided' }, status: :bad_request
+          return render json: { error: "Authorization code not provided" }, status: :bad_request
         end
 
         begin
@@ -60,8 +60,8 @@ module Api
           # Exchange authorization code for tokens
           token_data = MicrosoftGraphClient.exchange_code_for_tokens(
             code: code,
-            client_id: ENV['ONEDRIVE_CLIENT_ID'],
-            client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+            client_id: ENV["ONEDRIVE_CLIENT_ID"],
+            client_secret: ENV["ONEDRIVE_CLIENT_SECRET"],
             redirect_uri: redirect_uri
           )
 
@@ -113,9 +113,9 @@ module Api
 
         if credential
           credential.deactivate!
-          render json: { message: 'OneDrive disconnected successfully' }
+          render json: { message: "OneDrive disconnected successfully" }
         else
-          render json: { message: 'OneDrive was not connected' }, status: :not_found
+          render json: { message: "OneDrive was not connected" }, status: :not_found
         end
       end
 
@@ -126,42 +126,42 @@ module Api
         credential = OrganizationOneDriveCredential.active_credential
 
         unless credential&.valid_credential?
-          return render json: { error: 'OneDrive not connected' }, status: :unauthorized
+          return render json: { error: "OneDrive not connected" }, status: :unauthorized
         end
 
         folder_path = params[:folder_name]
 
         if folder_path.blank?
-          return render json: { error: 'Folder name is required' }, status: :bad_request
+          return render json: { error: "Folder name is required" }, status: :bad_request
         end
 
         # Validate folder path to prevent path traversal attacks
         # Allow forward slashes for nested paths, but block ".." and backslashes
-        if folder_path.include?('..') || folder_path.include?('\\')
+        if folder_path.include?("..") || folder_path.include?("\\")
           return render json: { error: 'Invalid folder path. Folder paths cannot contain ".." or "\\" characters.' }, status: :bad_request
         end
 
         # Validate length
         if folder_path.length > 1000
-          return render json: { error: 'Folder path is too long (maximum 1000 characters)' }, status: :bad_request
+          return render json: { error: "Folder path is too long (maximum 1000 characters)" }, status: :bad_request
         end
 
         # Validate each path segment
-        path_segments = folder_path.split('/')
+        path_segments = folder_path.split("/")
         if path_segments.any?(&:blank?)
-          return render json: { error: 'Invalid folder path. Empty path segments are not allowed.' }, status: :bad_request
+          return render json: { error: "Invalid folder path. Empty path segments are not allowed." }, status: :bad_request
         end
 
         # Sanitize each path segment (allow alphanumeric, spaces, hyphens, underscores)
         sanitized_segments = path_segments.map do |segment|
-          segment.gsub(/[^a-zA-Z0-9\s\-_]/, '').strip
+          segment.gsub(/[^a-zA-Z0-9\s\-_]/, "").strip
         end
 
         if sanitized_segments.any?(&:blank?)
-          return render json: { error: 'Folder path contains invalid characters' }, status: :bad_request
+          return render json: { error: "Folder path contains invalid characters" }, status: :bad_request
         end
 
-        sanitized_path = sanitized_segments.join('/')
+        sanitized_path = sanitized_segments.join("/")
 
         begin
           client = MicrosoftGraphClient.new(credential)
@@ -173,10 +173,10 @@ module Api
           sanitized_segments.each do |folder_name|
             # Get children of current parent
             response = client.get("#{current_parent_path}/children")
-            folders = response['value'] || []
+            folders = response["value"] || []
 
             # Find folder in current level
-            folder = folders.find { |f| f['name'] == folder_name && f['folder'] }
+            folder = folders.find { |f| f["name"] == folder_name && f["folder"] }
 
             if folder
               # Folder exists, use it
@@ -187,7 +187,7 @@ module Api
               folder = client.post("#{current_parent_path}/children", {
                 name: folder_name,
                 folder: {},
-                '@microsoft.graph.conflictBehavior' => 'fail'
+                "@microsoft.graph.conflictBehavior" => "fail"
               })
               current_folder = folder
               current_parent_path = "/me/drive/items/#{folder['id']}"
@@ -196,19 +196,19 @@ module Api
 
           # Update credential with new root folder info
           credential.update!(
-            root_folder_id: current_folder['id'],
+            root_folder_id: current_folder["id"],
             root_folder_path: sanitized_path,
             metadata: credential.metadata.merge({
               root_folder_name: sanitized_segments.last,
-              root_folder_web_url: current_folder['webUrl'],
+              root_folder_web_url: current_folder["webUrl"],
               updated_at: Time.current
             })
           )
 
           render json: {
-            message: 'Root folder updated successfully',
+            message: "Root folder updated successfully",
             root_folder_path: sanitized_path,
-            root_folder_web_url: current_folder['webUrl']
+            root_folder_web_url: current_folder["webUrl"]
           }
 
         rescue MicrosoftGraphClient::AuthenticationError => e
@@ -228,7 +228,7 @@ module Api
         credential = OrganizationOneDriveCredential.active_credential
 
         unless credential&.valid_credential?
-          return render json: { error: 'OneDrive not connected' }, status: :unauthorized
+          return render json: { error: "OneDrive not connected" }, status: :unauthorized
         end
 
         folder_id = params[:folder_id] # Optional - if not provided, browse root
@@ -242,20 +242,20 @@ module Api
             response = client.list_folder_items(folder_id)
           else
             # Browse root drive folders
-            response = client.get('/me/drive/root/children')
+            response = client.get("/me/drive/root/children")
           end
 
           # Filter to only show folders
-          folders = (response['value'] || []).select { |item| item['folder'] }
+          folders = (response["value"] || []).select { |item| item["folder"] }
 
           # Format response
           formatted_folders = folders.map do |folder|
             {
-              id: folder['id'],
-              name: folder['name'],
-              web_url: folder['webUrl'],
-              created_at: folder['createdDateTime'],
-              child_count: folder.dig('folder', 'childCount') || 0
+              id: folder["id"],
+              name: folder["name"],
+              web_url: folder["webUrl"],
+              created_at: folder["createdDateTime"],
+              child_count: folder.dig("folder", "childCount") || 0
             }
           end
 
@@ -284,7 +284,7 @@ module Api
         credential = OrganizationOneDriveCredential.active_credential
 
         unless credential&.valid_credential?
-          return render json: { error: 'OneDrive not connected. Please connect in Settings first.' }, status: :unauthorized
+          return render json: { error: "OneDrive not connected. Please connect in Settings first." }, status: :unauthorized
         end
 
         # Get folder template (use default or specified)
@@ -296,7 +296,7 @@ module Api
         end
 
         unless template
-          return render json: { error: 'No folder template found' }, status: :not_found
+          return render json: { error: "No folder template found" }, status: :not_found
         end
 
         begin
@@ -307,9 +307,9 @@ module Api
 
           if existing_folder
             return render json: {
-              message: 'Folder structure already exists for this job',
+              message: "Folder structure already exists for this job",
               job_folder: existing_folder,
-              web_url: existing_folder['webUrl']
+              web_url: existing_folder["webUrl"]
             }
           end
 
@@ -320,10 +320,10 @@ module Api
           credential.mark_synced!
 
           render json: {
-            message: 'Folder structure created successfully',
+            message: "Folder structure created successfully",
             job_folder: job_folder,
             folder_path: "#{credential.root_folder_path}/#{job_folder['name']}",
-            web_url: job_folder['webUrl']
+            web_url: job_folder["webUrl"]
           }
 
         rescue MicrosoftGraphClient::AuthenticationError => e
@@ -346,7 +346,7 @@ module Api
         credential = OrganizationOneDriveCredential.active_credential
 
         unless credential&.valid_credential?
-          return render json: { error: 'OneDrive not connected' }, status: :unauthorized
+          return render json: { error: "OneDrive not connected" }, status: :unauthorized
         end
 
         begin
@@ -357,21 +357,21 @@ module Api
 
           unless job_folder
             return render json: {
-              error: 'Job folder not found. Please create the folder structure first.',
+              error: "Job folder not found. Please create the folder structure first.",
               job_folder_exists: false
             }, status: :not_found
           end
 
           # Get folder ID from params or use job folder
-          folder_id = params[:folder_id] || job_folder['id']
+          folder_id = params[:folder_id] || job_folder["id"]
 
           items = client.list_folder_items(folder_id)
 
           render json: {
-            items: items['value'],
-            count: items['value']&.length || 0,
-            job_folder_id: job_folder['id'],
-            job_folder_web_url: job_folder['webUrl']
+            items: items["value"],
+            count: items["value"]&.length || 0,
+            job_folder_id: job_folder["id"],
+            job_folder_web_url: job_folder["webUrl"]
           }
 
         rescue MicrosoftGraphClient::AuthenticationError => e
@@ -393,18 +393,18 @@ module Api
         credential = OrganizationOneDriveCredential.active_credential
 
         unless credential&.valid_credential?
-          return render json: { error: 'OneDrive not connected' }, status: :unauthorized
+          return render json: { error: "OneDrive not connected" }, status: :unauthorized
         end
 
         uploaded_file = params[:file]
         folder_id = params[:folder_id]
 
         unless uploaded_file
-          return render json: { error: 'No file provided' }, status: :bad_request
+          return render json: { error: "No file provided" }, status: :bad_request
         end
 
         unless folder_id
-          return render json: { error: 'No folder_id provided' }, status: :bad_request
+          return render json: { error: "No folder_id provided" }, status: :bad_request
         end
 
         begin
@@ -423,12 +423,12 @@ module Api
             # Return upload session URL for client to handle chunked upload
             return render json: {
               upload_session: session_data,
-              message: 'Upload session created. Use upload URL for chunked upload.'
+              message: "Upload session created. Use upload URL for chunked upload."
             }
           end
 
           render json: {
-            message: 'File uploaded successfully',
+            message: "File uploaded successfully",
             file: result
           }
 
@@ -448,13 +448,13 @@ module Api
         credential = OrganizationOneDriveCredential.active_credential
 
         unless credential&.valid_credential?
-          return render json: { error: 'OneDrive not connected' }, status: :unauthorized
+          return render json: { error: "OneDrive not connected" }, status: :unauthorized
         end
 
         file_id = params[:file_id]
 
         unless file_id
-          return render json: { error: 'No file_id provided' }, status: :bad_request
+          return render json: { error: "No file_id provided" }, status: :bad_request
         end
 
         begin
@@ -468,9 +468,9 @@ module Api
 
           # Send file to user
           send_data file_content,
-            filename: file_metadata['name'],
-            type: file_metadata['file']&.dig('mimeType') || 'application/octet-stream',
-            disposition: 'attachment'
+            filename: file_metadata["name"],
+            type: file_metadata["file"]&.dig("mimeType") || "application/octet-stream",
+            disposition: "attachment"
 
         rescue MicrosoftGraphClient::AuthenticationError => e
           render json: { error: "Authentication failed: #{e.message}" }, status: :unauthorized
@@ -488,7 +488,7 @@ module Api
         credential = OrganizationOneDriveCredential.active_credential
 
         unless credential&.valid_credential?
-          return render json: { error: 'OneDrive not connected. Please connect in Settings first.' }, status: :unauthorized
+          return render json: { error: "OneDrive not connected. Please connect in Settings first." }, status: :unauthorized
         end
 
         folder_path = params[:folder_path] || "Pricebook Images"
@@ -530,7 +530,7 @@ module Api
 
         unless credential&.valid_credential?
           Rails.logger.warn "[OneDrive Apply] No valid credential found"
-          return render json: { error: 'OneDrive not connected. Please connect in Settings first.' }, status: :unauthorized
+          return render json: { error: "OneDrive not connected. Please connect in Settings first." }, status: :unauthorized
         end
 
         folder_path = params[:folder_path] || "Pricebook Images"
@@ -603,7 +603,7 @@ module Api
 
         unless credential&.valid_credential?
           Rails.logger.warn "[OneDrive Sync] No valid credential found"
-          return render json: { error: 'OneDrive not connected. Please connect in Settings first.' }, status: :unauthorized
+          return render json: { error: "OneDrive not connected. Please connect in Settings first." }, status: :unauthorized
         end
 
         folder_path = params[:folder_path] || "Pricebook Images"

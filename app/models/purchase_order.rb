@@ -3,7 +3,7 @@ class PurchaseOrder < ApplicationRecord
   belongs_to :construction, counter_cache: true
   belongs_to :supplier, optional: true, counter_cache: true
   belongs_to :estimate, optional: true
-  has_many :line_items, class_name: 'PurchaseOrderLineItem', dependent: :destroy
+  has_many :line_items, class_name: "PurchaseOrderLineItem", dependent: :destroy
   has_many :project_tasks, dependent: :nullify
   has_many :schedule_tasks, dependent: :nullify
 
@@ -22,22 +22,22 @@ class PurchaseOrder < ApplicationRecord
 
   # Status enum
   enum :status, {
-    draft: 'draft',
-    pending: 'pending',
-    approved: 'approved',
-    sent: 'sent',
-    received: 'received',
-    invoiced: 'invoiced',
-    paid: 'paid',
-    cancelled: 'cancelled'
+    draft: "draft",
+    pending: "pending",
+    approved: "approved",
+    sent: "sent",
+    received: "received",
+    invoiced: "invoiced",
+    paid: "paid",
+    cancelled: "cancelled"
   }
 
   # Payment status enum (for Xero invoice matching)
   enum :payment_status, {
-    pending: 'pending',
-    part_payment: 'part_payment',
-    complete: 'complete',
-    manual_review: 'manual_review'
+    pending: "pending",
+    part_payment: "part_payment",
+    complete: "complete",
+    manual_review: "manual_review"
   }, prefix: :payment
 
   # Callbacks
@@ -51,8 +51,8 @@ class PurchaseOrder < ApplicationRecord
   scope :by_status, ->(status) { where(status: status) if status.present? }
   scope :by_construction, ->(construction_id) { where(construction_id: construction_id) if construction_id.present? }
   scope :recent, -> { order(created_at: :desc) }
-  scope :overdue, -> { where('required_date < ? AND status NOT IN (?)', Date.today, ['received', 'cancelled']) }
-  scope :pending_approval, -> { where(status: 'pending') }
+  scope :overdue, -> { where("required_date < ? AND status NOT IN (?)", Date.today, [ "received", "cancelled" ]) }
+  scope :pending_approval, -> { where(status: "pending") }
   scope :for_schedule, -> { where(creates_schedule_tasks: true) }
 
   # Instance methods
@@ -90,18 +90,18 @@ class PurchaseOrder < ApplicationRecord
 
   def approve!(user_id = nil)
     update(
-      status: 'approved',
+      status: "approved",
       approved_by_id: user_id,
       approved_at: Time.current
     )
   end
 
   def send_to_supplier!
-    update(status: 'sent', ordered_date: Date.today)
+    update(status: "sent", ordered_date: Date.today)
   end
 
   def mark_received!
-    update(status: 'received', received_date: Date.today)
+    update(status: "received", received_date: Date.today)
   end
 
   def can_edit?
@@ -109,7 +109,7 @@ class PurchaseOrder < ApplicationRecord
   end
 
   def can_approve?
-    status == 'pending'
+    status == "pending"
   end
 
   def can_cancel?
@@ -151,24 +151,24 @@ class PurchaseOrder < ApplicationRecord
   # Determine payment status based on invoice amount
   # Returns the appropriate payment_status based on invoice amount vs PO total
   def determine_payment_status(invoice_amount)
-    return 'pending' if invoice_amount.nil? || invoice_amount.zero?
-    return 'manual_review' if total.nil? || total.zero?
+    return "pending" if invoice_amount.nil? || invoice_amount.zero?
+    return "manual_review" if total.nil? || total.zero?
 
     # Check if invoice exceeds PO total by $1 or more FIRST
     if invoice_amount > total && (invoice_amount - total) >= 1.0
-      return 'manual_review'
+      return "manual_review"
     end
 
     percentage = (invoice_amount / total * 100).round(2)
 
     # Within 5% tolerance (95% - 105%)
     if percentage >= 95.0 && percentage <= 105.0
-      'complete'
+      "complete"
     # Partial payment (less than 95% of total)
     elsif percentage < 95.0
-      'part_payment'
+      "part_payment"
     else
-      'pending'
+      "pending"
     end
   end
 

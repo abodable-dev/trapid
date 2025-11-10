@@ -12,7 +12,7 @@ class FolderTemplateItem < ApplicationRecord
 
   # Get the full path of this folder
   def full_path
-    path_parts = [name]
+    path_parts = [ name ]
     current = parent
     while current
       path_parts.unshift(current.name)

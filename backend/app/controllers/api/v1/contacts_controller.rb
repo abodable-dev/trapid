@@ -1,7 +1,7 @@
 module Api
   module V1
     class ContactsController < ApplicationController
-      before_action :set_contact, only: [:show, :update, :destroy, :activities, :link_xero_contact]
+      before_action :set_contact, only: [ :show, :update, :destroy, :activities, :link_xero_contact ]
 
       # GET /api/v1/contacts
       def index
@@ -48,8 +48,8 @@ module Api
         render json: {
           success: true,
           contacts: @contacts.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas, :xero_id, :sync_with_xero, :last_synced_at],
-            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
+            only: [ :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas, :xero_id, :sync_with_xero, :last_synced_at ],
+            methods: [ :is_customer?, :is_supplier?, :is_sales?, :is_land_agent? ]
           )
         }
       end
@@ -65,7 +65,7 @@ module Api
             :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
             :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas
           ],
-          methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
+          methods: [ :is_customer?, :is_supplier?, :is_sales?, :is_land_agent? ]
         )
 
         # If contact is a supplier, add pricebook items and purchase orders
@@ -88,10 +88,10 @@ module Api
             price_histories = item.price_histories
               .where(supplier_id: @contact.id)
               .order(date_effective: :desc, created_at: :desc)
-              .as_json(only: [:id, :old_price, :new_price, :date_effective, :lga, :change_reason, :user_name, :created_at])
+              .as_json(only: [ :id, :old_price, :new_price, :date_effective, :lga, :change_reason, :user_name, :created_at ])
 
             item.as_json(
-              only: [:id, :item_code, :item_name, :category, :current_price, :unit, :price_last_updated_at]
+              only: [ :id, :item_code, :item_name, :category, :current_price, :unit, :price_last_updated_at ]
             ).merge(
               is_default_supplier: item.default_supplier_id == @contact.id,
               price_histories: price_histories
@@ -122,8 +122,8 @@ module Api
           render json: {
             success: true,
             contact: @contact.as_json(
-              only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas],
-              methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
+              only: [ :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas ],
+              methods: [ :is_customer?, :is_supplier?, :is_sales?, :is_land_agent? ]
             )
           }
         else
@@ -143,7 +143,7 @@ module Api
             # Check if any POs have been paid or invoiced
             paid_pos = PurchaseOrder.where(supplier_id: suppliers_with_pos.pluck(:id))
                                    .where("status IN (?) OR amount_paid > 0 OR amount_invoiced > 0",
-                                          ['paid', 'invoiced', 'received'])
+                                          [ 'paid', 'invoiced', 'received' ])
 
             if paid_pos.any?
               return render json: {
@@ -266,14 +266,14 @@ module Api
 
         # Import supplier history into contact
         contact.update(
-          contact_types: (contact.contact_types + ['supplier']).uniq,
+          contact_types: (contact.contact_types + [ 'supplier' ]).uniq,
           rating: supplier.rating || contact.rating,
           response_rate: supplier.response_rate || contact.response_rate,
           avg_response_time: supplier.avg_response_time || contact.avg_response_time,
           is_active: supplier.is_active.nil? ? contact.is_active : supplier.is_active,
           supplier_code: supplier.supplier_code || contact.supplier_code,
           address: supplier.address || contact.address,
-          notes: [contact.notes, supplier.notes].compact.join("\n\n")
+          notes: [ contact.notes, supplier.notes ].compact.join("\n\n")
         )
 
         # Link the supplier to this contact
@@ -283,7 +283,7 @@ module Api
           success: true,
           message: "Successfully matched contact with supplier '#{supplier.name}'",
           contact: contact.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :contact_types, :rating, :notes]
+            only: [ :id, :full_name, :first_name, :last_name, :email, :contact_types, :rating, :notes ]
           ),
           imported_fields: {
             rating: supplier.rating,
@@ -344,7 +344,7 @@ module Api
             category: category,
             default_supplier_count: default_count,
             price_history_count: history_count,
-            total_count: [default_count, history_count].max
+            total_count: [ default_count, history_count ].max
           }
         end
 
@@ -633,7 +633,7 @@ module Api
           success: true,
           message: "Successfully merged #{source_contacts.count} contact(s) into #{target_contact.full_name}",
           contact: target_contact.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types]
+            only: [ :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types ]
           )
         }
       rescue ActiveRecord::RecordNotFound => e
@@ -822,10 +822,10 @@ module Api
         render json: {
           success: true,
           activities: activities.as_json(
-            only: [:id, :activity_type, :description, :metadata, :occurred_at, :created_at],
+            only: [ :id, :activity_type, :description, :metadata, :occurred_at, :created_at ],
             include: {
               performed_by: {
-                only: [:id, :type]
+                only: [ :id, :type ]
               }
             }
           )
@@ -891,7 +891,7 @@ module Api
             success: true,
             message: "Successfully linked contact to Xero: #{xero_contact['Name']}",
             contact: @contact.as_json(
-              only: [:id, :full_name, :xero_id, :last_synced_at, :sync_with_xero]
+              only: [ :id, :full_name, :xero_id, :last_synced_at, :sync_with_xero ]
             ),
             xero_contact: {
               xero_id: xero_contact['ContactID'],

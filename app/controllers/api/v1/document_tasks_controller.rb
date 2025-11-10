@@ -32,7 +32,7 @@ module Api
         )
 
         unless params[:file].present?
-          return render json: { error: 'No file provided' }, status: :bad_request
+          return render json: { error: "No file provided" }, status: :bad_request
         end
 
         # Attach the file using ActiveStorage
@@ -44,7 +44,7 @@ module Api
         )
 
         render json: {
-          message: 'Document uploaded successfully',
+          message: "Document uploaded successfully",
           document_url: url_for(task.document),
           uploaded_at: task.uploaded_at
         }
@@ -57,7 +57,7 @@ module Api
         task = DocumentTask.find(params[:id])
 
         unless task.has_document
-          return render json: { error: 'Cannot validate without a document' }, status: :bad_request
+          return render json: { error: "Cannot validate without a document" }, status: :bad_request
         end
 
         task.update(
@@ -67,7 +67,7 @@ module Api
         )
 
         render json: {
-          message: 'Document validated successfully',
+          message: "Document validated successfully",
           validated_at: task.validated_at,
           validated_by: task.validated_by
         }
@@ -115,43 +115,43 @@ module Api
 
       def default_tasks_for_category(category)
         case category
-        when 'site-plan'
+        when "site-plan"
           [
-            { name: 'Site Survey', description: 'Professional site survey documentation', required: true },
-            { name: 'Boundary Plan', description: 'Property boundary plan', required: true },
-            { name: 'Topographic Survey', description: 'Topographic survey details', required: false }
+            { name: "Site Survey", description: "Professional site survey documentation", required: true },
+            { name: "Boundary Plan", description: "Property boundary plan", required: true },
+            { name: "Topographic Survey", description: "Topographic survey details", required: false }
           ]
-        when 'sales'
+        when "sales"
           [
-            { name: 'Sales Contract', description: 'Signed sales contract', required: true },
-            { name: 'Payment Schedule', description: 'Agreed payment schedule', required: true },
-            { name: 'Client Information Form', description: 'Completed client information', required: true }
+            { name: "Sales Contract", description: "Signed sales contract", required: true },
+            { name: "Payment Schedule", description: "Agreed payment schedule", required: true },
+            { name: "Client Information Form", description: "Completed client information", required: true }
           ]
-        when 'certification'
+        when "certification"
           [
-            { name: 'Building Consent', description: 'Approved building consent', required: true },
-            { name: 'Engineering Certificates', description: 'Structural engineering certificates', required: true },
-            { name: 'Plumbing Certificate', description: 'Plumbing compliance certificate', required: false },
-            { name: 'Electrical Certificate', description: 'Electrical compliance certificate', required: false }
+            { name: "Building Consent", description: "Approved building consent", required: true },
+            { name: "Engineering Certificates", description: "Structural engineering certificates", required: true },
+            { name: "Plumbing Certificate", description: "Plumbing compliance certificate", required: false },
+            { name: "Electrical Certificate", description: "Electrical compliance certificate", required: false }
           ]
-        when 'client'
+        when "client"
           [
-            { name: 'Client ID Verification', description: 'Copy of client ID', required: true },
-            { name: 'Contact Details', description: 'Emergency contact information', required: true },
-            { name: 'Insurance Documents', description: 'Home insurance documents', required: false }
+            { name: "Client ID Verification", description: "Copy of client ID", required: true },
+            { name: "Contact Details", description: "Emergency contact information", required: true },
+            { name: "Insurance Documents", description: "Home insurance documents", required: false }
           ]
-        when 'client-photo'
+        when "client-photo"
           [
-            { name: 'Before Photos', description: 'Site photos before construction', required: true },
-            { name: 'Progress Photos', description: 'Construction progress photos', required: false },
-            { name: 'Completion Photos', description: 'Final completion photos', required: true }
+            { name: "Before Photos", description: "Site photos before construction", required: true },
+            { name: "Progress Photos", description: "Construction progress photos", required: false },
+            { name: "Completion Photos", description: "Final completion photos", required: true }
           ]
-        when 'final-certificate'
+        when "final-certificate"
           [
-            { name: 'Code Compliance Certificate', description: 'CCC from council', required: true },
-            { name: 'Warranty Documents', description: 'Builder warranty documents', required: true },
-            { name: 'As-Built Plans', description: 'Final as-built construction plans', required: true },
-            { name: 'Maintenance Guide', description: 'Home maintenance guide', required: false }
+            { name: "Code Compliance Certificate", description: "CCC from council", required: true },
+            { name: "Warranty Documents", description: "Builder warranty documents", required: true },
+            { name: "As-Built Plans", description: "Final as-built construction plans", required: true },
+            { name: "Maintenance Guide", description: "Home maintenance guide", required: false }
           ]
         else
           []

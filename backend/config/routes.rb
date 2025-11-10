@@ -42,7 +42,7 @@ Rails.application.routes.draw do
       # Construction jobs management
       resources :constructions do
         # Schedule tasks (nested under constructions)
-        resources :schedule_tasks, only: [:index, :create] do
+        resources :schedule_tasks, only: [ :index, :create ] do
           collection do
             post :import
             post :copy_from_template
@@ -51,7 +51,7 @@ Rails.application.routes.draw do
         end
 
         # Document tasks (nested under constructions)
-        resources :document_tasks, only: [:index] do
+        resources :document_tasks, only: [ :index ] do
           member do
             post :upload
             post :validate
@@ -60,7 +60,7 @@ Rails.application.routes.draw do
       end
 
       # Schedule tasks (non-nested routes)
-      resources :schedule_tasks, only: [:show, :update, :destroy] do
+      resources :schedule_tasks, only: [ :show, :update, :destroy ] do
         member do
           patch :match_po
           delete :unmatch_po
@@ -151,13 +151,13 @@ Rails.application.routes.draw do
       end
 
       # Users management
-      resources :users, only: [:index, :show]
+      resources :users, only: [ :index, :show ]
 
       # Designs library
       resources :designs
 
       # Company Settings
-      resource :company_settings, only: [:show, :update]
+      resource :company_settings, only: [ :show, :update ]
 
       # Folder Templates for OneDrive sync
       resources :folder_templates do
@@ -179,7 +179,7 @@ Rails.application.routes.draw do
           post :set_as_default
         end
         # Template rows (nested under schedule_templates)
-        resources :rows, controller: 'schedule_template_rows', except: [:index, :show] do
+        resources :rows, controller: 'schedule_template_rows', except: [ :index, :show ] do
           collection do
             post :bulk_update
             post :reorder
@@ -241,7 +241,7 @@ Rails.application.routes.draw do
       # Table management
       resources :tables do
         # Column management
-        resources :columns, only: [:create, :update, :destroy] do
+        resources :columns, only: [ :create, :update, :destroy ] do
           collection do
             post :test_formula
           end
@@ -256,17 +256,17 @@ Rails.application.routes.draw do
       end
 
       # Estimates management (from Unreal Engine or other sources)
-      resources :estimates, only: [:index, :show, :destroy] do
+      resources :estimates, only: [ :index, :show, :destroy ] do
         member do
           patch :match
           post :generate_purchase_orders
           post :ai_review, to: 'estimate_reviews#create'
         end
-        resources :reviews, controller: 'estimate_reviews', only: [:index]
+        resources :reviews, controller: 'estimate_reviews', only: [ :index ]
       end
 
       # Estimate Reviews (AI Plan Analysis)
-      resources :estimate_reviews, only: [:show, :destroy]
+      resources :estimate_reviews, only: [ :show, :destroy ]
 
       # External integrations (API endpoints for third-party systems)
       namespace :external do

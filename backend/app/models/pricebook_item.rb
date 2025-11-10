@@ -102,7 +102,7 @@ class PricebookItem < ApplicationRecord
   end
 
   def price_with_unit
-    return "#{display_price} per #{unit_of_measure}"
+    "#{display_price} per #{unit_of_measure}"
   end
 
   def has_supplier?
@@ -198,7 +198,7 @@ class PricebookItem < ApplicationRecord
     # Response time contributes 30 points (inverse - faster is better)
     # Assume 48 hours is baseline, < 12 hours is excellent
     if supplier.avg_response_time
-      time_score = [30 - (supplier.avg_response_time / 2.0), 0].max
+      time_score = [ 30 - (supplier.avg_response_time / 2.0), 0 ].max
       score += time_score
     end
 
@@ -275,7 +275,7 @@ class PricebookItem < ApplicationRecord
 
     # Supplier reliability contributes 20 points (inverse)
     reliability = supplier_reliability_score
-    score += [20 - (reliability / 5.0), 0].max
+    score += [ 20 - (reliability / 5.0), 0 ].max
 
     # Price volatility contributes 20 points
     score += price_volatility_score * 0.4
@@ -283,7 +283,7 @@ class PricebookItem < ApplicationRecord
     # Missing info contributes 20 points
     score += missing_info_score * 0.33
 
-    [score.round, 100].min
+    [ score.round, 100 ].min
   end
 
   def risk_level

@@ -47,7 +47,7 @@ class ProjectTask < ApplicationRecord
   scope :subtasks, -> { where(spawned_type: 'subtask') }
   scope :requiring_supervisor, -> { where(requires_supervisor_check: true) }
   scope :supervisor_pending, -> { requiring_supervisor.where(supervisor_checked_at: nil) }
-  scope :with_tag, ->(tag) { where("tags @> ?", [tag].to_json) }
+  scope :with_tag, ->(tag) { where("tags @> ?", [ tag ].to_json) }
   scope :critical_po_tasks, -> { where(critical_po: true) }
   scope :by_sequence, -> { order(sequence_order: :asc) }
 

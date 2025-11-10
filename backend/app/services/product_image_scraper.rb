@@ -252,7 +252,7 @@ class ProductImageScraper
   def download_image(url)
     require 'tempfile'
 
-    temp_file = Tempfile.new(['product_image', '.jpg'])
+    temp_file = Tempfile.new([ 'product_image', '.jpg' ])
     temp_file.binmode
 
     URI.open(url, 'rb', read_timeout: 10) do |source|

@@ -1,7 +1,7 @@
 module Api
   module V1
     class FolderTemplatesController < ApplicationController
-      before_action :set_folder_template, only: [:show, :update, :destroy, :duplicate]
+      before_action :set_folder_template, only: [ :show, :update, :destroy, :duplicate ]
 
       # GET /api/v1/folder_templates
       def index
@@ -13,10 +13,10 @@ module Api
           folder_templates: @folder_templates.as_json(
             include: {
               folder_template_items: {
-                only: [:id, :name, :level, :order, :parent_id, :description]
+                only: [ :id, :name, :level, :order, :parent_id, :description ]
               },
               created_by: {
-                only: [:id, :name, :email]
+                only: [ :id, :name, :email ]
               }
             }
           )
@@ -29,10 +29,10 @@ module Api
           folder_template: @folder_template.as_json(
             include: {
               folder_template_items: {
-                only: [:id, :name, :level, :order, :parent_id, :description]
+                only: [ :id, :name, :level, :order, :parent_id, :description ]
               }
             },
-            methods: [:folder_hierarchy]
+            methods: [ :folder_hierarchy ]
           )
         }
       end

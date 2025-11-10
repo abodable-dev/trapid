@@ -4,7 +4,7 @@ require 'base64'
 class PlanReviewService
   MAX_FILE_SIZE = 20.megabytes
   MAX_PAGES_PER_PDF = 10
-  PLAN_FOLDER_PATHS = ['01 - Plans', '02 - Engineering', '03 - Specifications'].freeze
+  PLAN_FOLDER_PATHS = [ '01 - Plans', '02 - Engineering', '03 - Specifications' ].freeze
 
   class PDFNotFoundError < StandardError; end
   class FileTooLargeError < StandardError; end
@@ -400,7 +400,7 @@ class PlanReviewService
     penalty = (mismatched * 5) + (missing * 3) + (extra * 2)
 
     # Ensure score is between 0 and 100
-    [base_score - penalty, 0].max.round(2)
+    [ base_score - penalty, 0 ].max.round(2)
   end
 
   def handle_error(message)

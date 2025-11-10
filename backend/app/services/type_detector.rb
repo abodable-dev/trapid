@@ -43,7 +43,7 @@ class TypeDetector
   end
 
   def check_boolean(values)
-    bool_values = ['true', 'false', 'yes', 'no', '1', '0', 't', 'f', 'y', 'n']
+    bool_values = [ 'true', 'false', 'yes', 'no', '1', '0', 't', 'f', 'y', 'n' ]
     matches = values.count { |v| bool_values.include?(v.to_s.downcase.strip) }
     matches.to_f / values.length
   end
@@ -77,7 +77,7 @@ class TypeDetector
     base_score = currency_matches.to_f / values.length
 
     # Boost score if we see $ symbols
-    has_currency_symbol ? [base_score + 0.2, 1.0].min : base_score
+    has_currency_symbol ? [ base_score + 0.2, 1.0 ].min : base_score
   end
 
   def check_percentage(values)
@@ -90,7 +90,7 @@ class TypeDetector
     base_score = percentage_matches.to_f / values.length
 
     # Boost score if we see % symbols
-    has_percent_symbol ? [base_score + 0.3, 1.0].min : base_score * 0.5
+    has_percent_symbol ? [ base_score + 0.3, 1.0 ].min : base_score * 0.5
   end
 
   def check_date(values)

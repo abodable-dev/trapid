@@ -184,7 +184,7 @@ class XeroContactSyncService
     return nil if contacts.empty?
 
     # Create fuzzy matcher with contact names
-    contact_names = contacts.map { |c| [c.display_name, c] }.to_h
+    contact_names = contacts.map { |c| [ c.display_name, c ] }.to_h
     matcher = FuzzyMatch.new(contact_names.keys)
 
     # Find best match
@@ -268,7 +268,7 @@ class XeroContactSyncService
     end
 
     # Track changes for activity logging
-    changed_fields = updates.keys - [:xero_id, :last_synced_at, :xero_sync_error]
+    changed_fields = updates.keys - [ :xero_id, :last_synced_at, :xero_sync_error ]
     changes_made = changed_fields.each_with_object({}) do |field, hash|
       old_value = trapid_contact.send(field)
       new_value = updates[field]

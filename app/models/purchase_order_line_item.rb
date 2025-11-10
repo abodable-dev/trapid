@@ -39,30 +39,30 @@ class PurchaseOrderLineItem < ApplicationRecord
   end
 
   def price_status
-    return 'no_pricebook_item' unless pricebook_item
-    return 'no_current_price' unless pricebook_item.current_price
+    return "no_pricebook_item" unless pricebook_item
+    return "no_current_price" unless pricebook_item.current_price
 
     drift = price_drift
-    return 'in_sync' if drift.abs < 0.01 # Within 1 cent
+    return "in_sync" if drift.abs < 0.01 # Within 1 cent
 
     if drift.abs <= 10
-      'minor_drift'
+      "minor_drift"
     else
-      'major_drift'
+      "major_drift"
     end
   end
 
   def price_status_label
     case price_status
-    when 'no_pricebook_item'
-      'Not linked to pricebook'
-    when 'no_current_price'
-      'Pricebook item has no price'
-    when 'in_sync'
-      'Price up to date'
-    when 'minor_drift'
+    when "no_pricebook_item"
+      "Not linked to pricebook"
+    when "no_current_price"
+      "Pricebook item has no price"
+    when "in_sync"
+      "Price up to date"
+    when "minor_drift"
       "Price drift: #{price_drift}%"
-    when 'major_drift'
+    when "major_drift"
       "WARNING: Price drift: #{price_drift}%"
     end
   end

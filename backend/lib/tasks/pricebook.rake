@@ -304,21 +304,21 @@ namespace :pricebook do
     # Suppliers template
     CSV.open(Rails.root.join('tmp', 'suppliers_template.csv'), 'w') do |csv|
       csv << %w[name contact_person email phone address rating response_rate avg_response_time notes is_active]
-      csv << ['TL Supply', 'John Smith', 'john@tlsupply.com.au', '1300 123 456', '123 Trade St', 4, 85.5, 24, 'Reliable supplier', true]
+      csv << [ 'TL Supply', 'John Smith', 'john@tlsupply.com.au', '1300 123 456', '123 Trade St', 4, 85.5, 24, 'Reliable supplier', true ]
     end
     puts "  ✓ Created tmp/suppliers_template.csv"
 
     # Price book items template
     CSV.open(Rails.root.join('tmp', 'pricebook_items_template.csv'), 'w') do |csv|
       csv << %w[item_code item_name category unit_of_measure current_price supplier_name brand notes is_active needs_pricing_review price_last_updated_at]
-      csv << ['DPP', 'Wiring Double Power Point', 'Electrical', 'Each', 51.00, 'TL Supply', 'Clipsal', '', true, false, '2024-01-15']
+      csv << [ 'DPP', 'Wiring Double Power Point', 'Electrical', 'Each', 51.00, 'TL Supply', 'Clipsal', '', true, false, '2024-01-15' ]
     end
     puts "  ✓ Created tmp/pricebook_items_template.csv"
 
     # Price history template
     CSV.open(Rails.root.join('tmp', 'price_history_template.csv'), 'w') do |csv|
       csv << %w[item_code old_price new_price change_reason supplier_name quote_reference created_at]
-      csv << ['DPP', 48.00, 51.00, 'price_increase', 'TL Supply', 'Q-2024-001', '2024-01-15']
+      csv << [ 'DPP', 48.00, 51.00, 'price_increase', 'TL Supply', 'Q-2024-001', '2024-01-15' ]
     end
     puts "  ✓ Created tmp/price_history_template.csv"
 

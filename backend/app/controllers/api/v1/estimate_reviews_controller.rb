@@ -1,8 +1,8 @@
 module Api
   module V1
     class EstimateReviewsController < ApplicationController
-      before_action :set_estimate, only: [:create]
-      before_action :set_review, only: [:show]
+      before_action :set_estimate, only: [ :create ]
+      before_action :set_review, only: [ :show ]
 
       # POST /api/v1/estimates/:estimate_id/ai_review
       def create

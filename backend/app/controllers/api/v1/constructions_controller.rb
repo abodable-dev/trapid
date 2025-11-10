@@ -1,7 +1,7 @@
 module Api
   module V1
     class ConstructionsController < ApplicationController
-      before_action :set_construction, only: [:show, :update, :destroy]
+      before_action :set_construction, only: [ :show, :update, :destroy ]
 
       # GET /api/v1/constructions
       # GET /api/v1/constructions?status=Active

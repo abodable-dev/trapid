@@ -92,7 +92,7 @@ module Api
         unless session_key.present?
           return render json: {
             success: false,
-            error: 'Session key not provided. Please upload the file again.',
+            error: 'Session key not provided. Please upload the file again.'
           }, status: :unprocessable_entity
         end
 
@@ -102,7 +102,7 @@ module Api
         unless import_session
           return render json: {
             success: false,
-            error: 'Import session expired or not found. Please upload the file again.',
+            error: 'Import session expired or not found. Please upload the file again.'
           }, status: :unprocessable_entity
         end
 
@@ -110,7 +110,7 @@ module Api
           import_session.destroy
           return render json: {
             success: false,
-            error: 'Import file not found. Please upload the file again.',
+            error: 'Import file not found. Please upload the file again.'
           }, status: :unprocessable_entity
         end
 
@@ -207,7 +207,6 @@ module Api
 
         render json: response
       end
-
     end
   end
 end

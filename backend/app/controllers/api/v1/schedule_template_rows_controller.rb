@@ -3,7 +3,7 @@ module Api
     class ScheduleTemplateRowsController < ApplicationController
       before_action :authorize_request
       before_action :set_template
-      before_action :set_row, only: [:update, :destroy]
+      before_action :set_row, only: [ :update, :destroy ]
       before_action :check_can_edit_templates
 
       # POST /api/v1/schedule_templates/:template_id/rows

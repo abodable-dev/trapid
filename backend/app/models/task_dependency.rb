@@ -51,7 +51,7 @@ class TaskDependency < ApplicationRecord
     # Check if adding this dependency would create a cycle
     # This is a simplified check - full implementation would need graph traversal
     visited = Set.new
-    to_visit = [predecessor_task_id]
+    to_visit = [ predecessor_task_id ]
 
     while to_visit.any?
       current_id = to_visit.pop
