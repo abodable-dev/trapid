@@ -96,8 +96,10 @@ export default function PriceBooksPage() {
     brand: { visible: true, width: 150, label: 'Brand', resizable: true, order: 10 },
     requiresPhoto: { visible: false, width: 120, label: 'Needs Photo', resizable: true, order: 11 },
     requiresSpec: { visible: false, width: 120, label: 'Needs Spec', resizable: true, order: 12 },
-    needsPricingReview: { visible: false, width: 140, label: 'Pricing Review', resizable: true, order: 13 },
-    notes: { visible: true, width: 200, label: 'Notes', resizable: true, order: 14 },
+    photoAttached: { visible: false, width: 120, label: 'Photo Added', resizable: true, order: 13 },
+    specAttached: { visible: false, width: 120, label: 'Spec Added', resizable: true, order: 14 },
+    needsPricingReview: { visible: false, width: 140, label: 'Pricing Review', resizable: true, order: 15 },
+    notes: { visible: true, width: 200, label: 'Notes', resizable: true, order: 16 },
   }
 
   const [columnConfig, setColumnConfig] = useState(() => {

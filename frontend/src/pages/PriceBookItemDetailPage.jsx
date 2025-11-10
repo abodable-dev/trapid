@@ -777,6 +777,44 @@ export default function PriceBookItemDetailPage() {
 
                 <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
                   <div>
+                    <label htmlFor="photo_attached" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Photo Added
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Product photo has been uploaded
+                    </p>
+                  </div>
+                  <input
+                    id="photo_attached"
+                    type="checkbox"
+                    checked={item.photo_attached || false}
+                    onChange={() => handleBooleanToggle('photo_attached', item.photo_attached)}
+                    disabled={savingBooleans}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <div>
+                    <label htmlFor="spec_attached" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Spec Added
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Specification sheet has been uploaded
+                    </p>
+                  </div>
+                  <input
+                    id="spec_attached"
+                    type="checkbox"
+                    checked={item.spec_attached || false}
+                    onChange={() => handleBooleanToggle('spec_attached', item.spec_attached)}
+                    disabled={savingBooleans}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <div>
                     <label htmlFor="needs_pricing_review" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Pricing Review
                     </label>
