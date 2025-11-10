@@ -1,7 +1,7 @@
 require 'roo'
 
 class PriceHistoryImportService
-  attr_reader :file_path, :errors, :warnings
+  attr_reader :file_path, :errors, :warnings, :effective_date_override
 
   # Valid LGA values from PriceHistory model
   VALID_LGAS = [
@@ -14,8 +14,9 @@ class PriceHistoryImportService
     'Scenic Rim Regional Council'
   ].freeze
 
-  def initialize(file_path)
+  def initialize(file_path, effective_date: nil)
     @file_path = file_path
+    @effective_date_override = effective_date
     @errors = []
     @warnings = []
     @stats = {
@@ -79,13 +80,21 @@ class PriceHistoryImportService
       headers[header.downcase] = col
     end
 
-    # Validate required headers
-    required = ['item id', 'historical price']
-    missing = required - headers.keys
+    # Validate required headers - accept both "historical price" and "current price"
+    has_item_id = headers.key?('item id')
+    has_price = headers.key?('historical price') || headers.key?('current price')
 
-    if missing.any?
+    if !has_item_id || !has_price
+      missing = []
+      missing << 'item id' unless has_item_id
+      missing << 'historical price or current price' unless has_price
       @errors << "Missing required columns: #{missing.join(', ')}"
       return nil
+    end
+
+    # Normalize price column name to 'historical price' for backward compatibility
+    if headers.key?('current price') && !headers.key?('historical price')
+      headers['historical price'] = headers['current price']
     end
 
     headers
@@ -200,6 +209,9 @@ class PriceHistoryImportService
       return history if history
     end
 
+    # Determine effective date: override > row data > today
+    effective_date = @effective_date_override || row_data[:date_effective] || Date.today
+
     # Create new price history record
     PriceHistory.new(
       pricebook_item: item,
@@ -207,19 +219,22 @@ class PriceHistoryImportService
       old_price: row_data[:previous_price],
       supplier_id: row_data[:supplier]&.id,
       lga: row_data[:lga],
-      date_effective: row_data[:date_effective] || Date.today,
+      date_effective: effective_date,
       change_reason: row_data[:change_reason] || 'imported_from_excel',
       quote_reference: row_data[:quote_reference]
     )
   end
 
   def update_history(history, row_data)
+    # Determine effective date: override > row data > existing
+    effective_date = @effective_date_override || row_data[:date_effective] || history.date_effective
+
     history.update(
       new_price: row_data[:historical_price],
       old_price: row_data[:previous_price] || history.old_price,
       supplier_id: row_data[:supplier]&.id || history.supplier_id,
       lga: row_data[:lga] || history.lga,
-      date_effective: row_data[:date_effective] || history.date_effective,
+      date_effective: effective_date,
       change_reason: row_data[:change_reason] || history.change_reason,
       quote_reference: row_data[:quote_reference] || history.quote_reference
     )
