@@ -130,7 +130,7 @@ module Api
             supplier: { only: [:id, :full_name, :email, :mobile_phone, :office_phone, :rating] },
             default_supplier: { only: [:id, :full_name] },
             price_histories: {
-              only: [:id, :old_price, :new_price, :change_reason, :created_at],
+              only: [:id, :old_price, :new_price, :change_reason, :created_at, :date_effective],
               include: { supplier: { only: [:id, :full_name] } }
             }
           }
@@ -550,15 +550,17 @@ module Api
         end
 
         file = params[:file]
-        temp_file = Tempfile.new(['price_history_import', File.extname(file.original_filename)])
+        temp_file = Tempfile.new(['price_history_import', File.extname(file.original_filename)], binmode: true)
 
         begin
-          # Save uploaded file
+          # Save uploaded file in binary mode to avoid encoding issues
+          temp_file.binmode
           temp_file.write(file.read)
           temp_file.rewind
 
-          # Run import service
-          import_service = PriceHistoryImportService.new(temp_file.path)
+          # Run import service with optional effective_date
+          effective_date = params[:effective_date].present? ? Date.parse(params[:effective_date]) : nil
+          import_service = PriceHistoryImportService.new(temp_file.path, effective_date: effective_date)
           result = import_service.import
 
           render json: result
@@ -566,6 +568,60 @@ module Api
           temp_file.close
           temp_file.unlink
         end
+      end
+
+      # GET /api/v1/pricebook/price_health_check
+      def price_health_check
+        issues = []
+        today = Date.today
+
+        # Find all items with default suppliers
+        items_with_defaults = PricebookItem.includes(:default_supplier, :price_histories)
+          .where.not(default_supplier_id: nil)
+
+        items_with_defaults.each do |item|
+          # Find the active price for the default supplier
+          active_price = item.price_histories
+            .where(supplier_id: item.default_supplier_id)
+            .where('date_effective <= ? OR date_effective IS NULL', today)
+            .order(date_effective: :desc, created_at: :desc)
+            .first
+
+          if active_price && active_price.new_price != item.current_price
+            issues << {
+              item_id: item.id,
+              item_code: item.item_code,
+              item_name: item.item_name,
+              default_supplier_id: item.default_supplier_id,
+              default_supplier_name: item.default_supplier&.full_name,
+              item_current_price: item.current_price,
+              active_price_id: active_price.id,
+              active_price_value: active_price.new_price,
+              active_price_date: active_price.date_effective || active_price.created_at,
+              difference: (active_price.new_price - item.current_price).round(2)
+            }
+          elsif !active_price && item.current_price.present?
+            issues << {
+              item_id: item.id,
+              item_code: item.item_code,
+              item_name: item.item_name,
+              default_supplier_id: item.default_supplier_id,
+              default_supplier_name: item.default_supplier&.full_name,
+              item_current_price: item.current_price,
+              active_price_id: nil,
+              active_price_value: nil,
+              active_price_date: nil,
+              difference: nil,
+              error: 'No active price found for default supplier'
+            }
+          end
+        end
+
+        render json: {
+          total_items_checked: items_with_defaults.count,
+          issues_found: issues.count,
+          issues: issues
+        }
       end
 
       private

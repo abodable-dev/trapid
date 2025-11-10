@@ -361,6 +361,11 @@ module Api
         set_as_default = params[:set_as_default] != false # Default to true unless explicitly false
         effective_date = params[:effective_date].present? ? Date.parse(params[:effective_date]) : Date.today
 
+        Rails.logger.info "===== COPY PRICE HISTORY DEBUG ====="
+        Rails.logger.info "params[:effective_date] = #{params[:effective_date].inspect}"
+        Rails.logger.info "effective_date after parsing = #{effective_date.inspect}"
+        Rails.logger.info "======================================="
+
         if source_id.blank?
           return render json: {
             success: false,
@@ -382,47 +387,44 @@ module Api
         updated_count = 0
 
         ActiveRecord::Base.transaction do
-          # Get all pricebook items where source is the default supplier
-          source_items = PricebookItem.where(default_supplier_id: source_id)
+          # Get all pricebook items that have price histories from the source supplier
+          source_price_histories = PriceHistory.where(supplier_id: source_id)
+            .joins(:pricebook_item)
+            .select('DISTINCT ON (pricebook_item_id) price_histories.*')
+            .order('pricebook_item_id, created_at DESC')
 
           # Filter by categories if provided
           if categories.present? && categories.is_a?(Array) && categories.any?
-            source_items = source_items.where(category: categories)
+            source_price_histories = source_price_histories.where(pricebook_items: { category: categories })
           end
 
-          source_items.each do |item|
+          source_price_histories.each do |latest_price_history|
+            item = latest_price_history.pricebook_item
+
             # Only set target as the new default supplier if requested
             if set_as_default
               item.update!(default_supplier_id: target_contact.id)
               updated_count += 1
             end
 
-            # Only copy the most recent price history for this item from the source supplier
-            latest_price_history = PriceHistory.where(
+            # Check if target already has a price history for this item
+            existing_history = PriceHistory.where(
               pricebook_item_id: item.id,
-              supplier_id: source_id
-            ).order(created_at: :desc).first
+              supplier_id: target_contact.id
+            ).exists?
 
-            if latest_price_history
-              # Check if target already has a price history for this item
-              existing_history = PriceHistory.where(
+            # Only create if target doesn't already have a price history for this item
+            unless existing_history
+              PriceHistory.create!(
                 pricebook_item_id: item.id,
-                supplier_id: target_contact.id
-              ).exists?
-
-              # Only create if target doesn't already have a price history for this item
-              unless existing_history
-                PriceHistory.create!(
-                  pricebook_item_id: item.id,
-                  old_price: latest_price_history.old_price,
-                  new_price: latest_price_history.new_price,
-                  supplier_id: target_contact.id,
-                  lga: latest_price_history.lga,
-                  date_effective: effective_date,
-                  change_reason: "Copied from #{source_contact.full_name}"
-                )
-                copied_count += 1
-              end
+                old_price: latest_price_history.old_price,
+                new_price: latest_price_history.new_price,
+                supplier_id: target_contact.id,
+                lga: latest_price_history.lga,
+                date_effective: effective_date,
+                change_reason: "Copied from #{source_contact.full_name}"
+              )
+              copied_count += 1
             end
           end
         end
