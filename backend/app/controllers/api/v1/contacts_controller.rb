@@ -38,7 +38,7 @@ module Api
         render json: {
           success: true,
           contacts: @contacts.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes],
+            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas],
             methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
           )
         }
@@ -52,7 +52,7 @@ module Api
             :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
             :tax_number, :xero_id, :sync_with_xero, :sys_type_id, :deleted, :parent_id, :parent,
             :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
-            :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes
+            :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas
           ],
           methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
         )
@@ -111,7 +111,7 @@ module Api
           render json: {
             success: true,
             contact: @contact.as_json(
-              only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes],
+              only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas],
               methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
             )
           }
@@ -652,7 +652,8 @@ module Api
           :supplier_code,
           :address,
           :notes,
-          contact_types: []
+          contact_types: [],
+          lgas: []
         )
       end
     end

@@ -43,7 +43,7 @@ export default function ContactDetailPage() {
   const [setAsDefaultSupplier, setSetAsDefaultSupplier] = useState(true)
   const [effectiveDate, setEffectiveDate] = useState(new Date().toISOString().split('T')[0])
   const [priceBookSearchTerm, setPriceBookSearchTerm] = useState('')
-  const [editingPriceHistory, setEditingPriceHistory] = useState(null) // { itemId, historyId, price, date, lga }
+  const [editingPriceHistory, setEditingPriceHistory] = useState(null) // { itemId, historyId, price, date }
   const [deletingPriceHistory, setDeletingPriceHistory] = useState(null) // { itemId, historyId }
 
   useEffect(() => {
@@ -314,7 +314,8 @@ export default function ContactDetailPage() {
       website: contact.website || '',
       tax_number: contact.tax_number || '',
       address: contact.address || '',
-      notes: contact.notes || ''
+      notes: contact.notes || '',
+      lgas: contact.lgas || []
     })
     setIsEditModalOpen(true)
   }
@@ -386,8 +387,7 @@ export default function ContactDetailPage() {
       itemId,
       historyId: history.id,
       price: history.new_price,
-      date: history.date_effective || history.created_at?.split('T')[0],
-      lga: history.lga || ''
+      date: history.date_effective || history.created_at?.split('T')[0]
     })
   }
 
@@ -397,8 +397,7 @@ export default function ContactDetailPage() {
     try {
       await api.patch(`/api/v1/pricebook/${editingPriceHistory.itemId}/price_histories/${editingPriceHistory.historyId}`, {
         new_price: editingPriceHistory.price,
-        date_effective: editingPriceHistory.date,
-        lga: editingPriceHistory.lga
+        date_effective: editingPriceHistory.date
       })
 
       // Reload contact data to refresh the table
@@ -627,7 +626,31 @@ export default function ContactDetailPage() {
               )}
             </div>
 
-            {!contact.tax_number && contact.branch === null && (
+            {/* LGAs - Multi-select for suppliers */}
+            {contact.is_supplier && (
+              <div className="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Local Government Areas (LGAs)</p>
+                <div className="flex flex-wrap gap-2">
+                  {contact.lgas && contact.lgas.length > 0 ? (
+                    contact.lgas.map((lga, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
+                      >
+                        {lga}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-500 dark:text-gray-400">No LGAs assigned</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Edit LGAs using the Edit button above
+                </p>
+              </div>
+            )}
+
+            {!contact.tax_number && contact.branch === null && !contact.is_supplier && (
               <p className="text-gray-500 dark:text-gray-400 text-sm mt-4">No additional business details available</p>
             )}
           </div>
@@ -1077,7 +1100,7 @@ export default function ContactDetailPage() {
                     type="text"
                     value={priceBookSearchTerm}
                     onChange={(e) => setPriceBookSearchTerm(e.target.value)}
-                    placeholder="Search by code, name, category, price, or LGA..."
+                    placeholder="Search by code, name, category, or price..."
                     className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <svg
@@ -1133,9 +1156,6 @@ export default function ContactDetailPage() {
                         <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Date
                         </th>
-                        <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
-                          LGA
-                        </th>
                         <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
                           Actions
                         </th>
@@ -1151,8 +1171,7 @@ export default function ContactDetailPage() {
                             item.item_name?.toLowerCase().includes(search) ||
                             item.category?.toLowerCase().includes(search) ||
                             item.price_histories?.some(h =>
-                              h.new_price?.toString().includes(search) ||
-                              h.lga?.toLowerCase().includes(search)
+                              h.new_price?.toString().includes(search)
                             )
                           )
                         })
@@ -1240,25 +1259,6 @@ export default function ContactDetailPage() {
                                           })
                                         ) : '—'}
                                       </span>
-                                    )}
-                                  </td>
-
-                                  {/* LGA - editable */}
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    {isEditing ? (
-                                      <input
-                                        type="text"
-                                        value={editingPriceHistory.lga}
-                                        onChange={(e) => setEditingPriceHistory({ ...editingPriceHistory, lga: e.target.value })}
-                                        placeholder="LGA"
-                                        className="w-32 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                      />
-                                    ) : history.lga ? (
-                                      <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">
-                                        {history.lga}
-                                      </span>
-                                    ) : (
-                                      <span className="text-gray-400 dark:text-gray-500">—</span>
                                     )}
                                   </td>
 
@@ -1525,6 +1525,44 @@ export default function ContactDetailPage() {
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         />
                       </div>
+
+                      {/* LGAs - Multi-select for suppliers */}
+                      {contact.is_supplier && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Local Government Areas (LGAs)
+                          </label>
+                          <div className="space-y-2">
+                            {[
+                              'Toowoomba Regional Council',
+                              'Lockyer Valley Regional Council',
+                              'City of Gold Coast',
+                              'Brisbane City Council',
+                              'Sunshine Coast Regional Council',
+                              'Redland City Council',
+                              'Scenic Rim Regional Council'
+                            ].map((lga) => (
+                              <label key={lga} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={editFormData?.lgas?.includes(lga) || false}
+                                  onChange={(e) => {
+                                    const currentLgas = editFormData?.lgas || []
+                                    const newLgas = e.target.checked
+                                      ? [...currentLgas, lga]
+                                      : currentLgas.filter(l => l !== lga)
+                                    handleEditChange('lgas', newLgas)
+                                  }}
+                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
+                                />
+                                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                  {lga}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
