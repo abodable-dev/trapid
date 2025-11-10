@@ -169,6 +169,24 @@ Rails.application.routes.draw do
       # Task Templates for Schedule Master
       resources :task_templates
 
+      # Schedule Templates for Schedule Master
+      resources :schedule_templates do
+        collection do
+          get :default
+        end
+        member do
+          post :duplicate
+          post :set_as_default
+        end
+        # Template rows (nested under schedule_templates)
+        resources :rows, controller: 'schedule_template_rows', except: [:index, :show] do
+          collection do
+            post :bulk_update
+            post :reorder
+          end
+        end
+      end
+
       # Xero integration
       resources :xero, only: [] do
         collection do
