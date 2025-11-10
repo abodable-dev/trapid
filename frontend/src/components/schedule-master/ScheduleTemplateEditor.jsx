@@ -299,11 +299,11 @@ export default function ScheduleTemplateEditor() {
               />
               <ColumnTooltip
                 text="PO Req"
-                tooltip="Check if this task requires a purchase order. Must have a supplier selected first."
+                tooltip="Check if this task requires a purchase order. This tracks whether a PO is needed, but doesn't automatically create one."
               />
               <ColumnTooltip
                 text="Auto PO"
-                tooltip="Automatically create and send a purchase order to the supplier when the job starts. Requires 'PO Req' to be checked."
+                tooltip="Automatically create and send a purchase order to the supplier when the job starts. Requires a supplier to be selected."
               />
               <ColumnTooltip
                 text="Price Items"
@@ -491,9 +491,13 @@ function ScheduleTemplateRow({
       if (!value) {
         // If po_required is unchecked, also uncheck create_po_on_job_start
         onUpdate({ po_required: false, create_po_on_job_start: false })
-      } else if (!row.supplier_id) {
-        // If checking po_required but no supplier, show error and don't update
-        alert('Please select a supplier first before requiring a PO')
+      } else {
+        onUpdate({ [field]: value })
+      }
+    } else if (field === 'create_po_on_job_start') {
+      if (value && !row.supplier_id) {
+        // If checking create_po_on_job_start but no supplier, show error and don't update
+        alert('Please select a supplier first before enabling Auto PO')
         return
       } else {
         onUpdate({ [field]: value })
