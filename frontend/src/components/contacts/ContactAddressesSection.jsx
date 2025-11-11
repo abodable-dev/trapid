@@ -104,7 +104,10 @@ export default function ContactAddressesSection({ contactAddresses = [], onUpdat
       </div>
 
       <div>
-        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Address Line 1</label>
+        <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+          Address Line 1
+          <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+        </label>
         <input
           type="text"
           placeholder="Street address"
@@ -115,7 +118,10 @@ export default function ContactAddressesSection({ contactAddresses = [], onUpdat
       </div>
 
       <div>
-        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Address Line 2</label>
+        <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+          Address Line 2
+          <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+        </label>
         <input
           type="text"
           placeholder="Unit, building, etc."
@@ -127,7 +133,10 @@ export default function ContactAddressesSection({ contactAddresses = [], onUpdat
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">City</label>
+          <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+            City
+            <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+          </label>
           <input
             type="text"
             placeholder="City"
@@ -137,7 +146,10 @@ export default function ContactAddressesSection({ contactAddresses = [], onUpdat
           />
         </div>
         <div>
-          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">State/Region</label>
+          <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+            State/Region
+            <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+          </label>
           <input
             type="text"
             placeholder="State"
@@ -150,7 +162,10 @@ export default function ContactAddressesSection({ contactAddresses = [], onUpdat
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Postal Code</label>
+          <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+            Postal Code
+            <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+          </label>
           <input
             type="text"
             placeholder="Postal code"
@@ -160,7 +175,10 @@ export default function ContactAddressesSection({ contactAddresses = [], onUpdat
           />
         </div>
         <div>
-          <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Country</label>
+          <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+            Country
+            <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+          </label>
           <input
             type="text"
             placeholder="Country"

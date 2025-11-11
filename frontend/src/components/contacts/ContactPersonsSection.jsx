@@ -81,28 +81,46 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
               // Edit mode
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      First Name
+                      <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="First Name"
+                      value={editingPerson.first_name || ''}
+                      onChange={(e) => setEditingPerson({ ...editingPerson, first_name: e.target.value })}
+                      className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      Last Name
+                      <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Last Name"
+                      value={editingPerson.last_name || ''}
+                      onChange={(e) => setEditingPerson({ ...editingPerson, last_name: e.target.value })}
+                      className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    Email
+                    <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                  </label>
                   <input
-                    type="text"
-                    placeholder="First Name"
-                    value={editingPerson.first_name || ''}
-                    onChange={(e) => setEditingPerson({ ...editingPerson, first_name: e.target.value })}
-                    className="px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Last Name"
-                    value={editingPerson.last_name || ''}
-                    onChange={(e) => setEditingPerson({ ...editingPerson, last_name: e.target.value })}
-                    className="px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    type="email"
+                    placeholder="Email"
+                    value={editingPerson.email || ''}
+                    onChange={(e) => setEditingPerson({ ...editingPerson, email: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                   />
                 </div>
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={editingPerson.email || ''}
-                  onChange={(e) => setEditingPerson({ ...editingPerson, email: e.target.value })}
-                  className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
                 <div className="flex items-center gap-4">
                   <label className="flex items-center gap-2 text-sm">
                     <input
@@ -190,28 +208,46 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
             <p className="text-sm font-medium text-gray-900 dark:text-white mb-3">New Contact Person</p>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    First Name
+                    <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="First Name"
+                    value={newPerson.first_name}
+                    onChange={(e) => setNewPerson({ ...newPerson, first_name: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    Last Name
+                    <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Last Name"
+                    value={newPerson.last_name}
+                    onChange={(e) => setNewPerson({ ...newPerson, last_name: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                  Email
+                  <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                </label>
                 <input
-                  type="text"
-                  placeholder="First Name"
-                  value={newPerson.first_name}
-                  onChange={(e) => setNewPerson({ ...newPerson, first_name: e.target.value })}
-                  className="px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
-                <input
-                  type="text"
-                  placeholder="Last Name"
-                  value={newPerson.last_name}
-                  onChange={(e) => setNewPerson({ ...newPerson, last_name: e.target.value })}
-                  className="px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  type="email"
+                  placeholder="Email"
+                  value={newPerson.email}
+                  onChange={(e) => setNewPerson({ ...newPerson, email: e.target.value })}
+                  className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 />
               </div>
-              <input
-                type="email"
-                placeholder="Email"
-                value={newPerson.email}
-                onChange={(e) => setNewPerson({ ...newPerson, email: e.target.value })}
-                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              />
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 text-sm">
                   <input
