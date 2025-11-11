@@ -11,6 +11,8 @@ import PredecessorEditor from './PredecessorEditor'
 import PriceBookItemsModal from './PriceBookItemsModal'
 import DocumentationTabsModal from './DocumentationTabsModal'
 import SupervisorChecklistModal from './SupervisorChecklistModal'
+import LinkedTasksModal from './LinkedTasksModal'
+import LinkedTemplateModal from './LinkedTemplateModal'
 
 /**
  * Schedule Template Editor - Full 14-column grid interface for creating/editing schedule templates
@@ -1273,6 +1275,32 @@ function ScheduleTemplateRow({
           </td>
         )
 
+      case 'linkedTasks':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <button
+              onClick={() => setShowLinkedTasksModal(true)}
+              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+              title="Click to select linked tasks"
+            >
+              {row.linked_task_ids?.length || 0} tasks
+            </button>
+          </td>
+        )
+
+      case 'linkedTemplate':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => setShowLinkedTemplateModal(true)}
+              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-left cursor-pointer truncate"
+              title="Click to select a template"
+            >
+              {row.linked_template_name || 'None'}
+            </button>
+          </td>
+        )
+
       case 'actions':
         return (
           <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
@@ -1331,6 +1359,16 @@ function ScheduleTemplateRow({
     setShowChecklistModal(true)
   }
 
+  // Handler for saving linked tasks
+  const handleSaveLinkedTasks = (taskIds) => {
+    onUpdate({ linked_task_ids: taskIds })
+  }
+
+  // Handler for saving linked template
+  const handleSaveLinkedTemplate = (templateId) => {
+    onUpdate({ linked_template_id: templateId })
+  }
+
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
       {getSortedColumns().map(([key, config]) => {
@@ -1380,6 +1418,29 @@ function ScheduleTemplateRow({
             onClose={() => setShowChecklistModal(false)}
             currentRow={row}
             onSave={handleSaveChecklistTemplates}
+          />
+        </td>
+      )}
+
+      {showLinkedTasksModal && typeof document !== 'undefined' && (
+        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
+          <LinkedTasksModal
+            isOpen={showLinkedTasksModal}
+            onClose={() => setShowLinkedTasksModal(false)}
+            currentRow={row}
+            allRows={allRows}
+            onSave={handleSaveLinkedTasks}
+          />
+        </td>
+      )}
+
+      {showLinkedTemplateModal && typeof document !== 'undefined' && (
+        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
+          <LinkedTemplateModal
+            isOpen={showLinkedTemplateModal}
+            onClose={() => setShowLinkedTemplateModal(false)}
+            currentRow={row}
+            onSave={handleSaveLinkedTemplate}
           />
         </td>
       )}
