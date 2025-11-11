@@ -22,24 +22,45 @@ export default function PODocumentsTab({ purchaseOrderId, constructionId, schedu
   const [groupedDocuments, setGroupedDocuments] = useState({})
   const [activeCategory, setActiveCategory] = useState('site-plan')
   const [scheduleTask, setScheduleTask] = useState(null)
-
-  const categories = [
-    { id: 'site-plan', label: 'Site' },
-    { id: 'sales', label: 'Sales' },
-    { id: 'final-certificate', label: 'Final Certificate' },
-    { id: 'certification', label: 'Precon' },
-    { id: 'client', label: 'Client' },
-    { id: 'photo', label: 'Photo' },
-    { id: 'client-photo', label: 'Client Photo' },
-    { id: 'uncategorized', label: 'Plan' },
-  ]
+  const [categories, setCategories] = useState([])
 
   useEffect(() => {
+    loadCategories()
     loadAvailableDocuments()
     if (scheduleTaskId) {
       loadScheduleTask()
     }
   }, [purchaseOrderId, scheduleTaskId])
+
+  const loadCategories = async () => {
+    try {
+      const response = await api.get('/api/v1/documentation_categories')
+      const orderedCategories = (response.documentation_categories || []).map(cat => ({
+        id: cat.name.toLowerCase().replace(/\s+/g, '-'),
+        label: cat.name,
+        sequence_order: cat.sequence_order
+      }))
+      setCategories(orderedCategories)
+
+      // Set first category as active if we don't have one set
+      if (orderedCategories.length > 0 && !activeCategory) {
+        setActiveCategory(orderedCategories[0].id)
+      }
+    } catch (err) {
+      console.error('Failed to load categories:', err)
+      // Fallback to hardcoded categories
+      setCategories([
+        { id: 'site-plan', label: 'Site', sequence_order: 0 },
+        { id: 'sales', label: 'Sales', sequence_order: 1 },
+        { id: 'final-certificate', label: 'Final Certificate', sequence_order: 2 },
+        { id: 'certification', label: 'Precon', sequence_order: 3 },
+        { id: 'client', label: 'Client', sequence_order: 4 },
+        { id: 'photo', label: 'Photo', sequence_order: 5 },
+        { id: 'client-photo', label: 'Client Photo', sequence_order: 6 },
+        { id: 'uncategorized', label: 'Plan', sequence_order: 7 },
+      ])
+    }
+  }
 
   const loadScheduleTask = async () => {
     try {

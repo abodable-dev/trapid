@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { MagnifyingGlassIcon, EnvelopeIcon, PaperClipIcon, CloudArrowDownIcon } from '@heroicons/react/24/outline'
+import DOMPurify from 'isomorphic-dompurify'
 import { api } from '../../api'
 import OutlookImportModal from './OutlookImportModal'
 
@@ -181,7 +182,15 @@ export default function JobEmailsTab({ constructionId }) {
                       {email.body_html ? (
                         <div
                           className="prose dark:prose-invert max-w-none text-sm"
-                          dangerouslySetInnerHTML={{ __html: email.body_html }}
+                          dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(email.body_html, {
+                              ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'code', 'span', 'div'],
+                              ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
+                              ALLOW_DATA_ATTR: false,
+                              FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
+                              FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
+                            })
+                          }}
                         />
                       ) : (
                         <div className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">

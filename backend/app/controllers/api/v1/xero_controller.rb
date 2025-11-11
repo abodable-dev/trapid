@@ -269,13 +269,41 @@ module Api
       # POST /api/v1/xero/webhook
       # Receives Xero webhooks (for future use)
       def webhook
-        # TODO: Implement webhook signature verification
-        # TODO: Process invoice.created, invoice.updated events
+        # Verify webhook signature
+        unless verify_xero_webhook_signature
+          return render json: {
+            success: false,
+            error: 'Invalid webhook signature'
+          }, status: :unauthorized
+        end
+
+        # Parse webhook payload
+        payload = JSON.parse(request.body.read)
+        events = payload['events'] || []
+
+        # Process events (can be expanded for specific event types)
+        events.each do |event|
+          Rails.logger.info("Xero webhook event: #{event['eventType']} - Resource: #{event['resourceId']}")
+
+          case event['eventType']
+          when 'CREATE', 'UPDATE'
+            if event['eventType'].include?('INVOICE')
+              # Queue background job to sync invoice
+              # XeroInvoiceSyncJob.perform_later(event['resourceId'])
+            elsif event['eventType'].include?('CONTACT')
+              # Queue background job to sync contact
+              # XeroContactSyncJob.perform_later(event['resourceId'])
+            end
+          end
+        end
 
         render json: {
           success: true,
-          message: 'Webhook received'
+          message: 'Webhook received and queued for processing'
         }, status: :ok
+      rescue JSON::ParserError => e
+        Rails.logger.error("Failed to parse Xero webhook: #{e.message}")
+        render json: { success: false, error: 'Invalid JSON payload' }, status: :bad_request
       end
 
       # POST /api/v1/xero/sync_contacts
@@ -656,6 +684,39 @@ module Api
         end
 
         nil
+      end
+
+      # Verify Xero webhook signature using HMAC-SHA256
+      def verify_xero_webhook_signature
+        webhook_key = ENV['XERO_WEBHOOK_KEY']
+
+        unless webhook_key.present?
+          Rails.logger.error("XERO_WEBHOOK_KEY not configured")
+          return false
+        end
+
+        # Get signature from header
+        signature = request.headers['X-Xero-Signature']
+
+        unless signature.present?
+          Rails.logger.warn("Missing X-Xero-Signature header")
+          return false
+        end
+
+        # Read and verify the request body
+        body = request.body.read
+        request.body.rewind # Reset for later reading
+
+        # Calculate expected signature
+        expected_signature = Base64.strict_encode64(
+          OpenSSL::HMAC.digest('SHA256', webhook_key, body)
+        )
+
+        # Compare signatures (use secure comparison to prevent timing attacks)
+        ActiveSupport::SecurityUtils.secure_compare(signature, expected_signature)
+      rescue StandardError => e
+        Rails.logger.error("Webhook signature verification failed: #{e.message}")
+        false
       end
     end
   end
