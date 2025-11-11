@@ -4,6 +4,12 @@ class ProjectTask < ApplicationRecord
   belongs_to :purchase_order, optional: true
   belongs_to :assigned_to, class_name: 'User', optional: true
 
+  # Schedule template relationships
+  belongs_to :schedule_template_row, optional: true
+  belongs_to :parent_task, class_name: 'ProjectTask', optional: true
+  has_many :spawned_tasks, class_name: 'ProjectTask', foreign_key: 'parent_task_id', dependent: :destroy
+  belongs_to :supervisor_checked_by, class_name: 'User', optional: true
+
   # Dependency relationships
   has_many :successor_dependencies, class_name: 'TaskDependency',
            foreign_key: 'predecessor_task_id', dependent: :destroy
@@ -34,8 +40,21 @@ class ProjectTask < ApplicationRecord
   scope :upcoming, -> { where('planned_start_date <= ? AND status = ?', 1.week.from_now, 'not_started') }
   scope :by_category, ->(category) { where(category: category) }
 
+  # New scopes for schedule template features
+  scope :normal_tasks, -> { where(spawned_type: nil) }
+  scope :photo_tasks, -> { where(spawned_type: 'photo') }
+  scope :certificate_tasks, -> { where(spawned_type: 'certificate') }
+  scope :subtasks, -> { where(spawned_type: 'subtask') }
+  scope :requiring_supervisor, -> { where(requires_supervisor_check: true) }
+  scope :supervisor_pending, -> { requiring_supervisor.where(supervisor_checked_at: nil) }
+  scope :with_tag, ->(tag) { where("tags @> ?", [tag].to_json) }
+  scope :critical_po_tasks, -> { where(critical_po: true) }
+  scope :by_sequence, -> { order(sequence_order: :asc) }
+
   before_save :update_actual_dates
   after_save :update_project_timeline, if: :saved_change_to_planned_end_date?
+  after_save :spawn_child_tasks_on_status_change, if: :saved_change_to_status?
+  after_save :auto_complete_predecessors_if_enabled, if: :saved_change_to_status?
 
   def complete!
     update!(
@@ -89,6 +108,65 @@ class ProjectTask < ApplicationRecord
     'delayed'
   end
 
+  # Schedule template helper methods
+  def spawned_task?
+    spawned_type.present?
+  end
+
+  def photo_task?
+    spawned_type == 'photo'
+  end
+
+  def certificate_task?
+    spawned_type == 'certificate'
+  end
+
+  def subtask?
+    spawned_type == 'subtask'
+  end
+
+  def has_photo?
+    photo_uploaded_at.present?
+  end
+
+  def has_certificate?
+    certificate_uploaded_at.present?
+  end
+
+  def supervisor_checked?
+    supervisor_checked_at.present?
+  end
+
+  def needs_supervisor_check?
+    requires_supervisor_check && !supervisor_checked?
+  end
+
+  def tag_list
+    tags || []
+  end
+
+  def has_tag?(tag)
+    tag_list.include?(tag)
+  end
+
+  # Mark supervisor check as complete
+  def mark_supervisor_checked!(user)
+    update!(
+      supervisor_checked_at: Time.current,
+      supervisor_checked_by: user
+    )
+  end
+
+  # Upload photo for this task
+  def mark_photo_uploaded!
+    update!(photo_uploaded_at: Time.current)
+  end
+
+  # Upload certificate for this task
+  def mark_certificate_uploaded!
+    update!(certificate_uploaded_at: Time.current)
+  end
+
   private
 
   def update_actual_dates
@@ -105,5 +183,41 @@ class ProjectTask < ApplicationRecord
   def update_project_timeline
     # Recalculate project end date if this task's end date changed
     project.reload
+  end
+
+  def spawn_child_tasks_on_status_change
+    # Don't spawn tasks for spawned tasks themselves
+    return if spawned_task?
+    return unless schedule_template_row
+
+    spawner = Schedule::TaskSpawner.new(self)
+
+    case status
+    when 'in_progress'
+      # Spawn subtasks when task starts
+      spawner.spawn_subtasks if schedule_template_row.has_subtasks
+    when 'complete'
+      # Spawn photo and certificate tasks when task completes
+      spawner.spawn_photo_task if schedule_template_row.require_photo
+      spawner.spawn_certificate_task if schedule_template_row.require_certificate
+    end
+  rescue StandardError => e
+    Rails.logger.error("Failed to spawn child tasks for task #{id}: #{e.message}")
+    # Don't raise - we don't want to block the status change
+  end
+
+  def auto_complete_predecessors_if_enabled
+    # If this task is complete and has auto_complete_predecessors enabled,
+    # mark all predecessor tasks as complete
+    return unless status == 'complete'
+    return unless auto_complete_predecessors
+
+    predecessor_tasks.where.not(status: 'complete').find_each do |pred|
+      pred.complete!
+      Rails.logger.info("Auto-completed predecessor task #{pred.id} (#{pred.name})")
+    end
+  rescue StandardError => e
+    Rails.logger.error("Failed to auto-complete predecessors for task #{id}: #{e.message}")
+    # Don't raise - we don't want to block the completion
   end
 end

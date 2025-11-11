@@ -1,0 +1,2 @@
+class XeroTaxRate < ApplicationRecord
+end

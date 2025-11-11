@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PlusIcon, ArrowPathIcon, ChevronDownIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, ArrowPathIcon, ChevronDownIcon, ChevronRightIcon, MagnifyingGlassIcon, Bars3Icon, ChevronUpIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 
 export default function HealthPage() {
@@ -49,6 +49,114 @@ export default function HealthPage() {
     priceMismatches: ''
   })
 
+  // Column order state with localStorage persistence
+  const [itemsWithoutSupplierColumnOrder, setItemsWithoutSupplierColumnOrder] = useState(() => {
+    const saved = localStorage.getItem('health_itemsWithoutSupplier_columnOrder')
+    return saved ? JSON.parse(saved) : ['item_code', 'item_name', 'category', 'current_price']
+  })
+
+  const [suppliersColumnOrder, setSuppliersColumnOrder] = useState(() => {
+    const saved = localStorage.getItem('health_suppliers_columnOrder')
+    return saved ? JSON.parse(saved) : ['supplier', 'category', 'coverage', 'items_priced', 'missing_prices']
+  })
+
+  const [itemsWithSupplierColumnOrder, setItemsWithSupplierColumnOrder] = useState(() => {
+    const saved = localStorage.getItem('health_itemsWithSupplier_columnOrder')
+    return saved ? JSON.parse(saved) : ['item_code', 'item_name', 'category', 'default_supplier', 'current_price']
+  })
+
+  const [itemsRequiringPhotoColumnOrder, setItemsRequiringPhotoColumnOrder] = useState(() => {
+    const saved = localStorage.getItem('health_itemsRequiringPhoto_columnOrder')
+    return saved ? JSON.parse(saved) : ['item_code', 'item_name', 'category', 'current_price']
+  })
+
+  const [priceMismatchesColumnOrder, setPriceMismatchesColumnOrder] = useState(() => {
+    const saved = localStorage.getItem('health_priceMismatches_columnOrder')
+    return saved ? JSON.parse(saved) : ['item_code', 'item_name', 'default_supplier', 'current_price', 'active_price', 'difference']
+  })
+
+  // Column widths with localStorage persistence
+  const [itemsWithoutSupplierColumnWidths, setItemsWithoutSupplierColumnWidths] = useState(() => {
+    const saved = localStorage.getItem('health_itemsWithoutSupplier_columnWidths')
+    return saved ? JSON.parse(saved) : {
+      item_code: 150,
+      item_name: 250,
+      category: 150,
+      current_price: 150
+    }
+  })
+
+  const [suppliersColumnWidths, setSuppliersColumnWidths] = useState(() => {
+    const saved = localStorage.getItem('health_suppliers_columnWidths')
+    return saved ? JSON.parse(saved) : {
+      supplier: 200,
+      category: 150,
+      coverage: 150,
+      items_priced: 150,
+      missing_prices: 150
+    }
+  })
+
+  const [itemsWithSupplierColumnWidths, setItemsWithSupplierColumnWidths] = useState(() => {
+    const saved = localStorage.getItem('health_itemsWithSupplier_columnWidths')
+    return saved ? JSON.parse(saved) : {
+      item_code: 150,
+      item_name: 250,
+      category: 150,
+      default_supplier: 200,
+      current_price: 150
+    }
+  })
+
+  const [itemsRequiringPhotoColumnWidths, setItemsRequiringPhotoColumnWidths] = useState(() => {
+    const saved = localStorage.getItem('health_itemsRequiringPhoto_columnWidths')
+    return saved ? JSON.parse(saved) : {
+      item_code: 150,
+      item_name: 250,
+      category: 150,
+      current_price: 150
+    }
+  })
+
+  const [priceMismatchesColumnWidths, setPriceMismatchesColumnWidths] = useState(() => {
+    const saved = localStorage.getItem('health_priceMismatches_columnWidths')
+    return saved ? JSON.parse(saved) : {
+      item_code: 150,
+      item_name: 250,
+      default_supplier: 200,
+      current_price: 150,
+      active_price: 150,
+      difference: 150
+    }
+  })
+
+  // Sort state (primary and secondary)
+  const [sortBy, setSortBy] = useState({
+    itemsWithoutSupplier: 'item_code',
+    suppliers: 'supplier',
+    itemsWithSupplier: 'item_code',
+    itemsRequiringPhoto: 'item_code',
+    priceMismatches: 'item_code'
+  })
+
+  const [sortDirection, setSortDirection] = useState({
+    itemsWithoutSupplier: 'asc',
+    suppliers: 'asc',
+    itemsWithSupplier: 'asc',
+    itemsRequiringPhoto: 'asc',
+    priceMismatches: 'asc'
+  })
+
+  // Column resize state
+  const [resizingColumn, setResizingColumn] = useState(null)
+  const [resizeStartX, setResizeStartX] = useState(0)
+  const [resizeStartWidth, setResizeStartWidth] = useState(0)
+  const [resizingTable, setResizingTable] = useState(null)
+
+  // Dragged column state
+  const [draggedColumn, setDraggedColumn] = useState(null)
+  const [draggedTable, setDraggedTable] = useState(null)
+
   const toggleSection = (sectionName) => {
     setExpandedSections(prev => ({
       ...prev,
@@ -90,6 +198,60 @@ export default function HealthPage() {
     loadHealthData()
     loadPriceHealthCheck()
   }, [])
+
+  // Persist column order to localStorage
+  useEffect(() => {
+    localStorage.setItem('health_itemsWithoutSupplier_columnOrder', JSON.stringify(itemsWithoutSupplierColumnOrder))
+  }, [itemsWithoutSupplierColumnOrder])
+
+  useEffect(() => {
+    localStorage.setItem('health_suppliers_columnOrder', JSON.stringify(suppliersColumnOrder))
+  }, [suppliersColumnOrder])
+
+  useEffect(() => {
+    localStorage.setItem('health_itemsWithSupplier_columnOrder', JSON.stringify(itemsWithSupplierColumnOrder))
+  }, [itemsWithSupplierColumnOrder])
+
+  useEffect(() => {
+    localStorage.setItem('health_itemsRequiringPhoto_columnOrder', JSON.stringify(itemsRequiringPhotoColumnOrder))
+  }, [itemsRequiringPhotoColumnOrder])
+
+  useEffect(() => {
+    localStorage.setItem('health_priceMismatches_columnOrder', JSON.stringify(priceMismatchesColumnOrder))
+  }, [priceMismatchesColumnOrder])
+
+  // Persist column widths to localStorage
+  useEffect(() => {
+    localStorage.setItem('health_itemsWithoutSupplier_columnWidths', JSON.stringify(itemsWithoutSupplierColumnWidths))
+  }, [itemsWithoutSupplierColumnWidths])
+
+  useEffect(() => {
+    localStorage.setItem('health_suppliers_columnWidths', JSON.stringify(suppliersColumnWidths))
+  }, [suppliersColumnWidths])
+
+  useEffect(() => {
+    localStorage.setItem('health_itemsWithSupplier_columnWidths', JSON.stringify(itemsWithSupplierColumnWidths))
+  }, [itemsWithSupplierColumnWidths])
+
+  useEffect(() => {
+    localStorage.setItem('health_itemsRequiringPhoto_columnWidths', JSON.stringify(itemsRequiringPhotoColumnWidths))
+  }, [itemsRequiringPhotoColumnWidths])
+
+  useEffect(() => {
+    localStorage.setItem('health_priceMismatches_columnWidths', JSON.stringify(priceMismatchesColumnWidths))
+  }, [priceMismatchesColumnWidths])
+
+  // Add mouse move and mouse up listeners for column resizing
+  useEffect(() => {
+    if (resizingColumn) {
+      window.addEventListener('mousemove', handleResizeMove)
+      window.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove)
+        window.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [resizingColumn, resizeStartX, resizeStartWidth, resizingTable])
 
   const loadHealthData = async () => {
     try {
@@ -135,6 +297,193 @@ export default function HealthPage() {
         setLoadingMissingItems(false)
       }
     }
+  }
+
+  // Column drag and drop handlers
+  const handleDragStart = (e, columnKey, tableName) => {
+    setDraggedColumn(columnKey)
+    setDraggedTable(tableName)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e, targetColumnKey, tableName) => {
+    e.preventDefault()
+
+    if (!draggedColumn || draggedColumn === targetColumnKey || draggedTable !== tableName) {
+      setDraggedColumn(null)
+      setDraggedTable(null)
+      return
+    }
+
+    let currentOrder, setOrder
+
+    switch (tableName) {
+      case 'itemsWithoutSupplier':
+        currentOrder = itemsWithoutSupplierColumnOrder
+        setOrder = setItemsWithoutSupplierColumnOrder
+        break
+      case 'suppliers':
+        currentOrder = suppliersColumnOrder
+        setOrder = setSuppliersColumnOrder
+        break
+      case 'itemsWithSupplier':
+        currentOrder = itemsWithSupplierColumnOrder
+        setOrder = setItemsWithSupplierColumnOrder
+        break
+      case 'itemsRequiringPhoto':
+        currentOrder = itemsRequiringPhotoColumnOrder
+        setOrder = setItemsRequiringPhotoColumnOrder
+        break
+      case 'priceMismatches':
+        currentOrder = priceMismatchesColumnOrder
+        setOrder = setPriceMismatchesColumnOrder
+        break
+      default:
+        setDraggedColumn(null)
+        setDraggedTable(null)
+        return
+    }
+
+    const draggedIndex = currentOrder.indexOf(draggedColumn)
+    const targetIndex = currentOrder.indexOf(targetColumnKey)
+
+    const newOrder = [...currentOrder]
+    newOrder.splice(draggedIndex, 1)
+    newOrder.splice(targetIndex, 0, draggedColumn)
+
+    setOrder(newOrder)
+    setDraggedColumn(null)
+    setDraggedTable(null)
+  }
+
+  // Sort handler
+  const handleSort = (columnKey, tableName) => {
+    setSortBy(prev => ({ ...prev, [tableName]: columnKey }))
+    setSortDirection(prev => ({
+      ...prev,
+      [tableName]: prev[tableName] === 'asc' && sortBy[tableName] === columnKey ? 'desc' : 'asc'
+    }))
+  }
+
+  // Column resize handlers
+  const handleResizeStart = (e, columnKey, tableName) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingColumn(columnKey)
+    setResizingTable(tableName)
+    setResizeStartX(e.clientX)
+
+    let widths
+    switch (tableName) {
+      case 'itemsWithoutSupplier':
+        widths = itemsWithoutSupplierColumnWidths
+        break
+      case 'suppliers':
+        widths = suppliersColumnWidths
+        break
+      case 'itemsWithSupplier':
+        widths = itemsWithSupplierColumnWidths
+        break
+      case 'itemsRequiringPhoto':
+        widths = itemsRequiringPhotoColumnWidths
+        break
+      case 'priceMismatches':
+        widths = priceMismatchesColumnWidths
+        break
+      default:
+        return
+    }
+
+    setResizeStartWidth(widths[columnKey])
+  }
+
+  const handleResizeMove = (e) => {
+    if (!resizingColumn || !resizingTable) return
+    const diff = e.clientX - resizeStartX
+    const newWidth = Math.max(100, resizeStartWidth + diff)
+
+    switch (resizingTable) {
+      case 'itemsWithoutSupplier':
+        setItemsWithoutSupplierColumnWidths(prev => ({
+          ...prev,
+          [resizingColumn]: newWidth
+        }))
+        break
+      case 'suppliers':
+        setSuppliersColumnWidths(prev => ({
+          ...prev,
+          [resizingColumn]: newWidth
+        }))
+        break
+      case 'itemsWithSupplier':
+        setItemsWithSupplierColumnWidths(prev => ({
+          ...prev,
+          [resizingColumn]: newWidth
+        }))
+        break
+      case 'itemsRequiringPhoto':
+        setItemsRequiringPhotoColumnWidths(prev => ({
+          ...prev,
+          [resizingColumn]: newWidth
+        }))
+        break
+      case 'priceMismatches':
+        setPriceMismatchesColumnWidths(prev => ({
+          ...prev,
+          [resizingColumn]: newWidth
+        }))
+        break
+    }
+  }
+
+  const handleResizeEnd = () => {
+    setResizingColumn(null)
+    setResizingTable(null)
+  }
+
+  // Column configuration objects
+  const itemsWithoutSupplierColumns = {
+    item_code: { key: 'item_code', label: 'Item Code' },
+    item_name: { key: 'item_name', label: 'Item Name' },
+    category: { key: 'category', label: 'Category' },
+    current_price: { key: 'current_price', label: 'Current Price' }
+  }
+
+  const suppliersColumns = {
+    supplier: { key: 'supplier', label: 'Supplier' },
+    category: { key: 'category', label: 'Category' },
+    coverage: { key: 'coverage', label: 'Coverage' },
+    items_priced: { key: 'items_priced', label: 'Items Priced' },
+    missing_prices: { key: 'missing_prices', label: 'Missing Prices' }
+  }
+
+  const itemsWithSupplierColumns = {
+    item_code: { key: 'item_code', label: 'Item Code' },
+    item_name: { key: 'item_name', label: 'Item Name' },
+    category: { key: 'category', label: 'Category' },
+    default_supplier: { key: 'default_supplier', label: 'Default Supplier' },
+    current_price: { key: 'current_price', label: 'Current Price' }
+  }
+
+  const itemsRequiringPhotoColumns = {
+    item_code: { key: 'item_code', label: 'Item Code' },
+    item_name: { key: 'item_name', label: 'Item Name' },
+    category: { key: 'category', label: 'Category' },
+    current_price: { key: 'current_price', label: 'Current Price' }
+  }
+
+  const priceMismatchesColumns = {
+    item_code: { key: 'item_code', label: 'Item Code' },
+    item_name: { key: 'item_name', label: 'Item Name' },
+    default_supplier: { key: 'default_supplier', label: 'Default Supplier' },
+    current_price: { key: 'current_price', label: 'Current Price' },
+    active_price: { key: 'active_price', label: 'Active Price' },
+    difference: { key: 'difference', label: 'Difference' }
   }
 
   // Calculate health percentage for each health check
@@ -366,44 +715,90 @@ export default function HealthPage() {
                   {/* Item List */}
                   {healthChecks.itemsWithoutDefaultSupplier.count > 0 && expandedSections.itemsWithoutDefaultSupplier && (
                     <div className="mt-4 ml-15">
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                          <thead className="bg-gray-50 dark:bg-gray-900">
+                          <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Code
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Name
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Category
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Current Price
-                              </th>
+                              {itemsWithoutSupplierColumnOrder.map((columnKey) => {
+                                const column = itemsWithoutSupplierColumns[columnKey]
+                                const width = itemsWithoutSupplierColumnWidths[columnKey]
+                                const isSorted = sortBy.itemsWithoutSupplier === columnKey
+                                return (
+                                  <th
+                                    key={columnKey}
+                                    style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                                    className={`px-4 py-2 text-left border-r border-gray-200 dark:border-gray-700 ${draggedColumn === columnKey && draggedTable === 'itemsWithoutSupplier' ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, columnKey, 'itemsWithoutSupplier')}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, columnKey, 'itemsWithoutSupplier')}
+                                  >
+                                    <div
+                                      className="flex items-center gap-2 cursor-pointer"
+                                      onClick={() => handleSort(columnKey, 'itemsWithoutSupplier')}
+                                    >
+                                      <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        {column.label}
+                                      </span>
+                                      {isSorted && (
+                                        sortDirection.itemsWithoutSupplier === 'asc' ?
+                                          <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                          <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                      )}
+                                    </div>
+                                    {/* Resize handle */}
+                                    <div
+                                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                                      onMouseDown={(e) => handleResizeStart(e, columnKey, 'itemsWithoutSupplier')}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </th>
+                                )
+                              })}
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {filterItems(healthChecks.itemsWithoutDefaultSupplier.items, 'itemsWithoutDefaultSupplier').slice(0, 10).map((item) => (
                               <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
-                                  <Link
-                                    to={`/price-books/${item.id}`}
-                                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
-                                  >
-                                    {item.item_code}
-                                  </Link>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                  {item.item_name}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                  {item.category || '-'}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                  {item.current_price ? `$${parseFloat(item.current_price).toFixed(2)}` : '-'}
-                                </td>
+                                {itemsWithoutSupplierColumnOrder.map((columnKey) => {
+                                  const width = itemsWithoutSupplierColumnWidths[columnKey]
+                                  const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
+
+                                  switch (columnKey) {
+                                    case 'item_code':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                                          <Link
+                                            to={`/price-books/${item.id}`}
+                                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
+                                          >
+                                            {item.item_code}
+                                          </Link>
+                                        </td>
+                                      )
+                                    case 'item_name':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                          {item.item_name}
+                                        </td>
+                                      )
+                                    case 'category':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                          {item.category || '-'}
+                                        </td>
+                                      )
+                                    case 'current_price':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                          {item.current_price ? `$${parseFloat(item.current_price).toFixed(2)}` : '-'}
+                                        </td>
+                                      )
+                                    default:
+                                      return null
+                                  }
+                                })}
                               </tr>
                             ))}
                           </tbody>
@@ -500,25 +895,47 @@ export default function HealthPage() {
                   {/* Supplier List */}
                   {healthChecks.suppliersWithIncompleteCategoryPricing.count > 0 && expandedSections.suppliersWithIncompleteCategoryPricing && (
                     <div className="mt-4 ml-15">
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                          <thead className="bg-gray-50 dark:bg-gray-900">
+                          <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Supplier
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Category
-                              </th>
-                              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Coverage
-                              </th>
-                              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Items Priced
-                              </th>
-                              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Missing Prices
-                              </th>
+                              {suppliersColumnOrder.map((columnKey) => {
+                                const column = suppliersColumns[columnKey]
+                                const width = suppliersColumnWidths[columnKey]
+                                const isSorted = sortBy.suppliers === columnKey
+                                return (
+                                  <th
+                                    key={columnKey}
+                                    style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                                    className={`px-4 py-2 ${columnKey === 'coverage' || columnKey === 'items_priced' || columnKey === 'missing_prices' ? 'text-center' : 'text-left'} border-r border-gray-200 dark:border-gray-700 ${draggedColumn === columnKey && draggedTable === 'suppliers' ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, columnKey, 'suppliers')}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, columnKey, 'suppliers')}
+                                  >
+                                    <div
+                                      className="flex items-center gap-2 cursor-pointer justify-center"
+                                      onClick={() => handleSort(columnKey, 'suppliers')}
+                                    >
+                                      <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        {column.label}
+                                      </span>
+                                      {isSorted && (
+                                        sortDirection.suppliers === 'asc' ?
+                                          <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                          <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                      )}
+                                    </div>
+                                    {/* Resize handle */}
+                                    <div
+                                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                                      onMouseDown={(e) => handleResizeStart(e, columnKey, 'suppliers')}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </th>
+                                )
+                              })}
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800">
@@ -534,50 +951,74 @@ export default function HealthPage() {
                                     onClick={() => toggleSupplierCategory(entry.supplier.id, entry.category)}
                                     className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border-t border-gray-200 dark:border-gray-700"
                                   >
-                                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
-                                      <div className="flex items-center gap-2">
-                                        {isExpanded ? (
-                                          <ChevronDownIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                                        ) : (
-                                          <ChevronRightIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                                        )}
-                                        {entry.supplier.name}
-                                      </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                      {entry.category}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-center">
-                                      <div className="flex items-center justify-center gap-2">
-                                        <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                          <div
-                                            className={`h-2 rounded-full ${
-                                              entry.coverage_percentage >= 75
-                                                ? 'bg-green-500'
-                                                : entry.coverage_percentage >= 50
-                                                  ? 'bg-yellow-500'
-                                                  : 'bg-orange-500'
-                                            }`}
-                                            style={{ width: `${entry.coverage_percentage}%` }}
-                                          />
-                                        </div>
-                                        <span className="text-gray-600 dark:text-gray-400 text-xs font-medium">
-                                          {entry.coverage_percentage}%
-                                        </span>
-                                      </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-center text-gray-600 dark:text-gray-400">
-                                      {entry.items_with_pricing} / {entry.total_items_in_category}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-center">
-                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400">
-                                        {entry.missing_items_count}
-                                      </span>
-                                    </td>
+                                    {suppliersColumnOrder.map((columnKey) => {
+                                      const width = suppliersColumnWidths[columnKey]
+                                      const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
+
+                                      switch (columnKey) {
+                                        case 'supplier':
+                                          return (
+                                            <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                                              <div className="flex items-center gap-2">
+                                                {isExpanded ? (
+                                                  <ChevronDownIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                                ) : (
+                                                  <ChevronRightIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                                )}
+                                                {entry.supplier.name}
+                                              </div>
+                                            </td>
+                                          )
+                                        case 'category':
+                                          return (
+                                            <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                              {entry.category}
+                                            </td>
+                                          )
+                                        case 'coverage':
+                                          return (
+                                            <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-center">
+                                              <div className="flex items-center justify-center gap-2">
+                                                <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                                  <div
+                                                    className={`h-2 rounded-full ${
+                                                      entry.coverage_percentage >= 75
+                                                        ? 'bg-green-500'
+                                                        : entry.coverage_percentage >= 50
+                                                          ? 'bg-yellow-500'
+                                                          : 'bg-orange-500'
+                                                    }`}
+                                                    style={{ width: `${entry.coverage_percentage}%` }}
+                                                  />
+                                                </div>
+                                                <span className="text-gray-600 dark:text-gray-400 text-xs font-medium">
+                                                  {entry.coverage_percentage}%
+                                                </span>
+                                              </div>
+                                            </td>
+                                          )
+                                        case 'items_priced':
+                                          return (
+                                            <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-center text-gray-600 dark:text-gray-400">
+                                              {entry.items_with_pricing} / {entry.total_items_in_category}
+                                            </td>
+                                          )
+                                        case 'missing_prices':
+                                          return (
+                                            <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-center">
+                                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400">
+                                                {entry.missing_items_count}
+                                              </span>
+                                            </td>
+                                          )
+                                        default:
+                                          return null
+                                      }
+                                    })}
                                   </tr>
                                   {isExpanded && (
                                     <tr className="bg-gray-50 dark:bg-gray-900/50">
-                                      <td colSpan="5" className="px-4 py-4">
+                                      <td colSpan={suppliersColumnOrder.length} className="px-4 py-4">
                                         {loadingMissingItems ? (
                                           <div className="flex items-center justify-center py-4">
                                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
@@ -702,50 +1143,96 @@ export default function HealthPage() {
                   {/* Item List */}
                   {healthChecks.itemsWithDefaultSupplierButNoPriceHistory.count > 0 && expandedSections.itemsWithDefaultSupplierButNoPriceHistory && (
                     <div className="mt-4 ml-15">
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                          <thead className="bg-gray-50 dark:bg-gray-900">
+                          <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Code
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Name
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Category
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Default Supplier
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Current Price
-                              </th>
+                              {itemsWithSupplierColumnOrder.map((columnKey) => {
+                                const column = itemsWithSupplierColumns[columnKey]
+                                const width = itemsWithSupplierColumnWidths[columnKey]
+                                const isSorted = sortBy.itemsWithSupplier === columnKey
+                                return (
+                                  <th
+                                    key={columnKey}
+                                    style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                                    className={`px-4 py-2 text-left border-r border-gray-200 dark:border-gray-700 ${draggedColumn === columnKey && draggedTable === 'itemsWithSupplier' ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, columnKey, 'itemsWithSupplier')}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, columnKey, 'itemsWithSupplier')}
+                                  >
+                                    <div
+                                      className="flex items-center gap-2 cursor-pointer"
+                                      onClick={() => handleSort(columnKey, 'itemsWithSupplier')}
+                                    >
+                                      <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        {column.label}
+                                      </span>
+                                      {isSorted && (
+                                        sortDirection.itemsWithSupplier === 'asc' ?
+                                          <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                          <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                      )}
+                                    </div>
+                                    {/* Resize handle */}
+                                    <div
+                                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                                      onMouseDown={(e) => handleResizeStart(e, columnKey, 'itemsWithSupplier')}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </th>
+                                )
+                              })}
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800 divide-y divide-y-gray-200 dark:divide-gray-700">
                             {filterItems(healthChecks.itemsWithDefaultSupplierButNoPriceHistory.items, 'itemsWithDefaultSupplierButNoPriceHistory').slice(0, 15).map((item) => (
                               <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
-                                  <Link
-                                    to={`/price-books/${item.id}`}
-                                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
-                                  >
-                                    {item.item_code}
-                                  </Link>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                  {item.item_name}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                  {item.category || '-'}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                  {item.default_supplier?.name || '-'}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                  {item.current_price ? `$${parseFloat(item.current_price).toFixed(2)}` : '-'}
-                                </td>
+                                {itemsWithSupplierColumnOrder.map((columnKey) => {
+                                  const width = itemsWithSupplierColumnWidths[columnKey]
+                                  const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
+
+                                  switch (columnKey) {
+                                    case 'item_code':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                                          <Link
+                                            to={`/price-books/${item.id}`}
+                                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
+                                          >
+                                            {item.item_code}
+                                          </Link>
+                                        </td>
+                                      )
+                                    case 'item_name':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                          {item.item_name}
+                                        </td>
+                                      )
+                                    case 'category':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                          {item.category || '-'}
+                                        </td>
+                                      )
+                                    case 'default_supplier':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                          {item.default_supplier?.name || '-'}
+                                        </td>
+                                      )
+                                    case 'current_price':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                          {item.current_price ? `$${parseFloat(item.current_price).toFixed(2)}` : '-'}
+                                        </td>
+                                      )
+                                    default:
+                                      return null
+                                  }
+                                })}
                               </tr>
                             ))}
                           </tbody>
@@ -842,44 +1329,90 @@ export default function HealthPage() {
                   {/* Item List */}
                   {healthChecks.itemsRequiringPhotoWithoutImage.count > 0 && expandedSections.itemsRequiringPhotoWithoutImage && (
                     <div className="mt-4 ml-15">
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                          <thead className="bg-gray-50 dark:bg-gray-900">
+                          <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Code
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Name
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Category
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Current Price
-                              </th>
+                              {itemsRequiringPhotoColumnOrder.map((columnKey) => {
+                                const column = itemsRequiringPhotoColumns[columnKey]
+                                const width = itemsRequiringPhotoColumnWidths[columnKey]
+                                const isSorted = sortBy.itemsRequiringPhoto === columnKey
+                                return (
+                                  <th
+                                    key={columnKey}
+                                    style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                                    className={`px-4 py-2 text-left border-r border-gray-200 dark:border-gray-700 ${draggedColumn === columnKey && draggedTable === 'itemsRequiringPhoto' ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, columnKey, 'itemsRequiringPhoto')}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, columnKey, 'itemsRequiringPhoto')}
+                                  >
+                                    <div
+                                      className="flex items-center gap-2 cursor-pointer"
+                                      onClick={() => handleSort(columnKey, 'itemsRequiringPhoto')}
+                                    >
+                                      <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        {column.label}
+                                      </span>
+                                      {isSorted && (
+                                        sortDirection.itemsRequiringPhoto === 'asc' ?
+                                          <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                          <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                      )}
+                                    </div>
+                                    {/* Resize handle */}
+                                    <div
+                                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                                      onMouseDown={(e) => handleResizeStart(e, columnKey, 'itemsRequiringPhoto')}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </th>
+                                )
+                              })}
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {filterItems(healthChecks.itemsRequiringPhotoWithoutImage.items, 'itemsRequiringPhotoWithoutImage').slice(0, 10).map((item) => (
                               <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
-                                  <Link
-                                    to={`/price-books/${item.id}`}
-                                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
-                                  >
-                                    {item.item_code}
-                                  </Link>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                  {item.item_name}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                  {item.category || '-'}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                  {item.current_price ? `$${parseFloat(item.current_price).toFixed(2)}` : '-'}
-                                </td>
+                                {itemsRequiringPhotoColumnOrder.map((columnKey) => {
+                                  const width = itemsRequiringPhotoColumnWidths[columnKey]
+                                  const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
+
+                                  switch (columnKey) {
+                                    case 'item_code':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                                          <Link
+                                            to={`/price-books/${item.id}`}
+                                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
+                                          >
+                                            {item.item_code}
+                                          </Link>
+                                        </td>
+                                      )
+                                    case 'item_name':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                          {item.item_name}
+                                        </td>
+                                      )
+                                    case 'category':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                          {item.category || '-'}
+                                        </td>
+                                      )
+                                    case 'current_price':
+                                      return (
+                                        <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                          {item.current_price ? `$${parseFloat(item.current_price).toFixed(2)}` : '-'}
+                                        </td>
+                                      )
+                                    default:
+                                      return null
+                                  }
+                                })}
                               </tr>
                             ))}
                           </tbody>
@@ -976,28 +1509,48 @@ export default function HealthPage() {
                   {/* Item List */}
                   {priceHealthCheck.issues_found > 0 && expandedSections.priceMismatches && (
                     <div className="mt-4 ml-15">
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                          <thead className="bg-gray-50 dark:bg-gray-900">
+                          <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Code
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Item Name
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Default Supplier
-                              </th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Current Price
-                              </th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Active Price
-                              </th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Difference
-                              </th>
+                              {priceMismatchesColumnOrder.map((columnKey) => {
+                                const column = priceMismatchesColumns[columnKey]
+                                const width = priceMismatchesColumnWidths[columnKey]
+                                const isSorted = sortBy.priceMismatches === columnKey
+                                const isRightAlign = ['current_price', 'active_price', 'difference'].includes(columnKey)
+                                return (
+                                  <th
+                                    key={columnKey}
+                                    style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                                    className={`px-4 py-2 ${isRightAlign ? 'text-right' : 'text-left'} border-r border-gray-200 dark:border-gray-700 ${draggedColumn === columnKey && draggedTable === 'priceMismatches' ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, columnKey, 'priceMismatches')}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, columnKey, 'priceMismatches')}
+                                  >
+                                    <div
+                                      className={`flex items-center gap-2 cursor-pointer ${isRightAlign ? 'justify-end' : 'justify-start'}`}
+                                      onClick={() => handleSort(columnKey, 'priceMismatches')}
+                                    >
+                                      <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        {column.label}
+                                      </span>
+                                      {isSorted && (
+                                        sortDirection.priceMismatches === 'asc' ?
+                                          <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                          <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                      )}
+                                    </div>
+                                    {/* Resize handle */}
+                                    <div
+                                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                                      onMouseDown={(e) => handleResizeStart(e, columnKey, 'priceMismatches')}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </th>
+                                )
+                              })}
                             </tr>
                           </thead>
                           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -1011,39 +1564,66 @@ export default function HealthPage() {
                               )
                               return filtered.slice(0, 15).map((issue) => (
                                 <tr key={issue.item_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
-                                    <Link
-                                      to={`/price-books/${issue.item_id}`}
-                                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
-                                    >
-                                      {issue.item_code}
-                                    </Link>
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                    {issue.item_name}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                    {issue.default_supplier_name || '-'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                                    {issue.item_current_price ? `$${parseFloat(issue.item_current_price).toFixed(2)}` : '-'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white font-medium">
-                                    {issue.active_price_value ? `$${parseFloat(issue.active_price_value).toFixed(2)}` : '-'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-right">
-                                    {issue.difference !== null && issue.difference !== undefined ? (
-                                      <span className={`font-medium ${
-                                        issue.difference > 0 ? 'text-red-600 dark:text-red-400' :
-                                        issue.difference < 0 ? 'text-green-600 dark:text-green-400' :
-                                        'text-gray-600 dark:text-gray-400'
-                                      }`}>
-                                        {issue.difference > 0 ? '+' : ''}{issue.difference < 0 ? '-' : ''}${Math.abs(issue.difference).toFixed(2)}
-                                      </span>
-                                    ) : (
-                                      <span className="text-gray-600 dark:text-gray-400">-</span>
-                                    )}
-                                  </td>
+                                  {priceMismatchesColumnOrder.map((columnKey) => {
+                                    const width = priceMismatchesColumnWidths[columnKey]
+                                    const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
+
+                                    switch (columnKey) {
+                                      case 'item_code':
+                                        return (
+                                          <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                                            <Link
+                                              to={`/price-books/${issue.item_id}`}
+                                              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline"
+                                            >
+                                              {issue.item_code}
+                                            </Link>
+                                          </td>
+                                        )
+                                      case 'item_name':
+                                        return (
+                                          <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                            {issue.item_name}
+                                          </td>
+                                        )
+                                      case 'default_supplier':
+                                        return (
+                                          <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                            {issue.default_supplier_name || '-'}
+                                          </td>
+                                        )
+                                      case 'current_price':
+                                        return (
+                                          <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
+                                            {issue.item_current_price ? `$${parseFloat(issue.item_current_price).toFixed(2)}` : '-'}
+                                          </td>
+                                        )
+                                      case 'active_price':
+                                        return (
+                                          <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white font-medium">
+                                            {issue.active_price_value ? `$${parseFloat(issue.active_price_value).toFixed(2)}` : '-'}
+                                          </td>
+                                        )
+                                      case 'difference':
+                                        return (
+                                          <td key={columnKey} style={cellStyle} className="px-4 py-3 text-sm text-right">
+                                            {issue.difference !== null && issue.difference !== undefined ? (
+                                              <span className={`font-medium ${
+                                                issue.difference > 0 ? 'text-red-600 dark:text-red-400' :
+                                                issue.difference < 0 ? 'text-green-600 dark:text-green-400' :
+                                                'text-gray-600 dark:text-gray-400'
+                                              }`}>
+                                                {issue.difference > 0 ? '+' : ''}{issue.difference < 0 ? '-' : ''}${Math.abs(issue.difference).toFixed(2)}
+                                              </span>
+                                            ) : (
+                                              <span className="text-gray-600 dark:text-gray-400">-</span>
+                                            )}
+                                          </td>
+                                        )
+                                      default:
+                                        return null
+                                    }
+                                  })}
                                 </tr>
                               ))
                             })()}

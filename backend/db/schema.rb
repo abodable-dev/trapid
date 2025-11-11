@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_10_121612) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_10_234030) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -412,6 +412,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_121612) do
     t.index ["category"], name: "index_pricebook_items_on_category"
     t.index ["default_supplier_id"], name: "index_pricebook_items_on_default_supplier_id"
     t.index ["image_fetch_status"], name: "index_pricebook_items_on_image_fetch_status"
+    t.index ["is_active"], name: "index_pricebook_items_on_is_active"
     t.index ["item_code"], name: "index_pricebook_items_on_item_code", unique: true
     t.index ["needs_pricing_review"], name: "index_pricebook_items_on_needs_pricing_review"
     t.index ["price_last_updated_at"], name: "index_pricebook_items_on_price_last_updated_at"
@@ -444,12 +445,29 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_121612) do
     t.datetime "updated_at", null: false
     t.integer "sequence_order"
     t.date "required_on_site_date"
+    t.bigint "schedule_template_row_id"
+    t.string "spawned_type"
+    t.bigint "parent_task_id"
+    t.boolean "requires_supervisor_check", default: false, null: false
+    t.datetime "supervisor_checked_at"
+    t.bigint "supervisor_checked_by_id"
+    t.datetime "photo_uploaded_at"
+    t.datetime "certificate_uploaded_at"
+    t.jsonb "tags", default: [], null: false
+    t.boolean "critical_po", default: false, null: false
+    t.boolean "auto_complete_predecessors", default: false, null: false
     t.index ["assigned_to_id"], name: "index_project_tasks_on_assigned_to_id"
     t.index ["is_critical_path"], name: "index_project_tasks_on_is_critical_path"
+    t.index ["parent_task_id"], name: "index_project_tasks_on_parent_task_id"
     t.index ["planned_start_date", "planned_end_date"], name: "index_project_tasks_on_planned_start_date_and_planned_end_date"
     t.index ["project_id", "status"], name: "index_project_tasks_on_project_id_and_status"
     t.index ["project_id"], name: "index_project_tasks_on_project_id"
     t.index ["purchase_order_id"], name: "index_project_tasks_on_purchase_order_id"
+    t.index ["requires_supervisor_check"], name: "index_project_tasks_on_requires_supervisor_check"
+    t.index ["schedule_template_row_id"], name: "index_project_tasks_on_schedule_template_row_id"
+    t.index ["spawned_type"], name: "index_project_tasks_on_spawned_type"
+    t.index ["supervisor_checked_by_id"], name: "index_project_tasks_on_supervisor_checked_by_id"
+    t.index ["tags"], name: "index_project_tasks_on_tags", using: :gin
     t.index ["task_template_id"], name: "index_project_tasks_on_task_template_id"
   end
 
@@ -579,6 +597,46 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_121612) do
     t.index ["matched_to_po"], name: "index_schedule_tasks_on_matched_to_po"
     t.index ["purchase_order_id"], name: "index_schedule_tasks_on_purchase_order_id"
     t.index ["status"], name: "index_schedule_tasks_on_status"
+  end
+
+  create_table "schedule_template_rows", force: :cascade do |t|
+    t.bigint "schedule_template_id", null: false
+    t.string "name", null: false
+    t.bigint "supplier_id"
+    t.jsonb "predecessor_ids", default: [], null: false
+    t.boolean "po_required", default: false, null: false
+    t.boolean "create_po_on_job_start", default: false, null: false
+    t.jsonb "price_book_item_ids", default: [], null: false
+    t.boolean "critical_po", default: false, null: false
+    t.jsonb "tags", default: [], null: false
+    t.boolean "require_photo", default: false, null: false
+    t.boolean "require_certificate", default: false, null: false
+    t.integer "cert_lag_days", default: 10, null: false
+    t.boolean "require_supervisor_check", default: false, null: false
+    t.boolean "auto_complete_predecessors", default: false, null: false
+    t.boolean "has_subtasks", default: false, null: false
+    t.integer "subtask_count"
+    t.jsonb "subtask_names", default: [], null: false
+    t.integer "sequence_order", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "assigned_role"
+    t.index ["schedule_template_id", "sequence_order"], name: "idx_on_schedule_template_id_sequence_order_1bea5d762b"
+    t.index ["schedule_template_id"], name: "index_schedule_template_rows_on_schedule_template_id"
+    t.index ["sequence_order"], name: "index_schedule_template_rows_on_sequence_order"
+    t.index ["supplier_id"], name: "index_schedule_template_rows_on_supplier_id"
+  end
+
+  create_table "schedule_templates", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.boolean "is_default", default: false, null: false
+    t.bigint "created_by_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_schedule_templates_on_created_by_id"
+    t.index ["is_default"], name: "index_schedule_templates_on_is_default"
+    t.index ["name"], name: "index_schedule_templates_on_name"
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
@@ -1415,10 +1473,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_121612) do
   add_foreign_key "price_histories", "pricebook_items"
   add_foreign_key "pricebook_items", "contacts", column: "default_supplier_id", name: "fk_rails_pricebook_items_default_supplier"
   add_foreign_key "pricebook_items", "contacts", column: "supplier_id", name: "fk_rails_pricebook_items_contact"
+  add_foreign_key "project_tasks", "project_tasks", column: "parent_task_id"
   add_foreign_key "project_tasks", "projects"
   add_foreign_key "project_tasks", "purchase_orders"
+  add_foreign_key "project_tasks", "schedule_template_rows"
   add_foreign_key "project_tasks", "task_templates"
   add_foreign_key "project_tasks", "users", column: "assigned_to_id"
+  add_foreign_key "project_tasks", "users", column: "supervisor_checked_by_id"
   add_foreign_key "projects", "constructions"
   add_foreign_key "projects", "users", column: "project_manager_id"
   add_foreign_key "purchase_order_line_items", "pricebook_items"
@@ -1428,6 +1489,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_121612) do
   add_foreign_key "purchase_orders", "estimates"
   add_foreign_key "schedule_tasks", "constructions"
   add_foreign_key "schedule_tasks", "purchase_orders"
+  add_foreign_key "schedule_template_rows", "schedule_templates"
+  add_foreign_key "schedule_template_rows", "suppliers"
+  add_foreign_key "schedule_templates", "users", column: "created_by_id"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

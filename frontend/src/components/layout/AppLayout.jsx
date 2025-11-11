@@ -28,6 +28,9 @@ import {
   UserGroupIcon,
   UsersIcon,
   PlusIcon,
+  EnvelopeIcon,
+  DocumentTextIcon,
+  CloudIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
@@ -37,6 +40,9 @@ const navigation = [
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
   { name: 'Contacts', href: '/contacts', icon: UsersIcon },
+  { name: 'Documents', href: '/documents', icon: DocumentTextIcon },
+  { name: 'Outlook', href: '/outlook', icon: EnvelopeIcon },
+  { name: 'OneDrive', href: '/onedrive', icon: CloudIcon },
   { name: 'Health', href: '/health', icon: PlusIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ]
@@ -57,11 +63,13 @@ function classNames(...classes) {
 }
 
 export default function AppLayout({ children }) {
+  const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    location.pathname === '/active-jobs' || location.pathname.startsWith('/jobs/')
+  )
   const [backendVersion, setBackendVersion] = useState('loading...')
   const frontendVersion = packageJson.version
-  const location = useLocation()
 
   useEffect(() => {
     const fetchVersion = async () => {
@@ -75,6 +83,13 @@ export default function AppLayout({ children }) {
     }
     fetchVersion()
   }, [])
+
+  // Auto-collapse sidebar when navigating to Active Jobs or Job Detail pages
+  useEffect(() => {
+    if (location.pathname === '/active-jobs' || location.pathname.startsWith('/jobs/')) {
+      setSidebarCollapsed(true)
+    }
+  }, [location.pathname])
 
   const isCurrentPath = (href) => {
     if (href === '/dashboard') {

@@ -6,7 +6,7 @@ import AccountsLayout from '../components/layout/AccountsLayout'
 import XeroConnection from '../components/settings/XeroConnection'
 import OneDriveConnection from '../components/settings/OneDriveConnection'
 import FolderTemplatesTab from '../components/settings/FolderTemplatesTab'
-import ScheduleMasterTemplatesTab from '../components/settings/ScheduleMasterTemplatesTab'
+import ScheduleTemplateEditor from '../components/schedule-master/ScheduleTemplateEditor'
 import XeroFieldMappingTab from '../components/settings/XeroFieldMappingTab'
 import TablesTab from '../components/settings/TablesTab'
 import SchemaPage from './SchemaPage'
@@ -162,7 +162,7 @@ export default function SettingsPage() {
 
           {/* Schedule Master Templates Tab */}
           <TabPanel>
-            <ScheduleMasterTemplatesTab />
+            <ScheduleTemplateEditor />
           </TabPanel>
 
           {/* Xero Tab */}

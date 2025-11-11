@@ -1,0 +1,166 @@
+module Api
+  module V1
+    class ScheduleTemplatesController < ApplicationController
+      before_action :authorize_request
+      before_action :set_schedule_template, only: [:show, :update, :destroy, :duplicate, :set_as_default]
+      before_action :check_can_create_templates, only: [:create, :duplicate]
+      before_action :check_can_edit_templates, only: [:update, :destroy, :set_as_default]
+
+      # GET /api/v1/schedule_templates
+      def index
+        templates = ScheduleTemplate.includes(:created_by, :schedule_template_rows)
+                                     .active
+                                     .order(created_at: :desc)
+
+        render json: templates.map { |t| template_json(t) }
+      end
+
+      # GET /api/v1/schedule_templates/:id
+      def show
+        render json: template_json_with_rows(@schedule_template)
+      end
+
+      # POST /api/v1/schedule_templates
+      def create
+        template = ScheduleTemplate.new(template_params)
+        template.created_by = @current_user
+
+        if template.save
+          render json: template_json_with_rows(template), status: :created
+        else
+          render json: { errors: template.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      # PATCH /api/v1/schedule_templates/:id
+      def update
+        if @schedule_template.update(template_params)
+          render json: template_json_with_rows(@schedule_template)
+        else
+          render json: { errors: @schedule_template.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      # DELETE /api/v1/schedule_templates/:id
+      def destroy
+        # Don't allow deleting the default template
+        if @schedule_template.is_default?
+          return render json: { error: 'Cannot delete the default template' }, status: :forbidden
+        end
+
+        @schedule_template.destroy
+        head :no_content
+      end
+
+      # POST /api/v1/schedule_templates/:id/duplicate
+      def duplicate
+        new_name = params[:new_name] || "#{@schedule_template.name} (Copy)"
+
+        begin
+          new_template = @schedule_template.duplicate!(
+            new_name: new_name,
+            created_by: @current_user
+          )
+
+          render json: template_json_with_rows(new_template), status: :created
+        rescue ActiveRecord::RecordInvalid => e
+          render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      # POST /api/v1/schedule_templates/:id/set_as_default
+      def set_as_default
+        # Unset current default
+        ScheduleTemplate.where(is_default: true).update_all(is_default: false)
+
+        # Set this one as default
+        @schedule_template.update!(is_default: true)
+
+        render json: template_json_with_rows(@schedule_template)
+      end
+
+      # GET /api/v1/schedule_templates/default
+      def default
+        template = ScheduleTemplate.default_template
+
+        if template
+          render json: template_json_with_rows(template)
+        else
+          render json: { error: 'No default template found' }, status: :not_found
+        end
+      end
+
+      private
+
+      def set_schedule_template
+        @schedule_template = ScheduleTemplate.find(params[:id])
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'Template not found' }, status: :not_found
+      end
+
+      def template_params
+        params.require(:schedule_template).permit(:name, :description, :is_default)
+      end
+
+      def check_can_create_templates
+        unless @current_user.can_create_templates?
+          render json: { error: 'Unauthorized' }, status: :forbidden
+        end
+      end
+
+      def check_can_edit_templates
+        unless @current_user.can_create_templates?
+          render json: { error: 'Unauthorized' }, status: :forbidden
+        end
+      end
+
+      def template_json(template)
+        {
+          id: template.id,
+          name: template.name,
+          description: template.description,
+          is_default: template.is_default,
+          created_by: {
+            id: template.created_by.id,
+            name: template.created_by.name,
+            email: template.created_by.email
+          },
+          row_count: template.schedule_template_rows.count,
+          created_at: template.created_at,
+          updated_at: template.updated_at
+        }
+      end
+
+      def template_json_with_rows(template)
+        template_json(template).merge(
+          rows: template.schedule_template_rows.in_sequence.map { |row| row_json(row) }
+        )
+      end
+
+      def row_json(row)
+        {
+          id: row.id,
+          name: row.name,
+          supplier_id: row.supplier_id,
+          supplier_name: row.supplier&.name,
+          predecessor_ids: row.predecessor_ids,
+          predecessor_display: row.predecessor_display,
+          po_required: row.po_required,
+          create_po_on_job_start: row.create_po_on_job_start,
+          price_book_item_ids: row.price_book_item_ids,
+          critical_po: row.critical_po,
+          tags: row.tags,
+          require_photo: row.require_photo,
+          require_certificate: row.require_certificate,
+          cert_lag_days: row.cert_lag_days,
+          require_supervisor_check: row.require_supervisor_check,
+          auto_complete_predecessors: row.auto_complete_predecessors,
+          has_subtasks: row.has_subtasks,
+          subtask_count: row.subtask_count,
+          subtask_names: row.subtask_names,
+          sequence_order: row.sequence_order
+        }
+      end
+    end
+  end
+end

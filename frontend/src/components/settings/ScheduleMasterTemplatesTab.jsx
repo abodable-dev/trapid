@@ -1,7 +1,23 @@
 import { useState, useEffect } from 'react'
-import { PlusIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, TrashIcon, PencilIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import Toast from '../Toast'
+
+// Tooltip component for form labels
+function FieldTooltip({ text, tooltip }) {
+  return (
+    <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <span>{text}</span>
+      <div className="group relative">
+        <InformationCircleIcon className="h-4 w-4 text-gray-400 cursor-help" />
+        <div className="invisible group-hover:visible absolute z-[9999] top-full left-1/2 -translate-x-1/2 mt-2 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-xl border border-gray-700">
+          {tooltip}
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[-4px] border-4 border-transparent border-b-gray-900"></div>
+        </div>
+      </div>
+    </label>
+  )
+}
 
 export default function ScheduleMasterTemplatesTab() {
   const [templates, setTemplates] = useState([])
@@ -131,9 +147,10 @@ export default function ScheduleMasterTemplatesTab() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Task Name */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Task Name *
-                </label>
+                <FieldTooltip
+                  text="Task Name *"
+                  tooltip="The name of the task that will appear in the schedule. Use clear, action-oriented names like 'Pour Foundation Slab' or 'Install Electrical Rough-In'."
+                />
                 <input
                   type="text"
                   value={formData.name}
@@ -146,9 +163,10 @@ export default function ScheduleMasterTemplatesTab() {
 
               {/* Task Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Task Type
-                </label>
+                <FieldTooltip
+                  text="Task Type"
+                  tooltip="The type of action required: ORDER (materials), DO (physical work), GET (obtain permits/docs), CLAIM (submit claims), CERTIFICATE (get certifications), PHOTO (documentation), FIT (installation/fitting)."
+                />
                 <select
                   value={formData.task_type}
                   onChange={(e) => setFormData({ ...formData, task_type: e.target.value })}
@@ -162,9 +180,10 @@ export default function ScheduleMasterTemplatesTab() {
 
               {/* Category */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Category
-                </label>
+                <FieldTooltip
+                  text="Category"
+                  tooltip="The trade or department responsible for this task. Used for filtering and assigning work to specific teams."
+                />
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -180,9 +199,10 @@ export default function ScheduleMasterTemplatesTab() {
 
               {/* Duration */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Default Duration (days)
-                </label>
+                <FieldTooltip
+                  text="Default Duration (days)"
+                  tooltip="How many days this task typically takes to complete. This helps with automatic scheduling when creating jobs from templates."
+                />
                 <input
                   type="number"
                   min="1"
@@ -195,9 +215,10 @@ export default function ScheduleMasterTemplatesTab() {
 
               {/* Sequence Order */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Sequence Order
-                </label>
+                <FieldTooltip
+                  text="Sequence Order"
+                  tooltip="The order this task appears in the schedule. Lower numbers appear first. Use increments of 10 (10, 20, 30...) to allow easy insertion of tasks later."
+                />
                 <input
                   type="number"
                   min="0"
@@ -210,9 +231,10 @@ export default function ScheduleMasterTemplatesTab() {
 
               {/* Description */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description
-                </label>
+                <FieldTooltip
+                  text="Description"
+                  tooltip="Optional details about this task. Include any special instructions, materials needed, or important considerations."
+                />
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -224,25 +246,43 @@ export default function ScheduleMasterTemplatesTab() {
 
               {/* Checkboxes */}
               <div className="md:col-span-2 flex gap-6">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_milestone}
-                    onChange={(e) => setFormData({ ...formData, is_milestone: e.target.checked })}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Is Milestone</span>
-                </label>
+                <div className="flex items-center gap-1.5">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_milestone}
+                      onChange={(e) => setFormData({ ...formData, is_milestone: e.target.checked })}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Is Milestone</span>
+                  </label>
+                  <div className="group relative">
+                    <InformationCircleIcon className="h-4 w-4 text-gray-400 cursor-help" />
+                    <div className="invisible group-hover:visible absolute z-[9999] top-full left-1/2 -translate-x-1/2 mt-2 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-xl border border-gray-700">
+                      Mark this task as a milestone. Milestones are key checkpoints in the project timeline and are typically shown with special visual indicators.
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[-4px] border-4 border-transparent border-b-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
 
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.requires_photo}
-                    onChange={(e) => setFormData({ ...formData, requires_photo: e.target.checked })}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Requires Photo</span>
-                </label>
+                <div className="flex items-center gap-1.5">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.requires_photo}
+                      onChange={(e) => setFormData({ ...formData, requires_photo: e.target.checked })}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Requires Photo</span>
+                  </label>
+                  <div className="group relative">
+                    <InformationCircleIcon className="h-4 w-4 text-gray-400 cursor-help" />
+                    <div className="invisible group-hover:visible absolute z-[9999] top-full left-1/2 -translate-x-1/2 mt-2 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-xl border border-gray-700">
+                      Automatically create a photo documentation task when this task is completed. Useful for quality control and compliance.
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[-4px] border-4 border-transparent border-b-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

@@ -28,6 +28,9 @@ import Experiences from './pages/designer/Experiences'
 import SettingsPage from './pages/SettingsPage'
 import SchemaPage from './pages/SchemaPage'
 import XeroCallbackPage from './pages/XeroCallbackPage'
+import OutlookPage from './pages/OutlookPage'
+import OneDrivePage from './pages/OneDrivePage'
+import DocumentsPage from './pages/DocumentsPage'
 
 function App() {
   return (
@@ -36,6 +39,7 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
         <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
+        <Route path="/documents" element={<AppLayout><DocumentsPage /></AppLayout>} />
         <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />
         <Route path="/jobs/:id/setup" element={<AppLayout><JobSetupPage /></AppLayout>} />
         <Route path="/jobs/:id/schedule" element={<AppLayout><MasterSchedulePage /></AppLayout>} />
@@ -67,6 +71,8 @@ function App() {
         <Route path="/settings/integrations" element={<AppLayout><SettingsPage /></AppLayout>} />
         <Route path="/settings/schema" element={<AppLayout><SchemaPage /></AppLayout>} />
         <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
+        <Route path="/outlook" element={<AppLayout><OutlookPage /></AppLayout>} />
+        <Route path="/onedrive" element={<AppLayout><OneDrivePage /></AppLayout>} />
       </Routes>
     </BrowserRouter>
   )
