@@ -28,6 +28,7 @@ class DocumentationCategory < ApplicationRecord
         icon: icon,
         color: color,
         description: description,
+        folder_path: folder_path,
         sequence_order: sequence_order,
         is_active: true
       )

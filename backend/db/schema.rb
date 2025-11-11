@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_122612) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_204504) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -112,6 +112,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_122612) do
     t.boolean "is_active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "folder_path"
     t.index ["construction_id", "name"], name: "idx_on_construction_id_name_4a8823caab", unique: true
     t.index ["construction_id", "sequence_order"], name: "idx_on_construction_id_sequence_order_48145dc07a"
     t.index ["construction_id"], name: "index_construction_documentation_tabs_on_construction_id"
@@ -319,6 +320,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_122612) do
     t.boolean "is_active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "folder_path"
     t.index ["name"], name: "index_documentation_categories_on_name", unique: true
   end
 

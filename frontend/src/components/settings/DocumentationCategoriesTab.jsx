@@ -19,7 +19,8 @@ export default function DocumentationCategoriesTab() {
     name: '',
     color: '#6366f1',
     icon: '',
-    description: ''
+    description: '',
+    folder_path: ''
   })
 
   useEffect(() => {
@@ -44,7 +45,8 @@ export default function DocumentationCategoriesTab() {
       name: '',
       color: '#6366f1',
       icon: '',
-      description: ''
+      description: '',
+      folder_path: ''
     })
   }
 
@@ -54,7 +56,8 @@ export default function DocumentationCategoriesTab() {
       name: category.name,
       color: category.color || '#6366f1',
       icon: category.icon || '',
-      description: category.description || ''
+      description: category.description || '',
+      folder_path: category.folder_path || ''
     })
   }
 
@@ -65,7 +68,8 @@ export default function DocumentationCategoriesTab() {
       name: '',
       color: '#6366f1',
       icon: '',
-      description: ''
+      description: '',
+      folder_path: ''
     })
   }
 
@@ -174,7 +178,7 @@ export default function DocumentationCategoriesTab() {
         </h2>
         <p className="mt-1 text-sm/6 text-gray-500 dark:text-gray-400">
           Manage global documentation categories that can be assigned to schedule template tasks.
-          These categories organize job documentation and help track required documents.
+          These categories organize job documentation and specify which OneDrive folder documents should be saved to.
         </p>
         <p className="mt-2 text-sm/6 text-gray-500 dark:text-gray-400">
           Drag and drop categories to reorder how they appear in document tabs.
@@ -244,6 +248,22 @@ export default function DocumentationCategoriesTab() {
                   className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   placeholder="Optional description of what documents go in this category"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  OneDrive Folder Path
+                </label>
+                <input
+                  type="text"
+                  value={formData.folder_path}
+                  onChange={(e) => setFormData({ ...formData, folder_path: e.target.value })}
+                  className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  placeholder="e.g., Building Consent, Documentation/Warranties"
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Documents in this category will be saved to this folder in OneDrive. Relative to the job folder.
+                </p>
               </div>
 
               <div className="flex gap-2 justify-end">
@@ -341,6 +361,22 @@ export default function DocumentationCategoriesTab() {
                       />
                     </div>
 
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        OneDrive Folder Path
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.folder_path}
+                        onChange={(e) => setFormData({ ...formData, folder_path: e.target.value })}
+                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        placeholder="e.g., Building Consent, Documentation/Warranties"
+                      />
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Documents in this category will be saved to this folder in OneDrive. Relative to the job folder.
+                      </p>
+                    </div>
+
                     <div className="flex gap-2 justify-end">
                       <button
                         onClick={handleCancel}
@@ -376,6 +412,11 @@ export default function DocumentationCategoriesTab() {
                         {category.description && (
                           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                             {category.description}
+                          </p>
+                        )}
+                        {category.folder_path && (
+                          <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 font-mono">
+                            📁 {category.folder_path}
                           </p>
                         )}
                       </div>

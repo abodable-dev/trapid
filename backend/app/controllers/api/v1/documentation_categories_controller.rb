@@ -78,6 +78,7 @@ module Api
           :icon,
           :color,
           :description,
+          :folder_path,
           :sequence_order,
           :is_default,
           :is_active
