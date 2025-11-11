@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { PlusIcon, PencilIcon, TrashIcon, FolderIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, FolderIcon, CheckIcon, XMarkIcon, Bars3Icon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
 /**
@@ -14,6 +14,7 @@ export default function DocumentationCategoriesTab() {
   const [loading, setLoading] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [isCreating, setIsCreating] = useState(false)
+  const [draggedIndex, setDraggedIndex] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
     color: '#6366f1',
@@ -102,6 +103,48 @@ export default function DocumentationCategoriesTab() {
     }
   }
 
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault()
+    if (draggedIndex === null || draggedIndex === index) return
+
+    const newCategories = [...categories]
+    const draggedItem = newCategories[draggedIndex]
+
+    // Remove from old position
+    newCategories.splice(draggedIndex, 1)
+    // Insert at new position
+    newCategories.splice(index, 0, draggedItem)
+
+    setCategories(newCategories)
+    setDraggedIndex(index)
+  }
+
+  const handleDragEnd = async () => {
+    if (draggedIndex === null) return
+
+    // Update sequence order on backend
+    const categoryOrders = categories.map((cat, index) => ({
+      id: cat.id,
+      sequence_order: index
+    }))
+
+    try {
+      await api.post('/api/v1/documentation_categories/reorder', { category_orders: categoryOrders })
+      loadCategories() // Reload to ensure consistency
+    } catch (error) {
+      console.error('Failed to reorder categories:', error)
+      alert('Failed to save new order')
+      loadCategories() // Reload on error to reset to server state
+    }
+
+    setDraggedIndex(null)
+  }
+
   const predefinedColors = [
     '#6366f1', // indigo
     '#8b5cf6', // purple
@@ -132,6 +175,9 @@ export default function DocumentationCategoriesTab() {
         <p className="mt-1 text-sm/6 text-gray-500 dark:text-gray-400">
           Manage global documentation categories that can be assigned to schedule template tasks.
           These categories organize job documentation and help track required documents.
+        </p>
+        <p className="mt-2 text-sm/6 text-gray-500 dark:text-gray-400">
+          Drag and drop categories to reorder how they appear in document tabs.
         </p>
         <button
           onClick={handleCreate}
@@ -234,10 +280,16 @@ export default function DocumentationCategoriesTab() {
           </div>
         ) : (
           <div className="space-y-3">
-            {categories.map((category) => (
+            {categories.map((category, index) => (
               <div
                 key={category.id}
-                className="rounded-lg bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-900/5 dark:ring-white/10 p-4"
+                draggable={editingId !== category.id}
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragEnd={handleDragEnd}
+                className={`rounded-lg bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-900/5 dark:ring-white/10 p-4 transition-opacity ${
+                  draggedIndex === index ? 'opacity-50' : ''
+                } ${editingId !== category.id ? 'cursor-move' : ''}`}
               >
                 {editingId === category.id ? (
                   <div className="space-y-4">
@@ -310,6 +362,9 @@ export default function DocumentationCategoriesTab() {
                 ) : (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1">
+                      <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <Bars3Icon className="h-5 w-5" />
+                      </div>
                       <div
                         className="w-4 h-4 rounded"
                         style={{ backgroundColor: category.color || '#6366f1' }}
@@ -323,6 +378,9 @@ export default function DocumentationCategoriesTab() {
                             {category.description}
                           </p>
                         )}
+                      </div>
+                      <div className="text-xs text-gray-400 dark:text-gray-500">
+                        #{category.sequence_order}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
