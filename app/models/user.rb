@@ -7,11 +7,15 @@ class User < ApplicationRecord
   # Role constants
   ROLES = %w[user admin product_owner estimator supervisor builder].freeze
 
+  # Group/team assignment options (matches ScheduleTemplateRow::ASSIGNABLE_ROLES)
+  ASSIGNABLE_ROLES = %w[admin sales site supervisor builder estimator].freeze
+
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :name, presence: true
   validates :password, length: { minimum: 12 }, if: -> { new_record? || !password.nil? }
   validate :password_complexity, if: -> { new_record? || !password.nil? }
   validates :role, inclusion: { in: ROLES }
+  validates :assigned_role, inclusion: { in: ASSIGNABLE_ROLES }, allow_nil: true
 
   # Role helper methods
   def admin?
