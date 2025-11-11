@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircleIcon, XCircleIcon, ClockIcon, ChatBubbleLeftIcon, UserIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, PaperClipIcon } from '@heroicons/react/24/outline'
+import { CheckCircleIcon, XCircleIcon, ClockIcon, ChatBubbleLeftIcon, UserIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, PaperClipIcon, CurrencyDollarIcon, BriefcaseIcon, DocumentTextIcon, LinkIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
 export default function WorkflowApprovalPanel({ workflowInstance, currentStep, onActionComplete }) {
@@ -205,6 +205,139 @@ export default function WorkflowApprovalPanel({ workflowInstance, currentStep, o
                 </span>
               </a>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Financial Information */}
+      {workflowInstance.metadata && (workflowInstance.metadata.amount || workflowInstance.metadata.payment_terms) && (
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+            <CurrencyDollarIcon className="h-5 w-5 mr-2" />
+            Financial Information
+          </h4>
+          <div className="space-y-2">
+            {workflowInstance.metadata.amount && (
+              <div className="flex items-start text-sm">
+                <span className="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Amount:</span>
+                <span className="text-gray-900 dark:text-white font-medium">
+                  {workflowInstance.metadata.currency || 'AUD'} {parseFloat(workflowInstance.metadata.amount).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            )}
+            {workflowInstance.metadata.payment_terms && (
+              <div className="flex items-start text-sm">
+                <span className="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Payment Terms:</span>
+                <span className="text-gray-700 dark:text-gray-300">{workflowInstance.metadata.payment_terms}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Project Details */}
+      {workflowInstance.metadata && (workflowInstance.metadata.project_name || workflowInstance.metadata.project_reference || workflowInstance.metadata.site_address || workflowInstance.metadata.due_date) && (
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+            <BriefcaseIcon className="h-5 w-5 mr-2" />
+            Project Details
+          </h4>
+          <div className="space-y-2">
+            {workflowInstance.metadata.project_name && (
+              <div className="flex items-start text-sm">
+                <span className="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Project Name:</span>
+                <span className="text-gray-900 dark:text-white font-medium">{workflowInstance.metadata.project_name}</span>
+              </div>
+            )}
+            {workflowInstance.metadata.project_reference && (
+              <div className="flex items-start text-sm">
+                <span className="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Reference:</span>
+                <span className="text-gray-700 dark:text-gray-300">{workflowInstance.metadata.project_reference}</span>
+              </div>
+            )}
+            {workflowInstance.metadata.site_address && (
+              <div className="flex items-start text-sm">
+                <MapPinIcon className="h-4 w-4 mr-2 text-gray-400 mt-0.5 flex-shrink-0" />
+                <span className="text-gray-700 dark:text-gray-300">{workflowInstance.metadata.site_address}</span>
+              </div>
+            )}
+            {workflowInstance.metadata.due_date && (
+              <div className="flex items-start text-sm">
+                <span className="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Due Date:</span>
+                <span className="text-gray-700 dark:text-gray-300">
+                  {new Date(workflowInstance.metadata.due_date).toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </span>
+              </div>
+            )}
+            {workflowInstance.metadata.priority && workflowInstance.metadata.priority !== 'normal' && (
+              <div className="flex items-start text-sm">
+                <span className="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Priority:</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  workflowInstance.metadata.priority === 'urgent'
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                    : workflowInstance.metadata.priority === 'low'
+                    ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                    : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                }`}>
+                  {workflowInstance.metadata.priority.toUpperCase()}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Scope Information */}
+      {workflowInstance.metadata && (workflowInstance.metadata.scope_summary || workflowInstance.metadata.special_requirements) && (
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+            <DocumentTextIcon className="h-5 w-5 mr-2" />
+            Scope & Requirements
+          </h4>
+          <div className="space-y-3">
+            {workflowInstance.metadata.scope_summary && (
+              <div>
+                <span className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Scope Summary:</span>
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{workflowInstance.metadata.scope_summary}</p>
+              </div>
+            )}
+            {workflowInstance.metadata.special_requirements && (
+              <div>
+                <span className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Special Requirements:</span>
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{workflowInstance.metadata.special_requirements}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* References & Links */}
+      {workflowInstance.metadata && (workflowInstance.metadata.external_reference || workflowInstance.metadata.onedrive_folder_url) && (
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+            <LinkIcon className="h-5 w-5 mr-2" />
+            References & Links
+          </h4>
+          <div className="space-y-2">
+            {workflowInstance.metadata.external_reference && (
+              <div className="flex items-start text-sm">
+                <span className="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">External Ref:</span>
+                <span className="text-gray-700 dark:text-gray-300">{workflowInstance.metadata.external_reference}</span>
+              </div>
+            )}
+            {workflowInstance.metadata.onedrive_folder_url && (
+              <div className="flex items-start text-sm">
+                <span className="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">OneDrive:</span>
+                <a
+                  href={workflowInstance.metadata.onedrive_folder_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-indigo-600 dark:text-indigo-400 hover:underline break-all"
+                >
+                  View Folder
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}

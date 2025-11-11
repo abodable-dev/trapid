@@ -72,6 +72,106 @@ class WorkflowInstance < ApplicationRecord
     save
   end
 
+  # Financial information accessors
+  def amount
+    metadata&.dig('amount')
+  end
+
+  def amount=(value)
+    self.metadata = (metadata || {}).merge('amount' => value)
+  end
+
+  def currency
+    metadata&.dig('currency') || 'AUD'
+  end
+
+  def currency=(value)
+    self.metadata = (metadata || {}).merge('currency' => value)
+  end
+
+  def payment_terms
+    metadata&.dig('payment_terms')
+  end
+
+  def payment_terms=(value)
+    self.metadata = (metadata || {}).merge('payment_terms' => value)
+  end
+
+  # Project details accessors
+  def project_name
+    metadata&.dig('project_name')
+  end
+
+  def project_name=(value)
+    self.metadata = (metadata || {}).merge('project_name' => value)
+  end
+
+  def project_reference
+    metadata&.dig('project_reference')
+  end
+
+  def project_reference=(value)
+    self.metadata = (metadata || {}).merge('project_reference' => value)
+  end
+
+  def site_address
+    metadata&.dig('site_address')
+  end
+
+  def site_address=(value)
+    self.metadata = (metadata || {}).merge('site_address' => value)
+  end
+
+  def due_date
+    metadata&.dig('due_date')
+  end
+
+  def due_date=(value)
+    self.metadata = (metadata || {}).merge('due_date' => value)
+  end
+
+  def priority
+    metadata&.dig('priority') || 'normal'
+  end
+
+  def priority=(value)
+    self.metadata = (metadata || {}).merge('priority' => value)
+  end
+
+  # Scope information accessors
+  def scope_summary
+    metadata&.dig('scope_summary')
+  end
+
+  def scope_summary=(value)
+    self.metadata = (metadata || {}).merge('scope_summary' => value)
+  end
+
+  def special_requirements
+    metadata&.dig('special_requirements')
+  end
+
+  def special_requirements=(value)
+    self.metadata = (metadata || {}).merge('special_requirements' => value)
+  end
+
+  # Reference information accessors
+  def external_reference
+    metadata&.dig('external_reference')
+  end
+
+  def external_reference=(value)
+    self.metadata = (metadata || {}).merge('external_reference' => value)
+  end
+
+  def onedrive_folder_url
+    metadata&.dig('onedrive_folder_url')
+  end
+
+  def onedrive_folder_url=(value)
+    self.metadata = (metadata || {}).merge('onedrive_folder_url' => value)
+  end
+
   def current_step_record
     workflow_steps.find_by(step_name: current_step)
   end
