@@ -444,8 +444,100 @@ export default function PriceBooksPage() {
  if (loading && items.length === 0) {
  return (
  <div className="flex h-screen overflow-hidden">
- <div className="flex-1 flex items-center justify-center">
- <span className="loading loading-infinity loading-lg"></span>
+ <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
+ {/* Header Skeleton */}
+ <div className="bg-gray-800 border-b border-gray-700 sticky top-0">
+ <div className="px-4 py-3">
+ <div className="flex items-center relative">
+ {/* Left: Title */}
+ <div className="flex items-center gap-2">
+ <div className="h-3.5 w-3.5 bg-gray-700 rounded animate-pulse" />
+ <div>
+ <div className="h-3.5 w-24 bg-gray-700 rounded animate-pulse mb-1" />
+ <div className="h-3.5 w-32 bg-gray-700 rounded animate-pulse" />
+ </div>
+ </div>
+
+ {/* Center: Search skeleton */}
+ <div className="absolute left-1/2 -translate-x-1/2">
+ <div className="h-8 w-32 bg-gray-900 rounded-lg animate-pulse" />
+ </div>
+
+ {/* Right: Action buttons skeleton */}
+ <div className="ml-auto flex items-center gap-2">
+ <div className="h-7 w-20 bg-gray-700 rounded animate-pulse" />
+ <div className="h-7 w-20 bg-gray-700 rounded animate-pulse" />
+ <div className="h-7 w-20 bg-gray-700 rounded animate-pulse" />
+ </div>
+ </div>
+ </div>
+ </div>
+
+ {/* Table Skeleton */}
+ <div className="overflow-x-auto border-l border-r border-b border-gray-700">
+ <table className="min-w-full">
+ {/* Table Header Skeleton */}
+ <thead className="bg-gray-900/50 border-b border-gray-700 sticky top-0">
+ <tr>
+ <th className="px-3 py-2 w-10">
+ <div className="h-4 w-4 bg-gray-700 rounded animate-pulse" />
+ </th>
+ <th className="px-3 py-2">
+ <div className="h-3.5 w-16 bg-gray-700 rounded animate-pulse" />
+ </th>
+ <th className="px-3 py-2">
+ <div className="h-3.5 w-24 bg-gray-700 rounded animate-pulse" />
+ </th>
+ <th className="px-3 py-2">
+ <div className="h-3.5 w-20 bg-gray-700 rounded animate-pulse" />
+ </th>
+ <th className="px-3 py-2">
+ <div className="h-3.5 w-24 bg-gray-700 rounded animate-pulse" />
+ </th>
+ <th className="px-3 py-2">
+ <div className="h-3.5 w-16 bg-gray-700 rounded animate-pulse" />
+ </th>
+ <th className="px-3 py-2">
+ <div className="h-3.5 w-12 bg-gray-700 rounded animate-pulse" />
+ </th>
+ <th className="px-3 py-2">
+ <div className="h-3.5 w-24 bg-gray-700 rounded animate-pulse" />
+ </th>
+ </tr>
+ </thead>
+ {/* Table Body Skeleton - 10 rows */}
+ <tbody className="divide-y divide-gray-700">
+ {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => (
+ <tr key={i} className="h-12 bg-gray-800/30 animate-pulse">
+ <td className="px-3 py-2">
+ <div className="h-4 w-4 bg-gray-700 rounded" />
+ </td>
+ <td className="px-3 py-2">
+ <div className="h-4 w-16 bg-gray-700 rounded" />
+ </td>
+ <td className="px-3 py-2">
+ <div className="h-4 w-32 bg-gray-700 rounded" />
+ </td>
+ <td className="px-3 py-2">
+ <div className="h-4 w-20 bg-gray-700 rounded" />
+ </td>
+ <td className="px-3 py-2">
+ <div className="h-4 w-24 bg-gray-700 rounded" />
+ </td>
+ <td className="px-3 py-2">
+ <div className="h-4 w-16 bg-gray-700 rounded" />
+ </td>
+ <td className="px-3 py-2">
+ <div className="h-4 w-12 bg-gray-700 rounded" />
+ </td>
+ <td className="px-3 py-2">
+ <div className="h-4 w-24 bg-gray-700 rounded" />
+ </td>
+ </tr>
+ ))}
+ </tbody>
+ </table>
+ </div>
  </div>
  </div>
  )
@@ -832,7 +924,7 @@ export default function PriceBooksPage() {
  value={item.category || ''}
  onChange={(e) => handleCategoryUpdate(item.id, e.target.value)}
  onBlur={() => setEditingCategory(null)}
- className="w-full px-2 py-1 text-xs border border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-indigo-400"
+ className="w-full px-2 py-1 text-xs font-medium border border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-indigo-400"
  onClick={(e) => e.stopPropagation()}
  >
  <option value="">Select category...</option>

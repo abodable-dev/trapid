@@ -939,7 +939,7 @@ export default function ContactsPage() {
                       id="bulk-contact-type"
                       value={bulkContactType}
                       onChange={(e) => setBulkContactType(e.target.value)}
-                      className="block border-0 py-1.5 pl-3 pr-10 text-gray-900 dark:text-white bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      className="block border-0 py-1.5 pl-3 pr-10 text-gray-900 dark:text-white bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-600 text-xs font-medium"
                     >
                       <option value="">Select type...</option>
                       <option value="customer">Customer</option>

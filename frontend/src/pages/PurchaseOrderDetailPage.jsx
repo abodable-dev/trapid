@@ -43,7 +43,7 @@ export default function PurchaseOrderDetailPage() {
  color-adjust: exact !important;
  }
 
- /* CRITICAL: Remove all page margins for edge-to-edge black */
+ /* CRITICAL: Zero page margins for edge-to-edge black */
  @page {
  size: A4 portrait;
  margin: 0mm !important;
@@ -61,6 +61,7 @@ export default function PurchaseOrderDetailPage() {
         padding: 0 !important;
         width: 210mm !important;
         min-width: 210mm !important;
+        font-size: 10pt !important;
       }
 
       body {
@@ -69,13 +70,14 @@ export default function PurchaseOrderDetailPage() {
         padding: 0 !important;
         width: 210mm !important;
         min-width: 210mm !important;
+        font-size: 10pt !important;
       }
 
-      /* Main container should be black with internal padding and full A4 width */
+      /* Main container - black background with equal padding on all sides */
       main {
         background-color: #000000 !important;
         margin: 0 auto !important;
-        padding: 15mm !important;
+        padding: 20mm !important;
         width: 210mm !important;
         max-width: 210mm !important;
         min-width: 210mm !important;
@@ -110,6 +112,28 @@ export default function PurchaseOrderDetailPage() {
       .sm\:grid-cols-4 {
         grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
       }
+
+      /* Increase font sizes for better readability */
+      .text-xs {
+        font-size: 0.8rem !important;
+      }
+
+      .text-sm {
+        font-size: 0.95rem !important;
+      }
+
+      .text-base {
+        font-size: 1.1rem !important;
+      }
+
+      .text-xl {
+        font-size: 1.4rem !important;
+      }
+
+      .text-2xl {
+        font-size: 1.75rem !important;
+      }
+
  /* Preserve all dark theme colors */
  .bg-black {
  background-color: #000000 !important;

@@ -107,7 +107,7 @@ export default function ColumnHeaderMenu({
  }}
  className={`${
  active ? 'bg-gray-100 dark:bg-gray-700' : ''
- } group flex w-full items-center px-2 py-2 text-sm text-gray-900 dark:text-white`}
+ } group flex w-full items-center px-2 py-2 text-xs font-medium text-gray-900 dark:text-white`}
  >
  <ChevronUpIcon className="mr-2 h-4 w-4" />
  Sort ascending
@@ -123,7 +123,7 @@ export default function ColumnHeaderMenu({
  }}
  className={`${
  active ? 'bg-gray-100 dark:bg-gray-700' : ''
- } group flex w-full items-center px-2 py-2 text-sm text-gray-900 dark:text-white`}
+ } group flex w-full items-center px-2 py-2 text-xs font-medium text-gray-900 dark:text-white`}
  >
  <ChevronDownIcon className="mr-2 h-4 w-4" />
  Sort descending
@@ -154,7 +154,7 @@ export default function ColumnHeaderMenu({
  }}
  onClick={(e) => e.stopPropagation()}
  placeholder="Search..."
- className="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+ className="w-full pl-8 pr-2 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
  />
  </div>
  </div>
@@ -171,7 +171,7 @@ export default function ColumnHeaderMenu({
  active ? 'bg-gray-100 dark:bg-gray-700' : ''
  } ${
  filterValue === option.value ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
- } group flex w-full items-center justify-between px-2 py-2 text-sm text-gray-900 dark:text-white`}
+ } group flex w-full items-center justify-between px-2 py-2 text-xs font-medium text-gray-900 dark:text-white`}
  >
  <span className="truncate">{option.label}</span>
  {option.count !== undefined && (
@@ -196,12 +196,12 @@ export default function ColumnHeaderMenu({
  value={searchTerm}
  onChange={(e) => setSearchTerm(e.target.value)}
  placeholder={`Search ${label.toLowerCase()}...`}
- className="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+ className="w-full pl-8 pr-2 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
  />
  </div>
  <button
  type="submit"
- className="w-full mt-2 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+ className="w-full mt-2 px-3 py-1.5 text-xs font-medium font-medium text-white bg-indigo-600 hover:bg-indigo-700"
  >
  Apply Filter
  </button>
@@ -218,7 +218,7 @@ export default function ColumnHeaderMenu({
  onChange={(e) => setMinPrice(e.target.value)}
  placeholder="Min price"
  step="0.01"
- className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+ className="w-full px-2 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
  />
  <input
  type="number"
@@ -226,11 +226,11 @@ export default function ColumnHeaderMenu({
  onChange={(e) => setMaxPrice(e.target.value)}
  placeholder="Max price"
  step="0.01"
- className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+ className="w-full px-2 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
  />
  <button
  type="submit"
- className="w-full px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+ className="w-full px-3 py-1.5 text-xs font-medium font-medium text-white bg-indigo-600 hover:bg-indigo-700"
  >
  Apply Filter
  </button>
@@ -247,7 +247,7 @@ export default function ColumnHeaderMenu({
  onClick={handleClearFilter}
  className={`${
  active ? 'bg-gray-100 dark:bg-gray-700' : ''
- } group flex w-full items-center px-2 py-2 text-sm text-red-600 dark:text-red-400`}
+ } group flex w-full items-center px-2 py-2 text-xs font-medium text-red-600 dark:text-red-400`}
  >
  <XMarkIcon className="mr-2 h-4 w-4" />
  Clear filter

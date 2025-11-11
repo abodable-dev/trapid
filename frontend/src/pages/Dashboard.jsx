@@ -127,10 +127,59 @@ export default function Dashboard() {
 
  if (loading) {
  return (
- <div className="flex items-center justify-center h-[calc(100vh-64px)]">
- <div className="text-center">
- <span className="loading loading-infinity loading-lg"></span>
- <p className="mt-4 text-foreground-secondary">Loading tables...</p>
+ <div className="min-h-screen">
+ <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+ {/* Header Skeleton */}
+ <div className="mb-8">
+ <div className="h-5 w-32 bg-gray-800 rounded animate-pulse mb-6" />
+
+ {/* Stats Cards Skeleton */}
+ <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+ {[1, 2, 3].map(i => (
+ <div key={i} className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+ <div className="flex items-center justify-between mb-4">
+ <div className="h-3.5 w-24 bg-gray-700 rounded animate-pulse" />
+ <div className="h-3.5 w-3.5 bg-gray-700 rounded animate-pulse" />
+ </div>
+ <div className="h-9 w-20 bg-gray-700 rounded animate-pulse" />
+ </div>
+ ))}
+ </div>
+
+ {/* Quick Actions Skeleton */}
+ <div className="flex gap-3 mb-6">
+ <div className="h-9 w-40 bg-gray-800 rounded animate-pulse" />
+ <div className="h-9 w-44 bg-gray-800 rounded animate-pulse" />
+ </div>
+ </div>
+
+ {/* Tables Section Skeleton */}
+ <div>
+ <div className="flex items-center justify-between mb-6">
+ <div className="h-5 w-24 bg-gray-800 rounded animate-pulse" />
+ <div className="h-4 w-20 bg-gray-800 rounded animate-pulse" />
+ </div>
+
+ {/* Table Cards Skeleton */}
+ <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+ {[1, 2, 3, 4, 5, 6].map(i => (
+ <div key={i} className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+ <div className="flex items-start justify-between mb-4">
+ <div className="flex-1">
+ <div className="h-5 w-32 bg-gray-700 rounded animate-pulse mb-2" />
+ <div className="h-3.5 w-full bg-gray-700 rounded animate-pulse" />
+ </div>
+ </div>
+ <div className="pt-3 border-t border-gray-700">
+ <div className="flex items-center justify-between">
+ <div className="h-3.5 w-24 bg-gray-700 rounded animate-pulse" />
+ <div className="h-3.5 w-16 bg-gray-700 rounded animate-pulse" />
+ </div>
+ </div>
+ </div>
+ ))}
+ </div>
+ </div>
  </div>
  </div>
  )
@@ -303,7 +352,7 @@ export default function Dashboard() {
  <CardContent className="text-center">
  <Table className="mx-auto w-6 h-6 text-foreground-muted mb-4" />
  <h3 className="text-sm font-medium text-foreground mb-2">No tables yet</h3>
- <p className="text-foreground-secondary mb-6 max-w-md mx-auto">
+ <p className="text-xs text-foreground-secondary mb-6 max-w-md mx-auto">
  Get started by creating a new table or importing a spreadsheet to begin organizing your data.
  </p>
  <div className="flex gap-3 justify-center">
@@ -328,7 +377,7 @@ export default function Dashboard() {
  <Card className="py-12">
  <CardContent className="text-center">
  <h3 className="text-sm font-medium text-foreground mb-2">No tables found</h3>
- <p className="text-foreground-secondary mb-6">
+ <p className="text-xs text-foreground-secondary mb-6">
  No tables match your search query"{searchQuery}".
  </p>
  <Button asChild>
@@ -361,7 +410,7 @@ export default function Dashboard() {
  {table.name}
  </CardTitle>
  {table.description && (
- <p className="text-sm text-foreground-secondary mt-1 line-clamp-2">
+ <p className="text-xs text-foreground-secondary mt-1 line-clamp-2">
  {table.description}
  </p>
  )}
@@ -373,7 +422,7 @@ export default function Dashboard() {
  </CardHeader>
 
  <CardContent>
- <div className="flex items-center justify-between text-sm pt-3 border-t border-border">
+ <div className="flex items-center justify-between text-xs pt-3 border-t border-border">
  <div className="flex items-center gap-1 text-foreground-secondary">
  <BarChart3 className="w-3.5 h-3.5" />
  <span>{(table.record_count || 0).toLocaleString()} {table.record_count === 1 ? 'record' : 'records'}</span>
