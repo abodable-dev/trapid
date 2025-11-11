@@ -41,6 +41,9 @@ module Backend
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
 
+    # Enable Rack::Attack for rate limiting
+    config.middleware.use Rack::Attack
+
     # Configure ActiveRecord encryption to use environment variables
     config.active_record.encryption.primary_key = ENV['ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY']
     config.active_record.encryption.deterministic_key = ENV['ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY']

@@ -49,6 +49,10 @@ module Api
           category_orders.each do |category_order|
             category = DocumentationCategory.find(category_order[:id])
             category.update!(sequence_order: category_order[:sequence_order])
+
+            # Update sequence_order for all job-specific tabs with this category name
+            ConstructionDocumentationTab.where(name: category.name)
+                                       .update_all(sequence_order: category_order[:sequence_order])
           end
         end
 
