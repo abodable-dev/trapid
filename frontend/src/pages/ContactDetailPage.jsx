@@ -1177,7 +1177,10 @@ export default function ContactDetailPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Bank Account Name */}
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Account Name</p>
+                    <div className="flex items-center gap-1 mb-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Account Name</p>
+                      <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                    </div>
                     {editingXeroFields['bank_account_name'] ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -1208,7 +1211,10 @@ export default function ContactDetailPage() {
 
                   {/* Bank BSB */}
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">BSB</p>
+                    <div className="flex items-center gap-1 mb-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">BSB</p>
+                      <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                    </div>
                     {editingXeroFields['bank_bsb'] ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -1241,7 +1247,10 @@ export default function ContactDetailPage() {
 
                   {/* Bank Account Number */}
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Account Number</p>
+                    <div className="flex items-center gap-1 mb-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Account Number</p>
+                      <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                    </div>
                     {editingXeroFields['bank_account_number'] ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -1310,7 +1319,10 @@ export default function ContactDetailPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Default Purchase Account */}
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Default Purchase Account</p>
+                    <div className="flex items-center gap-1 mb-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Default Purchase Account</p>
+                      <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                    </div>
                     {editingXeroFields['default_purchase_account'] ? (
                       <div className="flex items-center gap-2">
                         {loadingXeroAccounts ? (
