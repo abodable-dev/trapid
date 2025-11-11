@@ -22,6 +22,9 @@ class ProjectTask < ApplicationRecord
   # Progress tracking
   has_many :task_updates, dependent: :destroy
 
+  # Supervisor checklist items
+  has_many :project_task_checklist_items, dependent: :destroy
+
   validates :name, presence: true
   validates :task_type, presence: true
   validates :category, presence: true

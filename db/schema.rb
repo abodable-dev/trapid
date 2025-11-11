@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_035603) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_040404) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -569,6 +569,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_035603) do
     t.index ["price_last_updated_at"], name: "index_pricebook_items_on_price_last_updated_at"
     t.index ["searchable_text"], name: "idx_pricebook_search", using: :gin
     t.index ["supplier_id"], name: "index_pricebook_items_on_supplier_id"
+  end
+
+  create_table "project_task_checklist_items", force: :cascade do |t|
+    t.bigint "project_task_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.string "category"
+    t.boolean "is_completed", default: false
+    t.datetime "completed_at"
+    t.string "completed_by"
+    t.integer "sequence_order", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["is_completed"], name: "index_project_task_checklist_items_on_is_completed"
+    t.index ["project_task_id", "sequence_order"], name: "idx_on_project_task_id_sequence_order_cc3d531d29"
+    t.index ["project_task_id"], name: "index_project_task_checklist_items_on_project_task_id"
   end
 
   create_table "project_tasks", force: :cascade do |t|
@@ -1686,6 +1702,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_035603) do
   add_foreign_key "price_histories", "pricebook_items"
   add_foreign_key "pricebook_items", "contacts", column: "default_supplier_id", name: "fk_rails_pricebook_items_default_supplier"
   add_foreign_key "pricebook_items", "contacts", column: "supplier_id", name: "fk_rails_pricebook_items_contact"
+  add_foreign_key "project_task_checklist_items", "project_tasks"
   add_foreign_key "project_tasks", "project_tasks", column: "parent_task_id"
   add_foreign_key "project_tasks", "projects"
   add_foreign_key "project_tasks", "purchase_orders"
