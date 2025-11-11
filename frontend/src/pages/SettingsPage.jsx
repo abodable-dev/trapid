@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { RocketLaunchIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import AccountsLayout from '../components/layout/AccountsLayout'
-import api from '../services/api'
+import { api } from '../api'
 import XeroConnection from '../components/settings/XeroConnection'
 import OneDriveConnection from '../components/settings/OneDriveConnection'
 import OutlookConnection from '../components/settings/OutlookConnection'
@@ -53,7 +53,7 @@ export default function SettingsPage() {
 
   // Handle pull from local
   const handlePullFromLocal = async () => {
-    if (!confirm('This will delete all existing setup data (documentation categories, supervisor checklists, schedule templates) and replace it with data from your local development environment. Are you sure?')) {
+    if (!confirm('This will delete all existing setup data (users, documentation categories, supervisor checklists, schedule templates) and replace it with data from your local development environment. Are you sure?')) {
       return
     }
 
@@ -314,7 +314,7 @@ export default function SettingsPage() {
                         <span className="sr-only">Description</span>
                       </dt>
                       <dd className="text-sm/6 text-gray-500 dark:text-gray-400">
-                        Sync setup data from your local development environment to staging. This will delete existing documentation categories, supervisor checklists, and schedule templates, then replace them with local data.
+                        Sync setup data from your local development environment to staging. This will delete existing users, documentation categories, supervisor checklists, and schedule templates, then replace them with local data.
                       </dd>
                     </div>
                     {pullStatus && (
@@ -339,6 +339,7 @@ export default function SettingsPage() {
                               {pullStatus.counts && (
                                 <div className="mt-2 text-sm text-green-700 dark:text-green-300">
                                   <ul className="list-disc list-inside space-y-1">
+                                    <li>Users: {pullStatus.counts.users}</li>
                                     <li>Documentation Categories: {pullStatus.counts.documentation_categories}</li>
                                     <li>Supervisor Checklists: {pullStatus.counts.supervisor_checklist_templates}</li>
                                     <li>Schedule Templates: {pullStatus.counts.schedule_templates}</li>

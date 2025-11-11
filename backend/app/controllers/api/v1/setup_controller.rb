@@ -20,6 +20,7 @@ module Api
             success: true,
             message: 'Setup data successfully pulled from local and deployed',
             counts: {
+              users: User.count,
               documentation_categories: DocumentationCategory.count,
               supervisor_checklist_templates: SupervisorChecklistTemplate.count,
               schedule_templates: ScheduleTemplate.count,

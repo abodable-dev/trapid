@@ -8,6 +8,7 @@ namespace :setup do
     puts "="*60
 
     # Use CSV files from db/import_data
+    users_file = Rails.root.join('db', 'import_data', 'users.csv')
     doc_categories_file = Rails.root.join('db', 'import_data', 'documentation_categories.csv')
     checklist_templates_file = Rails.root.join('db', 'import_data', 'supervisor_checklist_templates.csv')
     schedule_templates_file = Rails.root.join('db', 'import_data', 'schedule_templates.csv')
@@ -32,7 +33,31 @@ namespace :setup do
     DocumentationCategory.delete_all
     puts "  ✓ Deleted #{deleted_categories} documentation categories"
 
-    # Step 2: Import Documentation Categories
+    deleted_users = User.count
+    User.delete_all
+    puts "  ✓ Deleted #{deleted_users} users"
+
+    # Step 2: Import Users
+    if File.exist?(users_file)
+      puts "\nStep 2: Importing users..."
+      user_count = 0
+
+      CSV.foreach(users_file, headers: true, header_converters: :symbol) do |row|
+        User.create!(
+          email: row[:email],
+          name: row[:name],
+          password: row[:password] || 'changeme123',  # Default password for imported users
+          role: row[:role] || 'user'
+        )
+        user_count += 1
+      end
+
+      puts "  ✓ Imported #{user_count} users"
+    else
+      puts "\n⚠ Users file not found at #{users_file}"
+    end
+
+    # Step 3: Import Documentation Categories
     if File.exist?(doc_categories_file)
       puts "\nStep 2: Importing documentation categories..."
       category_count = 0
@@ -54,7 +79,7 @@ namespace :setup do
       puts "\n⚠ Documentation categories file not found at #{doc_categories_file}"
     end
 
-    # Step 3: Import Supervisor Checklist Templates
+    # Step 4: Import Supervisor Checklist Templates
     if File.exist?(checklist_templates_file)
       puts "\nStep 3: Importing supervisor checklist templates..."
       checklist_count = 0
@@ -76,7 +101,7 @@ namespace :setup do
       puts "\n⚠ Supervisor checklist templates file not found at #{checklist_templates_file}"
     end
 
-    # Step 4: Import Schedule Templates
+    # Step 5: Import Schedule Templates
     template_map = {}
     if File.exist?(schedule_templates_file)
       puts "\nStep 4: Importing schedule templates..."
@@ -106,7 +131,7 @@ namespace :setup do
       puts "\n⚠ Schedule templates file not found at #{schedule_templates_file}"
     end
 
-    # Step 5: Import Schedule Template Rows
+    # Step 6: Import Schedule Template Rows
     if File.exist?(schedule_rows_file)
       puts "\nStep 5: Importing schedule template rows..."
       row_count = 0
@@ -169,6 +194,7 @@ namespace :setup do
     puts "\n" + "="*60
     puts "DEPLOYMENT COMPLETE"
     puts "="*60
+    puts "Users: #{User.count}"
     puts "Documentation Categories: #{DocumentationCategory.count}"
     puts "Supervisor Checklist Templates: #{SupervisorChecklistTemplate.count}"
     puts "Schedule Templates: #{ScheduleTemplate.count}"
@@ -187,6 +213,22 @@ namespace :setup do
     # Create import_data directory if it doesn't exist
     import_dir = Rails.root.join('db', 'import_data')
     FileUtils.mkdir_p(import_dir)
+
+    # Export Users
+    puts "\nExporting users..."
+    users_file = import_dir.join('users.csv')
+    CSV.open(users_file, 'w') do |csv|
+      csv << ['email', 'name', 'role', 'password']
+      User.all.each do |user|
+        csv << [
+          user.email,
+          user.name,
+          user.role,
+          'changeme123'  # Default password - users should reset on first login
+        ]
+      end
+    end
+    puts "  ✓ Exported #{User.count} users to #{users_file}"
 
     # Export Documentation Categories
     puts "\nExporting documentation categories..."
@@ -293,6 +335,11 @@ namespace :setup do
     puts "EXPORT COMPLETE"
     puts "="*60
     puts "Files created in: #{import_dir}"
+    puts "Users: #{User.count}"
+    puts "Documentation Categories: #{DocumentationCategory.count}"
+    puts "Supervisor Checklist Templates: #{SupervisorChecklistTemplate.count}"
+    puts "Schedule Templates: #{ScheduleTemplate.count}"
+    puts "Schedule Template Rows: #{ScheduleTemplateRow.count}"
     puts "\nTo deploy to staging/production:"
     puts "1. Commit and push the CSV files to git"
     puts "2. On the target environment, run: rails setup:deploy_setup_data"
