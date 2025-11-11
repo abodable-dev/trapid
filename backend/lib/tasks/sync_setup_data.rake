@@ -1,0 +1,300 @@
+namespace :setup do
+  desc "Deploy setup data (documentation categories, supervisor checklists, schedule templates) to staging/production"
+  task deploy_setup_data: :environment do
+    require 'csv'
+
+    puts "\n" + "="*60
+    puts "DEPLOYING SETUP DATA"
+    puts "="*60
+
+    # Use CSV files from db/import_data
+    doc_categories_file = Rails.root.join('db', 'import_data', 'documentation_categories.csv')
+    checklist_templates_file = Rails.root.join('db', 'import_data', 'supervisor_checklist_templates.csv')
+    schedule_templates_file = Rails.root.join('db', 'import_data', 'schedule_templates.csv')
+    schedule_rows_file = Rails.root.join('db', 'import_data', 'schedule_template_rows.csv')
+
+    # Step 1: Clear existing data
+    puts "\nStep 1: Clearing existing setup data..."
+
+    deleted_rows = ScheduleTemplateRow.count
+    ScheduleTemplateRow.delete_all
+    puts "  ✓ Deleted #{deleted_rows} schedule template rows"
+
+    deleted_templates = ScheduleTemplate.count
+    ScheduleTemplate.delete_all
+    puts "  ✓ Deleted #{deleted_templates} schedule templates"
+
+    deleted_checklists = SupervisorChecklistTemplate.count
+    SupervisorChecklistTemplate.delete_all
+    puts "  ✓ Deleted #{deleted_checklists} supervisor checklist templates"
+
+    deleted_categories = DocumentationCategory.count
+    DocumentationCategory.delete_all
+    puts "  ✓ Deleted #{deleted_categories} documentation categories"
+
+    # Step 2: Import Documentation Categories
+    if File.exist?(doc_categories_file)
+      puts "\nStep 2: Importing documentation categories..."
+      category_count = 0
+
+      CSV.foreach(doc_categories_file, headers: true, header_converters: :symbol) do |row|
+        DocumentationCategory.create!(
+          name: row[:name],
+          icon: row[:icon],
+          color: row[:color],
+          description: row[:description],
+          sequence_order: row[:sequence_order].to_i,
+          is_active: row[:is_active] == 'true'
+        )
+        category_count += 1
+      end
+
+      puts "  ✓ Imported #{category_count} documentation categories"
+    else
+      puts "\n⚠ Documentation categories file not found at #{doc_categories_file}"
+    end
+
+    # Step 3: Import Supervisor Checklist Templates
+    if File.exist?(checklist_templates_file)
+      puts "\nStep 3: Importing supervisor checklist templates..."
+      checklist_count = 0
+
+      CSV.foreach(checklist_templates_file, headers: true, header_converters: :symbol) do |row|
+        SupervisorChecklistTemplate.create!(
+          name: row[:name],
+          description: row[:description],
+          category: row[:category],
+          response_type: row[:response_type] || 'checkbox',
+          sequence_order: row[:sequence_order].to_i,
+          is_active: row[:is_active] == 'true'
+        )
+        checklist_count += 1
+      end
+
+      puts "  ✓ Imported #{checklist_count} supervisor checklist templates"
+    else
+      puts "\n⚠ Supervisor checklist templates file not found at #{checklist_templates_file}"
+    end
+
+    # Step 4: Import Schedule Templates
+    template_map = {}
+    if File.exist?(schedule_templates_file)
+      puts "\nStep 4: Importing schedule templates..."
+      template_count = 0
+
+      # Get first user as creator (or create a system user)
+      creator = User.first || User.create!(
+        email: 'system@trapid.com',
+        name: 'System',
+        password: SecureRandom.hex(20)
+      )
+
+      CSV.foreach(schedule_templates_file, headers: true, header_converters: :symbol) do |row|
+        template = ScheduleTemplate.create!(
+          name: row[:name],
+          description: row[:description],
+          is_default: row[:is_default] == 'true',
+          created_by: creator
+        )
+        # Map old ID to new ID for linking rows
+        template_map[row[:id].to_i] = template.id
+        template_count += 1
+      end
+
+      puts "  ✓ Imported #{template_count} schedule templates"
+    else
+      puts "\n⚠ Schedule templates file not found at #{schedule_templates_file}"
+    end
+
+    # Step 5: Import Schedule Template Rows
+    if File.exist?(schedule_rows_file)
+      puts "\nStep 5: Importing schedule template rows..."
+      row_count = 0
+
+      CSV.foreach(schedule_rows_file, headers: true, header_converters: :symbol) do |row|
+        template_id = template_map[row[:schedule_template_id].to_i]
+
+        unless template_id
+          puts "  ⚠ Skipping row '#{row[:name]}' - template not found"
+          next
+        end
+
+        # Parse array fields
+        predecessor_ids = row[:predecessor_ids].present? ? JSON.parse(row[:predecessor_ids]) : []
+        price_book_item_ids = row[:price_book_item_ids].present? ? JSON.parse(row[:price_book_item_ids]) : []
+        documentation_category_ids = row[:documentation_category_ids].present? ? JSON.parse(row[:documentation_category_ids]) : []
+        supervisor_checklist_template_ids = row[:supervisor_checklist_template_ids].present? ? JSON.parse(row[:supervisor_checklist_template_ids]) : []
+        tags = row[:tags].present? ? JSON.parse(row[:tags]) : []
+        subtask_names = row[:subtask_names].present? ? JSON.parse(row[:subtask_names]) : []
+
+        # Build attributes hash
+        attributes = {
+          schedule_template_id: template_id,
+          name: row[:name],
+          supplier_id: row[:supplier_id].present? ? row[:supplier_id].to_i : nil,
+          assigned_role: row[:assigned_role],
+          predecessor_ids: predecessor_ids,
+          po_required: row[:po_required] == 'true',
+          create_po_on_job_start: row[:create_po_on_job_start] == 'true',
+          critical_po: row[:critical_po] == 'true',
+          price_book_item_ids: price_book_item_ids,
+          documentation_category_ids: documentation_category_ids,
+          tags: tags,
+          require_photo: row[:require_photo] == 'true',
+          require_certificate: row[:require_certificate] == 'true',
+          cert_lag_days: row[:cert_lag_days].present? ? row[:cert_lag_days].to_i : nil,
+          require_supervisor_check: row[:require_supervisor_check] == 'true',
+          auto_complete_predecessors: row[:auto_complete_predecessors] == 'true',
+          has_subtasks: row[:has_subtasks] == 'true',
+          subtask_count: row[:subtask_count].present? ? row[:subtask_count].to_i : nil,
+          subtask_names: subtask_names,
+          sequence_order: row[:sequence_order].to_i
+        }
+
+        # Only add supervisor_checklist_template_ids if column exists
+        if ScheduleTemplateRow.column_names.include?('supervisor_checklist_template_ids')
+          attributes[:supervisor_checklist_template_ids] = supervisor_checklist_template_ids
+        end
+
+        ScheduleTemplateRow.create!(attributes)
+        row_count += 1
+      end
+
+      puts "  ✓ Imported #{row_count} schedule template rows"
+    else
+      puts "\n⚠ Schedule template rows file not found at #{schedule_rows_file}"
+    end
+
+    # Summary
+    puts "\n" + "="*60
+    puts "DEPLOYMENT COMPLETE"
+    puts "="*60
+    puts "Documentation Categories: #{DocumentationCategory.count}"
+    puts "Supervisor Checklist Templates: #{SupervisorChecklistTemplate.count}"
+    puts "Schedule Templates: #{ScheduleTemplate.count}"
+    puts "Schedule Template Rows: #{ScheduleTemplateRow.count}"
+    puts "\nSetup data successfully deployed!"
+  end
+
+  desc "Export setup data to CSV files for deployment"
+  task export_setup_data: :environment do
+    require 'csv'
+
+    puts "\n" + "="*60
+    puts "EXPORTING SETUP DATA TO CSV"
+    puts "="*60
+
+    # Create import_data directory if it doesn't exist
+    import_dir = Rails.root.join('db', 'import_data')
+    FileUtils.mkdir_p(import_dir)
+
+    # Export Documentation Categories
+    puts "\nExporting documentation categories..."
+    doc_categories_file = import_dir.join('documentation_categories.csv')
+    CSV.open(doc_categories_file, 'w') do |csv|
+      csv << ['name', 'icon', 'color', 'description', 'sequence_order', 'is_active']
+      DocumentationCategory.order(:sequence_order).each do |cat|
+        csv << [
+          cat.name,
+          cat.icon,
+          cat.color,
+          cat.description,
+          cat.sequence_order,
+          cat.is_active
+        ]
+      end
+    end
+    puts "  ✓ Exported #{DocumentationCategory.count} categories to #{doc_categories_file}"
+
+    # Export Supervisor Checklist Templates
+    puts "\nExporting supervisor checklist templates..."
+    checklist_file = import_dir.join('supervisor_checklist_templates.csv')
+    CSV.open(checklist_file, 'w') do |csv|
+      csv << ['name', 'description', 'category', 'response_type', 'sequence_order', 'is_active']
+      SupervisorChecklistTemplate.order(:sequence_order).each do |template|
+        csv << [
+          template.name,
+          template.description,
+          template.category,
+          template.response_type,
+          template.sequence_order,
+          template.is_active
+        ]
+      end
+    end
+    puts "  ✓ Exported #{SupervisorChecklistTemplate.count} checklist templates to #{checklist_file}"
+
+    # Export Schedule Templates
+    puts "\nExporting schedule templates..."
+    templates_file = import_dir.join('schedule_templates.csv')
+    CSV.open(templates_file, 'w') do |csv|
+      csv << ['id', 'name', 'description', 'is_default']
+      ScheduleTemplate.all.each do |template|
+        csv << [
+          template.id,
+          template.name,
+          template.description,
+          template.is_default
+        ]
+      end
+    end
+    puts "  ✓ Exported #{ScheduleTemplate.count} templates to #{templates_file}"
+
+    # Export Schedule Template Rows
+    puts "\nExporting schedule template rows..."
+    rows_file = import_dir.join('schedule_template_rows.csv')
+
+    # Check which columns exist
+    has_supervisor_checklist = ScheduleTemplateRow.column_names.include?('supervisor_checklist_template_ids')
+
+    CSV.open(rows_file, 'w') do |csv|
+      headers = [
+        'schedule_template_id', 'name', 'supplier_id', 'assigned_role',
+        'predecessor_ids', 'po_required', 'create_po_on_job_start', 'critical_po',
+        'price_book_item_ids', 'documentation_category_ids',
+        'tags', 'require_photo', 'require_certificate', 'cert_lag_days',
+        'require_supervisor_check', 'auto_complete_predecessors',
+        'has_subtasks', 'subtask_count', 'subtask_names', 'sequence_order'
+      ]
+      headers.insert(10, 'supervisor_checklist_template_ids') if has_supervisor_checklist
+      csv << headers
+
+      ScheduleTemplateRow.order(:sequence_order).each do |row|
+        data = [
+          row.schedule_template_id,
+          row.name,
+          row.supplier_id,
+          row.assigned_role,
+          row.predecessor_ids.to_json,
+          row.po_required,
+          row.create_po_on_job_start,
+          row.critical_po,
+          row.price_book_item_ids.to_json,
+          row.documentation_category_ids.to_json,
+          row.tags.to_json,
+          row.require_photo,
+          row.require_certificate,
+          row.cert_lag_days,
+          row.require_supervisor_check,
+          row.auto_complete_predecessors,
+          row.has_subtasks,
+          row.subtask_count,
+          row.subtask_names.to_json,
+          row.sequence_order
+        ]
+        data.insert(10, (row.respond_to?(:supervisor_checklist_template_ids) ? row.supervisor_checklist_template_ids.to_json : [].to_json)) if has_supervisor_checklist
+        csv << data
+      end
+    end
+    puts "  ✓ Exported #{ScheduleTemplateRow.count} rows to #{rows_file}"
+
+    # Summary
+    puts "\n" + "="*60
+    puts "EXPORT COMPLETE"
+    puts "="*60
+    puts "Files created in: #{import_dir}"
+    puts "\nTo deploy to staging/production:"
+    puts "1. Commit and push the CSV files to git"
+    puts "2. On the target environment, run: rails setup:deploy_setup_data"
+  end
+end
