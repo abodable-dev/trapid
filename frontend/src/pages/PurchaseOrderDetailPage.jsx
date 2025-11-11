@@ -54,26 +54,62 @@ export default function PurchaseOrderDetailPage() {
  display: none !important;
  }
 
- /* Force black background on root elements */
- html {
- background-color: #000000 !important;
- margin: 0 !important;
- padding: 0 !important;
- }
+      /* Force desktop A4 width - override mobile viewport */
+      html {
+        background-color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 210mm !important;
+        min-width: 210mm !important;
+      }
 
- body {
- background-color: #000000 !important;
- margin: 0 !important;
- padding: 0 !important;
- }
+      body {
+        background-color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 210mm !important;
+        min-width: 210mm !important;
+      }
 
- /* Main container should be black with internal padding */
- main {
- background-color: #000000 !important;
- margin: 0 !important;
- padding: 20mm !important;
- }
+      /* Main container should be black with internal padding and full A4 width */
+      main {
+        background-color: #000000 !important;
+        margin: 0 auto !important;
+        padding: 15mm !important;
+        width: 210mm !important;
+        max-width: 210mm !important;
+        min-width: 210mm !important;
+      }
 
+      /* Force invoice container to use full width */
+      #po-invoice-content {
+        max-width: none !important;
+        width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+
+      /* Override all responsive max-width constraints */
+      .max-w-4xl, .max-w-7xl {
+        max-width: none !important;
+      }
+
+      /* Force all grid columns to desktop layout */
+      .grid-cols-1 {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      }
+
+      .md\:grid-cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      }
+
+      .md\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+
+      .sm\:grid-cols-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      }
  /* Preserve all dark theme colors */
  .bg-black {
  background-color: #000000 !important;
@@ -382,9 +418,11 @@ export default function PurchaseOrderDetailPage() {
  <div className="border-b border-gray-800 p-4">
  <div className="flex items-start justify-between mb-4">
  <div>
- <h2 className="text-xl font-semibold text-white mb-0.5">
- {purchaseOrder.company_setting?.company_name ||"Tekna Homes"}
- </h2>
+ <img
+ src="/tekna_logo_white.png"
+ alt={purchaseOrder.company_setting?.company_name || "Tekna Homes"}
+ className="h-8 w-auto mb-2"
+ />
  <p className="text-xs text-gray-400">
  {purchaseOrder.description ||"Quality Construction Services"}
  </p>

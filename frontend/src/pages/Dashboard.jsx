@@ -172,7 +172,7 @@ export default function Dashboard() {
  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
  {/* Header */}
  <div className="mb-8">
- <h1 className="text-3xl font-bold text-foreground mb-6">Dashboard</h1>
+ <h1 className="text-sm font-medium text-foreground mb-6">Dashboard</h1>
 
  {/* Stats Overview */}
  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -182,7 +182,7 @@ export default function Dashboard() {
  <CardTitle className="text-sm font-medium text-foreground-secondary">
  Total Tables
  </CardTitle>
- <Table className="w-4 h-4 text-foreground-muted" />
+ <Table className="w-3.5 h-3.5 text-foreground-muted" />
  </div>
  </CardHeader>
  <CardContent>
@@ -198,7 +198,7 @@ export default function Dashboard() {
  <CardTitle className="text-sm font-medium text-foreground-secondary">
  Total Records
  </CardTitle>
- <BarChart3 className="w-4 h-4 text-foreground-muted" />
+ <BarChart3 className="w-3.5 h-3.5 text-foreground-muted" />
  </div>
  </CardHeader>
  <CardContent>
@@ -214,7 +214,7 @@ export default function Dashboard() {
  <CardTitle className="text-sm font-medium text-foreground-secondary">
  Last Activity
  </CardTitle>
- <Clock className="w-4 h-4 text-foreground-muted" />
+ <Clock className="w-3.5 h-3.5 text-foreground-muted" />
  </div>
  </CardHeader>
  <CardContent>
@@ -301,8 +301,8 @@ export default function Dashboard() {
  {tables.length === 0 ? (
  <Card className="py-16">
  <CardContent className="text-center">
- <Table className="mx-auto w-8 h-8 text-foreground-muted mb-4" />
- <h3 className="text-lg font-medium text-foreground mb-2">No tables yet</h3>
+ <Table className="mx-auto w-6 h-6 text-foreground-muted mb-4" />
+ <h3 className="text-sm font-medium text-foreground mb-2">No tables yet</h3>
  <p className="text-foreground-secondary mb-6 max-w-md mx-auto">
  Get started by creating a new table or importing a spreadsheet to begin organizing your data.
  </p>
@@ -327,7 +327,7 @@ export default function Dashboard() {
  ) : filteredTables.length === 0 ? (
  <Card className="py-12">
  <CardContent className="text-center">
- <h3 className="text-lg font-medium text-foreground mb-2">No tables found</h3>
+ <h3 className="text-sm font-medium text-foreground mb-2">No tables found</h3>
  <p className="text-foreground-secondary mb-6">
  No tables match your search query"{searchQuery}".
  </p>
@@ -341,7 +341,7 @@ export default function Dashboard() {
  ) : (
  <div>
  <div className="flex items-center justify-between mb-6">
- <h2 className="text-xl font-semibold text-foreground">All Tables</h2>
+ <h2 className="text-sm font-medium text-foreground">All Tables</h2>
  <p className="text-sm text-foreground-secondary">
  {filteredTables.length} {filteredTables.length === 1 ? 'table' : 'tables'}
  </p>

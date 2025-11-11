@@ -6,32 +6,44 @@ export default function TrapidLogo({ className = "h-6 w-6" }) {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Geometric T mark with construction theme */}
-      {/* Vertical beam (like a construction pillar) */}
-      <rect
-        x="13"
-        y="8"
-        width="6"
-        height="20"
-        fill="currentColor"
-        rx="1"
+      {/* Abstract interlocking circles - suggests collaboration, precision, and flow */}
+
+      {/* Top circle */}
+      <circle
+        cx="16"
+        cy="10"
+        r="6"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        fill="none"
       />
 
-      {/* Horizontal beam (top of T, like a construction beam) */}
-      <rect
-        x="6"
-        y="4"
-        width="20"
-        height="6"
-        fill="currentColor"
-        rx="1"
+      {/* Bottom-left circle */}
+      <circle
+        cx="10.5"
+        cy="20"
+        r="6"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        fill="none"
       />
 
-      {/* Small accent triangle at bottom (foundation/stability) */}
-      <path
-        d="M 16 28 L 12 24 L 20 24 Z"
+      {/* Bottom-right circle */}
+      <circle
+        cx="21.5"
+        cy="20"
+        r="6"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        fill="none"
+      />
+
+      {/* Central dot accent (where all circles overlap conceptually) */}
+      <circle
+        cx="16"
+        cy="16"
+        r="2"
         fill="currentColor"
-        opacity="0.6"
       />
     </svg>
   )

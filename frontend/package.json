@@ -1,7 +1,7 @@
 {
   "name": "trapid-frontend",
   "private": true,
-  "version": "1.99.12",
+  "version": "1.99.17",
   "type": "module",
   "scripts": {
     "dev": "node scripts/increment-version.js && vite",
@@ -17,6 +17,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "axios": "^1.13.1",
     "class-variance-authority": "^0.7.1",
+    "classcat": "^5.0.5",
     "clsx": "^2.1.1",
     "frappe-gantt": "^1.0.4",
     "geist": "^1.5.1",
@@ -25,6 +26,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.4",
+    "reactflow": "^11.11.4",
     "recharts": "^3.3.0",
     "tailwind-merge": "^3.4.0"
   },

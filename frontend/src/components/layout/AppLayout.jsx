@@ -319,9 +319,6 @@ export default function AppLayout({ children }) {
  <Bell className="w-[15px] h-[15px]" />
  </button>
 
- {/* Separator */}
- <div aria-hidden="true" className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-800" />
-
  </div>
           {/* Profile dropdown - Subframe-inspired design with Headless UI */}
           <Menu as="div" className="relative">
@@ -330,7 +327,7 @@ export default function AppLayout({ children }) {
               <img
                 alt="User profile"
                 src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                className="h-6 w-6 rounded-none ring-1 ring-gray-800"
+                className="h-6 w-6 rounded-full ring-1 ring-gray-800"
               />
               <span className="hidden lg:flex lg:items-center">
                 <span aria-hidden="true" className="text-xs font-medium text-white">
@@ -342,7 +339,7 @@ export default function AppLayout({ children }) {
 
             <MenuItems
               transition
-              className="absolute right-0 z-50 mt-1 min-w-[192px] origin-top-right rounded-none bg-gray-900 border border-gray-800 p-1 shadow-lg focus:outline-none transition duration-100 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
+              className="absolute right-0 z-50 mt-1 min-w-[192px] origin-top-right rounded-none bg-gray-900 border border-gray-800 p-1 shadow-lg focus:outline-none transition duration-150 ease-out data-[closed]:opacity-0"
             >
               <MenuItem>
                 {({ focus }) => (

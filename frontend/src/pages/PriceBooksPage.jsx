@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency } from '../utils/formatters'
 import { api } from '../api'
+import ColumnHeaderMenu from '../components/pricebook/ColumnHeaderMenu'
 import PriceBookImportModal from '../components/pricebook/PriceBookImportModal'
 
 export default function PriceBooksPage() {
@@ -50,9 +51,11 @@ export default function PriceBooksPage() {
  const [showImportModal, setShowImportModal] = useState(false)
  const [exporting, setExporting] = useState(false)
  const [selectedItems, setSelectedItems] = useState(new Set()) // Track selected item IDs
+ const [isSearchFocused, setIsSearchFocused] = useState(false) // Track search focus state
 
  const observerTarget = useRef(null)
  const searchTimeoutRef = useRef(null)
+ const searchInputRef = useRef(null)
 
  // Clear supplier filter if it's no longer in the filtered suppliers list
  useEffect(() => {
@@ -422,6 +425,14 @@ export default function PriceBooksPage() {
  loadPriceBook(1)
  }
 
+ const handleBackdropClick = () => {
+ setSearchQuery('')
+ setIsSearchFocused(false)
+ if (searchInputRef.current) {
+ searchInputRef.current.blur()
+ }
+ }
+
  const SortIcon = ({ column }) => {
  if (sortBy !== column) return <Menu className="h-3.5 w-3.5 text-gray-400" />
  return sortDirection === 'asc' ?
@@ -442,11 +453,21 @@ export default function PriceBooksPage() {
 
  return (
  <div className="flex h-screen overflow-hidden">
+ {/* Frosted glass backdrop - only visible when search is active */}
+ {(searchQuery || isSearchFocused) && (
+ <div
+ className="fixed inset-0 bg-black/40 backdrop-blur-sm z-10 transition-opacity duration-[240ms]"
+ onClick={handleBackdropClick}
+ />
+ )}
+
  <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
  {/* Header with search */}
  <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20">
  <div className="px-4 py-3">
- <div className="flex items-center justify-between gap-3 mb-3">
+ {/* Three-column layout: Title (left) | Search (center) | Actions (right) */}
+ <div className="flex items-center relative">
+ {/* Left: Title and results */}
  <div className="flex items-center gap-2">
  <DollarSign className="h-3.5 w-3.5 text-gray-400" />
  <div>
@@ -458,7 +479,42 @@ export default function PriceBooksPage() {
  </p>
  </div>
  </div>
- <div className="flex items-center gap-2">
+
+ {/* Center: Centered spotlight search */}
+ <div className="absolute left-1/2 -translate-x-1/2 z-20">
+ <div className="relative">
+ <Search
+ className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none z-30"
+ />
+ <input
+ ref={searchInputRef}
+ type="text"
+ placeholder="Search..."
+ value={searchQuery}
+ onChange={(e) => setSearchQuery(e.target.value)}
+ onFocus={() => setIsSearchFocused(true)}
+ onBlur={() => setIsSearchFocused(false)}
+ className="text-gray-900 dark:text-gray-100 text-xs font-sans outline-none ring-0 focus:ring-0 focus:outline-none transition-[width,padding] duration-[240ms] placeholder:text-gray-500 dark:placeholder:text-gray-500 rounded-lg bg-gray-900 border-0"
+ style={{
+ width: (searchQuery || isSearchFocused) ? '16rem' : '2rem',
+ height: '2rem',
+ paddingLeft: (searchQuery || isSearchFocused) ? '1.75rem' : '0.5rem',
+ paddingRight: (searchQuery || isSearchFocused) ? '2rem' : '0.5rem',
+ }}
+ />
+ {searchQuery && (
+ <button
+ onClick={handleBackdropClick}
+ className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors z-30"
+ >
+ <X className="h-3.5 w-3.5" />
+ </button>
+ )}
+ </div>
+ </div>
+
+ {/* Right: Action buttons */}
+ <div className="ml-auto flex items-center gap-2">
  {/* Selection Indicator */}
  {selectedItems.size > 0 && (
  <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30">
@@ -522,57 +578,6 @@ export default function PriceBooksPage() {
  </div>
  </div>
 
-        {/* Centered expanding search bar - Ultra-minimal with text fade-in */}
-        <div className="flex justify-center">
-          <div className="relative inline-block overflow-hidden">
-            <Search
-              className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none transition-colors duration-[240ms]"
-              style={{
-                color: searchQuery ? '#9ca3af' : '#6b7280'
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-0 bg-transparent text-gray-100 dark:text-gray-100 text-xs font-sans outline-none ring-0 focus:ring-0 focus:outline-none transition-[width,padding,opacity] duration-[240ms] placeholder:text-gray-500 dark:placeholder:text-gray-500 rounded-none"
-              style={{
-                width: searchQuery ? '12rem' : '0px',
-                paddingLeft: searchQuery ? '1.75rem' : '2rem',
-                paddingRight: searchQuery ? '2rem' : '0px',
-                paddingTop: '0.5rem',
-                paddingBottom: '0.5rem',
-                opacity: searchQuery ? 1 : 0,
-                border: 'none',
-                boxShadow: 'none'
-              }}
-              onFocus={(e) => {
-                e.target.style.width = '12rem'
-                e.target.style.paddingLeft = '1.75rem'
-                e.target.style.paddingRight = '2rem'
-                e.target.style.opacity = '1'
-              }}
-              onBlur={(e) => {
-                if (!searchQuery) {
-                  e.target.style.width = '0px'
-                  e.target.style.paddingLeft = '2rem'
-                  e.target.style.paddingRight = '0px'
-                  e.target.style.opacity = '0'
-                }
-              }}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-
  {/* Expanded filters */}
  {showFilters && (
  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
@@ -585,7 +590,7 @@ export default function PriceBooksPage() {
  <select
  value={categoryFilter}
  onChange={(e) => setCategoryFilter(e.target.value)}
- className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+ className="w-full px-3 py-2 text-xs font-medium border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
  >
  <option value="">All Categories</option>
  {categories.map((category) => (
@@ -604,7 +609,7 @@ export default function PriceBooksPage() {
  <select
  value={supplierFilter}
  onChange={(e) => setSupplierFilter(e.target.value)}
- className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+ className="w-full px-3 py-2 text-xs font-medium border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
  >
  <option value="">All Suppliers</option>
  {suppliers.map((supplier) => (
@@ -626,7 +631,7 @@ export default function PriceBooksPage() {
  placeholder="$0"
  value={minPrice}
  onChange={(e) => setMinPrice(e.target.value)}
- className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+ className="w-full px-3 py-2 text-xs font-medium border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
  />
  </div>
 
@@ -640,7 +645,7 @@ export default function PriceBooksPage() {
  placeholder="$999,999"
  value={maxPrice}
  onChange={(e) => setMaxPrice(e.target.value)}
- className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+ className="w-full px-3 py-2 text-xs font-medium border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
  />
  </div>
  </div>

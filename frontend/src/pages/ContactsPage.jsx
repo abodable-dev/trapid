@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels, Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import { api } from '../api'
 import {
@@ -853,6 +853,7 @@ export default function ContactsPage() {
   }
 
   return (
+    <>
     <div className="-mx-4 sm:-mx-6 lg:-mx-8 h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="mb-6">
@@ -1542,6 +1543,6 @@ export default function ContactsPage() {
         onClose={() => setToast(null)}
       />
     )}
-  </div>
+  </>
   )
 }

@@ -30,6 +30,7 @@ import SchemaPage from './pages/SchemaPage'
 import XeroCallbackPage from './pages/XeroCallbackPage'
 import ComponentsDemo from './pages/ComponentsDemo'
 import GlowTestPage from './pages/GlowTestPage'
+import SearchDemoPage from './pages/SearchDemoPage'
 
 function App() {
  return (
@@ -69,6 +70,7 @@ function App() {
  <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
  <Route path="/components-demo" element={<AppLayout><ComponentsDemo /></AppLayout>} />
  <Route path="/glow-test" element={<AppLayout><GlowTestPage /></AppLayout>} />
+ <Route path="/search-demo" element={<AppLayout><SearchDemoPage /></AppLayout>} />
  </Routes>
  </BrowserRouter>
  )
