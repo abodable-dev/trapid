@@ -115,6 +115,7 @@ export default function ScheduleTemplateEditor() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showColumnSettings, setShowColumnSettings] = useState(false)
   const [columnFilters, setColumnFilters] = useState({})
+  const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false)
 
   // Column resize state
   const [resizingColumn, setResizingColumn] = useState(null)
@@ -799,63 +800,85 @@ export default function ScheduleTemplateEditor() {
         </button>
       </div>
 
-      {/* Template Selector */}
-      <div className="mb-4 flex items-center gap-4">
-        <select
-          value={selectedTemplate?.id || ''}
-          onChange={(e) => {
-            const template = templates.find(t => t.id === parseInt(e.target.value))
-            setSelectedTemplate(template)
-          }}
-          className="flex-1 max-w-md px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
+      {/* Template Selector with Collapse Button */}
+      <div className="mb-4 flex items-center gap-2">
+        <button
+          onClick={() => setIsLeftPanelCollapsed(!isLeftPanelCollapsed)}
+          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+          title={isLeftPanelCollapsed ? "Show template selector" : "Hide template selector"}
         >
-          {templates.map((template) => (
-            <option key={template.id} value={template.id}>
-              {template.name} {template.is_default ? '(Default)' : ''}
-            </option>
-          ))}
-        </select>
+          {isLeftPanelCollapsed ? (
+            <ChevronDownIcon className="h-5 w-5" />
+          ) : (
+            <ChevronUpIcon className="h-5 w-5" />
+          )}
+        </button>
 
-        {selectedTemplate && (
+        {!isLeftPanelCollapsed && (
           <>
-            <button
-              onClick={handleDuplicateTemplate}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-              title="Duplicate Template"
+            <select
+              value={selectedTemplate?.id || ''}
+              onChange={(e) => {
+                const template = templates.find(t => t.id === parseInt(e.target.value))
+                setSelectedTemplate(template)
+              }}
+              className="flex-1 max-w-md px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
             >
-              <DocumentDuplicateIcon className="h-5 w-5" />
-            </button>
-            <button
-              onClick={handleExportToExcel}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-              title="Export to Excel"
-            >
-              <ArrowDownTrayIcon className="h-5 w-5" />
-            </button>
-            <label className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" title="Import from Excel">
-              <ArrowUpTrayIcon className="h-5 w-5" />
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleImportFromExcel}
-                className="hidden"
-              />
-            </label>
-            {!selectedTemplate.is_default && (
-              <button
-                onClick={handleSetAsDefault}
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400"
-                title="Set as Default"
-              >
-                <CheckIcon className="h-5 w-5" />
-              </button>
+              {templates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name} {template.is_default ? '(Default)' : ''}
+                </option>
+              ))}
+            </select>
+
+            {selectedTemplate && (
+              <>
+                <button
+                  onClick={handleDuplicateTemplate}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                  title="Duplicate Template"
+                >
+                  <DocumentDuplicateIcon className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={handleExportToExcel}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                  title="Export to Excel"
+                >
+                  <ArrowDownTrayIcon className="h-5 w-5" />
+                </button>
+                <label className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" title="Import from Excel">
+                  <ArrowUpTrayIcon className="h-5 w-5" />
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleImportFromExcel}
+                    className="hidden"
+                  />
+                </label>
+                {!selectedTemplate.is_default && (
+                  <button
+                    onClick={handleSetAsDefault}
+                    className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400"
+                    title="Set as Default"
+                  >
+                    <CheckIcon className="h-5 w-5" />
+                  </button>
+                )}
+              </>
             )}
           </>
+        )}
+
+        {isLeftPanelCollapsed && selectedTemplate && (
+          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+            {selectedTemplate.name}
+          </span>
         )}
       </div>
 
       {/* Search Bar and Column Settings */}
-      {selectedTemplate && (
+      {selectedTemplate && !isLeftPanelCollapsed && (
         <div className="mb-4 space-y-4">
           <div className="flex gap-2">
             <div className="flex-1 relative">
