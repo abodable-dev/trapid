@@ -1,6 +1,10 @@
 class ScheduleTemplateRow < ApplicationRecord
   belongs_to :schedule_template
   belongs_to :supplier, optional: true  # Supplier is only required if po_required is true
+  belongs_to :linked_template, class_name: 'ScheduleTemplate', optional: true
+
+  # Serialize JSON fields
+  serialize :linked_task_ids, coder: JSON
 
   # Role/group constants for internal work assignment
   ASSIGNABLE_ROLES = %w[admin sales site supervisor builder estimator].freeze
@@ -30,6 +34,10 @@ class ScheduleTemplateRow < ApplicationRecord
     predecessor_ids || []
   end
 
+  def linked_task_list
+    linked_task_ids || []
+  end
+
   def price_book_items
     return [] if price_book_item_ids.blank?
     PricebookItem.where(id: price_book_item_ids)
@@ -48,6 +56,17 @@ class ScheduleTemplateRow < ApplicationRecord
   def predecessor_display
     return "None" if predecessor_task_ids.empty?
     predecessor_task_ids.map { |pred| format_predecessor(pred) }.join(", ")
+  end
+
+  # Display linked tasks as "1, 3, 5"
+  def linked_tasks_display
+    return "None" if linked_task_list.empty?
+    linked_task_list.join(", ")
+  end
+
+  # Get the linked template name
+  def linked_template_name
+    linked_template&.name
   end
 
   private

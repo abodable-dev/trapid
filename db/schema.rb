@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_060147) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -821,6 +821,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_060147) do
     t.datetime "updated_at", null: false
     t.string "assigned_user_id"
     t.integer "documentation_category_ids", default: [], array: true
+    t.text "linked_task_ids", default: "[]"
+    t.integer "linked_template_id"
     t.index ["documentation_category_ids"], name: "index_schedule_template_rows_on_documentation_category_ids", using: :gin
     t.index ["schedule_template_id", "sequence_order"], name: "idx_on_schedule_template_id_sequence_order_1bea5d762b"
     t.index ["schedule_template_id"], name: "index_schedule_template_rows_on_schedule_template_id"
