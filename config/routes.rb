@@ -106,6 +106,8 @@ Rails.application.routes.draw do
           post :approve
           post :send_to_supplier
           post :mark_received
+          get :available_documents
+          post :attach_documents
         end
       end
 

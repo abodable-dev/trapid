@@ -1,6 +1,8 @@
 class DocumentTask < ApplicationRecord
   belongs_to :construction
   has_one_attached :document
+  has_many :purchase_order_documents, dependent: :destroy
+  has_many :purchase_orders, through: :purchase_order_documents
 
   validates :name, presence: true
   validates :category, presence: true
@@ -10,4 +12,8 @@ class DocumentTask < ApplicationRecord
   scope :required, -> { where(required: true) }
   scope :with_documents, -> { where(has_document: true) }
   scope :validated, -> { where(is_validated: true) }
+
+  def document_url
+    document.attached? ? Rails.application.routes.url_helpers.url_for(document) : nil
+  end
 end

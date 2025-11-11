@@ -7,6 +7,8 @@ class PurchaseOrder < ApplicationRecord
   has_many :project_tasks, dependent: :nullify
   has_many :schedule_tasks, dependent: :nullify
   has_many :workflow_instances, as: :subject, dependent: :destroy
+  has_many :purchase_order_documents, dependent: :destroy
+  has_many :document_tasks, through: :purchase_order_documents
 
   # Nested attributes
   accepts_nested_attributes_for :line_items, allow_destroy: true

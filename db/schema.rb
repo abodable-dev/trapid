@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_051548) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_060147) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -663,6 +663,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_051548) do
     t.index ["status"], name: "index_projects_on_status"
   end
 
+  create_table "purchase_order_documents", force: :cascade do |t|
+    t.bigint "purchase_order_id", null: false
+    t.bigint "document_task_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_task_id"], name: "index_purchase_order_documents_on_document_task_id"
+    t.index ["purchase_order_id", "document_task_id"], name: "index_po_documents_on_po_and_document", unique: true
+    t.index ["purchase_order_id"], name: "index_purchase_order_documents_on_purchase_order_id"
+  end
+
   create_table "purchase_order_line_items", force: :cascade do |t|
     t.bigint "purchase_order_id", null: false
     t.bigint "pricebook_item_id"
@@ -809,7 +819,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_051548) do
     t.integer "sequence_order", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "assigned_role"
+    t.string "assigned_user_id"
     t.integer "documentation_category_ids", default: [], array: true
     t.index ["documentation_category_ids"], name: "index_schedule_template_rows_on_documentation_category_ids", using: :gin
     t.index ["schedule_template_id", "sequence_order"], name: "idx_on_schedule_template_id_sequence_order_1bea5d762b"
@@ -1766,6 +1776,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_051548) do
   add_foreign_key "project_tasks", "users", column: "supervisor_checked_by_id"
   add_foreign_key "projects", "constructions"
   add_foreign_key "projects", "users", column: "project_manager_id"
+  add_foreign_key "purchase_order_documents", "document_tasks"
+  add_foreign_key "purchase_order_documents", "purchase_orders"
   add_foreign_key "purchase_order_line_items", "pricebook_items"
   add_foreign_key "purchase_order_line_items", "purchase_orders"
   add_foreign_key "purchase_orders", "constructions"
