@@ -235,6 +235,10 @@ Rails.application.routes.draw do
 
       # Setup data management
       post 'setup/pull_from_local', to: 'setup#pull_from_local'
+      post 'setup/sync_users', to: 'setup#sync_users'
+      post 'setup/sync_documentation_categories', to: 'setup#sync_documentation_categories'
+      post 'setup/sync_supervisor_checklists', to: 'setup#sync_supervisor_checklists'
+      post 'setup/sync_schedule_templates', to: 'setup#sync_schedule_templates'
 
       # Documentation Categories (Global)
       resources :documentation_categories do
