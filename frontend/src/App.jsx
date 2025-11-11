@@ -15,6 +15,7 @@ import SupplierEditPage from './pages/SupplierEditPage'
 import SupplierNewPage from './pages/SupplierNewPage'
 import ContactsPage from './pages/ContactsPage'
 import ContactDetailPage from './pages/ContactDetailPage'
+import UsersPage from './pages/UsersPage'
 import HealthPage from './pages/HealthPage'
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage'
 import PurchaseOrderEditPage from './pages/PurchaseOrderEditPage'
@@ -54,6 +55,7 @@ function App() {
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
         <Route path="/contacts" element={<AppLayout><ContactsPage /></AppLayout>} />
         <Route path="/contacts/:id" element={<AppLayout><ContactDetailPage /></AppLayout>} />
+        <Route path="/users" element={<AppLayout><UsersPage /></AppLayout>} />
         <Route path="/health" element={<AppLayout><HealthPage /></AppLayout>} />
         <Route path="/suppliers" element={<Navigate to="/contacts" replace />} />
         <Route path="/suppliers/new" element={<AppLayout><SupplierNewPage /></AppLayout>} />
