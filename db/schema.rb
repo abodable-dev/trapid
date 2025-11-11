@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_111014) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_122612) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -638,6 +638,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_111014) do
     t.boolean "order_required", default: false, null: false
     t.boolean "call_up_required", default: false, null: false
     t.boolean "plan_required", default: false, null: false
+    t.integer "duration", default: 0, null: false
     t.index ["assigned_to_id"], name: "index_project_tasks_on_assigned_to_id"
     t.index ["is_critical_path"], name: "index_project_tasks_on_is_critical_path"
     t.index ["parent_task_id"], name: "index_project_tasks_on_parent_task_id"
@@ -673,6 +674,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_111014) do
     t.index ["project_manager_id"], name: "index_projects_on_project_manager_id"
     t.index ["start_date", "planned_end_date"], name: "index_projects_on_start_date_and_planned_end_date"
     t.index ["status"], name: "index_projects_on_status"
+  end
+
+  create_table "public_holidays", force: :cascade do |t|
+    t.string "name"
+    t.date "date"
+    t.string "region"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "purchase_order_documents", force: :cascade do |t|
@@ -844,6 +853,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_111014) do
     t.boolean "order_required", default: false, null: false
     t.boolean "call_up_required", default: false, null: false
     t.boolean "plan_required", default: false, null: false
+    t.integer "duration", default: 0, null: false
     t.index ["documentation_category_ids"], name: "index_schedule_template_rows_on_documentation_category_ids", using: :gin
     t.index ["schedule_template_id", "sequence_order"], name: "idx_on_schedule_template_id_sequence_order_1bea5d762b"
     t.index ["schedule_template_id"], name: "index_schedule_template_rows_on_schedule_template_id"

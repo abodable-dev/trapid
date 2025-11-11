@@ -275,6 +275,13 @@ Rails.application.routes.draw do
         end
       end
 
+      # Public Holidays
+      resources :public_holidays, only: [:index, :create, :destroy] do
+        collection do
+          get :dates
+        end
+      end
+
       # Xero integration
       resources :xero, only: [] do
         collection do

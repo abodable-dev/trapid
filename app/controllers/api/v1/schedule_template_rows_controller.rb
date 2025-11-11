@@ -119,6 +119,7 @@ module Api
           :order_required,
           :call_up_required,
           :plan_required,
+          :duration,
           predecessor_ids: [:id, :type, :lag],
           price_book_item_ids: [],
           documentation_category_ids: [],
@@ -153,6 +154,7 @@ module Api
           :order_required,
           :call_up_required,
           :plan_required,
+          :duration,
           predecessor_ids: [:id, :type, :lag],
           price_book_item_ids: [],
           documentation_category_ids: [],
@@ -200,7 +202,8 @@ module Api
           allow_multiple_instances: row.allow_multiple_instances,
           order_required: row.order_required,
           call_up_required: row.call_up_required,
-          plan_required: row.plan_required
+          plan_required: row.plan_required,
+          duration: row.duration
         }
       end
     end
