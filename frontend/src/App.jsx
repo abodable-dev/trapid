@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import ErrorBoundary from './components/ErrorBoundary'
 import AppLayout from './components/layout/AppLayout'
 import Dashboard from './pages/Dashboard'
 import ImportPage from './pages/ImportPage'
@@ -37,8 +38,9 @@ import WorkflowAdminPage from './pages/WorkflowAdminPage'
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
         <Route path="/chat" element={<AppLayout><ChatPage /></AppLayout>} />
@@ -79,8 +81,9 @@ function App() {
         <Route path="/onedrive" element={<AppLayout><OneDrivePage /></AppLayout>} />
         <Route path="/workflows" element={<AppLayout><WorkflowsPage /></AppLayout>} />
         <Route path="/admin/workflows" element={<AppLayout><WorkflowAdminPage /></AppLayout>} />
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   )
 }
 

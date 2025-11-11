@@ -4,6 +4,10 @@ class OrganizationOutlookCredential < ApplicationRecord
   validates :refresh_token, presence: true
   validates :expires_at, presence: true
 
+  # Encrypt sensitive tokens at rest
+  encrypts :access_token
+  encrypts :refresh_token
+
   # Get the single organization credential
   def self.current
     first
@@ -19,7 +23,7 @@ class OrganizationOutlookCredential < ApplicationRecord
   def refresh!
     return unless refresh_token.present?
 
-    response = Http post("https://login.microsoftonline.com/#{tenant_id_or_common}/oauth2/v2.0/token",
+    response = HTTP.post("https://login.microsoftonline.com/#{tenant_id_or_common}/oauth2/v2.0/token",
       form: {
         client_id: ENV['OUTLOOK_CLIENT_ID'],
         client_secret: ENV['OUTLOOK_CLIENT_SECRET'],

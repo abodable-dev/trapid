@@ -73,13 +73,14 @@ export default function JobDetailPage() {
 
   // Check if this is the first time visiting (for setup guide)
   useEffect(() => {
+    let timer = null
     const hasSeenGuide = localStorage.getItem('trapid_setup_guide_shown')
+
     if (!hasSeenGuide) {
       // Show setup guide for first-time users (with a delay for better UX)
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setShowSetupGuide(true)
       }, 1000)
-      return () => clearTimeout(timer)
     }
 
     // Listen for custom event to open setup guide
@@ -87,7 +88,12 @@ export default function JobDetailPage() {
       setShowSetupGuide(true)
     }
     window.addEventListener('openSetupGuide', handleOpenSetupGuide)
-    return () => window.removeEventListener('openSetupGuide', handleOpenSetupGuide)
+
+    // Cleanup both timeout and event listener
+    return () => {
+      if (timer) clearTimeout(timer)
+      window.removeEventListener('openSetupGuide', handleOpenSetupGuide)
+    }
   }, [])
 
   const loadJob = async () => {

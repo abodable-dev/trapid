@@ -16,12 +16,13 @@ module Api
         page = params[:page]&.to_i || 1
         per_page = params[:per_page]&.to_i || 50
 
+        # Get total count before limiting results to avoid separate COUNT query
+        total_count = @constructions.count
+        total_pages = (total_count.to_f / per_page).ceil
+
         @constructions = @constructions.order(created_at: :desc)
                                        .limit(per_page)
                                        .offset((page - 1) * per_page)
-
-        total_count = Construction.where(status: status_filter).count
-        total_pages = (total_count.to_f / per_page).ceil
 
         render json: {
           constructions: @constructions,
