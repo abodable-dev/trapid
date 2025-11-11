@@ -26,6 +26,7 @@ import Pages from './pages/designer/Pages'
 import Experiences from './pages/designer/Experiences'
 import SettingsPage from './pages/SettingsPage'
 import XeroCallbackPage from './pages/XeroCallbackPage'
+import ComponentsDemo from './pages/ComponentsDemo'
 
 function App() {
   return (
@@ -63,6 +64,7 @@ function App() {
         <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
         <Route path="/settings/integrations" element={<AppLayout><SettingsPage /></AppLayout>} />
         <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
+        <Route path="/components-demo" element={<AppLayout><ComponentsDemo /></AppLayout>} />
       </Routes>
     </BrowserRouter>
   )

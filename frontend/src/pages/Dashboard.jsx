@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import {
-  XMarkIcon,
   TableCellsIcon,
   ChartBarIcon,
   ClockIcon,
   PlusIcon,
   ArrowUpTrayIcon
 } from '@heroicons/react/24/outline'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetFooter } from '@/components/ui/sheet'
+import { Input } from '@/components/ui/input'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -18,7 +21,7 @@ export default function Dashboard() {
   const [error, setError] = useState(null)
   const [searchParams] = useSearchParams()
   const searchQuery = searchParams.get('search') || ''
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showCreateSheet, setShowCreateSheet] = useState(false)
   const [newTableName, setNewTableName] = useState('')
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState(null)
@@ -54,7 +57,9 @@ export default function Dashboard() {
     }
   }
 
-  const handleCreateTable = async () => {
+  const handleCreateTable = async (e) => {
+    if (e) e.preventDefault()
+
     if (!newTableName.trim()) {
       setCreateError('Table name is required')
       return
@@ -114,7 +119,9 @@ export default function Dashboard() {
         table: { is_live: true }
       })
 
-      // Step 4: Navigate to the spreadsheet view
+      // Step 4: Close sheet and navigate
+      setShowCreateSheet(false)
+      setNewTableName('')
       navigate(`/tables/${tableId}`)
     } catch (err) {
       console.error('Table creation error:', err)
@@ -126,16 +133,21 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="text-gray-600">Loading tables...</div>
+      <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+          <p className="mt-4 text-foreground-secondary">Loading tables...</p>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <div className="text-red-600">{error}</div>
+      <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+        <div className="text-center">
+          <div className="text-error">{error}</div>
+        </div>
       </div>
     )
   }
@@ -162,243 +174,228 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Main Content */}
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-6">Dashboard</h1>
 
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <TableCellsIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card className="hover:border-gray-700 transition-colors">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium text-foreground-secondary">
+                    Total Tables
+                  </CardTitle>
+                  <TableCellsIcon className="h-5 w-5 text-foreground-muted" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Tables</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-white">{totalTables}</p>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-mono font-semibold text-foreground">
+                  {totalTables}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ChartBarIcon className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <Card className="hover:border-gray-700 transition-colors">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium text-foreground-secondary">
+                    Total Records
+                  </CardTitle>
+                  <ChartBarIcon className="h-5 w-5 text-foreground-muted" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Records</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-white">{totalRecords.toLocaleString()}</p>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-mono font-semibold text-foreground">
+                  {totalRecords.toLocaleString()}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ClockIcon className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+            <Card className="hover:border-gray-700 transition-colors">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium text-foreground-secondary">
+                    Last Activity
+                  </CardTitle>
+                  <ClockIcon className="h-5 w-5 text-foreground-muted" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Activity</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                    {tables.length > 0 ? formatDate(tables.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0]?.updated_at) : 'Never'}
-                  </p>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-mono font-semibold text-foreground">
+                  {tables.length > 0 ? formatDate(tables.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0]?.updated_at) : 'Never'}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Quick Actions */}
           <div className="flex gap-3">
-            <button
-              onClick={() => {
-                setShowCreateModal(true)
-                setNewTableName('')
-                setCreateError(null)
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm"
-            >
-              <PlusIcon className="h-5 w-5" />
-              Create New Table
-            </button>
-            <Link
-              to="/import"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition shadow-sm"
-            >
-              <ArrowUpTrayIcon className="h-5 w-5" />
-              Import Spreadsheet
-            </Link>
-          </div>
-        </div>
-
-      {searchQuery && (
-        <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          Showing {filteredTables.length} result{filteredTables.length !== 1 ? 's' : ''} for "{searchQuery}"
-          <Link to="/dashboard" className="ml-2 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
-            Clear search
-          </Link>
-        </div>
-      )}
-
-      {tables.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-          <TableCellsIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No tables yet</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-            Get started by creating a new table or importing a spreadsheet to begin organizing your data.
-          </p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={() => {
-                setShowCreateModal(true)
-                setNewTableName('')
-                setCreateError(null)
-              }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm"
-            >
-              <PlusIcon className="h-5 w-5" />
-              Create Your First Table
-            </button>
-            <Link
-              to="/import"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition shadow-sm"
-            >
-              <ArrowUpTrayIcon className="h-5 w-5" />
-              Import Spreadsheet
-            </Link>
-          </div>
-        </div>
-      ) : filteredTables.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No tables found</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            No tables match your search query "{searchQuery}".
-          </p>
-          <Link
-            to="/dashboard"
-            className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-          >
-            Clear search
-          </Link>
-        </div>
-      ) : (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">All Tables</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {filteredTables.length} {filteredTables.length === 1 ? 'table' : 'tables'}
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredTables.map((table) => (
-              <Link
-                key={table.id}
-                to={`/tables/${table.id}`}
-                className="group block p-5 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-400 transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:border-blue-500"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {table.name}
-                    </h3>
-                    {table.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{table.description}</p>
+            <Sheet open={showCreateSheet} onOpenChange={setShowCreateSheet}>
+              <SheetTrigger asChild>
+                <Button onClick={() => {
+                  setNewTableName('')
+                  setCreateError(null)
+                }}>
+                  <PlusIcon className="h-4 w-4" />
+                  Create New Table
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right">
+                <SheetHeader>
+                  <SheetTitle>Create New Table</SheetTitle>
+                  <SheetDescription>
+                    Give your table a name. We'll create it with default columns (Name, Email, Phone, Status, Created Date) that you can customize later.
+                  </SheetDescription>
+                </SheetHeader>
+                <form onSubmit={handleCreateTable} className="space-y-6 py-6">
+                  <div className="space-y-2">
+                    <label htmlFor="tableName" className="text-sm font-medium text-foreground">
+                      Table Name
+                    </label>
+                    <Input
+                      id="tableName"
+                      value={newTableName}
+                      onChange={(e) => setNewTableName(e.target.value)}
+                      placeholder="e.g., Contacts, Tasks, Projects..."
+                      autoFocus
+                    />
+                    {createError && (
+                      <p className="text-sm text-error">{createError}</p>
                     )}
                   </div>
-                  {table.icon && (
-                    <span className="text-2xl ml-3 flex-shrink-0">{table.icon}</span>
-                  )}
-                </div>
+                  <SheetFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowCreateSheet(false)}
+                      disabled={creating}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={creating || !newTableName.trim()}
+                    >
+                      {creating ? 'Creating...' : 'Create Table'}
+                    </Button>
+                  </SheetFooter>
+                </form>
+              </SheetContent>
+            </Sheet>
 
-                <div className="flex items-center justify-between text-sm pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                    <ChartBarIcon className="h-4 w-4" />
-                    <span>{(table.record_count || 0).toLocaleString()} {table.record_count === 1 ? 'record' : 'records'}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-gray-500 dark:text-gray-500">
-                    <ClockIcon className="h-4 w-4" />
-                    <span>{formatDate(table.updated_at)}</span>
-                  </div>
-                </div>
+            <Button variant="outline" asChild>
+              <Link to="/import">
+                <ArrowUpTrayIcon className="h-4 w-4" />
+                Import Spreadsheet
               </Link>
-            ))}
+            </Button>
           </div>
         </div>
-      )}
 
-      {/* Create Table Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-screen items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-              onClick={() => setShowCreateModal(false)}
-            />
+        {searchQuery && (
+          <div className="mb-4 text-sm text-foreground-secondary">
+            Showing {filteredTables.length} result{filteredTables.length !== 1 ? 's' : ''} for "{searchQuery}"
+            <Link to="/dashboard" className="ml-2 text-foreground hover:underline">
+              Clear search
+            </Link>
+          </div>
+        )}
 
-            {/* Modal */}
-            <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Create New Table
-                </h3>
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                Give your table a name. We'll create it with default columns (Name, Email, Phone, Status, Created Date) that you can customize later.
+        {tables.length === 0 ? (
+          <Card className="py-16">
+            <CardContent className="text-center">
+              <TableCellsIcon className="mx-auto h-12 w-12 text-foreground-muted mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No tables yet</h3>
+              <p className="text-foreground-secondary mb-6 max-w-md mx-auto">
+                Get started by creating a new table or importing a spreadsheet to begin organizing your data.
               </p>
-
-              <div className="mb-6">
-                <label htmlFor="tableName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Table Name
-                </label>
-                <input
-                  type="text"
-                  id="tableName"
-                  value={newTableName}
-                  onChange={(e) => setNewTableName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !creating) {
-                      handleCreateTable()
-                    }
-                  }}
-                  placeholder="e.g., Contacts, Tasks, Projects..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  autoFocus
-                />
-                {createError && (
-                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">{createError}</p>
-                )}
+              <div className="flex gap-3 justify-center">
+                <Button onClick={() => {
+                  setShowCreateSheet(true)
+                  setNewTableName('')
+                  setCreateError(null)
+                }}>
+                  <PlusIcon className="h-4 w-4" />
+                  Create Your First Table
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link to="/import">
+                    <ArrowUpTrayIcon className="h-4 w-4" />
+                    Import Spreadsheet
+                  </Link>
+                </Button>
               </div>
+            </CardContent>
+          </Card>
+        ) : filteredTables.length === 0 ? (
+          <Card className="py-12">
+            <CardContent className="text-center">
+              <h3 className="text-lg font-medium text-foreground mb-2">No tables found</h3>
+              <p className="text-foreground-secondary mb-6">
+                No tables match your search query "{searchQuery}".
+              </p>
+              <Button asChild>
+                <Link to="/dashboard">
+                  Clear search
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-foreground">All Tables</h2>
+              <p className="text-sm text-foreground-secondary">
+                {filteredTables.length} {filteredTables.length === 1 ? 'table' : 'tables'}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTables.map((table) => (
+                <Link
+                  key={table.id}
+                  to={`/tables/${table.id}`}
+                  className="block"
+                >
+                  <Card className="h-full hover:border-gray-700 transition-colors group cursor-pointer">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="truncate group-hover:text-white transition-colors">
+                            {table.name}
+                          </CardTitle>
+                          {table.description && (
+                            <p className="text-sm text-foreground-secondary mt-1 line-clamp-2">
+                              {table.description}
+                            </p>
+                          )}
+                        </div>
+                        {table.icon && (
+                          <span className="text-2xl ml-3 flex-shrink-0">{table.icon}</span>
+                        )}
+                      </div>
+                    </CardHeader>
 
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  disabled={creating}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateTable}
-                  disabled={creating || !newTableName.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {creating ? 'Creating...' : 'Create Table'}
-                </button>
-              </div>
+                    <CardContent>
+                      <div className="flex items-center justify-between text-sm pt-3 border-t border-border">
+                        <div className="flex items-center gap-1 text-foreground-secondary">
+                          <ChartBarIcon className="h-4 w-4" />
+                          <span>{(table.record_count || 0).toLocaleString()} {table.record_count === 1 ? 'record' : 'records'}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-foreground-muted">
+                          <ClockIcon className="h-4 w-4" />
+                          <span>{formatDate(table.updated_at)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   )

@@ -2,7 +2,372 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+/* Geist Sans Font */
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/geist-sans/Geist-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/geist-sans/Geist-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/geist-sans/Geist-Bold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/geist-sans/Geist-Black.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Geist Mono Font */
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/geist-mono/GeistMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/geist-mono/GeistMono-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Base Layer - Midday.ai Foundation */
+@layer base {
+  /* Root Variables */
+  :root {
+    --color-background: #000000;
+    --color-foreground: #FFFFFF;
+    --color-border: #2E2E2E;
+    --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, monospace;
+  }
+
+  /* Reset & Base Styles */
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-black text-white font-sans;
+    @apply m-0 p-0;
+    @apply overflow-x-hidden;
+  }
+
+  /* Typography Base */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans font-semibold text-white;
+    @apply tracking-tight;
+  }
+
+  h1 {
+    @apply text-4xl;
+  }
+
+  h2 {
+    @apply text-3xl;
+  }
+
+  h3 {
+    @apply text-2xl;
+  }
+
+  h4 {
+    @apply text-xl;
+  }
+
+  h5 {
+    @apply text-lg;
+  }
+
+  h6 {
+    @apply text-base;
+  }
+
+  p {
+    @apply text-base text-foreground-secondary;
+    @apply leading-relaxed;
+  }
+
+  /* Links */
+  a {
+    @apply text-white hover:text-foreground-secondary;
+    @apply transition-colors duration-200;
+    @apply no-underline;
+  }
+
+  /* Code */
+  code {
+    @apply font-mono text-sm;
+    @apply bg-gray-900 text-white;
+    @apply px-1.5 py-0.5 rounded;
+  }
+
+  pre {
+    @apply font-mono text-sm;
+    @apply bg-gray-900 text-white;
+    @apply p-4 rounded-lg;
+    @apply overflow-x-auto;
+  }
+
+  pre code {
+    @apply bg-transparent p-0;
+  }
+
+  /* Form Elements - Minimal Style */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"],
+  textarea,
+  select {
+    @apply w-full;
+    @apply bg-transparent;
+    @apply text-white placeholder:text-foreground-muted;
+    @apply border-0 border-b border-border;
+    @apply px-0 py-2;
+    @apply outline-none;
+    @apply transition-colors duration-200;
+    @apply font-sans text-base;
+  }
+
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="password"]:focus,
+  input[type="number"]:focus,
+  input[type="search"]:focus,
+  input[type="tel"]:focus,
+  input[type="url"]:focus,
+  input[type="date"]:focus,
+  input[type="datetime-local"]:focus,
+  input[type="time"]:focus,
+  textarea:focus,
+  select:focus {
+    @apply border-white;
+    @apply outline-none;
+  }
+
+  /* Buttons - Base Reset */
+  button {
+    @apply font-sans;
+    @apply cursor-pointer;
+    @apply outline-none;
+    @apply transition-all duration-200;
+  }
+
+  button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Tables */
+  table {
+    @apply w-full;
+    @apply border-collapse;
+  }
+
+  th {
+    @apply text-left font-medium;
+    @apply text-foreground-secondary text-sm;
+    @apply pb-3;
+    @apply border-b border-border;
+  }
+
+  td {
+    @apply text-white text-sm;
+    @apply py-3;
+    @apply border-b border-border-subtle;
+  }
+
+  /* Scrollbars - Minimal Dark Style */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-black;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-700 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-600;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-white text-black;
+  }
+
+  ::-moz-selection {
+    @apply bg-white text-black;
+  }
+}
+
+/* Component Layer - Reusable Patterns */
+@layer components {
+  /* Button Variants */
+  .btn {
+    @apply inline-flex items-center justify-center;
+    @apply px-4 py-2;
+    @apply font-medium text-sm;
+    @apply rounded;
+    @apply transition-all duration-200;
+    @apply outline-none;
+  }
+
+  .btn-primary {
+    @apply bg-white text-black;
+    @apply hover:bg-gray-200;
+    @apply active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-900 text-white;
+    @apply border border-border;
+    @apply hover:bg-gray-800;
+    @apply active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-white;
+    @apply hover:bg-gray-900;
+    @apply active:scale-95;
+  }
+
+  .btn-danger {
+    @apply bg-error text-white;
+    @apply hover:bg-red-600;
+    @apply active:scale-95;
+  }
+
+  /* Card */
+  .card {
+    @apply bg-gray-950;
+    @apply border border-border;
+    @apply rounded-lg;
+    @apply p-6;
+  }
+
+  /* Input Group */
+  .input-group {
+    @apply flex flex-col gap-2;
+  }
+
+  .input-label {
+    @apply text-sm font-medium text-foreground-secondary;
+    @apply tracking-wide;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-border;
+    @apply my-6;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center;
+    @apply px-2 py-1;
+    @apply text-xs font-medium;
+    @apply rounded;
+  }
+
+  .badge-success {
+    @apply bg-success/10 text-success;
+    @apply border border-success/20;
+  }
+
+  .badge-warning {
+    @apply bg-warning/10 text-warning;
+    @apply border border-warning/20;
+  }
+
+  .badge-error {
+    @apply bg-error/10 text-error;
+    @apply border border-error/20;
+  }
+
+  .badge-info {
+    @apply bg-info/10 text-info;
+    @apply border border-info/20;
+  }
+
+  /* Loading Spinner */
+  .spinner {
+    @apply inline-block;
+    @apply w-5 h-5;
+    @apply border-2 border-gray-700 border-t-white;
+    @apply rounded-full;
+    @apply animate-spin;
+  }
+}
+
+/* Utility Layer - Custom Utilities */
+@layer utilities {
+  /* Text Utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Glassmorphism */
+  .glass {
+    @apply bg-gray-900/50 backdrop-blur-md;
+    @apply border border-border;
+  }
+
+  /* Smooth Transitions */
+  .transition-smooth {
+    @apply transition-all duration-200 ease-smooth;
+  }
+
+  /* Hide Scrollbar */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Focus Visible */
+  .focus-ring {
+    @apply outline-none;
+    @apply focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black;
+  }
 }
