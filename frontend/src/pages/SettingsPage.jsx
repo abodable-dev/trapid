@@ -53,7 +53,7 @@ export default function SettingsPage() {
 
   // Handle pull from local
   const handlePullFromLocal = async () => {
-    if (!confirm('This will delete all existing setup data (users, documentation categories, supervisor checklists, schedule templates) and replace it with data from your local development environment. Are you sure?')) {
+    if (!confirm('This will delete existing documentation categories, supervisor checklists, and schedule templates, and update/create users from your local development environment. Are you sure?')) {
       return
     }
 
@@ -314,7 +314,7 @@ export default function SettingsPage() {
                         <span className="sr-only">Description</span>
                       </dt>
                       <dd className="text-sm/6 text-gray-500 dark:text-gray-400">
-                        Sync setup data from your local development environment to staging. This will delete existing users, documentation categories, supervisor checklists, and schedule templates, then replace them with local data.
+                        Sync setup data from your local development environment to staging. This will delete existing documentation categories, supervisor checklists, and schedule templates, and update/create users from local data.
                       </dd>
                     </div>
                     {pullStatus && (

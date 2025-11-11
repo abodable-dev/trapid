@@ -33,26 +33,33 @@ namespace :setup do
     DocumentationCategory.delete_all
     puts "  ✓ Deleted #{deleted_categories} documentation categories"
 
-    deleted_users = User.count
-    User.delete_all
-    puts "  ✓ Deleted #{deleted_users} users"
+    puts "  ⚠ Skipping user deletion (users may be referenced by projects/other records)"
 
-    # Step 2: Import Users
+    # Step 2: Update/Create Users
     if File.exist?(users_file)
-      puts "\nStep 2: Importing users..."
+      puts "\nStep 2: Updating/creating users..."
       user_count = 0
+      updated_count = 0
 
       CSV.foreach(users_file, headers: true, header_converters: :symbol) do |row|
-        User.create!(
-          email: row[:email],
-          name: row[:name],
-          password: row[:password] || 'changeme123',  # Default password for imported users
-          role: row[:role] || 'user'
-        )
-        user_count += 1
+        user = User.find_or_initialize_by(email: row[:email])
+
+        if user.new_record?
+          user.name = row[:name]
+          user.password = row[:password] || 'changeme123'
+          user.role = row[:role] || 'user'
+          user.save!
+          user_count += 1
+        else
+          user.update!(
+            name: row[:name],
+            role: row[:role] || 'user'
+          )
+          updated_count += 1
+        end
       end
 
-      puts "  ✓ Imported #{user_count} users"
+      puts "  ✓ Created #{user_count} new users, updated #{updated_count} existing users"
     else
       puts "\n⚠ Users file not found at #{users_file}"
     end

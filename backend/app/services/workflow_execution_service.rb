@@ -1,10 +1,29 @@
 class WorkflowExecutionService
   class << self
     # Start a workflow for a given subject (e.g., PurchaseOrder, Job, etc.)
-    def start_workflow(workflow_type:, subject:, initiated_by: nil)
+    # Options:
+    #   - client_name: Name of client/recipient
+    #   - client_address: Address of client/recipient
+    #   - client_email: Email of client/recipient
+    #   - client_phone: Phone of client/recipient
+    #   - attachments: Array of attachment hashes [{url:, filename:, content_type:}]
+    def start_workflow(workflow_type:, subject:, initiated_by: nil, client_name: nil, client_address: nil,
+                       client_email: nil, client_phone: nil, attachments: [])
       workflow_definition = WorkflowDefinition.active.find_by(workflow_type: workflow_type)
 
       raise "No active workflow found for type: #{workflow_type}" unless workflow_definition
+
+      # Build metadata with client info
+      metadata = {
+        initiated_by_id: initiated_by&.id,
+        initiated_at: Time.current
+      }
+
+      metadata[:client_name] = client_name if client_name.present?
+      metadata[:client_address] = client_address if client_address.present?
+      metadata[:client_email] = client_email if client_email.present?
+      metadata[:client_phone] = client_phone if client_phone.present?
+      metadata[:attachments] = attachments if attachments.present?
 
       # Create workflow instance
       instance = WorkflowInstance.create!(
@@ -12,10 +31,7 @@ class WorkflowExecutionService
         subject: subject,
         status: 'pending',
         started_at: Time.current,
-        metadata: {
-          initiated_by_id: initiated_by&.id,
-          initiated_at: Time.current
-        }
+        metadata: metadata
       )
 
       # Workflow instance after_create callback will initialize first step

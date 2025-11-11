@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircleIcon, XCircleIcon, ClockIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline'
+import { CheckCircleIcon, XCircleIcon, ClockIcon, ChatBubbleLeftIcon, UserIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, PaperClipIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
 export default function WorkflowApprovalPanel({ workflowInstance, currentStep, onActionComplete }) {
@@ -142,6 +142,72 @@ export default function WorkflowApprovalPanel({ workflowInstance, currentStep, o
           </span>
         </div>
       </div>
+
+      {/* Client Information */}
+      {workflowInstance.metadata && (workflowInstance.metadata.client_name || workflowInstance.metadata.client_email) && (
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+            <UserIcon className="h-5 w-5 mr-2" />
+            Client/Recipient Information
+          </h4>
+          <div className="space-y-2">
+            {workflowInstance.metadata.client_name && (
+              <div className="flex items-start text-sm">
+                <span className="text-gray-500 dark:text-gray-400 w-20 flex-shrink-0">Name:</span>
+                <span className="text-gray-900 dark:text-white font-medium">{workflowInstance.metadata.client_name}</span>
+              </div>
+            )}
+            {workflowInstance.metadata.client_email && (
+              <div className="flex items-start text-sm">
+                <EnvelopeIcon className="h-4 w-4 mr-2 text-gray-400 mt-0.5" />
+                <a href={`mailto:${workflowInstance.metadata.client_email}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                  {workflowInstance.metadata.client_email}
+                </a>
+              </div>
+            )}
+            {workflowInstance.metadata.client_phone && (
+              <div className="flex items-start text-sm">
+                <PhoneIcon className="h-4 w-4 mr-2 text-gray-400 mt-0.5" />
+                <a href={`tel:${workflowInstance.metadata.client_phone}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                  {workflowInstance.metadata.client_phone}
+                </a>
+              </div>
+            )}
+            {workflowInstance.metadata.client_address && (
+              <div className="flex items-start text-sm">
+                <MapPinIcon className="h-4 w-4 mr-2 text-gray-400 mt-0.5 flex-shrink-0" />
+                <span className="text-gray-700 dark:text-gray-300">{workflowInstance.metadata.client_address}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Attachments */}
+      {workflowInstance.metadata?.attachments && workflowInstance.metadata.attachments.length > 0 && (
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+            <PaperClipIcon className="h-5 w-5 mr-2" />
+            Attached Documents ({workflowInstance.metadata.attachments.length})
+          </h4>
+          <div className="space-y-2">
+            {workflowInstance.metadata.attachments.map((attachment, index) => (
+              <a
+                key={index}
+                href={attachment.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+              >
+                <PaperClipIcon className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                <span className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline truncate">
+                  {attachment.filename}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Current Step */}
       {currentStep && (
