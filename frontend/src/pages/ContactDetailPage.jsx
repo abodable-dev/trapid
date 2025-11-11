@@ -158,13 +158,23 @@ export default function ContactDetailPage() {
   const loadXeroAccounts = async () => {
     try {
       setLoadingXeroAccounts(true)
+
+      // Check if Xero is connected first
+      const statusResponse = await api.get('/api/v1/xero/status')
+      if (!statusResponse.data.connected) {
+        // Not connected, silently skip loading accounts
+        setLoadingXeroAccounts(false)
+        return
+      }
+
+      // Connected, load accounts
       const response = await api.get('/api/v1/xero/accounts?account_class=EXPENSE')
       if (response.success) {
         setXeroAccounts(response.accounts || [])
       }
     } catch (err) {
-      console.error('Failed to load Xero accounts:', err)
       // Silently fail - accounts will just not be available for dropdown
+      // This can happen if Xero is not connected or credentials expired
     } finally {
       setLoadingXeroAccounts(false)
     }
