@@ -336,6 +336,39 @@ class XeroContactSyncJob < ApplicationJob
       end
     end
 
+    # Extract bank account details
+    # BankAccountDetails is a string in format "BSB: 123456, Account Number: 98765432, Account Name: Business Account"
+    if xero_contact['BankAccountDetails'].present?
+      bank_details = xero_contact['BankAccountDetails']
+
+      # Try to parse BSB
+      if bank_details.match(/BSB[:\s]+(\d{6})/)
+        updates[:bank_bsb] = $1
+      end
+
+      # Try to parse account number
+      if bank_details.match(/Account Number[:\s]+([\d\s]+)/)
+        updates[:bank_account_number] = $1.gsub(/\s/, '')
+      end
+
+      # Try to parse account name
+      if bank_details.match(/Account Name[:\s]+([^,\n]+)/)
+        updates[:bank_account_name] = $1.strip
+      end
+    end
+
+    # Extract purchase account
+    if xero_contact['PurchaseDetails'].present? && xero_contact['PurchaseDetails']['AccountCode'].present?
+      updates[:default_purchase_account] = xero_contact['PurchaseDetails']['AccountCode']
+    end
+
+    # Extract payment terms
+    if xero_contact['PaymentTerms'].present? && xero_contact['PaymentTerms']['Bills'].present?
+      bills = xero_contact['PaymentTerms']['Bills']
+      updates[:bill_due_day] = bills['Day'] if bills['Day'].present?
+      updates[:bill_due_type] = bills['Type'] if bills['Type'].present?
+    end
+
     trapid_contact.update!(updates)
     @stats[:updated] += 1
     Rails.logger.info("Updated Trapid contact ##{trapid_contact.id}")
@@ -371,6 +404,38 @@ class XeroContactSyncJob < ApplicationJob
       end
     end
 
+    # Extract bank account details
+    if xero_contact['BankAccountDetails'].present?
+      bank_details = xero_contact['BankAccountDetails']
+
+      # Try to parse BSB
+      if bank_details.match(/BSB[:\s]+(\d{6})/)
+        contact_data[:bank_bsb] = $1
+      end
+
+      # Try to parse account number
+      if bank_details.match(/Account Number[:\s]+([\d\s]+)/)
+        contact_data[:bank_account_number] = $1.gsub(/\s/, '')
+      end
+
+      # Try to parse account name
+      if bank_details.match(/Account Name[:\s]+([^,\n]+)/)
+        contact_data[:bank_account_name] = $1.strip
+      end
+    end
+
+    # Extract purchase account
+    if xero_contact['PurchaseDetails'].present? && xero_contact['PurchaseDetails']['AccountCode'].present?
+      contact_data[:default_purchase_account] = xero_contact['PurchaseDetails']['AccountCode']
+    end
+
+    # Extract payment terms
+    if xero_contact['PaymentTerms'].present? && xero_contact['PaymentTerms']['Bills'].present?
+      bills = xero_contact['PaymentTerms']['Bills']
+      contact_data[:bill_due_day] = bills['Day'] if bills['Day'].present?
+      contact_data[:bill_due_type] = bills['Type'] if bills['Type'].present?
+    end
+
     Contact.create!(contact_data.compact)
     Rails.logger.info("Created Trapid contact from Xero: #{xero_contact['Name']}")
   rescue StandardError => e
@@ -404,6 +469,32 @@ class XeroContactSyncJob < ApplicationJob
       }
     end
     payload[:Phones] = phones if phones.any?
+
+    # Add bank account details
+    # Format: "BSB: 123456, Account Number: 98765432, Account Name: Business Account"
+    if trapid_contact.bank_bsb.present? || trapid_contact.bank_account_number.present? || trapid_contact.bank_account_name.present?
+      bank_details = []
+      bank_details << "BSB: #{trapid_contact.bank_bsb}" if trapid_contact.bank_bsb.present?
+      bank_details << "Account Number: #{trapid_contact.bank_account_number}" if trapid_contact.bank_account_number.present?
+      bank_details << "Account Name: #{trapid_contact.bank_account_name}" if trapid_contact.bank_account_name.present?
+      payload[:BankAccountDetails] = bank_details.join(', ')
+    end
+
+    # Add purchase account
+    if trapid_contact.default_purchase_account.present?
+      payload[:PurchaseDetails] = {
+        AccountCode: trapid_contact.default_purchase_account
+      }
+    end
+
+    # Add payment terms
+    if trapid_contact.bill_due_day.present? || trapid_contact.bill_due_type.present?
+      payload[:PaymentTerms] = {
+        Bills: {}
+      }
+      payload[:PaymentTerms][:Bills][:Day] = trapid_contact.bill_due_day if trapid_contact.bill_due_day.present?
+      payload[:PaymentTerms][:Bills][:Type] = trapid_contact.bill_due_type if trapid_contact.bill_due_type.present?
+    end
 
     payload
   end
