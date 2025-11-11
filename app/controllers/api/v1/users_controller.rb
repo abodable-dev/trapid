@@ -13,4 +13,42 @@ class Api::V1::UsersController < ApplicationController
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'User not found' }, status: :not_found
   end
+
+  # PATCH /api/v1/users/:id
+  def update
+    @user = User.find(params[:id])
+
+    if @user.update(user_params)
+      render json: {
+        success: true,
+        user: @user.as_json(only: [:id, :name, :email, :role])
+      }
+    else
+      render json: {
+        success: false,
+        errors: @user.errors.full_messages
+      }, status: :unprocessable_entity
+    end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'User not found' }, status: :not_found
+  end
+
+  # DELETE /api/v1/users/:id
+  def destroy
+    @user = User.find(params[:id])
+
+    if @user.destroy
+      render json: { success: true, message: 'User removed successfully' }
+    else
+      render json: { success: false, error: 'Failed to remove user' }, status: :unprocessable_entity
+    end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'User not found' }, status: :not_found
+  end
+
+  private
+
+  def user_params
+    params.require(:user).permit(:name, :email, :role)
+  end
 end
