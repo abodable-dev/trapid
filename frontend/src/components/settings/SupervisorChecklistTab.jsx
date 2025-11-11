@@ -11,9 +11,16 @@ export default function SupervisorChecklistTab() {
     name: '',
     description: '',
     category: '',
+    response_type: 'checkbox',
   })
 
   const categories = ['Safety', 'Quality', 'Pre-Start', 'Completion', 'Documentation']
+  const responseTypes = [
+    { value: 'checkbox', label: 'Checkbox (Yes/No)' },
+    { value: 'photo', label: 'Photo Required' },
+    { value: 'note', label: 'Note Required' },
+    { value: 'photo_and_note', label: 'Photo and Note Required' },
+  ]
 
   useEffect(() => {
     fetchTemplates()
@@ -37,7 +44,7 @@ export default function SupervisorChecklistTab() {
       await api.post('/api/v1/supervisor_checklist_templates', {
         supervisor_checklist_template: formData
       })
-      setFormData({ name: '', description: '', category: '' })
+      setFormData({ name: '', description: '', category: '', response_type: 'checkbox' })
       setShowNewForm(false)
       fetchTemplates()
     } catch (error) {
@@ -114,7 +121,7 @@ export default function SupervisorChecklistTab() {
       {/* New Template Form */}
       {showNewForm && (
         <form onSubmit={handleCreate} className="mt-6 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Checklist Item Name *
@@ -145,6 +152,21 @@ export default function SupervisorChecklistTab() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Response Type *
+              </label>
+              <select
+                required
+                value={formData.response_type}
+                onChange={(e) => setFormData({ ...formData, response_type: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                {responseTypes.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Description
               </label>
               <input
@@ -168,7 +190,7 @@ export default function SupervisorChecklistTab() {
               type="button"
               onClick={() => {
                 setShowNewForm(false)
-                setFormData({ name: '', description: '', category: '' })
+                setFormData({ name: '', description: '', category: '', response_type: 'checkbox' })
               }}
               className="inline-flex items-center rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
             >
@@ -193,6 +215,9 @@ export default function SupervisorChecklistTab() {
                       Category
                     </th>
                     <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                      Response Type
+                    </th>
+                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">
                       Description
                     </th>
                     <th className="relative py-3.5 pl-3 pr-4 sm:pr-6">
@@ -203,7 +228,7 @@ export default function SupervisorChecklistTab() {
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
                   {templates.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                      <td colSpan="5" className="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
                         No checklist items yet. Create one to get started.
                       </td>
                     </tr>
@@ -242,6 +267,23 @@ export default function SupervisorChecklistTab() {
                                 {template.category}
                               </span>
                             )
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                          {editingId === template.id ? (
+                            <select
+                              value={template.response_type || 'checkbox'}
+                              onChange={(e) => updateTemplate(template.id, 'response_type', e.target.value)}
+                              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            >
+                              {responseTypes.map(type => (
+                                <option key={type.value} value={type.value}>{type.label}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="text-gray-900 dark:text-gray-100">
+                              {responseTypes.find(t => t.value === template.response_type)?.label || 'Checkbox (Yes/No)'}
+                            </span>
                           )}
                         </td>
                         <td className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
