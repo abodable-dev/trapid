@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import {
   PlusIcon, TrashIcon, PencilIcon, DocumentDuplicateIcon,
@@ -84,25 +84,26 @@ const defaultColumnConfig = {
   taskName: { visible: true, width: 200, label: 'Task Name', order: 1 },
   supplierGroup: { visible: true, width: 150, label: 'Supplier / Group', order: 2 },
   predecessors: { visible: true, width: 100, label: 'Predecessors', order: 3 },
-  poRequired: { visible: true, width: 80, label: 'PO Req', order: 4 },
-  autoPo: { visible: true, width: 80, label: 'Auto PO', order: 5 },
-  priceItems: { visible: true, width: 120, label: 'Price Items', order: 6 },
-  docTabs: { visible: true, width: 100, label: 'Doc Tabs', order: 7 },
-  critical: { visible: true, width: 80, label: 'Critical', order: 8 },
-  tags: { visible: true, width: 100, label: 'Tags', order: 9 },
-  photo: { visible: true, width: 80, label: 'Photo', order: 10 },
-  cert: { visible: true, width: 80, label: 'Cert', order: 10 },
-  certLag: { visible: true, width: 80, label: 'Cert Lag', order: 11 },
-  supCheck: { visible: true, width: 120, label: 'Sup Check', order: 12 },
-  autoComplete: { visible: true, width: 120, label: 'Auto Complete', order: 13 },
-  subtasks: { visible: true, width: 120, label: 'Subtasks', order: 14 },
-  linkedTasks: { visible: true, width: 120, label: 'Linked Tasks', order: 15 },
-  manualTask: { visible: true, width: 80, label: 'Manual', order: 16 },
-  multipleItems: { visible: true, width: 80, label: 'Multi', order: 17 },
-  orderRequired: { visible: true, width: 100, label: 'Order Time', order: 18 },
-  callUpRequired: { visible: true, width: 100, label: 'Call Up', order: 19 },
-  planType: { visible: true, width: 80, label: 'Plan', order: 20 },
-  actions: { visible: true, width: 80, label: 'Actions', order: 21 }
+  duration: { visible: true, width: 80, label: 'Duration', order: 4 },
+  poRequired: { visible: true, width: 80, label: 'PO Req', order: 5 },
+  autoPo: { visible: true, width: 80, label: 'Auto PO', order: 6 },
+  priceItems: { visible: true, width: 120, label: 'Price Items', order: 7 },
+  docTabs: { visible: true, width: 100, label: 'Doc Tabs', order: 8 },
+  critical: { visible: true, width: 80, label: 'Critical', order: 9 },
+  tags: { visible: true, width: 100, label: 'Tags', order: 10 },
+  photo: { visible: true, width: 80, label: 'Photo', order: 11 },
+  cert: { visible: true, width: 80, label: 'Cert', order: 12 },
+  certLag: { visible: true, width: 80, label: 'Cert Lag', order: 13 },
+  supCheck: { visible: true, width: 120, label: 'Sup Check', order: 14 },
+  autoComplete: { visible: true, width: 120, label: 'Auto Complete', order: 15 },
+  subtasks: { visible: true, width: 120, label: 'Subtasks', order: 16 },
+  linkedTasks: { visible: true, width: 120, label: 'Linked Tasks', order: 17 },
+  manualTask: { visible: true, width: 80, label: 'Manual', order: 18 },
+  multipleItems: { visible: true, width: 80, label: 'Multi', order: 19 },
+  orderRequired: { visible: true, width: 100, label: 'Order Time', order: 20 },
+  callUpRequired: { visible: true, width: 100, label: 'Call Up', order: 21 },
+  planType: { visible: true, width: 80, label: 'Plan', order: 22 },
+  actions: { visible: true, width: 80, label: 'Actions', order: 23 }
 }
 
 export default function ScheduleTemplateEditor() {
@@ -1255,7 +1256,8 @@ function ScheduleTemplateRow({
   onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown
 }) {
   const [localName, setLocalName] = useState(row.name)
-  const [updateTimeout, setUpdateTimeout] = useState(null)
+  const [localDuration, setLocalDuration] = useState(row.duration || 0)
+  const updateTimeoutRef = useRef(null)
   const [showPredecessorEditor, setShowPredecessorEditor] = useState(false)
   const [showPriceItemsModal, setShowPriceItemsModal] = useState(false)
   const [showDocTabsModal, setShowDocTabsModal] = useState(false)
@@ -1264,25 +1266,45 @@ function ScheduleTemplateRow({
   const [showAutoCompleteModal, setShowAutoCompleteModal] = useState(false)
   const [showSubtasksModal, setShowSubtasksModal] = useState(false)
 
+  // Sync local state when row data changes
+  useEffect(() => {
+    setLocalName(row.name)
+    setLocalDuration(row.duration || 0)
+  }, [row.name, row.duration])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // Debounced update for text fields
   const handleTextChange = (field, value) => {
     if (field === 'name') {
       setLocalName(value)
+    } else if (field === 'duration') {
+      // Store as number to match the type from the server
+      const numValue = parseInt(value) || 0
+      setLocalDuration(numValue)
     }
 
     // Clear existing timeout
-    if (updateTimeout) {
-      clearTimeout(updateTimeout)
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current)
     }
 
     // Set new timeout to update after user stops typing
-    const timeout = setTimeout(() => {
-      if (value && value.trim()) { // Only update if non-empty
+    updateTimeoutRef.current = setTimeout(() => {
+      if (field === 'duration') {
+        const numValue = parseInt(value) || 0
+        onUpdate({ [field]: numValue })
+      } else if (value && value.trim()) {
         onUpdate({ [field]: value })
       }
     }, 500)
-
-    setUpdateTimeout(timeout)
   }
 
   // Immediate update for checkboxes and selects
@@ -1374,6 +1396,29 @@ function ScheduleTemplateRow({
             >
               {row.predecessor_display || 'None'}
             </button>
+          </td>
+        )
+
+      case 'duration':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
+            <input
+              type="number"
+              value={localDuration}
+              onChange={(e) => handleTextChange('duration', e.target.value)}
+              onBlur={(e) => {
+                // Immediately save on blur
+                const numValue = parseInt(e.target.value) || 0
+                if (updateTimeoutRef.current) {
+                  clearTimeout(updateTimeoutRef.current)
+                }
+                onUpdate({ duration: numValue })
+              }}
+              onFocus={(e) => e.target.select()}
+              min="0"
+              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+              placeholder="0"
+            />
           </td>
         )
 

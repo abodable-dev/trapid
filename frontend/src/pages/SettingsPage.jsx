@@ -16,13 +16,14 @@ import DocumentationCategoriesTab from '../components/settings/DocumentationCate
 import UserManagementTab from '../components/settings/UserManagementTab'
 import SupervisorChecklistTab from '../components/settings/SupervisorChecklistTab'
 import WorkflowAdminPage from './WorkflowAdminPage'
+import PublicHolidaysPage from './PublicHolidaysPage'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
   // Map tab names to indices
-  const tabs = ['integrations', 'users', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'xero', 'tables', 'schema', 'deployment']
+  const tabs = ['integrations', 'users', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'deployment']
 
   // Get initial tab index from URL query parameter
   const getInitialTabIndex = () => {
@@ -212,6 +213,18 @@ export default function SettingsPage() {
                 }`
               }
             >
+              Public Holidays
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
               Xero
             </Tab>
             <Tab
@@ -306,6 +319,11 @@ export default function SettingsPage() {
           {/* Supervisor Checklist Tab */}
           <TabPanel>
             <SupervisorChecklistTab />
+          </TabPanel>
+
+          {/* Public Holidays Tab */}
+          <TabPanel>
+            <PublicHolidaysPage />
           </TabPanel>
 
           {/* Xero Tab */}

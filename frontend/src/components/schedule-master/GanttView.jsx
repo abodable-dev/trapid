@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Gantt } from '@svar-ui/react-gantt'
+import { Gantt, ContextMenu } from '@svar-ui/react-gantt'
 import '@svar-ui/react-gantt/style.css'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import { api } from '../../api'
 
 /**
  * GanttView - Visualize schedule template tasks with dependencies using SVAR Gantt
@@ -10,15 +11,78 @@ import { XMarkIcon } from '@heroicons/react/24/outline'
 
 export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
   const [ganttData, setGanttData] = useState({ data: [], links: [] })
+  const [publicHolidays, setPublicHolidays] = useState([])
+  const [ganttApi, setGanttApi] = useState(null)
+
+  // Fetch public holidays from API
+  useEffect(() => {
+    const fetchHolidays = async () => {
+      try {
+        const currentYear = new Date().getFullYear()
+        const response = await api.get(`/api/v1/public_holidays/dates?region=QLD&year_start=${currentYear}&year_end=${currentYear + 2}`)
+        setPublicHolidays(response.dates || [])
+      } catch (error) {
+        console.error('Failed to fetch public holidays:', error)
+        // Fallback to empty array if fetch fails
+        setPublicHolidays([])
+      }
+    }
+
+    fetchHolidays()
+  }, [])
+
+  // Check if a date is a weekend
+  const isWeekend = (date) => {
+    const day = date.getDay()
+    return day === 0 || day === 6 // Sunday or Saturday
+  }
+
+  // Check if a date is a public holiday
+  const isPublicHoliday = (dateStr) => {
+    return publicHolidays.includes(dateStr)
+  }
+
+  // Check if a date is a working day
+  const isWorkingDay = (date) => {
+    const dateStr = date.toISOString().split('T')[0]
+    return !isWeekend(date) && !isPublicHoliday(dateStr)
+  }
+
+  // Calculate end date from start date and business days duration
+  const addBusinessDays = (startDate, days) => {
+    let current = new Date(startDate)
+    let remainingDays = days
+
+    while (remainingDays > 0) {
+      current.setDate(current.getDate() + 1)
+      if (isWorkingDay(current)) {
+        remainingDays--
+      }
+    }
+
+    return current
+  }
+
+  // CSS function for highlighting weekends and holidays in the timeline
+  const dayStyle = (date) => {
+    const dateStr = date.toISOString().split('T')[0]
+    if (isPublicHoliday(dateStr)) {
+      return 'gantt-holiday'
+    }
+    if (isWeekend(date)) {
+      return 'gantt-weekend'
+    }
+    return ''
+  }
 
   useEffect(() => {
     if (isOpen && tasks) {
       // Convert tasks to Gantt format
       const ganttTasks = tasks.map((task, index) => {
-        // Default start date (today) and duration (5 days)
+        // Use task duration or default to 5 business days
+        const duration = task.duration || 5
         const startDate = new Date()
-        const endDate = new Date()
-        endDate.setDate(endDate.getDate() + 5)
+        const endDate = addBusinessDays(startDate, duration)
 
         // Format predecessors for display
         const formatPredecessor = (pred) => {
@@ -43,7 +107,7 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
           text: task.name,
           start: startDate.toISOString().split('T')[0],
           end: endDate.toISOString().split('T')[0],
-          duration: 5,
+          duration: duration,
           progress: 0,
           type: 'task',
           // Store original task data
@@ -75,12 +139,15 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
         }
       })
 
+      console.log('Gantt Tasks:', ganttTasks.slice(0, 2)) // Log first 2 tasks to see structure
+      console.log('Gantt Links:', ganttLinks)
+
       setGanttData({
         data: ganttTasks,
         links: ganttLinks
       })
     }
-  }, [isOpen, tasks])
+  }, [isOpen, tasks, publicHolidays])
 
   // Convert dependency type to Gantt link type
   const getLinkType = (depType) => {
@@ -156,17 +223,59 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50" style={{ zIndex: 2147483647 }}>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+    <>
+      <style>
+        {`
+          /* Weekend highlighting - apply to entire column */
+          .wx-gantt .gantt-weekend,
+          .wx-gantt .wx-gantt-cell.gantt-weekend,
+          .wx-gantt-scale-cell.gantt-weekend {
+            background-color: #f8f9fa !important;
+          }
+
+          /* Holiday highlighting - apply to entire column */
+          .wx-gantt .gantt-holiday,
+          .wx-gantt .wx-gantt-cell.gantt-holiday,
+          .wx-gantt-scale-cell.gantt-holiday {
+            background-color: #fff5f5 !important;
+          }
+
+          /* Match SVAR website styling */
+          .wx-gantt {
+            --wx-gantt-header-background: #2c3e50;
+            --wx-gantt-header-color: #ffffff;
+            --wx-gantt-border-color: #dee2e6;
+            --wx-gantt-row-background: #ffffff;
+            --wx-gantt-row-alt-background: #f8f9fa;
+            --wx-gantt-task-background: #3498db;
+            --wx-gantt-task-progress-background: #2980b9;
+            --wx-gantt-link-color: #95a5a6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          }
+
+          /* Header styling to match SVAR website */
+          .wx-gantt .wx-gantt-scale-cell {
+            font-weight: 500;
+            border-right: 1px solid #dee2e6;
+          }
+
+          /* Grid styling */
+          .wx-gantt .wx-gantt-grid-head-cell {
+            background-color: #2c3e50 !important;
+            color: #ffffff !important;
+            font-weight: 500;
+            padding: 12px 8px;
+          }
+        `}
+      </style>
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50" style={{ zIndex: 2147483647 }}>
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Gantt Chart View
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Gantt Chart
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Visualize tasks and dependencies on a timeline. Drag to add new dependency links.
-            </p>
           </div>
           <button
             onClick={onClose}
@@ -177,49 +286,38 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
         </div>
 
         {/* Gantt Chart */}
-        <div className="flex-1 overflow-hidden p-4">
-          <div className="h-full border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full">
             {ganttData.data.length > 0 && (
-              <Gantt
-                tasks={ganttData.data}
-                links={ganttData.links}
-                scales={[
-                  { unit: 'month', step: 1, format: 'MMMM yyyy' },
-                  { unit: 'day', step: 1, format: 'd' }
-                ]}
-                columns={[
-                  { name: 'taskNumber', label: '#', width: 60, align: 'center' },
-                  { name: 'text', label: 'Task Name', width: 300 },
-                  { name: 'supplier', label: 'Supplier/Group', width: 150 },
-                  { name: 'predecessors', label: 'Predecessors', width: 120 },
-                  { name: 'duration', label: 'Days', width: 70, align: 'center' }
-                ]}
-                cellHeight={40}
-                readonly={false}
-                onAdd={handleLinkAdd}
-                onUpdate={(task) => {
-                  // Handle task updates if needed
-                  console.log('Task updated:', task)
-                }}
-                onDelete={handleLinkDelete}
-              />
+              <ContextMenu api={ganttApi}>
+                <Gantt
+                  init={setGanttApi}
+                  tasks={ganttData.data}
+                  links={ganttData.links}
+                  scales={[
+                    { unit: 'month', step: 1, format: 'MMMM yyyy' },
+                    { unit: 'day', step: 1, format: 'd', css: dayStyle }
+                  ]}
+                  columns={[
+                    { id: 'taskNumber', header: '#', width: 60, align: 'center' },
+                    { id: 'text', header: 'Task Name', width: 250 },
+                    { id: 'duration', header: 'Duration', width: 80, align: 'center' }
+                  ]}
+                  cellHeight={44}
+                  readonly={false}
+                  onAdd={handleLinkAdd}
+                  onUpdate={(task) => {
+                    // Handle task updates if needed
+                    console.log('Task updated:', task)
+                  }}
+                  onDelete={handleLinkDelete}
+                />
+              </ContextMenu>
             )}
-          </div>
-        </div>
-
-        {/* Footer with instructions */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-blue-900/20">
-          <div className="text-sm text-blue-800 dark:text-blue-300">
-            <strong>How to use:</strong>
-            <ul className="mt-2 space-y-1 ml-4 list-disc">
-              <li>Drag from one task to another to create a dependency link</li>
-              <li>Click on a link and press Delete to remove it</li>
-              <li>Changes to dependencies are automatically saved</li>
-              <li>Task durations shown here are for visualization only</li>
-            </ul>
           </div>
         </div>
       </div>
     </div>
+    </>
   )
 }

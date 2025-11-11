@@ -35,6 +35,7 @@ import DocumentsPage from './pages/DocumentsPage'
 import ChatPage from './pages/ChatPage'
 import WorkflowsPage from './pages/WorkflowsPage'
 import WorkflowAdminPage from './pages/WorkflowAdminPage'
+import PublicHolidaysPage from './pages/PublicHolidaysPage'
 
 function App() {
   return (
@@ -81,6 +82,7 @@ function App() {
         <Route path="/onedrive" element={<AppLayout><OneDrivePage /></AppLayout>} />
         <Route path="/workflows" element={<AppLayout><WorkflowsPage /></AppLayout>} />
         <Route path="/admin/workflows" element={<AppLayout><WorkflowAdminPage /></AppLayout>} />
+        <Route path="/admin/public-holidays" element={<AppLayout><PublicHolidaysPage /></AppLayout>} />
         </Routes>
       </BrowserRouter>
     </ErrorBoundary>
