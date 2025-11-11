@@ -237,7 +237,10 @@ export default function ContactDetailPage() {
       // Show ALL categories where this contact has any involvement (default supplier OR price histories)
       setCurrentContactCategories(response.categories || [])
     } catch (err) {
-      console.error('Failed to load current contact categories:', err)
+      // Silently ignore 422 errors (contact is not a supplier)
+      if (err.response?.status !== 422) {
+        console.error('Failed to load current contact categories:', err)
+      }
       setCurrentContactCategories([])
     } finally {
       setLoadingCurrentCategories(false)
