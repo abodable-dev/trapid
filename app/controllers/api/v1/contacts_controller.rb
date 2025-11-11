@@ -130,7 +130,12 @@ module Api
 
       # PATCH /api/v1/contacts/:id
       def update
-        if @contact.update(contact_params)
+        # Handle contact groups separately
+        if params[:contact][:contact_group_ids] || params[:contact][:new_contact_group_names]
+          handle_contact_groups
+        end
+
+        if @contact.update(contact_params.except(:contact_group_ids, :new_contact_group_names))
           render json: {
             success: true,
             contact: @contact.as_json(
@@ -934,6 +939,27 @@ module Api
         render json: { success: false, error: "Contact not found" }, status: :not_found
       end
 
+      def handle_contact_groups
+        # Clear existing group memberships
+        @contact.contact_group_memberships.destroy_all
+
+        # Add to existing groups
+        if params[:contact][:contact_group_ids].present?
+          params[:contact][:contact_group_ids].each do |group_id|
+            group = ContactGroup.find(group_id)
+            @contact.contact_group_memberships.create!(contact_group: group)
+          end
+        end
+
+        # Create new groups and add contact to them
+        if params[:contact][:new_contact_group_names].present?
+          params[:contact][:new_contact_group_names].each do |group_name|
+            group = ContactGroup.find_or_create_by!(name: group_name, status: 'ACTIVE')
+            @contact.contact_group_memberships.create!(contact_group: group) unless @contact.contact_groups.include?(group)
+          end
+        end
+      end
+
       def contact_params
         params.require(:contact).permit(
           :full_name,
@@ -981,6 +1007,8 @@ module Api
           :default_discount,
           contact_types: [],
           lgas: [],
+          contact_group_ids: [],
+          new_contact_group_names: [],
           # Nested attributes for contact persons
           contact_persons_attributes: [:id, :first_name, :last_name, :email, :include_in_emails, :is_primary, :_destroy],
           # Nested attributes for contact addresses
