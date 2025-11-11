@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   PlusIcon, TrashIcon, PencilIcon, DocumentDuplicateIcon,
   CheckIcon, ArrowUpIcon, ArrowDownIcon, InformationCircleIcon,
-  MagnifyingGlassIcon, XMarkIcon, Cog6ToothIcon, EyeIcon, EyeSlashIcon
+  MagnifyingGlassIcon, XMarkIcon, Cog6ToothIcon, EyeIcon, EyeSlashIcon,
+  Bars3Icon, ChevronUpIcon, ChevronDownIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import Toast from '../Toast'
@@ -80,6 +81,10 @@ export default function ScheduleTemplateEditor() {
 
   // Column drag/reorder state
   const [draggedColumn, setDraggedColumn] = useState(null)
+
+  // Sort state
+  const [sortBy, setSortBy] = useState('sequence')
+  const [sortDirection, setSortDirection] = useState('asc')
 
   // Column configuration with localStorage persistence
   const [columnConfig, setColumnConfig] = useState(() => {
@@ -353,6 +358,16 @@ export default function ScheduleTemplateEditor() {
   const handleDragEnd = (e) => {
     e.preventDefault()
     setDraggedColumn(null)
+  }
+
+  // Sort handler
+  const handleSort = (columnKey) => {
+    if (sortBy === columnKey) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(columnKey)
+      setSortDirection('asc')
+    }
   }
 
   // Column resize handlers (like PriceBooksPage)
@@ -661,22 +676,52 @@ export default function ScheduleTemplateEditor() {
               <tr>
                 {getSortedColumns().map(([key, config]) => {
                   if (!config.visible) return null
+                  const isSorted = sortBy === key
+                  const isSortable = key !== 'sequence' && key !== 'actions'
 
                   return (
                     <th
                       key={key}
                       style={{ width: `${config.width}px`, minWidth: `${config.width}px`, position: 'relative' }}
-                      className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-700 dark:text-gray-300"
+                      className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left ${draggedColumn === key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, key)}
                     >
-                      {key === 'sequence' ? (
-                        '#'
-                      ) : key === 'actions' ? (
-                        'Actions'
-                      ) : columnTooltips[key] ? (
-                        <ColumnTooltip text={config.label} tooltip={columnTooltips[key]} />
-                      ) : (
-                        config.label
-                      )}
+                      <div className="flex items-center gap-2">
+                        {/* Drag handle - only this icon is draggable */}
+                        <div
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, key)}
+                          onDragEnd={handleDragEnd}
+                          className="cursor-move"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Bars3Icon className="h-4 w-4 text-gray-400" />
+                        </div>
+
+                        {/* Column label with sort functionality */}
+                        <span
+                          className={`text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${isSortable ? 'cursor-pointer' : ''}`}
+                          onClick={() => isSortable && handleSort(key)}
+                        >
+                          {key === 'sequence' ? (
+                            '#'
+                          ) : key === 'actions' ? (
+                            'Actions'
+                          ) : columnTooltips[key] ? (
+                            <ColumnTooltip text={config.label} tooltip={columnTooltips[key]} />
+                          ) : (
+                            config.label
+                          )}
+                        </span>
+
+                        {/* Sort indicators */}
+                        {isSortable && isSorted && (
+                          sortDirection === 'asc' ?
+                            <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                            <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                        )}
+                      </div>
 
                       {/* Resize handle - draggable column width adjuster */}
                       {key !== 'sequence' && key !== 'actions' && (
