@@ -20,6 +20,8 @@ import {
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import ActivityTimeline from '../components/contacts/ActivityTimeline'
 import LinkXeroContactModal from '../components/contacts/LinkXeroContactModal'
+import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
+import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
 
 export default function ContactDetailPage() {
   const { id } = useParams()
@@ -65,6 +67,9 @@ export default function ContactDetailPage() {
   const [editingXeroFields, setEditingXeroFields] = useState({}) // Track which Xero fields are being edited
   const [xeroFieldValues, setXeroFieldValues] = useState({}) // Temp values while editing
   const [isPageEditMode, setIsPageEditMode] = useState(false) // Global edit mode for the entire page
+  const [contactPersons, setContactPersons] = useState([])
+  const [contactAddresses, setContactAddresses] = useState([])
+  const [contactGroups, setContactGroups] = useState([])
 
   useEffect(() => {
     loadContact()
@@ -97,7 +102,11 @@ export default function ContactDetailPage() {
     try {
       setLoading(true)
       const response = await api.get(`/api/v1/contacts/${id}`)
-      setContact(response.contact)
+      const contactData = response.contact
+      setContact(contactData)
+      setContactPersons(contactData.contact_persons || [])
+      setContactAddresses(contactData.contact_addresses || [])
+      setContactGroups(contactData.contact_groups || [])
     } catch (err) {
       setError('Failed to load contact')
       console.error(err)
@@ -578,6 +587,61 @@ export default function ContactDetailPage() {
     }
   }
 
+  const handleContactPersonsUpdate = async (updatedPersons) => {
+    try {
+      const contact_persons_attributes = updatedPersons.map(person => ({
+        id: person.id,
+        first_name: person.first_name,
+        last_name: person.last_name,
+        email: person.email,
+        include_in_emails: person.include_in_emails,
+        is_primary: person.is_primary,
+        _destroy: person._destroy
+      }))
+
+      const response = await api.patch(`/api/v1/contacts/${id}`, {
+        contact: { contact_persons_attributes }
+      })
+
+      if (response.success) {
+        await loadContact()
+      }
+    } catch (error) {
+      console.error('Failed to update contact persons:', error)
+      alert('Failed to update contact persons')
+    }
+  }
+
+  const handleContactAddressesUpdate = async (updatedAddresses) => {
+    try {
+      const contact_addresses_attributes = updatedAddresses.map(address => ({
+        id: address.id,
+        address_type: address.address_type,
+        line1: address.line1,
+        line2: address.line2,
+        line3: address.line3,
+        line4: address.line4,
+        city: address.city,
+        region: address.region,
+        postal_code: address.postal_code,
+        country: address.country,
+        attention_to: address.attention_to,
+        is_primary: address.is_primary,
+        _destroy: address._destroy
+      }))
+
+      const response = await api.patch(`/api/v1/contacts/${id}`, {
+        contact: { contact_addresses_attributes }
+      })
+
+      if (response.success) {
+        await loadContact()
+      }
+    } catch (error) {
+      console.error('Failed to update contact addresses:', error)
+      alert('Failed to update contact addresses')
+    }
+  }
 
   if (loading) {
     return (
@@ -863,6 +927,22 @@ export default function ContactDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Contact Persons Section */}
+          <ContactPersonsSection
+            contactPersons={contactPersons}
+            onUpdate={handleContactPersonsUpdate}
+            isEditMode={isPageEditMode}
+            contactId={id}
+          />
+
+          {/* Contact Addresses Section */}
+          <ContactAddressesSection
+            contactAddresses={contactAddresses}
+            onUpdate={handleContactAddressesUpdate}
+            isEditMode={isPageEditMode}
+            contactId={id}
+          />
 
           {/* Business Details */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
