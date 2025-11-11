@@ -590,6 +590,50 @@ export default function SettingsPage() {
                           )}
                         </button>
                       </div>
+
+                      {/* Folder Templates Sync */}
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-white">Folder Templates</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Replace all templates & items</p>
+                          </div>
+                        </div>
+                        {syncStatus.folder_templates && (
+                          <div className={`mb-3 text-xs p-2 rounded ${syncStatus.folder_templates.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'}`}>
+                            {syncStatus.folder_templates.message}
+                            {syncStatus.folder_templates.count && (
+                              <div className="mt-1">
+                                {typeof syncStatus.folder_templates.count === 'object' ? (
+                                  <>Templates: {syncStatus.folder_templates.count.templates}, Items: {syncStatus.folder_templates.count.items}</>
+                                ) : (
+                                  <span className="ml-1 font-medium">({syncStatus.folder_templates.count})</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleIndividualSync('folder_templates', '/api/v1/setup/sync_folder_templates', 'This will DELETE all existing folder templates and items and replace them with local data. Continue?')}
+                          disabled={syncingType === 'folder_templates'}
+                          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-yellow-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {syncingType === 'folder_templates' ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Syncing...
+                            </>
+                          ) : (
+                            <>
+                              <ArrowDownTrayIcon className="h-4 w-4" />
+                              Sync Folder Templates
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
