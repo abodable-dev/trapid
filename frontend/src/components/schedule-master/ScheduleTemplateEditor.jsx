@@ -364,7 +364,7 @@ export default function ScheduleTemplateEditor() {
     return getSortedColumns()
       .filter(([, config]) => config.visible)
       .map(([, config]) => `${config.width}px`)
-      .join('_')
+      .join(' ')
   }
 
   // Column tooltips mapping
