@@ -20,6 +20,24 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
         const endDate = new Date()
         endDate.setDate(endDate.getDate() + 5)
 
+        // Format predecessors for display
+        const formatPredecessor = (pred) => {
+          if (typeof pred === 'object') {
+            const type = pred.type || 'FS'
+            const lag = pred.lag || 0
+            let result = `${pred.id}${type}`
+            if (lag !== 0) {
+              result += lag > 0 ? `+${lag}` : lag
+            }
+            return result
+          }
+          return `${pred}FS`
+        }
+
+        const predecessorDisplay = task.predecessor_ids && task.predecessor_ids.length > 0
+          ? task.predecessor_ids.map(formatPredecessor).join(', ')
+          : ''
+
         return {
           id: task.id,
           text: task.name,
@@ -30,7 +48,8 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
           type: 'task',
           // Store original task data
           taskNumber: index + 1,
-          supplier: task.supplier_name || '',
+          supplier: task.supplier_name || task.assigned_role || '',
+          predecessors: predecessorDisplay,
           originalTask: task
         }
       })
@@ -169,11 +188,11 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
                   { unit: 'day', step: 1, format: 'd' }
                 ]}
                 columns={[
-                  { name: 'text', label: 'Task Name', width: 250 },
-                  { name: 'taskNumber', label: '#', width: 50, align: 'center' },
-                  { name: 'supplier', label: 'Supplier', width: 150 },
-                  { name: 'start', label: 'Start', width: 100 },
-                  { name: 'duration', label: 'Duration', width: 80, align: 'center' }
+                  { name: 'taskNumber', label: '#', width: 60, align: 'center' },
+                  { name: 'text', label: 'Task Name', width: 300 },
+                  { name: 'supplier', label: 'Supplier/Group', width: 150 },
+                  { name: 'predecessors', label: 'Predecessors', width: 120 },
+                  { name: 'duration', label: 'Days', width: 70, align: 'center' }
                 ]}
                 cellHeight={40}
                 readonly={false}
