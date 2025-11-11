@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_040922) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_040948) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -583,6 +583,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_040922) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "response_type"
+    t.text "response_note"
+    t.string "response_photo_url"
     t.index ["is_completed"], name: "index_project_task_checklist_items_on_is_completed"
     t.index ["project_task_id", "sequence_order"], name: "idx_on_project_task_id_sequence_order_cc3d531d29"
     t.index ["project_task_id"], name: "index_project_task_checklist_items_on_project_task_id"
@@ -749,6 +751,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_040922) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "response_type"
+    t.text "response_note"
+    t.string "response_photo_url"
     t.index ["is_completed"], name: "index_schedule_task_checklist_items_on_is_completed"
     t.index ["schedule_task_id", "sequence_order"], name: "idx_on_schedule_task_id_sequence_order_bbbbb75501"
     t.index ["schedule_task_id"], name: "index_schedule_task_checklist_items_on_schedule_task_id"
