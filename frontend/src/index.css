@@ -127,13 +127,13 @@
   code {
     @apply font-mono text-sm;
     @apply bg-gray-900 text-white;
-    @apply px-1.5 py-0.5 rounded;
+    @apply px-1.5 py-0.5;
   }
 
   pre {
     @apply font-mono text-sm;
     @apply bg-gray-900 text-white;
-    @apply p-4 rounded-lg;
+    @apply p-4;
     @apply overflow-x-auto;
   }
 
@@ -221,7 +221,7 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-700 rounded-full;
+    @apply bg-gray-700;
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -245,7 +245,6 @@
     @apply inline-flex items-center justify-center;
     @apply px-4 py-2;
     @apply font-medium text-sm;
-    @apply rounded;
     @apply transition-all duration-200;
     @apply outline-none;
   }
@@ -279,7 +278,6 @@
   .card {
     @apply bg-gray-950;
     @apply border border-border;
-    @apply rounded-lg;
     @apply p-6;
   }
 
@@ -304,7 +302,6 @@
     @apply inline-flex items-center;
     @apply px-2 py-1;
     @apply text-xs font-medium;
-    @apply rounded;
   }
 
   .badge-success {
@@ -332,7 +329,7 @@
     @apply inline-block;
     @apply w-5 h-5;
     @apply border-2 border-gray-700 border-t-white;
-    @apply rounded-full;
+    @apply rounded-full; /* Keep rounded-full for spinner */
     @apply animate-spin;
   }
 }
@@ -369,5 +366,31 @@
   .focus-ring {
     @apply outline-none;
     @apply focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black;
+  }
+
+  /* Icon Sizes - Lucide React */
+  .icon-xs {
+    @apply w-3 h-3;
+  }
+
+  .icon-sm {
+    @apply w-4 h-4;
+  }
+
+  .icon-md {
+    @apply w-5 h-5;
+  }
+
+  .icon-lg {
+    @apply w-6 h-6;
+  }
+
+  .icon-xl {
+    @apply w-8 h-8;
+  }
+
+  /* Lucide Icon Stroke Weight - Global Override */
+  .lucide {
+    stroke-width: 1.5;
   }
 }

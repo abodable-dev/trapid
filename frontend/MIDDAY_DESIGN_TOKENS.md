@@ -277,6 +277,129 @@ hover:bg-gray-900/50
 
 ---
 
+## Icons - Lucide React
+
+### Icon System
+
+Trapid uses **Lucide React** for all icons. Lucide provides a consistent, beautiful icon set with proper sizing and styling.
+
+### Installation
+
+```bash
+npm install lucide-react
+```
+
+### Importing Icons
+
+```jsx
+import { Home, Settings, User, Plus, Upload, X } from 'lucide-react'
+```
+
+### Icon Sizing Standards
+
+Use these standardized sizes across the application:
+
+| Size Class | Dimensions | Usage | Example |
+|-----------|------------|-------|---------|
+| `w-3 h-3` or `.icon-xs` | 12px | Very small icons, badges | Badge icons |
+| `w-4 h-4` or `.icon-sm` | 16px | Compact UI, nav items, buttons | Sidebar nav, button icons |
+| `w-5 h-5` or `.icon-md` | 20px | Standard size (default) | Topbar buttons, form icons |
+| `w-6 h-6` or `.icon-lg` | 24px | Large buttons, headers | Mobile menu, empty states |
+| `w-8 h-8` or `.icon-xl` | 32px | Feature icons, large UI | Dashboard stats, hero sections |
+
+### Usage Examples
+
+```jsx
+// Navigation icons (small, compact)
+<Home className="w-4 h-4" />
+<Settings className="w-4 h-4" />
+
+// Standard buttons and forms
+<Plus className="w-5 h-5" />
+<Upload className="w-5 h-5" />
+
+// Large feature icons
+<Table className="w-12 h-12 text-foreground-muted" />
+
+// Using utility classes
+<Home className="icon-sm" />
+<Plus className="icon-md" />
+```
+
+### Common Icons Reference
+
+| Icon Name | Component | Use Case |
+|-----------|-----------|----------|
+| `Home` | `<Home />` | Dashboard, home navigation |
+| `Briefcase` | `<Briefcase />` | Jobs, projects |
+| `BookOpen` | `<BookOpen />` | Price books, documentation |
+| `Users` | `<Users />` | Contacts, team |
+| `Settings` | `<Settings />` | Settings, configuration |
+| `Upload` | `<Upload />` | File upload, import |
+| `Plus` | `<Plus />` | Create, add new |
+| `X` | `<X />` | Close, dismiss |
+| `Menu` | `<Menu />` | Mobile menu toggle |
+| `Bell` | `<Bell />` | Notifications |
+| `User` | `<User />` | Profile, user account |
+| `LogOut` | `<LogOut />` | Sign out |
+| `ChevronLeft` | `<ChevronLeft />` | Navigation, collapse |
+| `ChevronRight` | `<ChevronRight />` | Navigation, expand |
+| `ChevronDown` | `<ChevronDown />` | Dropdowns, expand |
+| `Table` | `<Table />` | Tables, data grids |
+| `BarChart3` | `<BarChart3 />` | Charts, analytics |
+| `Clock` | `<Clock />` | Time, last updated |
+
+### Migration from Heroicons
+
+When converting from Heroicons to Lucide:
+
+| Heroicons | Lucide React | Notes |
+|-----------|-------------|-------|
+| `Bars3Icon` | `Menu` | Mobile menu |
+| `XMarkIcon` | `X` | Close button |
+| `HomeIcon` | `Home` | Dashboard |
+| `Cog6ToothIcon` | `Settings` | Settings |
+| `BellIcon` | `Bell` | Notifications |
+| `UserIcon` | `User` | Profile |
+| `ArrowRightOnRectangleIcon` | `LogOut` | Sign out |
+| `ChevronLeftIcon` | `ChevronLeft` | Navigate left |
+| `ChevronRightIcon` | `ChevronRight` | Navigate right |
+| `ChevronDownIcon` | `ChevronDown` | Dropdown |
+| `PlusIcon` | `Plus` | Add/Create |
+| `ArrowUpTrayIcon` | `Upload` | Upload/Import |
+| `TableCellsIcon` | `Table` | Tables |
+| `ChartBarIcon` | `BarChart3` | Charts |
+| `ClockIcon` | `Clock` | Time |
+
+### Styling Guidelines
+
+- Always use `className` for sizing
+- Prefer Tailwind utility classes (`w-4 h-4`) over inline styles
+- Use color utilities: `text-foreground`, `text-foreground-secondary`, `text-gray-400`
+- Icons inherit text color by default
+
+```jsx
+// Good
+<Home className="w-4 h-4 text-foreground-secondary" />
+
+// Avoid
+<Home style={{ width: '16px', height: '16px' }} />
+```
+
+### Accessibility
+
+- Use `aria-hidden="true"` for decorative icons
+- Add descriptive text for screen readers when needed
+
+```jsx
+<button>
+  <span className="sr-only">Close sidebar</span>
+  <X aria-hidden="true" className="w-5 h-5" />
+</button>
+```
+
+---
+
 ## Quick Reference
 
 ### Most Common Classes

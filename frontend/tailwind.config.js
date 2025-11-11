@@ -89,16 +89,17 @@ export default {
         '24': '192px',
       },
 
-      // Border Radius (minimal)
+      // Border Radius (dead square - Midday.ai style)
       borderRadius: {
         none: '0',
-        sm: '2px',
-        DEFAULT: '4px',
-        md: '6px',
-        lg: '8px',
-        xl: '12px',
-        '2xl': '16px',
-        full: '9999px',
+        sm: '0',
+        DEFAULT: '0',
+        md: '0',
+        lg: '0',
+        xl: '0',
+        '2xl': '0',
+        '3xl': '0',
+        full: '9999px', // Keep for avatars/circles only
       },
 
       // Transitions (smooth, polished)

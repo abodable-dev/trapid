@@ -3,337 +3,337 @@ import { XMarkIcon, SparklesIcon, ExclamationTriangleIcon, UserIcon } from '@her
 import { api } from '../../api'
 
 export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOrder, suppliers, constructionId, construction }) {
-  const [formData, setFormData] = useState({
-    construction_id: constructionId,
-    supplier_id: '',
-    description: '',
-    required_date: '',
-    delivery_address: '',
-    special_instructions: '',
-    status: 'draft',
-    category: '',
-    line_items_attributes: [
-      {
-        description: '',
-        quantity: 1,
-        unit_price: 0
-      }
-    ]
-  })
-  const [saving, setSaving] = useState(false)
-  const [smartLookupLoading, setSmartLookupLoading] = useState(false)
-  const [lookupWarnings, setLookupWarnings] = useState([])
-  const [lookupMetadata, setLookupMetadata] = useState(null)
+ const [formData, setFormData] = useState({
+ construction_id: constructionId,
+ supplier_id: '',
+ description: '',
+ required_date: '',
+ delivery_address: '',
+ special_instructions: '',
+ status: 'draft',
+ category: '',
+ line_items_attributes: [
+ {
+ description: '',
+ quantity: 1,
+ unit_price: 0
+ }
+ ]
+ })
+ const [saving, setSaving] = useState(false)
+ const [smartLookupLoading, setSmartLookupLoading] = useState(false)
+ const [lookupWarnings, setLookupWarnings] = useState([])
+ const [lookupMetadata, setLookupMetadata] = useState(null)
 
-  useEffect(() => {
-    if (purchaseOrder) {
-      setFormData({
-        ...purchaseOrder,
-        line_items_attributes: purchaseOrder.line_items || [{ description: '', quantity: 1, unit_price: 0 }]
-      })
-    }
-  }, [purchaseOrder])
+ useEffect(() => {
+ if (purchaseOrder) {
+ setFormData({
+ ...purchaseOrder,
+ line_items_attributes: purchaseOrder.line_items || [{ description: '', quantity: 1, unit_price: 0 }]
+ })
+ }
+ }, [purchaseOrder])
 
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+ const handleChange = (field, value) => {
+ setFormData(prev => ({ ...prev, [field]: value }))
+ }
 
-  const handleLineItemChange = (index, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      line_items_attributes: prev.line_items_attributes.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
-      )
-    }))
-  }
+ const handleLineItemChange = (index, field, value) => {
+ setFormData(prev => ({
+ ...prev,
+ line_items_attributes: prev.line_items_attributes.map((item, i) =>
+ i === index ? { ...item, [field]: value } : item
+ )
+ }))
+ }
 
-  const addLineItem = () => {
-    setFormData(prev => ({
-      ...prev,
-      line_items_attributes: [...prev.line_items_attributes, { description: '', quantity: 1, unit_price: 0 }]
-    }))
-  }
+ const addLineItem = () => {
+ setFormData(prev => ({
+ ...prev,
+ line_items_attributes: [...prev.line_items_attributes, { description: '', quantity: 1, unit_price: 0 }]
+ }))
+ }
 
-  const removeLineItem = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      line_items_attributes: prev.line_items_attributes.filter((_, i) => i !== index)
-    }))
-  }
+ const removeLineItem = (index) => {
+ setFormData(prev => ({
+ ...prev,
+ line_items_attributes: prev.line_items_attributes.filter((_, i) => i !== index)
+ }))
+ }
 
-  const handleSmartLookup = async () => {
-    if (!formData.description || !formData.line_items_attributes[0]?.description) {
-      alert('Please enter a task description first')
-      return
-    }
+ const handleSmartLookup = async () => {
+ if (!formData.description || !formData.line_items_attributes[0]?.description) {
+ alert('Please enter a task description first')
+ return
+ }
 
-    setSmartLookupLoading(true)
-    setLookupWarnings([])
-    setLookupMetadata(null)
+ setSmartLookupLoading(true)
+ setLookupWarnings([])
+ setLookupMetadata(null)
 
-    try {
-      const taskDescription = formData.description || formData.line_items_attributes[0]?.description
-      const quantity = formData.line_items_attributes[0]?.quantity || 1
+ try {
+ const taskDescription = formData.description || formData.line_items_attributes[0]?.description
+ const quantity = formData.line_items_attributes[0]?.quantity || 1
 
-      const result = await api.post('/api/v1/purchase_orders/smart_lookup', {
-        construction_id: constructionId,
-        task_description: taskDescription,
-        category: formData.category,
-        quantity: quantity
-      })
+ const result = await api.post('/api/v1/purchase_orders/smart_lookup', {
+ construction_id: constructionId,
+ task_description: taskDescription,
+ category: formData.category,
+ quantity: quantity
+ })
 
-      if (result.success && result.supplier) {
-        // Auto-populate the form with lookup results
-        setFormData(prev => ({
-          ...prev,
-          supplier_id: result.supplier.id,
-          delivery_address: result.metadata?.delivery_address || prev.delivery_address,
-          line_items_attributes: prev.line_items_attributes.map((item, idx) =>
-            idx === 0 ? {
-              ...item,
-              unit_price: result.unit_price || item.unit_price,
-              pricebook_item_id: result.price_book_item?.id
-            } : item
-          )
-        }))
+ if (result.success && result.supplier) {
+ // Auto-populate the form with lookup results
+ setFormData(prev => ({
+ ...prev,
+ supplier_id: result.supplier.id,
+ delivery_address: result.metadata?.delivery_address || prev.delivery_address,
+ line_items_attributes: prev.line_items_attributes.map((item, idx) =>
+ idx === 0 ? {
+ ...item,
+ unit_price: result.unit_price || item.unit_price,
+ pricebook_item_id: result.price_book_item?.id
+ } : item
+ )
+ }))
 
-        setLookupWarnings(result.warnings || [])
-        setLookupMetadata(result.metadata || {})
-      } else {
-        setLookupWarnings(result.warnings || ['Smart lookup failed'])
-      }
-    } catch (error) {
-      console.error('Smart lookup error:', error)
-      alert('Failed to perform smart lookup')
-    } finally {
-      setSmartLookupLoading(false)
-    }
-  }
+ setLookupWarnings(result.warnings || [])
+ setLookupMetadata(result.metadata || {})
+ } else {
+ setLookupWarnings(result.warnings || ['Smart lookup failed'])
+ }
+ } catch (error) {
+ console.error('Smart lookup error:', error)
+ alert('Failed to perform smart lookup')
+ } finally {
+ setSmartLookupLoading(false)
+ }
+ }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setSaving(true)
-    try {
-      await onSave(formData)
-      onClose()
-    } catch (error) {
-      console.error('Error saving PO:', error)
-    } finally {
-      setSaving(false)
-    }
-  }
+ const handleSubmit = async (e) => {
+ e.preventDefault()
+ setSaving(true)
+ try {
+ await onSave(formData)
+ onClose()
+ } catch (error) {
+ console.error('Error saving PO:', error)
+ } finally {
+ setSaving(false)
+ }
+ }
 
-  if (!isOpen) return null
+ if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75 transition-opacity" onClick={onClose} />
+ return (
+ <div className="fixed inset-0 z-50 overflow-y-auto">
+ <div className="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+ <div className="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75 transition-opacity" onClick={onClose} />
 
-        <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-          <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                {purchaseOrder ? 'Edit Purchase Order' : 'New Purchase Order'}
-              </h3>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
-                <XMarkIcon className="h-6 w-6" />
-              </button>
-            </div>
+ <div className="inline-block align-bottom bg-white dark:bg-gray-800 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+ <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+ <div className="flex items-center justify-between mb-4">
+ <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+ {purchaseOrder ? 'Edit Purchase Order' : 'New Purchase Order'}
+ </h3>
+ <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
+ <XMarkIcon className="h-6 w-6" />
+ </button>
+ </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Site Supervisor Info Banner */}
-              {construction?.site_supervisor_name && (
-                <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg p-4">
-                  <div className="flex">
-                    <UserIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400 mr-2 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-indigo-900 dark:text-indigo-200 mb-1">
-                        Site Supervisor: {construction.site_supervisor_name}
-                      </h4>
-                      <div className="text-sm text-indigo-700 dark:text-indigo-300 space-y-0.5">
-                        {construction.site_supervisor_email && (
-                          <div>Email: {construction.site_supervisor_email}</div>
-                        )}
-                        {construction.site_supervisor_phone && (
-                          <div>Phone: {construction.site_supervisor_phone}</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+ <form onSubmit={handleSubmit} className="space-y-6">
+ {/* Site Supervisor Info Banner */}
+ {construction?.site_supervisor_name && (
+ <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 p-4">
+ <div className="flex">
+ <UserIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400 mr-2 flex-shrink-0" />
+ <div className="flex-1">
+ <h4 className="text-sm font-medium text-indigo-900 dark:text-indigo-200 mb-1">
+ Site Supervisor: {construction.site_supervisor_name}
+ </h4>
+ <div className="text-sm text-indigo-700 dark:text-indigo-300 space-y-0.5">
+ {construction.site_supervisor_email && (
+ <div>Email: {construction.site_supervisor_email}</div>
+ )}
+ {construction.site_supervisor_phone && (
+ <div>Phone: {construction.site_supervisor_phone}</div>
+ )}
+ </div>
+ </div>
+ </div>
+ </div>
+ )}
 
-              {/* Smart Lookup Banner */}
-              {lookupWarnings.length > 0 && (
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
-                  <div className="flex">
-                    <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
-                        Smart Lookup Warnings
-                      </h4>
-                      <ul className="text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside">
-                        {lookupWarnings.map((warning, idx) => (
-                          <li key={idx}>{warning}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
+ {/* Smart Lookup Banner */}
+ {lookupWarnings.length > 0 && (
+ <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 p-4">
+ <div className="flex">
+ <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0" />
+ <div className="flex-1">
+ <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+ Smart Lookup Warnings
+ </h4>
+ <ul className="text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside">
+ {lookupWarnings.map((warning, idx) => (
+ <li key={idx}>{warning}</li>
+ ))}
+ </ul>
+ </div>
+ </div>
+ </div>
+ )}
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Category
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => handleChange('category', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
-                  >
-                    <option value="">Select Category</option>
-                    <option value="plumbing">Plumbing</option>
-                    <option value="electrical">Electrical</option>
-                    <option value="carpentry">Carpentry</option>
-                    <option value="painting">Painting</option>
-                    <option value="roofing">Roofing</option>
-                    <option value="concrete">Concrete</option>
-                    <option value="landscaping">Landscaping</option>
-                    <option value="hvac">HVAC</option>
-                    <option value="materials">Materials</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
+ <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+ <div>
+ <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+ Category
+ </label>
+ <select
+ value={formData.category}
+ onChange={(e) => handleChange('category', e.target.value)}
+ className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+ >
+ <option value="">Select Category</option>
+ <option value="plumbing">Plumbing</option>
+ <option value="electrical">Electrical</option>
+ <option value="carpentry">Carpentry</option>
+ <option value="painting">Painting</option>
+ <option value="roofing">Roofing</option>
+ <option value="concrete">Concrete</option>
+ <option value="landscaping">Landscaping</option>
+ <option value="hvac">HVAC</option>
+ <option value="materials">Materials</option>
+ <option value="other">Other</option>
+ </select>
+ </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Supplier
-                  </label>
-                  <select
-                    value={formData.supplier_id}
-                    onChange={(e) => handleChange('supplier_id', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
-                  >
-                    <option value="">Select Supplier</option>
-                    {suppliers?.map(supplier => (
-                      <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
-                    ))}
-                  </select>
-                </div>
+ <div>
+ <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+ Supplier
+ </label>
+ <select
+ value={formData.supplier_id}
+ onChange={(e) => handleChange('supplier_id', e.target.value)}
+ className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+ >
+ <option value="">Select Supplier</option>
+ {suppliers?.map(supplier => (
+ <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+ ))}
+ </select>
+ </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Required Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.required_date || ''}
-                    onChange={(e) => handleChange('required_date', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
-                  />
-                </div>
-              </div>
+ <div>
+ <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+ Required Date
+ </label>
+ <input
+ type="date"
+ value={formData.required_date || ''}
+ onChange={(e) => handleChange('required_date', e.target.value)}
+ className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+ />
+ </div>
+ </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Description
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleSmartLookup}
-                    disabled={smartLookupLoading}
-                    className="inline-flex items-center px-3 py-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 disabled:opacity-50"
-                  >
-                    <SparklesIcon className="h-4 w-4 mr-1" />
-                    {smartLookupLoading ? 'Looking up...' : 'Smart Fill'}
-                  </button>
-                </div>
-                <textarea
-                  value={formData.description || ''}
-                  onChange={(e) => handleChange('description', e.target.value)}
-                  rows={2}
-                  placeholder="e.g., Water Tank, Foundation Concrete, Electrical Rough-In"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
-                />
-              </div>
+ <div>
+ <div className="flex items-center justify-between mb-2">
+ <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+ Description
+ </label>
+ <button
+ type="button"
+ onClick={handleSmartLookup}
+ disabled={smartLookupLoading}
+ className="inline-flex items-center px-3 py-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 disabled:opacity-50"
+ >
+ <SparklesIcon className="h-4 w-4 mr-1" />
+ {smartLookupLoading ? 'Looking up...' : 'Smart Fill'}
+ </button>
+ </div>
+ <textarea
+ value={formData.description || ''}
+ onChange={(e) => handleChange('description', e.target.value)}
+ rows={2}
+ placeholder="e.g., Water Tank, Foundation Concrete, Electrical Rough-In"
+ className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+ />
+ </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Line Items
-                  </label>
-                  <button
-                    type="button"
-                    onClick={addLineItem}
-                    className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
-                  >
-                    + Add Item
-                  </button>
-                </div>
+ <div>
+ <div className="flex items-center justify-between mb-2">
+ <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+ Line Items
+ </label>
+ <button
+ type="button"
+ onClick={addLineItem}
+ className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+ >
+ + Add Item
+ </button>
+ </div>
 
-                <div className="space-y-2">
-                  {formData.line_items_attributes.map((item, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Description"
-                        value={item.description}
-                        onChange={(e) => handleLineItemChange(index, 'description', e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white text-sm"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Qty"
-                        value={item.quantity}
-                        onChange={(e) => handleLineItemChange(index, 'quantity', e.target.value)}
-                        className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white text-sm"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Price"
-                        value={item.unit_price}
-                        onChange={(e) => handleLineItemChange(index, 'unit_price', e.target.value)}
-                        step="0.01"
-                        className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white text-sm"
-                      />
-                      {formData.line_items_attributes.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeLineItem(index)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <XMarkIcon className="h-5 w-5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+ <div className="space-y-2">
+ {formData.line_items_attributes.map((item, index) => (
+ <div key={index} className="flex gap-2">
+ <input
+ type="text"
+ placeholder="Description"
+ value={item.description}
+ onChange={(e) => handleLineItemChange(index, 'description', e.target.value)}
+ className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white text-sm"
+ />
+ <input
+ type="number"
+ placeholder="Qty"
+ value={item.quantity}
+ onChange={(e) => handleLineItemChange(index, 'quantity', e.target.value)}
+ className="w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white text-sm"
+ />
+ <input
+ type="number"
+ placeholder="Price"
+ value={item.unit_price}
+ onChange={(e) => handleLineItemChange(index, 'unit_price', e.target.value)}
+ step="0.01"
+ className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white text-sm"
+ />
+ {formData.line_items_attributes.length > 1 && (
+ <button
+ type="button"
+ onClick={() => removeLineItem(index)}
+ className="text-red-600 hover:text-red-700"
+ >
+ <XMarkIcon className="h-5 w-5" />
+ </button>
+ )}
+ </div>
+ ))}
+ </div>
+ </div>
 
-              <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  disabled={saving}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : 'Save Purchase Order'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+ <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+ <button
+ type="button"
+ onClick={onClose}
+ disabled={saving}
+ className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+ >
+ Cancel
+ </button>
+ <button
+ type="submit"
+ disabled={saving}
+ className="px-4 py-2 border border-transparent text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+ >
+ {saving ? 'Saving...' : 'Save Purchase Order'}
+ </button>
+ </div>
+ </form>
+ </div>
+ </div>
+ </div>
+ </div>
+ )
 }
