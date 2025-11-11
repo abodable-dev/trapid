@@ -148,6 +148,7 @@ module Api
           po_required: row.po_required,
           create_po_on_job_start: row.create_po_on_job_start,
           price_book_item_ids: row.price_book_item_ids,
+          documentation_category_ids: row.documentation_category_ids,
           critical_po: row.critical_po,
           tags: row.tags,
           require_photo: row.require_photo,

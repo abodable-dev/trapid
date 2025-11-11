@@ -59,12 +59,24 @@ module Api
         # If this contact is a supplier, include their supplier-specific data
         contact_json = @contact.as_json(
           only: [
-            :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
+            :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :fax_phone, :website,
             :tax_number, :xero_id, :sync_with_xero, :last_synced_at, :xero_sync_error,
             :sys_type_id, :deleted, :parent_id, :parent,
             :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
-            :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas
+            :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas,
+            # Xero fields
+            :bank_bsb, :bank_account_number, :bank_account_name,
+            :default_purchase_account, :default_sales_account,
+            :bill_due_day, :bill_due_type, :sales_due_day, :sales_due_type,
+            :xero_contact_number, :xero_contact_status, :xero_account_number, :company_number, :default_discount,
+            :accounts_receivable_outstanding, :accounts_receivable_overdue,
+            :accounts_payable_outstanding, :accounts_payable_overdue
           ],
+          include: {
+            contact_persons: { only: [:id, :first_name, :last_name, :email, :include_in_emails, :is_primary, :xero_contact_person_id] },
+            contact_addresses: { only: [:id, :address_type, :line1, :line2, :line3, :line4, :city, :region, :postal_code, :country, :attention_to, :is_primary] },
+            contact_groups: { only: [:id, :name, :status, :xero_contact_group_id] }
+          },
           methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
         )
 
@@ -930,6 +942,7 @@ module Api
           :email,
           :mobile_phone,
           :office_phone,
+          :fax_phone,
           :website,
           :tax_number,
           :xero_id,
@@ -951,8 +964,27 @@ module Api
           :supplier_code,
           :address,
           :notes,
+          # Xero sync fields
+          :bank_bsb,
+          :bank_account_number,
+          :bank_account_name,
+          :default_purchase_account,
+          :default_sales_account,
+          :bill_due_day,
+          :bill_due_type,
+          :sales_due_day,
+          :sales_due_type,
+          :xero_contact_number,
+          :xero_contact_status,
+          :xero_account_number,
+          :company_number,
+          :default_discount,
           contact_types: [],
-          lgas: []
+          lgas: [],
+          # Nested attributes for contact persons
+          contact_persons_attributes: [:id, :first_name, :last_name, :email, :include_in_emails, :is_primary, :_destroy],
+          # Nested attributes for contact addresses
+          contact_addresses_attributes: [:id, :address_type, :line1, :line2, :line3, :line4, :city, :region, :postal_code, :country, :attention_to, :is_primary, :_destroy]
         )
       end
     end

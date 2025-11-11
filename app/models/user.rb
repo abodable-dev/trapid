@@ -2,6 +2,7 @@ class User < ApplicationRecord
   has_secure_password
 
   has_many :grok_plans, dependent: :destroy
+  has_many :chat_messages, dependent: :destroy
 
   # Role constants
   ROLES = %w[user admin product_owner estimator supervisor builder].freeze
