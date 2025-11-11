@@ -89,18 +89,25 @@ module Api
 
           # Combine all three and get unique items
           all_item_ids = (items_as_supplier.pluck(:id) + items_as_default_supplier.pluck(:id) + items_with_price_history.pluck(:id)).uniq
-          all_items = PricebookItem.where(id: all_item_ids).order(:item_code)
 
-          contact_json[:pricebook_items_count] = all_items.count
+          # Eager load price_histories to avoid N+1 queries
+          all_items = PricebookItem.where(id: all_item_ids)
+            .includes(:price_histories)
+            .order(:item_code)
+
+          contact_json[:pricebook_items_count] = all_items.size # Use size instead of count to avoid extra query
           contact_json[:purchase_orders_count] = @contact.purchase_orders.count
 
           # Build items with price histories specific to this contact
           contact_json[:pricebook_items] = all_items.map do |item|
-            # Get price histories for this contact only
+            # Filter preloaded price histories for this contact (no N+1)
             price_histories = item.price_histories
-              .where(supplier_id: @contact.id)
-              .order(date_effective: :desc, created_at: :desc)
-              .as_json(only: [:id, :old_price, :new_price, :date_effective, :lga, :change_reason, :user_name, :created_at])
+              .select { |ph| ph.supplier_id == @contact.id }
+              .sort_by { |ph| [ph.date_effective, ph.created_at] }
+              .reverse
+              .map do |ph|
+                ph.as_json(only: [:id, :old_price, :new_price, :date_effective, :lga, :change_reason, :user_name, :created_at])
+              end
 
             item.as_json(
               only: [:id, :item_code, :item_name, :category, :current_price, :unit, :price_last_updated_at]

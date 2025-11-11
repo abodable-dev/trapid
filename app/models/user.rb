@@ -9,7 +9,8 @@ class User < ApplicationRecord
 
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :name, presence: true
-  validates :password, length: { minimum: 6 }, if: -> { new_record? || !password.nil? }
+  validates :password, length: { minimum: 12 }, if: -> { new_record? || !password.nil? }
+  validate :password_complexity, if: -> { new_record? || !password.nil? }
   validates :role, inclusion: { in: ROLES }
 
   # Role helper methods
@@ -52,5 +53,31 @@ class User < ApplicationRecord
 
   def can_view_builder_tasks?
     admin? || builder?
+  end
+
+  private
+
+  def password_complexity
+    return if password.blank?
+
+    # Check for at least one uppercase letter
+    unless password.match?(/[A-Z]/)
+      errors.add :password, 'must contain at least one uppercase letter'
+    end
+
+    # Check for at least one lowercase letter
+    unless password.match?(/[a-z]/)
+      errors.add :password, 'must contain at least one lowercase letter'
+    end
+
+    # Check for at least one digit
+    unless password.match?(/\d/)
+      errors.add :password, 'must contain at least one number'
+    end
+
+    # Check for at least one special character
+    unless password.match?(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/)
+      errors.add :password, 'must contain at least one special character'
+    end
   end
 end
