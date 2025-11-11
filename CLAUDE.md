@@ -16,51 +16,42 @@
 ### Branch-Based Deployment Rules
 
 **Two deployment environments:**
-- **Production**: Deploy from `main` branch only
-- **Staging**: Deploy from `rob` branch (or other development branches)
+- **Production**: Deploy from `main` branch only (requires authorization)
+- **Staging**: Deploy from `rob` branch (requires authorization)
 
-Before deploying, the deploy-manager agent MUST:
+**IMPORTANT: Claude Code does NOT have deployment authority**
+
+When user requests deployment:
 
 1. **Check current branch:**
    ```bash
    git branch --show-current
    ```
 
-2. **Determine deployment target:**
-   - ✅ If on `main` → Deploy to **PRODUCTION** (Heroku production app)
-   - ✅ If on `rob` or other branch → Deploy to **STAGING** (always allowed)
+2. **Commit and push changes** to the current branch
 
-3. **Deploy workflow:**
+3. **Inform user that changes are ready:**
+   - ✅ If on `main` → "Changes committed and pushed to `main`. Ready for **PRODUCTION** deployment when you're ready."
+   - ✅ If on `rob` → "Changes committed and pushed to `rob`. Ready for **STAGING** deployment when you're ready."
 
-   **Production (from `main` branch):**
-   - Backend: `git subtree push --prefix backend heroku main`
-   - Frontend: Automatic via Vercel when pushed to `main`
-
-   **Staging (from `rob` or other branches):**
-   - Backend: `git push heroku-staging rob:main` (or appropriate staging remote)
-   - Frontend: Automatic via Vercel preview deployment
-   - ALWAYS deploy to staging when on development branches
+4. **Do NOT attempt to deploy** - user will handle deployment separately
 
 ### Development Workflow
 
 **`rob` branch** is for active development:
 - Rob works on this branch in Claude Code Web
-- **Always deploy to staging** for testing before merging to `main`
+- Changes are committed and pushed to GitHub
+- User deploys to staging for testing
 - Changes should be reviewed via PR before merging to `main`
-- Only deploy to production after merging to `main`
+- User deploys to production after merging to `main`
 
-### Staging vs Production
+### Commit and Push Only
 
-**When to deploy to staging:**
-- Testing new features before production
-- Verifying bug fixes work correctly
-- Validating integration changes
-- Any work on development branches
-
-**When to deploy to production:**
-- After PR review and merge to `main`
-- Only from `main` branch
-- After verifying changes work in staging
+**What Claude Code should do:**
+- Commit changes with descriptive messages
+- Push to the appropriate branch (rob or main)
+- Inform user that changes are ready for deployment
+- **Never attempt actual deployment commands**
 
 ## Code Review Standards
 
@@ -98,11 +89,10 @@ If UI/UX doesn't match guidelines:
 - Works with other agents for fixes
 
 **deploy-manager agent:**
-- Deployment to Heroku (backend - production and staging)
-- Deployment to Vercel (frontend - production and staging)
-- Environment configuration
-- **MUST check branch to determine staging vs production**
-- Always allow staging deployments from development branches
+- Commit and push changes to appropriate branch
+- Inform user when changes are ready for deployment
+- **Does NOT have deployment authority**
+- User handles actual deployment to Heroku/Vercel
 
 **planning-collaborator agent:**
 - Feature brainstorming
