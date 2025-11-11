@@ -13,9 +13,11 @@
 
 ## Deployment Protocol
 
-### CRITICAL: Branch-Based Deployment Rules
+### Branch-Based Deployment Rules
 
-**ONLY deploy from `main` branch to production.**
+**Two deployment environments:**
+- **Production**: Deploy from `main` branch only
+- **Staging**: Deploy from `rob` branch (or other development branches)
 
 Before deploying, the deploy-manager agent MUST:
 
@@ -24,42 +26,41 @@ Before deploying, the deploy-manager agent MUST:
    git branch --show-current
    ```
 
-2. **Verify branch is `main`:**
-   - ✅ If on `main` → Proceed with deployment
-   - ❌ If on ANY other branch (including `rob`) → STOP and inform user
+2. **Determine deployment target:**
+   - ✅ If on `main` → Deploy to **PRODUCTION** (Heroku production app)
+   - ✅ If on `rob` or other branch → Deploy to **STAGING** (always allowed)
 
 3. **Deploy workflow:**
+
+   **Production (from `main` branch):**
    - Backend: `git subtree push --prefix backend heroku main`
    - Frontend: Automatic via Vercel when pushed to `main`
 
-### Development Branch Protection
+   **Staging (from `rob` or other branches):**
+   - Backend: `git push heroku-staging rob:main` (or appropriate staging remote)
+   - Frontend: Automatic via Vercel preview deployment
+   - ALWAYS deploy to staging when on development branches
 
-**`rob` branch** is for development only:
+### Development Workflow
+
+**`rob` branch** is for active development:
 - Rob works on this branch in Claude Code Web
-- Changes must be reviewed via PR before merging to `main`
-- **NO direct deployments from `rob` branch**
-- Deploy-manager should refuse deployment requests when not on `main`
+- **Always deploy to staging** for testing before merging to `main`
+- Changes should be reviewed via PR before merging to `main`
+- Only deploy to production after merging to `main`
 
-### Exception Handling
+### Staging vs Production
 
-If a user requests deployment while NOT on `main` branch:
+**When to deploy to staging:**
+- Testing new features before production
+- Verifying bug fixes work correctly
+- Validating integration changes
+- Any work on development branches
 
-```
-⚠️ DEPLOYMENT BLOCKED
-
-Current branch: [branch_name]
-Production deployments are only allowed from the `main` branch.
-
-To deploy these changes:
-1. Create a Pull Request to merge `[branch_name]` → `main`
-2. Review changes for UI/UX consistency
-3. Merge PR to `main`
-4. Switch to `main` branch: git checkout main
-5. Pull latest: git pull origin main
-6. Request deployment again
-
-Would you like me to help create a Pull Request?
-```
+**When to deploy to production:**
+- After PR review and merge to `main`
+- Only from `main` branch
+- After verifying changes work in staging
 
 ## Code Review Standards
 
@@ -97,10 +98,11 @@ If UI/UX doesn't match guidelines:
 - Works with other agents for fixes
 
 **deploy-manager agent:**
-- Deployment to Heroku (backend)
-- Deployment to Vercel (frontend)
+- Deployment to Heroku (backend - production and staging)
+- Deployment to Vercel (frontend - production and staging)
 - Environment configuration
-- **MUST check branch before deploying**
+- **MUST check branch to determine staging vs production**
+- Always allow staging deployments from development branches
 
 **planning-collaborator agent:**
 - Feature brainstorming
