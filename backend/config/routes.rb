@@ -41,6 +41,10 @@ Rails.application.routes.draw do
 
       # Construction jobs management
       resources :constructions do
+        member do
+          get :saved_messages
+        end
+
         # Schedule tasks (nested under constructions)
         resources :schedule_tasks, only: [:index, :create] do
           collection do
@@ -57,6 +61,7 @@ Rails.application.routes.draw do
             post :validate
           end
         end
+
       end
 
       # Schedule tasks (non-nested routes)
@@ -150,6 +155,18 @@ Rails.application.routes.draw do
         end
       end
 
+      # Chat messages
+      resources :chat_messages, only: [:index, :create, :destroy] do
+        collection do
+          get :unread_count
+          post :mark_as_read
+          post :save_conversation_to_job
+        end
+        member do
+          post :save_to_job
+        end
+      end
+
       # Users management
       resources :users, only: [:index, :show]
 
@@ -168,6 +185,13 @@ Rails.application.routes.draw do
 
       # Task Templates for Schedule Master
       resources :task_templates
+
+      # Documentation Categories (Global)
+      resources :documentation_categories do
+        collection do
+          post :reorder
+        end
+      end
 
       # Schedule Templates for Schedule Master
       resources :schedule_templates do

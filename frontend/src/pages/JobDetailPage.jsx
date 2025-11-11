@@ -22,6 +22,7 @@ import EstimatesTab from '../components/estimates/EstimatesTab'
 import ScheduleMasterTab from '../components/schedule-master/ScheduleMasterTab'
 import DocumentationTab from '../components/documentation/DocumentationTab'
 import SetupGuideModal from '../components/documentation/SetupGuideModal'
+import JobMessagesTab from '../components/messages/JobMessagesTab'
 
 const tabs = [
   { name: 'Overview' },
@@ -31,6 +32,7 @@ const tabs = [
   { name: 'Budget' },
   { name: 'Schedule Master' },
   { name: 'Documents' },
+  { name: 'Messages' },
   { name: 'Team' },
   { name: 'Settings' },
   { name: 'Documentation' },
@@ -669,6 +671,10 @@ export default function JobDetailPage() {
 
           {activeTab === 'Documents' && (
             <JobDocumentsTab jobId={id} jobTitle={job?.title} />
+          )}
+
+          {activeTab === 'Messages' && (
+            <JobMessagesTab constructionId={id} />
           )}
 
           {activeTab === 'Team' && (

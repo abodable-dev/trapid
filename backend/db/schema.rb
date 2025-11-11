@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_10_234030) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_025313) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -41,6 +41,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_234030) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "chat_messages", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "project_id"
+    t.text "content", null: false
+    t.string "channel", default: "general", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "recipient_user_id"
+    t.bigint "construction_id"
+    t.boolean "saved_to_job", default: false
+    t.index ["channel", "created_at"], name: "index_chat_messages_on_channel_and_created_at"
+    t.index ["construction_id"], name: "index_chat_messages_on_construction_id"
+    t.index ["project_id", "created_at"], name: "index_chat_messages_on_project_id_and_created_at"
+    t.index ["project_id"], name: "index_chat_messages_on_project_id"
+    t.index ["user_id"], name: "index_chat_messages_on_user_id"
   end
 
   create_table "columns", force: :cascade do |t|
@@ -124,6 +141,63 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_234030) do
     t.index ["performed_by_type", "performed_by_id"], name: "index_contact_activities_on_performed_by"
   end
 
+  create_table "contact_addresses", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.string "address_type"
+    t.string "line1"
+    t.string "line2"
+    t.string "line3"
+    t.string "line4"
+    t.string "city"
+    t.string "region"
+    t.string "postal_code"
+    t.string "country"
+    t.string "attention_to"
+    t.boolean "is_primary", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["address_type"], name: "index_contact_addresses_on_address_type"
+    t.index ["contact_id", "address_type"], name: "index_contact_addresses_on_contact_id_and_address_type"
+    t.index ["contact_id", "is_primary"], name: "index_contact_addresses_on_contact_id_and_is_primary"
+    t.index ["contact_id"], name: "index_contact_addresses_on_contact_id"
+  end
+
+  create_table "contact_group_memberships", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.bigint "contact_group_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_group_id"], name: "index_contact_group_memberships_on_contact_group_id"
+    t.index ["contact_id"], name: "index_contact_group_memberships_on_contact_id"
+  end
+
+  create_table "contact_groups", force: :cascade do |t|
+    t.string "xero_contact_group_id", null: false
+    t.string "name", null: false
+    t.string "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_contact_groups_on_name"
+    t.index ["status"], name: "index_contact_groups_on_status"
+    t.index ["xero_contact_group_id"], name: "index_contact_groups_on_xero_contact_group_id", unique: true
+  end
+
+  create_table "contact_persons", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.string "first_name"
+    t.string "last_name"
+    t.string "email"
+    t.boolean "include_in_emails", default: true
+    t.boolean "is_primary", default: false
+    t.string "xero_contact_person_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id", "is_primary"], name: "index_contact_persons_on_contact_id_and_is_primary"
+    t.index ["contact_id"], name: "index_contact_persons_on_contact_id"
+    t.index ["email"], name: "index_contact_persons_on_email"
+    t.index ["xero_contact_person_id"], name: "index_contact_persons_on_xero_contact_person_id"
+  end
+
   create_table "contacts", force: :cascade do |t|
     t.integer "sys_type_id"
     t.boolean "deleted"
@@ -164,11 +238,26 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_234030) do
     t.string "default_purchase_account"
     t.integer "bill_due_day"
     t.string "bill_due_type"
+    t.string "xero_contact_number"
+    t.string "xero_contact_status"
+    t.string "xero_account_number"
+    t.string "company_number"
+    t.string "fax_phone"
+    t.string "default_sales_account"
+    t.decimal "default_discount", precision: 5, scale: 2
+    t.integer "sales_due_day"
+    t.string "sales_due_type"
+    t.decimal "accounts_receivable_outstanding", precision: 15, scale: 2
+    t.decimal "accounts_receivable_overdue", precision: 15, scale: 2
+    t.decimal "accounts_payable_outstanding", precision: 15, scale: 2
+    t.decimal "accounts_payable_overdue", precision: 15, scale: 2
     t.index ["contact_types"], name: "index_contacts_on_contact_types", using: :gin
     t.index ["is_active"], name: "index_contacts_on_is_active"
     t.index ["primary_contact_type"], name: "index_contacts_on_primary_contact_type"
     t.index ["rating"], name: "index_contacts_on_rating"
     t.index ["supplier_code"], name: "index_contacts_on_supplier_code", unique: true, where: "(supplier_code IS NOT NULL)"
+    t.index ["xero_contact_number"], name: "index_contacts_on_xero_contact_number"
+    t.index ["xero_contact_status"], name: "index_contacts_on_xero_contact_status"
   end
 
   create_table "designs", force: :cascade do |t|
@@ -199,6 +288,32 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_234030) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["construction_id"], name: "index_document_tasks_on_construction_id"
+  end
+
+  create_table "documentation_categories", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "icon"
+    t.string "color"
+    t.text "description"
+    t.integer "sequence_order", default: 0
+    t.boolean "is_default", default: false
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_documentation_categories_on_name", unique: true
+  end
+
+  create_table "emails", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.string "from_email"
+    t.string "to_email"
+    t.string "subject"
+    t.text "body"
+    t.datetime "received_at"
+    t.text "raw_email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id"], name: "index_emails_on_construction_id"
   end
 
   create_table "estimate_line_items", force: :cascade do |t|
@@ -621,6 +736,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_234030) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "assigned_role"
+    t.integer "documentation_category_ids", default: [], array: true
+    t.index ["documentation_category_ids"], name: "index_schedule_template_rows_on_documentation_category_ids", using: :gin
     t.index ["schedule_template_id", "sequence_order"], name: "idx_on_schedule_template_id_sequence_order_1bea5d762b"
     t.index ["schedule_template_id"], name: "index_schedule_template_rows_on_schedule_template_id"
     t.index ["sequence_order"], name: "index_schedule_template_rows_on_sequence_order"
@@ -1421,6 +1538,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_234030) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "role", default: "user", null: false
+    t.datetime "last_chat_read_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["role"], name: "index_users_on_role"
   end
@@ -1456,10 +1574,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_234030) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "chat_messages", "constructions"
+  add_foreign_key "chat_messages", "projects"
+  add_foreign_key "chat_messages", "users"
   add_foreign_key "columns", "tables"
   add_foreign_key "constructions", "designs"
   add_foreign_key "contact_activities", "contacts"
+  add_foreign_key "contact_addresses", "contacts"
+  add_foreign_key "contact_group_memberships", "contact_groups"
+  add_foreign_key "contact_group_memberships", "contacts"
+  add_foreign_key "contact_persons", "contacts"
   add_foreign_key "document_tasks", "constructions"
+  add_foreign_key "emails", "constructions"
   add_foreign_key "estimate_line_items", "estimates"
   add_foreign_key "estimate_reviews", "estimates"
   add_foreign_key "estimates", "constructions"

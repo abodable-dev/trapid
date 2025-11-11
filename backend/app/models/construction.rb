@@ -5,6 +5,9 @@ class Construction < ApplicationRecord
   has_one :project, dependent: :destroy
   has_one :one_drive_credential, dependent: :destroy
   belongs_to :design, optional: true
+  has_many :chat_messages, dependent: :nullify
+  has_many :documentation_tabs, dependent: :destroy
+  has_many :emails, dependent: :nullify
 
   # Enums
   enum :onedrive_folder_creation_status, {
