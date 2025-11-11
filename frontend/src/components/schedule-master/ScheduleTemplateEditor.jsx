@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   PlusIcon, TrashIcon, PencilIcon, DocumentDuplicateIcon,
   CheckIcon, ArrowUpIcon, ArrowDownIcon, InformationCircleIcon,
-  MagnifyingGlassIcon, XMarkIcon, Cog6ToothIcon
+  MagnifyingGlassIcon, XMarkIcon, Cog6ToothIcon, EyeIcon, EyeSlashIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import Toast from '../Toast'
+import PredecessorEditor from './PredecessorEditor'
+import PriceBookItemsModal from './PriceBookItemsModal'
 
 /**
  * Schedule Template Editor - Full 14-column grid interface for creating/editing schedule templates
@@ -69,6 +71,14 @@ export default function ScheduleTemplateEditor() {
   const [templateForm, setTemplateForm] = useState({ name: '', description: '', is_default: false })
   const [searchQuery, setSearchQuery] = useState('')
   const [showColumnSettings, setShowColumnSettings] = useState(false)
+  const [columnFilters, setColumnFilters] = useState({})
+
+  // Column resize state
+  const [resizingColumn, setResizingColumn] = useState(null)
+  const [resizeStartX, setResizeStartX] = useState(0)
+  const [resizeStartWidth, setResizeStartWidth] = useState(0)
+
+  // Column drag/reorder state
   const [draggedColumn, setDraggedColumn] = useState(null)
 
   // Column configuration with localStorage persistence
@@ -285,23 +295,15 @@ export default function ScheduleTemplateEditor() {
     localStorage.setItem('scheduleTemplateColumnConfig', JSON.stringify(newConfig))
   }
 
-  const handleColumnWidthChange = (columnKey, width) => {
-    const newConfig = {
-      ...columnConfig,
-      [columnKey]: { ...columnConfig[columnKey], width: parseInt(width) || 50 }
-    }
-    setColumnConfig(newConfig)
-    localStorage.setItem('scheduleTemplateColumnConfig', JSON.stringify(newConfig))
-  }
-
   const handleResetColumns = () => {
     setColumnConfig(defaultColumnConfig)
     localStorage.removeItem('scheduleTemplateColumnConfig')
   }
 
+  // Column drag/reorder handlers
   const handleDragStart = (e, columnKey) => {
     // Don't start drag if clicking on interactive elements
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL' || e.target.tagName === 'BUTTON') {
       e.preventDefault()
       return
     }
@@ -353,6 +355,47 @@ export default function ScheduleTemplateEditor() {
     setDraggedColumn(null)
   }
 
+  // Column resize handlers (like PriceBooksPage)
+  const handleResizeStart = (e, columnKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingColumn(columnKey)
+    setResizeStartX(e.clientX)
+    setResizeStartWidth(columnConfig[columnKey].width)
+  }
+
+  const handleResizeMove = useCallback((e) => {
+    if (!resizingColumn) return
+    const diff = e.clientX - resizeStartX
+    const newWidth = Math.max(50, resizeStartWidth + diff)
+
+    const newConfig = {
+      ...columnConfig,
+      [resizingColumn]: { ...columnConfig[resizingColumn], width: newWidth }
+    }
+    setColumnConfig(newConfig)
+  }, [resizingColumn, resizeStartX, resizeStartWidth, columnConfig])
+
+  const handleResizeEnd = useCallback(() => {
+    if (resizingColumn) {
+      // Save to localStorage when resize ends
+      localStorage.setItem('scheduleTemplateColumnConfig', JSON.stringify(columnConfig))
+      setResizingColumn(null)
+    }
+  }, [resizingColumn, columnConfig])
+
+  // Add mouse event listeners for column resizing
+  useEffect(() => {
+    if (resizingColumn) {
+      document.addEventListener('mousemove', handleResizeMove)
+      document.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        document.removeEventListener('mousemove', handleResizeMove)
+        document.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [resizingColumn, handleResizeMove, handleResizeEnd])
+
   // Get sorted column entries by order
   const getSortedColumns = () => {
     return Object.entries(columnConfig)
@@ -377,16 +420,54 @@ export default function ScheduleTemplateEditor() {
     subtasks: "Automatically create subtasks when this task starts. Useful for breaking down complex tasks into smaller steps."
   }
 
-  // Filter rows based on search query
+  // Handle column filter change
+  const handleColumnFilterChange = (columnKey, value) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnKey]: value
+    }))
+  }
+
+  // Filter rows based on search query and column filters
   const filteredRows = rows.filter(row => {
-    if (!searchQuery.trim()) return true
-    const query = searchQuery.toLowerCase()
-    return (
-      row.name.toLowerCase().includes(query) ||
-      (row.supplier_name && row.supplier_name.toLowerCase().includes(query)) ||
-      (row.assigned_role && row.assigned_role.toLowerCase().includes(query)) ||
-      (row.tags && row.tags.some(tag => tag.toLowerCase().includes(query)))
-    )
+    // Global search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      const matchesGlobal = (
+        row.name.toLowerCase().includes(query) ||
+        (row.supplier_name && row.supplier_name.toLowerCase().includes(query)) ||
+        (row.assigned_role && row.assigned_role.toLowerCase().includes(query)) ||
+        (row.tags && row.tags.some(tag => tag.toLowerCase().includes(query)))
+      )
+      if (!matchesGlobal) return false
+    }
+
+    // Column-specific filters
+    for (const [columnKey, filterValue] of Object.entries(columnFilters)) {
+      if (!filterValue || !filterValue.trim()) continue
+
+      const filter = filterValue.toLowerCase()
+      let matches = false
+
+      switch (columnKey) {
+        case 'taskName':
+          matches = row.name.toLowerCase().includes(filter)
+          break
+        case 'supplierGroup':
+          matches = (row.supplier_name && row.supplier_name.toLowerCase().includes(filter)) ||
+                   (row.assigned_role && row.assigned_role.toLowerCase().includes(filter))
+          break
+        case 'tags':
+          matches = row.tags && row.tags.some(tag => tag.toLowerCase().includes(filter))
+          break
+        default:
+          matches = true
+      }
+
+      if (!matches) return false
+    }
+
+    return true
   })
 
   return (
@@ -482,16 +563,16 @@ export default function ScheduleTemplateEditor() {
             </button>
           </div>
 
-          {/* Column Settings Panel */}
+          {/* Column Settings Panel - Simple toggle interface */}
           {showColumnSettings && (
             <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                    Column Configuration
+                    Column Visibility
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Drag columns to reorder • Check to show/hide • Adjust width
+                    Drag to reorder • Toggle to show/hide • Resize by dragging column edges
                   </p>
                 </div>
                 <button
@@ -501,7 +582,7 @@ export default function ScheduleTemplateEditor() {
                   Reset to Defaults
                 </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {getSortedColumns().map(([key, config]) => {
                   // Don't show sequence and actions in settings (always visible)
                   if (key === 'sequence' || key === 'actions') return null
@@ -515,49 +596,54 @@ export default function ScheduleTemplateEditor() {
                       onDragOver={handleDragOver}
                       onDragEnter={handleDragEnter}
                       onDrop={(e) => handleDrop(e, key)}
-                      className={`flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded border-2 transition-all cursor-move ${
+                      className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all bg-white dark:bg-gray-800 cursor-move ${
                         draggedColumn === key
-                          ? 'border-indigo-500 opacity-50 scale-95'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'
+                          ? 'opacity-50 scale-95 border-2 border-indigo-500'
+                          : 'border-2 border-transparent'
                       }`}
                     >
-                      <div className="flex items-center gap-2 flex-shrink-0 pointer-events-none">
-                        <svg
-                          className="h-5 w-5 text-gray-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                        </svg>
-                        <input
-                          type="checkbox"
-                          checked={config.visible}
-                          onChange={(e) => handleColumnVisibilityChange(key, e.target.checked)}
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 pointer-events-auto"
-                          onClick={(e) => e.stopPropagation()}
+                      {/* Drag handle icon */}
+                      <svg
+                        className="h-5 w-5 text-gray-400 flex-shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                      </svg>
+
+                      {/* Eye icon */}
+                      <div className="flex-shrink-0">
+                        {config.visible ? (
+                          <EyeIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                        ) : (
+                          <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                        )}
+                      </div>
+
+                      {/* Column label */}
+                      <span className="text-sm font-medium text-gray-900 dark:text-white flex-1 min-w-0">
+                        {config.label}
+                      </span>
+
+                      {/* Toggle switch */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleColumnVisibilityChange(key, !config.visible)
+                        }}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex-shrink-0 ${
+                          config.visible
+                            ? 'bg-indigo-600'
+                            : 'bg-gray-200 dark:bg-gray-700'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            config.visible ? 'translate-x-6' : 'translate-x-1'
+                          }`}
                         />
-                      </div>
-                      <div className="flex-1 min-w-0 pointer-events-none">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {config.label}
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min="50"
-                            max="500"
-                            step="10"
-                            value={config.width}
-                            onChange={(e) => handleColumnWidthChange(key, e.target.value)}
-                            onFocus={(e) => e.target.select()}
-                            disabled={!config.visible}
-                            className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed pointer-events-auto"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <span className="text-xs text-gray-500 dark:text-gray-400">px</span>
-                        </div>
-                      </div>
+                      </button>
                     </div>
                   )
                 })}
@@ -591,6 +677,43 @@ export default function ScheduleTemplateEditor() {
                       ) : (
                         config.label
                       )}
+
+                      {/* Resize handle - draggable column width adjuster */}
+                      {key !== 'sequence' && key !== 'actions' && (
+                        <div
+                          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                          onMouseDown={(e) => handleResizeStart(e, key)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                    </th>
+                  )
+                })}
+              </tr>
+
+              {/* Filter row */}
+              <tr className="bg-gray-100 dark:bg-gray-800">
+                {getSortedColumns().map(([key, config]) => {
+                  if (!config.visible) return null
+
+                  // Determine if this column is filterable
+                  const isFilterable = ['taskName', 'supplierGroup', 'tags'].includes(key)
+
+                  return (
+                    <th
+                      key={`filter-${key}`}
+                      style={{ width: `${config.width}px`, minWidth: `${config.width}px` }}
+                      className="px-3 py-1.5 border-r border-gray-200 dark:border-gray-700"
+                    >
+                      {isFilterable ? (
+                        <input
+                          type="text"
+                          value={columnFilters[key] || ''}
+                          onChange={(e) => handleColumnFilterChange(key, e.target.value)}
+                          placeholder="Filter..."
+                          className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      ) : null}
                     </th>
                   )
                 })}
@@ -625,6 +748,7 @@ export default function ScheduleTemplateEditor() {
                     suppliers={suppliers}
                     columnConfig={columnConfig}
                     getSortedColumns={getSortedColumns}
+                    allRows={rows}
                     onUpdate={(updates) => handleUpdateRow(row.id, updates)}
                     onDelete={() => handleDeleteRow(row.id)}
                     onMoveUp={() => handleMoveRow(rows.findIndex(r => r.id === row.id), 'up')}
@@ -724,11 +848,13 @@ export default function ScheduleTemplateEditor() {
 
 // Individual row component
 function ScheduleTemplateRow({
-  row, index, suppliers, columnConfig, getSortedColumns,
+  row, index, suppliers, columnConfig, getSortedColumns, allRows,
   onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown
 }) {
   const [localName, setLocalName] = useState(row.name)
   const [updateTimeout, setUpdateTimeout] = useState(null)
+  const [showPredecessorEditor, setShowPredecessorEditor] = useState(false)
+  const [showPriceItemsModal, setShowPriceItemsModal] = useState(false)
 
   // Debounced update for text fields
   const handleTextChange = (field, value) => {
@@ -830,15 +956,16 @@ function ScheduleTemplateRow({
         )
 
       case 'predecessors':
+        // Clickable button to open predecessor editor modal
         return (
           <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
-            <input
-              type="text"
-              value={row.predecessor_display || 'None'}
-              readOnly
-              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm bg-gray-50 dark:bg-gray-800"
+            <button
+              onClick={() => setShowPredecessorEditor(true)}
+              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-left cursor-pointer"
               title="Click to edit predecessors"
-            />
+            >
+              {row.predecessor_display || 'None'}
+            </button>
           </td>
         )
 
@@ -869,8 +996,14 @@ function ScheduleTemplateRow({
 
       case 'priceItems':
         return (
-          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center text-xs text-gray-600 dark:text-gray-400">
-            {row.price_book_item_ids?.length || 0} items
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <button
+              onClick={() => setShowPriceItemsModal(true)}
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium cursor-pointer"
+              title="Click to select price book items"
+            >
+              {row.price_book_item_ids?.length || 0} items
+            </button>
           </td>
         )
 
@@ -997,12 +1130,40 @@ function ScheduleTemplateRow({
     }
   }
 
+  // Handler for saving predecessors
+  const handleSavePredecessors = (predecessors) => {
+    onUpdate({ predecessor_ids: predecessors })
+  }
+
+  // Handler for saving price book items
+  const handleSavePriceItems = (itemIds) => {
+    onUpdate({ price_book_item_ids: itemIds })
+  }
+
   return (
-    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-      {getSortedColumns().map(([key, config]) => {
-        if (!config.visible) return null
-        return renderCell(key, config)
-      })}
-    </tr>
+    <>
+      <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+        {getSortedColumns().map(([key, config]) => {
+          if (!config.visible) return null
+          return renderCell(key, config)
+        })}
+      </tr>
+
+      {/* Modals */}
+      <PredecessorEditor
+        isOpen={showPredecessorEditor}
+        onClose={() => setShowPredecessorEditor(false)}
+        currentRow={row}
+        allRows={allRows}
+        onSave={handleSavePredecessors}
+      />
+
+      <PriceBookItemsModal
+        isOpen={showPriceItemsModal}
+        onClose={() => setShowPriceItemsModal(false)}
+        currentRow={row}
+        onSave={handleSavePriceItems}
+      />
+    </>
   )
 }
