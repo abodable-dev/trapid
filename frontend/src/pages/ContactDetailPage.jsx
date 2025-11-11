@@ -771,18 +771,20 @@ export default function ContactDetailPage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 group">
+                    <div
+                      className={`flex items-center gap-2 ${isPageEditMode ? 'cursor-pointer' : ''}`}
+                      onClick={isPageEditMode ? () => startEditingXeroField('email') : undefined}
+                    >
                       {contact.email ? (
-                        <a href={`mailto:${contact.email}`} className="text-blue-600 hover:text-blue-700 dark:text-blue-400 flex-1">
+                        <a
+                          href={`mailto:${contact.email}`}
+                          className={`text-blue-600 hover:text-blue-700 dark:text-blue-400 flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}
+                          onClick={(e) => isPageEditMode && e.preventDefault()}
+                        >
                           {contact.email}
                         </a>
                       ) : (
-                        <p className="text-gray-900 dark:text-white flex-1">-</p>
-                      )}
-                      {isPageEditMode && (
-                        <button onClick={() => startEditingXeroField('email')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
+                        <p className={`text-gray-900 dark:text-white flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>-</p>
                       )}
                     </div>
                   )}
@@ -811,18 +813,20 @@ export default function ContactDetailPage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 group">
+                    <div
+                      className={`flex items-center gap-2 ${isPageEditMode ? 'cursor-pointer' : ''}`}
+                      onClick={isPageEditMode ? () => startEditingXeroField('mobile_phone') : undefined}
+                    >
                       {contact.mobile_phone ? (
-                        <a href={`tel:${contact.mobile_phone}`} className="text-gray-900 dark:text-white flex-1">
+                        <a
+                          href={`tel:${contact.mobile_phone}`}
+                          className={`text-gray-900 dark:text-white flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}
+                          onClick={(e) => isPageEditMode && e.preventDefault()}
+                        >
                           {contact.mobile_phone}
                         </a>
                       ) : (
-                        <p className="text-gray-900 dark:text-white flex-1">-</p>
-                      )}
-                      {isPageEditMode && (
-                        <button onClick={() => startEditingXeroField('mobile_phone')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
+                        <p className={`text-gray-900 dark:text-white flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>-</p>
                       )}
                     </div>
                   )}
@@ -851,18 +855,20 @@ export default function ContactDetailPage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 group">
+                    <div
+                      className={`flex items-center gap-2 ${isPageEditMode ? 'cursor-pointer' : ''}`}
+                      onClick={isPageEditMode ? () => startEditingXeroField('office_phone') : undefined}
+                    >
                       {contact.office_phone ? (
-                        <a href={`tel:${contact.office_phone}`} className="text-gray-900 dark:text-white flex-1">
+                        <a
+                          href={`tel:${contact.office_phone}`}
+                          className={`text-gray-900 dark:text-white flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}
+                          onClick={(e) => isPageEditMode && e.preventDefault()}
+                        >
                           {contact.office_phone}
                         </a>
                       ) : (
-                        <p className="text-gray-900 dark:text-white flex-1">-</p>
-                      )}
-                      {isPageEditMode && (
-                        <button onClick={() => startEditingXeroField('office_phone')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
+                        <p className={`text-gray-900 dark:text-white flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>-</p>
                       )}
                     </div>
                   )}
@@ -910,13 +916,13 @@ export default function ContactDetailPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start gap-2 group">
-                      <p className="text-gray-900 dark:text-white flex-1 whitespace-pre-wrap">{contact.address || '-'}</p>
-                      {isPageEditMode && (
-                        <button onClick={() => startEditingXeroField('address')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 mt-0.5">
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
-                      )}
+                    <div
+                      className={`flex items-start gap-2 ${isPageEditMode ? 'cursor-pointer' : ''}`}
+                      onClick={isPageEditMode ? () => startEditingXeroField('address') : undefined}
+                    >
+                      <p className={`text-gray-900 dark:text-white flex-1 whitespace-pre-wrap ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400 pb-1' : ''}`}>
+                        {contact.address || '-'}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1028,8 +1034,13 @@ export default function ContactDetailPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 group">
-                    <p className="text-gray-900 dark:text-white font-medium flex-1">{contact.tax_number || '-'}</p>
+                  <div
+                    className={`flex items-center gap-2 ${isPageEditMode ? 'cursor-pointer' : ''}`}
+                    onClick={isPageEditMode ? () => startEditingXeroField('tax_number') : undefined}
+                  >
+                    <p className={`text-gray-900 dark:text-white font-medium flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>
+                      {contact.tax_number || '-'}
+                    </p>
                     {contact.tax_number && (
                       <>
                         {validatingAbn ? (
@@ -1047,11 +1058,6 @@ export default function ContactDetailPage() {
                           <XCircleIcon className="h-5 w-5 text-red-500" title={abnValidation.error || 'Invalid ABN'} />
                         ) : null}
                       </>
-                    )}
-                    {isPageEditMode && (
-                      <button onClick={() => startEditingXeroField('tax_number')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
                     )}
                   </div>
                 )}
@@ -1130,13 +1136,13 @@ export default function ContactDetailPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 group">
-                        <p className="text-gray-900 dark:text-white font-medium flex-1">{contact.bank_account_name || '-'}</p>
-                        {isPageEditMode && (
-                          <button onClick={() => startEditingXeroField('bank_account_name')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                        )}
+                      <div
+                        className={`flex items-center gap-2 ${isPageEditMode ? 'cursor-pointer' : ''}`}
+                        onClick={isPageEditMode ? () => startEditingXeroField('bank_account_name') : undefined}
+                      >
+                        <p className={`text-gray-900 dark:text-white font-medium flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>
+                          {contact.bank_account_name || '-'}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -1163,13 +1169,13 @@ export default function ContactDetailPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 group">
-                        <p className="text-gray-900 dark:text-white font-mono flex-1">{contact.bank_bsb || '-'}</p>
-                        {isPageEditMode && (
-                          <button onClick={() => startEditingXeroField('bank_bsb')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                        )}
+                      <div
+                        className={`flex items-center gap-2 ${isPageEditMode ? 'cursor-pointer' : ''}`}
+                        onClick={isPageEditMode ? () => startEditingXeroField('bank_bsb') : undefined}
+                      >
+                        <p className={`text-gray-900 dark:text-white font-mono flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>
+                          {contact.bank_bsb || '-'}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -1195,13 +1201,13 @@ export default function ContactDetailPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 group">
-                        <p className="text-gray-900 dark:text-white font-mono flex-1">{contact.bank_account_number || '-'}</p>
-                        {isPageEditMode && (
-                          <button onClick={() => startEditingXeroField('bank_account_number')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                        )}
+                      <div
+                        className={`flex items-center gap-2 ${isPageEditMode ? 'cursor-pointer' : ''}`}
+                        onClick={isPageEditMode ? () => startEditingXeroField('bank_account_number') : undefined}
+                      >
+                        <p className={`text-gray-900 dark:text-white font-mono flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>
+                          {contact.bank_account_number || '-'}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -1264,13 +1270,13 @@ export default function ContactDetailPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 group">
-                        <p className="text-gray-900 dark:text-white font-medium flex-1">{contact.default_purchase_account || '-'}</p>
-                        {isPageEditMode && (
-                          <button onClick={() => startEditingXeroField('default_purchase_account')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                        )}
+                      <div
+                        className={`flex items-center gap-2 ${isPageEditMode ? 'cursor-pointer' : ''}`}
+                        onClick={isPageEditMode ? () => startEditingXeroField('default_purchase_account') : undefined}
+                      >
+                        <p className={`text-gray-900 dark:text-white font-medium flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>
+                          {contact.default_purchase_account || '-'}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -1298,13 +1304,13 @@ export default function ContactDetailPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 group">
-                        <p className="text-gray-900 dark:text-white font-medium flex-1">{contact.bill_due_day || '-'}</p>
-                        {isPageEditMode && (
-                          <button onClick={() => startEditingXeroField('bill_due_day')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                        )}
+                      <div
+                        className={`flex items-center gap-2 ${isPageEditMode ? 'cursor-pointer' : ''}`}
+                        onClick={isPageEditMode ? () => startEditingXeroField('bill_due_day') : undefined}
+                      >
+                        <p className={`text-gray-900 dark:text-white font-medium flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>
+                          {contact.bill_due_day || '-'}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -1334,13 +1340,13 @@ export default function ContactDetailPage() {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 group">
-                        <p className="text-gray-900 dark:text-white font-medium flex-1">{contact.bill_due_type || '-'}</p>
-                        {isPageEditMode && (
-                          <button onClick={() => startEditingXeroField('bill_due_type')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                        )}
+                      <div
+                        className={`flex items-center gap-2 ${isPageEditMode ? 'cursor-pointer' : ''}`}
+                        onClick={isPageEditMode ? () => startEditingXeroField('bill_due_type') : undefined}
+                      >
+                        <p className={`text-gray-900 dark:text-white font-medium flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>
+                          {contact.bill_due_type || '-'}
+                        </p>
                       </div>
                     )}
                   </div>
