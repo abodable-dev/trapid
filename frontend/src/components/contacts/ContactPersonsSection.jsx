@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { UserCircleIcon, PencilIcon, TrashIcon, PlusIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import { UserCircleIcon, PencilIcon, TrashIcon, PlusIcon, CheckCircleIcon, XCircleIcon, CheckBadgeIcon } from '@heroicons/react/24/solid'
 
 export default function ContactPersonsSection({ contactPersons = [], onUpdate, isEditMode, contactId }) {
   const [editingPerson, setEditingPerson] = useState(null)
@@ -57,9 +57,7 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
         <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
           <UserCircleIcon className="h-5 w-5" />
           Contact Persons
-          <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-          </svg>
+          <CheckBadgeIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
         </h3>
         {isEditMode && (
           <button
