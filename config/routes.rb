@@ -88,7 +88,11 @@ Rails.application.routes.draw do
         end
 
         # Project tasks (nested under projects)
-        resources :tasks, controller: 'project_tasks'
+        resources :tasks, controller: 'project_tasks' do
+          member do
+            post :auto_complete_subtasks
+          end
+        end
       end
 
       # Purchase Orders management
