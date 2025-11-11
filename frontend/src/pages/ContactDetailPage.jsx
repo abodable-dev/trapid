@@ -769,22 +769,13 @@ export default function ContactDetailPage() {
               Back to Contacts
             </button>
             {!isPageEditMode ? (
-              <>
-                <button
-                  onClick={openEditModal}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-                >
-                  <PencilIcon className="h-5 w-5" />
-                  Edit Details
-                </button>
-                <button
-                  onClick={() => setIsPageEditMode(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-                >
-                  <PencilIcon className="h-5 w-5" />
-                  Edit Inline
-                </button>
-              </>
+              <button
+                onClick={() => setIsPageEditMode(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              >
+                <PencilIcon className="h-5 w-5" />
+                Edit
+              </button>
             ) : (
               <>
                 <button
@@ -1472,23 +1463,52 @@ export default function ContactDetailPage() {
             {contact['is_supplier?'] && (
               <div className="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Local Government Areas (LGAs)</p>
-                <div className="flex flex-wrap gap-2">
-                  {contact.lgas && contact.lgas.length > 0 ? (
-                    contact.lgas.map((lga, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
-                      >
-                        {lga}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-sm text-gray-500 dark:text-gray-400">No LGAs assigned</span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Edit LGAs using the Edit button above
-                </p>
+                {isPageEditMode ? (
+                  <div className="space-y-2">
+                    {[
+                      'Toowoomba Regional Council',
+                      'Lockyer Valley Regional Council',
+                      'City of Gold Coast',
+                      'Brisbane City Council',
+                      'Sunshine Coast Regional Council',
+                      'Redland City Council',
+                      'Scenic Rim Regional Council'
+                    ].map((lga) => (
+                      <label key={lga} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={contact.lgas?.includes(lga) || false}
+                          onChange={(e) => {
+                            const currentLgas = contact.lgas || []
+                            const newLgas = e.target.checked
+                              ? [...currentLgas, lga]
+                              : currentLgas.filter(l => l !== lga)
+                            handleInlineEdit('lgas', newLgas)
+                          }}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
+                        />
+                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                          {lga}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {contact.lgas && contact.lgas.length > 0 ? (
+                      contact.lgas.map((lga, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
+                        >
+                          {lga}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-500 dark:text-gray-400">No LGAs assigned</span>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
