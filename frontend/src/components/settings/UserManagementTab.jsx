@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../api'
-import { UserIcon, EnvelopeIcon, ShieldCheckIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { UserIcon, EnvelopeIcon, ShieldCheckIcon, PlusIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import AddUserModal from './AddUserModal'
 import EditUserModal from './EditUserModal'
 
@@ -53,6 +53,31 @@ export default function UserManagementTab() {
       user: 'User'
     }
     return names[role] || role
+  }
+
+  const getGroupDisplayName = (assignedRole) => {
+    if (!assignedRole) return null
+    const names = {
+      admin: 'Admin',
+      sales: 'Sales',
+      site: 'Site',
+      supervisor: 'Supervisor',
+      builder: 'Builder',
+      estimator: 'Estimator'
+    }
+    return names[assignedRole] || assignedRole
+  }
+
+  const getGroupBadgeColor = (assignedRole) => {
+    const colors = {
+      admin: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
+      sales: 'bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-400',
+      site: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400',
+      supervisor: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
+      builder: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
+      estimator: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+    }
+    return colors[assignedRole] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
   }
 
   const handleEditUser = (user) => {
@@ -148,7 +173,7 @@ export default function UserManagementTab() {
                         </div>
                       </div>
                       <div className="min-w-0 flex-1 px-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 truncate">
                             {user.name}
                           </p>
@@ -160,6 +185,16 @@ export default function UserManagementTab() {
                             <ShieldCheckIcon className="h-3 w-3 mr-1" />
                             {getRoleDisplayName(user.role)}
                           </span>
+                          {user.assigned_role && (
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getGroupBadgeColor(
+                                user.assigned_role
+                              )}`}
+                            >
+                              <UserGroupIcon className="h-3 w-3 mr-1" />
+                              {getGroupDisplayName(user.assigned_role)}
+                            </span>
+                          )}
                         </div>
                         <div className="mt-1 flex items-center">
                           <EnvelopeIcon className="h-4 w-4 text-gray-400 mr-1.5" />

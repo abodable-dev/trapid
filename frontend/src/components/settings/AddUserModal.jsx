@@ -8,7 +8,8 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
     email: '',
     password: '',
     password_confirmation: '',
-    role: 'user'
+    role: 'user',
+    assigned_role: ''
   })
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState([])
@@ -20,6 +21,16 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
     { value: 'estimator', label: 'Estimator', description: 'Can edit schedules' },
     { value: 'product_owner', label: 'Product Owner', description: 'Can create templates and edit schedules' },
     { value: 'admin', label: 'Admin', description: 'Full system access' }
+  ]
+
+  const assignableRoles = [
+    { value: '', label: 'None', description: 'No group assignment' },
+    { value: 'admin', label: 'Admin', description: 'Administrative tasks' },
+    { value: 'sales', label: 'Sales', description: 'Sales team' },
+    { value: 'site', label: 'Site', description: 'Site management' },
+    { value: 'supervisor', label: 'Supervisor', description: 'Supervisor tasks' },
+    { value: 'builder', label: 'Builder', description: 'Builder tasks' },
+    { value: 'estimator', label: 'Estimator', description: 'Estimating tasks' }
   ]
 
   const handleSubmit = async (e) => {
@@ -44,10 +55,13 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
       })
 
       if (response.success) {
-        // If role is different from default, update it
-        if (formData.role !== 'user') {
+        // If role or assigned_role is different from default, update them
+        if (formData.role !== 'user' || formData.assigned_role) {
           await api.patch(`/api/v1/users/${response.user.id}`, {
-            user: { role: formData.role }
+            user: {
+              role: formData.role,
+              assigned_role: formData.assigned_role || null
+            }
           })
         }
 
@@ -70,7 +84,8 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
       email: '',
       password: '',
       password_confirmation: '',
-      role: 'user'
+      role: 'user',
+      assigned_role: ''
     })
     setErrors([])
     onClose()
@@ -189,6 +204,27 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label htmlFor="assigned-role" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Group Assignment
+                </label>
+                <select
+                  id="assigned-role"
+                  value={formData.assigned_role}
+                  onChange={(e) => setFormData({ ...formData, assigned_role: e.target.value })}
+                  className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                  {assignableRoles.map((role) => (
+                    <option key={role.value} value={role.value}>
+                      {role.label} - {role.description}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Assign user to a team/group for task assignment in schedules
+                </p>
               </div>
             </div>
 

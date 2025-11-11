@@ -6,7 +6,8 @@ export default function EditUserModal({ isOpen, onClose, onUserUpdated, user }) 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'user'
+    role: 'user',
+    assigned_role: ''
   })
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState([])
@@ -20,12 +21,23 @@ export default function EditUserModal({ isOpen, onClose, onUserUpdated, user }) 
     { value: 'admin', label: 'Admin', description: 'Full system access' }
   ]
 
+  const assignableRoles = [
+    { value: '', label: 'None', description: 'No group assignment' },
+    { value: 'admin', label: 'Admin', description: 'Administrative tasks' },
+    { value: 'sales', label: 'Sales', description: 'Sales team' },
+    { value: 'site', label: 'Site', description: 'Site management' },
+    { value: 'supervisor', label: 'Supervisor', description: 'Supervisor tasks' },
+    { value: 'builder', label: 'Builder', description: 'Builder tasks' },
+    { value: 'estimator', label: 'Estimator', description: 'Estimating tasks' }
+  ]
+
   useEffect(() => {
     if (user) {
       setFormData({
         name: user.name || '',
         email: user.email || '',
-        role: user.role || 'user'
+        role: user.role || 'user',
+        assigned_role: user.assigned_role || ''
       })
     }
   }, [user])
@@ -40,7 +52,8 @@ export default function EditUserModal({ isOpen, onClose, onUserUpdated, user }) 
         user: {
           name: formData.name,
           email: formData.email,
-          role: formData.role
+          role: formData.role,
+          assigned_role: formData.assigned_role || null
         }
       })
 
@@ -62,7 +75,8 @@ export default function EditUserModal({ isOpen, onClose, onUserUpdated, user }) 
     setFormData({
       name: '',
       email: '',
-      role: 'user'
+      role: 'user',
+      assigned_role: ''
     })
     setErrors([])
     onClose()
@@ -151,6 +165,27 @@ export default function EditUserModal({ isOpen, onClose, onUserUpdated, user }) 
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label htmlFor="edit-assigned-role" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Group Assignment
+                </label>
+                <select
+                  id="edit-assigned-role"
+                  value={formData.assigned_role}
+                  onChange={(e) => setFormData({ ...formData, assigned_role: e.target.value })}
+                  className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                  {assignableRoles.map((role) => (
+                    <option key={role.value} value={role.value}>
+                      {role.label} - {role.description}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Assign user to a team/group for task assignment in schedules
+                </p>
               </div>
             </div>
 
