@@ -7,6 +7,7 @@ class Construction < ApplicationRecord
   belongs_to :design, optional: true
   has_many :chat_messages, dependent: :nullify
   has_many :emails, dependent: :nullify
+  has_many :construction_documentation_tabs, dependent: :destroy
 
   # Enums
   enum :onedrive_folder_creation_status, {
@@ -21,6 +22,9 @@ class Construction < ApplicationRecord
   validates :title, presence: true
   validates :status, presence: true
   validates :site_supervisor_name, presence: true
+
+  # Callbacks
+  after_create :create_documentation_tabs_from_categories
 
   # Scopes
   scope :active, -> { where(status: 'Active') }
@@ -91,5 +95,21 @@ class Construction < ApplicationRecord
 
     update!(onedrive_folder_creation_status: 'pending')
     CreateJobFoldersJob.perform_later(id, template_id)
+  end
+
+  private
+
+  # Create job-specific documentation tabs from global categories
+  def create_documentation_tabs_from_categories
+    DocumentationCategory.active.ordered.each do |category|
+      construction_documentation_tabs.create!(
+        name: category.name,
+        icon: category.icon,
+        color: category.color,
+        description: category.description,
+        sequence_order: category.sequence_order,
+        is_active: true
+      )
+    end
   end
 end

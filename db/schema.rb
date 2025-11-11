@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_040922) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -41,6 +41,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "chat_messages", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "project_id"
+    t.text "content", null: false
+    t.string "channel", default: "general", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "recipient_user_id"
+    t.bigint "construction_id"
+    t.boolean "saved_to_job", default: false
+    t.index ["channel", "created_at"], name: "index_chat_messages_on_channel_and_created_at"
+    t.index ["construction_id"], name: "index_chat_messages_on_construction_id"
+    t.index ["project_id", "created_at"], name: "index_chat_messages_on_project_id_and_created_at"
+    t.index ["project_id"], name: "index_chat_messages_on_project_id"
+    t.index ["user_id"], name: "index_chat_messages_on_user_id"
   end
 
   create_table "columns", force: :cascade do |t|
@@ -84,6 +101,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "construction_documentation_tabs", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.string "name", null: false
+    t.string "icon"
+    t.string "color"
+    t.text "description"
+    t.integer "sequence_order", default: 0
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id", "name"], name: "idx_on_construction_id_name_4a8823caab", unique: true
+    t.index ["construction_id", "sequence_order"], name: "idx_on_construction_id_sequence_order_48145dc07a"
+    t.index ["construction_id"], name: "index_construction_documentation_tabs_on_construction_id"
+  end
+
   create_table "constructions", force: :cascade do |t|
     t.string "title"
     t.decimal "contract_value", precision: 15, scale: 2
@@ -122,6 +154,63 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.datetime "updated_at", null: false
     t.index ["contact_id"], name: "index_contact_activities_on_contact_id"
     t.index ["performed_by_type", "performed_by_id"], name: "index_contact_activities_on_performed_by"
+  end
+
+  create_table "contact_addresses", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.string "address_type"
+    t.string "line1"
+    t.string "line2"
+    t.string "line3"
+    t.string "line4"
+    t.string "city"
+    t.string "region"
+    t.string "postal_code"
+    t.string "country"
+    t.string "attention_to"
+    t.boolean "is_primary", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["address_type"], name: "index_contact_addresses_on_address_type"
+    t.index ["contact_id", "address_type"], name: "index_contact_addresses_on_contact_id_and_address_type"
+    t.index ["contact_id", "is_primary"], name: "index_contact_addresses_on_contact_id_and_is_primary"
+    t.index ["contact_id"], name: "index_contact_addresses_on_contact_id"
+  end
+
+  create_table "contact_group_memberships", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.bigint "contact_group_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_group_id"], name: "index_contact_group_memberships_on_contact_group_id"
+    t.index ["contact_id"], name: "index_contact_group_memberships_on_contact_id"
+  end
+
+  create_table "contact_groups", force: :cascade do |t|
+    t.string "xero_contact_group_id", null: false
+    t.string "name", null: false
+    t.string "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_contact_groups_on_name"
+    t.index ["status"], name: "index_contact_groups_on_status"
+    t.index ["xero_contact_group_id"], name: "index_contact_groups_on_xero_contact_group_id", unique: true
+  end
+
+  create_table "contact_persons", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.string "first_name"
+    t.string "last_name"
+    t.string "email"
+    t.boolean "include_in_emails", default: true
+    t.boolean "is_primary", default: false
+    t.string "xero_contact_person_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id", "is_primary"], name: "index_contact_persons_on_contact_id_and_is_primary"
+    t.index ["contact_id"], name: "index_contact_persons_on_contact_id"
+    t.index ["email"], name: "index_contact_persons_on_email"
+    t.index ["xero_contact_person_id"], name: "index_contact_persons_on_xero_contact_person_id"
   end
 
   create_table "contacts", force: :cascade do |t|
@@ -164,11 +253,26 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.string "default_purchase_account"
     t.integer "bill_due_day"
     t.string "bill_due_type"
+    t.string "xero_contact_number"
+    t.string "xero_contact_status"
+    t.string "xero_account_number"
+    t.string "company_number"
+    t.string "fax_phone"
+    t.string "default_sales_account"
+    t.decimal "default_discount", precision: 5, scale: 2
+    t.integer "sales_due_day"
+    t.string "sales_due_type"
+    t.decimal "accounts_receivable_outstanding", precision: 15, scale: 2
+    t.decimal "accounts_receivable_overdue", precision: 15, scale: 2
+    t.decimal "accounts_payable_outstanding", precision: 15, scale: 2
+    t.decimal "accounts_payable_overdue", precision: 15, scale: 2
     t.index ["contact_types"], name: "index_contacts_on_contact_types", using: :gin
     t.index ["is_active"], name: "index_contacts_on_is_active"
     t.index ["primary_contact_type"], name: "index_contacts_on_primary_contact_type"
     t.index ["rating"], name: "index_contacts_on_rating"
     t.index ["supplier_code"], name: "index_contacts_on_supplier_code", unique: true, where: "(supplier_code IS NOT NULL)"
+    t.index ["xero_contact_number"], name: "index_contacts_on_xero_contact_number"
+    t.index ["xero_contact_status"], name: "index_contacts_on_xero_contact_status"
   end
 
   create_table "designs", force: :cascade do |t|
@@ -199,6 +303,32 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["construction_id"], name: "index_document_tasks_on_construction_id"
+  end
+
+  create_table "documentation_categories", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "icon"
+    t.string "color"
+    t.text "description"
+    t.integer "sequence_order", default: 0
+    t.boolean "is_default", default: false
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_documentation_categories_on_name", unique: true
+  end
+
+  create_table "emails", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.string "from_email"
+    t.string "to_email"
+    t.string "subject"
+    t.text "body"
+    t.datetime "received_at"
+    t.text "raw_email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id"], name: "index_emails_on_construction_id"
   end
 
   create_table "estimate_line_items", force: :cascade do |t|
@@ -360,6 +490,27 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.index ["token_expires_at"], name: "index_organization_one_drive_credentials_on_token_expires_at"
   end
 
+  create_table "organization_outlook_credentials", force: :cascade do |t|
+    t.text "access_token"
+    t.text "refresh_token"
+    t.datetime "expires_at"
+    t.string "email"
+    t.string "tenant_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "outlook_credentials", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.text "access_token"
+    t.text "refresh_token"
+    t.datetime "expires_at"
+    t.string "email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_outlook_credentials_on_user_id"
+  end
+
   create_table "price_histories", force: :cascade do |t|
     t.bigint "pricebook_item_id", null: false
     t.decimal "old_price", precision: 10, scale: 2
@@ -420,6 +571,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.index ["supplier_id"], name: "index_pricebook_items_on_supplier_id"
   end
 
+  create_table "project_task_checklist_items", force: :cascade do |t|
+    t.bigint "project_task_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.string "category"
+    t.boolean "is_completed", default: false
+    t.datetime "completed_at"
+    t.string "completed_by"
+    t.integer "sequence_order", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "response_type"
+    t.index ["is_completed"], name: "index_project_task_checklist_items_on_is_completed"
+    t.index ["project_task_id", "sequence_order"], name: "idx_on_project_task_id_sequence_order_cc3d531d29"
+    t.index ["project_task_id"], name: "index_project_task_checklist_items_on_project_task_id"
+  end
+
   create_table "project_tasks", force: :cascade do |t|
     t.bigint "project_id", null: false
     t.bigint "task_template_id"
@@ -445,12 +613,29 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.datetime "updated_at", null: false
     t.integer "sequence_order"
     t.date "required_on_site_date"
+    t.bigint "schedule_template_row_id"
+    t.string "spawned_type"
+    t.bigint "parent_task_id"
+    t.boolean "requires_supervisor_check", default: false, null: false
+    t.datetime "supervisor_checked_at"
+    t.bigint "supervisor_checked_by_id"
+    t.datetime "photo_uploaded_at"
+    t.datetime "certificate_uploaded_at"
+    t.jsonb "tags", default: [], null: false
+    t.boolean "critical_po", default: false, null: false
+    t.boolean "auto_complete_predecessors", default: false, null: false
     t.index ["assigned_to_id"], name: "index_project_tasks_on_assigned_to_id"
     t.index ["is_critical_path"], name: "index_project_tasks_on_is_critical_path"
+    t.index ["parent_task_id"], name: "index_project_tasks_on_parent_task_id"
     t.index ["planned_start_date", "planned_end_date"], name: "index_project_tasks_on_planned_start_date_and_planned_end_date"
     t.index ["project_id", "status"], name: "index_project_tasks_on_project_id_and_status"
     t.index ["project_id"], name: "index_project_tasks_on_project_id"
     t.index ["purchase_order_id"], name: "index_project_tasks_on_purchase_order_id"
+    t.index ["requires_supervisor_check"], name: "index_project_tasks_on_requires_supervisor_check"
+    t.index ["schedule_template_row_id"], name: "index_project_tasks_on_schedule_template_row_id"
+    t.index ["spawned_type"], name: "index_project_tasks_on_spawned_type"
+    t.index ["supervisor_checked_by_id"], name: "index_project_tasks_on_supervisor_checked_by_id"
+    t.index ["tags"], name: "index_project_tasks_on_tags", using: :gin
     t.index ["task_template_id"], name: "index_project_tasks_on_task_template_id"
   end
 
@@ -552,6 +737,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
   end
 
+  create_table "schedule_task_checklist_items", force: :cascade do |t|
+    t.bigint "schedule_task_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.string "category"
+    t.boolean "is_completed", default: false
+    t.datetime "completed_at"
+    t.string "completed_by"
+    t.integer "sequence_order", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "response_type"
+    t.index ["is_completed"], name: "index_schedule_task_checklist_items_on_is_completed"
+    t.index ["schedule_task_id", "sequence_order"], name: "idx_on_schedule_task_id_sequence_order_bbbbb75501"
+    t.index ["schedule_task_id"], name: "index_schedule_task_checklist_items_on_schedule_task_id"
+  end
+
   create_table "schedule_tasks", force: :cascade do |t|
     t.bigint "construction_id", null: false
     t.bigint "purchase_order_id"
@@ -580,6 +782,48 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.index ["matched_to_po"], name: "index_schedule_tasks_on_matched_to_po"
     t.index ["purchase_order_id"], name: "index_schedule_tasks_on_purchase_order_id"
     t.index ["status"], name: "index_schedule_tasks_on_status"
+  end
+
+  create_table "schedule_template_rows", force: :cascade do |t|
+    t.bigint "schedule_template_id", null: false
+    t.string "name", null: false
+    t.bigint "supplier_id"
+    t.jsonb "predecessor_ids", default: [], null: false
+    t.boolean "po_required", default: false, null: false
+    t.boolean "create_po_on_job_start", default: false, null: false
+    t.jsonb "price_book_item_ids", default: [], null: false
+    t.boolean "critical_po", default: false, null: false
+    t.jsonb "tags", default: [], null: false
+    t.boolean "require_photo", default: false, null: false
+    t.boolean "require_certificate", default: false, null: false
+    t.integer "cert_lag_days", default: 10, null: false
+    t.boolean "require_supervisor_check", default: false, null: false
+    t.boolean "auto_complete_predecessors", default: false, null: false
+    t.boolean "has_subtasks", default: false, null: false
+    t.integer "subtask_count"
+    t.jsonb "subtask_names", default: [], null: false
+    t.integer "sequence_order", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "assigned_role"
+    t.integer "documentation_category_ids", default: [], array: true
+    t.index ["documentation_category_ids"], name: "index_schedule_template_rows_on_documentation_category_ids", using: :gin
+    t.index ["schedule_template_id", "sequence_order"], name: "idx_on_schedule_template_id_sequence_order_1bea5d762b"
+    t.index ["schedule_template_id"], name: "index_schedule_template_rows_on_schedule_template_id"
+    t.index ["sequence_order"], name: "index_schedule_template_rows_on_sequence_order"
+    t.index ["supplier_id"], name: "index_schedule_template_rows_on_supplier_id"
+  end
+
+  create_table "schedule_templates", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.boolean "is_default", default: false, null: false
+    t.bigint "created_by_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_schedule_templates_on_created_by_id"
+    t.index ["is_default"], name: "index_schedule_templates_on_is_default"
+    t.index ["name"], name: "index_schedule_templates_on_name"
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
@@ -703,6 +947,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.index ["expires_at"], name: "index_solid_queue_semaphores_on_expires_at"
     t.index ["key", "value"], name: "index_solid_queue_semaphores_on_key_and_value"
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
+  end
+
+  create_table "supervisor_checklist_templates", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.string "category"
+    t.integer "sequence_order", default: 0
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "response_type"
+    t.index ["category"], name: "index_supervisor_checklist_templates_on_category"
+    t.index ["name"], name: "index_supervisor_checklist_templates_on_name", unique: true
+    t.index ["sequence_order"], name: "index_supervisor_checklist_templates_on_sequence_order"
   end
 
   create_table "supplier_contacts", force: :cascade do |t|
@@ -1364,6 +1622,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "role", default: "user", null: false
+    t.datetime "last_chat_read_at"
+    t.string "reset_password_token"
+    t.datetime "reset_password_sent_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["role"], name: "index_users_on_role"
   end
@@ -1372,6 +1633,71 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
     t.integer "current_version", default: 101, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "workflow_definitions", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.string "workflow_type", null: false
+    t.jsonb "config", default: {}, null: false
+    t.boolean "active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_workflow_definitions_on_active"
+    t.index ["workflow_type"], name: "index_workflow_definitions_on_workflow_type"
+  end
+
+  create_table "workflow_instances", force: :cascade do |t|
+    t.bigint "workflow_definition_id", null: false
+    t.string "subject_type", null: false
+    t.bigint "subject_id", null: false
+    t.string "status", default: "pending", null: false
+    t.string "current_step"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status"], name: "index_workflow_instances_on_status"
+    t.index ["subject_type", "subject_id"], name: "index_workflow_instances_on_subject"
+    t.index ["subject_type", "subject_id"], name: "index_workflow_instances_on_subject_type_and_subject_id"
+    t.index ["workflow_definition_id"], name: "index_workflow_instances_on_workflow_definition_id"
+  end
+
+  create_table "workflow_steps", force: :cascade do |t|
+    t.bigint "workflow_instance_id", null: false
+    t.string "step_name", null: false
+    t.string "status", default: "pending", null: false
+    t.string "assigned_to_type"
+    t.bigint "assigned_to_id"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.jsonb "data", default: {}
+    t.text "comment"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_to_type", "assigned_to_id"], name: "index_workflow_steps_on_assigned_to"
+    t.index ["assigned_to_type", "assigned_to_id"], name: "index_workflow_steps_on_assigned_to_type_and_assigned_to_id"
+    t.index ["status"], name: "index_workflow_steps_on_status"
+    t.index ["workflow_instance_id"], name: "index_workflow_steps_on_workflow_instance_id"
+  end
+
+  create_table "xero_accounts", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "name", null: false
+    t.string "account_type"
+    t.string "tax_type"
+    t.text "description"
+    t.boolean "active", default: true
+    t.string "account_class"
+    t.boolean "system_account", default: false
+    t.boolean "enable_payments_to_account", default: false
+    t.boolean "show_in_expense_claims", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_type"], name: "index_xero_accounts_on_account_type"
+    t.index ["active"], name: "index_xero_accounts_on_active"
+    t.index ["code"], name: "index_xero_accounts_on_code", unique: true
   end
 
   create_table "xero_credentials", force: :cascade do |t|
@@ -1399,10 +1725,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "chat_messages", "constructions"
+  add_foreign_key "chat_messages", "projects"
+  add_foreign_key "chat_messages", "users"
   add_foreign_key "columns", "tables"
+  add_foreign_key "construction_documentation_tabs", "constructions"
   add_foreign_key "constructions", "designs"
   add_foreign_key "contact_activities", "contacts"
+  add_foreign_key "contact_addresses", "contacts"
+  add_foreign_key "contact_group_memberships", "contact_groups"
+  add_foreign_key "contact_group_memberships", "contacts"
+  add_foreign_key "contact_persons", "contacts"
   add_foreign_key "document_tasks", "constructions"
+  add_foreign_key "emails", "constructions"
   add_foreign_key "estimate_line_items", "estimates"
   add_foreign_key "estimate_reviews", "estimates"
   add_foreign_key "estimates", "constructions"
@@ -1412,14 +1747,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
   add_foreign_key "grok_plans", "users"
   add_foreign_key "one_drive_credentials", "constructions"
   add_foreign_key "organization_one_drive_credentials", "users", column: "connected_by_id"
+  add_foreign_key "outlook_credentials", "users"
   add_foreign_key "price_histories", "contacts", column: "supplier_id", name: "fk_rails_price_histories_contact"
   add_foreign_key "price_histories", "pricebook_items"
   add_foreign_key "pricebook_items", "contacts", column: "default_supplier_id", name: "fk_rails_pricebook_items_default_supplier"
   add_foreign_key "pricebook_items", "contacts", column: "supplier_id", name: "fk_rails_pricebook_items_contact"
+  add_foreign_key "project_task_checklist_items", "project_tasks"
+  add_foreign_key "project_tasks", "project_tasks", column: "parent_task_id"
   add_foreign_key "project_tasks", "projects"
   add_foreign_key "project_tasks", "purchase_orders"
+  add_foreign_key "project_tasks", "schedule_template_rows"
   add_foreign_key "project_tasks", "task_templates"
   add_foreign_key "project_tasks", "users", column: "assigned_to_id"
+  add_foreign_key "project_tasks", "users", column: "supervisor_checked_by_id"
   add_foreign_key "projects", "constructions"
   add_foreign_key "projects", "users", column: "project_manager_id"
   add_foreign_key "purchase_order_line_items", "pricebook_items"
@@ -1427,8 +1767,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
   add_foreign_key "purchase_orders", "constructions"
   add_foreign_key "purchase_orders", "contacts", column: "supplier_id", name: "fk_rails_purchase_orders_contact"
   add_foreign_key "purchase_orders", "estimates"
+  add_foreign_key "schedule_task_checklist_items", "schedule_tasks"
   add_foreign_key "schedule_tasks", "constructions"
   add_foreign_key "schedule_tasks", "purchase_orders"
+  add_foreign_key "schedule_template_rows", "schedule_templates"
+  add_foreign_key "schedule_template_rows", "suppliers"
+  add_foreign_key "schedule_templates", "users", column: "created_by_id"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
@@ -1441,4 +1785,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_134418) do
   add_foreign_key "task_dependencies", "project_tasks", column: "successor_task_id"
   add_foreign_key "task_updates", "project_tasks"
   add_foreign_key "task_updates", "users"
+  add_foreign_key "workflow_instances", "workflow_definitions"
+  add_foreign_key "workflow_steps", "workflow_instances"
 end

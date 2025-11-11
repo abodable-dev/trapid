@@ -179,6 +179,16 @@ Rails.application.routes.draw do
       # Users management
       resources :users, only: [:index, :show, :update, :destroy]
 
+      # Workflow management
+      resources :workflow_definitions
+      resources :workflow_steps, only: [:index, :show] do
+        member do
+          post :approve
+          post :reject
+          post :request_changes
+        end
+      end
+
       # Emails management
       resources :emails do
         collection do
