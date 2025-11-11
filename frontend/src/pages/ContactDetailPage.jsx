@@ -95,9 +95,12 @@ export default function ContactDetailPage() {
   const [contactPersons, setContactPersons] = useState([])
   const [contactAddresses, setContactAddresses] = useState([])
   const [contactGroups, setContactGroups] = useState([])
+  const [xeroAccounts, setXeroAccounts] = useState([]) // Xero chart of accounts for dropdown
+  const [loadingXeroAccounts, setLoadingXeroAccounts] = useState(false)
 
   useEffect(() => {
     loadContact()
+    loadXeroAccounts()
     loadAllContacts()
     loadCurrentContactCategories()
   }, [id])
@@ -149,6 +152,21 @@ export default function ContactDetailPage() {
       setAllContacts(otherContacts)
     } catch (err) {
       console.error('Failed to load contacts:', err)
+    }
+  }
+
+  const loadXeroAccounts = async () => {
+    try {
+      setLoadingXeroAccounts(true)
+      const response = await api.get('/api/v1/xero/accounts?account_class=EXPENSE')
+      if (response.success) {
+        setXeroAccounts(response.accounts || [])
+      }
+    } catch (err) {
+      console.error('Failed to load Xero accounts:', err)
+      // Silently fail - accounts will just not be available for dropdown
+    } finally {
+      setLoadingXeroAccounts(false)
     }
   }
 
@@ -751,13 +769,22 @@ export default function ContactDetailPage() {
               Back to Contacts
             </button>
             {!isPageEditMode ? (
-              <button
-                onClick={() => setIsPageEditMode(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-              >
-                <PencilIcon className="h-5 w-5" />
-                Edit
-              </button>
+              <>
+                <button
+                  onClick={openEditModal}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                >
+                  <PencilIcon className="h-5 w-5" />
+                  Edit Details
+                </button>
+                <button
+                  onClick={() => setIsPageEditMode(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                >
+                  <PencilIcon className="h-5 w-5" />
+                  Edit Inline
+                </button>
+              </>
             ) : (
               <>
                 <button
@@ -1316,14 +1343,32 @@ export default function ContactDetailPage() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Default Purchase Account</p>
                     {editingXeroFields['default_purchase_account'] ? (
                       <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={xeroFieldValues['default_purchase_account'] || ''}
-                          onChange={(e) => handleXeroFieldChange('default_purchase_account', e.target.value)}
-                          placeholder="e.g., 300"
-                          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                          autoFocus
-                        />
+                        {loadingXeroAccounts ? (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Loading accounts...</p>
+                        ) : xeroAccounts.length > 0 ? (
+                          <select
+                            value={xeroFieldValues['default_purchase_account'] || ''}
+                            onChange={(e) => handleXeroFieldChange('default_purchase_account', e.target.value)}
+                            className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            autoFocus
+                          >
+                            <option value="">Select an account...</option>
+                            {xeroAccounts.map(account => (
+                              <option key={account.code} value={account.code}>
+                                {account.display_name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            value={xeroFieldValues['default_purchase_account'] || ''}
+                            onChange={(e) => handleXeroFieldChange('default_purchase_account', e.target.value)}
+                            placeholder="e.g., 300"
+                            className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            autoFocus
+                          />
+                        )}
                         <button onClick={() => saveXeroField('default_purchase_account')} className="text-green-600 hover:text-green-700 dark:text-green-400">
                           <CheckCircleIcon className="h-5 w-5" />
                         </button>
@@ -1337,7 +1382,12 @@ export default function ContactDetailPage() {
                         onClick={isPageEditMode ? () => startEditingXeroField('default_purchase_account') : undefined}
                       >
                         <p className={`text-gray-900 dark:text-white font-medium flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>
-                          {contact.default_purchase_account || '-'}
+                          {/* Display the account name if we can find it, otherwise just show the code */}
+                          {contact.default_purchase_account ? (
+                            xeroAccounts.length > 0 ? (
+                              xeroAccounts.find(acc => acc.code === contact.default_purchase_account)?.display_name || contact.default_purchase_account
+                            ) : contact.default_purchase_account
+                          ) : '-'}
                         </p>
                       </div>
                     )}
