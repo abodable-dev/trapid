@@ -1,7 +1,7 @@
 module Api
   module V1
     class ConstructionsController < ApplicationController
-      before_action :set_construction, only: [:show, :update, :destroy, :saved_messages]
+      before_action :set_construction, only: [:show, :update, :destroy, :saved_messages, :emails, :documentation_tabs]
 
       # GET /api/v1/constructions
       # GET /api/v1/constructions?status=Active
@@ -98,6 +98,24 @@ module Api
           include: { user: { only: [:id, :name, :email] } },
           methods: :formatted_timestamp
         )
+      end
+
+      # GET /api/v1/constructions/:id/emails
+      def emails
+        @emails = @construction.emails
+                              .includes(:user)
+                              .order(received_at: :desc)
+
+        render json: @emails
+      end
+
+      # GET /api/v1/constructions/:id/documentation_tabs
+      def documentation_tabs
+        @tabs = @construction.construction_documentation_tabs
+                            .active
+                            .ordered
+
+        render json: @tabs
       end
 
       private
