@@ -116,6 +116,7 @@ module Api
           predecessor_ids: [],
           price_book_item_ids: [],
           documentation_category_ids: [],
+          supervisor_checklist_template_ids: [],
           tags: [],
           subtask_names: []
         )
@@ -140,6 +141,7 @@ module Api
           predecessor_ids: [],
           price_book_item_ids: [],
           documentation_category_ids: [],
+          supervisor_checklist_template_ids: [],
           tags: [],
           subtask_names: []
         )
@@ -158,6 +160,7 @@ module Api
           create_po_on_job_start: row.create_po_on_job_start,
           price_book_item_ids: row.price_book_item_ids,
           documentation_category_ids: row.documentation_category_ids,
+          supervisor_checklist_template_ids: row.supervisor_checklist_template_ids,
           critical_po: row.critical_po,
           tags: row.tags,
           require_photo: row.require_photo,

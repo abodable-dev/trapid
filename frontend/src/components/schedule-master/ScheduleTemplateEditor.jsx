@@ -10,6 +10,7 @@ import Toast from '../Toast'
 import PredecessorEditor from './PredecessorEditor'
 import PriceBookItemsModal from './PriceBookItemsModal'
 import DocumentationTabsModal from './DocumentationTabsModal'
+import SupervisorChecklistModal from './SupervisorChecklistModal'
 
 /**
  * Schedule Template Editor - Full 14-column grid interface for creating/editing schedule templates
@@ -57,7 +58,7 @@ const defaultColumnConfig = {
   photo: { visible: true, width: 80, label: 'Photo', order: 10 },
   cert: { visible: true, width: 80, label: 'Cert', order: 10 },
   certLag: { visible: true, width: 80, label: 'Cert Lag', order: 11 },
-  supCheck: { visible: true, width: 80, label: 'Sup Check', order: 12 },
+  supCheck: { visible: true, width: 120, label: 'Sup Check', order: 12 },
   autoComplete: { visible: true, width: 80, label: 'Auto ✓', order: 13 },
   subtasks: { visible: true, width: 120, label: 'Subtasks', order: 14 },
   actions: { visible: true, width: 80, label: 'Actions', order: 15 }
@@ -986,6 +987,7 @@ function ScheduleTemplateRow({
   const [showPredecessorEditor, setShowPredecessorEditor] = useState(false)
   const [showPriceItemsModal, setShowPriceItemsModal] = useState(false)
   const [showDocTabsModal, setShowDocTabsModal] = useState(false)
+  const [showChecklistModal, setShowChecklistModal] = useState(false)
 
   // Debounced update for text fields
   const handleTextChange = (field, value) => {
@@ -1223,13 +1225,24 @@ function ScheduleTemplateRow({
 
       case 'supCheck':
         return (
-          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
-            <input
-              type="checkbox"
-              checked={row.require_supervisor_check}
-              onChange={(e) => handleFieldChange('require_supervisor_check', e.target.checked)}
-              className="h-4 w-4"
-            />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-2 py-3 border-r border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={row.require_supervisor_check}
+                onChange={(e) => handleFieldChange('require_supervisor_check', e.target.checked)}
+                className="h-4 w-4"
+              />
+              {row.require_supervisor_check && (
+                <button
+                  onClick={handleOpenChecklistModal}
+                  className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer whitespace-nowrap"
+                  title="Click to assign checklist items"
+                >
+                  {row.supervisor_checklist_template_ids?.length || 0} items
+                </button>
+              )}
+            </div>
           </td>
         )
 
@@ -1301,6 +1314,15 @@ function ScheduleTemplateRow({
     setShowDocTabsModal(true)
   }
 
+  // Handler for saving supervisor checklist templates
+  const handleSaveChecklistTemplates = (templateIds) => {
+    onUpdate({ supervisor_checklist_template_ids: templateIds })
+  }
+
+  const handleOpenChecklistModal = () => {
+    setShowChecklistModal(true)
+  }
+
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
       {getSortedColumns().map(([key, config]) => {
@@ -1339,6 +1361,17 @@ function ScheduleTemplateRow({
             onClose={() => setShowDocTabsModal(false)}
             currentRow={row}
             onSave={handleSaveDocTabs}
+          />
+        </td>
+      )}
+
+      {showChecklistModal && typeof document !== 'undefined' && (
+        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
+          <SupervisorChecklistModal
+            isOpen={showChecklistModal}
+            onClose={() => setShowChecklistModal(false)}
+            currentRow={row}
+            onSave={handleSaveChecklistTemplates}
           />
         </td>
       )}

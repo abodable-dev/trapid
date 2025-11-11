@@ -13,6 +13,9 @@ class ScheduleTemplateRow < ApplicationRecord
   validate :supplier_required_if_po_required
   validate :subtask_names_match_count
 
+  # Callbacks
+  before_save :sync_photos_category
+
   # Scopes
   scope :in_sequence, -> { order(sequence_order: :asc) }
   scope :requiring_po, -> { where(po_required: true) }
@@ -79,6 +82,28 @@ class ScheduleTemplateRow < ApplicationRecord
     else
       # Legacy format: just an integer ID (assume FS with no lag)
       "#{pred_data}FS"
+    end
+  end
+
+  def sync_photos_category
+    return unless require_photo_changed?
+
+    # Find or create the "Photos" documentation category
+    photos_category = DocumentationCategory.find_or_create_by(name: 'Photos') do |category|
+      category.color = '#10b981' # emerald green
+      category.description = 'Photo documentation required'
+      category.sequence_order = DocumentationCategory.maximum(:sequence_order).to_i + 1
+    end
+
+    # Initialize array if nil
+    self.documentation_category_ids ||= []
+
+    if require_photo?
+      # Add Photos category if not already present
+      self.documentation_category_ids |= [photos_category.id]
+    else
+      # Remove Photos category if present
+      self.documentation_category_ids -= [photos_category.id]
     end
   end
 end
