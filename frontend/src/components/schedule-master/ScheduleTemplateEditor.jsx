@@ -263,7 +263,7 @@ export default function ScheduleTemplateEditor() {
     // Create workbook and worksheet
     const wb = XLSX.utils.book_new()
 
-    // Prepare header row (just text values)
+    // Prepare header row
     const headerRow = [
       'Task Name', 'Supplier', 'Predecessors', 'PO Required', 'Auto PO',
       'Critical', 'Tags', 'Photo', 'Cert', 'Cert Lag',
@@ -291,32 +291,6 @@ export default function ScheduleTemplateEditor() {
 
     // Create worksheet from headers and data
     const ws = XLSX.utils.aoa_to_sheet([headerRow, ...data])
-
-    // Add comments/notes to header cells
-    const tooltipTexts = [
-      columnTooltips.taskName,
-      columnTooltips.supplierGroup,
-      columnTooltips.predecessors,
-      columnTooltips.poRequired,
-      columnTooltips.autoPo,
-      columnTooltips.critical,
-      columnTooltips.tags,
-      columnTooltips.photo,
-      columnTooltips.cert,
-      columnTooltips.certLag,
-      columnTooltips.manualTask,
-      columnTooltips.multipleItems,
-      columnTooltips.orderRequired,
-      columnTooltips.callUpRequired,
-      columnTooltips.planType
-    ]
-
-    // Add comments to header row cells
-    tooltipTexts.forEach((tooltip, idx) => {
-      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: idx })
-      if (!ws[cellAddress].c) ws[cellAddress].c = []
-      ws[cellAddress].c.push({ a: 'System', t: tooltip })
-    })
 
     // Set column widths
     ws['!cols'] = [
@@ -365,11 +339,35 @@ export default function ScheduleTemplateEditor() {
           return
         }
 
+        // Helper function to parse predecessors from format "2FS+3, 5SS-1"
+        const parsePredecessors = (predecessorStr) => {
+          if (!predecessorStr || predecessorStr === 'None' || predecessorStr.trim() === '') {
+            return []
+          }
+
+          const predecessors = []
+          const parts = predecessorStr.split(',').map(p => p.trim())
+
+          for (const part of parts) {
+            // Parse format like "2FS+3" or "5SS" or "1FF-2"
+            const match = part.match(/^(\d+)([A-Z]{2})([+-]?\d+)?$/)
+            if (match) {
+              predecessors.push({
+                id: parseInt(match[1]),
+                type: match[2],
+                lag: match[3] ? parseInt(match[3]) : 0
+              })
+            }
+          }
+
+          return predecessors
+        }
+
         // Convert Excel data to task format
         const importedRows = jsonData.map((row, index) => ({
           name: row['Task Name'] || `Task ${index + 1}`,
           supplier_id: null, // Will need to be mapped manually
-          predecessor_ids: [],
+          predecessor_ids: parsePredecessors(row['Predecessors']),
           po_required: row['PO Required'] === 'Yes',
           create_po_on_job_start: row['Auto PO'] === 'Yes',
           critical_po: row['Critical'] === 'Yes',
