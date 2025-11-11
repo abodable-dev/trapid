@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { api } from '../api'
 import {
   EnvelopeIcon,
@@ -35,12 +35,13 @@ function classNames(...classes) {
 export default function SupplierDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [supplier, setSupplier] = useState(null)
   const [purchaseOrders, setPurchaseOrders] = useState([])
   const [loadingPOs, setLoadingPOs] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [currentTab, setCurrentTab] = useState('overview')
+  const currentTab = searchParams.get('tab') || 'overview'
   const [editingItemId, setEditingItemId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [savingItemId, setSavingItemId] = useState(null)
@@ -428,7 +429,7 @@ export default function SupplierDetailPage() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setCurrentTab(tab.id)}
+                onClick={() => setSearchParams({ tab: tab.id })}
                 role="tab"
                 aria-selected={tab.id === currentTab}
                 className={classNames(
