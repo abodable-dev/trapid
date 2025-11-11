@@ -41,6 +41,12 @@ Rails.application.routes.draw do
 
       # Construction jobs management
       resources :constructions do
+        member do
+          get :saved_messages
+          get :emails
+          get :documentation_tabs
+        end
+
         # Schedule tasks (nested under constructions)
         resources :schedule_tasks, only: [:index, :create] do
           collection do
@@ -57,6 +63,7 @@ Rails.application.routes.draw do
             post :validate
           end
         end
+
       end
 
       # Schedule tasks (non-nested routes)
@@ -64,6 +71,13 @@ Rails.application.routes.draw do
         member do
           patch :match_po
           delete :unmatch_po
+        end
+
+        # Checklist items for supervisor checks
+        resources :checklist_items, controller: 'schedule_task_checklist_items', only: [:index, :create, :update, :destroy] do
+          member do
+            post :toggle
+          end
         end
       end
 
@@ -74,7 +88,11 @@ Rails.application.routes.draw do
         end
 
         # Project tasks (nested under projects)
-        resources :tasks, controller: 'project_tasks'
+        resources :tasks, controller: 'project_tasks' do
+          member do
+            post :auto_complete_subtasks
+          end
+        end
       end
 
       # Purchase Orders management
@@ -88,6 +106,8 @@ Rails.application.routes.draw do
           post :approve
           post :send_to_supplier
           post :mark_received
+          get :available_documents
+          post :attach_documents
         end
       end
 
@@ -150,8 +170,54 @@ Rails.application.routes.draw do
         end
       end
 
+      # Chat messages
+      resources :chat_messages, only: [:index, :create, :destroy] do
+        collection do
+          get :unread_count
+          post :mark_as_read
+          post :save_conversation_to_job
+        end
+        member do
+          post :save_to_job
+        end
+      end
+
       # Users management
-      resources :users, only: [:index, :show]
+      resources :users, only: [:index, :show, :update, :destroy]
+
+      # Workflow management
+      resources :workflow_definitions
+      resources :workflow_steps, only: [:index, :show] do
+        member do
+          post :approve
+          post :reject
+          post :request_changes
+        end
+      end
+
+      # Emails management
+      resources :emails do
+        collection do
+          post :webhook
+        end
+        member do
+          post :assign_to_job
+        end
+      end
+
+      # Outlook integration
+      resources :outlook, only: [] do
+        collection do
+          get :auth_url
+          get :callback
+          get :status
+          delete :disconnect
+          get :folders
+          post :search
+          post :import
+          post :import_for_job
+        end
+      end
 
       # Designs library
       resources :designs
@@ -169,6 +235,54 @@ Rails.application.routes.draw do
       # Task Templates for Schedule Master
       resources :task_templates
 
+      # Setup data management
+      post 'setup/pull_from_local', to: 'setup#pull_from_local'
+      post 'setup/sync_users', to: 'setup#sync_users'
+      post 'setup/sync_documentation_categories', to: 'setup#sync_documentation_categories'
+      post 'setup/sync_supervisor_checklists', to: 'setup#sync_supervisor_checklists'
+      post 'setup/sync_schedule_templates', to: 'setup#sync_schedule_templates'
+      post 'setup/sync_folder_templates', to: 'setup#sync_folder_templates'
+
+      # Documentation Categories (Global)
+      resources :documentation_categories do
+        collection do
+          post :reorder
+        end
+      end
+
+      # Supervisor Checklist Templates (Global)
+      resources :supervisor_checklist_templates do
+        collection do
+          post :reorder
+          get :categories
+        end
+      end
+
+      # Schedule Templates for Schedule Master
+      resources :schedule_templates do
+        collection do
+          get :default
+        end
+        member do
+          post :duplicate
+          post :set_as_default
+        end
+        # Template rows (nested under schedule_templates)
+        resources :rows, controller: 'schedule_template_rows', except: [:index, :show] do
+          collection do
+            post :bulk_update
+            post :reorder
+          end
+        end
+      end
+
+      # Public Holidays
+      resources :public_holidays, only: [:index, :create, :destroy] do
+        collection do
+          get :dates
+        end
+      end
+
       # Xero integration
       resources :xero, only: [] do
         collection do
@@ -183,6 +297,7 @@ Rails.application.routes.draw do
           get :sync_status
           get :sync_history
           get :tax_rates
+          get :accounts
           get :search_contacts
         end
         member do
