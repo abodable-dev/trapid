@@ -230,7 +230,7 @@ module Api
             schedule_template_id: template_id,
             name: row[:name],
             supplier_id: row[:supplier_id].present? ? row[:supplier_id].to_i : nil,
-            assigned_role: row[:assigned_role],
+            assigned_user_id: row[:assigned_user_id].present? ? row[:assigned_user_id].to_i : nil,
             predecessor_ids: predecessor_ids,
             po_required: row[:po_required] == 'true',
             create_po_on_job_start: row[:create_po_on_job_start] == 'true',

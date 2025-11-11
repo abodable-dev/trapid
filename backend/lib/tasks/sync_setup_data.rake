@@ -164,7 +164,7 @@ namespace :setup do
           schedule_template_id: template_id,
           name: row[:name],
           supplier_id: row[:supplier_id].present? ? row[:supplier_id].to_i : nil,
-          assigned_role: row[:assigned_role],
+          assigned_user_id: row[:assigned_user_id].present? ? row[:assigned_user_id].to_i : nil,
           predecessor_ids: predecessor_ids,
           po_required: row[:po_required] == 'true',
           create_po_on_job_start: row[:create_po_on_job_start] == 'true',
@@ -298,7 +298,7 @@ namespace :setup do
 
     CSV.open(rows_file, 'w') do |csv|
       headers = [
-        'schedule_template_id', 'name', 'supplier_id', 'assigned_role',
+        'schedule_template_id', 'name', 'supplier_id', 'assigned_user_id',
         'predecessor_ids', 'po_required', 'create_po_on_job_start', 'critical_po',
         'price_book_item_ids', 'documentation_category_ids',
         'tags', 'require_photo', 'require_certificate', 'cert_lag_days',
@@ -313,7 +313,7 @@ namespace :setup do
           row.schedule_template_id,
           row.name,
           row.supplier_id,
-          row.assigned_role,
+          row.assigned_user_id,
           row.predecessor_ids.to_json,
           row.po_required,
           row.create_po_on_job_start,
