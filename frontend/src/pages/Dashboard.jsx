@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetFooter } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
+import Toast from '../components/Toast'
 
 export default function Dashboard() {
  const navigate = useNavigate()
@@ -19,6 +20,7 @@ export default function Dashboard() {
  const [newTableName, setNewTableName] = useState('')
  const [creating, setCreating] = useState(false)
  const [createError, setCreateError] = useState(null)
+ const [toast, setToast] = useState(null)
 
  useEffect(() => {
  loadTables()
@@ -113,13 +115,22 @@ export default function Dashboard() {
  table: { is_live: true }
  })
 
- // Step 4: Close sheet and navigate
+ // Step 4: Show success toast, close sheet and navigate
+ setToast({
+ message: `Table "${newTableName}" created successfully!`,
+ type: 'success'
+ })
  setShowCreateSheet(false)
  setNewTableName('')
  navigate(`/tables/${tableId}`)
  } catch (err) {
  console.error('Table creation error:', err)
- setCreateError(err.response?.data?.error || err.message || 'Failed to create table')
+ const errorMessage = err.response?.data?.error || err.message || 'Failed to create table'
+ setCreateError(errorMessage)
+ setToast({
+ message: errorMessage,
+ type: 'error'
+ })
  } finally {
  setCreating(false)
  }
@@ -217,6 +228,7 @@ export default function Dashboard() {
  }
 
  return (
+ <>
  <div className="min-h-screen">
  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
  {/* Header */}
@@ -439,7 +451,18 @@ export default function Dashboard() {
  </div>
  </div>
  )}
+
  </div>
  </div>
+
+ {/* Toast Notification */}
+ {toast && (
+ <Toast
+ message={toast.message}
+ type={toast.type}
+ onClose={() => setToast(null)}
+ />
+ )}
+ </>
  )
 }

@@ -13,6 +13,7 @@ import {
 } from"lucide-react";
 import { api } from"../api";
 import { formatCurrency } from"../utils/formatters";
+import Toast from"../components/Toast";
 
 function formatDate(dateString) {
  if (!dateString) return"-";
@@ -30,6 +31,7 @@ export default function PurchaseOrderDetailPage() {
  const [purchaseOrder, setPurchaseOrder] = useState(null);
  const [loading, setLoading] = useState(true);
  const [error, setError] = useState(null);
+ const [toast, setToast] = useState(null);
 
  // Add print styles
  useEffect(() => {
@@ -46,93 +48,94 @@ export default function PurchaseOrderDetailPage() {
  /* CRITICAL: Zero page margins for edge-to-edge black */
  @page {
  size: A4 portrait;
- margin: 0mm !important;
+ margin: 0 !important;
  }
 
- /* Hide navigation and action buttons */
- header, nav, .no-print {
+ /* Hide everything except print wrapper */
+ body > *:not(.print-wrapper) {
  display: none !important;
  }
 
-      /* Force desktop A4 width - override mobile viewport */
-      html {
-        background-color: #000000 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 210mm !important;
-        min-width: 210mm !important;
-        font-size: 10pt !important;
-      }
+ /* Print wrapper fills entire page - edge to edge black */
+ .print-wrapper {
+ position: fixed !important;
+ top: 0 !important;
+ left: 0 !important;
+ right: 0 !important;
+ bottom: 0 !important;
+ width: 210mm !important;
+ height: 297mm !important;
+ background-color: #000000 !important;
+ margin: 0 !important;
+ padding: 0 !important;
+ overflow: visible !important;
+ display: block !important;
+ }
 
-      body {
-        background-color: #000000 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 210mm !important;
-        min-width: 210mm !important;
-        font-size: 10pt !important;
-      }
+ /* Print container - centered with MINIMAL padding for single-page fit */
+ .print-container {
+ position: absolute !important;
+ top: 0 !important;
+ left: 0 !important;
+ right: 0 !important;
+ bottom: 0 !important;
+ padding: 8mm !important;
+ background-color: #000000 !important;
+ box-sizing: border-box !important;
+ }
 
-      /* Main container - black background with equal padding on all sides */
-      main {
-        background-color: #000000 !important;
-        margin: 0 auto !important;
-        padding: 20mm !important;
-        width: 210mm !important;
-        max-width: 210mm !important;
-        min-width: 210mm !important;
-      }
+ /* Override all responsive max-width constraints */
+ .print-container .max-w-4xl,
+ .print-container .max-w-7xl {
+ max-width: none !important;
+ width: 100% !important;
+ padding-left: 0 !important;
+ padding-right: 0 !important;
+ margin: 0 !important;
+ }
 
-      /* Force invoice container to use full width */
-      #po-invoice-content {
-        max-width: none !important;
-        width: 100% !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-      }
+ /* Force all grid columns to desktop layout */
+ .print-container .grid-cols-1 {
+ grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+ }
 
-      /* Override all responsive max-width constraints */
-      .max-w-4xl, .max-w-7xl {
-        max-width: none !important;
-      }
+ .print-container .md\:grid-cols-3 {
+ grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+ }
 
-      /* Force all grid columns to desktop layout */
-      .grid-cols-1 {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-      }
+ .print-container .md\:grid-cols-2 {
+ grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+ }
 
-      .md\:grid-cols-3 {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-      }
+ .print-container .sm\:grid-cols-4 {
+ grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+ }
 
-      .md\:grid-cols-2 {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-      }
+ /* Optimized font sizes for single-page fit */
+ .print-container .text-xs {
+ font-size: 0.65rem !important;
+ line-height: 1.2 !important;
+ }
 
-      .sm\:grid-cols-4 {
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-      }
+ .print-container .text-sm {
+ font-size: 0.75rem !important;
+ line-height: 1.3 !important;
+ }
 
-      /* Increase font sizes for better readability */
-      .text-xs {
-        font-size: 0.8rem !important;
-      }
+ .print-container .text-base {
+ font-size: 0.85rem !important;
+ line-height: 1.3 !important;
+ }
 
-      .text-sm {
-        font-size: 0.95rem !important;
-      }
+ .print-container .text-xl {
+ font-size: 1rem !important;
+ line-height: 1.3 !important;
+ }
 
-      .text-base {
-        font-size: 1.1rem !important;
-      }
-
-      .text-xl {
-        font-size: 1.4rem !important;
-      }
-
-      .text-2xl {
-        font-size: 1.75rem !important;
-      }
+ .print-container .text-2xl {
+ font-size: 1.2rem !important;
+ line-height: 1.3 !important;
+ }
 
  /* Preserve all dark theme colors */
  .bg-black {
@@ -215,6 +218,89 @@ export default function PurchaseOrderDetailPage() {
  page-break-inside: avoid;
  page-break-after: auto;
  }
+
+ /* Reduce spacing globally for single-page fit */
+ .print-container .p-4 {
+ padding: 0.5rem !important;
+ }
+
+ .print-container .p-3 {
+ padding: 0.4rem !important;
+ }
+
+ .print-container .py-2 {
+ padding-top: 0.3rem !important;
+ padding-bottom: 0.3rem !important;
+ }
+
+ .print-container .pb-2 {
+ padding-bottom: 0.3rem !important;
+ }
+
+ .print-container .mb-2 {
+ margin-bottom: 0.3rem !important;
+ }
+
+ .print-container .mb-4 {
+ margin-bottom: 0.5rem !important;
+ }
+
+ .print-container .mt-4 {
+ margin-top: 0.5rem !important;
+ }
+
+ .print-container .space-y-1 > * + * {
+ margin-top: 0.15rem !important;
+ }
+
+ .print-container .space-y-2 > * + * {
+ margin-top: 0.3rem !important;
+ }
+
+ .print-container .gap-3 {
+ gap: 0.4rem !important;
+ }
+
+ .print-container .gap-4 {
+ gap: 0.5rem !important;
+ }
+
+ /* Reduce logo size */
+ .print-container img {
+ max-height: 20px !important;
+ margin-bottom: 0.25rem !important;
+ }
+
+ /* Tighter table spacing */
+ .print-container table td,
+ .print-container table th {
+ padding-top: 0.25rem !important;
+ padding-bottom: 0.25rem !important;
+ }
+
+ /* Hide Activity Timeline to save space */
+ .print-container .activity-timeline {
+ display: none !important;
+ }
+
+ /* Make remittance section more compact */
+ .print-container .remittance-section {
+ padding: 0.4rem !important;
+ }
+
+ /* Make conditions section more compact */
+ .print-container .conditions-section {
+ padding: 0.4rem !important;
+ }
+
+ .print-container .conditions-section ul {
+ margin: 0 !important;
+ }
+
+ .print-container .conditions-section li {
+ margin-bottom: 0.1rem !important;
+ line-height: 1.2 !important;
+ }
  }
  `;
  document.head.appendChild(style);
@@ -245,9 +331,16 @@ export default function PurchaseOrderDetailPage() {
  try {
  await api.post(`/api/v1/purchase_orders/${id}/approve`);
  await loadPurchaseOrder();
+ setToast({
+ message:"Purchase order approved successfully",
+ type:"success"
+ });
  } catch (err) {
  console.error("Failed to approve purchase order:", err);
- alert("Failed to approve purchase order");
+ setToast({
+ message:"Failed to approve purchase order. Please try again.",
+ type:"error"
+ });
  }
  };
 
@@ -255,9 +348,16 @@ export default function PurchaseOrderDetailPage() {
  try {
  await api.post(`/api/v1/purchase_orders/${id}/send_to_supplier`);
  await loadPurchaseOrder();
+ setToast({
+ message:"Purchase order sent to supplier successfully",
+ type:"success"
+ });
  } catch (err) {
  console.error("Failed to send to supplier:", err);
- alert("Failed to send to supplier");
+ setToast({
+ message:"Failed to send to supplier. Please try again.",
+ type:"error"
+ });
  }
  };
 
@@ -265,9 +365,16 @@ export default function PurchaseOrderDetailPage() {
  try {
  await api.post(`/api/v1/purchase_orders/${id}/mark_received`);
  await loadPurchaseOrder();
+ setToast({
+ message:"Purchase order marked as received",
+ type:"success"
+ });
  } catch (err) {
  console.error("Failed to mark as received:", err);
- alert("Failed to mark as received");
+ setToast({
+ message:"Failed to mark as received. Please try again.",
+ type:"error"
+ });
  }
  };
 
@@ -309,6 +416,7 @@ export default function PurchaseOrderDetailPage() {
  }
 
  return (
+ <>
  <main className="min-h-screen bg-black">
  {/* Minimal Header */}
  <div className="border-b border-gray-800 no-print">
@@ -406,7 +514,7 @@ export default function PurchaseOrderDetailPage() {
  </div>
 
  {/* Main Invoice Container */}
- <div className="mx-auto max-w-4xl px-6 py-6" id="po-invoice-content">
+ <div className="mx-auto max-w-4xl px-6 py-6">
  {/* PO Header with Title & Status */}
  <div className="flex items-start justify-between mb-6 no-print">
  <div>
@@ -435,6 +543,10 @@ export default function PurchaseOrderDetailPage() {
  </div>
  </div>
  </div>
+
+ {/* Print Wrapper - for print styles only */}
+ <div className="print-wrapper">
+ <div className="print-container">
 
  {/* Main Card */}
  <div className="bg-gray-900 border border-gray-800 overflow-hidden">
@@ -744,7 +856,7 @@ export default function PurchaseOrderDetailPage() {
  </div>
 
  {/* Remittance Section */}
- <div className="border-t border-gray-800 p-4 bg-gray-900/50">
+ <div className="remittance-section border-t border-gray-800 p-4 bg-gray-900/50">
  <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">
  Remittance
  </div>
@@ -786,7 +898,7 @@ export default function PurchaseOrderDetailPage() {
  </div>
 
  {/* Conditions of Acceptance */}
- <div className="border-t border-gray-800 p-4">
+ <div className="conditions-section border-t border-gray-800 p-4">
  <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">
  Conditions of Acceptance
  </div>
@@ -828,8 +940,8 @@ export default function PurchaseOrderDetailPage() {
  </div>
  </div>
 
- {/* Activity Timeline */}
- <div className="mt-4">
+ {/* Activity Timeline - Hidden in print */}
+ <div className="activity-timeline mt-4">
  <h2 className="text-xs font-medium text-gray-400 mb-2">Activity</h2>
  <div className="bg-gray-900 border border-gray-800 p-3">
  <div className="flex items-start gap-3">
@@ -848,7 +960,22 @@ export default function PurchaseOrderDetailPage() {
  </div>
  </div>
  </div>
+
+ </div>
+ </div>
+ {/* End Print Wrapper */}
+
  </div>
  </main>
+
+ {/* Toast Notification */}
+ {toast && (
+ <Toast
+ message={toast.message}
+ type={toast.type}
+ onClose={() => setToast(null)}
+ />
+ )}
+ </>
  );
 }

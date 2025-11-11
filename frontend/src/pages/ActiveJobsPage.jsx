@@ -5,11 +5,16 @@ import {
  Plus,
  Briefcase,
  Upload,
+ Pencil,
+ CheckCircle,
+ XCircle,
 } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import NewJobModal from '../components/jobs/NewJobModal'
 import CsvImportJobModal from '../components/jobs/CsvImportJobModal'
 import MiddayDataTable from '../components/MiddayDataTable'
+import EmptyState from '../components/EmptyState'
+import Toast from '../components/Toast'
 
 export default function ActiveJobsPage() {
  const navigate = useNavigate()
@@ -20,6 +25,9 @@ export default function ActiveJobsPage() {
  const [editValue, setEditValue] = useState('')
  const [showNewJobModal, setShowNewJobModal] = useState(false)
  const [showCsvImportModal, setShowCsvImportModal] = useState(false)
+ const [savedCell, setSavedCell] = useState(null)
+ const [errorCell, setErrorCell] = useState(null)
+ const [toast, setToast] = useState(null)
 
  useEffect(() => {
  loadJobs()
@@ -59,9 +67,20 @@ export default function ActiveJobsPage() {
  }
  })
  await loadJobs()
+
+ // Show success indicator
+ setSavedCell({ jobId, field })
+ setTimeout(() => setSavedCell(null), 1500)
  } catch (err) {
  console.error('Failed to update job:', err)
- alert('Failed to update job')
+
+ // Show error indicator
+ setErrorCell({
+ jobId,
+ field,
+ message: err.response?.data?.message || 'Failed to update. Please try again.'
+ })
+ setTimeout(() => setErrorCell(null), 3000)
  }
  }
 
@@ -88,7 +107,15 @@ export default function ActiveJobsPage() {
  await loadJobs()
 
  if (createOneDriveFolders) {
- alert('Job created successfully! OneDrive folders are being created in the background.')
+ setToast({
+ message: 'Job created successfully! OneDrive folders are being created in the background.',
+ type: 'success'
+ })
+ } else {
+ setToast({
+ message: 'Job created successfully!',
+ type: 'success'
+ })
  }
 
  if (response.construction && response.construction.id) {
@@ -96,6 +123,10 @@ export default function ActiveJobsPage() {
  }
  } catch (err) {
  console.error('Failed to create job:', err)
+ setToast({
+ message: 'Failed to create job. Please try again.',
+ type: 'error'
+ })
  throw err
  }
  }
@@ -158,20 +189,36 @@ export default function ActiveJobsPage() {
  onBlur={handleCellBlur}
  onKeyDown={handleKeyDown}
  autoFocus
- className="w-full px-2 py-1 text-xs text-right font-mono border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:bg-gray-900 dark:text-white"
+ className="w-full px-2 py-1 text-xs text-right font-mono border-2 border-blue-500 dark:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 dark:text-white rounded transition-all"
  />
  )
  }
  return (
+ <div className="relative">
  <div
  onClick={(e) => {
  e.stopPropagation()
  handleCellClick(job.id, 'contract_value', job.contract_value)
  }}
- className="text-gray-900 dark:text-white font-mono cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 px-2 py-1"
+ className="relative group text-gray-900 dark:text-white font-mono cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 px-2 py-1 -mx-2 -my-1 rounded transition-colors"
  title="Click to edit"
  >
+ <Pencil className="absolute -right-1 -top-1 h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
  {job.contract_value ? formatCurrency(job.contract_value, false) : '-'}
+ </div>
+ {savedCell?.jobId === job.id && savedCell?.field === 'contract_value' && (
+ <div className="absolute inset-0 flex items-center justify-center bg-green-500/10 dark:bg-green-500/20 rounded animate-[fadeIn_0.2s_ease-in]">
+ <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 animate-[scaleIn_0.3s_ease-out]" />
+ </div>
+ )}
+ {errorCell?.jobId === job.id && errorCell?.field === 'contract_value' && (
+ <div className="absolute -bottom-8 left-0 right-0 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded shadow-sm z-10 animate-[slideDown_0.2s_ease-out]">
+ <div className="flex items-center gap-1">
+ <XCircle className="h-3 w-3 flex-shrink-0" />
+ <span>{errorCell.message}</span>
+ </div>
+ </div>
+ )}
  </div>
  )
  }
@@ -193,24 +240,40 @@ export default function ActiveJobsPage() {
  onBlur={handleCellBlur}
  onKeyDown={handleKeyDown}
  autoFocus
- className="w-full px-2 py-1 text-xs text-right font-mono border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:bg-gray-900 dark:text-white"
+ className="w-full px-2 py-1 text-xs text-right font-mono border-2 border-blue-500 dark:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 dark:text-white rounded transition-all"
  />
  )
  }
  return (
+ <div className="relative">
  <div
  onClick={(e) => {
  e.stopPropagation()
  handleCellClick(job.id, 'live_profit', job.live_profit)
  }}
- className={`cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 px-2 py-1 font-mono ${
+ className={`relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 px-2 py-1 -mx-2 -my-1 rounded transition-colors font-mono ${
  job.live_profit >= 0
  ? 'text-green-600 dark:text-green-400'
  : 'text-red-600 dark:text-red-400'
  }`}
  title="Click to edit"
  >
+ <Pencil className="absolute -right-1 -top-1 h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
  {job.live_profit ? formatCurrency(job.live_profit, false) : '-'}
+ </div>
+ {savedCell?.jobId === job.id && savedCell?.field === 'live_profit' && (
+ <div className="absolute inset-0 flex items-center justify-center bg-green-500/10 dark:bg-green-500/20 rounded animate-[fadeIn_0.2s_ease-in]">
+ <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 animate-[scaleIn_0.3s_ease-out]" />
+ </div>
+ )}
+ {errorCell?.jobId === job.id && errorCell?.field === 'live_profit' && (
+ <div className="absolute -bottom-8 left-0 right-0 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded shadow-sm z-10 animate-[slideDown_0.2s_ease-out]">
+ <div className="flex items-center gap-1">
+ <XCircle className="h-3 w-3 flex-shrink-0" />
+ <span>{errorCell.message}</span>
+ </div>
+ </div>
+ )}
  </div>
  )
  }
@@ -232,24 +295,40 @@ export default function ActiveJobsPage() {
  onBlur={handleCellBlur}
  onKeyDown={handleKeyDown}
  autoFocus
- className="w-full px-2 py-1 text-xs text-right font-mono border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:bg-gray-900 dark:text-white"
+ className="w-full px-2 py-1 text-xs text-right font-mono border-2 border-blue-500 dark:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 dark:text-white rounded transition-all"
  />
  )
  }
  return (
+ <div className="relative">
  <div
  onClick={(e) => {
  e.stopPropagation()
  handleCellClick(job.id, 'profit_percentage', job.profit_percentage)
  }}
- className={`cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 px-2 py-1 font-mono ${
+ className={`relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 px-2 py-1 -mx-2 -my-1 rounded transition-colors font-mono ${
  job.profit_percentage >= 0
  ? 'text-green-600 dark:text-green-400'
  : 'text-red-600 dark:text-red-400'
  }`}
  title="Click to edit"
  >
+ <Pencil className="absolute -right-1 -top-1 h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
  {job.profit_percentage ? formatPercentage(job.profit_percentage, 2) : '-'}
+ </div>
+ {savedCell?.jobId === job.id && savedCell?.field === 'profit_percentage' && (
+ <div className="absolute inset-0 flex items-center justify-center bg-green-500/10 dark:bg-green-500/20 rounded animate-[fadeIn_0.2s_ease-in]">
+ <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 animate-[scaleIn_0.3s_ease-out]" />
+ </div>
+ )}
+ {errorCell?.jobId === job.id && errorCell?.field === 'profit_percentage' && (
+ <div className="absolute -bottom-8 left-0 right-0 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded shadow-sm z-10 animate-[slideDown_0.2s_ease-out]">
+ <div className="flex items-center gap-1">
+ <XCircle className="h-3 w-3 flex-shrink-0" />
+ <span>{errorCell.message}</span>
+ </div>
+ </div>
+ )}
  </div>
  )
  }
@@ -268,22 +347,38 @@ export default function ActiveJobsPage() {
  onBlur={handleCellBlur}
  onKeyDown={handleKeyDown}
  autoFocus
- className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:bg-gray-900 dark:text-white"
+ className="w-full px-2 py-1 text-xs border-2 border-blue-500 dark:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 dark:text-white rounded transition-all"
  />
  )
  }
  return (
+ <div className="relative">
  <div
  onClick={(e) => {
  e.stopPropagation()
  handleCellClick(job.id, 'stage', job.stage)
  }}
- className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 px-2 py-1 inline-block"
+ className="relative group cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800/50 px-2 py-1 -mx-2 -my-1 rounded transition-colors inline-block"
  title="Click to edit"
  >
+ <Pencil className="absolute -right-1 -top-1 h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
  {job.stage || 'Not Set'}
  </span>
+ </div>
+ {savedCell?.jobId === job.id && savedCell?.field === 'stage' && (
+ <div className="absolute inset-0 flex items-center justify-center bg-green-500/10 dark:bg-green-500/20 rounded animate-[fadeIn_0.2s_ease-in]">
+ <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 animate-[scaleIn_0.3s_ease-out]" />
+ </div>
+ )}
+ {errorCell?.jobId === job.id && errorCell?.field === 'stage' && (
+ <div className="absolute -bottom-8 left-0 right-0 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded shadow-sm z-10 animate-[slideDown_0.2s_ease-out]">
+ <div className="flex items-center gap-1">
+ <XCircle className="h-3 w-3 flex-shrink-0" />
+ <span>{errorCell.message}</span>
+ </div>
+ </div>
+ )}
  </div>
  )
  }
@@ -370,8 +465,21 @@ export default function ActiveJobsPage() {
  onSuccess={() => {
  setShowCsvImportModal(false)
  loadJobs()
+ setToast({
+ message: 'Jobs imported successfully!',
+ type: 'success'
+ })
  }}
  />
+
+ {/* Toast Notification */}
+ {toast && (
+ <Toast
+ message={toast.message}
+ type={toast.type}
+ onClose={() => setToast(null)}
+ />
+ )}
  </div>
  </div>
  )

@@ -12,11 +12,15 @@ import {
  Menu,
  SlidersHorizontal,
  Search,
+ Pencil,
+ CheckCircle,
+ XCircle,
 } from 'lucide-react'
 import { formatCurrency } from '../utils/formatters'
 import { api } from '../api'
 import ColumnHeaderMenu from '../components/pricebook/ColumnHeaderMenu'
 import PriceBookImportModal from '../components/pricebook/PriceBookImportModal'
+import Toast from '../components/Toast'
 
 export default function PriceBooksPage() {
  const navigate = useNavigate()
@@ -52,6 +56,9 @@ export default function PriceBooksPage() {
  const [exporting, setExporting] = useState(false)
  const [selectedItems, setSelectedItems] = useState(new Set()) // Track selected item IDs
  const [isSearchFocused, setIsSearchFocused] = useState(false) // Track search focus state
+ const [savedCell, setSavedCell] = useState(null) // Track successful category updates
+ const [errorCell, setErrorCell] = useState(null) // Track failed category updates
+ const [toast, setToast] = useState(null) // Toast notifications
 
  const observerTarget = useRef(null)
  const searchTimeoutRef = useRef(null)
@@ -329,9 +336,20 @@ export default function PriceBooksPage() {
  ))
 
  setEditingCategory(null)
+
+ // Show success indicator
+ setSavedCell({ itemId, field: 'category' })
+ setTimeout(() => setSavedCell(null), 1500)
  } catch (error) {
  console.error('Failed to update category:', error)
- alert('Failed to update category')
+
+ // Show error indicator
+ setErrorCell({
+ itemId,
+ field: 'category',
+ message: error.response?.data?.message || 'Failed to update category'
+ })
+ setTimeout(() => setErrorCell(null), 3000)
  }
  }, [])
 
@@ -412,9 +430,18 @@ export default function PriceBooksPage() {
  a.click()
  window.URL.revokeObjectURL(downloadUrl)
  document.body.removeChild(a)
+
+ // Show success toast
+ setToast({
+ message: `Successfully exported ${selectedItems.size > 0 ? selectedItems.size : 'all'} item${selectedItems.size !== 1 ? 's' : ''} to Excel`,
+ type: 'success'
+ })
  } catch (error) {
  console.error('Export failed:', error)
- alert('Failed to export data. Please try again.')
+ setToast({
+ message: 'Failed to export data. Please try again.',
+ type: 'error'
+ })
  } finally {
  setExporting(false)
  }
@@ -423,6 +450,10 @@ export default function PriceBooksPage() {
  const handleImportSuccess = () => {
  // Refresh the pricebook data
  loadPriceBook(1)
+ setToast({
+ message: 'Price book import completed successfully',
+ type: 'success'
+ })
  }
 
  const handleBackdropClick = () => {
@@ -581,17 +612,18 @@ export default function PriceBooksPage() {
  <input
  ref={searchInputRef}
  type="text"
- placeholder="Search..."
+ placeholder={searchQuery || isSearchFocused ? "Search..." : ""}
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
  onFocus={() => setIsSearchFocused(true)}
  onBlur={() => setIsSearchFocused(false)}
- className="text-gray-900 dark:text-gray-100 text-xs font-sans outline-none ring-0 focus:ring-0 focus:outline-none transition-[width,padding] duration-[240ms] placeholder:text-gray-500 dark:placeholder:text-gray-500 rounded-lg bg-gray-900 border-0"
+ className="text-gray-900 dark:text-gray-100 text-xs font-sans outline-none ring-0 focus:ring-0 focus:outline-none transition-[width,padding,color] duration-[240ms] rounded-lg bg-gray-900 border-0 placeholder:text-gray-400"
  style={{
  width: (searchQuery || isSearchFocused) ? '16rem' : '2rem',
  height: '2rem',
- paddingLeft: (searchQuery || isSearchFocused) ? '1.75rem' : '0.5rem',
+ paddingLeft: (searchQuery || isSearchFocused) ? '2.5rem' : '0.5rem',
  paddingRight: (searchQuery || isSearchFocused) ? '2rem' : '0.5rem',
+ color: (searchQuery || isSearchFocused) ? undefined : 'transparent',
  }}
  />
  {searchQuery && (
@@ -924,7 +956,7 @@ export default function PriceBooksPage() {
  value={item.category || ''}
  onChange={(e) => handleCategoryUpdate(item.id, e.target.value)}
  onBlur={() => setEditingCategory(null)}
- className="w-full px-2 py-1 text-xs font-medium border border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-indigo-400"
+ className="w-full px-2 py-1 text-xs font-medium border-2 border-blue-500 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-blue-400 rounded transition-all"
  onClick={(e) => e.stopPropagation()}
  >
  <option value="">Select category...</option>
@@ -933,9 +965,25 @@ export default function PriceBooksPage() {
  ))}
  </select>
  ) : (
- <span className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400">
+ <div className="relative">
+ <div className="relative group cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 px-2 py-1 -mx-2 -my-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+ <Pencil className="absolute -right-1 -top-1 h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
  {item.category || '-'}
- </span>
+ </div>
+ {savedCell?.itemId === item.id && savedCell?.field === 'category' && (
+ <div className="absolute inset-0 flex items-center justify-center bg-green-500/10 dark:bg-green-500/20 rounded animate-[fadeIn_0.2s_ease-in]">
+ <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 animate-[scaleIn_0.3s_ease-out]" />
+ </div>
+ )}
+ {errorCell?.itemId === item.id && errorCell?.field === 'category' && (
+ <div className="absolute -bottom-8 left-0 right-0 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded shadow-sm z-10 animate-[slideDown_0.2s_ease-out]">
+ <div className="flex items-center gap-1">
+ <XCircle className="h-3 w-3 flex-shrink-0" />
+ <span>{errorCell.message}</span>
+ </div>
+ </div>
+ )}
+ </div>
  )}
  </td>
  <td className="px-3 py-2.5 text-xs text-right font-mono text-gray-900 dark:text-white font-medium">
@@ -988,6 +1036,15 @@ export default function PriceBooksPage() {
  onClose={() => setShowImportModal(false)}
  onImportSuccess={handleImportSuccess}
  />
+
+ {/* Toast Notification */}
+ {toast && (
+ <Toast
+ message={toast.message}
+ type={toast.type}
+ onClose={() => setToast(null)}
+ />
+ )}
  </div>
  </div>
  )

@@ -95,6 +95,8 @@ export default function SuppliersPage() {
  }
  }
 
+ const [toast, setToast] = useState(null)
+
  const runAutoMatch = async () => {
  setIsMatching(true)
  try {
@@ -103,11 +105,17 @@ export default function SuppliersPage() {
  verify_exact: false
  })
 
- alert(`✓ Matched ${response.matched_count} suppliers!`)
+ setToast({
+ message: `Successfully matched ${response.matched_count} supplier${response.matched_count !== 1 ? 's' : ''}!`,
+ type: 'success'
+ })
  loadSuppliers()
  } catch (err) {
- alert('Failed to run auto-matching')
- console.error(err)
+ console.error('Auto-match error:', err)
+ setToast({
+ message: 'Failed to run auto-matching. Please try again.',
+ type: 'error'
+ })
  } finally {
  setIsMatching(false)
  }
@@ -193,8 +201,55 @@ export default function SuppliersPage() {
 
  if (loading) {
  return (
- <div className="flex items-center justify-center py-12">
- <div className="text-gray-600 dark:text-gray-400">Loading suppliers...</div>
+ <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+ {/* Header Skeleton */}
+ <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+ <div className="flex items-center gap-2">
+ <div className="h-4 w-4 bg-gray-700 rounded animate-pulse" />
+ <div>
+ <div className="h-4 w-40 bg-gray-800 rounded animate-pulse mb-1" />
+ <div className="h-3 w-64 bg-gray-800 rounded animate-pulse" />
+ </div>
+ </div>
+ <div className="h-8 w-32 bg-gray-800 rounded animate-pulse self-start sm:self-auto" />
+ </div>
+
+ {/* Stats Cards Skeleton */}
+ <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+ {[1, 2, 3, 4].map(i => (
+ <div key={i} className="bg-gray-900 border border-gray-800 p-4">
+ <div className="flex items-center justify-between">
+ <div className="flex-1">
+ <div className="h-3 w-24 bg-gray-700 rounded animate-pulse mb-2" />
+ <div className="h-8 w-16 bg-gray-700 rounded animate-pulse" />
+ </div>
+ <div className="h-3.5 w-3.5 bg-gray-700 rounded animate-pulse" />
+ </div>
+ </div>
+ ))}
+ </div>
+
+ {/* Actions Bar Skeleton */}
+ <div className="flex flex-col sm:flex-row gap-3 mb-6">
+ <div className="flex-1 h-8 bg-gray-900 rounded animate-pulse" />
+ <div className="flex gap-2">
+ <div className="h-8 w-24 bg-gray-800 rounded animate-pulse" />
+ <div className="h-8 w-32 bg-gray-800 rounded animate-pulse" />
+ <div className="h-8 w-36 bg-gray-800 rounded animate-pulse" />
+ </div>
+ </div>
+
+ {/* Table Skeleton */}
+ <div className="bg-gray-800 border border-gray-700">
+ <div className="overflow-x-auto">
+ {/* Table Header */}
+ <div className="bg-gray-900/50 h-10 border-b border-gray-700 animate-pulse" />
+ {/* Table Rows */}
+ {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+ <div key={i} className="h-16 border-b border-gray-700 bg-gray-800/30 animate-pulse" />
+ ))}
+ </div>
+ </div>
  </div>
  )
  }
@@ -527,6 +582,15 @@ export default function SuppliersPage() {
  visibleColumns={visibleColumns}
  onToggleColumn={toggleColumn}
  />
+
+ {/* Toast Notification */}
+ {toast && (
+ <Toast
+ message={toast.message}
+ type={toast.type}
+ onClose={() => setToast(null)}
+ />
+ )}
  </div>
  )
 }

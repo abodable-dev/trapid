@@ -68,6 +68,7 @@ export default function MiddayDataTable({
 
  // Empty state
  emptyMessage = 'No data',
+ emptyState,
 
  // Loading
  loading = false,
@@ -154,8 +155,51 @@ export default function MiddayDataTable({
  // Loading state
  if (loading) {
  return (
- <div className="flex items-center justify-center h-64">
- <span className="loading loading-infinity loading-lg"></span>
+ <div className={`overflow-x-auto ${className}`}>
+ <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+ {/* Header Skeleton */}
+ <thead className="bg-gray-50 dark:bg-gray-900/50">
+ <tr>
+ {selectable && (
+ <th className="px-3 py-2 w-8">
+ <div className="h-4 w-4 bg-gray-300 dark:bg-gray-700 rounded animate-pulse" />
+ </th>
+ )}
+ {columns.map((column) => (
+ <th
+ key={column.key}
+ className={`px-3 py-2 ${column.width || ''}`}
+ >
+ <div className={`h-3 bg-gray-300 dark:bg-gray-700 rounded animate-pulse ${
+ column.width === 'w-8' ? 'w-4' : column.width === 'w-20' ? 'w-16' : 'w-24'
+ }`} />
+ </th>
+ ))}
+ </tr>
+ </thead>
+ {/* Body Skeleton - 8 rows */}
+ <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
+ {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+ <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+ {selectable && (
+ <td className="px-3 py-2.5 whitespace-nowrap w-8">
+ <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+ </td>
+ )}
+ {columns.map((column) => (
+ <td
+ key={column.key}
+ className={`px-3 py-2.5 whitespace-nowrap ${column.width || ''}`}
+ >
+ <div className={`h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ${
+ column.width === 'w-8' ? 'w-4' : column.width === 'w-20' ? 'w-16' : 'w-32'
+ }`} />
+ </td>
+ ))}
+ </tr>
+ ))}
+ </tbody>
+ </table>
  </div>
  )
  }
@@ -219,9 +263,13 @@ export default function MiddayDataTable({
  <tr>
  <td
  colSpan={columns.length + (selectable ? 1 : 0)}
- className="px-3 py-6 text-center text-xs text-gray-500 dark:text-gray-400"
+ className="px-3 py-6"
  >
+ {emptyState || (
+ <div className="text-center text-xs text-gray-500 dark:text-gray-400">
  {emptyMessage}
+ </div>
+ )}
  </td>
  </tr>
  ) : (
