@@ -31,6 +31,7 @@ import XeroCallbackPage from './pages/XeroCallbackPage'
 import OutlookPage from './pages/OutlookPage'
 import OneDrivePage from './pages/OneDrivePage'
 import DocumentsPage from './pages/DocumentsPage'
+import ChatPage from './pages/ChatPage'
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
+        <Route path="/chat" element={<AppLayout><ChatPage /></AppLayout>} />
         <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
         <Route path="/documents" element={<AppLayout><DocumentsPage /></AppLayout>} />
         <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />

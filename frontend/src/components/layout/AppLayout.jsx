@@ -31,6 +31,7 @@ import {
   EnvelopeIcon,
   DocumentTextIcon,
   CloudIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
@@ -69,6 +70,7 @@ export default function AppLayout({ children }) {
     location.pathname === '/active-jobs' || location.pathname.startsWith('/jobs/')
   )
   const [backendVersion, setBackendVersion] = useState('loading...')
+  const [unreadCount, setUnreadCount] = useState(0)
   const frontendVersion = packageJson.version
 
   useEffect(() => {
@@ -82,6 +84,25 @@ export default function AppLayout({ children }) {
       }
     }
     fetchVersion()
+  }, [])
+
+  // Poll for unread messages count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/v1/chat_messages/unread_count`, {
+          withCredentials: true
+        })
+        setUnreadCount(response.data.count || 0)
+      } catch (error) {
+        // Silently fail - unread count is not critical
+      }
+    }
+
+    fetchUnreadCount()
+    const interval = setInterval(fetchUnreadCount, 5000) // Poll every 5 seconds
+
+    return () => clearInterval(interval)
   }, [])
 
   // Auto-collapse sidebar when navigating to Active Jobs or Job Detail pages
@@ -371,6 +392,17 @@ export default function AppLayout({ children }) {
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex flex-1 items-center justify-end gap-x-4 lg:gap-x-6">
+              {/* Chat Icon */}
+              <Link to="/chat" className="relative -m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-white">
+                <span className="sr-only">Chat</span>
+                <ChatBubbleLeftRightIcon aria-hidden="true" className="size-6" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+
               <button type="button" className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-white">
                 <span className="sr-only">View notifications</span>
                 <BellIcon aria-hidden="true" className="size-6" />

@@ -54,6 +54,10 @@ export const api = {
       }
       throw new Error(errorMessage);
     }
+    // Handle 204 No Content responses
+    if (response.status === 204) {
+      return null;
+    }
     return response.json();
   },
 

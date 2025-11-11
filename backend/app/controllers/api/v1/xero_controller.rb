@@ -84,6 +84,15 @@ module Api
             success: true,
             data: status
           }
+        rescue XeroApiClient::AuthenticationError => e
+          Rails.logger.warn("Xero status - credentials not configured: #{e.message}")
+          render json: {
+            success: true,
+            data: {
+              connected: false,
+              message: 'Xero integration not configured'
+            }
+          }
         rescue StandardError => e
           Rails.logger.error("Xero status error: #{e.message}")
           render json: {

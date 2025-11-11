@@ -5,6 +5,16 @@ class Contact < ApplicationRecord
   has_many :linked_suppliers, through: :supplier_contacts, source: :supplier
   has_many :contact_activities, dependent: :destroy
 
+  # Xero-related associations
+  has_many :contact_persons, dependent: :destroy
+  has_many :contact_addresses, dependent: :destroy
+  has_many :contact_group_memberships, dependent: :destroy
+  has_many :contact_groups, through: :contact_group_memberships
+
+  # Enable nested attributes for Xero associations
+  accepts_nested_attributes_for :contact_persons, allow_destroy: true
+  accepts_nested_attributes_for :contact_addresses, allow_destroy: true
+
   # Supplier-specific associations (when contact is a supplier)
   # After migration, supplier_id in these tables points to contact_id
   has_many :pricebook_items, foreign_key: :supplier_id, dependent: :destroy

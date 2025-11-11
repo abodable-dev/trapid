@@ -61,18 +61,28 @@ module Api
         end
 
         # Pagination - Added DoS protection by capping limit at 1000
+        # Exception: When filtering by supplier_id, allow unlimited results (for Schedule Master auto-PO)
         page = [params[:page]&.to_i || 1, 1].max # Ensure page is at least 1
         limit = (params[:limit] || params[:per_page])&.to_i || 100
-        limit = [[limit, 1].max, 1000].min # Cap between 1 and 1000
-        offset = (page - 1) * limit
+
+        # Allow unlimited results when filtering by supplier_id
+        if params[:supplier_id].present? && limit == 0
+          limit = nil # No limit
+        else
+          limit = [[limit, 1].max, 1000].min # Cap between 1 and 1000
+        end
+
+        offset = (page - 1) * (limit || 0)
 
         total_count = @items.is_a?(Array) ? @items.count : @items.count
 
         # Apply pagination
         if @items.is_a?(Array)
-          paginated_items = @items[offset, limit] || []
+          paginated_items = limit ? (@items[offset, limit] || []) : @items
         else
-          @items = @items.limit(limit).offset(offset)
+          if limit
+            @items = @items.limit(limit).offset(offset)
+          end
           paginated_items = @items
         end
 
@@ -121,7 +131,7 @@ module Api
             page: page,
             limit: limit,
             total_count: total_count,
-            total_pages: (total_count.to_f / limit).ceil
+            total_pages: limit ? (total_count.to_f / limit).ceil : 1
           },
           filters: {
             categories: PricebookItem.categories,

@@ -87,7 +87,37 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
   const [selectedClient, setSelectedClient] = useState(null)
   const [loadingClients, setLoadingClients] = useState(false)
 
+  // Schedule template state
+  const [templates, setTemplates] = useState([])
+  const [loadingTemplates, setLoadingTemplates] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState(null)
+
   const totalSteps = 3
+
+  // Load schedule templates when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadScheduleTemplates()
+    }
+  }, [isOpen])
+
+  const loadScheduleTemplates = async () => {
+    setLoadingTemplates(true)
+    try {
+      const response = await api.get('/api/v1/schedule_templates')
+      setTemplates(response || [])
+      // Auto-select default template if exists
+      const defaultTemplate = response.find(t => t.is_default)
+      if (defaultTemplate) {
+        setSelectedTemplate(defaultTemplate)
+      }
+    } catch (error) {
+      console.error('Error fetching templates:', error)
+      setTemplates([])
+    } finally {
+      setLoadingTemplates(false)
+    }
+  }
 
   // Debounced client search
   useEffect(() => {
@@ -165,6 +195,7 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
       const submitData = {
         ...formData,
         contract_value: formData.contract_value ? parseFloat(formData.contract_value) : null,
+        template_id: selectedTemplate?.id || null,
       }
 
       await onSuccess(submitData)
@@ -193,6 +224,7 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
       })
       setSelectedClient(null)
       setClientQuery('')
+      setSelectedTemplate(null)
       setStep(1)
       onClose()
     } catch (error) {
@@ -594,6 +626,82 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                         </p>
                       </div>
 
+                      {/* Schedule Template Selection */}
+                      <div className="group">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                          <div className="rounded-lg bg-purple-100 dark:bg-purple-900/30 p-2">
+                            <ChartBarIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          Schedule Template
+                        </label>
+                        {loadingTemplates ? (
+                          <div className="text-sm text-gray-500 dark:text-gray-400 p-4 border border-gray-300 dark:border-gray-600 rounded-lg">
+                            Loading templates...
+                          </div>
+                        ) : templates.length === 0 ? (
+                          <div className="text-sm text-gray-500 dark:text-gray-400 p-4 border border-gray-300 dark:border-gray-600 rounded-lg">
+                            No templates available. Create one in Settings first.
+                          </div>
+                        ) : (
+                          <RadioGroup value={selectedTemplate} onChange={setSelectedTemplate}>
+                            <div className="space-y-2">
+                              {templates.map((template) => (
+                                <RadioGroup.Option
+                                  key={template.id}
+                                  value={template}
+                                  className={({ checked }) =>
+                                    `flex items-start gap-3 p-4 border ${
+                                      checked
+                                        ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20'
+                                        : 'border-gray-300 dark:border-gray-600'
+                                    } rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors`
+                                  }
+                                >
+                                  {({ checked }) => (
+                                    <>
+                                      <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                                        checked ? 'border-purple-600' : 'border-gray-300 dark:border-gray-600'
+                                      }`}>
+                                        {checked && <div className="h-2 w-2 rounded-full bg-purple-600" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <span className={`text-sm font-medium ${
+                                            checked ? 'text-purple-900 dark:text-purple-100' : 'text-gray-900 dark:text-white'
+                                          }`}>
+                                            {template.name}
+                                          </span>
+                                          {template.is_default && (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
+                                              Default
+                                            </span>
+                                          )}
+                                        </div>
+                                        {template.description && (
+                                          <p className={`text-xs mt-1 ${
+                                            checked ? 'text-purple-700 dark:text-purple-300' : 'text-gray-600 dark:text-gray-400'
+                                          }`}>
+                                            {template.description}
+                                          </p>
+                                        )}
+                                        <p className={`text-xs mt-1 ${
+                                          checked ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-500'
+                                        }`}>
+                                          {template.row_count} tasks
+                                        </p>
+                                      </div>
+                                    </>
+                                  )}
+                                </RadioGroup.Option>
+                              ))}
+                            </div>
+                          </RadioGroup>
+                        )}
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          The selected template will be used to create the initial schedule for this job.
+                        </p>
+                      </div>
+
                       {/* Documents Available */}
                       <div className="group">
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -764,6 +872,7 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                               {formData.lead_source && <p><span className="font-medium">Lead Source:</span> {formData.lead_source}</p>}
                               {formData.contract_value && <p><span className="font-medium">Value:</span> ${parseFloat(formData.contract_value).toLocaleString()}</p>}
                               {formData.site_supervisor_name && <p><span className="font-medium">Site Supervisor:</span> {formData.site_supervisor_name}</p>}
+                              {selectedTemplate && <p><span className="font-medium">Schedule Template:</span> {selectedTemplate.name} ({selectedTemplate.row_count} tasks)</p>}
                               {formData.land_status && <p><span className="font-medium">Land:</span> {formData.land_status}</p>}
                               <p><span className="font-medium">Stage:</span> {formData.stage} • <span className="font-medium">Status:</span> {formData.status}</p>
                             </div>

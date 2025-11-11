@@ -9,6 +9,7 @@ import { api } from '../../api'
 import Toast from '../Toast'
 import PredecessorEditor from './PredecessorEditor'
 import PriceBookItemsModal from './PriceBookItemsModal'
+import DocumentationTabsModal from './DocumentationTabsModal'
 
 /**
  * Schedule Template Editor - Full 14-column grid interface for creating/editing schedule templates
@@ -50,9 +51,10 @@ const defaultColumnConfig = {
   poRequired: { visible: true, width: 80, label: 'PO Req', order: 4 },
   autoPo: { visible: true, width: 80, label: 'Auto PO', order: 5 },
   priceItems: { visible: true, width: 120, label: 'Price Items', order: 6 },
-  critical: { visible: true, width: 80, label: 'Critical', order: 7 },
-  tags: { visible: true, width: 100, label: 'Tags', order: 8 },
-  photo: { visible: true, width: 80, label: 'Photo', order: 9 },
+  docTabs: { visible: true, width: 100, label: 'Doc Tabs', order: 7 },
+  critical: { visible: true, width: 80, label: 'Critical', order: 8 },
+  tags: { visible: true, width: 100, label: 'Tags', order: 9 },
+  photo: { visible: true, width: 80, label: 'Photo', order: 10 },
   cert: { visible: true, width: 80, label: 'Cert', order: 10 },
   certLag: { visible: true, width: 80, label: 'Cert Lag', order: 11 },
   supCheck: { visible: true, width: 80, label: 'Sup Check', order: 12 },
@@ -425,6 +427,7 @@ export default function ScheduleTemplateEditor() {
     poRequired: "Check if this task requires a purchase order. This tracks whether a PO is needed, but doesn't automatically create one.",
     autoPo: "Automatically create and send a purchase order to the supplier when the job starts. Requires a supplier to be selected.",
     priceItems: "Link price book items to this task. These items will be included in the auto-generated purchase order.",
+    docTabs: "Assign this task to one or more documentation tabs. Helps organize tasks by trade or category (e.g., 'Electrical', 'Plumbing', 'Structural').",
     critical: "Mark this PO as critical priority. Critical POs will be highlighted and require immediate attention.",
     tags: "Add tags to categorize and filter tasks (e.g., 'electrical', 'foundation', 'inspection'). Useful for filtering views by trade.",
     photo: "Automatically spawn a photo task when this task is completed. Use for tasks that need photo documentation.",
@@ -443,47 +446,129 @@ export default function ScheduleTemplateEditor() {
     }))
   }
 
-  // Filter rows based on search query and column filters
-  const filteredRows = rows.filter(row => {
-    // Global search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      const matchesGlobal = (
-        row.name.toLowerCase().includes(query) ||
-        (row.supplier_name && row.supplier_name.toLowerCase().includes(query)) ||
-        (row.assigned_role && row.assigned_role.toLowerCase().includes(query)) ||
-        (row.tags && row.tags.some(tag => tag.toLowerCase().includes(query)))
-      )
-      if (!matchesGlobal) return false
-    }
-
-    // Column-specific filters
-    for (const [columnKey, filterValue] of Object.entries(columnFilters)) {
-      if (!filterValue || !filterValue.trim()) continue
-
-      const filter = filterValue.toLowerCase()
-      let matches = false
-
-      switch (columnKey) {
-        case 'taskName':
-          matches = row.name.toLowerCase().includes(filter)
-          break
-        case 'supplierGroup':
-          matches = (row.supplier_name && row.supplier_name.toLowerCase().includes(filter)) ||
-                   (row.assigned_role && row.assigned_role.toLowerCase().includes(filter))
-          break
-        case 'tags':
-          matches = row.tags && row.tags.some(tag => tag.toLowerCase().includes(filter))
-          break
-        default:
-          matches = true
+  // Filter and sort rows
+  const filteredAndSortedRows = (() => {
+    // First, filter rows based on search query and column filters
+    const filtered = rows.filter(row => {
+      // Global search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase()
+        const matchesGlobal = (
+          row.name.toLowerCase().includes(query) ||
+          (row.supplier_name && row.supplier_name.toLowerCase().includes(query)) ||
+          (row.assigned_role && row.assigned_role.toLowerCase().includes(query)) ||
+          (row.tags && row.tags.some(tag => tag.toLowerCase().includes(query)))
+        )
+        if (!matchesGlobal) return false
       }
 
-      if (!matches) return false
+      // Column-specific filters
+      for (const [columnKey, filterValue] of Object.entries(columnFilters)) {
+        if (!filterValue || !filterValue.trim()) continue
+
+        const filter = filterValue.toLowerCase()
+        let matches = false
+
+        switch (columnKey) {
+          case 'taskName':
+            matches = row.name.toLowerCase().includes(filter)
+            break
+          case 'supplierGroup':
+            matches = (row.supplier_name && row.supplier_name.toLowerCase().includes(filter)) ||
+                     (row.assigned_role && row.assigned_role.toLowerCase().includes(filter))
+            break
+          case 'tags':
+            matches = row.tags && row.tags.some(tag => tag.toLowerCase().includes(filter))
+            break
+          default:
+            matches = true
+        }
+
+        if (!matches) return false
+      }
+
+      return true
+    })
+
+    // Then, sort the filtered rows
+    if (sortBy && sortBy !== 'sequence') {
+      return [...filtered].sort((a, b) => {
+        let aVal, bVal
+
+        switch (sortBy) {
+          case 'taskName':
+            aVal = a.name || ''
+            bVal = b.name || ''
+            break
+          case 'supplierGroup':
+            aVal = a.supplier_name || a.assigned_role || ''
+            bVal = b.supplier_name || b.assigned_role || ''
+            break
+          case 'predecessors':
+            aVal = a.predecessor_display || ''
+            bVal = b.predecessor_display || ''
+            break
+          case 'tags':
+            aVal = a.tags?.join(', ') || ''
+            bVal = b.tags?.join(', ') || ''
+            break
+          case 'poRequired':
+          case 'autoPo':
+          case 'critical':
+          case 'photo':
+          case 'cert':
+          case 'supCheck':
+          case 'autoComplete':
+            // Boolean columns
+            aVal = a[sortBy === 'autoPo' ? 'create_po_on_job_start' :
+                     sortBy === 'poRequired' ? 'po_required' :
+                     sortBy === 'critical' ? 'critical_po' :
+                     sortBy === 'photo' ? 'require_photo' :
+                     sortBy === 'cert' ? 'require_certificate' :
+                     sortBy === 'supCheck' ? 'require_supervisor_check' :
+                     'auto_complete_predecessors'] ? 1 : 0
+            bVal = b[sortBy === 'autoPo' ? 'create_po_on_job_start' :
+                     sortBy === 'poRequired' ? 'po_required' :
+                     sortBy === 'critical' ? 'critical_po' :
+                     sortBy === 'photo' ? 'require_photo' :
+                     sortBy === 'cert' ? 'require_certificate' :
+                     sortBy === 'supCheck' ? 'require_supervisor_check' :
+                     'auto_complete_predecessors'] ? 1 : 0
+            break
+          case 'certLag':
+            aVal = a.cert_lag_days || 0
+            bVal = b.cert_lag_days || 0
+            break
+          case 'priceItems':
+            aVal = a.price_book_item_ids?.length || 0
+            bVal = b.price_book_item_ids?.length || 0
+            break
+          case 'docTabs':
+            aVal = a.documentation_category_ids?.length || 0
+            bVal = b.documentation_category_ids?.length || 0
+            break
+          case 'subtasks':
+            aVal = a.subtask_count || 0
+            bVal = b.subtask_count || 0
+            break
+          default:
+            return 0
+        }
+
+        // String comparison
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+          return sortDirection === 'asc'
+            ? aVal.localeCompare(bVal)
+            : bVal.localeCompare(aVal)
+        }
+
+        // Numeric comparison
+        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal
+      })
     }
 
-    return true
-  })
+    return filtered
+  })()
 
   return (
     <div className="max-w-full px-4 py-6">
@@ -778,14 +863,14 @@ export default function ScheduleTemplateEditor() {
                     No rows yet. Click "Add Row" to start building your template.
                   </td>
                 </tr>
-              ) : filteredRows.length === 0 ? (
+              ) : filteredAndSortedRows.length === 0 ? (
                 <tr>
                   <td colSpan={getSortedColumns().filter(([, c]) => c.visible).length} className="p-8 text-center text-gray-500 dark:text-gray-400">
                     No tasks match your search.
                   </td>
                 </tr>
               ) : (
-                filteredRows.map((row, index) => (
+                filteredAndSortedRows.map((row, index) => (
                   <ScheduleTemplateRow
                     key={row.id}
                     row={row}
@@ -900,6 +985,7 @@ function ScheduleTemplateRow({
   const [updateTimeout, setUpdateTimeout] = useState(null)
   const [showPredecessorEditor, setShowPredecessorEditor] = useState(false)
   const [showPriceItemsModal, setShowPriceItemsModal] = useState(false)
+  const [showDocTabsModal, setShowDocTabsModal] = useState(false)
 
   // Debounced update for text fields
   const handleTextChange = (field, value) => {
@@ -1033,21 +1119,42 @@ function ScheduleTemplateRow({
               type="checkbox"
               checked={row.create_po_on_job_start}
               onChange={(e) => handleFieldChange('create_po_on_job_start', e.target.checked)}
-              disabled={!row.supplier_id}
+              disabled={!row.po_required || !row.supplier_id}
               className="h-4 w-4 disabled:opacity-30"
+              title={!row.po_required ? "Enable 'PO Required' first" : !row.supplier_id ? "Select a supplier first" : "Automatically create PO when job starts"}
             />
           </td>
         )
 
       case 'priceItems':
+        const canSelectItems = row.create_po_on_job_start && row.po_required && row.supplier_id
         return (
           <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
             <button
-              onClick={() => setShowPriceItemsModal(true)}
-              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium cursor-pointer"
-              title="Click to select price book items"
+              onClick={() => canSelectItems && setShowPriceItemsModal(true)}
+              disabled={!canSelectItems}
+              className={`text-xs font-medium ${canSelectItems ? 'text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer' : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'}`}
+              title={
+                !row.po_required ? "Enable 'PO Required' first" :
+                !row.supplier_id ? "Select a supplier first" :
+                !row.create_po_on_job_start ? "Enable 'Auto PO' first" :
+                "Click to select price book items"
+              }
             >
               {row.price_book_item_ids?.length || 0} items
+            </button>
+          </td>
+        )
+
+      case 'docTabs':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <button
+              onClick={handleOpenDocTabsModal}
+              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+              title="Click to assign documentation tabs"
+            >
+              {row.documentation_category_ids?.length || 0} tabs
             </button>
           </td>
         )
@@ -1185,30 +1292,56 @@ function ScheduleTemplateRow({
     onUpdate({ price_book_item_ids: itemIds })
   }
 
+  // Handler for saving documentation tabs
+  const handleSaveDocTabs = (tabIds) => {
+    onUpdate({ documentation_category_ids: tabIds })
+  }
+
+  const handleOpenDocTabsModal = () => {
+    setShowDocTabsModal(true)
+  }
+
   return (
-    <>
-      <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-        {getSortedColumns().map(([key, config]) => {
-          if (!config.visible) return null
-          return renderCell(key, config)
-        })}
-      </tr>
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+      {getSortedColumns().map(([key, config]) => {
+        if (!config.visible) return null
+        return renderCell(key, config)
+      })}
 
-      {/* Modals */}
-      <PredecessorEditor
-        isOpen={showPredecessorEditor}
-        onClose={() => setShowPredecessorEditor(false)}
-        currentRow={row}
-        allRows={allRows}
-        onSave={handleSavePredecessors}
-      />
+      {/* Modals - rendered conditionally to avoid HTML structure issues */}
+      {showPredecessorEditor && typeof document !== 'undefined' && (
+        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
+          <PredecessorEditor
+            isOpen={showPredecessorEditor}
+            onClose={() => setShowPredecessorEditor(false)}
+            currentRow={row}
+            allRows={allRows}
+            onSave={handleSavePredecessors}
+          />
+        </td>
+      )}
 
-      <PriceBookItemsModal
-        isOpen={showPriceItemsModal}
-        onClose={() => setShowPriceItemsModal(false)}
-        currentRow={row}
-        onSave={handleSavePriceItems}
-      />
-    </>
+      {showPriceItemsModal && typeof document !== 'undefined' && (
+        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
+          <PriceBookItemsModal
+            isOpen={showPriceItemsModal}
+            onClose={() => setShowPriceItemsModal(false)}
+            currentRow={row}
+            onSave={handleSavePriceItems}
+          />
+        </td>
+      )}
+
+      {showDocTabsModal && typeof document !== 'undefined' && (
+        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
+          <DocumentationTabsModal
+            isOpen={showDocTabsModal}
+            onClose={() => setShowDocTabsModal(false)}
+            currentRow={row}
+            onSave={handleSaveDocTabs}
+          />
+        </td>
+      )}
+    </tr>
   )
 }

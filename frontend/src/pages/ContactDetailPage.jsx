@@ -62,6 +62,9 @@ export default function ContactDetailPage() {
   const [bulkUpdating, setBulkUpdating] = useState(false)
   const [abnValidation, setAbnValidation] = useState(null) // { valid, entity_name, etc. }
   const [validatingAbn, setValidatingAbn] = useState(false)
+  const [editingXeroFields, setEditingXeroFields] = useState({}) // Track which Xero fields are being edited
+  const [xeroFieldValues, setXeroFieldValues] = useState({}) // Temp values while editing
+  const [isPageEditMode, setIsPageEditMode] = useState(false) // Global edit mode for the entire page
 
   useEffect(() => {
     loadContact()
@@ -362,7 +365,15 @@ export default function ContactDetailPage() {
       tax_number: contact.tax_number || '',
       address: contact.address || '',
       notes: contact.notes || '',
-      lgas: contact.lgas || []
+      lgas: contact.lgas || [],
+      // Xero sync fields
+      bank_bsb: contact.bank_bsb || '',
+      bank_account_number: contact.bank_account_number || '',
+      bank_account_name: contact.bank_account_name || '',
+      default_purchase_account: contact.default_purchase_account || '',
+      bill_due_day: contact.bill_due_day || '',
+      bill_due_type: contact.bill_due_type || '',
+      sync_with_xero: contact.sync_with_xero || false
     })
     setIsEditModalOpen(true)
   }
@@ -372,6 +383,52 @@ export default function ContactDetailPage() {
       ...prev,
       [field]: value
     }))
+  }
+
+  // Inline Xero field editing functions
+  const startEditingXeroField = (fieldName) => {
+    if (!isPageEditMode) return // Only allow editing in edit mode
+    setEditingXeroFields(prev => ({ ...prev, [fieldName]: true }))
+    setXeroFieldValues(prev => ({ ...prev, [fieldName]: contact[fieldName] || '' }))
+  }
+
+  const cancelEditingXeroField = (fieldName) => {
+    setEditingXeroFields(prev => ({ ...prev, [fieldName]: false }))
+    setXeroFieldValues(prev => {
+      const newValues = { ...prev }
+      delete newValues[fieldName]
+      return newValues
+    })
+  }
+
+  const saveXeroField = async (fieldName) => {
+    try {
+      const value = xeroFieldValues[fieldName]
+      const response = await api.patch(`/api/v1/contacts/${id}`, {
+        contact: { [fieldName]: value }
+      })
+
+      if (response.success || response.contact) {
+        // Update the contact state
+        setContact(prev => ({
+          ...prev,
+          [fieldName]: value
+        }))
+        setEditingXeroFields(prev => ({ ...prev, [fieldName]: false }))
+        setXeroFieldValues(prev => {
+          const newValues = { ...prev }
+          delete newValues[fieldName]
+          return newValues
+        })
+      }
+    } catch (err) {
+      console.error(`Failed to update ${fieldName}:`, err)
+      alert(`Failed to update field: ${err.message}`)
+    }
+  }
+
+  const handleXeroFieldChange = (fieldName, value) => {
+    setXeroFieldValues(prev => ({ ...prev, [fieldName]: value }))
   }
 
   const saveContact = async () => {
@@ -575,13 +632,39 @@ export default function ContactDetailPage() {
               <ArrowLeftIcon className="h-5 w-5" />
               Back to Contacts
             </button>
-            <button
-              onClick={openEditModal}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-            >
-              <PencilIcon className="h-5 w-5" />
-              Edit
-            </button>
+            {!isPageEditMode ? (
+              <button
+                onClick={() => setIsPageEditMode(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              >
+                <PencilIcon className="h-5 w-5" />
+                Edit
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={async () => {
+                    // Save all changes and exit edit mode
+                    setIsPageEditMode(false)
+                    await loadContact() // Reload to get fresh data
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                >
+                  <CheckCircleIcon className="h-5 w-5" />
+                  Save & Lock
+                </button>
+                <button
+                  onClick={() => {
+                    setIsPageEditMode(false)
+                    loadContact() // Reload to discard changes
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                >
+                  <XCircleIcon className="h-5 w-5" />
+                  Cancel
+                </button>
+              </>
+            )}
             <button
               onClick={deleteContact}
               className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
@@ -602,41 +685,125 @@ export default function ContactDetailPage() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Contact Information</h2>
 
             <div className="space-y-4">
-              {contact.email && (
-                <div className="flex items-start gap-3">
-                  <EnvelopeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
-                    <a href={`mailto:${contact.email}`} className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
-                      {contact.email}
-                    </a>
-                  </div>
+              {/* Email with inline editing */}
+              <div className="flex items-start gap-3">
+                <EnvelopeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Email</p>
+                  {editingXeroFields['email'] ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="email"
+                        value={xeroFieldValues['email'] || ''}
+                        onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+                        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        autoFocus
+                      />
+                      <button onClick={() => saveXeroField('email')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+                        <CheckCircleIcon className="h-5 w-5" />
+                      </button>
+                      <button onClick={() => cancelEditingXeroField('email')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+                        <XCircleIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 group">
+                      {contact.email ? (
+                        <a href={`mailto:${contact.email}`} className="text-blue-600 hover:text-blue-700 dark:text-blue-400 flex-1">
+                          {contact.email}
+                        </a>
+                      ) : (
+                        <p className="text-gray-900 dark:text-white flex-1">-</p>
+                      )}
+                      {isPageEditMode && (
+                        <button onClick={() => startEditingXeroField('email')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
-              {contact.mobile_phone && (
-                <div className="flex items-start gap-3">
-                  <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Mobile Phone</p>
-                    <a href={`tel:${contact.mobile_phone}`} className="text-gray-900 dark:text-white">
-                      {contact.mobile_phone}
-                    </a>
-                  </div>
+              {/* Mobile Phone with inline editing */}
+              <div className="flex items-start gap-3">
+                <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Mobile Phone</p>
+                  {editingXeroFields['mobile_phone'] ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="tel"
+                        value={xeroFieldValues['mobile_phone'] || ''}
+                        onChange={(e) => handleXeroFieldChange('mobile_phone', e.target.value)}
+                        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        autoFocus
+                      />
+                      <button onClick={() => saveXeroField('mobile_phone')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+                        <CheckCircleIcon className="h-5 w-5" />
+                      </button>
+                      <button onClick={() => cancelEditingXeroField('mobile_phone')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+                        <XCircleIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 group">
+                      {contact.mobile_phone ? (
+                        <a href={`tel:${contact.mobile_phone}`} className="text-gray-900 dark:text-white flex-1">
+                          {contact.mobile_phone}
+                        </a>
+                      ) : (
+                        <p className="text-gray-900 dark:text-white flex-1">-</p>
+                      )}
+                      {isPageEditMode && (
+                        <button onClick={() => startEditingXeroField('mobile_phone')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
-              {contact.office_phone && (
-                <div className="flex items-start gap-3">
-                  <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Office Phone</p>
-                    <a href={`tel:${contact.office_phone}`} className="text-gray-900 dark:text-white">
-                      {contact.office_phone}
-                    </a>
-                  </div>
+              {/* Office Phone with inline editing */}
+              <div className="flex items-start gap-3">
+                <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Office Phone</p>
+                  {editingXeroFields['office_phone'] ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="tel"
+                        value={xeroFieldValues['office_phone'] || ''}
+                        onChange={(e) => handleXeroFieldChange('office_phone', e.target.value)}
+                        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        autoFocus
+                      />
+                      <button onClick={() => saveXeroField('office_phone')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+                        <CheckCircleIcon className="h-5 w-5" />
+                      </button>
+                      <button onClick={() => cancelEditingXeroField('office_phone')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+                        <XCircleIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 group">
+                      {contact.office_phone ? (
+                        <a href={`tel:${contact.office_phone}`} className="text-gray-900 dark:text-white flex-1">
+                          {contact.office_phone}
+                        </a>
+                      ) : (
+                        <p className="text-gray-900 dark:text-white flex-1">-</p>
+                      )}
+                      {isPageEditMode && (
+                        <button onClick={() => startEditingXeroField('office_phone')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               {contact.website && (
                 <div className="flex items-start gap-3">
@@ -655,7 +822,43 @@ export default function ContactDetailPage() {
                 </div>
               )}
 
-              {!contact.email && !contact.mobile_phone && !contact.office_phone && !contact.website && (
+              {/* Address with inline editing */}
+              <div className="flex items-start gap-3">
+                <MapPinIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Address</p>
+                  {editingXeroFields['address'] ? (
+                    <div className="flex items-start gap-2">
+                      <textarea
+                        value={xeroFieldValues['address'] || ''}
+                        onChange={(e) => handleXeroFieldChange('address', e.target.value)}
+                        rows={3}
+                        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        autoFocus
+                      />
+                      <div className="flex flex-col gap-1">
+                        <button onClick={() => saveXeroField('address')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+                          <CheckCircleIcon className="h-5 w-5" />
+                        </button>
+                        <button onClick={() => cancelEditingXeroField('address')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+                          <XCircleIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 group">
+                      <p className="text-gray-900 dark:text-white flex-1 whitespace-pre-wrap">{contact.address || '-'}</p>
+                      {isPageEditMode && (
+                        <button onClick={() => startEditingXeroField('address')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 mt-0.5">
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {!contact.email && !contact.mobile_phone && !contact.office_phone && !contact.website && !contact.address && (
                 <p className="text-gray-500 dark:text-gray-400 text-sm">No contact information available</p>
               )}
             </div>
@@ -713,28 +916,77 @@ export default function ContactDetailPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {contact.tax_number && (
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Tax Number (ABN)</p>
+              {/* Tax Number (ABN) with inline editing */}
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Tax Number (ABN)</p>
+                {editingXeroFields['tax_number'] ? (
                   <div className="flex items-center gap-2">
-                    <p className="text-gray-900 dark:text-white font-medium">{contact.tax_number}</p>
-                    {validatingAbn ? (
-                      <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-indigo-600 rounded-full" />
-                    ) : abnValidation?.valid ? (
-                      <div className="flex items-center gap-1">
-                        <CheckCircleIcon className="h-5 w-5 text-green-500" title="Valid ABN" />
-                        {abnValidation.entity_name && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400" title={abnValidation.entity_name}>
-                            ({abnValidation.entity_name.substring(0, 20)}{abnValidation.entity_name.length > 20 ? '...' : ''})
-                          </span>
-                        )}
-                      </div>
-                    ) : abnValidation && !abnValidation.valid ? (
-                      <XCircleIcon className="h-5 w-5 text-red-500" title={abnValidation.error || 'Invalid ABN'} />
-                    ) : null}
+                    <input
+                      type="text"
+                      value={xeroFieldValues['tax_number'] || ''}
+                      onChange={(e) => {
+                        handleXeroFieldChange('tax_number', e.target.value)
+                        // Validate ABN as user types (debounced)
+                        if (e.target.value) {
+                          clearTimeout(window.abnValidationTimeout)
+                          window.abnValidationTimeout = setTimeout(() => {
+                            validateAbn(e.target.value)
+                          }, 500)
+                        } else {
+                          setAbnValidation(null)
+                        }
+                      }}
+                      placeholder="e.g., 51 824 753 556"
+                      className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                      autoFocus
+                    />
+                    <button onClick={() => saveXeroField('tax_number')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+                      <CheckCircleIcon className="h-5 w-5" />
+                    </button>
+                    <button onClick={() => cancelEditingXeroField('tax_number')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+                      <XCircleIcon className="h-5 w-5" />
+                    </button>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="flex items-center gap-2 group">
+                    <p className="text-gray-900 dark:text-white font-medium flex-1">{contact.tax_number || '-'}</p>
+                    {contact.tax_number && (
+                      <>
+                        {validatingAbn ? (
+                          <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-indigo-600 rounded-full" />
+                        ) : abnValidation?.valid ? (
+                          <div className="flex items-center gap-1">
+                            <CheckCircleIcon className="h-5 w-5 text-green-500" title="Valid ABN" />
+                            {abnValidation.entity_name && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400" title={abnValidation.entity_name}>
+                                ({abnValidation.entity_name.substring(0, 20)}{abnValidation.entity_name.length > 20 ? '...' : ''})
+                              </span>
+                            )}
+                          </div>
+                        ) : abnValidation && !abnValidation.valid ? (
+                          <XCircleIcon className="h-5 w-5 text-red-500" title={abnValidation.error || 'Invalid ABN'} />
+                        ) : null}
+                      </>
+                    )}
+                    {isPageEditMode && (
+                      <button onClick={() => startEditingXeroField('tax_number')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
+                {editingXeroFields['tax_number'] && abnValidation?.valid && abnValidation.entity_name && (
+                  <p className="mt-1 text-sm text-green-600 dark:text-green-400">
+                    {abnValidation.entity_name}
+                    {abnValidation.gst_registered && ' (GST Registered)'}
+                  </p>
+                )}
+                {editingXeroFields['tax_number'] && abnValidation && !abnValidation.valid && abnValidation.error && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {abnValidation.error}
+                  </p>
+                )}
+              </div>
 
               {contact.branch !== null && contact.branch !== undefined && (
                 <div>
@@ -746,65 +998,277 @@ export default function ContactDetailPage() {
               )}
             </div>
 
-            {/* Bank Account Details - from Xero */}
-            {(contact.bank_bsb || contact.bank_account_number || contact.bank_account_name) && (
-              <div className="mt-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Bank Account Details</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {contact.bank_account_name && (
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Account Name</p>
-                      <p className="text-gray-900 dark:text-white font-medium">{contact.bank_account_name}</p>
-                    </div>
-                  )}
-                  {contact.bank_bsb && (
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">BSB</p>
-                      <p className="text-gray-900 dark:text-white font-mono">{contact.bank_bsb}</p>
-                    </div>
-                  )}
-                  {contact.bank_account_number && (
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Account Number</p>
-                      <p className="text-gray-900 dark:text-white font-mono">{contact.bank_account_number}</p>
-                    </div>
+            {/* Bank Account Details - from Xero - Always show for editing */}
+            <div className="mt-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Bank Account Details</p>
+                    <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </div>
+                  {contact.sync_with_xero ? (
+                    contact.xero_sync_error ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200" title={contact.xero_sync_error}>
+                        <XCircleIcon className="h-3 w-3" />
+                        Sync Failed
+                      </span>
+                    ) : contact.last_synced_at ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200" title={`Last synced: ${new Date(contact.last_synced_at).toLocaleString()}`}>
+                        <CheckCircleIcon className="h-3 w-3" />
+                        Synced
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200">
+                        Pending Sync
+                      </span>
+                    )
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                      Not Synced
+                    </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Synced from Xero
-                </p>
-              </div>
-            )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Bank Account Name */}
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Account Name</p>
+                    {editingXeroFields['bank_account_name'] ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={xeroFieldValues['bank_account_name'] || ''}
+                          onChange={(e) => handleXeroFieldChange('bank_account_name', e.target.value)}
+                          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          autoFocus
+                        />
+                        <button onClick={() => saveXeroField('bank_account_name')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+                          <CheckCircleIcon className="h-5 w-5" />
+                        </button>
+                        <button onClick={() => cancelEditingXeroField('bank_account_name')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+                          <XCircleIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 group">
+                        <p className="text-gray-900 dark:text-white font-medium flex-1">{contact.bank_account_name || '-'}</p>
+                        {isPageEditMode && (
+                          <button onClick={() => startEditingXeroField('bank_account_name')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-            {/* Purchase Account & Payment Terms - from Xero */}
-            {(contact.default_purchase_account || contact.bill_due_day || contact.bill_due_type) && (
-              <div className="mt-4 p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Purchase & Payment Settings</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {contact.default_purchase_account && (
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Default Purchase Account</p>
-                      <p className="text-gray-900 dark:text-white font-medium">{contact.default_purchase_account}</p>
-                    </div>
-                  )}
-                  {contact.bill_due_day && (
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Bill Due Day</p>
-                      <p className="text-gray-900 dark:text-white font-medium">{contact.bill_due_day}</p>
-                    </div>
-                  )}
-                  {contact.bill_due_type && (
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Bill Due Type</p>
-                      <p className="text-gray-900 dark:text-white font-medium">{contact.bill_due_type}</p>
-                    </div>
-                  )}
+                  {/* Bank BSB */}
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">BSB</p>
+                    {editingXeroFields['bank_bsb'] ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={xeroFieldValues['bank_bsb'] || ''}
+                          onChange={(e) => handleXeroFieldChange('bank_bsb', e.target.value)}
+                          placeholder="123456"
+                          maxLength="6"
+                          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white font-mono"
+                          autoFocus
+                        />
+                        <button onClick={() => saveXeroField('bank_bsb')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+                          <CheckCircleIcon className="h-5 w-5" />
+                        </button>
+                        <button onClick={() => cancelEditingXeroField('bank_bsb')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+                          <XCircleIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 group">
+                        <p className="text-gray-900 dark:text-white font-mono flex-1">{contact.bank_bsb || '-'}</p>
+                        {isPageEditMode && (
+                          <button onClick={() => startEditingXeroField('bank_bsb')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bank Account Number */}
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Account Number</p>
+                    {editingXeroFields['bank_account_number'] ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={xeroFieldValues['bank_account_number'] || ''}
+                          onChange={(e) => handleXeroFieldChange('bank_account_number', e.target.value)}
+                          placeholder="98765432"
+                          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white font-mono"
+                          autoFocus
+                        />
+                        <button onClick={() => saveXeroField('bank_account_number')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+                          <CheckCircleIcon className="h-5 w-5" />
+                        </button>
+                        <button onClick={() => cancelEditingXeroField('bank_account_number')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+                          <XCircleIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 group">
+                        <p className="text-gray-900 dark:text-white font-mono flex-1">{contact.bank_account_number || '-'}</p>
+                        {isPageEditMode && (
+                          <button onClick={() => startEditingXeroField('bank_account_number')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Synced from Xero
+                  Synced with Xero {contact.last_synced_at && `• Last sync: ${new Date(contact.last_synced_at).toLocaleDateString()}`}
                 </p>
-              </div>
-            )}
+            </div>
+
+            {/* Purchase Account & Payment Terms - from Xero - Always show for editing */}
+            <div className="mt-4 p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Purchase & Payment Settings</p>
+                    <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </div>
+                  {contact.sync_with_xero ? (
+                    contact.xero_sync_error ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200" title={contact.xero_sync_error}>
+                        <XCircleIcon className="h-3 w-3" />
+                        Sync Failed
+                      </span>
+                    ) : contact.last_synced_at ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200" title={`Last synced: ${new Date(contact.last_synced_at).toLocaleString()}`}>
+                        <CheckCircleIcon className="h-3 w-3" />
+                        Synced
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200">
+                        Pending Sync
+                      </span>
+                    )
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                      Not Synced
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Default Purchase Account */}
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Default Purchase Account</p>
+                    {editingXeroFields['default_purchase_account'] ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={xeroFieldValues['default_purchase_account'] || ''}
+                          onChange={(e) => handleXeroFieldChange('default_purchase_account', e.target.value)}
+                          placeholder="e.g., 300"
+                          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          autoFocus
+                        />
+                        <button onClick={() => saveXeroField('default_purchase_account')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+                          <CheckCircleIcon className="h-5 w-5" />
+                        </button>
+                        <button onClick={() => cancelEditingXeroField('default_purchase_account')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+                          <XCircleIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 group">
+                        <p className="text-gray-900 dark:text-white font-medium flex-1">{contact.default_purchase_account || '-'}</p>
+                        {isPageEditMode && (
+                          <button onClick={() => startEditingXeroField('default_purchase_account')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bill Due Day */}
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Bill Due Day</p>
+                    {editingXeroFields['bill_due_day'] ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={xeroFieldValues['bill_due_day'] || ''}
+                          onChange={(e) => handleXeroFieldChange('bill_due_day', e.target.value)}
+                          placeholder="30"
+                          min="1"
+                          max="90"
+                          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          autoFocus
+                        />
+                        <button onClick={() => saveXeroField('bill_due_day')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+                          <CheckCircleIcon className="h-5 w-5" />
+                        </button>
+                        <button onClick={() => cancelEditingXeroField('bill_due_day')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+                          <XCircleIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 group">
+                        <p className="text-gray-900 dark:text-white font-medium flex-1">{contact.bill_due_day || '-'}</p>
+                        {isPageEditMode && (
+                          <button onClick={() => startEditingXeroField('bill_due_day')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bill Due Type */}
+                  <div className="sm:col-span-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Bill Due Type</p>
+                    {editingXeroFields['bill_due_type'] ? (
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={xeroFieldValues['bill_due_type'] || ''}
+                          onChange={(e) => handleXeroFieldChange('bill_due_type', e.target.value)}
+                          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                          autoFocus
+                        >
+                          <option value="">Select type...</option>
+                          <option value="DAYSAFTERBILLDATE">Days After Bill Date</option>
+                          <option value="DAYSAFTERBILLMONTH">Days After Bill Month</option>
+                          <option value="OFCURRENTMONTH">Of Current Month</option>
+                          <option value="OFFOLLOWINGMONTH">Of Following Month</option>
+                        </select>
+                        <button onClick={() => saveXeroField('bill_due_type')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+                          <CheckCircleIcon className="h-5 w-5" />
+                        </button>
+                        <button onClick={() => cancelEditingXeroField('bill_due_type')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+                          <XCircleIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 group">
+                        <p className="text-gray-900 dark:text-white font-medium flex-1">{contact.bill_due_type || '-'}</p>
+                        {isPageEditMode && (
+                          <button onClick={() => startEditingXeroField('bill_due_type')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Synced with Xero {contact.last_synced_at && `• Last sync: ${new Date(contact.last_synced_at).toLocaleDateString()}`}
+                </p>
+            </div>
 
             {/* LGAs - Multi-select for suppliers */}
             {contact['is_supplier?'] && (
@@ -2213,6 +2677,132 @@ export default function ContactDetailPage() {
                           onChange={(e) => handleEditChange('notes', e.target.value)}
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         />
+                      </div>
+
+                      {/* Xero Sync Fields Section */}
+                      <div className="col-span-2 border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          Xero Sync Fields
+                          {contact?.sync_with_xero && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200">
+                              Synced with Xero
+                            </span>
+                          )}
+                        </h3>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {/* Bank BSB */}
+                          <div>
+                            <label htmlFor="bank_bsb" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Bank BSB
+                            </label>
+                            <input
+                              type="text"
+                              id="bank_bsb"
+                              value={editFormData?.bank_bsb || ''}
+                              onChange={(e) => handleEditChange('bank_bsb', e.target.value)}
+                              placeholder="123456"
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                          </div>
+
+                          {/* Bank Account Number */}
+                          <div>
+                            <label htmlFor="bank_account_number" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Bank Account Number
+                            </label>
+                            <input
+                              type="text"
+                              id="bank_account_number"
+                              value={editFormData?.bank_account_number || ''}
+                              onChange={(e) => handleEditChange('bank_account_number', e.target.value)}
+                              placeholder="98765432"
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                          </div>
+
+                          {/* Bank Account Name */}
+                          <div className="sm:col-span-2">
+                            <label htmlFor="bank_account_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Bank Account Name
+                            </label>
+                            <input
+                              type="text"
+                              id="bank_account_name"
+                              value={editFormData?.bank_account_name || ''}
+                              onChange={(e) => handleEditChange('bank_account_name', e.target.value)}
+                              placeholder="Business Account"
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                          </div>
+
+                          {/* Default Purchase Account */}
+                          <div>
+                            <label htmlFor="default_purchase_account" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Default Purchase Account
+                            </label>
+                            <input
+                              type="text"
+                              id="default_purchase_account"
+                              value={editFormData?.default_purchase_account || ''}
+                              onChange={(e) => handleEditChange('default_purchase_account', e.target.value)}
+                              placeholder="e.g., 300"
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Xero account code</p>
+                          </div>
+
+                          {/* Bill Due Day */}
+                          <div>
+                            <label htmlFor="bill_due_day" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Bill Due Day
+                            </label>
+                            <input
+                              type="number"
+                              id="bill_due_day"
+                              value={editFormData?.bill_due_day || ''}
+                              onChange={(e) => handleEditChange('bill_due_day', e.target.value)}
+                              placeholder="30"
+                              min="1"
+                              max="90"
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            />
+                          </div>
+
+                          {/* Bill Due Type */}
+                          <div className="sm:col-span-2">
+                            <label htmlFor="bill_due_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Bill Due Type
+                            </label>
+                            <select
+                              id="bill_due_type"
+                              value={editFormData?.bill_due_type || ''}
+                              onChange={(e) => handleEditChange('bill_due_type', e.target.value)}
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            >
+                              <option value="">Select type...</option>
+                              <option value="DAYSAFTERBILLDATE">Days After Bill Date</option>
+                              <option value="DAYSAFTERBILLMONTH">Days After Bill Month</option>
+                              <option value="OFCURRENTMONTH">Of Current Month</option>
+                              <option value="OFFOLLOWINGMONTH">Of Following Month</option>
+                            </select>
+                          </div>
+
+                          {/* Sync with Xero Toggle */}
+                          <div className="sm:col-span-2">
+                            <label className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={editFormData?.sync_with_xero || false}
+                                onChange={(e) => handleEditChange('sync_with_xero', e.target.checked)}
+                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
+                              />
+                              <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                Sync with Xero (enable bidirectional sync for this contact)
+                              </span>
+                            </label>
+                          </div>
+                        </div>
                       </div>
 
                       {/* LGAs - Multi-select for suppliers */}

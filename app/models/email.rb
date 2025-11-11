@@ -1,0 +1,4 @@
+class Email < ApplicationRecord
+  belongs_to :construction
+  belongs_to :user
+end
