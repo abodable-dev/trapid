@@ -1,6 +1,8 @@
 require 'httparty'
 require 'cloudinary'
 require 'open-uri'
+require 'resolv'
+require 'ipaddr'
 
 class ProductImageScraper
   include HTTParty
@@ -252,6 +254,12 @@ class ProductImageScraper
   def download_image(url)
     require 'tempfile'
 
+    # Validate URL to prevent SSRF attacks
+    unless valid_image_url?(url)
+      Rails.logger.error "Invalid or unsafe image URL: #{url}"
+      return nil
+    end
+
     temp_file = Tempfile.new(['product_image', '.jpg'])
     temp_file.binmode
 
@@ -265,6 +273,46 @@ class ProductImageScraper
     Rails.logger.error "Image download failed: #{e.message}"
     temp_file&.close!
     nil
+  end
+
+  # Validate URL to prevent SSRF (Server-Side Request Forgery) attacks
+  def valid_image_url?(url)
+    return false unless url.present?
+
+    begin
+      uri = URI.parse(url)
+
+      # Only allow HTTP/HTTPS schemes
+      return false unless ['http', 'https'].include?(uri.scheme&.downcase)
+
+      # Resolve hostname to IP address
+      resolved_ip = Resolv.getaddress(uri.host)
+
+      # Block private IP ranges
+      ip = IPAddr.new(resolved_ip)
+      blocked_ranges = [
+        IPAddr.new('10.0.0.0/8'),       # Private network
+        IPAddr.new('172.16.0.0/12'),    # Private network
+        IPAddr.new('192.168.0.0/16'),   # Private network
+        IPAddr.new('127.0.0.0/8'),      # Loopback
+        IPAddr.new('169.254.0.0/16'),   # Link-local
+        IPAddr.new('::1/128'),          # IPv6 loopback
+        IPAddr.new('fc00::/7'),         # IPv6 private
+        IPAddr.new('fe80::/10')         # IPv6 link-local
+      ]
+
+      blocked_ranges.each do |range|
+        if range.include?(ip)
+          Rails.logger.warn "Blocked SSRF attempt to private IP: #{resolved_ip}"
+          return false
+        end
+      end
+
+      true
+    rescue URI::InvalidURIError, Resolv::ResolvError, IPAddr::InvalidAddressError => e
+      Rails.logger.error "URL validation failed: #{e.message}"
+      false
+    end
   end
 
   def fail_with_error(message)
