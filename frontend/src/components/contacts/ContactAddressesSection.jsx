@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPinIcon, PencilIcon, TrashIcon, PlusIcon, CheckCircleIcon, XCircleIcon, CheckBadgeIcon } from '@heroicons/react/24/solid'
+import { MapPinIcon, PencilIcon, TrashIcon, PlusIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/solid'
 
 const ADDRESS_TYPES = ['STREET', 'POBOX', 'DELIVERY']
 
@@ -189,7 +189,7 @@ export default function ContactAddressesSection({ contactAddresses = [], onUpdat
         <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
           <MapPinIcon className="h-5 w-5" />
           Addresses
-          <CheckBadgeIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+          <ShieldCheckIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
         </h3>
         {isEditMode && (
           <button
