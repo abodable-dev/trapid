@@ -1377,7 +1377,10 @@ export default function ContactDetailPage() {
 
                   {/* Bill Due Day */}
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Bill Due Day</p>
+                    <div className="flex items-center gap-1 mb-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Bill Due Day</p>
+                      <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                    </div>
                     {editingXeroFields['bill_due_day'] ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -1411,7 +1414,10 @@ export default function ContactDetailPage() {
 
                   {/* Bill Due Type */}
                   <div className="sm:col-span-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Bill Due Type</p>
+                    <div className="flex items-center gap-1 mb-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Bill Due Type</p>
+                      <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                    </div>
                     {editingXeroFields['bill_due_type'] ? (
                       <div className="flex items-center gap-2">
                         <select
