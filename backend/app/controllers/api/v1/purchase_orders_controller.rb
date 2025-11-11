@@ -1,7 +1,7 @@
 module Api
   module V1
     class PurchaseOrdersController < ApplicationController
-      before_action :set_purchase_order, only: [:show, :update, :destroy, :approve, :send_to_supplier, :mark_received]
+      before_action :set_purchase_order, only: [:show, :update, :destroy, :approve, :send_to_supplier, :mark_received, :attach_documents, :available_documents]
 
       # GET /api/v1/purchase_orders
       # Params: construction_id, supplier_id, status, search, sort_by, sort_direction, page, per_page
@@ -81,6 +81,7 @@ module Api
                 only: [:id, :title],
                 methods: [:site_supervisor_info]
               },
+              schedule_tasks: { only: [:id, :title, :supplier_category] },
               line_items: {
                 include: { pricebook_item: { only: [:id, :item_code, :item_name, :current_price, :unit_of_measure] } },
                 methods: [:price_drift, :price_outdated?, :price_status, :price_status_label]
@@ -88,6 +89,10 @@ module Api
               project_tasks: {
                 only: [:id, :name, :planned_start_date, :planned_end_date, :status],
                 methods: [:materials_status]
+              },
+              document_tasks: {
+                only: [:id, :name, :description, :category, :has_document, :is_validated],
+                methods: [:document_url]
               }
             },
             methods: [:timing_warnings, :delivery_aligned_with_tasks?]
@@ -98,13 +103,26 @@ module Api
 
       # POST /api/v1/purchase_orders
       def create
-        @purchase_order = PurchaseOrder.new(purchase_order_params)
+        schedule_task_id = params[:purchase_order][:schedule_task_id]
+        @purchase_order = PurchaseOrder.new(purchase_order_params.except(:schedule_task_id))
 
-        if @purchase_order.save
-          render json: @purchase_order.as_json(include: :line_items), status: :created
-        else
-          render json: { errors: @purchase_order.errors.full_messages }, status: :unprocessable_entity
+        ActiveRecord::Base.transaction do
+          if @purchase_order.save
+            # Link schedule task to this PO if provided
+            if schedule_task_id.present?
+              schedule_task = ScheduleTask.find(schedule_task_id)
+              schedule_task.update!(purchase_order_id: @purchase_order.id)
+            end
+
+            render json: @purchase_order.as_json(include: :line_items), status: :created
+          else
+            render json: { errors: @purchase_order.errors.full_messages }, status: :unprocessable_entity
+          end
         end
+      rescue ActiveRecord::RecordNotFound
+        render json: { errors: ['Schedule task not found'] }, status: :unprocessable_entity
+      rescue => e
+        render json: { errors: [e.message] }, status: :unprocessable_entity
       end
 
       # PATCH/PUT /api/v1/purchase_orders/:id
@@ -114,11 +132,33 @@ module Api
           return
         end
 
-        if @purchase_order.update(purchase_order_params)
-          render json: @purchase_order.as_json(include: :line_items)
-        else
-          render json: { errors: @purchase_order.errors.full_messages }, status: :unprocessable_entity
+        schedule_task_id = params[:purchase_order][:schedule_task_id]
+
+        ActiveRecord::Base.transaction do
+          # Update the PO
+          if @purchase_order.update(purchase_order_params.except(:schedule_task_id))
+            # Handle schedule task assignment changes
+            if schedule_task_id.present?
+              # Unlink any existing schedule tasks from this PO
+              ScheduleTask.where(purchase_order_id: @purchase_order.id).update_all(purchase_order_id: nil)
+
+              # Link the new schedule task to this PO
+              schedule_task = ScheduleTask.find(schedule_task_id)
+              schedule_task.update!(purchase_order_id: @purchase_order.id)
+            elsif params[:purchase_order].key?(:schedule_task_id) && schedule_task_id.nil?
+              # Explicitly setting to nil - unlink all schedule tasks
+              ScheduleTask.where(purchase_order_id: @purchase_order.id).update_all(purchase_order_id: nil)
+            end
+
+            render json: @purchase_order.as_json(include: :line_items)
+          else
+            render json: { errors: @purchase_order.errors.full_messages }, status: :unprocessable_entity
+          end
         end
+      rescue ActiveRecord::RecordNotFound
+        render json: { errors: ['Schedule task not found'] }, status: :unprocessable_entity
+      rescue => e
+        render json: { errors: [e.message] }, status: :unprocessable_entity
       end
 
       # DELETE /api/v1/purchase_orders/:id
@@ -292,6 +332,69 @@ module Api
           results: results,
           errors: errors
         }, status: errors.empty? ? :created : :unprocessable_entity
+      end
+
+      # GET /api/v1/purchase_orders/:id/available_documents
+      # Get all documents from the associated job that can be attached to this PO
+      def available_documents
+        documents = DocumentTask.where(construction_id: @purchase_order.construction_id)
+                                 .order(:category, :name)
+
+        render json: {
+          documents: documents.map do |doc|
+            {
+              id: doc.id,
+              name: doc.name,
+              description: doc.description,
+              category: doc.category,
+              has_document: doc.has_document,
+              is_validated: doc.is_validated,
+              document_url: doc.document_url,
+              uploaded_at: doc.uploaded_at,
+              is_attached: @purchase_order.document_task_ids.include?(doc.id)
+            }
+          end
+        }
+      end
+
+      # POST /api/v1/purchase_orders/:id/attach_documents
+      # Attach or detach documents from this PO
+      # Params: { document_task_ids: [1, 2, 3] }
+      def attach_documents
+        document_task_ids = params[:document_task_ids] || []
+
+        # Validate that all document tasks belong to the same construction
+        if document_task_ids.any?
+          invalid_docs = DocumentTask.where(id: document_task_ids)
+                                     .where.not(construction_id: @purchase_order.construction_id)
+
+          if invalid_docs.any?
+            return render json: {
+              error: 'Some documents do not belong to this job'
+            }, status: :unprocessable_entity
+          end
+        end
+
+        # Replace all document associations with the new list
+        @purchase_order.document_task_ids = document_task_ids
+
+        render json: {
+          message: 'Documents updated successfully',
+          attached_count: document_task_ids.length,
+          document_tasks: @purchase_order.document_tasks.map do |doc|
+            {
+              id: doc.id,
+              name: doc.name,
+              description: doc.description,
+              category: doc.category,
+              has_document: doc.has_document,
+              is_validated: doc.is_validated,
+              document_url: doc.document_url
+            }
+          end
+        }
+      rescue => e
+        render json: { error: e.message }, status: :unprocessable_entity
       end
 
       private

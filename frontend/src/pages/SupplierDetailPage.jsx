@@ -25,6 +25,8 @@ import {
  XMarkIcon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
+import EditSupplierModal from '../components/suppliers/EditSupplierModal'
+import Toast from '../components/Toast'
 
 function classNames(...classes) {
  return classes.filter(Boolean).join(' ')

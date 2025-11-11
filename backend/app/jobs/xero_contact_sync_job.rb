@@ -232,7 +232,9 @@ class XeroContactSyncJob < ApplicationJob
 
   def update_job_metadata(metadata)
     # Store job metadata in Rails cache for progress tracking
-    Rails.cache.write("xero_sync_job_#{job_id}", metadata.merge(job_id: job_id), expires_in: 24.hours)
+    # Note: Temporarily disabled due to solid_cache setup issues
+    # Rails.cache.write("xero_sync_job_#{job_id}", metadata.merge(job_id: job_id), expires_in: 24.hours)
+    Rails.logger.info("Job metadata update: #{metadata.inspect}")
   end
 
   def update_progress
@@ -330,11 +332,83 @@ class XeroContactSyncJob < ApplicationJob
           updates[:mobile_phone] = phone['PhoneNumber'] if phone['PhoneNumber'].present?
         when 'DEFAULT', 'DDI'
           updates[:office_phone] = phone['PhoneNumber'] if phone['PhoneNumber'].present?
+        when 'FAX'
+          updates[:fax_phone] = phone['PhoneNumber'] if phone['PhoneNumber'].present?
         end
       end
     end
 
+    # Extract bank account details
+    # BankAccountDetails is a string in format "BSB: 123456, Account Number: 98765432, Account Name: Business Account"
+    if xero_contact['BankAccountDetails'].present?
+      bank_details = xero_contact['BankAccountDetails']
+
+      # Try to parse BSB
+      if bank_details.match(/BSB[:\s]+(\d{6})/)
+        updates[:bank_bsb] = $1
+      end
+
+      # Try to parse account number
+      if bank_details.match(/Account Number[:\s]+([\d\s]+)/)
+        updates[:bank_account_number] = $1.gsub(/\s/, '')
+      end
+
+      # Try to parse account name
+      if bank_details.match(/Account Name[:\s]+([^,\n]+)/)
+        updates[:bank_account_name] = $1.strip
+      end
+    end
+
+    # Extract purchase account
+    if xero_contact['PurchaseDetails'].present? && xero_contact['PurchaseDetails']['AccountCode'].present?
+      updates[:default_purchase_account] = xero_contact['PurchaseDetails']['AccountCode']
+    end
+
+    # Extract sales account
+    if xero_contact['SalesDetails'].present? && xero_contact['SalesDetails']['AccountCode'].present?
+      updates[:default_sales_account] = xero_contact['SalesDetails']['AccountCode']
+    end
+
+    # Extract payment terms - Bills
+    if xero_contact['PaymentTerms'].present? && xero_contact['PaymentTerms']['Bills'].present?
+      bills = xero_contact['PaymentTerms']['Bills']
+      updates[:bill_due_day] = bills['Day'] if bills['Day'].present?
+      updates[:bill_due_type] = bills['Type'] if bills['Type'].present?
+    end
+
+    # Extract payment terms - Sales
+    if xero_contact['PaymentTerms'].present? && xero_contact['PaymentTerms']['Sales'].present?
+      sales = xero_contact['PaymentTerms']['Sales']
+      updates[:sales_due_day] = sales['Day'] if sales['Day'].present?
+      updates[:sales_due_type] = sales['Type'] if sales['Type'].present?
+    end
+
+    # Extract additional Xero fields
+    updates[:xero_contact_number] = xero_contact['ContactNumber'] if xero_contact['ContactNumber'].present?
+    updates[:xero_contact_status] = xero_contact['ContactStatus'] if xero_contact['ContactStatus'].present?
+    updates[:xero_account_number] = xero_contact['AccountNumber'] if xero_contact['AccountNumber'].present?
+    updates[:company_number] = xero_contact['CompanyNumber'] if xero_contact['CompanyNumber'].present?
+    updates[:default_discount] = xero_contact['Discount'] if xero_contact['Discount'].present?
+
+    # Extract balances (read-only)
+    if xero_contact['Balances'].present?
+      if xero_contact['Balances']['AccountsReceivable'].present?
+        updates[:accounts_receivable_outstanding] = xero_contact['Balances']['AccountsReceivable']['Outstanding']
+        updates[:accounts_receivable_overdue] = xero_contact['Balances']['AccountsReceivable']['Overdue']
+      end
+      if xero_contact['Balances']['AccountsPayable'].present?
+        updates[:accounts_payable_outstanding] = xero_contact['Balances']['AccountsPayable']['Outstanding']
+        updates[:accounts_payable_overdue] = xero_contact['Balances']['AccountsPayable']['Overdue']
+      end
+    end
+
     trapid_contact.update!(updates)
+
+    # Sync nested structures
+    sync_contact_persons_from_xero(trapid_contact, xero_contact)
+    sync_contact_addresses_from_xero(trapid_contact, xero_contact)
+    sync_contact_groups_from_xero(trapid_contact, xero_contact)
+
     @stats[:updated] += 1
     Rails.logger.info("Updated Trapid contact ##{trapid_contact.id}")
   rescue StandardError => e
@@ -354,7 +428,11 @@ class XeroContactSyncJob < ApplicationJob
       tax_number: normalize_tax_number(xero_contact['TaxNumber']),
       email: extract_xero_email(xero_contact),
       sync_with_xero: true,
-      last_synced_at: @sync_timestamp
+      last_synced_at: @sync_timestamp,
+      xero_contact_number: xero_contact['ContactNumber'],
+      xero_contact_status: xero_contact['ContactStatus'],
+      xero_account_number: xero_contact['AccountNumber'],
+      company_number: xero_contact['CompanyNumber']
     }
 
     # Extract phone numbers
@@ -365,11 +443,77 @@ class XeroContactSyncJob < ApplicationJob
           contact_data[:mobile_phone] = phone['PhoneNumber']
         when 'DEFAULT', 'DDI'
           contact_data[:office_phone] = phone['PhoneNumber']
+        when 'FAX'
+          contact_data[:fax_phone] = phone['PhoneNumber']
         end
       end
     end
 
-    Contact.create!(contact_data.compact)
+    # Extract bank account details
+    if xero_contact['BankAccountDetails'].present?
+      bank_details = xero_contact['BankAccountDetails']
+
+      # Try to parse BSB
+      if bank_details.match(/BSB[:\s]+(\d{6})/)
+        contact_data[:bank_bsb] = $1
+      end
+
+      # Try to parse account number
+      if bank_details.match(/Account Number[:\s]+([\d\s]+)/)
+        contact_data[:bank_account_number] = $1.gsub(/\s/, '')
+      end
+
+      # Try to parse account name
+      if bank_details.match(/Account Name[:\s]+([^,\n]+)/)
+        contact_data[:bank_account_name] = $1.strip
+      end
+    end
+
+    # Extract purchase account
+    if xero_contact['PurchaseDetails'].present? && xero_contact['PurchaseDetails']['AccountCode'].present?
+      contact_data[:default_purchase_account] = xero_contact['PurchaseDetails']['AccountCode']
+    end
+
+    # Extract sales account
+    if xero_contact['SalesDetails'].present? && xero_contact['SalesDetails']['AccountCode'].present?
+      contact_data[:default_sales_account] = xero_contact['SalesDetails']['AccountCode']
+    end
+
+    # Extract payment terms - Bills
+    if xero_contact['PaymentTerms'].present? && xero_contact['PaymentTerms']['Bills'].present?
+      bills = xero_contact['PaymentTerms']['Bills']
+      contact_data[:bill_due_day] = bills['Day'] if bills['Day'].present?
+      contact_data[:bill_due_type] = bills['Type'] if bills['Type'].present?
+    end
+
+    # Extract payment terms - Sales
+    if xero_contact['PaymentTerms'].present? && xero_contact['PaymentTerms']['Sales'].present?
+      sales = xero_contact['PaymentTerms']['Sales']
+      contact_data[:sales_due_day] = sales['Day'] if sales['Day'].present?
+      contact_data[:sales_due_type] = sales['Type'] if sales['Type'].present?
+    end
+
+    contact_data[:default_discount] = xero_contact['Discount'] if xero_contact['Discount'].present?
+
+    # Extract balances (read-only)
+    if xero_contact['Balances'].present?
+      if xero_contact['Balances']['AccountsReceivable'].present?
+        contact_data[:accounts_receivable_outstanding] = xero_contact['Balances']['AccountsReceivable']['Outstanding']
+        contact_data[:accounts_receivable_overdue] = xero_contact['Balances']['AccountsReceivable']['Overdue']
+      end
+      if xero_contact['Balances']['AccountsPayable'].present?
+        contact_data[:accounts_payable_outstanding] = xero_contact['Balances']['AccountsPayable']['Outstanding']
+        contact_data[:accounts_payable_overdue] = xero_contact['Balances']['AccountsPayable']['Overdue']
+      end
+    end
+
+    trapid_contact = Contact.create!(contact_data.compact)
+
+    # Sync nested structures
+    sync_contact_persons_from_xero(trapid_contact, xero_contact)
+    sync_contact_addresses_from_xero(trapid_contact, xero_contact)
+    sync_contact_groups_from_xero(trapid_contact, xero_contact)
+
     Rails.logger.info("Created Trapid contact from Xero: #{xero_contact['Name']}")
   rescue StandardError => e
     error_msg = "Failed to create Trapid contact from Xero: #{e.message}"
@@ -386,6 +530,9 @@ class XeroContactSyncJob < ApplicationJob
     payload[:LastName] = trapid_contact.last_name if trapid_contact.last_name.present?
     payload[:EmailAddress] = trapid_contact.email if trapid_contact.email.present?
     payload[:TaxNumber] = trapid_contact.tax_number if trapid_contact.tax_number.present?
+    payload[:ContactNumber] = trapid_contact.xero_contact_number if trapid_contact.xero_contact_number.present?
+    payload[:AccountNumber] = trapid_contact.xero_account_number if trapid_contact.xero_account_number.present?
+    payload[:CompanyNumber] = trapid_contact.company_number if trapid_contact.company_number.present?
 
     # Add phone numbers
     phones = []
@@ -401,7 +548,88 @@ class XeroContactSyncJob < ApplicationJob
         PhoneNumber: trapid_contact.office_phone
       }
     end
+    if trapid_contact.fax_phone.present?
+      phones << {
+        PhoneType: 'FAX',
+        PhoneNumber: trapid_contact.fax_phone
+      }
+    end
     payload[:Phones] = phones if phones.any?
+
+    # Add addresses
+    if trapid_contact.contact_addresses.any?
+      addresses = trapid_contact.contact_addresses.map do |address|
+        {
+          AddressType: address.address_type,
+          AddressLine1: address.line1,
+          AddressLine2: address.line2,
+          AddressLine3: address.line3,
+          AddressLine4: address.line4,
+          City: address.city,
+          Region: address.region,
+          PostalCode: address.postal_code,
+          Country: address.country,
+          AttentionTo: address.attention_to
+        }.compact
+      end
+      payload[:Addresses] = addresses if addresses.any?
+    end
+
+    # Add contact persons
+    if trapid_contact.contact_persons.any?
+      contact_persons = trapid_contact.contact_persons.map do |person|
+        cp = {
+          FirstName: person.first_name,
+          LastName: person.last_name,
+          EmailAddress: person.email,
+          IncludeInEmails: person.include_in_emails
+        }.compact
+        cp[:ContactPersonID] = person.xero_contact_person_id if person.xero_contact_person_id.present?
+        cp
+      end
+      payload[:ContactPersons] = contact_persons if contact_persons.any?
+    end
+
+    # Add bank account details
+    # Format: "BSB: 123456, Account Number: 98765432, Account Name: Business Account"
+    if trapid_contact.bank_bsb.present? || trapid_contact.bank_account_number.present? || trapid_contact.bank_account_name.present?
+      bank_details = []
+      bank_details << "BSB: #{trapid_contact.bank_bsb}" if trapid_contact.bank_bsb.present?
+      bank_details << "Account Number: #{trapid_contact.bank_account_number}" if trapid_contact.bank_account_number.present?
+      bank_details << "Account Name: #{trapid_contact.bank_account_name}" if trapid_contact.bank_account_name.present?
+      payload[:BankAccountDetails] = bank_details.join(', ')
+    end
+
+    # Add purchase account
+    if trapid_contact.default_purchase_account.present?
+      payload[:PurchaseDetails] = {
+        AccountCode: trapid_contact.default_purchase_account
+      }
+    end
+
+    # Add sales account
+    if trapid_contact.default_sales_account.present?
+      payload[:SalesDetails] = {
+        AccountCode: trapid_contact.default_sales_account
+      }
+    end
+
+    # Add payment terms
+    payment_terms = {}
+    if trapid_contact.bill_due_day.present? || trapid_contact.bill_due_type.present?
+      payment_terms[:Bills] = {}
+      payment_terms[:Bills][:Day] = trapid_contact.bill_due_day if trapid_contact.bill_due_day.present?
+      payment_terms[:Bills][:Type] = trapid_contact.bill_due_type if trapid_contact.bill_due_type.present?
+    end
+    if trapid_contact.sales_due_day.present? || trapid_contact.sales_due_type.present?
+      payment_terms[:Sales] = {}
+      payment_terms[:Sales][:Day] = trapid_contact.sales_due_day if trapid_contact.sales_due_day.present?
+      payment_terms[:Sales][:Type] = trapid_contact.sales_due_type if trapid_contact.sales_due_type.present?
+    end
+    payload[:PaymentTerms] = payment_terms if payment_terms.any?
+
+    # Add discount
+    payload[:Discount] = trapid_contact.default_discount if trapid_contact.default_discount.present?
 
     payload
   end
@@ -424,5 +652,107 @@ class XeroContactSyncJob < ApplicationJob
     return nil if tax_number.blank?
     # Remove spaces, dashes, and other formatting
     tax_number.to_s.gsub(/[\s\-]/, '').upcase
+  end
+
+  # Sync ContactPersons from Xero to Trapid
+  def sync_contact_persons_from_xero(trapid_contact, xero_contact)
+    return unless xero_contact['ContactPersons'].present?
+
+    xero_persons = xero_contact['ContactPersons']
+    existing_persons = trapid_contact.contact_persons.index_by(&:xero_contact_person_id)
+
+    xero_persons.each do |xero_person|
+      person_id = xero_person['ContactPersonID']
+
+      person_data = {
+        first_name: xero_person['FirstName'],
+        last_name: xero_person['LastName'],
+        email: xero_person['EmailAddress'],
+        include_in_emails: xero_person['IncludeInEmails'] != false, # Default true if not specified
+        xero_contact_person_id: person_id
+      }
+
+      if existing_persons[person_id]
+        # Update existing person
+        existing_persons[person_id].update!(person_data)
+        existing_persons.delete(person_id)
+      else
+        # Create new person
+        trapid_contact.contact_persons.create!(person_data)
+      end
+    end
+
+    # Delete persons that no longer exist in Xero
+    existing_persons.values.each(&:destroy)
+  end
+
+  # Sync Addresses from Xero to Trapid
+  def sync_contact_addresses_from_xero(trapid_contact, xero_contact)
+    return unless xero_contact['Addresses'].present?
+
+    xero_addresses = xero_contact['Addresses']
+    existing_addresses = trapid_contact.contact_addresses.index_by(&:address_type)
+
+    xero_addresses.each do |xero_address|
+      address_type = xero_address['AddressType'] # STREET, POBOX, DELIVERY
+
+      address_data = {
+        address_type: address_type,
+        line1: xero_address['AddressLine1'],
+        line2: xero_address['AddressLine2'],
+        line3: xero_address['AddressLine3'],
+        line4: xero_address['AddressLine4'],
+        city: xero_address['City'],
+        region: xero_address['Region'],
+        postal_code: xero_address['PostalCode'],
+        country: xero_address['Country'],
+        attention_to: xero_address['AttentionTo']
+      }
+
+      if existing_addresses[address_type]
+        # Update existing address
+        existing_addresses[address_type].update!(address_data)
+        existing_addresses.delete(address_type)
+      else
+        # Create new address
+        trapid_contact.contact_addresses.create!(address_data)
+      end
+    end
+
+    # Delete addresses that no longer exist in Xero
+    existing_addresses.values.each(&:destroy)
+
+    # Set first address as primary if none set
+    if trapid_contact.contact_addresses.any? && !trapid_contact.contact_addresses.primary.any?
+      trapid_contact.contact_addresses.first.update!(is_primary: true)
+    end
+  end
+
+  # Sync ContactGroups from Xero to Trapid
+  def sync_contact_groups_from_xero(trapid_contact, xero_contact)
+    return unless xero_contact['ContactGroups'].present?
+
+    xero_groups = xero_contact['ContactGroups']
+
+    xero_groups.each do |xero_group|
+      group_id = xero_group['ContactGroupID']
+
+      # Find or create contact group
+      contact_group = ContactGroup.find_or_initialize_by(xero_contact_group_id: group_id)
+      contact_group.name = xero_group['Name']
+      contact_group.status = xero_group['Status']
+      contact_group.save!
+
+      # Create membership if doesn't exist
+      unless trapid_contact.contact_groups.include?(contact_group)
+        trapid_contact.contact_groups << contact_group
+      end
+    end
+
+    # Remove memberships for groups not in Xero response
+    xero_group_ids = xero_groups.map { |g| g['ContactGroupID'] }
+    trapid_contact.contact_group_memberships.joins(:contact_group)
+      .where.not(contact_groups: { xero_contact_group_id: xero_group_ids })
+      .destroy_all
   end
 end

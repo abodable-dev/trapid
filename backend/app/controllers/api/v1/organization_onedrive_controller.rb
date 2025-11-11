@@ -1,6 +1,9 @@
 module Api
   module V1
     class OrganizationOnedriveController < ApplicationController
+      # Require admin for sensitive operations
+      before_action :require_admin, only: [:disconnect, :change_root_folder, :sync_pricebook_images]
+
       # GET /api/v1/organization_onedrive/status
       # Check if organization has OneDrive connected
       def status
@@ -13,6 +16,7 @@ module Api
             drive_name: credential.drive_name,
             root_folder_id: credential.root_folder_id,
             root_folder_path: credential.root_folder_path,
+            root_folder_web_url: credential.metadata&.dig('root_folder_web_url'),
             connected_at: credential.created_at,
             connected_by: credential.connected_by&.as_json(only: [:id, :email]),
             metadata: credential.metadata
@@ -25,61 +29,85 @@ module Api
         end
       end
 
-      # POST /api/v1/organization_onedrive/connect
-      # Connect OneDrive using client credentials (Application permissions)
-      def connect
+      # GET /api/v1/organization_onedrive/authorize
+      # Start OAuth flow - returns authorization URL
+      def authorize
+        redirect_uri = "#{request.base_url}/api/v1/organization_onedrive/callback"
+
+        auth_url = MicrosoftGraphClient.authorization_url(
+          client_id: ENV['ONEDRIVE_CLIENT_ID'],
+          redirect_uri: redirect_uri,
+          scope: 'Files.ReadWrite.All Sites.ReadWrite.All offline_access'
+        )
+
+        render json: { auth_url: auth_url }
+      end
+
+      # GET /api/v1/organization_onedrive/callback
+      # OAuth callback - exchange code for tokens
+      def callback
+        code = params[:code]
+
+        unless code
+          return render json: { error: 'Authorization code not provided' }, status: :bad_request
+        end
+
         begin
-          # Check if already connected
-          existing_credential = OrganizationOneDriveCredential.active_credential
+          Rails.logger.info "=== OneDrive OAuth Callback Started ==="
 
-          if existing_credential&.valid_credential?
-            return render json: {
-              message: 'OneDrive is already connected',
-              credential: existing_credential.as_json(only: [:id, :drive_id, :drive_name, :root_folder_path])
-            }
-          end
+          redirect_uri = "#{request.base_url}/api/v1/organization_onedrive/callback"
 
-          # Authenticate using client credentials flow (no user interaction needed!)
-          token_data = MicrosoftGraphClient.authenticate_as_application
+          # Exchange authorization code for tokens
+          token_data = MicrosoftGraphClient.exchange_code_for_tokens(
+            code: code,
+            client_id: ENV['ONEDRIVE_CLIENT_ID'],
+            client_secret: ENV['ONEDRIVE_CLIENT_SECRET'],
+            redirect_uri: redirect_uri
+          )
+
+          Rails.logger.info "Token exchange successful"
 
           # Deactivate any existing credentials
           OrganizationOneDriveCredential.where(is_active: true).update_all(is_active: false)
 
-          # Create new credential
+          # Create new credential with refresh token
           credential = OrganizationOneDriveCredential.create!(
             access_token: token_data[:access_token],
+            refresh_token: token_data[:refresh_token],
             token_expires_at: token_data[:expires_at],
             connected_by: current_user,
             is_active: true
           )
 
+          Rails.logger.info "Credential created with ID: #{credential.id}"
+
           # Initialize client and set up drive
           client = MicrosoftGraphClient.new(credential)
 
           # Create root folder for all jobs
+          Rails.logger.info "Creating root folder 'Trapid Jobs'..."
           root_folder = client.create_jobs_root_folder("Trapid Jobs")
+          Rails.logger.info "Root folder created successfully"
 
-          render json: {
-            message: 'OneDrive connected successfully!',
-            credential: {
-              id: credential.id,
-              drive_id: credential.drive_id,
-              drive_name: credential.drive_name,
-              root_folder_path: credential.root_folder_path,
-              root_folder_web_url: root_folder['webUrl']
-            }
-          }
+          Rails.logger.info "=== OneDrive Connection Completed Successfully ==="
+
+          # Dynamically determine frontend URL based on request origin
+          frontend_url = get_frontend_url_from_request
+
+          # Redirect to frontend settings page with success message
+          redirect_to "#{frontend_url}/settings?onedrive=connected", allow_other_host: true
 
         rescue MicrosoftGraphClient::AuthenticationError => e
-          Rails.logger.error "OneDrive authentication failed: #{e.message}"
-          render json: { error: "Authentication failed: #{e.message}" }, status: :unauthorized
-        rescue MicrosoftGraphClient::APIError => e
-          Rails.logger.error "OneDrive API error: #{e.message}"
-          render json: { error: "OneDrive API error: #{e.message}" }, status: :bad_gateway
+          Rails.logger.error "=== OneDrive Authentication Failed ==="
+          Rails.logger.error "Error: #{e.message}"
+          frontend_url = get_frontend_url_from_request
+          redirect_to "#{frontend_url}/settings?onedrive=error&message=#{CGI.escape(e.message)}", allow_other_host: true
         rescue StandardError => e
-          Rails.logger.error "Failed to connect OneDrive: #{e.message}"
+          Rails.logger.error "=== OneDrive Connection Failed ==="
+          Rails.logger.error "Error: #{e.message}"
           Rails.logger.error e.backtrace.join("\n")
-          render json: { error: "Failed to connect to OneDrive: #{e.message}" }, status: :internal_server_error
+          frontend_url = get_frontend_url_from_request
+          redirect_to "#{frontend_url}/settings?onedrive=error&message=#{CGI.escape(e.message)}", allow_other_host: true
         end
       end
 
@@ -93,6 +121,162 @@ module Api
           render json: { message: 'OneDrive disconnected successfully' }
         else
           render json: { message: 'OneDrive was not connected' }, status: :not_found
+        end
+      end
+
+      # PATCH /api/v1/organization_onedrive/change_root_folder
+      # Change the root folder for organization OneDrive
+      # Supports nested folder paths like "00 - Trapid/Photos for Price Book"
+      def change_root_folder
+        credential = OrganizationOneDriveCredential.active_credential
+
+        unless credential&.valid_credential?
+          return render json: { error: 'OneDrive not connected' }, status: :unauthorized
+        end
+
+        folder_path = params[:folder_name]
+
+        if folder_path.blank?
+          return render json: { error: 'Folder name is required' }, status: :bad_request
+        end
+
+        # Validate folder path to prevent path traversal attacks
+        # Allow forward slashes for nested paths, but block ".." and backslashes
+        if folder_path.include?('..') || folder_path.include?('\\')
+          return render json: { error: 'Invalid folder path. Folder paths cannot contain ".." or "\\" characters.' }, status: :bad_request
+        end
+
+        # Validate length
+        if folder_path.length > 1000
+          return render json: { error: 'Folder path is too long (maximum 1000 characters)' }, status: :bad_request
+        end
+
+        # Validate each path segment
+        path_segments = folder_path.split('/')
+        if path_segments.any?(&:blank?)
+          return render json: { error: 'Invalid folder path. Empty path segments are not allowed.' }, status: :bad_request
+        end
+
+        # Sanitize each path segment (allow alphanumeric, spaces, hyphens, underscores)
+        sanitized_segments = path_segments.map do |segment|
+          segment.gsub(/[^a-zA-Z0-9\s\-_]/, '').strip
+        end
+
+        if sanitized_segments.any?(&:blank?)
+          return render json: { error: 'Folder path contains invalid characters' }, status: :bad_request
+        end
+
+        sanitized_path = sanitized_segments.join('/')
+
+        begin
+          client = MicrosoftGraphClient.new(credential)
+
+          # Navigate through nested folder path, creating folders as needed
+          current_parent_path = "/me/drive/root"
+          current_folder = nil
+
+          sanitized_segments.each do |folder_name|
+            # Get children of current parent
+            response = client.get("#{current_parent_path}/children")
+            folders = response['value'] || []
+
+            # Find folder in current level
+            folder = folders.find { |f| f['name'] == folder_name && f['folder'] }
+
+            if folder
+              # Folder exists, use it
+              current_folder = folder
+              current_parent_path = "/me/drive/items/#{folder['id']}"
+            else
+              # Create folder at this level
+              folder = client.post("#{current_parent_path}/children", {
+                name: folder_name,
+                folder: {},
+                '@microsoft.graph.conflictBehavior' => 'fail'
+              })
+              current_folder = folder
+              current_parent_path = "/me/drive/items/#{folder['id']}"
+            end
+          end
+
+          # Update credential with new root folder info
+          credential.update!(
+            root_folder_id: current_folder['id'],
+            root_folder_path: sanitized_path,
+            metadata: credential.metadata.merge({
+              root_folder_name: sanitized_segments.last,
+              root_folder_web_url: current_folder['webUrl'],
+              updated_at: Time.current
+            })
+          )
+
+          render json: {
+            message: 'Root folder updated successfully',
+            root_folder_path: sanitized_path,
+            root_folder_web_url: current_folder['webUrl']
+          }
+
+        rescue MicrosoftGraphClient::AuthenticationError => e
+          render json: { error: "Authentication failed: #{e.message}" }, status: :unauthorized
+        rescue MicrosoftGraphClient::APIError => e
+          render json: { error: "OneDrive API error: #{e.message}" }, status: :bad_gateway
+        rescue StandardError => e
+          Rails.logger.error "Failed to change root folder: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: "Failed to change root folder: #{e.message}" }, status: :internal_server_error
+        end
+      end
+
+      # GET /api/v1/organization_onedrive/browse_folders
+      # Browse OneDrive folders - optionally within a specific folder
+      def browse_folders
+        credential = OrganizationOneDriveCredential.active_credential
+
+        unless credential&.valid_credential?
+          return render json: { error: 'OneDrive not connected' }, status: :unauthorized
+        end
+
+        folder_id = params[:folder_id] # Optional - if not provided, browse root
+
+        begin
+          client = MicrosoftGraphClient.new(credential)
+
+          # Get folders in the specified location
+          if folder_id.present?
+            # Browse children of specific folder
+            response = client.list_folder_items(folder_id)
+          else
+            # Browse root drive folders
+            response = client.get('/me/drive/root/children')
+          end
+
+          # Filter to only show folders
+          folders = (response['value'] || []).select { |item| item['folder'] }
+
+          # Format response
+          formatted_folders = folders.map do |folder|
+            {
+              id: folder['id'],
+              name: folder['name'],
+              web_url: folder['webUrl'],
+              created_at: folder['createdDateTime'],
+              child_count: folder.dig('folder', 'childCount') || 0
+            }
+          end
+
+          render json: {
+            folders: formatted_folders,
+            parent_folder_id: folder_id
+          }
+
+        rescue MicrosoftGraphClient::AuthenticationError => e
+          render json: { error: "Authentication failed: #{e.message}" }, status: :unauthorized
+        rescue MicrosoftGraphClient::APIError => e
+          render json: { error: "OneDrive API error: #{e.message}" }, status: :bad_gateway
+        rescue StandardError => e
+          Rails.logger.error "Failed to browse folders: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: "Failed to browse folders: #{e.message}" }, status: :internal_server_error
         end
       end
 
@@ -301,6 +485,203 @@ module Api
           Rails.logger.error "Failed to download file: #{e.message}"
           render json: { error: "Failed to download file: #{e.message}" }, status: :internal_server_error
         end
+      end
+
+      # GET /api/v1/organization_onedrive/preview_pricebook_matches
+      # Preview all files with their suggested matches before syncing
+      def preview_pricebook_matches
+        credential = OrganizationOneDriveCredential.active_credential
+
+        unless credential&.valid_credential?
+          return render json: { error: 'OneDrive not connected. Please connect in Settings first.' }, status: :unauthorized
+        end
+
+        folder_path = params[:folder_path] || "Pricebook Images"
+
+        begin
+          # Run preview service with credential directly
+          sync_service = OnedrivePricebookSyncService.new(credential, folder_path)
+          result = sync_service.preview_matches
+
+          if result[:success]
+            render json: {
+              success: true,
+              matches: result[:matches],
+              total_files: result[:total_files],
+              total_items: result[:total_items]
+            }
+          else
+            render json: {
+              success: false,
+              error: result[:error]
+            }, status: :unprocessable_entity
+          end
+
+        rescue StandardError => e
+          Rails.logger.error "Failed to preview pricebook matches: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: "Failed to preview matches: #{e.message}" }, status: :internal_server_error
+        end
+      end
+
+      # POST /api/v1/organization_onedrive/apply_pricebook_matches
+      # Apply only the accepted matches from the preview
+      def apply_pricebook_matches
+        credential = OrganizationOneDriveCredential.active_credential
+
+        Rails.logger.info "[OneDrive Apply] Starting to apply pricebook matches"
+        Rails.logger.info "[OneDrive Apply] Credential present: #{credential.present?}"
+        Rails.logger.info "[OneDrive Apply] Credential valid: #{credential&.valid_credential?}"
+
+        unless credential&.valid_credential?
+          Rails.logger.warn "[OneDrive Apply] No valid credential found"
+          return render json: { error: 'OneDrive not connected. Please connect in Settings first.' }, status: :unauthorized
+        end
+
+        folder_path = params[:folder_path] || "Pricebook Images"
+        accepted_matches = params[:accepted_matches] || []
+
+        Rails.logger.info "[OneDrive Apply] Folder path: #{folder_path}"
+        Rails.logger.info "[OneDrive Apply] Accepted matches count: #{accepted_matches.length}"
+
+        begin
+          # Run sync service with only accepted matches
+          sync_service = OnedrivePricebookSyncService.new(credential, folder_path)
+          result = sync_service.apply_matches(accepted_matches)
+
+          Rails.logger.info "[OneDrive Apply] Apply completed"
+          Rails.logger.info "[OneDrive Apply] Success: #{result[:success]}"
+          Rails.logger.info "[OneDrive Apply] Matched: #{result[:matched]}"
+          Rails.logger.info "[OneDrive Apply] Photos: #{result[:photos_matched]}"
+          Rails.logger.info "[OneDrive Apply] Specs: #{result[:specs_matched]}"
+          Rails.logger.info "[OneDrive Apply] QR Codes: #{result[:qr_codes_matched]}"
+          Rails.logger.info "[OneDrive Apply] Errors: #{result[:errors]&.length || 0}"
+
+          if result[:success]
+            render json: {
+              success: true,
+              message: "Synced #{result[:matched]} images successfully",
+              matched: result[:matched],
+              photos_matched: result[:photos_matched],
+              specs_matched: result[:specs_matched],
+              qr_codes_matched: result[:qr_codes_matched],
+              errors: result[:errors]
+            }
+          else
+            Rails.logger.error "[OneDrive Apply] Apply failed: #{result[:error]}"
+            render json: {
+              success: false,
+              error: result[:error]
+            }, status: :unprocessable_entity
+          end
+
+        rescue StandardError => e
+          Rails.logger.error "[OneDrive Apply] Exception occurred: #{e.message}"
+          Rails.logger.error "[OneDrive Apply] Backtrace:\n#{e.backtrace.join("\n")}"
+
+          # Provide user-friendly error messages
+          user_message = case e.message
+          when /undefined method.*for nil/
+            "Unable to sync images. Some files may have been moved or deleted. Please try again."
+          when /timeout/i, /timed out/i
+            "The sync request timed out. Please try syncing fewer items at once."
+          when /not found/i, /404/
+            "Some OneDrive files could not be found. They may have been moved or deleted."
+          when /unauthorized/i, /401/, /403/
+            "OneDrive access expired. Please reconnect your OneDrive account."
+          else
+            "An error occurred while syncing images. Please try again or contact support if the problem persists."
+          end
+
+          render json: { error: user_message }, status: :internal_server_error
+        end
+      end
+
+      # POST /api/v1/organization_onedrive/sync_pricebook_images
+      # Sync images from OneDrive folder to pricebook items
+      def sync_pricebook_images
+        credential = OrganizationOneDriveCredential.active_credential
+
+        Rails.logger.info "[OneDrive Sync] Starting pricebook image sync"
+        Rails.logger.info "[OneDrive Sync] Credential present: #{credential.present?}"
+        Rails.logger.info "[OneDrive Sync] Credential valid: #{credential&.valid_credential?}"
+
+        unless credential&.valid_credential?
+          Rails.logger.warn "[OneDrive Sync] No valid credential found"
+          return render json: { error: 'OneDrive not connected. Please connect in Settings first.' }, status: :unauthorized
+        end
+
+        folder_path = params[:folder_path] || "Pricebook Images"
+        Rails.logger.info "[OneDrive Sync] Folder path: #{folder_path}"
+
+        begin
+          # Run sync service with credential directly
+          sync_service = OnedrivePricebookSyncService.new(credential, folder_path)
+          result = sync_service.sync
+
+          Rails.logger.info "[OneDrive Sync] Sync completed"
+          Rails.logger.info "[OneDrive Sync] Success: #{result[:success]}"
+          Rails.logger.info "[OneDrive Sync] Matched: #{result[:matched]}"
+          Rails.logger.info "[OneDrive Sync] Photos: #{result[:photos_matched]}"
+          Rails.logger.info "[OneDrive Sync] Specs: #{result[:specs_matched]}"
+          Rails.logger.info "[OneDrive Sync] QR Codes: #{result[:qr_codes_matched]}"
+          Rails.logger.info "[OneDrive Sync] Unmatched files: #{result[:unmatched_files]&.length || 0}"
+          Rails.logger.info "[OneDrive Sync] Errors: #{result[:errors]&.length || 0}"
+
+          if result[:success]
+            render json: {
+              success: true,
+              message: "Synced #{result[:matched]} images successfully",
+              matched: result[:matched],
+              photos_matched: result[:photos_matched],
+              specs_matched: result[:specs_matched],
+              qr_codes_matched: result[:qr_codes_matched],
+              unmatched_files: result[:unmatched_files],
+              unmatched_items: result[:unmatched_items],
+              errors: result[:errors]
+            }
+          else
+            Rails.logger.error "[OneDrive Sync] Sync failed: #{result[:error]}"
+            render json: {
+              success: false,
+              error: result[:error]
+            }, status: :unprocessable_entity
+          end
+
+        rescue StandardError => e
+          Rails.logger.error "[OneDrive Sync] Exception occurred: #{e.message}"
+          Rails.logger.error "[OneDrive Sync] Backtrace:\n#{e.backtrace.join("\n")}"
+          render json: { error: "Failed to sync images: #{e.message}" }, status: :internal_server_error
+        end
+      end
+
+      private
+
+      # Dynamically determine the frontend URL from the request
+      # This ensures OAuth redirects work correctly across different environments
+      def get_frontend_url_from_request
+        # Try to get the origin from the Referer header (where the user initiated the OAuth flow)
+        referer = request.referer
+
+        if referer.present?
+          uri = URI.parse(referer)
+          frontend_url = "#{uri.scheme}://#{uri.host}"
+          frontend_url += ":#{uri.port}" if uri.port && ![80, 443].include?(uri.port)
+          Rails.logger.info "Using frontend URL from referer: #{frontend_url}"
+          return frontend_url
+        end
+
+        # Fallback to Origin header if Referer is not present
+        origin = request.headers['Origin']
+        if origin.present?
+          Rails.logger.info "Using frontend URL from Origin header: #{origin}"
+          return origin
+        end
+
+        # Final fallback to environment variable
+        frontend_url = ENV['FRONTEND_URL'] || 'https://trapid.vercel.app'
+        Rails.logger.info "Using frontend URL from ENV (fallback): #{frontend_url}"
+        frontend_url
       end
     end
   end

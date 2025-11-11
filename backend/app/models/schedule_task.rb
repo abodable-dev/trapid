@@ -2,6 +2,7 @@ class ScheduleTask < ApplicationRecord
   # Associations
   belongs_to :construction
   belongs_to :purchase_order, optional: true
+  has_many :schedule_task_checklist_items, dependent: :destroy
 
   # Validations
   validates :title, presence: true

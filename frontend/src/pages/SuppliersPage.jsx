@@ -10,6 +10,8 @@ import {
  SlidersHorizontal
 } from 'lucide-react'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
+import EditSupplierModal from '../components/suppliers/EditSupplierModal'
+import Toast from '../components/Toast'
 
 export default function SuppliersPage() {
  const [suppliers, setSuppliers] = useState([])

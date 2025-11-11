@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import {
  BriefcaseIcon,
  CurrencyDollarIcon,
@@ -20,6 +20,8 @@ import EstimatesTab from '../components/estimates/EstimatesTab'
 import ScheduleMasterTab from '../components/schedule-master/ScheduleMasterTab'
 import DocumentationTab from '../components/documentation/DocumentationTab'
 import SetupGuideModal from '../components/documentation/SetupGuideModal'
+import JobMessagesTab from '../components/messages/JobMessagesTab'
+import JobEmailsTab from '../components/emails/JobEmailsTab'
 
 const tabs = [
  { name: 'Overview' },

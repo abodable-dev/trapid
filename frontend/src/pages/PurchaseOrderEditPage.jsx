@@ -1,7 +1,14 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useEffect, useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { api } from '../api'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { formatCurrency } from '../utils/formatters'
+import PODocumentsTab from '../components/purchase-orders/PODocumentsTab'
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(' ')
+}
 
 export default function PurchaseOrderEditPage() {
  const { id } = useParams()

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { XMarkIcon, SparklesIcon, ExclamationTriangleIcon, UserIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect, useRef } from 'react'
+import { XMarkIcon, SparklesIcon, ExclamationTriangleIcon, UserIcon, MagnifyingGlassIcon, CheckIcon, ChevronUpDownIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
 export default function PurchaseOrderModal({ isOpen, onClose, onSave, purchaseOrder, suppliers, constructionId, construction }) {

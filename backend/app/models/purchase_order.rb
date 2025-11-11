@@ -6,6 +6,9 @@ class PurchaseOrder < ApplicationRecord
   has_many :line_items, class_name: 'PurchaseOrderLineItem', dependent: :destroy
   has_many :project_tasks, dependent: :nullify
   has_many :schedule_tasks, dependent: :nullify
+  has_many :workflow_instances, as: :subject, dependent: :destroy
+  has_many :purchase_order_documents, dependent: :destroy
+  has_many :document_tasks, through: :purchase_order_documents
 
   # Nested attributes
   accepts_nested_attributes_for :line_items, allow_destroy: true
@@ -148,6 +151,23 @@ class PurchaseOrder < ApplicationRecord
     warnings
   end
 
+  # Workflow helper methods
+  def active_workflow
+    workflow_instances.find_by(status: ['pending', 'in_progress'])
+  end
+
+  def has_active_workflow?
+    active_workflow.present?
+  end
+
+  def workflow_status
+    active_workflow&.status || 'none'
+  end
+
+  def current_workflow_step
+    active_workflow&.workflow_steps&.find_by(status: ['pending', 'in_progress'])
+  end
+
   # Determine payment status based on invoice amount
   # Returns the appropriate payment_status based on invoice amount vs PO total
   def determine_payment_status(invoice_amount)
@@ -197,14 +217,24 @@ class PurchaseOrder < ApplicationRecord
   def generate_po_number
     return if purchase_order_number.present?
 
-    last_po = PurchaseOrder.order(created_at: :desc).first
-    next_number = if last_po && last_po.purchase_order_number =~ /PO-(\d+)/
-      $1.to_i + 1
-    else
-      1
-    end
+    # Use an advisory lock to prevent race conditions
+    # The lock ensures only one transaction can generate a PO number at a time
+    PurchaseOrder.transaction do
+      # Acquire exclusive lock (lock ID: arbitrary large number for PO generation)
+      PurchaseOrder.connection.execute("SELECT pg_advisory_xact_lock(123456789)")
 
-    self.purchase_order_number = "PO-#{next_number.to_s.rjust(6, '0')}"
+      # Find the highest PO number within the locked transaction
+      max_number = PurchaseOrder.where("purchase_order_number LIKE 'PO-%'")
+                                 .pluck(:purchase_order_number)
+                                 .map { |num| num.match(/PO-(\d+)/)&.captures&.first&.to_i }
+                                 .compact
+                                 .max || 0
+
+      next_number = max_number + 1
+      self.purchase_order_number = "PO-#{next_number.to_s.rjust(6, '0')}"
+
+      # Lock is automatically released at end of transaction
+    end
   end
 
   # Update the construction's live profit when this PO changes

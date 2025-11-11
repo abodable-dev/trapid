@@ -1,0 +1,226 @@
+import { useState, Fragment } from 'react'
+import { Dialog, Transition, RadioGroup } from '@headlessui/react'
+import { XMarkIcon, UserIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+
+export default function MergeContactsModal({ isOpen, onClose, selectedContacts, onMerge }) {
+  const [targetContact, setTargetContact] = useState(null)
+  const [merging, setMerging] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleMerge = async () => {
+    if (!targetContact) {
+      setError('Please select a contact to merge into')
+      return
+    }
+
+    try {
+      setMerging(true)
+      setError(null)
+
+      // Get IDs of contacts to merge (excluding the target)
+      const sourceIds = selectedContacts
+        .filter(c => c.id !== targetContact.id)
+        .map(c => c.id)
+
+      await onMerge(targetContact.id, sourceIds)
+      onClose()
+    } catch (err) {
+      setError(err.message || 'Failed to merge contacts')
+    } finally {
+      setMerging(false)
+    }
+  }
+
+  const handleClose = () => {
+    setTargetContact(null)
+    setError(null)
+    onClose()
+  }
+
+  return (
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={handleClose}>
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black bg-opacity-25" />
+        </Transition.Child>
+
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl transition-all">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                  <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Merge Contacts
+                  </Dialog.Title>
+                  <button
+                    onClick={handleClose}
+                    className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                  >
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="px-6 py-4 space-y-6">
+                  {/* Warning */}
+                  <div className="rounded-md bg-yellow-50 dark:bg-yellow-900/20 p-4">
+                    <div className="flex">
+                      <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                          Important: This action cannot be undone
+                        </h3>
+                        <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                          <p>
+                            All data from the other {selectedContacts.length - 1} contact(s) will be merged into the contact you select below.
+                            The other contacts will be permanently deleted.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                      Merging {selectedContacts.length} contacts
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Select which contact should be kept. All data will be merged into this contact:
+                    </p>
+                  </div>
+
+                  {/* Contact Selection */}
+                  <RadioGroup value={targetContact} onChange={setTargetContact}>
+                    <RadioGroup.Label className="sr-only">Select target contact</RadioGroup.Label>
+                    <div className="space-y-3">
+                      {selectedContacts.map((contact) => (
+                        <RadioGroup.Option
+                          key={contact.id}
+                          value={contact}
+                          className={({ checked }) =>
+                            `relative flex cursor-pointer rounded-lg border ${
+                              checked
+                                ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800'
+                            } px-5 py-4 shadow-sm focus:outline-none`
+                          }
+                        >
+                          {({ checked }) => (
+                            <>
+                              <div className="flex flex-1 items-center">
+                                <div className="flex items-center gap-4 flex-1">
+                                  <div className="flex-shrink-0">
+                                    <UserIcon className={`h-10 w-10 ${checked ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400'}`} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <RadioGroup.Label
+                                      as="p"
+                                      className={`font-medium ${
+                                        checked ? 'text-indigo-900 dark:text-indigo-200' : 'text-gray-900 dark:text-white'
+                                      }`}
+                                    >
+                                      {contact.full_name}
+                                    </RadioGroup.Label>
+                                    <RadioGroup.Description
+                                      as="div"
+                                      className={`text-sm ${
+                                        checked ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400'
+                                      }`}
+                                    >
+                                      <div>{contact.email || 'No email'}</div>
+                                      <div>{contact.mobile_phone || contact.office_phone || 'No phone'}</div>
+                                    </RadioGroup.Description>
+                                  </div>
+                                  {checked && (
+                                    <div className="flex-shrink-0">
+                                      <CheckCircleIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </RadioGroup.Option>
+                      ))}
+                    </div>
+                  </RadioGroup>
+
+                  {/* What will be merged */}
+                  {targetContact && (
+                    <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-4">
+                      <h4 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">
+                        What will be merged into {targetContact.full_name}:
+                      </h4>
+                      <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                        <li>• All purchase orders and relationships</li>
+                        <li>• All supplier associations</li>
+                        <li>• All communication history</li>
+                        <li>• All notes and tags</li>
+                        <li>• Contact information (if missing in target)</li>
+                      </ul>
+                      <p className="mt-3 text-sm text-blue-700 dark:text-blue-300 font-medium">
+                        {selectedContacts.filter(c => c.id !== targetContact.id).length} contact(s) will be deleted after merge
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Error */}
+                  {error && (
+                    <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+                      <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-3 border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    disabled={merging}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleMerge}
+                    disabled={!targetContact || merging}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {merging ? (
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                        Merging...
+                      </div>
+                    ) : (
+                      `Merge ${selectedContacts.length} Contacts`
+                    )}
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
+  )
+}

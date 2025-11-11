@@ -10,6 +10,8 @@ import {
  Cog6ToothIcon,
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
+import DocumentCategoryTabs from './DocumentCategoryTabs'
+import DocumentTaskList from './DocumentTaskList'
 
 export default function JobDocumentsTab({ jobId, jobTitle }) {
  const [orgStatus, setOrgStatus] = useState({

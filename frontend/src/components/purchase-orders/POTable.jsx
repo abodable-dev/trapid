@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { formatCurrency } from '../../utils/formatters'
@@ -9,6 +9,56 @@ import {
  PencilIcon,
  TrashIcon
 } from '@heroicons/react/24/outline'
+
+// Column configuration with searchable and filterType properties
+const columnConfig = {
+  poNumber: {
+    key: 'poNumber',
+    label: 'PO Number',
+    searchable: true,
+    filterType: 'search',
+    minWidth: '150px'
+  },
+  supplier: {
+    key: 'supplier',
+    label: 'Supplier',
+    searchable: true,
+    filterType: 'search',
+    minWidth: '200px'
+  },
+  description: {
+    key: 'description',
+    label: 'Description',
+    searchable: true,
+    filterType: 'search',
+    minWidth: '250px'
+  },
+  requiredDate: {
+    key: 'requiredDate',
+    label: 'Required Date',
+    searchable: false,
+    minWidth: '150px'
+  },
+  status: {
+    key: 'status',
+    label: 'Status',
+    searchable: true,
+    filterType: 'dropdown',
+    minWidth: '150px'
+  },
+  total: {
+    key: 'total',
+    label: 'Total',
+    searchable: false,
+    minWidth: '150px'
+  },
+  actions: {
+    key: 'actions',
+    label: 'Actions',
+    searchable: false,
+    minWidth: '100px'
+  }
+}
 
 export default function POTable({ purchaseOrders, onEdit, onDelete, onApprove, onSend }) {
  const [expandedPO, setExpandedPO] = useState(null)

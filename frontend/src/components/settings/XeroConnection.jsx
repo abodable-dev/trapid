@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
-import { ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import { ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon, ArrowsRightLeftIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
 export default function XeroConnection() {

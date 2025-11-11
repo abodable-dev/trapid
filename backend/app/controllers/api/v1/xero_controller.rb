@@ -84,6 +84,15 @@ module Api
             success: true,
             data: status
           }
+        rescue XeroApiClient::AuthenticationError => e
+          Rails.logger.warn("Xero status - credentials not configured: #{e.message}")
+          render json: {
+            success: true,
+            data: {
+              connected: false,
+              message: 'Xero integration not configured'
+            }
+          }
         rescue StandardError => e
           Rails.logger.error("Xero status error: #{e.message}")
           render json: {
@@ -290,18 +299,22 @@ module Api
           job = XeroContactSyncJob.perform_later
           job_id = job.job_id
 
-          # Initialize job metadata
-          Rails.cache.write(
-            "xero_sync_job_#{job_id}",
-            {
-              job_id: job_id,
-              status: 'queued',
-              queued_at: Time.current,
-              total: 0,
-              processed: 0
-            },
-            expires_in: 24.hours
-          )
+          # Initialize job metadata (skip cache write if cache is not configured)
+          begin
+            Rails.cache.write(
+              "xero_sync_job_#{job_id}",
+              {
+                job_id: job_id,
+                status: 'queued',
+                queued_at: Time.current,
+                total: 0,
+                processed: 0
+              },
+              expires_in: 24.hours
+            )
+          rescue StandardError => cache_error
+            Rails.logger.warn("Failed to write job metadata to cache: #{cache_error.message}")
+          end
 
           render json: {
             success: true,
@@ -407,7 +420,226 @@ module Api
         end
       end
 
+      # GET /api/v1/xero/sync_history
+      # Returns recent sync activity for contacts
+      def sync_history
+        begin
+          # Get recently synced contacts (last 50)
+          recent_syncs = Contact.where.not(last_synced_at: nil)
+                                .order(last_synced_at: :desc)
+                                .limit(50)
+                                .select(:id, :full_name, :first_name, :last_name, :email, :last_synced_at, :xero_sync_error, :xero_id, :created_at, :updated_at)
+
+          history_items = recent_syncs.map do |contact|
+            {
+              id: contact.id,
+              contact_name: contact.full_name || "#{contact.first_name} #{contact.last_name}".strip,
+              email: contact.email,
+              synced_at: contact.last_synced_at,
+              has_error: contact.xero_sync_error.present?,
+              error_message: contact.xero_sync_error,
+              action: determine_sync_action(contact),
+              xero_id: contact.xero_id
+            }
+          end
+
+          render json: {
+            success: true,
+            history: history_items
+          }
+        rescue StandardError => e
+          Rails.logger.error("Xero sync_history error: #{e.message}")
+          render json: {
+            success: false,
+            error: "Failed to fetch sync history"
+          }, status: :internal_server_error
+        end
+      end
+
+      # GET /api/v1/xero/tax_rates
+      # Fetches and syncs tax rates from Xero
+      def tax_rates
+        begin
+          client = XeroApiClient.new
+          result = client.get_tax_rates
+
+          if result[:success]
+            render json: {
+              success: true,
+              tax_rates: result[:tax_rates].map { |tr|
+                {
+                  code: tr.code,
+                  name: tr.name,
+                  rate: tr.rate,
+                  display_rate: tr.display_rate,
+                  tax_type: tr.tax_type
+                }
+              }
+            }
+          else
+            render json: {
+              success: false,
+              error: result[:error]
+            }, status: :unprocessable_entity
+          end
+        rescue XeroApiClient::AuthenticationError => e
+          Rails.logger.error("Xero tax_rates auth error: #{e.message}")
+          render json: {
+            success: false,
+            error: 'Not authenticated with Xero'
+          }, status: :unauthorized
+        rescue StandardError => e
+          Rails.logger.error("Xero tax_rates error: #{e.message}")
+          render json: {
+            success: false,
+            error: 'Failed to fetch tax rates'
+          }, status: :internal_server_error
+        end
+      end
+
+      # GET /api/v1/xero/accounts
+      # Fetches and syncs chart of accounts from Xero
+      def accounts
+        begin
+          client = XeroApiClient.new
+          result = client.get_accounts
+
+          if result[:success]
+            # Allow filtering by account class (e.g., EXPENSE for purchase accounts)
+            accounts = result[:accounts]
+            if params[:account_class].present?
+              accounts = accounts.where(account_class: params[:account_class])
+            end
+
+            render json: {
+              success: true,
+              accounts: accounts.map { |acc|
+                {
+                  code: acc.code,
+                  name: acc.name,
+                  display_name: acc.display_name,
+                  account_type: acc.account_type,
+                  account_class: acc.account_class,
+                  tax_type: acc.tax_type,
+                  description: acc.description
+                }
+              }
+            }
+          else
+            render json: {
+              success: false,
+              error: result[:error]
+            }, status: :unprocessable_entity
+          end
+        rescue XeroApiClient::AuthenticationError => e
+          Rails.logger.error("Xero accounts auth error: #{e.message}")
+          render json: {
+            success: false,
+            error: 'Not authenticated with Xero'
+          }, status: :unauthorized
+        rescue StandardError => e
+          Rails.logger.error("Xero accounts error: #{e.message}")
+          render json: {
+            success: false,
+            error: 'Failed to fetch accounts'
+          }, status: :internal_server_error
+        end
+      end
+
+      # GET /api/v1/xero/search_contacts?query=search_term
+      # Search for Xero contacts by name, email, or tax number
+      def search_contacts
+        query = params[:query]
+
+        if query.blank?
+          return render json: {
+            success: false,
+            error: 'Search query is required'
+          }, status: :bad_request
+        end
+
+        # Require minimum 2 characters for search
+        if query.length < 2
+          return render json: {
+            success: false,
+            error: 'Search query must be at least 2 characters'
+          }, status: :bad_request
+        end
+
+        begin
+          client = XeroApiClient.new
+
+          # Sanitize query to prevent OData injection
+          # Escape double quotes and backslashes in the query string
+          sanitized_query = query.gsub('\\', '\\\\\\\\').gsub('"', '\\"')
+
+          # Search Xero contacts with a WHERE clause
+          # Search by name, email, or tax number
+          where_clause = "Name.Contains(\"#{sanitized_query}\") OR EmailAddress.Contains(\"#{sanitized_query}\") OR TaxNumber.Contains(\"#{sanitized_query}\")"
+
+          Rails.logger.info("Xero contact search - Original query: '#{query}', Sanitized: '#{sanitized_query}'")
+
+          result = client.get('Contacts', { where: where_clause })
+
+          if result[:success]
+            contacts = result[:data]['Contacts'] || []
+
+            Rails.logger.info("Xero contact search - Found #{contacts.length} contacts")
+
+            # Format contacts for the frontend
+            formatted_contacts = contacts.map do |contact|
+              {
+                xero_id: contact['ContactID'],
+                name: contact['Name'],
+                email: contact['EmailAddress'],
+                tax_number: contact['TaxNumber'],
+                first_name: contact['FirstName'],
+                last_name: contact['LastName'],
+                phones: contact['Phones']
+              }
+            end
+
+            render json: {
+              success: true,
+              contacts: formatted_contacts,
+              count: formatted_contacts.length
+            }
+          else
+            render json: {
+              success: false,
+              error: 'Failed to search Xero contacts'
+            }, status: :unprocessable_entity
+          end
+        rescue XeroApiClient::AuthenticationError => e
+          Rails.logger.error("Xero search_contacts auth error: #{e.message}")
+          render json: {
+            success: false,
+            error: 'Not authenticated with Xero. Please connect to Xero first.'
+          }, status: :unauthorized
+        rescue StandardError => e
+          Rails.logger.error("Xero search_contacts error: #{e.message}")
+          Rails.logger.error(e.backtrace.first(5).join("\n"))
+          render json: {
+            success: false,
+            error: "Failed to search contacts: #{e.message}"
+          }, status: :internal_server_error
+        end
+      end
+
       private
+
+      # Determine what sync action was taken for a contact
+      def determine_sync_action(contact)
+        if contact.xero_sync_error.present?
+          'Sync Failed'
+        elsif contact.xero_id.present? && contact.created_at < contact.last_synced_at
+          'Updated from Xero'
+        elsif contact.xero_id.present?
+          'Created from Xero'
+        else
+          'Synced to Xero'
+        end
+      end
 
       # Find the most recent active sync job
       def find_active_sync_job

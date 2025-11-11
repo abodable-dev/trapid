@@ -22,7 +22,20 @@ export const api = {
       headers: getAuthHeaders(),
       credentials: 'include',
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
+      const error = new Error(errorMessage);
+      error.status = response.status;
+      error.data = errorData;
+      throw error;
+    }
     return response.json();
   },
 
@@ -33,7 +46,21 @@ export const api = {
       credentials: 'include',
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
+      throw new Error(errorMessage);
+    }
+    // Handle 204 No Content responses
+    if (response.status === 204) {
+      return null;
+    }
     return response.json();
   },
 
@@ -51,7 +78,17 @@ export const api = {
       credentials: 'include',
       body: formData,
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
+      throw new Error(errorMessage);
+    }
     return response.json();
   },
 
@@ -62,7 +99,17 @@ export const api = {
       credentials: 'include',
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
+      throw new Error(errorMessage);
+    }
     return response.json();
   },
 
@@ -73,17 +120,47 @@ export const api = {
       credentials: 'include',
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
+      throw new Error(errorMessage);
+    }
     return response.json();
   },
 
-  async delete(endpoint) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+  async delete(endpoint, options = {}) {
+    // Build query string from params if provided
+    let url = `${API_URL}${endpoint}`;
+    if (options.params) {
+      const queryString = new URLSearchParams(options.params).toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+    }
+
+    const response = await fetch(url, {
       method: 'DELETE',
       headers: getAuthHeaders(),
       credentials: 'include',
+      body: options.data ? JSON.stringify(options.data) : undefined,
     });
-    if (!response.ok) throw new Error('API request failed');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      // Handle both single error and array of errors
+      let errorMessage;
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorMessage = errorData.errors.join(', ');
+      } else {
+        errorMessage = errorData.error || `API request failed with status ${response.status}`;
+      }
+      throw new Error(errorMessage);
+    }
     return response.json();
   },
 

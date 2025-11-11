@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import CurrencyCell from '../components/table/CurrencyCell'
 import AutocompleteLookupCell from '../components/table/AutocompleteLookupCell'
@@ -438,6 +438,65 @@ function getColumnIcon(columnType) {
  'url': <LinkIcon {...iconProps} />,
  }
  return icons[columnType] || <DocumentTextIcon {...iconProps} />
+}
+
+function formatColumnType(columnType) {
+  const typeNames = {
+    'single_line_text': 'Text',
+    'multiple_lines_text': 'Long Text',
+    'number': 'Number',
+    'whole_number': 'Whole Number',
+    'email': 'Email',
+    'phone': 'Phone',
+    'date': 'Date',
+    'date_and_time': 'Date & Time',
+    'boolean': 'Yes/No',
+    'currency': 'Currency',
+    'percentage': 'Percentage',
+    'choice': 'Choice',
+    'url': 'URL',
+    'lookup': 'Lookup',
+    'multiple_lookups': 'Multiple Lookups',
+    'computed': 'Computed',
+    'user': 'User',
+  }
+  return typeNames[columnType] || columnType
+}
+
+// Check if a column is a system column that's typically hidden from end users
+function isSystemOrHiddenColumn(columnName) {
+  const systemColumns = [
+    'id',
+    'sys_type_id',
+    'deleted',
+    'drive_id',
+    'folder_id',
+    'parent_id',
+    'parent$type',
+    'range$type',
+    'colour_spec$type',
+    'tedmodel$type',
+    'pricebook$type',
+    'created_at',
+    'updated_at',
+  ]
+
+  // Check exact matches
+  if (systemColumns.includes(columnName)) {
+    return true
+  }
+
+  // Check for columns ending with $type (relationship type indicators)
+  if (columnName.endsWith('$type')) {
+    return true
+  }
+
+  // Check for columns ending with _id (foreign keys, except user-facing ones)
+  if (columnName.endsWith('_id') && !['product_id', 'contact_id', 'job_id'].includes(columnName)) {
+    return true
+  }
+
+  return false
 }
 
 function formatValue(value, columnType) {

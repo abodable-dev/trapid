@@ -15,7 +15,6 @@ import {
 } from 'lucide-react'
 import { formatCurrency } from '../utils/formatters'
 import { api } from '../api'
-import ColumnHeaderMenu from '../components/pricebook/ColumnHeaderMenu'
 import PriceBookImportModal from '../components/pricebook/PriceBookImportModal'
 
 export default function PriceBooksPage() {

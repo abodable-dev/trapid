@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
+import { PlusIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import ScheduleImporter from './ScheduleImporter'
 import ScheduleStats from './ScheduleStats'
 import ScheduleTaskList from './ScheduleTaskList'
 import ScheduleGanttChart from './ScheduleGanttChart'
 import TaskMatchModal from './TaskMatchModal'
+import AddScheduleTaskModal from './AddScheduleTaskModal'
+import CopyFromTemplateModal from './CopyFromTemplateModal'
 import Toast from '../Toast'
 
 export default function ScheduleMasterTab({ constructionId }) {

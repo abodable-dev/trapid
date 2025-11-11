@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { Switch, Menu, Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import { api } from '../api'
 import { formatCurrency } from '../utils/formatters'
+
+// Get API URL for proxy endpoints
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 import {
  ArrowLeftIcon,
  CurrencyDollarIcon,

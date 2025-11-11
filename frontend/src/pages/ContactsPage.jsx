@@ -14,6 +14,7 @@ import {
   ChevronDown
 } from 'lucide-react'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
+import MergeContactsModal from '../components/contacts/MergeContactsModal'
 import Toast from '../components/Toast'
 
 function classNames(...classes) {
@@ -22,13 +23,26 @@ function classNames(...classes) {
 
 export default function ContactsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [contacts, setContacts] = useState([])
   const [suppliers, setSuppliers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showColumnModal, setShowColumnModal] = useState(false)
-  const [activeTab, setActiveTab] = useState(0)
+
+  // Map tab names to indices
+  const tabs = ['contacts', 'suppliers']
+
+  // Get initial tab index from URL query parameter
+  const getInitialTabIndex = () => {
+    const params = new URLSearchParams(location.search)
+    const tab = params.get('tab')
+    const index = tabs.indexOf(tab)
+    return index >= 0 ? index : 0
+  }
+
+  const [activeTab, setActiveTab] = useState(getInitialTabIndex())
   const [selectedCategories, setSelectedCategories] = useState([])
 
   // Bulk selection state
@@ -36,8 +50,51 @@ export default function ContactsPage() {
   const [openDropdownId, setOpenDropdownId] = useState(null)
   const [bulkContactType, setBulkContactType] = useState('')
   const [updating, setUpdating] = useState(false)
+  const [showMergeModal, setShowMergeModal] = useState(false)
   const [updatingContactId, setUpdatingContactId] = useState(null)
   const [toast, setToast] = useState(null)
+  const [deletingContactId, setDeletingContactId] = useState(null)
+
+  // Column order state for Contacts tab with localStorage persistence
+  const [contactColumnOrder, setContactColumnOrder] = useState(() => {
+    const saved = localStorage.getItem('contacts_columnOrder')
+    return saved ? JSON.parse(saved) : ['name', 'type', 'email', 'phone', 'website', 'xero', 'actions']
+  })
+
+  // Column order state for Suppliers tab with localStorage persistence
+  const [supplierColumnOrder, setSupplierColumnOrder] = useState(() => {
+    const saved = localStorage.getItem('suppliers_columnOrder')
+    return saved ? JSON.parse(saved) : ['supplier', 'categories', 'rating', 'items', 'contact', 'status', 'actions']
+  })
+
+  // Column-specific search filters
+  const [columnFilters, setColumnFilters] = useState({})
+  const [draggedColumn, setDraggedColumn] = useState(null)
+
+  // Sort state with primary and secondary sorting
+  const [sortBy, setSortBy] = useState('name')
+  const [sortDirection, setSortDirection] = useState('asc')
+  const [secondarySortBy, setSecondarySortBy] = useState('type')
+  const [secondarySortDirection, setSecondarySortDirection] = useState('asc')
+
+  // Column widths with localStorage persistence
+  const [columnWidths, setColumnWidths] = useState(() => {
+    const saved = localStorage.getItem('contacts_columnWidths')
+    return saved ? JSON.parse(saved) : {
+      name: 200,
+      type: 150,
+      email: 250,
+      phone: 200,
+      website: 150,
+      xero: 150,
+      actions: 100
+    }
+  })
+
+  // Column resize state
+  const [resizingColumn, setResizingColumn] = useState(null)
+  const [resizeStartX, setResizeStartX] = useState(0)
+  const [resizeStartWidth, setResizeStartWidth] = useState(0)
 
   // Column visibility state for Contacts tab
   const [visibleContactColumns, setVisibleContactColumns] = useState({
@@ -62,25 +119,44 @@ export default function ContactsPage() {
   })
 
   // Define available columns for each tab
-  const contactColumns = [
-    { key: 'name', label: 'Contact Name' },
-    { key: 'type', label: 'Contact Type' },
-    { key: 'email', label: 'Email' },
-    { key: 'phone', label: 'Phone Numbers' },
-    { key: 'website', label: 'Website' },
-    { key: 'xero', label: 'Xero Status' },
-    { key: 'actions', label: 'Actions' }
-  ]
+  const contactColumnsConfig = {
+    name: { key: 'name', label: 'Contact Name', searchable: true, filterType: 'search' },
+    type: { key: 'type', label: 'Contact Type', searchable: true, filterType: 'dropdown' },
+    email: { key: 'email', label: 'Email', searchable: true, filterType: 'search' },
+    phone: { key: 'phone', label: 'Phone Numbers', searchable: true, filterType: 'search' },
+    website: { key: 'website', label: 'Website', searchable: false },
+    xero: { key: 'xero', label: 'Xero Status', searchable: true, filterType: 'dropdown' },
+    actions: { key: 'actions', label: 'Actions', searchable: false }
+  }
 
-  const clientColumns = [
-    { key: 'supplier', label: 'Supplier Name' },
-    { key: 'categories', label: 'Trade Categories' },
-    { key: 'rating', label: 'Rating' },
-    { key: 'items', label: 'Items Count' },
-    { key: 'contact', label: 'Supplier Details' },
-    { key: 'status', label: 'Status' },
-    { key: 'actions', label: 'Actions' }
-  ]
+  const contactColumns = contactColumnOrder.map(key => contactColumnsConfig[key])
+
+  const clientColumnsConfig = {
+    supplier: { key: 'supplier', label: 'Supplier Name', searchable: true },
+    categories: { key: 'categories', label: 'Trade Categories', searchable: true },
+    rating: { key: 'rating', label: 'Rating', searchable: false },
+    items: { key: 'items', label: 'Items Count', searchable: false },
+    contact: { key: 'contact', label: 'Supplier Details', searchable: true },
+    status: { key: 'status', label: 'Status', searchable: false },
+    actions: { key: 'actions', label: 'Actions', searchable: false }
+  }
+
+  const clientColumns = supplierColumnOrder.map(key => clientColumnsConfig[key])
+
+  // Update URL when tab changes
+  const handleTabChange = (index) => {
+    setActiveTab(index)
+    const tabName = tabs[index]
+    navigate(`/contacts?tab=${tabName}`, { replace: true })
+  }
+
+  // Update selected tab when URL changes (e.g., browser back/forward)
+  useEffect(() => {
+    const newIndex = getInitialTabIndex()
+    if (newIndex !== activeTab) {
+      setActiveTab(newIndex)
+    }
+  }, [location.search])
 
   useEffect(() => {
     loadContacts()
@@ -98,6 +174,20 @@ export default function ContactsPage() {
       window.removeEventListener('global-search', handleGlobalSearch)
     }
   }, [])
+
+  // Persist column widths to localStorage
+  useEffect(() => {
+    localStorage.setItem('contacts_columnWidths', JSON.stringify(columnWidths))
+  }, [columnWidths])
+
+  // Persist column order to localStorage
+  useEffect(() => {
+    localStorage.setItem('contacts_columnOrder', JSON.stringify(contactColumnOrder))
+  }, [contactColumnOrder])
+
+  useEffect(() => {
+    localStorage.setItem('suppliers_columnOrder', JSON.stringify(supplierColumnOrder))
+  }, [supplierColumnOrder])
 
   const loadContacts = async () => {
     try {
@@ -133,6 +223,134 @@ export default function ContactsPage() {
       ...prev,
       [columnKey]: !prev[columnKey]
     }))
+  }
+
+  // Column reordering handlers
+  const handleDragStart = (e, columnKey) => {
+    setDraggedColumn(columnKey)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e, targetColumnKey) => {
+    e.preventDefault()
+
+    if (!draggedColumn || draggedColumn === targetColumnKey) {
+      setDraggedColumn(null)
+      return
+    }
+
+    const currentOrder = activeTab === 0 ? contactColumnOrder : supplierColumnOrder
+    const setOrder = activeTab === 0 ? setContactColumnOrder : setSupplierColumnOrder
+
+    const draggedIndex = currentOrder.indexOf(draggedColumn)
+    const targetIndex = currentOrder.indexOf(targetColumnKey)
+
+    const newOrder = [...currentOrder]
+    newOrder.splice(draggedIndex, 1)
+    newOrder.splice(targetIndex, 0, draggedColumn)
+
+    setOrder(newOrder)
+    setDraggedColumn(null)
+  }
+
+  // Column filter handler
+  const handleColumnFilterChange = (columnKey, value) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnKey]: value
+    }))
+  }
+
+  // Sort handler
+  const handleSort = (columnKey) => {
+    if (sortBy === columnKey) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(columnKey)
+      setSortDirection('asc')
+    }
+  }
+
+  // Column resize handlers
+  const handleResizeStart = (e, columnKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingColumn(columnKey)
+    setResizeStartX(e.clientX)
+    setResizeStartWidth(columnWidths[columnKey])
+  }
+
+  const handleResizeMove = (e) => {
+    if (!resizingColumn) return
+    const diff = e.clientX - resizeStartX
+    const newWidth = Math.max(100, resizeStartWidth + diff)
+    setColumnWidths(prev => ({
+      ...prev,
+      [resizingColumn]: newWidth
+    }))
+  }
+
+  const handleResizeEnd = () => {
+    setResizingColumn(null)
+  }
+
+  // Add mouse move and mouse up listeners for column resizing
+  useEffect(() => {
+    if (resizingColumn) {
+      window.addEventListener('mousemove', handleResizeMove)
+      window.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove)
+        window.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [resizingColumn, resizeStartX, resizeStartWidth])
+
+  // Apply column filters to contacts
+  const applyColumnFilters = (items) => {
+    if (Object.keys(columnFilters).length === 0) return items
+
+    return items.filter(item => {
+      return Object.entries(columnFilters).every(([key, filterValue]) => {
+        if (!filterValue || filterValue.trim() === '') return true
+
+        const lowerFilter = filterValue.toLowerCase()
+
+        switch (key) {
+          case 'name':
+            return item.full_name?.toLowerCase().includes(lowerFilter)
+          case 'type':
+            return item.primary_contact_type?.toLowerCase().includes(lowerFilter)
+          case 'email':
+            return item.email?.toLowerCase().includes(lowerFilter)
+          case 'phone':
+            return item.mobile_phone?.toLowerCase().includes(lowerFilter) ||
+                   item.office_phone?.toLowerCase().includes(lowerFilter)
+          case 'xero':
+            if (filterValue === 'synced') {
+              return !!item.xero_id
+            } else if (filterValue === 'not_synced') {
+              return !item.xero_id
+            }
+            return true
+          case 'supplier':
+            return item.name?.toLowerCase().includes(lowerFilter)
+          case 'categories':
+            return item.trade_categories?.some(cat =>
+              cat.toLowerCase().includes(lowerFilter)
+            )
+          case 'contact':
+            return item.contact?.full_name?.toLowerCase().includes(lowerFilter)
+          default:
+            return true
+        }
+      })
+    })
   }
 
   // Bulk selection handlers
@@ -188,6 +406,101 @@ export default function ContactsPage() {
     setSelectedContacts(new Set())
   }
 
+  const handleMergeContacts = async (targetId, sourceIds) => {
+    try {
+      const response = await api.post('/api/v1/contacts/merge', {
+        target_id: targetId,
+        source_ids: sourceIds
+      })
+
+      if (response.success) {
+        setToast({
+          message: response.message,
+          type: 'success'
+        })
+        setSelectedContacts(new Set())
+        setShowMergeModal(false)
+        loadContacts() // Refresh the list
+      }
+    } catch (error) {
+      console.error('Merge error:', error)
+      throw error // Re-throw to be handled by the modal
+    }
+  }
+
+  const handleDeleteContact = async (contactId, contactName) => {
+    if (!confirm(`Are you sure you want to delete ${contactName}? This action cannot be undone.`)) {
+      return
+    }
+
+    setDeletingContactId(contactId)
+    try {
+      const response = await api.delete(`/api/v1/contacts/${contactId}`)
+
+      if (response.success) {
+        setToast({
+          message: response.message || 'Contact deleted successfully',
+          type: 'success'
+        })
+        loadContacts() // Refresh the list
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      setToast({
+        message: error.message || 'Failed to delete contact',
+        type: 'error'
+      })
+    } finally {
+      setDeletingContactId(null)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedContacts.size === 0) return
+
+    const count = selectedContacts.size
+    const contactWord = count === 1 ? 'contact' : 'contacts'
+
+    if (!confirm(`Are you sure you want to delete ${count} ${contactWord}? This action cannot be undone.`)) {
+      return
+    }
+
+    setUpdating(true)
+    try {
+      const deletePromises = Array.from(selectedContacts).map(contactId =>
+        api.delete(`/api/v1/contacts/${contactId}`)
+      )
+
+      const results = await Promise.allSettled(deletePromises)
+
+      const succeeded = results.filter(r => r.status === 'fulfilled').length
+      const failed = results.filter(r => r.status === 'rejected').length
+
+      if (succeeded > 0) {
+        setToast({
+          message: `Successfully deleted ${succeeded} ${succeeded === 1 ? 'contact' : 'contacts'}${failed > 0 ? `. ${failed} failed.` : ''}`,
+          type: succeeded === count ? 'success' : 'warning'
+        })
+      } else {
+        setToast({
+          message: 'Failed to delete contacts. Please try again.',
+          type: 'error'
+        })
+      }
+
+      setSelectedContacts(new Set())
+      loadContacts() // Refresh the list
+    } catch (error) {
+      console.error('Bulk delete error:', error)
+      setToast({
+        message: 'Failed to delete contacts. Please try again.',
+        type: 'error'
+      })
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   const handleUpdateSingleContact = async (contactId, newTypes, newPrimaryType) => {
     setUpdatingContactId(contactId)
     try {
@@ -233,6 +546,233 @@ export default function ContactsPage() {
       }
     }
     return badges[type] || badges.customer
+  }
+
+  // Helper function to render contact table cells in the correct order
+  const renderContactCell = (contact, columnKey) => {
+    if (!visibleContactColumns[columnKey]) return null
+
+    const width = columnWidths[columnKey]
+    const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
+
+    switch (columnKey) {
+      case 'name':
+        return (
+          <td key="name" style={cellStyle} className="px-6 py-4 whitespace-nowrap">
+            <Link
+              to={`/contacts/${contact.id}`}
+              className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              {contact.full_name}
+            </Link>
+            {(contact.first_name || contact.last_name) && (
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {contact.first_name} {contact.last_name}
+              </div>
+            )}
+          </td>
+        )
+
+      case 'type':
+        return (
+          <td key="type" style={cellStyle} className="px-6 py-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              {updatingContactId === contact.id ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+                  <span className="text-sm text-gray-500">Updating...</span>
+                </div>
+              ) : contact.primary_contact_type ? (
+                <div className="relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setOpenDropdownId(openDropdownId === contact.id ? null : contact.id)
+                    }}
+                    className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${getTypeBadge(contact.primary_contact_type).className}`}
+                  >
+                    {getTypeBadge(contact.primary_contact_type).label}
+                    <ChevronDownIcon className="ml-1 h-3 w-3" />
+                  </button>
+                  {openDropdownId === contact.id && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setOpenDropdownId(null)}
+                      />
+                      <div className="absolute z-20 mt-1 w-56 bg-white dark:bg-gray-800 shadow-lg rounded-md py-2 text-sm border border-gray-200 dark:border-gray-700">
+                        <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                          Select Types
+                        </div>
+                        {['customer', 'supplier', 'sales', 'land_agent'].map((type) => {
+                          const badge = getTypeBadge(type)
+                          const isSelected = contact.contact_types?.includes(type)
+                          const isPrimary = contact.primary_contact_type === type
+                          return (
+                            <div
+                              key={type}
+                              className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                            >
+                              <label className="flex items-center gap-2 cursor-pointer flex-1">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    const currentTypes = contact.contact_types || []
+                                    let newTypes
+                                    let newPrimaryType = contact.primary_contact_type
+
+                                    if (isSelected) {
+                                      newTypes = currentTypes.filter(t => t !== type)
+                                      if (isPrimary) {
+                                        newPrimaryType = newTypes[0] || null
+                                      }
+                                    } else {
+                                      newTypes = [...currentTypes, type]
+                                    }
+
+                                    handleUpdateSingleContact(contact.id, newTypes, newPrimaryType)
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                />
+                                <span className={isSelected ? 'font-medium' : 'font-normal'}>
+                                  {badge.label}
+                                </span>
+                              </label>
+                              {isSelected && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleUpdateSingleContact(contact.id, contact.contact_types, type)
+                                  }}
+                                  className={`text-xs px-2 py-0.5 rounded ${
+                                    isPrimary
+                                      ? 'bg-indigo-600 text-white'
+                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                  }`}
+                                >
+                                  {isPrimary ? 'Primary' : 'Set Primary'}
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <span className="text-sm text-gray-400">No type</span>
+              )}
+            </div>
+          </td>
+        )
+
+      case 'email':
+        return (
+          <td key="email" style={cellStyle} className="px-6 py-4">
+            {contact.email ? (
+              <a
+                href={`mailto:${contact.email}`}
+                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+              >
+                <EnvelopeIcon className="h-4 w-4" />
+                {contact.email}
+              </a>
+            ) : (
+              <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
+            )}
+          </td>
+        )
+
+      case 'phone':
+        return (
+          <td key="phone" style={cellStyle} className="px-6 py-4">
+            <div className="space-y-1">
+              {contact.mobile_phone && (
+                <div className="text-sm text-gray-900 dark:text-white flex items-center gap-1">
+                  <PhoneIcon className="h-4 w-4" />
+                  {contact.mobile_phone}
+                </div>
+              )}
+              {contact.office_phone && (
+                <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                  <BuildingOfficeIcon className="h-4 w-4" />
+                  {contact.office_phone}
+                </div>
+              )}
+              {!contact.mobile_phone && !contact.office_phone && (
+                <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
+              )}
+            </div>
+          </td>
+        )
+
+      case 'website':
+        return (
+          <td key="website" style={cellStyle} className="px-6 py-4">
+            {contact.website ? (
+              <a
+                href={contact.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+              >
+                <GlobeAltIcon className="h-4 w-4" />
+                Visit
+              </a>
+            ) : (
+              <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
+            )}
+          </td>
+        )
+
+      case 'xero':
+        return (
+          <td key="xero" style={cellStyle} className="px-6 py-4 whitespace-nowrap">
+            {contact.xero_id ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50">
+                <CheckCircleIcon className="h-3.5 w-3.5" />
+                Synced
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800/50">
+                <XCircleIcon className="h-3.5 w-3.5" />
+                Not Synced
+              </span>
+            )}
+          </td>
+        )
+
+      case 'actions':
+        return (
+          <td key="actions" style={cellStyle} className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <div className="flex items-center justify-end gap-3">
+              <Link
+                to={`/contacts/${contact.id}`}
+                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                View
+              </Link>
+              <button
+                onClick={() => handleDeleteContact(contact.id, contact.full_name)}
+                disabled={deletingContactId === contact.id}
+                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
+                title="Delete contact"
+              >
+                {deletingContactId === contact.id ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                ) : (
+                  <TrashIcon className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </td>
+        )
+
+      default:
+        return null
+    }
   }
 
   // Get unique categories from all suppliers
@@ -313,7 +853,7 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-sm font-medium text-gray-900 dark:text-white">Contacts & Suppliers</h1>
@@ -348,7 +888,7 @@ export default function ContactsPage() {
           </Tab>
         </TabList>
 
-        <TabPanels>
+        <TabPanels className="flex-1 overflow-hidden flex flex-col">
           {/* Contacts Tab */}
           <TabPanel>
             {/* Actions Bar */}
@@ -410,6 +950,32 @@ export default function ContactsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={updating || selectedContacts.size === 0}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+                  >
+                    {updating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <TrashIcon className="h-5 w-5" />
+                        Delete
+                      </>
+                    )}
+                  </button>
+                  {selectedContacts.size >= 2 && (
+                    <button
+                      onClick={() => setShowMergeModal(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium shadow-sm"
+                    >
+                      <ArrowsRightLeftIcon className="h-5 w-5" />
+                      Merge Contacts
+                    </button>
+                  )}
                   <button
                     onClick={handleBulkUpdate}
                     disabled={updating || !bulkContactType || selectedContacts.size === 0}
@@ -947,24 +1513,35 @@ export default function ContactsPage() {
           </TabPanel>
         </TabPanels>
       </TabGroup>
-
-      {/* Column Visibility Modal */}
-      <ColumnVisibilityModal
-        isOpen={showColumnModal}
-        onClose={() => setShowColumnModal(false)}
-        columns={activeTab === 0 ? contactColumns : clientColumns}
-        visibleColumns={activeTab === 0 ? visibleContactColumns : visibleClientColumns}
-        onToggleColumn={activeTab === 0 ? toggleContactColumn : toggleClientColumn}
-      />
-
-      {/* Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </div>
+
+    {/* Column Visibility Modal */}
+    <ColumnVisibilityModal
+      isOpen={showColumnModal}
+      onClose={() => setShowColumnModal(false)}
+      columns={activeTab === 0 ? contactColumns : clientColumns}
+      visibleColumns={activeTab === 0 ? visibleContactColumns : visibleClientColumns}
+      onToggleColumn={activeTab === 0 ? toggleContactColumn : toggleClientColumn}
+    />
+
+    {/* Merge Contacts Modal */}
+    <MergeContactsModal
+      isOpen={showMergeModal}
+      onClose={() => setShowMergeModal(false)}
+      selectedContacts={Array.from(selectedContacts)
+        .map(id => filteredContacts.find(c => c.id === id))
+        .filter(Boolean)}
+      onMerge={handleMergeContacts}
+    />
+
+    {/* Toast Notification */}
+    {toast && (
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast(null)}
+      />
+    )}
+  </div>
   )
 }

@@ -13,53 +13,70 @@
 
 ## Deployment Protocol
 
-### CRITICAL: Branch-Based Deployment Rules
+### Branch-Based Deployment Rules
 
-**ONLY deploy from `main` branch to production.**
+**Two deployment environments:**
+- **Production**: Deploy from `main` branch only (NO AUTHORITY - user must deploy)
+- **Staging**: Deploy from `rob` branch (AUTHORIZED - Claude Code can deploy)
 
-Before deploying, the deploy-manager agent MUST:
+**Deployment Authority:**
+- ✅ **STAGING**: Claude Code HAS authority to deploy from `rob` branch to Heroku staging
+- ❌ **PRODUCTION**: Claude Code does NOT have authority to deploy to production
+
+### Staging Deployment (rob branch)
+
+When user requests staging deployment from `rob` branch:
 
 1. **Check current branch:**
    ```bash
    git branch --show-current
    ```
 
-2. **Verify branch is `main`:**
-   - ✅ If on `main` → Proceed with deployment
-   - ❌ If on ANY other branch (including `rob`) → STOP and inform user
+2. **If on `rob` branch, deploy to staging:**
+   ```bash
+   # Commit and push changes first
+   git add .
+   git commit -m "..."
+   git push origin rob
 
-3. **Deploy workflow:**
-   - Backend: `git subtree push --prefix backend heroku main`
-   - Frontend: Automatic via Vercel when pushed to `main`
+   # Deploy backend to Heroku staging
+   export GIT_HTTP_USER_AGENT="git/2.51.2"
+   /opt/homebrew/bin/git subtree split --prefix=backend -b backend-deploy-rob
+   /opt/homebrew/bin/git push heroku backend-deploy-rob:main --force
+   git branch -D backend-deploy-rob
 
-### Development Branch Protection
+   # Frontend deploys automatically via Vercel when pushed to rob
+   ```
 
-**`rob` branch** is for development only:
+3. **After successful deployment:**
+   - Verify deployment completed
+   - Check for any migration errors
+   - Inform user deployment is complete
+
+### Production Deployment (main branch)
+
+**Claude Code does NOT have production deployment authority.**
+
+When user requests production deployment:
+
+1. **Check current branch:**
+   ```bash
+   git branch --show-current
+   ```
+
+2. **If on `main` branch:**
+   - Commit and push changes to `main`
+   - Inform user: "Changes committed and pushed to `main`. Ready for **PRODUCTION** deployment when you're ready."
+   - **Do NOT attempt to deploy to production**
+
+### Development Workflow
+
+**`rob` branch** is for active development:
 - Rob works on this branch in Claude Code Web
-- Changes must be reviewed via PR before merging to `main`
-- **NO direct deployments from `rob` branch**
-- Deploy-manager should refuse deployment requests when not on `main`
-
-### Exception Handling
-
-If a user requests deployment while NOT on `main` branch:
-
-```
-⚠️ DEPLOYMENT BLOCKED
-
-Current branch: [branch_name]
-Production deployments are only allowed from the `main` branch.
-
-To deploy these changes:
-1. Create a Pull Request to merge `[branch_name]` → `main`
-2. Review changes for UI/UX consistency
-3. Merge PR to `main`
-4. Switch to `main` branch: git checkout main
-5. Pull latest: git pull origin main
-6. Request deployment again
-
-Would you like me to help create a Pull Request?
-```
+- Changes are committed and pushed to GitHub
+- Claude Code can deploy to staging for testing
+- Changes should be reviewed via PR before merging to `main`
+- User deploys to production after merging to `main`
 
 ## Code Review Standards
 
@@ -97,10 +114,11 @@ If UI/UX doesn't match guidelines:
 - Works with other agents for fixes
 
 **deploy-manager agent:**
-- Deployment to Heroku (backend)
-- Deployment to Vercel (frontend)
-- Environment configuration
-- **MUST check branch before deploying**
+- Commit and push changes to appropriate branch
+- **HAS AUTHORITY to deploy to staging from `rob` branch**
+- Does NOT have authority to deploy to production from `main` branch
+- Deploys backend to Heroku staging using git subtree
+- Frontend deploys automatically via Vercel
 
 **planning-collaborator agent:**
 - Feature brainstorming

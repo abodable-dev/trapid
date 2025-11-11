@@ -1,100 +1,128 @@
 module Api
   module V1
     class PricebookItemsController < ApplicationController
-      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image, :add_price, :set_default_supplier, :delete_price_history]
+      before_action :set_pricebook_item, only: [:show, :update, :destroy, :history, :fetch_image, :update_image, :add_price, :set_default_supplier, :delete_price_history, :update_price_history, :proxy_image]
 
       # GET /api/v1/pricebook
       def index
         @items = PricebookItem.includes(:supplier, :default_supplier, :price_histories).active
 
-        # Apply search
-        @items = @items.search(params[:search]) if params[:search].present?
+        # Filter by specific IDs if provided (for viewing selected items)
+        if params[:ids].present?
+          ids = params[:ids].split(',').map(&:to_i)
+          @items = @items.where(id: ids)
+        else
+          # Apply search
+          @items = @items.search(params[:search]) if params[:search].present?
 
-        # Apply filters
-        @items = @items.by_category(params[:category]) if params[:category].present?
-        @items = @items.by_supplier(params[:supplier_id]) if params[:supplier_id].present?
-        @items = @items.price_range(params[:min_price], params[:max_price])
-        @items = @items.needs_pricing if params[:needs_pricing] == "true"
+          # Apply filters
+          @items = @items.by_category(params[:category]) if params[:category].present?
+          @items = @items.by_supplier(params[:supplier_id]) if params[:supplier_id].present?
+          @items = @items.price_range(params[:min_price], params[:max_price])
+          @items = @items.needs_pricing if params[:needs_pricing] == "true"
 
-        # Risk level filter
-        if params[:risk_level].present?
-          @items = @items.select do |item|
-            item.risk_level == params[:risk_level]
-          end
+          # Boolean field filters
+          @items = @items.where(requires_photo: params[:requires_photo] == "true") if params[:requires_photo].present?
+          @items = @items.where(requires_spec: params[:requires_spec] == "true") if params[:requires_spec].present?
+          @items = @items.where(photo_attached: params[:photo_attached] == "true") if params[:photo_attached].present?
+          @items = @items.where(spec_attached: params[:spec_attached] == "true") if params[:spec_attached].present?
+          @items = @items.where(needs_pricing_review: params[:needs_pricing_review] == "true") if params[:needs_pricing_review].present?
+
+          # Risk level filter - use scope instead of loading all records
+          @items = @items.by_risk_level(params[:risk_level]) if params[:risk_level].present?
         end
 
-        # Sorting
+        # Sorting - Fixed SQL injection vulnerability
         if params[:sort_by].present? && !@items.is_a?(Array)
           sort_column = params[:sort_by]
-          sort_direction = params[:sort_direction]&.downcase == 'desc' ? :desc : :asc
+          # Validate sort_direction to prevent SQL injection
+          sort_direction = params[:sort_direction]&.downcase == 'desc' ? 'desc' : 'asc'
 
-          # Map frontend column names to database columns
+          # Map frontend column names to database columns (whitelist)
           column_mapping = {
             'item_code' => 'item_code',
             'item_name' => 'item_name',
             'category' => 'category',
             'current_price' => 'current_price',
-            'supplier' => 'suppliers.name'
+            'supplier' => 'contacts.full_name'
           }
 
           db_column = column_mapping[sort_column] || 'item_code'
 
-          # Join suppliers table if sorting by supplier
+          # Join contacts table if sorting by supplier
           if sort_column == 'supplier'
             @items = @items.left_joins(:supplier)
+            # Use Arel to safely construct the query
+            @items = @items.order(Arel.sql("#{Contact.connection.quote_column_name('contacts')}.#{Contact.connection.quote_column_name('full_name')} #{sort_direction}"))
+          else
+            # Use Arel to safely construct the query with sanitized column name
+            @items = @items.order(Arel.sql("#{PricebookItem.connection.quote_column_name(db_column)} #{sort_direction}"))
           end
-
-          @items = @items.order("#{db_column} #{sort_direction}")
         end
 
-        # Pagination
-        page = params[:page]&.to_i || 1
-        limit = params[:limit]&.to_i || 100
-        offset = (page - 1) * limit
+        # Pagination - Added DoS protection by capping limit at 1000
+        # Exception: When filtering by supplier_id, allow unlimited results (for Schedule Master auto-PO)
+        page = [params[:page]&.to_i || 1, 1].max # Ensure page is at least 1
+        limit = (params[:limit] || params[:per_page])&.to_i || 100
+
+        # Allow unlimited results when filtering by supplier_id
+        if params[:supplier_id].present? && limit == 0
+          limit = nil # No limit
+        else
+          limit = [[limit, 1].max, 1000].min # Cap between 1 and 1000
+        end
+
+        offset = (page - 1) * (limit || 0)
 
         total_count = @items.is_a?(Array) ? @items.count : @items.count
 
         # Apply pagination
         if @items.is_a?(Array)
-          paginated_items = @items[offset, limit] || []
+          paginated_items = limit ? (@items[offset, limit] || []) : @items
         else
-          @items = @items.limit(limit).offset(offset)
+          if limit
+            @items = @items.limit(limit).offset(offset)
+          end
           paginated_items = @items
         end
 
         # Filter suppliers by category if category filter is active
         # Include suppliers from both default_supplier_id AND price_histories
         suppliers_list = if params[:category].present?
-          # Get suppliers who have items in the selected category
+          # Get suppliers (contacts) who have items in the selected category
           # Check both as default supplier AND in price history
-          default_supplier_ids = Supplier.joins("INNER JOIN pricebook_items ON pricebook_items.default_supplier_id = suppliers.id")
-                                         .where(pricebook_items: { category: params[:category], is_active: true })
-                                         .distinct
-                                         .pluck(:id)
+          default_supplier_ids = Contact.joins("INNER JOIN pricebook_items ON pricebook_items.default_supplier_id = contacts.id")
+                                        .where(pricebook_items: { category: params[:category], is_active: true })
+                                        .where("'supplier' = ANY(contacts.contact_types)")
+                                        .distinct
+                                        .pluck(:id)
 
-          price_history_supplier_ids = Supplier.joins("INNER JOIN price_histories ON price_histories.supplier_id = suppliers.id")
-                                               .joins("INNER JOIN pricebook_items ON pricebook_items.id = price_histories.pricebook_item_id")
-                                               .where(pricebook_items: { category: params[:category], is_active: true })
-                                               .distinct
-                                               .pluck(:id)
+          price_history_supplier_ids = Contact.joins("INNER JOIN price_histories ON price_histories.supplier_id = contacts.id")
+                                              .joins("INNER JOIN pricebook_items ON pricebook_items.id = price_histories.pricebook_item_id")
+                                              .where(pricebook_items: { category: params[:category], is_active: true })
+                                              .where("'supplier' = ANY(contacts.contact_types)")
+                                              .distinct
+                                              .pluck(:id)
 
           # Combine both and get distinct
           combined_ids = (default_supplier_ids + price_history_supplier_ids).uniq
-          Supplier.where(id: combined_ids).order(:name).pluck(:id, :name)
+          Contact.where(id: combined_ids).order(:full_name).pluck(:id, :full_name)
         else
-          # Get ALL suppliers that appear in either default_supplier_id or price_histories
-          default_supplier_ids = Supplier.joins("INNER JOIN pricebook_items ON pricebook_items.default_supplier_id = suppliers.id")
-                                         .where(pricebook_items: { is_active: true })
-                                         .distinct
-                                         .pluck(:id)
+          # Get ALL suppliers (contacts) that appear in either default_supplier_id or price_histories
+          default_supplier_ids = Contact.joins("INNER JOIN pricebook_items ON pricebook_items.default_supplier_id = contacts.id")
+                                        .where(pricebook_items: { is_active: true })
+                                        .where("'supplier' = ANY(contacts.contact_types)")
+                                        .distinct
+                                        .pluck(:id)
 
-          price_history_supplier_ids = Supplier.joins(:price_histories)
-                                               .distinct
-                                               .pluck(:id)
+          price_history_supplier_ids = Contact.joins(:price_histories)
+                                              .where("'supplier' = ANY(contacts.contact_types)")
+                                              .distinct
+                                              .pluck(:id)
 
           # Combine both and get distinct
           combined_ids = (default_supplier_ids + price_history_supplier_ids).uniq
-          Supplier.where(id: combined_ids).order(:name).pluck(:id, :name)
+          Contact.where(id: combined_ids).order(:full_name).pluck(:id, :full_name)
         end
 
         render json: {
@@ -103,7 +131,7 @@ module Api
             page: page,
             limit: limit,
             total_count: total_count,
-            total_pages: (total_count.to_f / limit).ceil
+            total_pages: limit ? (total_count.to_f / limit).ceil : 1
           },
           filters: {
             categories: PricebookItem.categories,
@@ -114,18 +142,31 @@ module Api
 
       # GET /api/v1/pricebook/:id
       def show
-        render json: item_with_risk_data(@item).merge(
-          @item.as_json(
-            include: {
-              supplier: { only: [:id, :name, :email, :phone, :rating] },
-              default_supplier: { only: [:id, :name] },
-              price_histories: {
-                only: [:id, :old_price, :new_price, :change_reason, :created_at],
-                include: { supplier: { only: [:id, :name] } }
-              }
+        item_json = @item.as_json(
+          include: {
+            supplier: { only: [:id, :full_name, :email, :mobile_phone, :office_phone, :rating] },
+            default_supplier: { only: [:id, :full_name] },
+            price_histories: {
+              only: [:id, :old_price, :new_price, :change_reason, :created_at, :date_effective],
+              include: { supplier: { only: [:id, :full_name] } }
             }
-          )
+          }
         )
+
+        # Map full_name to name for backwards compatibility
+        if item_json['supplier']
+          item_json['supplier']['name'] = item_json['supplier']['full_name']
+        end
+        if item_json['default_supplier']
+          item_json['default_supplier']['name'] = item_json['default_supplier']['full_name']
+        end
+        item_json['price_histories']&.each do |ph|
+          if ph['supplier']
+            ph['supplier']['name'] = ph['supplier']['full_name']
+          end
+        end
+
+        render json: item_with_risk_data(@item).merge(item_json)
       end
 
       # POST /api/v1/pricebook
@@ -157,20 +198,91 @@ module Api
       # GET /api/v1/pricebook/:id/history
       def history
         histories = @item.price_histories.recent.includes(:supplier)
-        render json: histories.as_json(include: { supplier: { only: [:id, :name] } })
+        render json: histories.as_json(include: { supplier: { only: [:id, :full_name], methods: [] } }).map { |h|
+          h['supplier']['name'] = h['supplier']['full_name'] if h['supplier']
+          h
+        }
       end
 
       # PATCH /api/v1/pricebook/bulk_update
       def bulk_update
         updates = params[:updates] || []
-        results = { success: [], errors: [] }
+        results = { success: [], errors: [], prices_updated: 0 }
 
         updates.each do |update|
           item = PricebookItem.find_by(id: update[:id])
-          if item && item.update(update.permit(:current_price, :supplier_id, :notes, :category))
-            results[:success] << item.id
+          if item
+            # Permit the attributes we want to update (excluding :id which is used for lookup)
+            permitted_attrs = update.to_unsafe_h.slice(:current_price, :supplier_id, :default_supplier_id, :notes, :category, :requires_photo, :requires_spec, :photo_attached, :spec_attached, :needs_pricing_review)
+
+            # If update_price_to_current_default is true, create/update price history for the new default supplier
+            if update[:update_price_to_current_default] == true && update[:default_supplier_id].present? && item.current_price.present?
+              new_supplier_id = update[:default_supplier_id]
+
+              # Find the most recent price history for this supplier
+              existing_price = PriceHistory.where(
+                pricebook_item_id: item.id,
+                supplier_id: new_supplier_id
+              ).order(created_at: :desc).first
+
+              # Only create a new price history if the supplier doesn't have a price, or their price is different
+              if existing_price.nil? || existing_price.new_price != item.current_price
+                PriceHistory.create!(
+                  pricebook_item_id: item.id,
+                  supplier_id: new_supplier_id,
+                  old_price: existing_price&.new_price || item.current_price,
+                  new_price: item.current_price,
+                  date_effective: Date.today,
+                  change_reason: "Updated to match current default price when setting as default supplier"
+                )
+                results[:prices_updated] += 1
+              end
+            end
+
+            # Handle create_or_update_price flag - allows creating/updating price history with custom price
+            if update[:create_or_update_price] == true && update[:default_supplier_id].present? && update[:new_price].present?
+              new_supplier_id = update[:default_supplier_id]
+              new_price = update[:new_price].to_f
+
+              # Find the most recent price history for this supplier
+              existing_price = PriceHistory.where(
+                pricebook_item_id: item.id,
+                supplier_id: new_supplier_id
+              ).order(created_at: :desc).first
+
+              # Create/update price history if needed
+              if existing_price.nil?
+                # No existing price - create new price history
+                PriceHistory.create!(
+                  pricebook_item_id: item.id,
+                  supplier_id: new_supplier_id,
+                  old_price: new_price, # For new entries, old and new are the same
+                  new_price: new_price,
+                  date_effective: Date.today,
+                  change_reason: "Initial price set when assigning as default supplier"
+                )
+                results[:prices_updated] += 1
+              elsif existing_price.new_price != new_price
+                # Existing price differs - create new price history entry
+                PriceHistory.create!(
+                  pricebook_item_id: item.id,
+                  supplier_id: new_supplier_id,
+                  old_price: existing_price.new_price,
+                  new_price: new_price,
+                  date_effective: Date.today,
+                  change_reason: "Price updated when setting as default supplier"
+                )
+                results[:prices_updated] += 1
+              end
+            end
+
+            if item.update(permitted_attrs)
+              results[:success] << item.id
+            else
+              results[:errors] << { id: update[:id], errors: item.errors.full_messages }
+            end
           else
-            results[:errors] << { id: update[:id], errors: item&.errors&.full_messages || ["Item not found"] }
+            results[:errors] << { id: update[:id], errors: ["Item not found"] }
           end
         end
 
@@ -252,7 +364,8 @@ module Api
             image_url: params[:image_url],
             image_source: 'manual',
             image_fetched_at: Time.current,
-            image_fetch_status: 'success'
+            image_fetch_status: 'success',
+            photo_attached: true
           )
 
           render json: {
@@ -301,6 +414,11 @@ module Api
         @item.current_price = params[:price]
         @item.supplier_id = params[:supplier_id] if params[:supplier_id].present?
 
+        # If item doesn't have a default supplier yet, set this one as default
+        if @item.default_supplier_id.nil? && params[:supplier_id].present?
+          @item.default_supplier_id = params[:supplier_id]
+        end
+
         if @item.save
           # Create price history entry with LGA and date effective
           price_history = @item.price_histories.create!(
@@ -322,7 +440,7 @@ module Api
               new_price: price_history.new_price,
               lga: price_history.lga,
               date_effective: price_history.date_effective,
-              supplier: price_history.supplier ? { id: price_history.supplier.id, name: price_history.supplier.name } : nil,
+              supplier: price_history.supplier ? { id: price_history.supplier.id, name: price_history.supplier.full_name } : nil,
               created_at: price_history.created_at
             }
           }
@@ -387,6 +505,35 @@ module Api
         end
       end
 
+      # PATCH /api/v1/pricebook/:id/price_histories/:history_id
+      def update_price_history
+        history_id = params[:history_id]
+
+        if history_id.blank?
+          return render json: { success: false, error: 'history_id is required' }, status: :unprocessable_entity
+        end
+
+        price_history = @item.price_histories.find_by(id: history_id)
+
+        if price_history.nil?
+          return render json: { success: false, error: 'Price history not found' }, status: :not_found
+        end
+
+        # Update the price history attributes
+        update_params = {}
+        update_params[:old_price] = params[:old_price] if params[:old_price].present?
+        update_params[:new_price] = params[:new_price] if params[:new_price].present?
+        update_params[:date_effective] = params[:date_effective] if params[:date_effective].present?
+        update_params[:change_reason] = params[:change_reason] if params[:change_reason].present?
+        update_params[:lga] = params[:lga] if params[:lga].present?
+
+        if price_history.update(update_params)
+          render json: { success: true, message: 'Price history updated successfully', price_history: price_history }
+        else
+          render json: { success: false, errors: price_history.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
       # GET /api/v1/pricebook/export_price_history
       def export_price_history
         supplier_id = params[:supplier_id]
@@ -421,21 +568,134 @@ module Api
         end
 
         file = params[:file]
-        temp_file = Tempfile.new(['price_history_import', File.extname(file.original_filename)])
+        temp_file = Tempfile.new(['price_history_import', File.extname(file.original_filename)], binmode: true)
 
         begin
-          # Save uploaded file
+          # Save uploaded file in binary mode to avoid encoding issues
+          temp_file.binmode
           temp_file.write(file.read)
           temp_file.rewind
 
-          # Run import service
-          import_service = PriceHistoryImportService.new(temp_file.path)
+          # Run import service with optional effective_date
+          effective_date = params[:effective_date].present? ? Date.parse(params[:effective_date]) : nil
+          import_service = PriceHistoryImportService.new(temp_file.path, effective_date: effective_date)
           result = import_service.import
 
           render json: result
         ensure
           temp_file.close
           temp_file.unlink
+        end
+      end
+
+      # GET /api/v1/pricebook/price_health_check
+      def price_health_check
+        issues = []
+        today = Date.today
+
+        # Find all items with default suppliers
+        items_with_defaults = PricebookItem.includes(:default_supplier, :price_histories)
+          .where.not(default_supplier_id: nil)
+
+        items_with_defaults.each do |item|
+          # Find the active price for the default supplier
+          active_price = item.price_histories
+            .where(supplier_id: item.default_supplier_id)
+            .where('date_effective <= ? OR date_effective IS NULL', today)
+            .order(date_effective: :desc, created_at: :desc)
+            .first
+
+          if active_price && active_price.new_price != item.current_price
+            issues << {
+              item_id: item.id,
+              item_code: item.item_code,
+              item_name: item.item_name,
+              default_supplier_id: item.default_supplier_id,
+              default_supplier_name: item.default_supplier&.full_name,
+              item_current_price: item.current_price,
+              active_price_id: active_price.id,
+              active_price_value: active_price.new_price,
+              active_price_date: active_price.date_effective || active_price.created_at,
+              difference: (active_price.new_price - item.current_price).round(2)
+            }
+          elsif !active_price && item.current_price.present?
+            issues << {
+              item_id: item.id,
+              item_code: item.item_code,
+              item_name: item.item_name,
+              default_supplier_id: item.default_supplier_id,
+              default_supplier_name: item.default_supplier&.full_name,
+              item_current_price: item.current_price,
+              active_price_id: nil,
+              active_price_value: nil,
+              active_price_date: nil,
+              difference: nil,
+              error: 'No active price found for default supplier'
+            }
+          end
+        end
+
+        render json: {
+          total_items_checked: items_with_defaults.count,
+          issues_found: issues.count,
+          issues: issues
+        }
+      end
+
+      # GET /api/v1/pricebook/:id/proxy_image/:file_type
+      # Proxies OneDrive images through our backend to avoid CORS and expiration issues
+      def proxy_image
+        file_type = params[:file_type] # 'image', 'spec', or 'qr_code'
+
+        # Get the file ID based on the file type
+        file_id = case file_type
+        when 'image'
+          @item.image_file_id
+        when 'spec'
+          @item.spec_file_id
+        when 'qr_code'
+          @item.qr_code_file_id
+        else
+          return render json: { error: 'Invalid file type' }, status: :bad_request
+        end
+
+        if file_id.blank?
+          return render json: { error: 'File not found' }, status: :not_found
+        end
+
+        begin
+          # Get OneDrive credentials
+          credential = OrganizationOneDriveCredential.first
+          unless credential && credential.valid_credential?
+            return render json: { error: 'OneDrive not connected' }, status: :service_unavailable
+          end
+
+          # Initialize Microsoft Graph client
+          client = MicrosoftGraphClient.new(credential)
+
+          # Get file content from OneDrive
+          response = client.get_file_content(file_id)
+
+          # Detect content type from file extension or default to image/jpeg
+          content_type = case File.extname(@item.send("#{file_type}_url") || '').downcase
+          when '.jpg', '.jpeg'
+            'image/jpeg'
+          when '.png'
+            'image/png'
+          when '.pdf'
+            'application/pdf'
+          else
+            'application/octet-stream'
+          end
+
+          # Set caching headers (cache for 1 hour)
+          expires_in 1.hour, public: true
+
+          # Stream the file content
+          send_data response, type: content_type, disposition: 'inline'
+        rescue => e
+          Rails.logger.error "Error proxying image: #{e.message}"
+          render json: { error: 'Failed to fetch image' }, status: :internal_server_error
         end
       end
 
@@ -481,10 +741,20 @@ module Api
       end
 
       def item_with_risk_data(item)
-        item.as_json(include: {
-          supplier: { only: [:id, :name] },
-          default_supplier: { only: [:id, :name] }
-        }).merge(
+        item_json = item.as_json(include: {
+          supplier: { only: [:id, :full_name] },
+          default_supplier: { only: [:id, :full_name] }
+        })
+
+        # Map full_name to name for backwards compatibility
+        if item_json['supplier']
+          item_json['supplier']['name'] = item_json['supplier']['full_name']
+        end
+        if item_json['default_supplier']
+          item_json['default_supplier']['name'] = item_json['default_supplier']['full_name']
+        end
+
+        item_json.merge(
           price_last_updated_at: item.price_last_updated_at,
           price_age_days: item.price_age_in_days,
           price_freshness: {
@@ -501,13 +771,22 @@ module Api
           supplier_reliability: item.supplier_reliability_score,
           price_volatility: item.price_volatility,
           image_url: item.image_url,
+          qr_code_url: item.qr_code_url,
           image_fetch_status: item.image_fetch_status
         )
       end
 
       def item_with_image_data(item)
-        item.as_json(include: { supplier: { only: [:id, :name] } }).merge(
+        item_json = item.as_json(include: { supplier: { only: [:id, :full_name] } })
+
+        # Map full_name to name for backwards compatibility
+        if item_json['supplier']
+          item_json['supplier']['name'] = item_json['supplier']['full_name']
+        end
+
+        item_json.merge(
           image_url: item.image_url,
+          qr_code_url: item.qr_code_url,
           image_source: item.image_source,
           image_fetched_at: item.image_fetched_at,
           image_fetch_status: item.image_fetch_status

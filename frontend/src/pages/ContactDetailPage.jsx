@@ -16,6 +16,37 @@ import {
  TagIcon,
  StarIcon
 } from '@heroicons/react/24/outline'
+import { ShieldCheckIcon } from '@heroicons/react/24/solid'
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
+import ActivityTimeline from '../components/contacts/ActivityTimeline'
+import LinkXeroContactModal from '../components/contacts/LinkXeroContactModal'
+import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
+import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
+import ContactGroupsSection from '../components/contacts/ContactGroupsSection'
+
+// Helper function to format ABN as XX XXX XXX XXX
+const formatABN = (abn) => {
+  if (!abn) return ''
+  // Remove all non-digits
+  const digits = abn.replace(/\D/g, '')
+  // Format as XX XXX XXX XXX
+  if (digits.length === 11) {
+    return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8, 11)}`
+  }
+  return abn // Return original if not 11 digits
+}
+
+// Helper function to format Australian mobile phone as XXXX XXX XXX
+const formatMobilePhone = (phone) => {
+  if (!phone) return ''
+  // Remove all non-digits
+  const digits = phone.replace(/\D/g, '')
+  // Format as XXXX XXX XXX for 10 digit numbers
+  if (digits.length === 10) {
+    return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 10)}`
+  }
+  return phone // Return original if not 10 digits
+}
 
 export default function ContactDetailPage() {
  const { id } = useParams()
