@@ -24,6 +24,30 @@ import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
 import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
 import ContactGroupsSection from '../components/contacts/ContactGroupsSection'
 
+// Helper function to format ABN as XX XXX XXX XXX
+const formatABN = (abn) => {
+  if (!abn) return ''
+  // Remove all non-digits
+  const digits = abn.replace(/\D/g, '')
+  // Format as XX XXX XXX XXX
+  if (digits.length === 11) {
+    return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8, 11)}`
+  }
+  return abn // Return original if not 11 digits
+}
+
+// Helper function to format Australian mobile phone as XXXX XXX XXX
+const formatMobilePhone = (phone) => {
+  if (!phone) return ''
+  // Remove all non-digits
+  const digits = phone.replace(/\D/g, '')
+  // Format as XXXX XXX XXX for 10 digit numbers
+  if (digits.length === 10) {
+    return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 10)}`
+  }
+  return phone // Return original if not 10 digits
+}
+
 export default function ContactDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -847,10 +871,10 @@ export default function ContactDetailPage() {
                       {contact.mobile_phone ? (
                         <a
                           href={`tel:${contact.mobile_phone}`}
-                          className={`text-gray-900 dark:text-white flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}
+                          className={`text-gray-900 dark:text-white flex-1 font-mono ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}
                           onClick={(e) => isPageEditMode && e.preventDefault()}
                         >
-                          {contact.mobile_phone}
+                          {formatMobilePhone(contact.mobile_phone)}
                         </a>
                       ) : (
                         <p className={`text-gray-900 dark:text-white flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>-</p>
@@ -1073,8 +1097,8 @@ export default function ContactDetailPage() {
                     className={`flex items-center gap-2 ${isPageEditMode ? 'cursor-pointer' : ''}`}
                     onClick={isPageEditMode ? () => startEditingXeroField('tax_number') : undefined}
                   >
-                    <p className={`text-gray-900 dark:text-white font-medium flex-1 ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>
-                      {contact.tax_number || '-'}
+                    <p className={`text-gray-900 dark:text-white font-medium flex-1 font-mono ${isPageEditMode ? 'border-b-2 border-dashed border-blue-400' : ''}`}>
+                      {formatABN(contact.tax_number) || '-'}
                     </p>
                     {contact.tax_number && (
                       <>
