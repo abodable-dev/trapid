@@ -1,7 +1,6 @@
 module Api
   module V1
     class WorkflowStepsController < ApplicationController
-      before_action :authenticate_user!
       before_action :set_workflow_step, only: [:show, :approve, :reject, :request_changes]
 
       # GET /api/v1/workflow_steps

@@ -233,6 +233,9 @@ Rails.application.routes.draw do
       # Task Templates for Schedule Master
       resources :task_templates
 
+      # Setup data management
+      post 'setup/pull_from_local', to: 'setup#pull_from_local'
+
       # Documentation Categories (Global)
       resources :documentation_categories do
         collection do

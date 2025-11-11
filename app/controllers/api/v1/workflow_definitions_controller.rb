@@ -1,7 +1,6 @@
 module Api
   module V1
     class WorkflowDefinitionsController < ApplicationController
-      before_action :authenticate_user!
       before_action :set_workflow_definition, only: [:show, :update, :destroy]
 
       # GET /api/v1/workflow_definitions
