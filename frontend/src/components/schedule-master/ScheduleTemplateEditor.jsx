@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   PlusIcon, TrashIcon, PencilIcon, DocumentDuplicateIcon,
   CheckIcon, ArrowUpIcon, ArrowDownIcon, InformationCircleIcon,
-  MagnifyingGlassIcon, XMarkIcon
+  MagnifyingGlassIcon, XMarkIcon, Cog6ToothIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import Toast from '../Toast'
@@ -38,6 +38,26 @@ const ASSIGNABLE_ROLES = [
   { value: 'estimator', label: 'Estimator' }
 ]
 
+// Default column configuration
+const defaultColumnConfig = {
+  sequence: { visible: true, width: 40, label: '#', order: 0 },
+  taskName: { visible: true, width: 200, label: 'Task Name', order: 1 },
+  supplierGroup: { visible: true, width: 150, label: 'Supplier / Group', order: 2 },
+  predecessors: { visible: true, width: 100, label: 'Predecessors', order: 3 },
+  poRequired: { visible: true, width: 80, label: 'PO Req', order: 4 },
+  autoPo: { visible: true, width: 80, label: 'Auto PO', order: 5 },
+  priceItems: { visible: true, width: 120, label: 'Price Items', order: 6 },
+  critical: { visible: true, width: 80, label: 'Critical', order: 7 },
+  tags: { visible: true, width: 100, label: 'Tags', order: 8 },
+  photo: { visible: true, width: 80, label: 'Photo', order: 9 },
+  cert: { visible: true, width: 80, label: 'Cert', order: 10 },
+  certLag: { visible: true, width: 80, label: 'Cert Lag', order: 11 },
+  supCheck: { visible: true, width: 80, label: 'Sup Check', order: 12 },
+  autoComplete: { visible: true, width: 80, label: 'Auto ✓', order: 13 },
+  subtasks: { visible: true, width: 120, label: 'Subtasks', order: 14 },
+  actions: { visible: true, width: 80, label: 'Actions', order: 15 }
+}
+
 export default function ScheduleTemplateEditor() {
   const [templates, setTemplates] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState(null)
@@ -48,6 +68,30 @@ export default function ScheduleTemplateEditor() {
   const [showTemplateModal, setShowTemplateModal] = useState(false)
   const [templateForm, setTemplateForm] = useState({ name: '', description: '', is_default: false })
   const [searchQuery, setSearchQuery] = useState('')
+  const [showColumnSettings, setShowColumnSettings] = useState(false)
+  const [draggedColumn, setDraggedColumn] = useState(null)
+
+  // Column configuration with localStorage persistence
+  const [columnConfig, setColumnConfig] = useState(() => {
+    const saved = localStorage.getItem('scheduleTemplateColumnConfig')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        // Merge with defaults to ensure all columns have required properties
+        const merged = {}
+        Object.keys(defaultColumnConfig).forEach(key => {
+          merged[key] = {
+            ...defaultColumnConfig[key],
+            ...(parsed[key] || {})
+          }
+        })
+        return merged
+      } catch (e) {
+        return defaultColumnConfig
+      }
+    }
+    return defaultColumnConfig
+  })
 
   useEffect(() => {
     loadTemplates()
@@ -231,6 +275,116 @@ export default function ScheduleTemplateEditor() {
     setTimeout(() => setToast(null), 4000)
   }
 
+  // Column configuration handlers
+  const handleColumnVisibilityChange = (columnKey, visible) => {
+    const newConfig = {
+      ...columnConfig,
+      [columnKey]: { ...columnConfig[columnKey], visible }
+    }
+    setColumnConfig(newConfig)
+    localStorage.setItem('scheduleTemplateColumnConfig', JSON.stringify(newConfig))
+  }
+
+  const handleColumnWidthChange = (columnKey, width) => {
+    const newConfig = {
+      ...columnConfig,
+      [columnKey]: { ...columnConfig[columnKey], width: parseInt(width) || 50 }
+    }
+    setColumnConfig(newConfig)
+    localStorage.setItem('scheduleTemplateColumnConfig', JSON.stringify(newConfig))
+  }
+
+  const handleResetColumns = () => {
+    setColumnConfig(defaultColumnConfig)
+    localStorage.removeItem('scheduleTemplateColumnConfig')
+  }
+
+  const handleDragStart = (e, columnKey) => {
+    // Don't start drag if clicking on interactive elements
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') {
+      e.preventDefault()
+      return
+    }
+
+    e.stopPropagation()
+    setDraggedColumn(columnKey)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', columnKey)
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDragEnter = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleDrop = (e, targetColumnKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!draggedColumn || draggedColumn === targetColumnKey) {
+      setDraggedColumn(null)
+      return
+    }
+
+    // Get current orders
+    const draggedOrder = columnConfig[draggedColumn].order
+    const targetOrder = columnConfig[targetColumnKey].order
+
+    // Create new config with swapped orders
+    const newConfig = { ...columnConfig }
+
+    // Swap the orders
+    newConfig[draggedColumn] = { ...newConfig[draggedColumn], order: targetOrder }
+    newConfig[targetColumnKey] = { ...newConfig[targetColumnKey], order: draggedOrder }
+
+    setColumnConfig(newConfig)
+    localStorage.setItem('scheduleTemplateColumnConfig', JSON.stringify(newConfig))
+    setDraggedColumn(null)
+  }
+
+  const handleDragEnd = (e) => {
+    e.preventDefault()
+    setDraggedColumn(null)
+  }
+
+  // Get sorted column entries by order
+  const getSortedColumns = () => {
+    return Object.entries(columnConfig)
+      .sort(([, a], [, b]) => a.order - b.order)
+  }
+
+  // Generate grid-cols CSS template based on visible columns
+  const getGridTemplate = () => {
+    return getSortedColumns()
+      .filter(([, config]) => config.visible)
+      .map(([, config]) => `${config.width}px`)
+      .join('_')
+  }
+
+  // Column tooltips mapping
+  const columnTooltips = {
+    taskName: "The name of the task that will appear in the schedule. Be descriptive so builders know exactly what needs to be done.",
+    supplierGroup: "For PO tasks: select a supplier. For internal work: assign to a team (Admin, Sales, Site, Supervisor, Builder, Estimator).",
+    predecessors: "Tasks that must be completed before this one starts. Supports FS (Finish-to-Start), SS (Start-to-Start), FF (Finish-to-Finish), and SF (Start-to-Finish) dependencies with lag days.",
+    poRequired: "Check if this task requires a purchase order. This tracks whether a PO is needed, but doesn't automatically create one.",
+    autoPo: "Automatically create and send a purchase order to the supplier when the job starts. Requires a supplier to be selected.",
+    priceItems: "Link price book items to this task. These items will be included in the auto-generated purchase order.",
+    critical: "Mark this PO as critical priority. Critical POs will be highlighted and require immediate attention.",
+    tags: "Add tags to categorize and filter tasks (e.g., 'electrical', 'foundation', 'inspection'). Useful for filtering views by trade.",
+    photo: "Automatically spawn a photo task when this task is completed. Use for tasks that need photo documentation.",
+    cert: "Automatically spawn a certificate task when this task is completed. Used for regulatory certifications and compliance documents.",
+    certLag: "Number of days after task completion when the certificate is due. Default is 10 days.",
+    supCheck: "Require a supervisor to check in on this task. Supervisor will get a prompt to visit the site and verify quality.",
+    autoComplete: "Automatically mark all predecessor tasks as complete when this task is completed. Useful for cleanup or milestone tasks.",
+    subtasks: "Automatically create subtasks when this task starts. Useful for breaking down complex tasks into smaller steps."
+  }
+
   // Filter rows based on search query
   const filteredRows = rows.filter(row => {
     if (!searchQuery.trim()) return true
@@ -303,94 +457,152 @@ export default function ScheduleTemplateEditor() {
         )}
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar and Column Settings */}
       {selectedTemplate && (
-        <div className="mb-4">
-          <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder={`Search ${rows.length} task${rows.length !== 1 ? 's' : ''} by name, supplier, group, or tags...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <XMarkIcon className="h-5 w-5" />
-              </button>
-            )}
+        <div className="mb-4 space-y-4">
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder={`Search ${rows.length} task${rows.length !== 1 ? 's' : ''} by name, supplier, group, or tags...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+
+            {/* Column Settings Button */}
+            <button
+              onClick={() => setShowColumnSettings(!showColumnSettings)}
+              className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <Cog6ToothIcon className="h-4 w-4 mr-2" />
+              Columns
+            </button>
           </div>
+
+          {/* Column Settings Panel */}
+          {showColumnSettings && (
+            <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                    Column Configuration
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Drag columns to reorder • Check to show/hide • Adjust width
+                  </p>
+                </div>
+                <button
+                  onClick={handleResetColumns}
+                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 underline"
+                >
+                  Reset to Defaults
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getSortedColumns().map(([key, config]) => {
+                  // Don't show sequence and actions in settings (always visible)
+                  if (key === 'sequence' || key === 'actions') return null
+
+                  return (
+                    <div
+                      key={key}
+                      draggable="true"
+                      onDragStart={(e) => handleDragStart(e, key)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={handleDragOver}
+                      onDragEnter={handleDragEnter}
+                      onDrop={(e) => handleDrop(e, key)}
+                      className={`flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded border-2 transition-all cursor-move ${
+                        draggedColumn === key
+                          ? 'border-indigo-500 opacity-50 scale-95'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 flex-shrink-0 pointer-events-none">
+                        <svg
+                          className="h-5 w-5 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                        </svg>
+                        <input
+                          type="checkbox"
+                          checked={config.visible}
+                          onChange={(e) => handleColumnVisibilityChange(key, e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 pointer-events-auto"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 pointer-events-none">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          {config.label}
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="50"
+                            max="500"
+                            step="10"
+                            value={config.width}
+                            onChange={(e) => handleColumnWidthChange(key, e.target.value)}
+                            onFocus={(e) => e.target.select()}
+                            disabled={!config.visible}
+                            className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed pointer-events-auto"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <span className="text-xs text-gray-500 dark:text-gray-400">px</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* 14-Column Grid */}
+      {/* Dynamic Column Grid */}
       {selectedTemplate && (
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
           <div className="min-w-[2000px]">
             {/* Header Row */}
-            <div className="grid grid-cols-[40px_200px_150px_100px_80px_80px_120px_80px_100px_80px_80px_80px_80px_80px_120px_80px] gap-2 p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300">
-              <div>#</div>
-              <ColumnTooltip
-                text="Task Name"
-                tooltip="The name of the task that will appear in the schedule. Be descriptive so builders know exactly what needs to be done."
-              />
-              <ColumnTooltip
-                text="Supplier / Group"
-                tooltip="For PO tasks: select a supplier. For internal work: assign to a team (Admin, Sales, Site, Supervisor, Builder, Estimator)."
-              />
-              <ColumnTooltip
-                text="Predecessors"
-                tooltip="Tasks that must be completed before this one starts. Supports FS (Finish-to-Start), SS (Start-to-Start), FF (Finish-to-Finish), and SF (Start-to-Finish) dependencies with lag days."
-              />
-              <ColumnTooltip
-                text="PO Req"
-                tooltip="Check if this task requires a purchase order. This tracks whether a PO is needed, but doesn't automatically create one."
-              />
-              <ColumnTooltip
-                text="Auto PO"
-                tooltip="Automatically create and send a purchase order to the supplier when the job starts. Requires a supplier to be selected."
-              />
-              <ColumnTooltip
-                text="Price Items"
-                tooltip="Link price book items to this task. These items will be included in the auto-generated purchase order."
-              />
-              <ColumnTooltip
-                text="Critical"
-                tooltip="Mark this PO as critical priority. Critical POs will be highlighted and require immediate attention."
-              />
-              <ColumnTooltip
-                text="Tags"
-                tooltip="Add tags to categorize and filter tasks (e.g., 'electrical', 'foundation', 'inspection'). Useful for filtering views by trade."
-              />
-              <ColumnTooltip
-                text="Photo"
-                tooltip="Automatically spawn a photo task when this task is completed. Use for tasks that need photo documentation."
-              />
-              <ColumnTooltip
-                text="Cert"
-                tooltip="Automatically spawn a certificate task when this task is completed. Used for regulatory certifications and compliance documents."
-              />
-              <ColumnTooltip
-                text="Cert Lag"
-                tooltip="Number of days after task completion when the certificate is due. Default is 10 days."
-              />
-              <ColumnTooltip
-                text="Sup Check"
-                tooltip="Require a supervisor to check in on this task. Supervisor will get a prompt to visit the site and verify quality."
-              />
-              <ColumnTooltip
-                text="Auto ✓"
-                tooltip="Automatically mark all predecessor tasks as complete when this task is completed. Useful for cleanup or milestone tasks."
-              />
-              <ColumnTooltip
-                text="Subtasks"
-                tooltip="Automatically create subtasks when this task starts. Useful for breaking down complex tasks into smaller steps."
-              />
-              <div>Actions</div>
+            <div
+              className="grid gap-2 p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300"
+              style={{ gridTemplateColumns: getGridTemplate() }}
+            >
+              {getSortedColumns().map(([key, config]) => {
+                if (!config.visible) return null
+
+                if (key === 'sequence') {
+                  return <div key={key}>#</div>
+                } else if (key === 'actions') {
+                  return <div key={key}>Actions</div>
+                } else if (columnTooltips[key]) {
+                  return (
+                    <ColumnTooltip
+                      key={key}
+                      text={config.label}
+                      tooltip={columnTooltips[key]}
+                    />
+                  )
+                } else {
+                  return <div key={key}>{config.label}</div>
+                }
+              })}
             </div>
 
             {/* Data Rows */}
@@ -413,6 +625,9 @@ export default function ScheduleTemplateEditor() {
                   row={row}
                   index={rows.findIndex(r => r.id === row.id)}
                   suppliers={suppliers}
+                  columnConfig={columnConfig}
+                  getSortedColumns={getSortedColumns}
+                  getGridTemplate={getGridTemplate}
                   onUpdate={(updates) => handleUpdateRow(row.id, updates)}
                   onDelete={() => handleDeleteRow(row.id)}
                   onMoveUp={() => handleMoveRow(rows.findIndex(r => r.id === row.id), 'up')}
@@ -511,7 +726,8 @@ export default function ScheduleTemplateEditor() {
 
 // Individual row component
 function ScheduleTemplateRow({
-  row, index, suppliers, onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown
+  row, index, suppliers, columnConfig, getSortedColumns, getGridTemplate,
+  onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown
 }) {
   const [localName, setLocalName] = useState(row.name)
   const [updateTimeout, setUpdateTimeout] = useState(null)
@@ -561,151 +777,212 @@ function ScheduleTemplateRow({
     }
   }
 
+  // Render individual column based on key
+  const renderColumn = (key) => {
+    switch (key) {
+      case 'sequence':
+        return <div key={key} className="text-gray-500 dark:text-gray-400">{index + 1}</div>
+
+      case 'taskName':
+        return (
+          <input
+            key={key}
+            type="text"
+            value={localName}
+            onChange={(e) => handleTextChange('name', e.target.value)}
+            onFocus={(e) => e.target.select()}
+            className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+          />
+        )
+
+      case 'supplierGroup':
+        return row.po_required ? (
+          <select
+            key={key}
+            value={row.supplier_id || ''}
+            onChange={(e) => handleFieldChange('supplier_id', e.target.value ? parseInt(e.target.value) : null)}
+            className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+          >
+            <option value="">Select supplier...</option>
+            {suppliers.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        ) : (
+          <select
+            key={key}
+            value={row.assigned_role || ''}
+            onChange={(e) => handleFieldChange('assigned_role', e.target.value || null)}
+            className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+          >
+            <option value="">Assign to group...</option>
+            {ASSIGNABLE_ROLES.map(role => (
+              <option key={role.value} value={role.value}>{role.label}</option>
+            ))}
+          </select>
+        )
+
+      case 'predecessors':
+        return (
+          <input
+            key={key}
+            type="text"
+            value={row.predecessor_display || 'None'}
+            readOnly
+            className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm bg-gray-50 dark:bg-gray-800"
+            title="Click to edit predecessors"
+          />
+        )
+
+      case 'poRequired':
+        return (
+          <input
+            key={key}
+            type="checkbox"
+            checked={row.po_required}
+            onChange={(e) => handleFieldChange('po_required', e.target.checked)}
+            className="mx-auto"
+          />
+        )
+
+      case 'autoPo':
+        return (
+          <input
+            key={key}
+            type="checkbox"
+            checked={row.create_po_on_job_start}
+            onChange={(e) => handleFieldChange('create_po_on_job_start', e.target.checked)}
+            disabled={!row.supplier_id}
+            className="mx-auto disabled:opacity-30"
+          />
+        )
+
+      case 'priceItems':
+        return (
+          <div key={key} className="text-xs text-gray-600 dark:text-gray-400 text-center">
+            {row.price_book_item_ids?.length || 0} items
+          </div>
+        )
+
+      case 'critical':
+        return (
+          <input
+            key={key}
+            type="checkbox"
+            checked={row.critical_po}
+            onChange={(e) => handleFieldChange('critical_po', e.target.checked)}
+            className="mx-auto"
+          />
+        )
+
+      case 'tags':
+        return (
+          <input
+            key={key}
+            type="text"
+            value={row.tags?.join(', ') || ''}
+            onChange={(e) => handleFieldChange('tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
+            placeholder="tag1, tag2"
+            className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+          />
+        )
+
+      case 'photo':
+        return (
+          <input
+            key={key}
+            type="checkbox"
+            checked={row.require_photo}
+            onChange={(e) => handleFieldChange('require_photo', e.target.checked)}
+            className="mx-auto"
+          />
+        )
+
+      case 'cert':
+        return (
+          <input
+            key={key}
+            type="checkbox"
+            checked={row.require_certificate}
+            onChange={(e) => handleFieldChange('require_certificate', e.target.checked)}
+            className="mx-auto"
+          />
+        )
+
+      case 'certLag':
+        return (
+          <input
+            key={key}
+            type="number"
+            value={row.cert_lag_days}
+            onChange={(e) => handleFieldChange('cert_lag_days', parseInt(e.target.value))}
+            disabled={!row.require_certificate}
+            className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm w-full"
+          />
+        )
+
+      case 'supCheck':
+        return (
+          <input
+            key={key}
+            type="checkbox"
+            checked={row.require_supervisor_check}
+            onChange={(e) => handleFieldChange('require_supervisor_check', e.target.checked)}
+            className="mx-auto"
+          />
+        )
+
+      case 'autoComplete':
+        return (
+          <input
+            key={key}
+            type="checkbox"
+            checked={row.auto_complete_predecessors}
+            onChange={(e) => handleFieldChange('auto_complete_predecessors', e.target.checked)}
+            className="mx-auto"
+          />
+        )
+
+      case 'subtasks':
+        return (
+          <div key={key} className="text-xs text-gray-600 dark:text-gray-400 text-center">
+            {row.has_subtasks ? `${row.subtask_count} subs` : '-'}
+          </div>
+        )
+
+      case 'actions':
+        return (
+          <div key={key} className="flex items-center gap-1">
+            {canMoveUp && (
+              <button onClick={onMoveUp} className="p-1 hover:text-indigo-600" title="Move up">
+                <ArrowUpIcon className="h-4 w-4" />
+              </button>
+            )}
+            {canMoveDown && (
+              <button onClick={onMoveDown} className="p-1 hover:text-indigo-600" title="Move down">
+                <ArrowDownIcon className="h-4 w-4" />
+              </button>
+            )}
+            <button onClick={onDelete} className="p-1 hover:text-red-600" title="Delete">
+              <TrashIcon className="h-4 w-4" />
+            </button>
+          </div>
+        )
+
+      default:
+        return <div key={key}>-</div>
+    }
+  }
+
   return (
-    <div className="grid grid-cols-[40px_200px_150px_100px_80px_80px_120px_80px_100px_80px_80px_80px_80px_80px_120px_80px] gap-2 p-4 border-b border-gray-100 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-700/30">
-      {/* Sequence # */}
-      <div className="text-gray-500 dark:text-gray-400">{index + 1}</div>
-
-      {/* Task Name */}
-      <input
-        type="text"
-        value={localName}
-        onChange={(e) => handleTextChange('name', e.target.value)}
-        onFocus={(e) => e.target.select()}
-        className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
-      />
-
-      {/* Supplier / Group */}
-      {row.po_required ? (
-        <select
-          value={row.supplier_id || ''}
-          onChange={(e) => handleFieldChange('supplier_id', e.target.value ? parseInt(e.target.value) : null)}
-          className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
-        >
-          <option value="">Select supplier...</option>
-          {suppliers.map(s => (
-            <option key={s.id} value={s.id}>{s.name}</option>
-          ))}
-        </select>
-      ) : (
-        <select
-          value={row.assigned_role || ''}
-          onChange={(e) => handleFieldChange('assigned_role', e.target.value || null)}
-          className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
-        >
-          <option value="">Assign to group...</option>
-          {ASSIGNABLE_ROLES.map(role => (
-            <option key={role.value} value={role.value}>{role.label}</option>
-          ))}
-        </select>
-      )}
-
-      {/* Predecessors */}
-      <input
-        type="text"
-        value={row.predecessor_display || 'None'}
-        readOnly
-        className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm bg-gray-50 dark:bg-gray-800"
-        title="Click to edit predecessors"
-      />
-
-      {/* PO Required */}
-      <input
-        type="checkbox"
-        checked={row.po_required}
-        onChange={(e) => handleFieldChange('po_required', e.target.checked)}
-        className="mx-auto"
-      />
-
-      {/* Auto PO */}
-      <input
-        type="checkbox"
-        checked={row.create_po_on_job_start}
-        onChange={(e) => handleFieldChange('create_po_on_job_start', e.target.checked)}
-        disabled={!row.po_required}
-        className="mx-auto"
-      />
-
-      {/* Price Items */}
-      <div className="text-xs text-gray-600 dark:text-gray-400 text-center">
-        {row.price_book_item_ids.length} items
-      </div>
-
-      {/* Critical PO */}
-      <input
-        type="checkbox"
-        checked={row.critical_po}
-        onChange={(e) => handleFieldChange('critical_po', e.target.checked)}
-        className="mx-auto"
-      />
-
-      {/* Tags */}
-      <div className="text-xs text-gray-600 dark:text-gray-400 text-center">
-        {row.tags.length} tags
-      </div>
-
-      {/* Photo */}
-      <input
-        type="checkbox"
-        checked={row.require_photo}
-        onChange={(e) => handleFieldChange('require_photo', e.target.checked)}
-        className="mx-auto"
-      />
-
-      {/* Certificate */}
-      <input
-        type="checkbox"
-        checked={row.require_certificate}
-        onChange={(e) => handleFieldChange('require_certificate', e.target.checked)}
-        className="mx-auto"
-      />
-
-      {/* Cert Lag */}
-      <input
-        type="number"
-        value={row.cert_lag_days}
-        onChange={(e) => handleFieldChange('cert_lag_days', parseInt(e.target.value))}
-        disabled={!row.require_certificate}
-        className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm w-full"
-      />
-
-      {/* Supervisor Check */}
-      <input
-        type="checkbox"
-        checked={row.require_supervisor_check}
-        onChange={(e) => handleFieldChange('require_supervisor_check', e.target.checked)}
-        className="mx-auto"
-      />
-
-      {/* Auto Complete */}
-      <input
-        type="checkbox"
-        checked={row.auto_complete_predecessors}
-        onChange={(e) => handleFieldChange('auto_complete_predecessors', e.target.checked)}
-        className="mx-auto"
-      />
-
-      {/* Subtasks */}
-      <div className="text-xs text-gray-600 dark:text-gray-400 text-center">
-        {row.has_subtasks ? `${row.subtask_count} subs` : '-'}
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-1">
-        {canMoveUp && (
-          <button onClick={onMoveUp} className="p-1 hover:text-indigo-600" title="Move up">
-            <ArrowUpIcon className="h-4 w-4" />
-          </button>
-        )}
-        {canMoveDown && (
-          <button onClick={onMoveDown} className="p-1 hover:text-indigo-600" title="Move down">
-            <ArrowDownIcon className="h-4 w-4" />
-          </button>
-        )}
-        <button onClick={onDelete} className="p-1 hover:text-red-600" title="Delete">
-          <TrashIcon className="h-4 w-4" />
-        </button>
-      </div>
+    <div
+      className="grid gap-2 p-4 border-b border-gray-100 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-700/30"
+      style={{ gridTemplateColumns: getGridTemplate() }}
+    >
+      {getSortedColumns().map(([key, config]) => {
+        if (!config.visible) return null
+        return renderColumn(key)
+      })}
     </div>
   )
 }
