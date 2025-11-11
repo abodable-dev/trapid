@@ -40,6 +40,9 @@ module Api
         user = User.find_by(email: login_params[:email])
 
         if user&.authenticate(login_params[:password])
+          # Update last login timestamp
+          user.update_column(:last_login_at, Time.current)
+
           token = JsonWebToken.encode(user_id: user.id)
           render json: {
             success: true,

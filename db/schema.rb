@@ -1676,6 +1676,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_204504) do
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.string "assigned_role"
+    t.datetime "last_login_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["role"], name: "index_users_on_role"
   end
