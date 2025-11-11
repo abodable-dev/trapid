@@ -266,6 +266,9 @@ class XeroApiClient
 
       # Update local database
       accounts.each do |account|
+        # Skip accounts without a code or name
+        next if account['Code'].blank? || account['Name'].blank?
+
         XeroAccount.find_or_initialize_by(code: account['Code']).tap do |xero_account|
           xero_account.name = account['Name']
           xero_account.account_type = account['Type']
