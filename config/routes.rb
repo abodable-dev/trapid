@@ -43,6 +43,8 @@ Rails.application.routes.draw do
       resources :constructions do
         member do
           get :saved_messages
+          get :emails
+          get :documentation_tabs
         end
 
         # Schedule tasks (nested under constructions)
@@ -69,6 +71,13 @@ Rails.application.routes.draw do
         member do
           patch :match_po
           delete :unmatch_po
+        end
+
+        # Checklist items for supervisor checks
+        resources :checklist_items, controller: 'schedule_task_checklist_items', only: [:index, :create, :update, :destroy] do
+          member do
+            post :toggle
+          end
         end
       end
 
@@ -168,7 +177,31 @@ Rails.application.routes.draw do
       end
 
       # Users management
-      resources :users, only: [:index, :show]
+      resources :users, only: [:index, :show, :update, :destroy]
+
+      # Emails management
+      resources :emails do
+        collection do
+          post :webhook
+        end
+        member do
+          post :assign_to_job
+        end
+      end
+
+      # Outlook integration
+      resources :outlook, only: [] do
+        collection do
+          get :auth_url
+          get :callback
+          get :status
+          delete :disconnect
+          get :folders
+          post :search
+          post :import
+          post :import_for_job
+        end
+      end
 
       # Designs library
       resources :designs
@@ -190,6 +223,14 @@ Rails.application.routes.draw do
       resources :documentation_categories do
         collection do
           post :reorder
+        end
+      end
+
+      # Supervisor Checklist Templates (Global)
+      resources :supervisor_checklist_templates do
+        collection do
+          post :reorder
+          get :categories
         end
       end
 
@@ -225,6 +266,7 @@ Rails.application.routes.draw do
           get :sync_status
           get :sync_history
           get :tax_rates
+          get :accounts
           get :search_contacts
         end
         member do

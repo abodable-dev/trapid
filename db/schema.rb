@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_025313) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_035603) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -99,6 +99,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_025313) do
     t.string "logo_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "construction_documentation_tabs", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.string "name", null: false
+    t.string "icon"
+    t.string "color"
+    t.text "description"
+    t.integer "sequence_order", default: 0
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id", "name"], name: "idx_on_construction_id_name_4a8823caab", unique: true
+    t.index ["construction_id", "sequence_order"], name: "idx_on_construction_id_sequence_order_48145dc07a"
+    t.index ["construction_id"], name: "index_construction_documentation_tabs_on_construction_id"
   end
 
   create_table "constructions", force: :cascade do |t|
@@ -475,6 +490,27 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_025313) do
     t.index ["token_expires_at"], name: "index_organization_one_drive_credentials_on_token_expires_at"
   end
 
+  create_table "organization_outlook_credentials", force: :cascade do |t|
+    t.text "access_token"
+    t.text "refresh_token"
+    t.datetime "expires_at"
+    t.string "email"
+    t.string "tenant_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "outlook_credentials", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.text "access_token"
+    t.text "refresh_token"
+    t.datetime "expires_at"
+    t.string "email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_outlook_credentials_on_user_id"
+  end
+
   create_table "price_histories", force: :cascade do |t|
     t.bigint "pricebook_item_id", null: false
     t.decimal "old_price", precision: 10, scale: 2
@@ -684,6 +720,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_025313) do
     t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
   end
 
+  create_table "schedule_task_checklist_items", force: :cascade do |t|
+    t.bigint "schedule_task_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.string "category"
+    t.boolean "is_completed", default: false
+    t.datetime "completed_at"
+    t.string "completed_by"
+    t.integer "sequence_order", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["is_completed"], name: "index_schedule_task_checklist_items_on_is_completed"
+    t.index ["schedule_task_id", "sequence_order"], name: "idx_on_schedule_task_id_sequence_order_bbbbb75501"
+    t.index ["schedule_task_id"], name: "index_schedule_task_checklist_items_on_schedule_task_id"
+  end
+
   create_table "schedule_tasks", force: :cascade do |t|
     t.bigint "construction_id", null: false
     t.bigint "purchase_order_id"
@@ -877,6 +929,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_025313) do
     t.index ["expires_at"], name: "index_solid_queue_semaphores_on_expires_at"
     t.index ["key", "value"], name: "index_solid_queue_semaphores_on_key_and_value"
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
+  end
+
+  create_table "supervisor_checklist_templates", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.string "category"
+    t.integer "sequence_order", default: 0
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_supervisor_checklist_templates_on_category"
+    t.index ["name"], name: "index_supervisor_checklist_templates_on_name", unique: true
+    t.index ["sequence_order"], name: "index_supervisor_checklist_templates_on_sequence_order"
   end
 
   create_table "supplier_contacts", force: :cascade do |t|
@@ -1539,6 +1604,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_025313) do
     t.datetime "updated_at", null: false
     t.string "role", default: "user", null: false
     t.datetime "last_chat_read_at"
+    t.string "reset_password_token"
+    t.datetime "reset_password_sent_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["role"], name: "index_users_on_role"
   end
@@ -1547,6 +1614,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_025313) do
     t.integer "current_version", default: 101, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "xero_accounts", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "name", null: false
+    t.string "account_type"
+    t.string "tax_type"
+    t.text "description"
+    t.boolean "active", default: true
+    t.string "account_class"
+    t.boolean "system_account", default: false
+    t.boolean "enable_payments_to_account", default: false
+    t.boolean "show_in_expense_claims", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_type"], name: "index_xero_accounts_on_account_type"
+    t.index ["active"], name: "index_xero_accounts_on_active"
+    t.index ["code"], name: "index_xero_accounts_on_code", unique: true
   end
 
   create_table "xero_credentials", force: :cascade do |t|
@@ -1578,6 +1663,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_025313) do
   add_foreign_key "chat_messages", "projects"
   add_foreign_key "chat_messages", "users"
   add_foreign_key "columns", "tables"
+  add_foreign_key "construction_documentation_tabs", "constructions"
   add_foreign_key "constructions", "designs"
   add_foreign_key "contact_activities", "contacts"
   add_foreign_key "contact_addresses", "contacts"
@@ -1595,6 +1681,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_025313) do
   add_foreign_key "grok_plans", "users"
   add_foreign_key "one_drive_credentials", "constructions"
   add_foreign_key "organization_one_drive_credentials", "users", column: "connected_by_id"
+  add_foreign_key "outlook_credentials", "users"
   add_foreign_key "price_histories", "contacts", column: "supplier_id", name: "fk_rails_price_histories_contact"
   add_foreign_key "price_histories", "pricebook_items"
   add_foreign_key "pricebook_items", "contacts", column: "default_supplier_id", name: "fk_rails_pricebook_items_default_supplier"
@@ -1613,6 +1700,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_025313) do
   add_foreign_key "purchase_orders", "constructions"
   add_foreign_key "purchase_orders", "contacts", column: "supplier_id", name: "fk_rails_purchase_orders_contact"
   add_foreign_key "purchase_orders", "estimates"
+  add_foreign_key "schedule_task_checklist_items", "schedule_tasks"
   add_foreign_key "schedule_tasks", "constructions"
   add_foreign_key "schedule_tasks", "purchase_orders"
   add_foreign_key "schedule_template_rows", "schedule_templates"
