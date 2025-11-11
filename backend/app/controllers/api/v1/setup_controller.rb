@@ -225,6 +225,7 @@ module Api
           supervisor_checklist_template_ids = row[:supervisor_checklist_template_ids].present? ? JSON.parse(row[:supervisor_checklist_template_ids]) : []
           tags = row[:tags].present? ? JSON.parse(row[:tags]) : []
           subtask_names = row[:subtask_names].present? ? JSON.parse(row[:subtask_names]) : []
+          linked_task_ids = row[:linked_task_ids].present? ? JSON.parse(row[:linked_task_ids]) : []
 
           attributes = {
             schedule_template_id: template_id,
@@ -246,7 +247,9 @@ module Api
             has_subtasks: row[:has_subtasks] == 'true',
             subtask_count: row[:subtask_count].present? ? row[:subtask_count].to_i : nil,
             subtask_names: subtask_names,
-            sequence_order: row[:sequence_order].to_i
+            sequence_order: row[:sequence_order].to_i,
+            linked_task_ids: linked_task_ids,
+            linked_template_id: row[:linked_template_id].present? ? row[:linked_template_id].to_i : nil
           }
 
           if ScheduleTemplateRow.column_names.include?('supervisor_checklist_template_ids')

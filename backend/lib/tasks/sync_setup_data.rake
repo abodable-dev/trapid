@@ -158,6 +158,7 @@ namespace :setup do
         supervisor_checklist_template_ids = row[:supervisor_checklist_template_ids].present? ? JSON.parse(row[:supervisor_checklist_template_ids]) : []
         tags = row[:tags].present? ? JSON.parse(row[:tags]) : []
         subtask_names = row[:subtask_names].present? ? JSON.parse(row[:subtask_names]) : []
+        linked_task_ids = row[:linked_task_ids].present? ? JSON.parse(row[:linked_task_ids]) : []
 
         # Build attributes hash
         attributes = {
@@ -180,7 +181,9 @@ namespace :setup do
           has_subtasks: row[:has_subtasks] == 'true',
           subtask_count: row[:subtask_count].present? ? row[:subtask_count].to_i : nil,
           subtask_names: subtask_names,
-          sequence_order: row[:sequence_order].to_i
+          sequence_order: row[:sequence_order].to_i,
+          linked_task_ids: linked_task_ids,
+          linked_template_id: row[:linked_template_id].present? ? row[:linked_template_id].to_i : nil
         }
 
         # Only add supervisor_checklist_template_ids if column exists
@@ -303,7 +306,8 @@ namespace :setup do
         'price_book_item_ids', 'documentation_category_ids',
         'tags', 'require_photo', 'require_certificate', 'cert_lag_days',
         'require_supervisor_check', 'auto_complete_predecessors',
-        'has_subtasks', 'subtask_count', 'subtask_names', 'sequence_order'
+        'has_subtasks', 'subtask_count', 'subtask_names', 'sequence_order',
+        'linked_task_ids', 'linked_template_id'
       ]
       headers.insert(10, 'supervisor_checklist_template_ids') if has_supervisor_checklist
       csv << headers
@@ -329,7 +333,9 @@ namespace :setup do
           row.has_subtasks,
           row.subtask_count,
           row.subtask_names.to_json,
-          row.sequence_order
+          row.sequence_order,
+          row.linked_task_ids.to_json,
+          row.linked_template_id
         ]
         data.insert(10, (row.respond_to?(:supervisor_checklist_template_ids) ? row.supervisor_checklist_template_ids.to_json : [].to_json)) if has_supervisor_checklist
         csv << data
