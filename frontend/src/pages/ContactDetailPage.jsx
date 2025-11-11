@@ -1060,7 +1060,10 @@ export default function ContactDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Tax Number (ABN) with inline editing */}
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Tax Number (ABN)</p>
+                <div className="flex items-center gap-1 mb-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Tax Number (ABN)</p>
+                  <ShieldCheckIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                </div>
                 {editingXeroFields['tax_number'] ? (
                   <div className="flex items-center gap-2">
                     <input
