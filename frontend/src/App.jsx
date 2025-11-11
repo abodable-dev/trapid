@@ -32,6 +32,8 @@ import OutlookPage from './pages/OutlookPage'
 import OneDrivePage from './pages/OneDrivePage'
 import DocumentsPage from './pages/DocumentsPage'
 import ChatPage from './pages/ChatPage'
+import WorkflowsPage from './pages/WorkflowsPage'
+import WorkflowAdminPage from './pages/WorkflowAdminPage'
 
 function App() {
   return (
@@ -75,6 +77,8 @@ function App() {
         <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
         <Route path="/outlook" element={<AppLayout><OutlookPage /></AppLayout>} />
         <Route path="/onedrive" element={<AppLayout><OneDrivePage /></AppLayout>} />
+        <Route path="/workflows" element={<AppLayout><WorkflowsPage /></AppLayout>} />
+        <Route path="/admin/workflows" element={<AppLayout><WorkflowAdminPage /></AppLayout>} />
       </Routes>
     </BrowserRouter>
   )
