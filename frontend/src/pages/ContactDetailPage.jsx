@@ -836,7 +836,10 @@ export default function ContactDetailPage() {
               <div className="flex items-start gap-3">
                 <EnvelopeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Email</p>
+                  <div className="flex items-center gap-1 mb-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                    <ShieldCheckIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                  </div>
                   {editingXeroFields['email'] ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -878,7 +881,10 @@ export default function ContactDetailPage() {
               <div className="flex items-start gap-3">
                 <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Mobile Phone</p>
+                  <div className="flex items-center gap-1 mb-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Mobile Phone</p>
+                    <ShieldCheckIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                  </div>
                   {editingXeroFields['mobile_phone'] ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -920,7 +926,10 @@ export default function ContactDetailPage() {
               <div className="flex items-start gap-3">
                 <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Office Phone</p>
+                  <div className="flex items-center gap-1 mb-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Office Phone</p>
+                    <ShieldCheckIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                  </div>
                   {editingXeroFields['office_phone'] ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -979,7 +988,10 @@ export default function ContactDetailPage() {
               <div className="flex items-start gap-3">
                 <MapPinIcon className="h-5 w-5 text-gray-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Address</p>
+                  <div className="flex items-center gap-1 mb-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Address</p>
+                    <ShieldCheckIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                  </div>
                   {editingXeroFields['address'] ? (
                     <div className="flex items-start gap-2">
                       <textarea
