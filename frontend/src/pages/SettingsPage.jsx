@@ -35,6 +35,8 @@ export default function SettingsPage() {
   const [selectedIndex, setSelectedIndex] = useState(getInitialTabIndex())
   const [isPullingData, setIsPullingData] = useState(false)
   const [pullStatus, setPullStatus] = useState(null)
+  const [syncingType, setSyncingType] = useState(null) // Track which individual sync is in progress
+  const [syncStatus, setSyncStatus] = useState({}) // Track status for each sync type
 
   // Update URL when tab changes
   const handleTabChange = (index) => {
@@ -75,6 +77,39 @@ export default function SettingsPage() {
       })
     } finally {
       setIsPullingData(false)
+    }
+  }
+
+  // Handle individual sync
+  const handleIndividualSync = async (type, endpoint, confirmMessage) => {
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    setSyncingType(type)
+    setSyncStatus(prev => ({ ...prev, [type]: null }))
+
+    try {
+      const response = await api.post(endpoint)
+      setSyncStatus(prev => ({
+        ...prev,
+        [type]: {
+          type: 'success',
+          message: response.data.message,
+          count: response.data.count || response.data.counts
+        }
+      }))
+    } catch (error) {
+      console.error(`Error syncing ${type}:`, error)
+      setSyncStatus(prev => ({
+        ...prev,
+        [type]: {
+          type: 'error',
+          message: error.response?.data?.error || `Failed to sync ${type}`
+        }
+      }))
+    } finally {
+      setSyncingType(null)
     }
   }
 
@@ -369,12 +404,176 @@ export default function SettingsPage() {
                         ) : (
                           <>
                             <ArrowDownTrayIcon className="h-4 w-4" />
-                            Pull from Local
+                            Pull All Data
                           </>
                         )}
                       </button>
                     </div>
                   </dl>
+                </div>
+
+                {/* Individual Sync Cards */}
+                <div className="rounded-lg bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-900/5 dark:ring-white/10">
+                  <div className="px-6 py-6">
+                    <h3 className="text-sm/6 font-semibold text-gray-900 dark:text-white mb-4">Individual Data Sync</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                      Sync specific data types individually from your local development environment.
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Users Sync */}
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-white">Users</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Update/create users</p>
+                          </div>
+                        </div>
+                        {syncStatus.users && (
+                          <div className={`mb-3 text-xs p-2 rounded ${syncStatus.users.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'}`}>
+                            {syncStatus.users.message}
+                            {syncStatus.users.count && <span className="ml-1 font-medium">({syncStatus.users.count})</span>}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleIndividualSync('users', '/api/v1/setup/sync_users', 'This will update existing users and create new ones from local data. Continue?')}
+                          disabled={syncingType === 'users'}
+                          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {syncingType === 'users' ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Syncing...
+                            </>
+                          ) : (
+                            <>
+                              <ArrowDownTrayIcon className="h-4 w-4" />
+                              Sync Users
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Documentation Categories Sync */}
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-white">Documentation Categories</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Replace all categories</p>
+                          </div>
+                        </div>
+                        {syncStatus.documentation_categories && (
+                          <div className={`mb-3 text-xs p-2 rounded ${syncStatus.documentation_categories.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'}`}>
+                            {syncStatus.documentation_categories.message}
+                            {syncStatus.documentation_categories.count && <span className="ml-1 font-medium">({syncStatus.documentation_categories.count})</span>}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleIndividualSync('documentation_categories', '/api/v1/setup/sync_documentation_categories', 'This will DELETE all existing documentation categories and replace them with local data. Continue?')}
+                          disabled={syncingType === 'documentation_categories'}
+                          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {syncingType === 'documentation_categories' ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Syncing...
+                            </>
+                          ) : (
+                            <>
+                              <ArrowDownTrayIcon className="h-4 w-4" />
+                              Sync Categories
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Supervisor Checklists Sync */}
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-white">Supervisor Checklists</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Replace all templates</p>
+                          </div>
+                        </div>
+                        {syncStatus.supervisor_checklists && (
+                          <div className={`mb-3 text-xs p-2 rounded ${syncStatus.supervisor_checklists.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'}`}>
+                            {syncStatus.supervisor_checklists.message}
+                            {syncStatus.supervisor_checklists.count && <span className="ml-1 font-medium">({syncStatus.supervisor_checklists.count})</span>}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleIndividualSync('supervisor_checklists', '/api/v1/setup/sync_supervisor_checklists', 'This will DELETE all existing supervisor checklist templates and replace them with local data. Continue?')}
+                          disabled={syncingType === 'supervisor_checklists'}
+                          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-orange-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {syncingType === 'supervisor_checklists' ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Syncing...
+                            </>
+                          ) : (
+                            <>
+                              <ArrowDownTrayIcon className="h-4 w-4" />
+                              Sync Checklists
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Schedule Templates Sync */}
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-white">Schedule Templates</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Replace all templates & rows</p>
+                          </div>
+                        </div>
+                        {syncStatus.schedule_templates && (
+                          <div className={`mb-3 text-xs p-2 rounded ${syncStatus.schedule_templates.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'}`}>
+                            {syncStatus.schedule_templates.message}
+                            {syncStatus.schedule_templates.count && (
+                              <div className="mt-1">
+                                {typeof syncStatus.schedule_templates.count === 'object' ? (
+                                  <>Templates: {syncStatus.schedule_templates.count.templates}, Rows: {syncStatus.schedule_templates.count.rows}</>
+                                ) : (
+                                  <span className="ml-1 font-medium">({syncStatus.schedule_templates.count})</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleIndividualSync('schedule_templates', '/api/v1/setup/sync_schedule_templates', 'This will DELETE all existing schedule templates and rows and replace them with local data. Continue?')}
+                          disabled={syncingType === 'schedule_templates'}
+                          className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-teal-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {syncingType === 'schedule_templates' ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Syncing...
+                            </>
+                          ) : (
+                            <>
+                              <ArrowDownTrayIcon className="h-4 w-4" />
+                              Sync Templates
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Vercel Dashboard Card */}
