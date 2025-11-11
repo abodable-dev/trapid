@@ -4,7 +4,8 @@ import {
   PlusIcon, TrashIcon, PencilIcon, DocumentDuplicateIcon,
   CheckIcon, ArrowUpIcon, ArrowDownIcon, InformationCircleIcon,
   MagnifyingGlassIcon, XMarkIcon, Cog6ToothIcon, EyeIcon, EyeSlashIcon,
-  Bars3Icon, ChevronUpIcon, ChevronDownIcon, ArrowDownTrayIcon, ArrowUpTrayIcon
+  Bars3Icon, ChevronUpIcon, ChevronDownIcon, ArrowDownTrayIcon, ArrowUpTrayIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import Toast from '../Toast'
@@ -16,6 +17,7 @@ import SupervisorChecklistModal from './SupervisorChecklistModal'
 import LinkedTasksModal from './LinkedTasksModal'
 import AutoCompleteTasksModal from './AutoCompleteTasksModal'
 import SubtasksModal from './SubtasksModal'
+import GanttView from './GanttView'
 
 /**
  * Schedule Template Editor - Full 14-column grid interface for creating/editing schedule templates
@@ -116,6 +118,7 @@ export default function ScheduleTemplateEditor() {
   const [showColumnSettings, setShowColumnSettings] = useState(false)
   const [columnFilters, setColumnFilters] = useState({})
   const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false)
+  const [showGanttView, setShowGanttView] = useState(false)
 
   // Column resize state
   const [resizingColumn, setResizingColumn] = useState(null)
@@ -856,6 +859,13 @@ export default function ScheduleTemplateEditor() {
                     className="hidden"
                   />
                 </label>
+                <button
+                  onClick={() => setShowGanttView(true)}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400"
+                  title="View Gantt Chart"
+                >
+                  <ChartBarIcon className="h-5 w-5" />
+                </button>
                 {!selectedTemplate.is_default && (
                   <button
                     onClick={handleSetAsDefault}
@@ -1215,6 +1225,22 @@ export default function ScheduleTemplateEditor() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Gantt View Modal */}
+      {showGanttView && (
+        <GanttView
+          isOpen={showGanttView}
+          onClose={() => setShowGanttView(false)}
+          tasks={rows}
+          onUpdateTask={(taskId, updates) => {
+            // Find the row and update it
+            const rowIndex = rows.findIndex(r => r.id === taskId)
+            if (rowIndex !== -1) {
+              handleUpdateRow(taskId, updates)
+            }
+          }}
+        />
       )}
 
       {/* Toast */}
