@@ -113,12 +113,14 @@ module Api
           :has_subtasks,
           :subtask_count,
           :sequence_order,
+          :linked_template_id,
           predecessor_ids: [],
           price_book_item_ids: [],
           documentation_category_ids: [],
           supervisor_checklist_template_ids: [],
           tags: [],
-          subtask_names: []
+          subtask_names: [],
+          linked_task_ids: []
         )
       end
 
@@ -138,12 +140,14 @@ module Api
           :has_subtasks,
           :subtask_count,
           :sequence_order,
+          :linked_template_id,
           predecessor_ids: [],
           price_book_item_ids: [],
           documentation_category_ids: [],
           supervisor_checklist_template_ids: [],
           tags: [],
-          subtask_names: []
+          subtask_names: [],
+          linked_task_ids: []
         )
       end
 
@@ -171,7 +175,11 @@ module Api
           has_subtasks: row.has_subtasks,
           subtask_count: row.subtask_count,
           subtask_names: row.subtask_names,
-          sequence_order: row.sequence_order
+          sequence_order: row.sequence_order,
+          linked_task_ids: row.linked_task_ids,
+          linked_tasks_display: row.linked_tasks_display,
+          linked_template_id: row.linked_template_id,
+          linked_template_name: row.linked_template_name
         }
       end
     end
