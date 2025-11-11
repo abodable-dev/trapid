@@ -5,18 +5,22 @@ import { RocketLaunchIcon } from '@heroicons/react/24/outline'
 import AccountsLayout from '../components/layout/AccountsLayout'
 import XeroConnection from '../components/settings/XeroConnection'
 import OneDriveConnection from '../components/settings/OneDriveConnection'
+import OutlookConnection from '../components/settings/OutlookConnection'
 import FolderTemplatesTab from '../components/settings/FolderTemplatesTab'
 import ScheduleTemplateEditor from '../components/schedule-master/ScheduleTemplateEditor'
 import XeroFieldMappingTab from '../components/settings/XeroFieldMappingTab'
 import TablesTab from '../components/settings/TablesTab'
 import SchemaPage from './SchemaPage'
+import DocumentationCategoriesTab from '../components/settings/DocumentationCategoriesTab'
+import UserManagementTab from '../components/settings/UserManagementTab'
+import SupervisorChecklistTab from '../components/settings/SupervisorChecklistTab'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
   // Map tab names to indices
-  const tabs = ['integrations', 'folder-templates', 'schedule-master', 'xero', 'tables', 'schema', 'deployment']
+  const tabs = ['integrations', 'users', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'xero', 'tables', 'schema', 'deployment']
 
   // Get initial tab index from URL query parameter
   const getInitialTabIndex = () => {
@@ -70,6 +74,18 @@ export default function SettingsPage() {
                 }`
               }
             >
+              Users
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
               Folder Templates
             </Tab>
             <Tab
@@ -83,6 +99,30 @@ export default function SettingsPage() {
               }
             >
               Schedule Master
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Documentation
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Supervisor Checklist
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -149,7 +189,15 @@ export default function SettingsPage() {
               <div className="md:col-span-2 space-y-6">
                 <XeroConnection />
                 <OneDriveConnection />
+                <OutlookConnection />
               </div>
+            </div>
+          </TabPanel>
+
+          {/* Users Tab */}
+          <TabPanel>
+            <div className="px-4 sm:px-6 lg:px-8 py-10">
+              <UserManagementTab />
             </div>
           </TabPanel>
 
@@ -163,6 +211,16 @@ export default function SettingsPage() {
           {/* Schedule Master Templates Tab */}
           <TabPanel>
             <ScheduleTemplateEditor />
+          </TabPanel>
+
+          {/* Documentation Categories Tab */}
+          <TabPanel>
+            <DocumentationCategoriesTab />
+          </TabPanel>
+
+          {/* Supervisor Checklist Tab */}
+          <TabPanel>
+            <SupervisorChecklistTab />
           </TabPanel>
 
           {/* Xero Tab */}

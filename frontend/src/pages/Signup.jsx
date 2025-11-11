@@ -62,6 +62,11 @@ export default function Signup() {
                 Sign in
               </Link>
             </p>
+            <div className="mt-4 rounded-md bg-blue-50 dark:bg-blue-900/20 p-4">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                <strong>Tekna employees:</strong> Use your @tekna.com.au email to get instant access!
+              </p>
+            </div>
           </div>
 
           <div className="mt-10">
