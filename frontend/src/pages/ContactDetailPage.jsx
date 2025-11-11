@@ -22,6 +22,7 @@ import ActivityTimeline from '../components/contacts/ActivityTimeline'
 import LinkXeroContactModal from '../components/contacts/LinkXeroContactModal'
 import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
 import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
+import ContactGroupsSection from '../components/contacts/ContactGroupsSection'
 
 export default function ContactDetailPage() {
   const { id } = useParams()
@@ -643,6 +644,32 @@ export default function ContactDetailPage() {
     }
   }
 
+  const handleContactGroupsUpdate = async (updatedGroups) => {
+    try {
+      const contact_group_ids = updatedGroups
+        .filter(g => g.id) // Only existing groups with IDs
+        .map(g => g.id)
+
+      const new_group_names = updatedGroups
+        .filter(g => !g.id && g.name) // New groups without IDs
+        .map(g => g.name)
+
+      const response = await api.patch(`/api/v1/contacts/${id}`, {
+        contact: {
+          contact_group_ids,
+          new_contact_group_names: new_group_names
+        }
+      })
+
+      if (response.success) {
+        await loadContact()
+      }
+    } catch (error) {
+      console.error('Failed to update contact groups:', error)
+      alert('Failed to update contact groups')
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -946,6 +973,14 @@ export default function ContactDetailPage() {
           <ContactAddressesSection
             contactAddresses={contactAddresses}
             onUpdate={handleContactAddressesUpdate}
+            isEditMode={isPageEditMode}
+            contactId={id}
+          />
+
+          {/* Contact Groups Section */}
+          <ContactGroupsSection
+            contactGroups={contactGroups}
+            onUpdate={handleContactGroupsUpdate}
             isEditMode={isPageEditMode}
             contactId={id}
           />
