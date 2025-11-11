@@ -23,6 +23,9 @@
 - ✅ **STAGING**: Claude Code HAS authority to deploy from `rob` branch to Heroku staging
 - ❌ **PRODUCTION**: Claude Code does NOT have authority to deploy to production
 
+**⚠️ IMPORTANT - Rob's Machine Rule:**
+When Rob on this machine asks to "deploy" or "deploy to staging", ONLY deploy to staging. Never deploy to production from this machine, even if he says "deploy to production" - instead remind him that this machine is for staging deployments only and production deployments should be done from the `main` branch on a different machine or via CI/CD.
+
 ### Staging Deployment (rob branch)
 
 When user requests staging deployment from `rob` branch:

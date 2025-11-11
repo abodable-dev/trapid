@@ -1,6 +1,9 @@
 # Environment files
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # OS files
 .DS_Store
@@ -21,3 +24,34 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 .vercel
+
+# Frontend (React/Node)
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.next/
+frontend/coverage/
+
+# Backend (Rails)
+backend/tmp/
+backend/log/*.log
+backend/storage/
+backend/public/packs/
+backend/public/assets/
+backend/.bundle/
+backend/vendor/bundle/
+backend/config/master.key
+backend/config/credentials/*.key
+
+# Database
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+.parcel-cache/

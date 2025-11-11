@@ -1,18 +1,21 @@
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import {
   PlusIcon, TrashIcon, PencilIcon, DocumentDuplicateIcon,
   CheckIcon, ArrowUpIcon, ArrowDownIcon, InformationCircleIcon,
   MagnifyingGlassIcon, XMarkIcon, Cog6ToothIcon, EyeIcon, EyeSlashIcon,
-  Bars3Icon, ChevronUpIcon, ChevronDownIcon
+  Bars3Icon, ChevronUpIcon, ChevronDownIcon, ArrowDownTrayIcon, ArrowUpTrayIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import Toast from '../Toast'
+import * as XLSX from 'xlsx'
 import PredecessorEditor from './PredecessorEditor'
 import PriceBookItemsModal from './PriceBookItemsModal'
 import DocumentationTabsModal from './DocumentationTabsModal'
 import SupervisorChecklistModal from './SupervisorChecklistModal'
 import LinkedTasksModal from './LinkedTasksModal'
-import LinkedTemplateModal from './LinkedTemplateModal'
+import AutoCompleteTasksModal from './AutoCompleteTasksModal'
+import SubtasksModal from './SubtasksModal'
 
 /**
  * Schedule Template Editor - Full 14-column grid interface for creating/editing schedule templates
@@ -45,6 +48,34 @@ const ASSIGNABLE_ROLES = [
   { value: 'estimator', label: 'Estimator' }
 ]
 
+// Plan types for documentation
+const PLAN_TYPES = [
+  { value: '', label: 'None' },
+  { value: '01-perspective', label: '01 - PERSPECTIVE' },
+  { value: '02-site-plan', label: '02 - SITE PLAN' },
+  { value: '02a-survey-plan', label: '02a - SURVEY PLAN' },
+  { value: '03-ground-floor', label: '03 - GROUND FLOOR PLAN' },
+  { value: '03a-first-floor', label: '03a - FIRST FLOOR PLAN' },
+  { value: '04-elevation-1', label: '04 - ELEVATION 1' },
+  { value: '04a-elevation-2', label: '04a - ELEVATION 2' },
+  { value: '05-electrical', label: '05 - ELECTRICAL' },
+  { value: '06-landscaping', label: '06 - LANDSCAPING PLAN' },
+  { value: '07-slab-plan', label: '07 - SLAB PLAN (Cert Drawing)' },
+  { value: '07a-slab-3d', label: '07a - SLAB 3D (Cert Drawing)' },
+  { value: '08-ext-concrete', label: '08 - EXT CONCRETE PLAN (Cert Drawing)' },
+  { value: '09-roof-plan', label: '09 - ROOF PLAN (Cert Drawing)' },
+  { value: '10-drainage', label: '10 - DRAINAGE PLAN (Cert Drawing)' },
+  { value: '11-room-areas', label: '11 - ROOM AREAS (Cert Drawing)' },
+  { value: '12-aircon', label: '12 - AIRCON (Cert Drawing)' },
+  { value: '13-insulation', label: '13 - INSULATION (Cert Drawing)' },
+  { value: '14-bracing', label: '14 - BRACING (Cert Drawing)' },
+  { value: '14a-bracing-details', label: '14a - BRACING DETAILS (Cert Drawing)' },
+  { value: '15-compliance', label: '15 - COMPLIANCE PLAN (Cert Drawing)' },
+  { value: '16-access-dwelling', label: '16 - ACCESS TO DWELLING (Cert Drawing)' },
+  { value: '17-emergency-evac', label: '17 - EMERGENCY EVAC PLAN (Cert Drawing)' },
+  { value: '18-ndis-notes', label: '18 - NDIS NOTES (Cert Drawing)' }
+]
+
 // Default column configuration
 const defaultColumnConfig = {
   sequence: { visible: true, width: 40, label: '#', order: 0 },
@@ -61,11 +92,15 @@ const defaultColumnConfig = {
   cert: { visible: true, width: 80, label: 'Cert', order: 10 },
   certLag: { visible: true, width: 80, label: 'Cert Lag', order: 11 },
   supCheck: { visible: true, width: 120, label: 'Sup Check', order: 12 },
-  autoComplete: { visible: true, width: 80, label: 'Auto ✓', order: 13 },
+  autoComplete: { visible: true, width: 120, label: 'Auto Complete', order: 13 },
   subtasks: { visible: true, width: 120, label: 'Subtasks', order: 14 },
   linkedTasks: { visible: true, width: 120, label: 'Linked Tasks', order: 15 },
-  linkedTemplate: { visible: true, width: 150, label: 'Linked Template', order: 16 },
-  actions: { visible: true, width: 80, label: 'Actions', order: 17 }
+  manualTask: { visible: true, width: 80, label: 'Manual', order: 16 },
+  multipleItems: { visible: true, width: 80, label: 'Multi', order: 17 },
+  orderRequired: { visible: true, width: 100, label: 'Order Time', order: 18 },
+  callUpRequired: { visible: true, width: 100, label: 'Call Up', order: 19 },
+  planType: { visible: true, width: 80, label: 'Plan', order: 20 },
+  actions: { visible: true, width: 80, label: 'Actions', order: 21 }
 }
 
 export default function ScheduleTemplateEditor() {
@@ -99,14 +134,24 @@ export default function ScheduleTemplateEditor() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
+        // Remove deprecated columns
+        delete parsed.linkedTemplate
+
         // Merge with defaults to ensure all columns have required properties
+        // Always use the label from defaultColumnConfig to allow updates
         const merged = {}
         Object.keys(defaultColumnConfig).forEach(key => {
           merged[key] = {
             ...defaultColumnConfig[key],
-            ...(parsed[key] || {})
+            ...(parsed[key] || {}),
+            // Always override with the default label to allow label updates
+            label: defaultColumnConfig[key].label
           }
         })
+
+        // Save the cleaned config back to localStorage
+        localStorage.setItem('scheduleTemplateColumnConfig', JSON.stringify(merged))
+
         return merged
       } catch (e) {
         return defaultColumnConfig
@@ -209,6 +254,156 @@ export default function ScheduleTemplateEditor() {
     }
   }
 
+  const handleExportToExcel = () => {
+    if (!selectedTemplate || rows.length === 0) {
+      showToast('No data to export', 'error')
+      return
+    }
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new()
+
+    // Prepare header row (just text values)
+    const headerRow = [
+      'Task Name', 'Supplier', 'Predecessors', 'PO Required', 'Auto PO',
+      'Critical', 'Tags', 'Photo', 'Cert', 'Cert Lag',
+      'Manual', 'Multi', 'Order Time', 'Call Up', 'Plan'
+    ]
+
+    // Prepare data rows
+    const data = rows.map(row => [
+      row.name || '',
+      row.supplier_name || '',
+      row.predecessor_display || '',
+      row.po_required ? 'Yes' : 'No',
+      row.create_po_on_job_start ? 'Yes' : 'No',
+      row.critical_po ? 'Yes' : 'No',
+      (row.tags || []).join(', '),
+      row.require_photo ? 'Yes' : 'No',
+      row.require_certificate ? 'Yes' : 'No',
+      row.cert_lag_days || 0,
+      row.manual_task ? 'Yes' : 'No',
+      row.allow_multiple_instances ? 'Yes' : 'No',
+      row.order_required ? 'Yes' : 'No',
+      row.call_up_required ? 'Yes' : 'No',
+      row.plan_required ? 'Yes' : 'No'
+    ])
+
+    // Create worksheet from headers and data
+    const ws = XLSX.utils.aoa_to_sheet([headerRow, ...data])
+
+    // Add comments/notes to header cells
+    const tooltipTexts = [
+      columnTooltips.taskName,
+      columnTooltips.supplierGroup,
+      columnTooltips.predecessors,
+      columnTooltips.poRequired,
+      columnTooltips.autoPo,
+      columnTooltips.critical,
+      columnTooltips.tags,
+      columnTooltips.photo,
+      columnTooltips.cert,
+      columnTooltips.certLag,
+      columnTooltips.manualTask,
+      columnTooltips.multipleItems,
+      columnTooltips.orderRequired,
+      columnTooltips.callUpRequired,
+      columnTooltips.planType
+    ]
+
+    // Add comments to header row cells
+    tooltipTexts.forEach((tooltip, idx) => {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: idx })
+      if (!ws[cellAddress].c) ws[cellAddress].c = []
+      ws[cellAddress].c.push({ a: 'System', t: tooltip })
+    })
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 30 }, // Task Name
+      { wch: 20 }, // Supplier
+      { wch: 15 }, // Predecessors
+      { wch: 12 }, // PO Required
+      { wch: 10 }, // Auto PO
+      { wch: 10 }, // Critical
+      { wch: 20 }, // Tags
+      { wch: 8 },  // Photo
+      { wch: 8 },  // Cert
+      { wch: 10 }, // Cert Lag
+      { wch: 10 }, // Manual
+      { wch: 8 },  // Multi
+      { wch: 12 }, // Order Time
+      { wch: 10 }, // Call Up
+      { wch: 8 }   // Plan
+    ]
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Tasks')
+
+    // Generate filename with template name and date
+    const date = new Date().toISOString().split('T')[0]
+    const filename = `${selectedTemplate.name.replace(/[^a-z0-9]/gi, '_')}_${date}.xlsx`
+
+    // Write file
+    XLSX.writeFile(wb, filename)
+    showToast('Template exported successfully', 'success')
+  }
+
+  const handleImportFromExcel = (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result)
+        const workbook = XLSX.read(data, { type: 'array' })
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet)
+
+        if (jsonData.length === 0) {
+          showToast('No data found in Excel file', 'error')
+          return
+        }
+
+        // Convert Excel data to task format
+        const importedRows = jsonData.map((row, index) => ({
+          name: row['Task Name'] || `Task ${index + 1}`,
+          supplier_id: null, // Will need to be mapped manually
+          predecessor_ids: [],
+          po_required: row['PO Required'] === 'Yes',
+          create_po_on_job_start: row['Auto PO'] === 'Yes',
+          critical_po: row['Critical'] === 'Yes',
+          tags: row['Tags'] ? row['Tags'].split(',').map(t => t.trim()) : [],
+          require_photo: row['Photo'] === 'Yes',
+          require_certificate: row['Cert'] === 'Yes',
+          cert_lag_days: parseInt(row['Cert Lag']) || 0,
+          manual_task: row['Manual'] === 'Yes',
+          allow_multiple_instances: row['Multi'] === 'Yes',
+          order_required: row['Order Time'] === 'Yes',
+          call_up_required: row['Call Up'] === 'Yes',
+          plan_required: row['Plan'] === 'Yes'
+        }))
+
+        // Bulk create rows
+        for (const rowData of importedRows) {
+          await api.post(`/api/v1/schedule_templates/${selectedTemplate.id}/rows`, {
+            schedule_template_row: rowData
+          })
+        }
+
+        showToast(`Imported ${importedRows.length} tasks successfully`, 'success')
+        await loadTemplateRows(selectedTemplate.id)
+      } catch (err) {
+        console.error('Failed to import Excel file:', err)
+        showToast('Failed to import Excel file', 'error')
+      }
+    }
+    reader.readAsArrayBuffer(file)
+
+    // Reset file input
+    event.target.value = ''
+  }
+
   const handleAddRow = async () => {
     if (!selectedTemplate) return
 
@@ -254,7 +449,9 @@ export default function ScheduleTemplateEditor() {
         `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`,
         { schedule_template_row: updates }
       )
-      setRows(rows.map(r => r.id === rowId ? { ...r, ...updates } : r))
+
+      // Reload all rows to get updated calculated fields like predecessor_display
+      await loadTemplateRows(selectedTemplate.id)
     } catch (err) {
       console.error('Failed to update row:', err)
       showToast('Failed to update row', 'error')
@@ -441,10 +638,14 @@ export default function ScheduleTemplateEditor() {
     cert: "Automatically spawn a certificate task when this task is completed. Used for regulatory certifications and compliance documents.",
     certLag: "Number of days after task completion when the certificate is due. Default is 10 days.",
     supCheck: "Require a supervisor to check in on this task. Supervisor will get a prompt to visit the site and verify quality.",
-    autoComplete: "Automatically mark all predecessor tasks as complete when this task is completed. Useful for cleanup or milestone tasks.",
+    autoComplete: "Select specific tasks that should be automatically marked as complete when this task is completed. Useful for milestone tasks that signal the completion of multiple other tasks.",
     subtasks: "Automatically create subtasks when this task starts. Useful for breaking down complex tasks into smaller steps.",
     linkedTasks: "Link this task to other tasks in the schedule. Useful for grouping related tasks or creating task dependencies across templates.",
-    linkedTemplate: "Attach an entire schedule template to this task. The linked template will be automatically instantiated when this task is created in a job."
+    manualTask: "Manual task - never gets automatically loaded or activated in the schedule. Must be manually created.",
+    multipleItems: "When this task is completed, user will be prompted if they need another instance (e.g., 'Frame Inspection', 'Frame Inspection 2', etc.).",
+    orderRequired: "Order time required from pricebook items. Tracks order placement timeline requirements.",
+    callUpRequired: "Call up time required from pricebook items. Tracks call-up/booking timeline requirements.",
+    planType: "This task is for documents that only get activated if a plan tab is selected. Select the plan/drawing type."
   }
 
   // Handle column filter change
@@ -626,6 +827,22 @@ export default function ScheduleTemplateEditor() {
             >
               <DocumentDuplicateIcon className="h-5 w-5" />
             </button>
+            <button
+              onClick={handleExportToExcel}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+              title="Export to Excel"
+            >
+              <ArrowDownTrayIcon className="h-5 w-5" />
+            </button>
+            <label className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" title="Import from Excel">
+              <ArrowUpTrayIcon className="h-5 w-5" />
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleImportFromExcel}
+                className="hidden"
+              />
+            </label>
             {!selectedTemplate.is_default && (
               <button
                 onClick={handleSetAsDefault}
@@ -915,7 +1132,7 @@ export default function ScheduleTemplateEditor() {
 
       {/* Create Template Modal */}
       {showTemplateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center" style={{ zIndex: '2147483647' }}>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
               Create New Template
@@ -997,7 +1214,8 @@ function ScheduleTemplateRow({
   const [showDocTabsModal, setShowDocTabsModal] = useState(false)
   const [showChecklistModal, setShowChecklistModal] = useState(false)
   const [showLinkedTasksModal, setShowLinkedTasksModal] = useState(false)
-  const [showLinkedTemplateModal, setShowLinkedTemplateModal] = useState(false)
+  const [showAutoCompleteModal, setShowAutoCompleteModal] = useState(false)
+  const [showSubtasksModal, setShowSubtasksModal] = useState(false)
 
   // Debounced update for text fields
   const handleTextChange = (field, value) => {
@@ -1259,19 +1477,26 @@ function ScheduleTemplateRow({
       case 'autoComplete':
         return (
           <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
-            <input
-              type="checkbox"
-              checked={row.auto_complete_predecessors}
-              onChange={(e) => handleFieldChange('auto_complete_predecessors', e.target.checked)}
-              className="h-4 w-4"
-            />
+            <button
+              onClick={() => setShowAutoCompleteModal(true)}
+              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+              title="Click to select tasks to auto-complete"
+            >
+              {row.auto_complete_task_ids?.length || 0} tasks
+            </button>
           </td>
         )
 
       case 'subtasks':
         return (
-          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center text-xs text-gray-600 dark:text-gray-400">
-            {row.has_subtasks ? `${row.subtask_count} subs` : '-'}
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <button
+              onClick={() => setShowSubtasksModal(true)}
+              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+              title="Click to select subtasks"
+            >
+              {row.subtask_template_ids?.length || 0} subtasks
+            </button>
           </td>
         )
 
@@ -1288,16 +1513,63 @@ function ScheduleTemplateRow({
           </td>
         )
 
-      case 'linkedTemplate':
+      case 'manualTask':
         return (
-          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
-            <button
-              onClick={() => setShowLinkedTemplateModal(true)}
-              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-left cursor-pointer truncate"
-              title="Click to select a template"
-            >
-              {row.linked_template_name || 'None'}
-            </button>
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.manual_task || false}
+              onChange={(e) => onUpdate({ manual_task: e.target.checked })}
+              className="h-4 w-4 text-indigo-600 rounded cursor-pointer"
+            />
+          </td>
+        )
+
+      case 'multipleItems':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.allow_multiple_instances || false}
+              onChange={(e) => onUpdate({ allow_multiple_instances: e.target.checked })}
+              className="h-4 w-4 text-indigo-600 rounded cursor-pointer"
+            />
+          </td>
+        )
+
+      case 'orderRequired':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.order_required || false}
+              onChange={(e) => onUpdate({ order_required: e.target.checked })}
+              className="h-4 w-4 text-indigo-600 rounded cursor-pointer"
+            />
+          </td>
+        )
+
+      case 'callUpRequired':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.call_up_required || false}
+              onChange={(e) => onUpdate({ call_up_required: e.target.checked })}
+              className="h-4 w-4 text-indigo-600 rounded cursor-pointer"
+            />
+          </td>
+        )
+
+      case 'planType':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.plan_required || false}
+              onChange={(e) => onUpdate({ plan_required: e.target.checked })}
+              className="h-4 w-4 text-indigo-600 rounded cursor-pointer"
+            />
           </td>
         )
 
@@ -1364,9 +1636,14 @@ function ScheduleTemplateRow({
     onUpdate({ linked_task_ids: taskIds })
   }
 
-  // Handler for saving linked template
-  const handleSaveLinkedTemplate = (templateId) => {
-    onUpdate({ linked_template_id: templateId })
+  // Handler for saving auto-complete tasks
+  const handleSaveAutoCompleteTasks = (taskIds) => {
+    onUpdate({ auto_complete_task_ids: taskIds })
+  }
+
+  // Handler for saving subtask templates
+  const handleSaveSubtasks = (taskIds) => {
+    onUpdate({ subtask_template_ids: taskIds })
   }
 
   return (
@@ -1376,73 +1653,79 @@ function ScheduleTemplateRow({
         return renderCell(key, config)
       })}
 
-      {/* Modals - rendered conditionally to avoid HTML structure issues */}
-      {showPredecessorEditor && typeof document !== 'undefined' && (
-        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
-          <PredecessorEditor
-            isOpen={showPredecessorEditor}
-            onClose={() => setShowPredecessorEditor(false)}
-            currentRow={row}
-            allRows={allRows}
-            onSave={handleSavePredecessors}
-          />
-        </td>
+      {/* Modals - rendered using portals to escape table structure */}
+      {showPredecessorEditor && typeof document !== 'undefined' && createPortal(
+        <PredecessorEditor
+          isOpen={showPredecessorEditor}
+          onClose={() => setShowPredecessorEditor(false)}
+          currentRow={row}
+          allRows={allRows}
+          onSave={handleSavePredecessors}
+        />,
+        document.body
       )}
 
-      {showPriceItemsModal && typeof document !== 'undefined' && (
-        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
-          <PriceBookItemsModal
-            isOpen={showPriceItemsModal}
-            onClose={() => setShowPriceItemsModal(false)}
-            currentRow={row}
-            onSave={handleSavePriceItems}
-          />
-        </td>
+      {showPriceItemsModal && typeof document !== 'undefined' && createPortal(
+        <PriceBookItemsModal
+          isOpen={showPriceItemsModal}
+          onClose={() => setShowPriceItemsModal(false)}
+          currentRow={row}
+          onSave={handleSavePriceItems}
+        />,
+        document.body
       )}
 
-      {showDocTabsModal && typeof document !== 'undefined' && (
-        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
-          <DocumentationTabsModal
-            isOpen={showDocTabsModal}
-            onClose={() => setShowDocTabsModal(false)}
-            currentRow={row}
-            onSave={handleSaveDocTabs}
-          />
-        </td>
+      {showDocTabsModal && typeof document !== 'undefined' && createPortal(
+        <DocumentationTabsModal
+          isOpen={showDocTabsModal}
+          onClose={() => setShowDocTabsModal(false)}
+          currentRow={row}
+          onSave={handleSaveDocTabs}
+        />,
+        document.body
       )}
 
-      {showChecklistModal && typeof document !== 'undefined' && (
-        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
-          <SupervisorChecklistModal
-            isOpen={showChecklistModal}
-            onClose={() => setShowChecklistModal(false)}
-            currentRow={row}
-            onSave={handleSaveChecklistTemplates}
-          />
-        </td>
+      {showChecklistModal && typeof document !== 'undefined' && createPortal(
+        <SupervisorChecklistModal
+          isOpen={showChecklistModal}
+          onClose={() => setShowChecklistModal(false)}
+          currentRow={row}
+          onSave={handleSaveChecklistTemplates}
+        />,
+        document.body
       )}
 
-      {showLinkedTasksModal && typeof document !== 'undefined' && (
-        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
-          <LinkedTasksModal
-            isOpen={showLinkedTasksModal}
-            onClose={() => setShowLinkedTasksModal(false)}
-            currentRow={row}
-            allRows={allRows}
-            onSave={handleSaveLinkedTasks}
-          />
-        </td>
+      {showLinkedTasksModal && typeof document !== 'undefined' && createPortal(
+        <LinkedTasksModal
+          isOpen={showLinkedTasksModal}
+          onClose={() => setShowLinkedTasksModal(false)}
+          currentRow={row}
+          allRows={allRows}
+          onSave={handleSaveLinkedTasks}
+        />,
+        document.body
       )}
 
-      {showLinkedTemplateModal && typeof document !== 'undefined' && (
-        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
-          <LinkedTemplateModal
-            isOpen={showLinkedTemplateModal}
-            onClose={() => setShowLinkedTemplateModal(false)}
-            currentRow={row}
-            onSave={handleSaveLinkedTemplate}
-          />
-        </td>
+      {showAutoCompleteModal && typeof document !== 'undefined' && createPortal(
+        <AutoCompleteTasksModal
+          isOpen={showAutoCompleteModal}
+          onClose={() => setShowAutoCompleteModal(false)}
+          currentRow={row}
+          allRows={allRows}
+          onSave={handleSaveAutoCompleteTasks}
+        />,
+        document.body
+      )}
+
+      {showSubtasksModal && typeof document !== 'undefined' && createPortal(
+        <SubtasksModal
+          isOpen={showSubtasksModal}
+          onClose={() => setShowSubtasksModal(false)}
+          currentRow={row}
+          allRows={allRows}
+          onSave={handleSaveSubtasks}
+        />,
+        document.body
       )}
     </tr>
   )

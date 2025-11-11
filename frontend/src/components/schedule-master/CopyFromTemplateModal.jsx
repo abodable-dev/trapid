@@ -54,7 +54,7 @@ export default function CopyFromTemplateModal({ isOpen, onClose, onCopy, constru
   const selectedTemplate = templates.find(t => t.id === selectedTemplateId)
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 overflow-y-auto" style={{ zIndex: '2147483647' }}>
       <div className="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75 transition-opacity" onClick={onClose} />
 

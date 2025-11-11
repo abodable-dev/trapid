@@ -114,13 +114,20 @@ module Api
           :subtask_count,
           :sequence_order,
           :linked_template_id,
-          predecessor_ids: [],
+          :manual_task,
+          :allow_multiple_instances,
+          :order_required,
+          :call_up_required,
+          :plan_required,
+          predecessor_ids: [:id, :type, :lag],
           price_book_item_ids: [],
           documentation_category_ids: [],
           supervisor_checklist_template_ids: [],
           tags: [],
           subtask_names: [],
-          linked_task_ids: []
+          linked_task_ids: [],
+          auto_complete_task_ids: [],
+          subtask_template_ids: []
         )
       end
 
@@ -141,13 +148,20 @@ module Api
           :subtask_count,
           :sequence_order,
           :linked_template_id,
-          predecessor_ids: [],
+          :manual_task,
+          :allow_multiple_instances,
+          :order_required,
+          :call_up_required,
+          :plan_required,
+          predecessor_ids: [:id, :type, :lag],
           price_book_item_ids: [],
           documentation_category_ids: [],
           supervisor_checklist_template_ids: [],
           tags: [],
           subtask_names: [],
-          linked_task_ids: []
+          linked_task_ids: [],
+          auto_complete_task_ids: [],
+          subtask_template_ids: []
         )
       end
 
@@ -172,14 +186,21 @@ module Api
           cert_lag_days: row.cert_lag_days,
           require_supervisor_check: row.require_supervisor_check,
           auto_complete_predecessors: row.auto_complete_predecessors,
+          auto_complete_task_ids: row.auto_complete_task_ids,
           has_subtasks: row.has_subtasks,
           subtask_count: row.subtask_count,
           subtask_names: row.subtask_names,
+          subtask_template_ids: row.subtask_template_ids,
           sequence_order: row.sequence_order,
           linked_task_ids: row.linked_task_ids,
           linked_tasks_display: row.linked_tasks_display,
           linked_template_id: row.linked_template_id,
-          linked_template_name: row.linked_template_name
+          linked_template_name: row.linked_template_name,
+          manual_task: row.manual_task,
+          allow_multiple_instances: row.allow_multiple_instances,
+          order_required: row.order_required,
+          call_up_required: row.call_up_required,
+          plan_required: row.plan_required
         }
       end
     end

@@ -55,7 +55,7 @@ class ScheduleTemplateRow < ApplicationRecord
   # Format predecessors as "2FS+3, 5SS" etc
   def predecessor_display
     return "None" if predecessor_task_ids.empty?
-    predecessor_task_ids.map { |pred| format_predecessor(pred) }.join(", ")
+    predecessor_task_ids.map { |pred| format_predecessor(pred) }.compact.join(", ")
   end
 
   # Display linked tasks as "1, 3, 5"
@@ -88,12 +88,14 @@ class ScheduleTemplateRow < ApplicationRecord
   end
 
   def format_predecessor(pred_data)
-    # pred_data format: { id: 2, type: "FS", lag: 3 }
+    # pred_data format: { id: 2, type: "FS", lag: 3 } or { "id" => 2, "type" => "FS", "lag" => 3 }
     # Output: "2FS+3" or "2FS-2" or "2FS" if no lag
     if pred_data.is_a?(Hash)
       task_id = pred_data['id'] || pred_data[:id]
       dep_type = pred_data['type'] || pred_data[:type] || 'FS'
-      lag = pred_data['lag'] || pred_data[:lag] || 0
+      lag = (pred_data['lag'] || pred_data[:lag] || 0).to_i
+
+      return nil unless task_id # Skip invalid entries
 
       result = "#{task_id}#{dep_type}"
       result += lag >= 0 ? "+#{lag}" : lag.to_s if lag != 0

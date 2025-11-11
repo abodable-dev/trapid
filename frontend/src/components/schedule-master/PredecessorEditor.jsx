@@ -71,11 +71,46 @@ export default function PredecessorEditor({ isOpen, onClose, currentRow, allRows
 
     // Validate no circular dependencies
     const currentTaskNumber = allRows.findIndex(r => r.id === currentRow.id) + 1
-    const hasCircular = validPreds.some(p => p.id === currentTaskNumber)
 
-    if (hasCircular) {
+    // Check direct circular dependency (task can't be its own predecessor)
+    const hasDirectCircular = validPreds.some(p => p.id === currentTaskNumber)
+    if (hasDirectCircular) {
       alert('Error: A task cannot be a predecessor of itself.')
       return
+    }
+
+    // Check for indirect circular dependencies (A -> B -> A)
+    const checkCircularDependency = (taskNum, visited = new Set()) => {
+      if (visited.has(taskNum)) {
+        return true // Found a cycle
+      }
+
+      visited.add(taskNum)
+
+      // Find the row for this task number
+      const taskRow = allRows[taskNum - 1]
+      if (!taskRow || !taskRow.predecessor_ids) return false
+
+      // Check each predecessor of this task
+      for (const pred of taskRow.predecessor_ids) {
+        const predId = typeof pred === 'object' ? pred.id : pred
+        if (predId === currentTaskNumber) {
+          return true // Found circular dependency
+        }
+        if (checkCircularDependency(predId, new Set(visited))) {
+          return true
+        }
+      }
+
+      return false
+    }
+
+    // Check if adding these predecessors would create a cycle
+    for (const pred of validPreds) {
+      if (checkCircularDependency(pred.id)) {
+        alert(`Error: Adding task ${pred.id} as a predecessor would create a circular dependency.`)
+        return
+      }
     }
 
     // Save as array of objects
@@ -91,7 +126,7 @@ export default function PredecessorEditor({ isOpen, onClose, currentRow, allRows
     .filter(row => row.id !== currentRow.id) // Can't be predecessor of itself
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50" style={{ zIndex: '2147483647' }}>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
