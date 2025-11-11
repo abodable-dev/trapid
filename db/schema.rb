@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_111014) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -55,6 +55,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.boolean "saved_to_job", default: false
     t.index ["channel", "created_at"], name: "index_chat_messages_on_channel_and_created_at"
     t.index ["construction_id"], name: "index_chat_messages_on_construction_id"
+    t.index ["created_at"], name: "index_chat_messages_on_created_at"
     t.index ["project_id", "created_at"], name: "index_chat_messages_on_project_id_and_created_at"
     t.index ["project_id"], name: "index_chat_messages_on_project_id"
     t.index ["user_id"], name: "index_chat_messages_on_user_id"
@@ -136,6 +137,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.string "design_name"
     t.datetime "onedrive_folders_created_at"
     t.string "onedrive_folder_creation_status", default: "not_requested"
+    t.index ["created_at"], name: "index_constructions_on_created_at"
     t.index ["design_id"], name: "index_constructions_on_design_id"
     t.index ["design_name"], name: "index_constructions_on_design_name"
     t.index ["onedrive_folder_creation_status"], name: "index_constructions_on_onedrive_folder_creation_status"
@@ -267,12 +269,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.decimal "accounts_payable_outstanding", precision: 15, scale: 2
     t.decimal "accounts_payable_overdue", precision: 15, scale: 2
     t.index ["contact_types"], name: "index_contacts_on_contact_types", using: :gin
+    t.index ["email"], name: "index_contacts_on_email"
     t.index ["is_active"], name: "index_contacts_on_is_active"
     t.index ["primary_contact_type"], name: "index_contacts_on_primary_contact_type"
     t.index ["rating"], name: "index_contacts_on_rating"
     t.index ["supplier_code"], name: "index_contacts_on_supplier_code", unique: true, where: "(supplier_code IS NOT NULL)"
     t.index ["xero_contact_number"], name: "index_contacts_on_xero_contact_number"
     t.index ["xero_contact_status"], name: "index_contacts_on_xero_contact_status"
+    t.index ["xero_id", "last_synced_at"], name: "index_contacts_on_xero_id_and_last_synced_at"
   end
 
   create_table "designs", force: :cascade do |t|
@@ -329,6 +333,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["construction_id"], name: "index_emails_on_construction_id"
+    t.index ["received_at"], name: "index_emails_on_received_at"
   end
 
   create_table "estimate_line_items", force: :cascade do |t|
@@ -626,6 +631,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.jsonb "tags", default: [], null: false
     t.boolean "critical_po", default: false, null: false
     t.boolean "auto_complete_predecessors", default: false, null: false
+    t.jsonb "auto_complete_task_ids", default: [], null: false
+    t.jsonb "subtask_template_ids", default: [], null: false
+    t.boolean "manual_task", default: false, null: false
+    t.boolean "allow_multiple_instances", default: false, null: false
+    t.boolean "order_required", default: false, null: false
+    t.boolean "call_up_required", default: false, null: false
+    t.boolean "plan_required", default: false, null: false
     t.index ["assigned_to_id"], name: "index_project_tasks_on_assigned_to_id"
     t.index ["is_critical_path"], name: "index_project_tasks_on_is_critical_path"
     t.index ["parent_task_id"], name: "index_project_tasks_on_parent_task_id"
@@ -795,6 +807,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.index ["construction_id"], name: "index_schedule_tasks_on_construction_id"
     t.index ["matched_to_po"], name: "index_schedule_tasks_on_matched_to_po"
     t.index ["purchase_order_id"], name: "index_schedule_tasks_on_purchase_order_id"
+    t.index ["start_date"], name: "index_schedule_tasks_on_start_date"
     t.index ["status"], name: "index_schedule_tasks_on_status"
   end
 
@@ -823,10 +836,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.integer "documentation_category_ids", default: [], array: true
     t.text "linked_task_ids", default: "[]"
     t.integer "linked_template_id"
+    t.integer "supervisor_checklist_template_ids", default: [], array: true
+    t.jsonb "auto_complete_task_ids", default: [], null: false
+    t.jsonb "subtask_template_ids", default: [], null: false
+    t.boolean "manual_task", default: false, null: false
+    t.boolean "allow_multiple_instances", default: false, null: false
+    t.boolean "order_required", default: false, null: false
+    t.boolean "call_up_required", default: false, null: false
+    t.boolean "plan_required", default: false, null: false
     t.index ["documentation_category_ids"], name: "index_schedule_template_rows_on_documentation_category_ids", using: :gin
     t.index ["schedule_template_id", "sequence_order"], name: "idx_on_schedule_template_id_sequence_order_1bea5d762b"
     t.index ["schedule_template_id"], name: "index_schedule_template_rows_on_schedule_template_id"
     t.index ["sequence_order"], name: "index_schedule_template_rows_on_sequence_order"
+    t.index ["supervisor_checklist_template_ids"], name: "index_schedule_template_rows_on_supervisor_checklist_template_i", using: :gin
     t.index ["supplier_id"], name: "index_schedule_template_rows_on_supplier_id"
   end
 
