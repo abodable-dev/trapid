@@ -106,13 +106,13 @@ export default function AppLayout({ children }) {
 
             {/* Mobile Sidebar content */}
             <div className="relative flex grow flex-col gap-y-5 overflow-y-auto bg-black border-r border-gray-800 px-6 pb-4">
-              <div className="relative flex h-14 shrink-0 items-center border-b border-gray-800">
+              <div className="relative flex h-12 shrink-0 items-center border-b border-gray-800">
                 <img
                   alt="Trapid"
                   src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
-                  className="h-7 w-auto"
+                  className="h-6 w-auto"
                 />
-                <span className="ml-3 text-base font-semibold text-white tracking-tight">Trapid</span>
+                <span className="ml-2 text-sm font-semibold text-white">Trapid</span>
               </div>
               <nav className="relative flex flex-1 flex-col">
                 <ul role="list" className="flex flex-1 flex-col gap-y-7">
@@ -129,12 +129,12 @@ export default function AppLayout({ children }) {
                                 current
                                   ? 'bg-gray-900 text-white'
                                   : 'text-gray-400 hover:text-white hover:bg-gray-900/50',
-                                'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                                'group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200',
                               )}
                             >
                               <item.icon
                                 aria-hidden="true"
-                                className="h-5 w-5 shrink-0"
+                                className="h-4 w-4 shrink-0"
                               />
                               {item.name}
                             </Link>
@@ -157,12 +157,12 @@ export default function AppLayout({ children }) {
                                   current
                                     ? 'bg-gray-900 text-white'
                                     : 'text-gray-400 hover:text-white hover:bg-gray-900/50',
-                                  'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                                  'group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200',
                                 )}
                               >
                                 <item.icon
                                   aria-hidden="true"
-                                  className="h-5 w-5 shrink-0"
+                                  className="h-4 w-4 shrink-0"
                                 />
                                 {item.name}
                               </Link>
@@ -194,24 +194,24 @@ export default function AppLayout({ children }) {
       )}>
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-800 bg-black pb-4">
           <div className={classNames(
-            "flex h-14 shrink-0 items-center relative border-b border-gray-800",
-            sidebarCollapsed ? "justify-center px-2" : "px-4"
+            "flex h-12 shrink-0 items-center relative border-b border-gray-800",
+            sidebarCollapsed ? "justify-center px-2" : "px-3"
           )}>
             {!sidebarCollapsed && (
               <>
                 <img
                   alt="Trapid"
                   src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
-                  className="h-7 w-auto"
+                  className="h-6 w-auto"
                 />
-                <span className="ml-3 text-base font-semibold text-white tracking-tight">Trapid</span>
+                <span className="ml-2 text-sm font-semibold text-white">Trapid</span>
               </>
             )}
             {sidebarCollapsed && (
               <img
                 alt="Trapid"
                 src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
-                className="h-7 w-auto"
+                className="h-6 w-auto"
               />
             )}
             <button
@@ -230,8 +230,8 @@ export default function AppLayout({ children }) {
               )}
             </button>
           </div>
-          <nav className={classNames("flex flex-1 flex-col", sidebarCollapsed ? "px-2" : "px-3")}>
-            <ul role="list" className="flex flex-1 flex-col gap-y-7">
+          <nav className={classNames("flex flex-1 flex-col", sidebarCollapsed ? "px-2" : "px-2")}>
+            <ul role="list" className="flex flex-1 flex-col gap-y-5">
               <li>
                 <ul role="list" className="space-y-1">
                   {navigation.map((item) => {
@@ -245,13 +245,13 @@ export default function AppLayout({ children }) {
                             current
                               ? 'bg-gray-900 text-white'
                               : 'text-gray-400 hover:text-white hover:bg-gray-900/50',
-                            'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                            'group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200',
                             sidebarCollapsed && 'justify-center px-2'
                           )}
                         >
                           <item.icon
                             aria-hidden="true"
-                            className="h-5 w-5 shrink-0"
+                            className="h-4 w-4 shrink-0"
                           />
                           {!sidebarCollapsed && item.name}
                         </Link>
@@ -277,13 +277,13 @@ export default function AppLayout({ children }) {
                               current
                                 ? 'bg-gray-900 text-white'
                                 : 'text-gray-400 hover:text-white hover:bg-gray-900/50',
-                              'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                              'group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200',
                               sidebarCollapsed && 'justify-center px-2'
                             )}
                           >
                             <item.icon
                               aria-hidden="true"
-                              className="h-5 w-5 shrink-0"
+                              className="h-4 w-4 shrink-0"
                             />
                             {!sidebarCollapsed && item.name}
                           </Link>
@@ -314,7 +314,7 @@ export default function AppLayout({ children }) {
         sidebarCollapsed ? "lg:pl-16" : "lg:pl-64"
       )}>
         {/* Top bar */}
-        <div className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-x-4 border-b border-gray-800 bg-black px-4 sm:gap-x-6 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-40 flex h-10 shrink-0 items-center gap-x-4 border-b border-gray-800 bg-black px-3 sm:gap-x-4 sm:px-4 lg:px-6">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
@@ -329,9 +329,9 @@ export default function AppLayout({ children }) {
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex flex-1 items-center justify-end gap-x-4 lg:gap-x-6">
-              <button type="button" className="-m-2.5 p-2.5 text-gray-400 hover:text-white transition-colors duration-200">
+              <button type="button" className="-m-1.5 p-1.5 text-gray-400 hover:text-white transition-colors duration-200">
                 <span className="sr-only">View notifications</span>
-                <BellIcon aria-hidden="true" className="h-6 w-6" />
+                <BellIcon aria-hidden="true" className="h-5 w-5" />
               </button>
 
               {/* Separator */}
@@ -339,18 +339,18 @@ export default function AppLayout({ children }) {
 
               {/* Profile dropdown */}
               <Menu as="div" className="relative">
-                <MenuButton className="relative flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-900/50 transition-all duration-200">
+                <MenuButton className="relative flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-900/50 transition-all duration-200">
                   <span className="sr-only">Open user menu</span>
                   <img
                     alt=""
                     src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                    className="h-8 w-8 rounded-full ring-1 ring-gray-800"
+                    className="h-7 w-7 rounded-full ring-1 ring-gray-800"
                   />
                   <span className="hidden lg:flex lg:items-center">
-                    <span aria-hidden="true" className="text-sm font-medium text-white">
+                    <span aria-hidden="true" className="text-xs font-medium text-white">
                       User
                     </span>
-                    <ChevronDownIcon aria-hidden="true" className="ml-2 h-5 w-5 text-gray-400" />
+                    <ChevronDownIcon aria-hidden="true" className="ml-1 h-4 w-4 text-gray-400" />
                   </span>
                 </MenuButton>
                 <MenuItems
