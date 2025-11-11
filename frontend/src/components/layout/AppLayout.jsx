@@ -28,6 +28,9 @@ import {
   UserGroupIcon,
   UsersIcon,
   PlusIcon,
+  EnvelopeIcon,
+  DocumentTextIcon,
+  CloudIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
@@ -37,6 +40,9 @@ const navigation = [
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
   { name: 'Contacts', href: '/contacts', icon: UsersIcon },
+  { name: 'Documents', href: '/documents', icon: DocumentTextIcon },
+  { name: 'Outlook', href: '/outlook', icon: EnvelopeIcon },
+  { name: 'OneDrive', href: '/onedrive', icon: CloudIcon },
   { name: 'Health', href: '/health', icon: PlusIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ]
