@@ -241,7 +241,7 @@ Rails.application.routes.draw do
       post 'setup/sync_documentation_categories', to: 'setup#sync_documentation_categories'
       post 'setup/sync_supervisor_checklists', to: 'setup#sync_supervisor_checklists'
       post 'setup/sync_schedule_templates', to: 'setup#sync_schedule_templates'
-      post 'setup/sync_folder_templates', to: 'setup#sync_folder_templates'
+      post 'setup/sync_folder_templates', to: 'setup#sync_folder_templates'  # Folder templates sync endpoint
 
       # Documentation Categories (Global)
       resources :documentation_categories do
