@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../api'
-import { UserIcon, EnvelopeIcon, ShieldCheckIcon, PlusIcon, UserGroupIcon } from '@heroicons/react/24/outline'
+import { UserIcon, EnvelopeIcon, ShieldCheckIcon, PlusIcon, UserGroupIcon, ClockIcon } from '@heroicons/react/24/outline'
 import AddUserModal from './AddUserModal'
 import EditUserModal from './EditUserModal'
 
@@ -78,6 +78,24 @@ export default function UserManagementTab() {
       estimator: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
     }
     return colors[assignedRole] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+  }
+
+  const formatLastLogin = (lastLoginAt) => {
+    if (!lastLoginAt) return 'Never'
+
+    const date = new Date(lastLoginAt)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+
+    return date.toLocaleDateString()
   }
 
   const handleEditUser = (user) => {
@@ -196,11 +214,17 @@ export default function UserManagementTab() {
                             </span>
                           )}
                         </div>
-                        <div className="mt-1 flex items-center">
-                          <EnvelopeIcon className="h-4 w-4 text-gray-400 mr-1.5" />
-                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                            {user.email}
-                          </p>
+                        <div className="mt-1 flex items-center gap-4">
+                          <div className="flex items-center">
+                            <EnvelopeIcon className="h-4 w-4 text-gray-400 mr-1.5" />
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                              {user.email}
+                            </p>
+                          </div>
+                          <div className="flex items-center text-xs text-gray-400 dark:text-gray-500">
+                            <ClockIcon className="h-3.5 w-3.5 mr-1" />
+                            Last login: {formatLastLogin(user.last_login_at)}
+                          </div>
                         </div>
                       </div>
                     </div>

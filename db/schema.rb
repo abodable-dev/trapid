@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_210431) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_211238) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -1676,6 +1676,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_210431) do
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.string "assigned_role"
+    t.datetime "last_login_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["role"], name: "index_users_on_role"
   end

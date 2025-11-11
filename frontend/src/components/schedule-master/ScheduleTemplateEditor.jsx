@@ -519,13 +519,16 @@ export default function ScheduleTemplateEditor() {
 
   const handleUpdateRow = async (rowId, updates) => {
     try {
+      console.log('ScheduleTemplateEditor: Updating row', rowId, 'with:', updates)
       await api.patch(
         `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`,
         { schedule_template_row: updates }
       )
 
+      console.log('ScheduleTemplateEditor: Row updated, reloading all rows...')
       // Reload all rows to get updated calculated fields like predecessor_display
       await loadTemplateRows(selectedTemplate.id)
+      console.log('ScheduleTemplateEditor: Rows reloaded successfully')
     } catch (err) {
       console.error('Failed to update row:', err)
       showToast('Failed to update row', 'error')

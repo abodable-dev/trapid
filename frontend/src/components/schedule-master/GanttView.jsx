@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Gantt, ContextMenu, Willow } from '@svar-ui/react-gantt'
 import '@svar-ui/react-gantt/style.css'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
+import TaskDependencyEditor from './TaskDependencyEditor'
 
 /**
  * GanttView - Visualize schedule template tasks with dependencies using SVAR Gantt
@@ -14,6 +15,8 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
   const [publicHolidays, setPublicHolidays] = useState([])
   const [ganttApi, setGanttApi] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedTask, setSelectedTask] = useState(null)
+  const [showEditor, setShowEditor] = useState(false)
 
   // Fetch public holidays from API
   useEffect(() => {
@@ -67,38 +70,109 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
     return current
   }
 
-  // CSS function for highlighting weekends and holidays in the timeline
-  const dayStyle = (date) => {
-    const dateStr = date.toISOString().split('T')[0]
-    if (isPublicHoliday(dateStr)) {
-      return 'gantt-holiday'
+  // Handle task click to open editor
+  const handleTaskClick = useCallback((taskId) => {
+    const task = tasks.find(t => t.id === taskId)
+    if (task) {
+      setSelectedTask(task)
+      setShowEditor(true)
     }
-    if (isWeekend(date)) {
-      return 'gantt-weekend'
-    }
-    return ''
+  }, [tasks])
+
+  // Handle saving task dependencies
+  const handleSaveDependencies = (taskId, predecessors) => {
+    console.log('GanttView: Saving dependencies for task', taskId, ':', predecessors)
+    onUpdateTask(taskId, { predecessor_ids: predecessors })
+    setShowEditor(false)
+    setSelectedTask(null)
   }
 
   // Memoize columns configuration to prevent re-renders
   const columns = useMemo(() => [
     { id: 'taskNumber', header: '#', width: 60, align: 'center' },
     { id: 'text', header: 'Task Name', width: 250 },
-    { id: 'duration', header: 'Duration', width: 80, align: 'center' }
+    {
+      id: 'predecessors',
+      header: 'Predecessors',
+      width: 150,
+      template: (value, row) => {
+        return value || '-'
+      }
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      width: 80,
+      align: 'center',
+      template: (value, row) => {
+        return `<button class="gantt-edit-btn" data-task-id="${row.id}" title="Edit Dependencies">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px; display: inline;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+          </svg>
+        </button>`
+      }
+    }
   ], [])
 
   // Memoize scales configuration to prevent re-renders
   const scales = useMemo(() => [
     { unit: 'month', step: 1, format: 'MMMM yyyy' },
-    { unit: 'day', step: 1, format: 'd', css: dayStyle }
-  ], [dayStyle])
+    { unit: 'day', step: 1, format: 'd' }
+  ], [])
 
+  const cellWidth = 30
+
+  // Convert tasks to Gantt format whenever tasks change
   useEffect(() => {
+    console.log('GanttView: useEffect triggered. isOpen:', isOpen, 'tasks:', tasks?.length)
     if (isOpen && tasks) {
+      // Calculate start dates based on dependencies
+      const taskStartDates = new Map()
+      const projectStartDate = new Date()
+
+      // Function to calculate task start date based on predecessors
+      const calculateStartDate = (task) => {
+        if (taskStartDates.has(task.id)) {
+          return taskStartDates.get(task.id)
+        }
+
+        // If no predecessors, start from project start date
+        if (!task.predecessor_ids || task.predecessor_ids.length === 0) {
+          taskStartDates.set(task.id, projectStartDate)
+          return projectStartDate
+        }
+
+        // Find the latest end date of all predecessors
+        let latestDate = projectStartDate
+        task.predecessor_ids.forEach(pred => {
+          const predData = typeof pred === 'object' ? pred : { id: pred, type: 'FS', lag: 0 }
+          const predTask = tasks[predData.id - 1] // Task numbers are 1-indexed
+
+          if (predTask) {
+            // Recursively calculate predecessor's start date
+            const predStart = calculateStartDate(predTask)
+            const predDuration = predTask.duration || 5
+            const predEnd = addBusinessDays(predStart, predDuration)
+
+            // For FS (Finish-to-Start), task starts after predecessor finishes
+            if (predData.type === 'FS' || !predData.type) {
+              const taskStart = addBusinessDays(predEnd, predData.lag || 0)
+              if (taskStart > latestDate) {
+                latestDate = taskStart
+              }
+            }
+          }
+        })
+
+        taskStartDates.set(task.id, latestDate)
+        return latestDate
+      }
+
       // Convert tasks to Gantt format
       const ganttTasks = tasks.map((task, index) => {
         // Use task duration or default to 5 business days
         const duration = task.duration || 5
-        const startDate = new Date()
+        const startDate = calculateStartDate(task, index)
         const endDate = addBusinessDays(startDate, duration)
 
         // Format predecessors for display
@@ -159,12 +233,53 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
       console.log('Gantt Tasks:', ganttTasks.slice(0, 2)) // Log first 2 tasks to see structure
       console.log('Gantt Links:', ganttLinks)
 
+      // Calculate the overall date range to fit all tasks
+      let minDate = projectStartDate
+      let maxDate = projectStartDate
+
+      ganttTasks.forEach(task => {
+        const taskStart = new Date(task.start)
+        const taskEnd = new Date(task.end)
+        if (taskStart < minDate) minDate = taskStart
+        if (taskEnd > maxDate) maxDate = taskEnd
+      })
+
+      // Add padding only at the end (2 weeks after)
+      const paddedEnd = new Date(maxDate)
+      paddedEnd.setDate(paddedEnd.getDate() + 14)
+
+      // Generate holidays array (weekends and public holidays)
+      const holidays = []
+      const current = new Date(minDate)
+      while (current <= paddedEnd) {
+        const dateStr = current.toISOString().split('T')[0]
+
+        // Check if weekend
+        if (isWeekend(current)) {
+          holidays.push(dateStr)
+        }
+        // Check if public holiday
+        else if (publicHolidays.includes(dateStr)) {
+          holidays.push(dateStr)
+        }
+
+        current.setDate(current.getDate() + 1)
+      }
+
       setGanttData({
         data: ganttTasks,
-        links: ganttLinks
+        links: ganttLinks,
+        start: minDate,
+        end: paddedEnd,
+        holidays: holidays
       })
+
+      console.log('Gantt data updated with tasks:', ganttTasks.length)
+      console.log('Date range:', minDate.toISOString().split('T')[0], 'to', paddedEnd.toISOString().split('T')[0])
+      console.log('Holidays count:', holidays.length)
     }
-  }, [isOpen, tasks, publicHolidays])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, tasks, publicHolidays.length])
 
   // Convert dependency type to Gantt link type
   const getLinkType = (depType) => {
@@ -237,24 +352,40 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
     }
   }
 
+  // Add click handler for edit buttons with better event delegation
+  useEffect(() => {
+    const handleEditClick = (e) => {
+      const button = e.target.closest('.gantt-edit-btn')
+      if (button) {
+        console.log('Document click handler: Edit button clicked')
+        e.preventDefault()
+        e.stopPropagation()
+        const taskId = parseInt(button.dataset.taskId)
+        console.log('Document click handler: taskId:', taskId)
+        handleTaskClick(taskId)
+      }
+    }
+
+    // Add listener with capture phase to ensure we catch it
+    document.addEventListener('click', handleEditClick, true)
+    return () => document.removeEventListener('click', handleEditClick, true)
+  }, [tasks, handleTaskClick])
+
   if (!isOpen) return null
 
   return (
     <>
       <style>
         {`
-          /* Weekend highlighting - apply to entire column */
-          .wx-gantt .gantt-weekend,
-          .wx-gantt .wx-gantt-cell.gantt-weekend,
-          .wx-gantt-scale-cell.gantt-weekend {
-            background-color: #f8f9fa !important;
+          /* Holiday highlighting - SVAR Gantt applies wx-holiday class to holiday columns */
+          .wx-gantt .wx-holiday {
+            background-color: #fef3c7 !important;
           }
 
-          /* Holiday highlighting - apply to entire column */
-          .wx-gantt .gantt-holiday,
-          .wx-gantt .wx-gantt-cell.gantt-holiday,
-          .wx-gantt-scale-cell.gantt-holiday {
-            background-color: #fff5f5 !important;
+          @media (prefers-color-scheme: dark) {
+            .wx-gantt .wx-holiday {
+              background-color: #78350f !important;
+            }
           }
 
           /* Match SVAR website styling */
@@ -282,6 +413,16 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
             color: #ffffff !important;
             font-weight: 500;
             padding: 12px 8px;
+          }
+
+          /* Gantt container - enable horizontal scrolling */
+          .wx-gantt {
+            width: 100%;
+            height: 100%;
+          }
+
+          .wx-gantt-chart {
+            overflow-x: auto;
           }
 
           /* Enhanced Context Menu Styling */
@@ -396,16 +537,56 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
               background-color: #374151 !important;
             }
           }
+
+          /* Edit button styling */
+          .gantt-edit-btn {
+            background: transparent;
+            border: none;
+            padding: 4px 8px;
+            cursor: pointer;
+            color: #6b7280;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .gantt-edit-btn:hover {
+            background-color: #f3f4f6;
+            color: #4f46e5;
+          }
+
+          .gantt-edit-btn:active {
+            background-color: #e5e7eb;
+          }
+
+          @media (prefers-color-scheme: dark) {
+            .gantt-edit-btn {
+              color: #9ca3af;
+            }
+
+            .gantt-edit-btn:hover {
+              background-color: #374151;
+              color: #818cf8;
+            }
+
+            .gantt-edit-btn:active {
+              background-color: #4b5563;
+            }
+          }
         `}
       </style>
-      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50" style={{ zIndex: 2147483647 }}>
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-[95vw] h-[90vh] overflow-hidden flex flex-col">
+      <div className="fixed inset-0 bg-white dark:bg-gray-900 flex flex-col" style={{ zIndex: 2147483647 }}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Gantt Chart
+              Gantt Chart <span className="text-sm text-gray-500">(Cell Width: {cellWidth}px)</span>
             </h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Click on the Actions column to edit task dependencies
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -416,8 +597,8 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
         </div>
 
         {/* Gantt Chart */}
-        <div className="flex-1 overflow-hidden">
-          <div className="h-full">
+        <div className="flex-1 overflow-auto">
+          <div className="h-full w-full">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
@@ -441,6 +622,10 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
                     scales={scales}
                     columns={columns}
                     cellHeight={44}
+                    cellWidth={cellWidth}
+                    start={ganttData.start}
+                    end={ganttData.end}
+                    holidays={ganttData.holidays}
                     readonly={false}
                     onAdd={handleLinkAdd}
                     onUpdate={(task) => {
@@ -448,6 +633,14 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
                       console.log('Task updated:', task)
                     }}
                     onDelete={handleLinkDelete}
+                    onCellClick={(ev) => {
+                      console.log('onCellClick triggered:', ev)
+                      // Open editor when Actions column is clicked
+                      if (ev.columnId === 'actions') {
+                        console.log('Actions column clicked, taskId:', ev.id)
+                        handleTaskClick(ev.id)
+                      }
+                    }}
                   />
                 </ContextMenu>
               </Willow>
@@ -455,7 +648,19 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
           </div>
         </div>
       </div>
-    </div>
+
+    {/* Task Dependency Editor */}
+    {showEditor && selectedTask && (
+      <TaskDependencyEditor
+        task={selectedTask}
+        tasks={tasks}
+        onSave={handleSaveDependencies}
+        onClose={() => {
+          setShowEditor(false)
+          setSelectedTask(null)
+        }}
+      />
+    )}
     </>
   )
 }
