@@ -264,6 +264,7 @@ module Schedule
           name: template.name,
           description: template.description,
           category: template.category,
+          response_type: template.response_type,
           sequence_order: index,
           is_completed: false
         )

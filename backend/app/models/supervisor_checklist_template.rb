@@ -1,6 +1,9 @@
 class SupervisorChecklistTemplate < ApplicationRecord
+  RESPONSE_TYPES = %w[checkbox photo note photo_and_note].freeze
+
   validates :name, presence: true, uniqueness: true
   validates :sequence_order, presence: true
+  validates :response_type, presence: true, inclusion: { in: RESPONSE_TYPES }
 
   scope :active, -> { where(is_active: true) }
   scope :ordered, -> { order(:sequence_order) }
