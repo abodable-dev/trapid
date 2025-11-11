@@ -10,6 +10,7 @@ class SupervisorChecklistTemplate < ApplicationRecord
   scope :by_category, ->(category) { where(category: category) }
 
   before_validation :set_default_sequence_order, on: :create
+  before_validation :set_default_response_type
 
   # Helper to get all unique categories
   def self.categories
@@ -23,5 +24,9 @@ class SupervisorChecklistTemplate < ApplicationRecord
 
     max_order = SupervisorChecklistTemplate.maximum(:sequence_order) || 0
     self.sequence_order = max_order + 1
+  end
+
+  def set_default_response_type
+    self.response_type ||= 'checkbox'
   end
 end
