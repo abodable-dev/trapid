@@ -12,7 +12,7 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
 
-export default function PODocumentsTab({ purchaseOrderId, constructionId, onDocumentsChange }) {
+export default function PODocumentsTab({ purchaseOrderId, constructionId, scheduleTaskId, onDocumentsChange }) {
   const [documents, setDocuments] = useState([])
   const [selectedDocumentIds, setSelectedDocumentIds] = useState([])
   const [loading, setLoading] = useState(true)
@@ -21,6 +21,7 @@ export default function PODocumentsTab({ purchaseOrderId, constructionId, onDocu
   const [successMessage, setSuccessMessage] = useState(null)
   const [groupedDocuments, setGroupedDocuments] = useState({})
   const [activeCategory, setActiveCategory] = useState('site-plan')
+  const [scheduleTask, setScheduleTask] = useState(null)
 
   const categories = [
     { id: 'site-plan', label: 'Site' },
@@ -35,7 +36,19 @@ export default function PODocumentsTab({ purchaseOrderId, constructionId, onDocu
 
   useEffect(() => {
     loadAvailableDocuments()
-  }, [purchaseOrderId])
+    if (scheduleTaskId) {
+      loadScheduleTask()
+    }
+  }, [purchaseOrderId, scheduleTaskId])
+
+  const loadScheduleTask = async () => {
+    try {
+      const response = await api.get(`/api/v1/schedule_tasks/${scheduleTaskId}`)
+      setScheduleTask(response)
+    } catch (err) {
+      console.error('Failed to load schedule task:', err)
+    }
+  }
 
   const loadAvailableDocuments = async () => {
     try {
@@ -144,7 +157,8 @@ export default function PODocumentsTab({ purchaseOrderId, constructionId, onDocu
 
   const activeCategoryDocs = groupedDocuments[activeCategory] || []
   const getCategoryCount = (categoryId) => {
-    return (groupedDocuments[categoryId] || []).length
+    const categoryDocs = groupedDocuments[categoryId] || []
+    return categoryDocs.filter(doc => selectedDocumentIds.includes(doc.id)).length
   }
 
   if (loading) {

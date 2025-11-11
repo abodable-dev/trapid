@@ -650,6 +650,7 @@ export default function PurchaseOrderEditPage() {
             <PODocumentsTab
               purchaseOrderId={id}
               constructionId={purchaseOrder?.construction_id}
+              scheduleTaskId={selectedScheduleTaskId}
               onDocumentsChange={(selectedDocIds) => {
                 console.log('Documents updated:', selectedDocIds)
               }}

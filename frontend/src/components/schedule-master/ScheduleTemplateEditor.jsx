@@ -61,7 +61,9 @@ const defaultColumnConfig = {
   supCheck: { visible: true, width: 120, label: 'Sup Check', order: 12 },
   autoComplete: { visible: true, width: 80, label: 'Auto ✓', order: 13 },
   subtasks: { visible: true, width: 120, label: 'Subtasks', order: 14 },
-  actions: { visible: true, width: 80, label: 'Actions', order: 15 }
+  linkedTasks: { visible: true, width: 120, label: 'Linked Tasks', order: 15 },
+  linkedTemplate: { visible: true, width: 150, label: 'Linked Template', order: 16 },
+  actions: { visible: true, width: 80, label: 'Actions', order: 17 }
 }
 
 export default function ScheduleTemplateEditor() {
@@ -226,6 +228,8 @@ export default function ScheduleTemplateEditor() {
       has_subtasks: false,
       subtask_count: 0,
       subtask_names: [],
+      linked_task_ids: [],
+      linked_template_id: null,
       sequence_order: rows.length
     }
 
@@ -436,7 +440,9 @@ export default function ScheduleTemplateEditor() {
     certLag: "Number of days after task completion when the certificate is due. Default is 10 days.",
     supCheck: "Require a supervisor to check in on this task. Supervisor will get a prompt to visit the site and verify quality.",
     autoComplete: "Automatically mark all predecessor tasks as complete when this task is completed. Useful for cleanup or milestone tasks.",
-    subtasks: "Automatically create subtasks when this task starts. Useful for breaking down complex tasks into smaller steps."
+    subtasks: "Automatically create subtasks when this task starts. Useful for breaking down complex tasks into smaller steps.",
+    linkedTasks: "Link this task to other tasks in the schedule. Useful for grouping related tasks or creating task dependencies across templates.",
+    linkedTemplate: "Attach an entire schedule template to this task. The linked template will be automatically instantiated when this task is created in a job."
   }
 
   // Handle column filter change
@@ -988,6 +994,8 @@ function ScheduleTemplateRow({
   const [showPriceItemsModal, setShowPriceItemsModal] = useState(false)
   const [showDocTabsModal, setShowDocTabsModal] = useState(false)
   const [showChecklistModal, setShowChecklistModal] = useState(false)
+  const [showLinkedTasksModal, setShowLinkedTasksModal] = useState(false)
+  const [showLinkedTemplateModal, setShowLinkedTemplateModal] = useState(false)
 
   // Debounced update for text fields
   const handleTextChange = (field, value) => {
