@@ -67,7 +67,8 @@ module Api
           :description,
           :category,
           :sequence_order,
-          :is_active
+          :is_active,
+          :response_type
         )
       end
     end

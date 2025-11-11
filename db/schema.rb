@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_040404) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_040948) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -582,6 +582,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_040404) do
     t.integer "sequence_order", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "response_type"
+    t.text "response_note"
+    t.string "response_photo_url"
     t.index ["is_completed"], name: "index_project_task_checklist_items_on_is_completed"
     t.index ["project_task_id", "sequence_order"], name: "idx_on_project_task_id_sequence_order_cc3d531d29"
     t.index ["project_task_id"], name: "index_project_task_checklist_items_on_project_task_id"
@@ -747,6 +750,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_040404) do
     t.integer "sequence_order", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "response_type"
+    t.text "response_note"
+    t.string "response_photo_url"
     t.index ["is_completed"], name: "index_schedule_task_checklist_items_on_is_completed"
     t.index ["schedule_task_id", "sequence_order"], name: "idx_on_schedule_task_id_sequence_order_bbbbb75501"
     t.index ["schedule_task_id"], name: "index_schedule_task_checklist_items_on_schedule_task_id"
@@ -955,6 +961,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_040404) do
     t.boolean "is_active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "response_type"
     t.index ["category"], name: "index_supervisor_checklist_templates_on_category"
     t.index ["name"], name: "index_supervisor_checklist_templates_on_name", unique: true
     t.index ["sequence_order"], name: "index_supervisor_checklist_templates_on_sequence_order"
@@ -1632,6 +1639,53 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_040404) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "workflow_definitions", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.string "workflow_type", null: false
+    t.jsonb "config", default: {}, null: false
+    t.boolean "active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_workflow_definitions_on_active"
+    t.index ["workflow_type"], name: "index_workflow_definitions_on_workflow_type"
+  end
+
+  create_table "workflow_instances", force: :cascade do |t|
+    t.bigint "workflow_definition_id", null: false
+    t.string "subject_type", null: false
+    t.bigint "subject_id", null: false
+    t.string "status", default: "pending", null: false
+    t.string "current_step"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status"], name: "index_workflow_instances_on_status"
+    t.index ["subject_type", "subject_id"], name: "index_workflow_instances_on_subject"
+    t.index ["subject_type", "subject_id"], name: "index_workflow_instances_on_subject_type_and_subject_id"
+    t.index ["workflow_definition_id"], name: "index_workflow_instances_on_workflow_definition_id"
+  end
+
+  create_table "workflow_steps", force: :cascade do |t|
+    t.bigint "workflow_instance_id", null: false
+    t.string "step_name", null: false
+    t.string "status", default: "pending", null: false
+    t.string "assigned_to_type"
+    t.bigint "assigned_to_id"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.jsonb "data", default: {}
+    t.text "comment"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_to_type", "assigned_to_id"], name: "index_workflow_steps_on_assigned_to"
+    t.index ["assigned_to_type", "assigned_to_id"], name: "index_workflow_steps_on_assigned_to_type_and_assigned_to_id"
+    t.index ["status"], name: "index_workflow_steps_on_status"
+    t.index ["workflow_instance_id"], name: "index_workflow_steps_on_workflow_instance_id"
+  end
+
   create_table "xero_accounts", force: :cascade do |t|
     t.string "code", null: false
     t.string "name", null: false
@@ -1735,4 +1789,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_040404) do
   add_foreign_key "task_dependencies", "project_tasks", column: "successor_task_id"
   add_foreign_key "task_updates", "project_tasks"
   add_foreign_key "task_updates", "users"
+  add_foreign_key "workflow_instances", "workflow_definitions"
+  add_foreign_key "workflow_steps", "workflow_instances"
 end
