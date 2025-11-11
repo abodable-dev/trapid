@@ -74,7 +74,7 @@ export default function DocumentCategoryTabs({ jobId, onCategoryChange, children
               }
             >
               <div className="flex items-center gap-2">
-                {category.name}
+                {category.name} ({category.document_count || 0})
               </div>
             </Tab>
           ))}

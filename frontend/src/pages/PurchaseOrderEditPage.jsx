@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { api } from '../api'
 import { ArrowLeftIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../utils/formatters'
@@ -13,6 +13,7 @@ function classNames(...classes) {
 export default function PurchaseOrderEditPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -25,12 +26,12 @@ export default function PurchaseOrderEditPage() {
   const [allSupplierItems, setAllSupplierItems] = useState([])
   const [scheduleTasks, setScheduleTasks] = useState([])
   const [selectedScheduleTaskId, setSelectedScheduleTaskId] = useState(null)
-  const [activeTab, setActiveTab] = useState('Line Items')
   const searchRefs = useRef({})
   const inputRefs = useRef({})
   const dropdownRefs = useRef({})
 
   const tabs = ['Line Items', 'Documents']
+  const activeTab = searchParams.get('tab') || 'Line Items'
 
   useEffect(() => {
     loadPurchaseOrder()
@@ -399,7 +400,7 @@ export default function PurchaseOrderEditPage() {
                 {tabs.map((tab) => (
                   <button
                     key={tab}
-                    onClick={() => setActiveTab(tab)}
+                    onClick={() => setSearchParams({ tab })}
                     type="button"
                     className={classNames(
                       activeTab === tab
