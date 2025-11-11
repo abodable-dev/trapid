@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useLocation } from 'react-router-dom'
 import {
   PlusIcon, TrashIcon, PencilIcon, DocumentDuplicateIcon,
   CheckIcon, ArrowUpIcon, ArrowDownIcon, InformationCircleIcon,
@@ -12,7 +13,6 @@ import Toast from '../Toast'
 import * as XLSX from 'xlsx'
 import PredecessorEditor from './PredecessorEditor'
 import PriceBookItemsModal from './PriceBookItemsModal'
-import DocumentationTabsModal from './DocumentationTabsModal'
 import SupervisorChecklistModal from './SupervisorChecklistModal'
 import LinkedTasksModal from './LinkedTasksModal'
 import AutoCompleteTasksModal from './AutoCompleteTasksModal'
@@ -88,29 +88,30 @@ const defaultColumnConfig = {
   poRequired: { visible: true, width: 80, label: 'PO Req', order: 5 },
   autoPo: { visible: true, width: 80, label: 'Auto PO', order: 6 },
   priceItems: { visible: true, width: 120, label: 'Price Items', order: 7 },
-  docTabs: { visible: true, width: 100, label: 'Doc Tabs', order: 8 },
-  critical: { visible: true, width: 80, label: 'Critical', order: 9 },
-  tags: { visible: true, width: 100, label: 'Tags', order: 10 },
-  photo: { visible: true, width: 80, label: 'Photo', order: 11 },
-  cert: { visible: true, width: 80, label: 'Cert', order: 12 },
-  certLag: { visible: true, width: 80, label: 'Cert Lag', order: 13 },
-  supCheck: { visible: true, width: 120, label: 'Sup Check', order: 14 },
-  autoComplete: { visible: true, width: 120, label: 'Auto Complete', order: 15 },
-  subtasks: { visible: true, width: 120, label: 'Subtasks', order: 16 },
-  linkedTasks: { visible: true, width: 120, label: 'Linked Tasks', order: 17 },
-  manualTask: { visible: true, width: 80, label: 'Manual', order: 18 },
-  multipleItems: { visible: true, width: 80, label: 'Multi', order: 19 },
-  orderRequired: { visible: true, width: 100, label: 'Order Time', order: 20 },
-  callUpRequired: { visible: true, width: 100, label: 'Call Up', order: 21 },
-  planType: { visible: true, width: 80, label: 'Plan', order: 22 },
-  actions: { visible: true, width: 80, label: 'Actions', order: 23 }
+  critical: { visible: true, width: 80, label: 'Critical', order: 8 },
+  tags: { visible: true, width: 100, label: 'Tags', order: 9 },
+  photo: { visible: true, width: 80, label: 'Photo', order: 10 },
+  cert: { visible: true, width: 80, label: 'Cert', order: 11 },
+  certLag: { visible: true, width: 80, label: 'Cert Lag', order: 12 },
+  supCheck: { visible: true, width: 120, label: 'Sup Check', order: 13 },
+  autoComplete: { visible: true, width: 120, label: 'Auto Complete', order: 14 },
+  subtasks: { visible: true, width: 120, label: 'Subtasks', order: 15 },
+  linkedTasks: { visible: true, width: 120, label: 'Linked Tasks', order: 16 },
+  manualTask: { visible: true, width: 80, label: 'Manual', order: 17 },
+  multipleItems: { visible: true, width: 80, label: 'Multi', order: 18 },
+  orderRequired: { visible: true, width: 100, label: 'Order Time', order: 19 },
+  callUpRequired: { visible: true, width: 100, label: 'Call Up', order: 20 },
+  planType: { visible: true, width: 80, label: 'Plan', order: 21 },
+  actions: { visible: true, width: 80, label: 'Actions', order: 100 }
 }
 
 export default function ScheduleTemplateEditor() {
+  const location = useLocation()
   const [templates, setTemplates] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [rows, setRows] = useState([])
   const [suppliers, setSuppliers] = useState([])
+  const [documentationCategories, setDocumentationCategories] = useState([])
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState(null)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
@@ -120,6 +121,7 @@ export default function ScheduleTemplateEditor() {
   const [columnFilters, setColumnFilters] = useState({})
   const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false)
   const [showGanttView, setShowGanttView] = useState(false)
+  const hasCollapsedOnLoad = useRef(false)
 
   // Column resize state
   const [resizingColumn, setResizingColumn] = useState(null)
@@ -141,6 +143,7 @@ export default function ScheduleTemplateEditor() {
         const parsed = JSON.parse(saved)
         // Remove deprecated columns
         delete parsed.linkedTemplate
+        delete parsed.docTabs // Remove old docTabs column
 
         // Merge with defaults to ensure all columns have required properties
         // Always use the label from defaultColumnConfig to allow updates
@@ -165,10 +168,69 @@ export default function ScheduleTemplateEditor() {
     return defaultColumnConfig
   })
 
+  // Update column config when documentation categories are loaded
+  useEffect(() => {
+    if (documentationCategories.length > 0) {
+      setColumnConfig(prev => {
+        const newConfig = { ...prev }
+
+        // Remove the old docTabs column
+        delete newConfig.docTabs
+
+        // Define the base order for doc tab columns (after planType, before actions)
+        const DOC_TABS_START_ORDER = 50
+        const ACTIONS_ORDER = 100
+
+        // Add a column for each documentation category
+        documentationCategories.forEach((category, index) => {
+          const key = `docTab_${category.id}`
+          if (!newConfig[key]) {
+            newConfig[key] = {
+              visible: true,
+              width: 80,
+              label: category.name,
+              order: DOC_TABS_START_ORDER + index,
+              categoryId: category.id,
+              categoryColor: category.color,
+              isDocTabColumn: true // Flag to identify doc tab columns
+            }
+          } else {
+            // Update label and order in case category name changed
+            newConfig[key].label = category.name
+            newConfig[key].categoryColor = category.color
+            newConfig[key].order = DOC_TABS_START_ORDER + index
+            newConfig[key].isDocTabColumn = true
+          }
+        })
+
+        // Ensure actions column stays at the end
+        if (newConfig.actions) {
+          newConfig.actions.order = ACTIONS_ORDER
+        }
+
+        return newConfig
+      })
+    }
+  }, [documentationCategories])
+
   useEffect(() => {
     loadTemplates()
     loadSuppliers()
+    loadDocumentationCategories()
+
+    // Auto-collapse left panel on initial load for better screen space
+    if (!hasCollapsedOnLoad.current) {
+      setIsLeftPanelCollapsed(true)
+      hasCollapsedOnLoad.current = true
+    }
   }, [])
+
+  // Also collapse when navigating to this tab (location change)
+  useEffect(() => {
+    if (location.pathname === '/settings' && location.search.includes('schedule-master')) {
+      setIsLeftPanelCollapsed(true)
+    }
+  }, [location])
 
   useEffect(() => {
     if (selectedTemplate) {
@@ -208,6 +270,15 @@ export default function ScheduleTemplateEditor() {
       setSuppliers(response.suppliers || [])
     } catch (err) {
       console.error('Failed to load suppliers:', err)
+    }
+  }
+
+  const loadDocumentationCategories = async () => {
+    try {
+      const response = await api.get('/api/v1/documentation_categories')
+      setDocumentationCategories(response.documentation_categories || [])
+    } catch (err) {
+      console.error('Failed to load documentation categories:', err)
     }
   }
 
@@ -528,9 +599,24 @@ export default function ScheduleTemplateEditor() {
     e.dataTransfer.setData('text/plain', columnKey)
   }
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e, targetColumnKey) => {
     e.preventDefault()
     e.stopPropagation()
+
+    // Check if drag is valid
+    if (draggedColumn && targetColumnKey) {
+      const draggedConfig = columnConfig[draggedColumn]
+      const targetConfig = columnConfig[targetColumnKey]
+      const draggedIsDocTab = draggedConfig?.isDocTabColumn || false
+      const targetIsDocTab = targetConfig?.isDocTabColumn || false
+
+      // If trying to move between groups, show "not allowed" cursor
+      if (draggedIsDocTab !== targetIsDocTab) {
+        e.dataTransfer.dropEffect = 'none'
+        return
+      }
+    }
+
     e.dataTransfer.dropEffect = 'move'
   }
 
@@ -548,9 +634,22 @@ export default function ScheduleTemplateEditor() {
       return
     }
 
+    const draggedConfig = columnConfig[draggedColumn]
+    const targetConfig = columnConfig[targetColumnKey]
+
+    // Check if both are doc tab columns or both are not
+    const draggedIsDocTab = draggedConfig?.isDocTabColumn || false
+    const targetIsDocTab = targetConfig?.isDocTabColumn || false
+
+    // Prevent moving doc tab columns outside their group
+    if (draggedIsDocTab !== targetIsDocTab) {
+      setDraggedColumn(null)
+      return
+    }
+
     // Get current orders
-    const draggedOrder = columnConfig[draggedColumn].order
-    const targetOrder = columnConfig[targetColumnKey].order
+    const draggedOrder = draggedConfig.order
+    const targetOrder = targetConfig.order
 
     // Create new config with swapped orders
     const newConfig = { ...columnConfig }
@@ -634,7 +733,6 @@ export default function ScheduleTemplateEditor() {
     poRequired: "Check if this task requires a purchase order. This tracks whether a PO is needed, but doesn't automatically create one.",
     autoPo: "Automatically create and send a purchase order to the supplier when the job starts. Requires a supplier to be selected.",
     priceItems: "Link price book items to this task. These items will be included in the auto-generated purchase order.",
-    docTabs: "Assign this task to one or more documentation tabs. Helps organize tasks by trade or category (e.g., 'Electrical', 'Plumbing', 'Structural').",
     critical: "Mark this PO as critical priority. Critical POs will be highlighted and require immediate attention.",
     tags: "Add tags to categorize and filter tasks (e.g., 'electrical', 'foundation', 'inspection'). Useful for filtering views by trade.",
     photo: "Automatically spawn a photo task when this task is completed. Use for tasks that need photo documentation.",
@@ -765,7 +863,14 @@ export default function ScheduleTemplateEditor() {
             bVal = b.subtask_count || 0
             break
           default:
-            return 0
+            // Handle dynamic doc category columns
+            if (sortBy.startsWith('docTab_')) {
+              const categoryId = columnConfig[sortBy]?.categoryId
+              aVal = a.documentation_category_ids?.includes(categoryId) ? 1 : 0
+              bVal = b.documentation_category_ids?.includes(categoryId) ? 1 : 0
+            } else {
+              return 0
+            }
         }
 
         // String comparison
@@ -804,87 +909,65 @@ export default function ScheduleTemplateEditor() {
         </button>
       </div>
 
-      {/* Template Selector with Collapse Button */}
+      {/* Template Selector */}
       <div className="mb-4 flex items-center gap-2">
-        <button
-          onClick={() => setIsLeftPanelCollapsed(!isLeftPanelCollapsed)}
-          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-          title={isLeftPanelCollapsed ? "Show template selector" : "Hide template selector"}
+        <select
+          value={selectedTemplate?.id || ''}
+          onChange={(e) => {
+            const template = templates.find(t => t.id === parseInt(e.target.value))
+            setSelectedTemplate(template)
+          }}
+          className="flex-1 max-w-md px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
         >
-          {isLeftPanelCollapsed ? (
-            <ChevronDownIcon className="h-5 w-5" />
-          ) : (
-            <ChevronUpIcon className="h-5 w-5" />
-          )}
-        </button>
+          {templates.map((template) => (
+            <option key={template.id} value={template.id}>
+              {template.name} {template.is_default ? '(Default)' : ''}
+            </option>
+          ))}
+        </select>
 
-        {!isLeftPanelCollapsed && (
+        {selectedTemplate && (
           <>
-            <select
-              value={selectedTemplate?.id || ''}
-              onChange={(e) => {
-                const template = templates.find(t => t.id === parseInt(e.target.value))
-                setSelectedTemplate(template)
-              }}
-              className="flex-1 max-w-md px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-900 dark:text-white"
+            <button
+              onClick={handleDuplicateTemplate}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+              title="Duplicate Template"
             >
-              {templates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.name} {template.is_default ? '(Default)' : ''}
-                </option>
-              ))}
-            </select>
-
-            {selectedTemplate && (
-              <>
-                <button
-                  onClick={handleDuplicateTemplate}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                  title="Duplicate Template"
-                >
-                  <DocumentDuplicateIcon className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={handleExportToExcel}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-                  title="Export to Excel"
-                >
-                  <ArrowDownTrayIcon className="h-5 w-5" />
-                </button>
-                <label className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" title="Import from Excel">
-                  <ArrowUpTrayIcon className="h-5 w-5" />
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleImportFromExcel}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  onClick={() => setShowGanttView(true)}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400"
-                  title="View Gantt Chart"
-                >
-                  <ChartBarIcon className="h-5 w-5" />
-                </button>
-                {!selectedTemplate.is_default && (
-                  <button
-                    onClick={handleSetAsDefault}
-                    className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400"
-                    title="Set as Default"
-                  >
-                    <CheckIcon className="h-5 w-5" />
-                  </button>
-                )}
-              </>
+              <DocumentDuplicateIcon className="h-5 w-5" />
+            </button>
+            <button
+              onClick={handleExportToExcel}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+              title="Export to Excel"
+            >
+              <ArrowDownTrayIcon className="h-5 w-5" />
+            </button>
+            <label className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" title="Import from Excel">
+              <ArrowUpTrayIcon className="h-5 w-5" />
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleImportFromExcel}
+                className="hidden"
+              />
+            </label>
+            <button
+              onClick={() => setShowGanttView(true)}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400"
+              title="View Gantt Chart"
+            >
+              <ChartBarIcon className="h-5 w-5" />
+            </button>
+            {!selectedTemplate.is_default && (
+              <button
+                onClick={handleSetAsDefault}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400"
+                title="Set as Default"
+              >
+                <CheckIcon className="h-5 w-5" />
+              </button>
             )}
           </>
-        )}
-
-        {isLeftPanelCollapsed && selectedTemplate && (
-          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-            {selectedTemplate.name}
-          </span>
         )}
       </div>
 
@@ -919,6 +1002,46 @@ export default function ScheduleTemplateEditor() {
               <Cog6ToothIcon className="h-4 w-4 mr-2" />
               Columns
             </button>
+
+            {/* Quick Toggle Doc Tabs Button */}
+            {documentationCategories.length > 0 && (
+              <button
+                onClick={() => {
+                  const docTabColumns = Object.keys(columnConfig).filter(key => key.startsWith('docTab_'))
+                  const allHidden = docTabColumns.every(key => !columnConfig[key]?.visible)
+
+                  const newConfig = { ...columnConfig }
+                  docTabColumns.forEach(key => {
+                    newConfig[key] = { ...newConfig[key], visible: allHidden }
+                  })
+
+                  setColumnConfig(newConfig)
+                  localStorage.setItem('scheduleTemplateColumnConfig', JSON.stringify(newConfig))
+                }}
+                className="inline-flex items-center px-3 py-1.5 border border-blue-300 dark:border-blue-600 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                title={(() => {
+                  const docTabColumns = Object.keys(columnConfig).filter(key => key.startsWith('docTab_'))
+                  const allHidden = docTabColumns.every(key => !columnConfig[key]?.visible)
+                  return allHidden ? 'Show Documentation Tabs' : 'Hide Documentation Tabs'
+                })()}
+              >
+                {(() => {
+                  const docTabColumns = Object.keys(columnConfig).filter(key => key.startsWith('docTab_'))
+                  const allHidden = docTabColumns.every(key => !columnConfig[key]?.visible)
+                  return allHidden ? (
+                    <>
+                      <EyeIcon className="h-4 w-4 mr-1.5" />
+                      <span>SDT</span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeSlashIcon className="h-4 w-4 mr-1.5" />
+                      <span>HDT</span>
+                    </>
+                  )
+                })()}
+              </button>
+            )}
           </div>
 
           {/* Column Settings Panel - Simple toggle interface */}
@@ -940,71 +1063,167 @@ export default function ScheduleTemplateEditor() {
                   Reset to Defaults
                 </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {getSortedColumns().map(([key, config]) => {
-                  // Don't show sequence and actions in settings (always visible)
-                  if (key === 'sequence' || key === 'actions') return null
+              <div className="space-y-4">
+                {/* Standard columns */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+                    Standard Columns
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {getSortedColumns().map(([key, config]) => {
+                      // Don't show sequence and actions in settings (always visible)
+                      if (key === 'sequence' || key === 'actions') return null
+                      // Skip doc tab columns - they're shown in their own section
+                      if (key.startsWith('docTab_')) return null
 
-                  return (
-                    <div
-                      key={key}
-                      draggable="true"
-                      onDragStart={(e) => handleDragStart(e, key)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={handleDragOver}
-                      onDragEnter={handleDragEnter}
-                      onDrop={(e) => handleDrop(e, key)}
-                      className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all bg-white dark:bg-gray-800 cursor-move ${
-                        draggedColumn === key
-                          ? 'opacity-50 scale-95 border-2 border-indigo-500'
-                          : 'border-2 border-transparent'
-                      }`}
-                    >
-                      {/* Drag handle icon */}
-                      <svg
-                        className="h-5 w-5 text-gray-400 flex-shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                      </svg>
-
-                      {/* Eye icon */}
-                      <div className="flex-shrink-0">
-                        {config.visible ? (
-                          <EyeIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                        ) : (
-                          <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                        )}
-                      </div>
-
-                      {/* Column label */}
-                      <span className="text-sm font-medium text-gray-900 dark:text-white flex-1 min-w-0">
-                        {config.label}
-                      </span>
-
-                      {/* Toggle switch */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleColumnVisibilityChange(key, !config.visible)
-                        }}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex-shrink-0 ${
-                          config.visible
-                            ? 'bg-indigo-600'
-                            : 'bg-gray-200 dark:bg-gray-700'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            config.visible ? 'translate-x-6' : 'translate-x-1'
+                      return (
+                        <div
+                          key={key}
+                          draggable="true"
+                          onDragStart={(e) => handleDragStart(e, key)}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={(e) => handleDragOver(e, key)}
+                          onDragEnter={handleDragEnter}
+                          onDrop={(e) => handleDrop(e, key)}
+                          className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all bg-white dark:bg-gray-800 cursor-move ${
+                            draggedColumn === key
+                              ? 'opacity-50 scale-95 border-2 border-indigo-500'
+                              : 'border-2 border-transparent'
                           }`}
-                        />
-                      </button>
+                        >
+                          {/* Drag handle icon */}
+                          <svg
+                            className="h-5 w-5 text-gray-400 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                          </svg>
+
+                          {/* Eye icon */}
+                          <div className="flex-shrink-0">
+                            {config.visible ? (
+                              <EyeIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                            ) : (
+                              <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                            )}
+                          </div>
+
+                          {/* Column label */}
+                          <span className="text-sm font-medium text-gray-900 dark:text-white flex-1 min-w-0">
+                            {config.label}
+                          </span>
+
+                          {/* Toggle switch */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleColumnVisibilityChange(key, !config.visible)
+                            }}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex-shrink-0 ${
+                              config.visible
+                                ? 'bg-indigo-600'
+                                : 'bg-gray-200 dark:bg-gray-700'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                config.visible ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Documentation category columns */}
+                {documentationCategories.length > 0 && (
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                        Documentation Tabs
+                      </h4>
+                      <span className="text-xs text-blue-600 dark:text-blue-400">
+                        Grouped together • Can only reorder within this section
+                      </span>
                     </div>
-                  )
-                })}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {getSortedColumns().map(([key, config]) => {
+                        if (!key.startsWith('docTab_')) return null
+
+                        return (
+                          <div
+                            key={key}
+                            draggable="true"
+                            onDragStart={(e) => handleDragStart(e, key)}
+                            onDragEnd={handleDragEnd}
+                            onDragOver={(e) => handleDragOver(e, key)}
+                            onDragEnter={handleDragEnter}
+                            onDrop={(e) => handleDrop(e, key)}
+                            className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all bg-white dark:bg-gray-800 cursor-move ${
+                              draggedColumn === key
+                                ? 'opacity-50 scale-95 border-2 border-indigo-500'
+                                : 'border-2 border-transparent'
+                            }`}
+                          >
+                            {/* Drag handle icon */}
+                            <svg
+                              className="h-5 w-5 text-gray-400 flex-shrink-0"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                            </svg>
+
+                            {/* Eye icon or color swatch */}
+                            <div className="flex-shrink-0">
+                              {config.visible ? (
+                                config.categoryColor ? (
+                                  <div
+                                    className="w-5 h-5 rounded border-2 border-gray-300 dark:border-gray-600"
+                                    style={{ backgroundColor: config.categoryColor }}
+                                  />
+                                ) : (
+                                  <EyeIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                                )
+                              ) : (
+                                <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                              )}
+                            </div>
+
+                            {/* Column label */}
+                            <span className="text-sm font-medium text-gray-900 dark:text-white flex-1 min-w-0">
+                              {config.label}
+                            </span>
+
+                            {/* Toggle switch */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleColumnVisibilityChange(key, !config.visible)
+                              }}
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 flex-shrink-0 ${
+                                config.visible
+                                  ? 'bg-indigo-600'
+                                  : 'bg-gray-200 dark:bg-gray-700'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                  config.visible ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                              />
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1027,7 +1246,7 @@ export default function ScheduleTemplateEditor() {
                       key={key}
                       style={{ width: `${config.width}px`, minWidth: `${config.width}px`, position: 'relative' }}
                       className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left ${draggedColumn === key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
-                      onDragOver={handleDragOver}
+                      onDragOver={(e) => handleDragOver(e, key)}
                       onDrop={(e) => handleDrop(e, key)}
                     >
                       <div className="flex items-center gap-2">
@@ -1260,7 +1479,6 @@ function ScheduleTemplateRow({
   const updateTimeoutRef = useRef(null)
   const [showPredecessorEditor, setShowPredecessorEditor] = useState(false)
   const [showPriceItemsModal, setShowPriceItemsModal] = useState(false)
-  const [showDocTabsModal, setShowDocTabsModal] = useState(false)
   const [showChecklistModal, setShowChecklistModal] = useState(false)
   const [showLinkedTasksModal, setShowLinkedTasksModal] = useState(false)
   const [showAutoCompleteModal, setShowAutoCompleteModal] = useState(false)
@@ -1469,17 +1687,8 @@ function ScheduleTemplateRow({
         )
 
       case 'docTabs':
-        return (
-          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
-            <button
-              onClick={handleOpenDocTabsModal}
-              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
-              title="Click to assign documentation tabs"
-            >
-              {row.documentation_category_ids?.length || 0} tabs
-            </button>
-          </td>
-        )
+        // This column has been replaced by individual doc category columns
+        return null
 
       case 'critical':
         return (
@@ -1687,6 +1896,38 @@ function ScheduleTemplateRow({
         )
 
       default:
+        // Handle dynamic documentation category columns
+        if (key.startsWith('docTab_')) {
+          const categoryId = config.categoryId
+          const isChecked = row.documentation_category_ids?.includes(categoryId) || false
+
+          return (
+            <td
+              key={key}
+              style={{
+                width: `${cellWidth}px`,
+                minWidth: `${cellWidth}px`,
+                backgroundColor: config.categoryColor ? `${config.categoryColor}10` : undefined
+              }}
+              className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center"
+            >
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={(e) => {
+                  const currentIds = row.documentation_category_ids || []
+                  const newIds = e.target.checked
+                    ? [...currentIds, categoryId]
+                    : currentIds.filter(id => id !== categoryId)
+                  onUpdate({ documentation_category_ids: newIds })
+                }}
+                className="h-4 w-4 text-indigo-600 rounded cursor-pointer"
+                title={`Toggle ${config.label}`}
+              />
+            </td>
+          )
+        }
+
         return (
           <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
             -
@@ -1703,15 +1944,6 @@ function ScheduleTemplateRow({
   // Handler for saving price book items
   const handleSavePriceItems = (itemIds) => {
     onUpdate({ price_book_item_ids: itemIds })
-  }
-
-  // Handler for saving documentation tabs
-  const handleSaveDocTabs = (tabIds) => {
-    onUpdate({ documentation_category_ids: tabIds })
-  }
-
-  const handleOpenDocTabsModal = () => {
-    setShowDocTabsModal(true)
   }
 
   // Handler for saving supervisor checklist templates
@@ -1763,16 +1995,6 @@ function ScheduleTemplateRow({
           onClose={() => setShowPriceItemsModal(false)}
           currentRow={row}
           onSave={handleSavePriceItems}
-        />,
-        document.body
-      )}
-
-      {showDocTabsModal && typeof document !== 'undefined' && createPortal(
-        <DocumentationTabsModal
-          isOpen={showDocTabsModal}
-          onClose={() => setShowDocTabsModal(false)}
-          currentRow={row}
-          onSave={handleSaveDocTabs}
         />,
         document.body
       )}

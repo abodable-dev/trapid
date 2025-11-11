@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { Gantt, ContextMenu } from '@svar-ui/react-gantt'
+import { useState, useEffect, useMemo } from 'react'
+import { Gantt, ContextMenu, Willow } from '@svar-ui/react-gantt'
 import '@svar-ui/react-gantt/style.css'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
@@ -13,11 +13,13 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
   const [ganttData, setGanttData] = useState({ data: [], links: [] })
   const [publicHolidays, setPublicHolidays] = useState([])
   const [ganttApi, setGanttApi] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   // Fetch public holidays from API
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
+        setIsLoading(true)
         const currentYear = new Date().getFullYear()
         const response = await api.get(`/api/v1/public_holidays/dates?region=QLD&year_start=${currentYear}&year_end=${currentYear + 2}`)
         setPublicHolidays(response.dates || [])
@@ -25,6 +27,8 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
         console.error('Failed to fetch public holidays:', error)
         // Fallback to empty array if fetch fails
         setPublicHolidays([])
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -74,6 +78,19 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
     }
     return ''
   }
+
+  // Memoize columns configuration to prevent re-renders
+  const columns = useMemo(() => [
+    { id: 'taskNumber', header: '#', width: 60, align: 'center' },
+    { id: 'text', header: 'Task Name', width: 250 },
+    { id: 'duration', header: 'Duration', width: 80, align: 'center' }
+  ], [])
+
+  // Memoize scales configuration to prevent re-renders
+  const scales = useMemo(() => [
+    { unit: 'month', step: 1, format: 'MMMM yyyy' },
+    { unit: 'day', step: 1, format: 'd', css: dayStyle }
+  ], [dayStyle])
 
   useEffect(() => {
     if (isOpen && tasks) {
@@ -266,6 +283,119 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
             font-weight: 500;
             padding: 12px 8px;
           }
+
+          /* Enhanced Context Menu Styling */
+          .wx-menu {
+            background: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 0.5rem !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+            padding: 0.5rem !important;
+            min-width: 180px !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+          }
+
+          .wx-menu-item {
+            padding: 0.5rem 0.75rem !important;
+            margin: 0.125rem 0 !important;
+            border-radius: 0.375rem !important;
+            cursor: pointer !important;
+            transition: all 0.15s ease !important;
+            font-size: 0.875rem !important;
+            line-height: 1.25rem !important;
+            color: #374151 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+          }
+
+          .wx-menu-item:hover {
+            background-color: #f3f4f6 !important;
+            color: #111827 !important;
+          }
+
+          .wx-menu-item:active {
+            background-color: #e5e7eb !important;
+          }
+
+          .wx-menu-item[disabled] {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+          }
+
+          .wx-menu-item[disabled]:hover {
+            background-color: transparent !important;
+            color: #374151 !important;
+          }
+
+          /* Menu item icons */
+          .wx-menu-item svg,
+          .wx-menu-item .wx-icon {
+            width: 1rem !important;
+            height: 1rem !important;
+            opacity: 0.7 !important;
+          }
+
+          .wx-menu-item:hover svg,
+          .wx-menu-item:hover .wx-icon {
+            opacity: 1 !important;
+          }
+
+          /* Menu item with keyboard shortcut */
+          .wx-menu-item-hotkey {
+            margin-left: auto !important;
+            font-size: 0.75rem !important;
+            color: #9ca3af !important;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+          }
+
+          /* Submenu arrow */
+          .wx-menu-item-arrow {
+            margin-left: auto !important;
+            opacity: 0.5 !important;
+          }
+
+          /* Menu separator */
+          .wx-menu-separator {
+            height: 1px !important;
+            background-color: #e5e7eb !important;
+            margin: 0.375rem 0 !important;
+            border: none !important;
+          }
+
+          /* Dark mode support */
+          @media (prefers-color-scheme: dark) {
+            .wx-menu {
+              background: #1f2937 !important;
+              border-color: #374151 !important;
+              box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+            }
+
+            .wx-menu-item {
+              color: #e5e7eb !important;
+            }
+
+            .wx-menu-item:hover {
+              background-color: #374151 !important;
+              color: #f9fafb !important;
+            }
+
+            .wx-menu-item:active {
+              background-color: #4b5563 !important;
+            }
+
+            .wx-menu-item[disabled] {
+              color: #6b7280 !important;
+            }
+
+            .wx-menu-item-hotkey {
+              color: #6b7280 !important;
+            }
+
+            .wx-menu-separator {
+              background-color: #374151 !important;
+            }
+          }
         `}
       </style>
       <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50" style={{ zIndex: 2147483647 }}>
@@ -288,31 +418,39 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
         {/* Gantt Chart */}
         <div className="flex-1 overflow-hidden">
           <div className="h-full">
-            {ganttData.data.length > 0 && (
-              <ContextMenu api={ganttApi}>
-                <Gantt
-                  init={setGanttApi}
-                  tasks={ganttData.data}
-                  links={ganttData.links}
-                  scales={[
-                    { unit: 'month', step: 1, format: 'MMMM yyyy' },
-                    { unit: 'day', step: 1, format: 'd', css: dayStyle }
-                  ]}
-                  columns={[
-                    { id: 'taskNumber', header: '#', width: 60, align: 'center' },
-                    { id: 'text', header: 'Task Name', width: 250 },
-                    { id: 'duration', header: 'Duration', width: 80, align: 'center' }
-                  ]}
-                  cellHeight={44}
-                  readonly={false}
-                  onAdd={handleLinkAdd}
-                  onUpdate={(task) => {
-                    // Handle task updates if needed
-                    console.log('Task updated:', task)
-                  }}
-                  onDelete={handleLinkDelete}
-                />
-              </ContextMenu>
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading Gantt chart...</p>
+                </div>
+              </div>
+            ) : ganttData.data.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <p className="text-gray-500 dark:text-gray-400">No tasks available</p>
+                </div>
+              </div>
+            ) : (
+              <Willow>
+                <ContextMenu api={ganttApi}>
+                  <Gantt
+                    init={setGanttApi}
+                    tasks={ganttData.data}
+                    links={ganttData.links}
+                    scales={scales}
+                    columns={columns}
+                    cellHeight={44}
+                    readonly={false}
+                    onAdd={handleLinkAdd}
+                    onUpdate={(task) => {
+                      // Handle task updates if needed
+                      console.log('Task updated:', task)
+                    }}
+                    onDelete={handleLinkDelete}
+                  />
+                </ContextMenu>
+              </Willow>
             )}
           </div>
         </div>
