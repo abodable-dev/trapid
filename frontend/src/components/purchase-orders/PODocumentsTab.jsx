@@ -29,7 +29,7 @@ export default function PODocumentsTab({ purchaseOrderId, constructionId, schedu
     { id: 'final-certificate', label: 'Final Certificate' },
     { id: 'certification', label: 'Precon' },
     { id: 'client', label: 'Client' },
-    { id: 'client-photo', label: 'Photo' },
+    { id: 'photo', label: 'Photo' },
     { id: 'client-photo', label: 'Client Photo' },
     { id: 'uncategorized', label: 'Plan' },
   ]
@@ -218,20 +218,20 @@ export default function PODocumentsTab({ purchaseOrderId, constructionId, schedu
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-4" aria-label="Tabs">
-          {Object.keys(groupedDocuments).map((categoryId) => {
-            const count = getCategoryCount(categoryId)
+          {categories.map((category) => {
+            const count = getCategoryCount(category.id)
             return (
               <button
-                key={categoryId}
-                onClick={() => setActiveCategory(categoryId)}
+                key={category.id}
+                onClick={() => setActiveCategory(category.id)}
                 className={classNames(
-                  categoryId === activeCategory
+                  category.id === activeCategory
                     ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 hover:text-gray-700 dark:hover:text-gray-300',
                   'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors'
                 )}
               >
-                {getCategoryLabel(categoryId)} ({count})
+                {category.label} ({count})
               </button>
             )
           })}
