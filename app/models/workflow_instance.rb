@@ -16,6 +16,62 @@ class WorkflowInstance < ApplicationRecord
   # Callbacks
   after_create :initialize_first_step
 
+  # Client/recipient information accessors
+  def client_name
+    metadata&.dig('client_name')
+  end
+
+  def client_name=(value)
+    self.metadata = (metadata || {}).merge('client_name' => value)
+  end
+
+  def client_address
+    metadata&.dig('client_address')
+  end
+
+  def client_address=(value)
+    self.metadata = (metadata || {}).merge('client_address' => value)
+  end
+
+  def client_email
+    metadata&.dig('client_email')
+  end
+
+  def client_email=(value)
+    self.metadata = (metadata || {}).merge('client_email' => value)
+  end
+
+  def client_phone
+    metadata&.dig('client_phone')
+  end
+
+  def client_phone=(value)
+    self.metadata = (metadata || {}).merge('client_phone' => value)
+  end
+
+  # Document attachments (stored as array of URLs/paths in metadata)
+  def attachments
+    metadata&.dig('attachments') || []
+  end
+
+  def add_attachment(url:, filename:, content_type: nil)
+    attachment = {
+      url: url,
+      filename: filename,
+      content_type: content_type,
+      uploaded_at: Time.current.iso8601
+    }
+    current_attachments = attachments
+    self.metadata = (metadata || {}).merge('attachments' => current_attachments + [attachment])
+    save
+  end
+
+  def remove_attachment(url)
+    current_attachments = attachments.reject { |a| a['url'] == url }
+    self.metadata = (metadata || {}).merge('attachments' => current_attachments)
+    save
+  end
+
   def current_step_record
     workflow_steps.find_by(step_name: current_step)
   end
