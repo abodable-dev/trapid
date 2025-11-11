@@ -17,6 +17,7 @@ import {
   CheckCircleIcon,
   XCircleIcon
 } from '@heroicons/react/24/outline'
+import { ShieldCheckIcon } from '@heroicons/react/24/solid'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import ActivityTimeline from '../components/contacts/ActivityTimeline'
 import LinkXeroContactModal from '../components/contacts/LinkXeroContactModal'

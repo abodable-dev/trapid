@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_040948) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_11_054816) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -661,6 +661,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_040948) do
     t.index ["project_manager_id"], name: "index_projects_on_project_manager_id"
     t.index ["start_date", "planned_end_date"], name: "index_projects_on_start_date_and_planned_end_date"
     t.index ["status"], name: "index_projects_on_status"
+  end
+
+  create_table "purchase_order_documents", force: :cascade do |t|
+    t.bigint "purchase_order_id", null: false
+    t.bigint "document_task_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_task_id"], name: "index_purchase_order_documents_on_document_task_id"
+    t.index ["purchase_order_id", "document_task_id"], name: "index_po_documents_on_po_and_document", unique: true
+    t.index ["purchase_order_id"], name: "index_purchase_order_documents_on_purchase_order_id"
   end
 
   create_table "purchase_order_line_items", force: :cascade do |t|
@@ -1766,6 +1776,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_040948) do
   add_foreign_key "project_tasks", "users", column: "supervisor_checked_by_id"
   add_foreign_key "projects", "constructions"
   add_foreign_key "projects", "users", column: "project_manager_id"
+  add_foreign_key "purchase_order_documents", "document_tasks"
+  add_foreign_key "purchase_order_documents", "purchase_orders"
   add_foreign_key "purchase_order_line_items", "pricebook_items"
   add_foreign_key "purchase_order_line_items", "purchase_orders"
   add_foreign_key "purchase_orders", "constructions"

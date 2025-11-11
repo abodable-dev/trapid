@@ -4,6 +4,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { api } from '../api'
 import { ArrowLeftIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../utils/formatters'
+import PODocumentsTab from '../components/purchase-orders/PODocumentsTab'
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(' ')
+}
 
 export default function PurchaseOrderEditPage() {
   const { id } = useParams()
@@ -20,9 +25,12 @@ export default function PurchaseOrderEditPage() {
   const [allSupplierItems, setAllSupplierItems] = useState([])
   const [scheduleTasks, setScheduleTasks] = useState([])
   const [selectedScheduleTaskId, setSelectedScheduleTaskId] = useState(null)
+  const [activeTab, setActiveTab] = useState('Line Items')
   const searchRefs = useRef({})
   const inputRefs = useRef({})
   const dropdownRefs = useRef({})
+
+  const tabs = ['Line Items', 'Documents']
 
   useEffect(() => {
     loadPurchaseOrder()
@@ -383,6 +391,29 @@ export default function PurchaseOrderEditPage() {
               </div>
             </div>
           </div>
+
+          {/* Tabs */}
+          <div className="border-b border-gray-200 dark:border-gray-700">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <nav aria-label="Tabs" className="flex space-x-8 -mb-px">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    type="button"
+                    className={classNames(
+                      activeTab === tab
+                        ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300',
+                      'whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium'
+                    )}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -396,7 +427,10 @@ export default function PurchaseOrderEditPage() {
             </div>
           )}
 
-          {/* Line Items Table */}
+          {/* Line Items Tab Content */}
+          {activeTab === 'Line Items' && (
+            <>
+              {/* Line Items Table */}
           <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-visible">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Line Items</h2>
@@ -590,23 +624,36 @@ export default function PurchaseOrderEditPage() {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(`/purchase-orders/${id}`)}
-              className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-6 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? 'Saving...' : 'Save Purchase Order'}
-            </button>
-          </div>
+              {/* Action Buttons */}
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/purchase-orders/${id}`)}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-6 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? 'Saving...' : 'Save Purchase Order'}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Documents Tab Content */}
+          {activeTab === 'Documents' && (
+            <PODocumentsTab
+              purchaseOrderId={id}
+              constructionId={purchaseOrder?.construction_id}
+              onDocumentsChange={(selectedDocIds) => {
+                console.log('Documents updated:', selectedDocIds)
+              }}
+            />
+          )}
         </form>
       </div>
     </div>
