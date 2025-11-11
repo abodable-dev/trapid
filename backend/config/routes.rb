@@ -34,6 +34,9 @@ Rails.application.routes.draw do
       get 'grok/plans/:id', to: 'grok#show_plan'
       patch 'grok/plans/:id', to: 'grok#update_plan'
 
+      # Git integration
+      get 'git/branch_status', to: 'git#branch_status'
+
       # Health checks
       get 'health/pricebook', to: 'health#pricebook'
       get 'health/pricebook/missing_items', to: 'health#missing_items'

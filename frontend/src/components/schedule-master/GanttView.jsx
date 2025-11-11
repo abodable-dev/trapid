@@ -98,27 +98,26 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
       template: (value, row) => {
         return value || '-'
       }
-    },
-    {
-      id: 'actions',
-      header: 'Actions',
-      width: 80,
-      align: 'center',
-      template: (value, row) => {
-        return `<button class="gantt-edit-btn" data-task-id="${row.id}" title="Edit Dependencies">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px; display: inline;">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-          </svg>
-        </button>`
-      }
     }
   ], [])
+
+  // Function to determine if a date should be styled as a holiday
+  const dayStyle = useCallback((date) => {
+    const dateStr = date.toISOString().split('T')[0]
+
+    // Check if weekend or holiday - return class for identification
+    if (isWeekend(date) || publicHolidays.includes(dateStr)) {
+      return 'weekend-day'
+    }
+
+    return ''
+  }, [publicHolidays])
 
   // Memoize scales configuration to prevent re-renders
   const scales = useMemo(() => [
     { unit: 'month', step: 1, format: 'MMMM yyyy' },
-    { unit: 'day', step: 1, format: 'd' }
-  ], [])
+    { unit: 'day', step: 1, format: 'd', css: dayStyle }
+  ], [dayStyle])
 
   const cellWidth = 30
 
@@ -371,21 +370,110 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
     return () => document.removeEventListener('click', handleEditClick, true)
   }, [tasks, handleTaskClick])
 
+  // Apply weekend styling using overlay divs - only in the chart area, not the header
+  useEffect(() => {
+    if (ganttApi && ganttData.data.length > 0 && ganttData.start) {
+      setTimeout(() => {
+        const ganttElement = document.querySelector('.wx-gantt')
+        if (ganttElement) {
+          // Remove any existing weekend overlays
+          const existingOverlays = ganttElement.querySelectorAll('.weekend-overlay, .holiday-overlay')
+          existingOverlays.forEach(overlay => overlay.remove())
+
+          // Find the day scale row (the second scale row with day numbers)
+          const scaleRows = ganttElement.querySelectorAll('[class*="wx-scale"]')
+          const dayScaleRow = scaleRows[scaleRows.length - 1] // Last scale row is the day scale
+
+          if (!dayScaleRow) return
+
+          // Get all cells in the day scale row
+          const allDayCells = Array.from(dayScaleRow.querySelectorAll('.wx-cell'))
+          console.log('Total day cells:', allDayCells.length)
+
+          // Find cells with weekend-day class
+          const weekendCells = allDayCells.filter(c => c.classList.contains('weekend-day'))
+          console.log('Found weekend/holiday scale cells:', weekendCells.length)
+
+          // Get the header height to position overlay below it
+          const scaleElement = ganttElement.querySelector('[class*="wx-scale"]')
+          const headerHeight = scaleElement ? scaleElement.parentElement.getBoundingClientRect().height : 0
+
+          // Build a map of dates by calculating from the start date
+          const startDate = new Date(ganttData.start)
+
+          // For each weekend/holiday header cell, create an overlay div in the chart area
+          weekendCells.forEach((cell) => {
+            const rect = cell.getBoundingClientRect()
+            const ganttRect = ganttElement.getBoundingClientRect()
+
+            // Find the index of this cell in ALL day cells
+            const cellIndex = allDayCells.indexOf(cell)
+
+            if (cellIndex >= 0) {
+              // Calculate the date for this cell
+              const cellDate = new Date(startDate)
+              cellDate.setDate(cellDate.getDate() + cellIndex)
+              const cellDateStr = cellDate.toISOString().split('T')[0]
+
+              // Check if this is a public holiday (not just a weekend)
+              const isPublicHoliday = publicHolidays.includes(cellDateStr) && !isWeekend(cellDate)
+
+              // Create overlay div
+              const overlay = document.createElement('div')
+              overlay.className = isPublicHoliday ? 'holiday-overlay' : 'weekend-overlay'
+              overlay.style.position = 'absolute'
+              overlay.style.left = `${rect.left - ganttRect.left}px`
+              overlay.style.top = `${headerHeight}px`
+              overlay.style.width = `${rect.width}px`
+              overlay.style.height = `calc(100% - ${headerHeight}px)`
+              overlay.style.backgroundColor = isPublicHoliday ? '#d1d5db' : '#f3f4f6' // Darker grey for holidays
+              overlay.style.opacity = '0.5'
+              overlay.style.pointerEvents = 'none'
+              overlay.style.zIndex = '1'
+
+              ganttElement.appendChild(overlay)
+              console.log(`Created ${isPublicHoliday ? 'holiday' : 'weekend'} overlay for ${cellDateStr} (index ${cellIndex}) at left: ${rect.left - ganttRect.left}px`)
+            }
+          })
+        }
+      }, 1500)
+    }
+  }, [ganttApi, ganttData.data.length, ganttData.start, publicHolidays, isWeekend])
+
   if (!isOpen) return null
 
   return (
     <>
       <style>
         {`
-          /* Holiday highlighting - SVAR Gantt applies wx-holiday class to holiday columns */
-          .wx-gantt .wx-holiday {
-            background-color: #fef3c7 !important;
+          /* Weekend overlay styling - grey columns in chart area only, not header */
+
+          /* Make weekend columns narrower */
+          .wx-cell.weekend-day {
+            width: 20px !important;
+            min-width: 20px !important;
+            max-width: 20px !important;
           }
 
-          @media (prefers-color-scheme: dark) {
-            .wx-gantt .wx-holiday {
-              background-color: #78350f !important;
-            }
+          /* Hide text in weekend cells */
+          .wx-cell.weekend-day {
+            font-size: 0 !important;
+            color: transparent !important;
+            background-color: transparent !important;
+            background: none !important;
+          }
+
+          .wx-cell.weekend-day * {
+            font-size: 0 !important;
+            color: transparent !important;
+            visibility: hidden !important;
+          }
+
+          /* Remove any background from weekend header cells - make them match the header */
+          .wx-scale .wx-cell.weekend-day,
+          [class*="wx-scale"] .wx-cell.weekend-day {
+            background-color: #2c3e50 !important;
+            background: #2c3e50 !important;
           }
 
           /* Match SVAR website styling */
@@ -585,7 +673,7 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
               Gantt Chart <span className="text-sm text-gray-500">(Cell Width: {cellWidth}px)</span>
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Click on the Actions column to edit task dependencies
+              Drag and drop on task bars to create dependency links
             </p>
           </div>
           <button

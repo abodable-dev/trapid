@@ -17,13 +17,14 @@ import UserManagementTab from '../components/settings/UserManagementTab'
 import SupervisorChecklistTab from '../components/settings/SupervisorChecklistTab'
 import WorkflowAdminPage from './WorkflowAdminPage'
 import PublicHolidaysPage from './PublicHolidaysPage'
+import GitBranchVisualization from '../components/settings/GitBranchVisualization'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
   // Map tab names to indices
-  const tabs = ['integrations', 'users', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'deployment']
+  const tabs = ['integrations', 'users', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'git', 'deployment']
 
   // Get initial tab index from URL query parameter
   const getInitialTabIndex = () => {
@@ -261,6 +262,18 @@ export default function SettingsPage() {
                 }`
               }
             >
+              Git Branches
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
               Deployment
             </Tab>
           </TabList>
@@ -339,6 +352,13 @@ export default function SettingsPage() {
           {/* Schema Tab */}
           <TabPanel>
             <SchemaPage />
+          </TabPanel>
+
+          {/* Git Branches Tab */}
+          <TabPanel>
+            <div className="px-4 sm:px-6 lg:px-8 py-10">
+              <GitBranchVisualization />
+            </div>
           </TabPanel>
 
           {/* Deployment Tab */}
