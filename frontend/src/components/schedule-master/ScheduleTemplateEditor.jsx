@@ -359,14 +359,6 @@ export default function ScheduleTemplateEditor() {
       .sort(([, a], [, b]) => a.order - b.order)
   }
 
-  // Generate grid-cols CSS template based on visible columns
-  const getGridTemplate = () => {
-    return getSortedColumns()
-      .filter(([, config]) => config.visible)
-      .map(([, config]) => `${config.width}px`)
-      .join(' ')
-  }
-
   // Column tooltips mapping
   const columnTooltips = {
     taskName: "The name of the task that will appear in the schedule. Be descriptive so builders know exactly what needs to be done.",
@@ -575,69 +567,75 @@ export default function ScheduleTemplateEditor() {
         </div>
       )}
 
-      {/* Dynamic Column Grid */}
+      {/* Dynamic Column Table */}
       {selectedTemplate && (
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
-          <div className="min-w-[2000px]">
-            {/* Header Row */}
-            <div
-              className="grid gap-2 p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300"
-              style={{ gridTemplateColumns: getGridTemplate() }}
-            >
-              {getSortedColumns().map(([key, config]) => {
-                if (!config.visible) return null
+          <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+              <tr>
+                {getSortedColumns().map(([key, config]) => {
+                  if (!config.visible) return null
 
-                if (key === 'sequence') {
-                  return <div key={key}>#</div>
-                } else if (key === 'actions') {
-                  return <div key={key}>Actions</div>
-                } else if (columnTooltips[key]) {
                   return (
-                    <ColumnTooltip
+                    <th
                       key={key}
-                      text={config.label}
-                      tooltip={columnTooltips[key]}
-                    />
+                      style={{ width: `${config.width}px`, minWidth: `${config.width}px`, position: 'relative' }}
+                      className="px-3 py-2 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      {key === 'sequence' ? (
+                        '#'
+                      ) : key === 'actions' ? (
+                        'Actions'
+                      ) : columnTooltips[key] ? (
+                        <ColumnTooltip text={config.label} tooltip={columnTooltips[key]} />
+                      ) : (
+                        config.label
+                      )}
+                    </th>
                   )
-                } else {
-                  return <div key={key}>{config.label}</div>
-                }
-              })}
-            </div>
+                })}
+              </tr>
+            </thead>
 
-            {/* Data Rows */}
-            {loading ? (
-              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                Loading...
-              </div>
-            ) : rows.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                No rows yet. Click "Add Row" to start building your template.
-              </div>
-            ) : filteredRows.length === 0 ? (
-              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                No tasks match your search.
-              </div>
-            ) : (
-              filteredRows.map((row, index) => (
-                <ScheduleTemplateRow
-                  key={row.id}
-                  row={row}
-                  index={rows.findIndex(r => r.id === row.id)}
-                  suppliers={suppliers}
-                  columnConfig={columnConfig}
-                  getSortedColumns={getSortedColumns}
-                  getGridTemplate={getGridTemplate}
-                  onUpdate={(updates) => handleUpdateRow(row.id, updates)}
-                  onDelete={() => handleDeleteRow(row.id)}
-                  onMoveUp={() => handleMoveRow(rows.findIndex(r => r.id === row.id), 'up')}
-                  onMoveDown={() => handleMoveRow(rows.findIndex(r => r.id === row.id), 'down')}
-                  canMoveUp={rows.findIndex(r => r.id === row.id) > 0}
-                  canMoveDown={rows.findIndex(r => r.id === row.id) < rows.length - 1}
-                />
-              ))
-            )}
-          </div>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
+              {loading ? (
+                <tr>
+                  <td colSpan={getSortedColumns().filter(([, c]) => c.visible).length} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                    Loading...
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={getSortedColumns().filter(([, c]) => c.visible).length} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                    No rows yet. Click "Add Row" to start building your template.
+                  </td>
+                </tr>
+              ) : filteredRows.length === 0 ? (
+                <tr>
+                  <td colSpan={getSortedColumns().filter(([, c]) => c.visible).length} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                    No tasks match your search.
+                  </td>
+                </tr>
+              ) : (
+                filteredRows.map((row, index) => (
+                  <ScheduleTemplateRow
+                    key={row.id}
+                    row={row}
+                    index={rows.findIndex(r => r.id === row.id)}
+                    suppliers={suppliers}
+                    columnConfig={columnConfig}
+                    getSortedColumns={getSortedColumns}
+                    onUpdate={(updates) => handleUpdateRow(row.id, updates)}
+                    onDelete={() => handleDeleteRow(row.id)}
+                    onMoveUp={() => handleMoveRow(rows.findIndex(r => r.id === row.id), 'up')}
+                    onMoveDown={() => handleMoveRow(rows.findIndex(r => r.id === row.id), 'down')}
+                    canMoveUp={rows.findIndex(r => r.id === row.id) > 0}
+                    canMoveDown={rows.findIndex(r => r.id === row.id) < rows.length - 1}
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
 
           {/* Add Row Button */}
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
@@ -726,7 +724,7 @@ export default function ScheduleTemplateEditor() {
 
 // Individual row component
 function ScheduleTemplateRow({
-  row, index, suppliers, columnConfig, getSortedColumns, getGridTemplate,
+  row, index, suppliers, columnConfig, getSortedColumns,
   onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown
 }) {
   const [localName, setLocalName] = useState(row.name)
@@ -777,212 +775,234 @@ function ScheduleTemplateRow({
     }
   }
 
-  // Render individual column based on key
-  const renderColumn = (key) => {
+  // Render individual cell based on key
+  const renderCell = (key, config) => {
+    const cellWidth = config.width
+
     switch (key) {
       case 'sequence':
-        return <div key={key} className="text-gray-500 dark:text-gray-400">{index + 1}</div>
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
+            {index + 1}
+          </td>
+        )
 
       case 'taskName':
         return (
-          <input
-            key={key}
-            type="text"
-            value={localName}
-            onChange={(e) => handleTextChange('name', e.target.value)}
-            onFocus={(e) => e.target.select()}
-            className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
-          />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
+            <input
+              type="text"
+              value={localName}
+              onChange={(e) => handleTextChange('name', e.target.value)}
+              onFocus={(e) => e.target.select()}
+              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+            />
+          </td>
         )
 
       case 'supplierGroup':
-        return row.po_required ? (
-          <select
-            key={key}
-            value={row.supplier_id || ''}
-            onChange={(e) => handleFieldChange('supplier_id', e.target.value ? parseInt(e.target.value) : null)}
-            className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
-          >
-            <option value="">Select supplier...</option>
-            {suppliers.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-        ) : (
-          <select
-            key={key}
-            value={row.assigned_role || ''}
-            onChange={(e) => handleFieldChange('assigned_role', e.target.value || null)}
-            className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
-          >
-            <option value="">Assign to group...</option>
-            {ASSIGNABLE_ROLES.map(role => (
-              <option key={role.value} value={role.value}>{role.label}</option>
-            ))}
-          </select>
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
+            {row.po_required ? (
+              <select
+                value={row.supplier_id || ''}
+                onChange={(e) => handleFieldChange('supplier_id', e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+              >
+                <option value="">Select supplier...</option>
+                {suppliers.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            ) : (
+              <select
+                value={row.assigned_role || ''}
+                onChange={(e) => handleFieldChange('assigned_role', e.target.value || null)}
+                className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+              >
+                <option value="">Assign to group...</option>
+                {ASSIGNABLE_ROLES.map(role => (
+                  <option key={role.value} value={role.value}>{role.label}</option>
+                ))}
+              </select>
+            )}
+          </td>
         )
 
       case 'predecessors':
         return (
-          <input
-            key={key}
-            type="text"
-            value={row.predecessor_display || 'None'}
-            readOnly
-            className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm bg-gray-50 dark:bg-gray-800"
-            title="Click to edit predecessors"
-          />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
+            <input
+              type="text"
+              value={row.predecessor_display || 'None'}
+              readOnly
+              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm bg-gray-50 dark:bg-gray-800"
+              title="Click to edit predecessors"
+            />
+          </td>
         )
 
       case 'poRequired':
         return (
-          <input
-            key={key}
-            type="checkbox"
-            checked={row.po_required}
-            onChange={(e) => handleFieldChange('po_required', e.target.checked)}
-            className="mx-auto"
-          />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.po_required}
+              onChange={(e) => handleFieldChange('po_required', e.target.checked)}
+              className="h-4 w-4"
+            />
+          </td>
         )
 
       case 'autoPo':
         return (
-          <input
-            key={key}
-            type="checkbox"
-            checked={row.create_po_on_job_start}
-            onChange={(e) => handleFieldChange('create_po_on_job_start', e.target.checked)}
-            disabled={!row.supplier_id}
-            className="mx-auto disabled:opacity-30"
-          />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.create_po_on_job_start}
+              onChange={(e) => handleFieldChange('create_po_on_job_start', e.target.checked)}
+              disabled={!row.supplier_id}
+              className="h-4 w-4 disabled:opacity-30"
+            />
+          </td>
         )
 
       case 'priceItems':
         return (
-          <div key={key} className="text-xs text-gray-600 dark:text-gray-400 text-center">
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center text-xs text-gray-600 dark:text-gray-400">
             {row.price_book_item_ids?.length || 0} items
-          </div>
+          </td>
         )
 
       case 'critical':
         return (
-          <input
-            key={key}
-            type="checkbox"
-            checked={row.critical_po}
-            onChange={(e) => handleFieldChange('critical_po', e.target.checked)}
-            className="mx-auto"
-          />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.critical_po}
+              onChange={(e) => handleFieldChange('critical_po', e.target.checked)}
+              className="h-4 w-4"
+            />
+          </td>
         )
 
       case 'tags':
         return (
-          <input
-            key={key}
-            type="text"
-            value={row.tags?.join(', ') || ''}
-            onChange={(e) => handleFieldChange('tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
-            placeholder="tag1, tag2"
-            className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
-          />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
+            <input
+              type="text"
+              value={row.tags?.join(', ') || ''}
+              onChange={(e) => handleFieldChange('tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
+              placeholder="tag1, tag2"
+              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
+            />
+          </td>
         )
 
       case 'photo':
         return (
-          <input
-            key={key}
-            type="checkbox"
-            checked={row.require_photo}
-            onChange={(e) => handleFieldChange('require_photo', e.target.checked)}
-            className="mx-auto"
-          />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.require_photo}
+              onChange={(e) => handleFieldChange('require_photo', e.target.checked)}
+              className="h-4 w-4"
+            />
+          </td>
         )
 
       case 'cert':
         return (
-          <input
-            key={key}
-            type="checkbox"
-            checked={row.require_certificate}
-            onChange={(e) => handleFieldChange('require_certificate', e.target.checked)}
-            className="mx-auto"
-          />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.require_certificate}
+              onChange={(e) => handleFieldChange('require_certificate', e.target.checked)}
+              className="h-4 w-4"
+            />
+          </td>
         )
 
       case 'certLag':
         return (
-          <input
-            key={key}
-            type="number"
-            value={row.cert_lag_days}
-            onChange={(e) => handleFieldChange('cert_lag_days', parseInt(e.target.value))}
-            disabled={!row.require_certificate}
-            className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm w-full"
-          />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
+            <input
+              type="number"
+              value={row.cert_lag_days}
+              onChange={(e) => handleFieldChange('cert_lag_days', parseInt(e.target.value))}
+              disabled={!row.require_certificate}
+              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm disabled:opacity-50"
+            />
+          </td>
         )
 
       case 'supCheck':
         return (
-          <input
-            key={key}
-            type="checkbox"
-            checked={row.require_supervisor_check}
-            onChange={(e) => handleFieldChange('require_supervisor_check', e.target.checked)}
-            className="mx-auto"
-          />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.require_supervisor_check}
+              onChange={(e) => handleFieldChange('require_supervisor_check', e.target.checked)}
+              className="h-4 w-4"
+            />
+          </td>
         )
 
       case 'autoComplete':
         return (
-          <input
-            key={key}
-            type="checkbox"
-            checked={row.auto_complete_predecessors}
-            onChange={(e) => handleFieldChange('auto_complete_predecessors', e.target.checked)}
-            className="mx-auto"
-          />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.auto_complete_predecessors}
+              onChange={(e) => handleFieldChange('auto_complete_predecessors', e.target.checked)}
+              className="h-4 w-4"
+            />
+          </td>
         )
 
       case 'subtasks':
         return (
-          <div key={key} className="text-xs text-gray-600 dark:text-gray-400 text-center">
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center text-xs text-gray-600 dark:text-gray-400">
             {row.has_subtasks ? `${row.subtask_count} subs` : '-'}
-          </div>
+          </td>
         )
 
       case 'actions':
         return (
-          <div key={key} className="flex items-center gap-1">
-            {canMoveUp && (
-              <button onClick={onMoveUp} className="p-1 hover:text-indigo-600" title="Move up">
-                <ArrowUpIcon className="h-4 w-4" />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-1">
+              {canMoveUp && (
+                <button onClick={onMoveUp} className="p-1 hover:text-indigo-600" title="Move up">
+                  <ArrowUpIcon className="h-4 w-4" />
+                </button>
+              )}
+              {canMoveDown && (
+                <button onClick={onMoveDown} className="p-1 hover:text-indigo-600" title="Move down">
+                  <ArrowDownIcon className="h-4 w-4" />
+                </button>
+              )}
+              <button onClick={onDelete} className="p-1 hover:text-red-600" title="Delete">
+                <TrashIcon className="h-4 w-4" />
               </button>
-            )}
-            {canMoveDown && (
-              <button onClick={onMoveDown} className="p-1 hover:text-indigo-600" title="Move down">
-                <ArrowDownIcon className="h-4 w-4" />
-              </button>
-            )}
-            <button onClick={onDelete} className="p-1 hover:text-red-600" title="Delete">
-              <TrashIcon className="h-4 w-4" />
-            </button>
-          </div>
+            </div>
+          </td>
         )
 
       default:
-        return <div key={key}>-</div>
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
+            -
+          </td>
+        )
     }
   }
 
   return (
-    <div
-      className="grid gap-2 p-4 border-b border-gray-100 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-700/30"
-      style={{ gridTemplateColumns: getGridTemplate() }}
-    >
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
       {getSortedColumns().map(([key, config]) => {
         if (!config.visible) return null
-        return renderColumn(key)
+        return renderCell(key, config)
       })}
-    </div>
+    </tr>
   )
 }
