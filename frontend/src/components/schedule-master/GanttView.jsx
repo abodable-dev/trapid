@@ -589,7 +589,7 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
             }
           })
         }
-      }, 1500)
+      }, 100)
     }
   }, [ganttApi, ganttData.data.length, ganttData.start, publicHolidays, isWeekend])
 
