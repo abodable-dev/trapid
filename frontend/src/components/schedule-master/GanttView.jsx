@@ -162,6 +162,7 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
         width: 100,
         key: 'duration',
         align: 'center',
+        editor: 'number',
         template: (value, row) => {
           // Show the task's duration directly from the data
           const duration = row.duration !== undefined && row.duration !== null ? row.duration : value
@@ -1124,6 +1125,18 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
                     readonly={false}
                     columnResize={true}
                     onAdd={handleLinkAdd}
+                    onEditCell={(cell) => {
+                      console.log('Cell edited in Gantt:', cell)
+                      // Handle duration edits
+                      if (cell.columnId === 'duration' && cell.value !== undefined) {
+                        const taskId = cell.id
+                        const newDuration = parseInt(cell.value)
+                        if (!isNaN(newDuration) && newDuration >= 0) {
+                          console.log('Syncing duration edit:', taskId, newDuration)
+                          onUpdateTask(taskId, { duration: newDuration })
+                        }
+                      }
+                    }}
                     onUpdate={(updatedTask) => {
                       console.log('Task updated in Gantt:', updatedTask)
 
