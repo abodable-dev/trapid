@@ -6,7 +6,13 @@ module Api
       # GET /api/v1/purchase_orders
       # Params: construction_id, supplier_id, status, search, sort_by, sort_direction, page, per_page
       def index
-        @purchase_orders = PurchaseOrder.includes(:supplier, :construction).all
+        @purchase_orders = PurchaseOrder.includes(
+          :supplier,
+          :construction,
+          :project_tasks,
+          :schedule_tasks,
+          line_items: :pricebook_item
+        ).all
 
         # Filters
         @purchase_orders = @purchase_orders.by_construction(params[:construction_id])
@@ -39,7 +45,7 @@ module Api
 
         # Pagination
         page = params[:page]&.to_i || 1
-        per_page = params[:per_page]&.to_i || 500  # Increased from 50 to 500
+        per_page = [params[:per_page]&.to_i || 50, 100].min  # Default 50, max 100
         total_count = @purchase_orders.count
         total_pages = (total_count.to_f / per_page).ceil
 

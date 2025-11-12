@@ -83,16 +83,15 @@ module Api
         # If contact is a supplier, add pricebook items and purchase orders
         if @contact.is_supplier?
           # Get items where this contact is the supplier OR default_supplier OR has provided a quote (in price_histories)
-          items_as_supplier = @contact.pricebook_items.distinct
-          items_as_default_supplier = PricebookItem.where(default_supplier_id: @contact.id).distinct
-          items_with_price_history = PricebookItem.joins(:price_histories).where(price_histories: { supplier_id: @contact.id }).distinct
-
-          # Combine all three and get unique items
-          all_item_ids = (items_as_supplier.pluck(:id) + items_as_default_supplier.pluck(:id) + items_with_price_history.pluck(:id)).uniq
-
-          # Eager load price_histories to avoid N+1 queries
-          all_items = PricebookItem.where(id: all_item_ids)
+          # Optimized to use a single query with LEFT JOIN instead of 3 separate queries
+          all_items = PricebookItem
+            .left_joins(:price_histories)
+            .where(
+              "pricebook_items.supplier_id = ? OR pricebook_items.default_supplier_id = ? OR price_histories.supplier_id = ?",
+              @contact.id, @contact.id, @contact.id
+            )
             .includes(:price_histories)
+            .distinct
             .order(:item_code)
 
           contact_json[:pricebook_items_count] = all_items.size # Use size instead of count to avoid extra query
