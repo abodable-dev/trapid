@@ -124,15 +124,10 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
       {
         id: 'predecessors',
         header: 'Predecessors',
-        width: 200,
+        width: 150,
         key: 'predecessors',
         template: (value, row) => {
-          const predText = value || '-'
-          // Simpler template without complex HTML - just show text with edit icon
-          return `<span style="display: inline-flex; align-items: center; gap: 8px; width: 100%;">
-            <span style="flex: 1; overflow: hidden; text-overflow: ellipsis;">${predText}</span>
-            <button class="gantt-edit-btn" data-task-id="${row.id}" title="Edit" style="padding: 2px;">✏️</button>
-          </span>`
+          return value || '-'
         }
       },
       {
