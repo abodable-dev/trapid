@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Gantt, ContextMenu, Willow } from '@svar-ui/react-gantt'
 import '@svar-ui/react-gantt/style.css'
-import { XMarkIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, PencilSquareIcon, EyeIcon, EyeSlashIcon, Bars3Icon, CheckIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import TaskDependencyEditor from './TaskDependencyEditor'
 
@@ -17,6 +17,31 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTask, setSelectedTask] = useState(null)
   const [showEditor, setShowEditor] = useState(false)
+  const [showLeftPanel, setShowLeftPanel] = useState(() => {
+    const saved = localStorage.getItem('gantt-show-left-panel')
+    return saved !== null ? JSON.parse(saved) : true
+  })
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    const saved = localStorage.getItem('gantt-visible-columns')
+    return saved ? JSON.parse(saved) : {
+      taskName: true,
+      predecessors: true,
+      supplierGroup: true,
+      duration: false,
+      startDay: true
+    }
+  })
+  const [showColumnMenu, setShowColumnMenu] = useState(false)
+
+  // Save panel visibility to localStorage
+  useEffect(() => {
+    localStorage.setItem('gantt-show-left-panel', JSON.stringify(showLeftPanel))
+  }, [showLeftPanel])
+
+  // Save column visibility to localStorage
+  useEffect(() => {
+    localStorage.setItem('gantt-visible-columns', JSON.stringify(visibleColumns))
+  }, [visibleColumns])
 
   // Fetch public holidays from API
   useEffect(() => {
@@ -56,9 +81,13 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
   }
 
   // Calculate end date from start date and business days duration
+  // The start date counts as day 1, so for a 2-day task starting Wednesday,
+  // it ends on Thursday (Wed=day 1, Thu=day 2)
   const addBusinessDays = (startDate, days) => {
+    if (days <= 0) return new Date(startDate)
+
     let current = new Date(startDate)
-    let remainingDays = days
+    let remainingDays = days - 1 // Subtract 1 because start day counts as day 1
 
     while (remainingDays > 0) {
       current.setDate(current.getDate() + 1)
@@ -88,28 +117,75 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
   }
 
   // Memoize columns configuration to prevent re-renders
-  const columns = useMemo(() => [
-    { id: 'taskNumber', header: '#', width: 60, align: 'center' },
-    { id: 'text', header: 'Task Name', width: 250 },
-    {
-      id: 'predecessors',
-      header: 'Predecessors',
-      width: 150,
-      template: (value, row) => {
-        return value || '-'
+  const columns = useMemo(() => {
+    const allColumns = [
+      { id: 'taskNumber', header: '#', width: 60, align: 'center', key: 'taskNumber', alwaysVisible: true },
+      { id: 'text', header: 'Task Name', width: 350, key: 'taskName' },
+      {
+        id: 'predecessors',
+        header: 'Predecessors',
+        width: 200,
+        key: 'predecessors',
+        template: (value, row) => {
+          const predText = value || '-'
+          return `
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${predText}</span>
+              <button
+                class="gantt-edit-btn"
+                data-task-id="${row.id}"
+                title="Edit predecessors"
+                style="flex-shrink: 0;"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 16px; height: 16px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                </svg>
+              </button>
+            </div>
+          `
+        }
+      },
+      {
+        id: 'supplier',
+        header: 'Supplier/Group',
+        width: 180,
+        key: 'supplierGroup',
+        template: (value, row) => {
+          return value || '-'
+        }
+      },
+      {
+        id: 'duration',
+        header: 'Duration',
+        width: 100,
+        key: 'duration',
+        align: 'center',
+        template: (value, row) => {
+          // Show the task's duration directly from the data
+          const duration = row.duration !== undefined && row.duration !== null ? row.duration : value
+          if (duration === 0) return '0 days'
+          return duration ? `${duration} ${duration === 1 ? 'day' : 'days'}` : '-'
+        }
+      },
+      {
+        id: 'start_day',
+        header: 'Start Day',
+        width: 100,
+        key: 'startDay',
+        align: 'center',
+        template: (value, row) => {
+          return value !== undefined && value !== null ? `Day ${value}` : '-'
+        }
       }
-    }
-  ], [])
+    ]
+
+    // Filter columns based on visibility settings
+    return allColumns.filter(col => col.alwaysVisible || visibleColumns[col.key])
+  }, [visibleColumns])
 
   // Function to determine if a date should be styled as a holiday
   const dayStyle = useCallback((date) => {
-    const dateStr = date.toISOString().split('T')[0]
-
-    // Check if weekend or holiday - return class for identification
-    if (isWeekend(date) || publicHolidays.includes(dateStr)) {
-      return 'weekend-day'
-    }
-
+    // Don't return any special class - we'll handle styling via overlays only
     return ''
   }, [publicHolidays])
 
@@ -123,9 +199,58 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
 
   // Convert tasks to Gantt format whenever tasks change
   useEffect(() => {
-    console.log('GanttView: useEffect triggered. isOpen:', isOpen, 'tasks:', tasks?.length)
     if (isOpen && tasks) {
-      // Calculate start dates based on dependencies
+      // First, calculate start dates for all tasks
+      const taskStartDays = new Map()
+
+      // Function to calculate start day (as integer) based on predecessors
+      const calculateStartDay = (task, allTasks) => {
+        if (taskStartDays.has(task.id)) {
+          return taskStartDays.get(task.id)
+        }
+
+        // If no predecessors, start at day 0
+        if (!task.predecessor_ids || task.predecessor_ids.length === 0) {
+          taskStartDays.set(task.id, 0)
+          return 0
+        }
+
+        // Find the latest end day of all predecessors
+        let latestEnd = 0
+        task.predecessor_ids.forEach(pred => {
+          const predData = typeof pred === 'object' ? pred : { id: pred, type: 'FS', lag: 0 }
+          const predTask = allTasks[predData.id - 1] // Task numbers are 1-indexed
+
+          if (predTask) {
+            const predStart = calculateStartDay(predTask, allTasks)
+            const predDuration = predTask.duration || 0
+            const predEnd = predStart + predDuration
+
+            // For FS (Finish-to-Start), task starts after predecessor finishes
+            if (predData.type === 'FS' || !predData.type) {
+              const taskStart = predEnd + (predData.lag || 0)
+              if (taskStart > latestEnd) {
+                latestEnd = taskStart
+              }
+            }
+          }
+        })
+
+        taskStartDays.set(task.id, latestEnd)
+        return latestEnd
+      }
+
+      // Calculate start days for all tasks
+      tasks.forEach(task => calculateStartDay(task, tasks))
+
+      // Sort tasks by calculated start day
+      const sortedTasks = [...tasks].sort((a, b) => {
+        const aStart = taskStartDays.get(a.id) || 0
+        const bStart = taskStartDays.get(b.id) || 0
+        return aStart - bStart
+      })
+
+      // Now convert to Gantt format with actual dates
       const taskStartDates = new Map()
       const projectStartDate = new Date()
 
@@ -150,8 +275,8 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
           if (predTask) {
             // Recursively calculate predecessor's start date
             const predStart = calculateStartDate(predTask)
-            const predDuration = predTask.duration || 5
-            const predEnd = addBusinessDays(predStart, predDuration)
+            const predDuration = predTask.duration !== undefined && predTask.duration !== null ? predTask.duration : 1
+            const predEnd = addBusinessDays(predStart, predDuration > 0 ? predDuration : 1)
 
             // For FS (Finish-to-Start), task starts after predecessor finishes
             if (predData.type === 'FS' || !predData.type) {
@@ -167,12 +292,12 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
         return latestDate
       }
 
-      // Convert tasks to Gantt format
-      const ganttTasks = tasks.map((task, index) => {
-        // Use task duration or default to 5 business days
-        const duration = task.duration || 5
+      // Convert sorted tasks to Gantt format
+      const ganttTasks = sortedTasks.map((task, index) => {
+        // Use task duration - handle 0 as valid, default to 1 if undefined/null
+        const duration = task.duration !== undefined && task.duration !== null ? task.duration : 1
         const startDate = calculateStartDate(task, index)
-        const endDate = addBusinessDays(startDate, duration)
+        const endDate = addBusinessDays(startDate, duration > 0 ? duration : 1)
 
         // Format predecessors for display
         const formatPredecessor = (pred) => {
@@ -204,13 +329,14 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
           taskNumber: index + 1,
           supplier: task.supplier_name || task.assigned_role || '',
           predecessors: predecessorDisplay,
+          start_day: task.start_date || 0,
           originalTask: task
         }
       })
 
-      // Convert predecessors to Gantt links
+      // Convert predecessors to Gantt links (use original tasks array for ID references)
       const ganttLinks = []
-      tasks.forEach((task, index) => {
+      sortedTasks.forEach((task, index) => {
         if (task.predecessor_ids && task.predecessor_ids.length > 0) {
           task.predecessor_ids.forEach(pred => {
             const predData = typeof pred === 'object' ? pred : { id: pred, type: 'FS', lag: 0 }
@@ -229,9 +355,6 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
         }
       })
 
-      console.log('Gantt Tasks:', ganttTasks.slice(0, 2)) // Log first 2 tasks to see structure
-      console.log('Gantt Links:', ganttLinks)
-
       // Calculate the overall date range to fit all tasks
       let minDate = projectStartDate
       let maxDate = projectStartDate
@@ -242,6 +365,13 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
         if (taskStart < minDate) minDate = taskStart
         if (taskEnd > maxDate) maxDate = taskEnd
       })
+
+      // Ensure today is visible on the chart
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (today < minDate) {
+        minDate = today
+      }
 
       // Add padding only at the end (2 weeks after)
       const paddedEnd = new Date(maxDate)
@@ -272,10 +402,6 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
         end: paddedEnd,
         holidays: holidays
       })
-
-      console.log('Gantt data updated with tasks:', ganttTasks.length)
-      console.log('Date range:', minDate.toISOString().split('T')[0], 'to', paddedEnd.toISOString().split('T')[0])
-      console.log('Holidays count:', holidays.length)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, tasks, publicHolidays.length])
@@ -376,9 +502,13 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
       setTimeout(() => {
         const ganttElement = document.querySelector('.wx-gantt')
         if (ganttElement) {
-          // Remove any existing weekend overlays
-          const existingOverlays = ganttElement.querySelectorAll('.weekend-overlay, .holiday-overlay')
+          // Remove any existing overlays
+          const existingOverlays = ganttElement.querySelectorAll('.weekend-overlay, .holiday-overlay, .today-overlay')
           existingOverlays.forEach(overlay => overlay.remove())
+
+          // Find the chart area (where the task bars are displayed)
+          const chartArea = ganttElement.querySelector('[class*="chart"]')
+          if (!chartArea) return
 
           // Find the day scale row (the second scale row with day numbers)
           const scaleRows = ganttElement.querySelectorAll('[class*="wx-scale"]')
@@ -388,51 +518,89 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
 
           // Get all cells in the day scale row
           const allDayCells = Array.from(dayScaleRow.querySelectorAll('.wx-cell'))
-          console.log('Total day cells:', allDayCells.length)
-
-          // Find cells with weekend-day class
-          const weekendCells = allDayCells.filter(c => c.classList.contains('weekend-day'))
-          console.log('Found weekend/holiday scale cells:', weekendCells.length)
-
-          // Get the header height to position overlay below it
-          const scaleElement = ganttElement.querySelector('[class*="wx-scale"]')
-          const headerHeight = scaleElement ? scaleElement.parentElement.getBoundingClientRect().height : 0
 
           // Build a map of dates by calculating from the start date
           const startDate = new Date(ganttData.start)
 
-          // For each weekend/holiday header cell, create an overlay div in the chart area
-          weekendCells.forEach((cell) => {
-            const rect = cell.getBoundingClientRect()
-            const ganttRect = ganttElement.getBoundingClientRect()
+          // Get today's date for comparison (using local timezone)
+          const today = new Date()
+          const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
-            // Find the index of this cell in ALL day cells
-            const cellIndex = allDayCells.indexOf(cell)
+          // Get the bounding rect of the chart area for alignment
+          const chartRect = chartArea.getBoundingClientRect()
 
-            if (cellIndex >= 0) {
-              // Calculate the date for this cell
-              const cellDate = new Date(startDate)
-              cellDate.setDate(cellDate.getDate() + cellIndex)
-              const cellDateStr = cellDate.toISOString().split('T')[0]
+          // Track the current date as we iterate through cells
+          let currentDate = new Date(startDate)
 
-              // Check if this is a public holiday (not just a weekend)
-              const isPublicHoliday = publicHolidays.includes(cellDateStr) && !isWeekend(cellDate)
+          // Iterate through ALL cells and create overlays for today, weekends, and holidays
+          allDayCells.forEach((cell) => {
+            // Read the day number from the cell text
+            const dayText = cell.textContent.trim()
+            const dayNum = parseInt(dayText)
 
-              // Create overlay div
-              const overlay = document.createElement('div')
-              overlay.className = isPublicHoliday ? 'holiday-overlay' : 'weekend-overlay'
-              overlay.style.position = 'absolute'
-              overlay.style.left = `${rect.left - ganttRect.left}px`
-              overlay.style.top = `${headerHeight}px`
-              overlay.style.width = `${rect.width}px`
-              overlay.style.height = `calc(100% - ${headerHeight}px)`
-              overlay.style.backgroundColor = isPublicHoliday ? '#d1d5db' : '#f3f4f6' // Darker grey for holidays
-              overlay.style.opacity = '0.5'
-              overlay.style.pointerEvents = 'none'
-              overlay.style.zIndex = '1'
+            // If we can parse a day number, update our current date
+            if (!isNaN(dayNum) && dayNum >= 1 && dayNum <= 31) {
+              // If day number is less than previous, we've moved to next month
+              if (dayNum < currentDate.getDate() && dayNum < 15) {
+                currentDate = new Date(currentDate)
+                currentDate.setMonth(currentDate.getMonth() + 1)
+                currentDate.setDate(dayNum)
+              } else {
+                currentDate = new Date(currentDate)
+                currentDate.setDate(dayNum)
+              }
 
-              ganttElement.appendChild(overlay)
-              console.log(`Created ${isPublicHoliday ? 'holiday' : 'weekend'} overlay for ${cellDateStr} (index ${cellIndex}) at left: ${rect.left - ganttRect.left}px`)
+              // Format cell date using local timezone to match todayStr
+              const cellDateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`
+
+              // Check if this is today
+              const isToday = cellDateStr === todayStr
+
+              // Check if this is a weekend or public holiday
+              const isWeekendDay = isWeekend(currentDate)
+              const isInPublicHolidays = publicHolidays.includes(cellDateStr)
+
+              // Create overlay for today, weekends, or holidays
+              if (isToday || isWeekendDay || isInPublicHolidays) {
+                const isPublicHoliday = isInPublicHolidays && !isWeekendDay
+
+                // Get the actual position of this cell relative to the chart area
+                const cellRect = cell.getBoundingClientRect()
+                const leftOffset = cellRect.left - chartRect.left
+
+                // Create overlay div positioned using actual cell position
+                const overlay = document.createElement('div')
+
+                // Determine class and color based on type
+                if (isToday) {
+                  overlay.className = 'today-overlay'
+                  overlay.style.backgroundColor = '#10b981' // Light green for today
+                  overlay.style.opacity = '0.2' // More subtle for today
+                  overlay.style.zIndex = '2' // Higher z-index so it shows on top of weekend/holiday
+                } else if (isPublicHoliday) {
+                  overlay.className = 'holiday-overlay'
+                  overlay.style.backgroundColor = '#d1d5db' // Darker grey for holidays
+                  overlay.style.opacity = '0.5'
+                  overlay.style.zIndex = '1'
+                } else {
+                  overlay.className = 'weekend-overlay'
+                  overlay.style.backgroundColor = '#f3f4f6' // Light grey for weekends
+                  overlay.style.opacity = '0.5'
+                  overlay.style.zIndex = '1'
+                }
+
+                overlay.style.position = 'absolute'
+                overlay.style.left = `${leftOffset}px`
+                overlay.style.top = '0'
+                overlay.style.width = `${cellRect.width}px`
+                overlay.style.height = '100%'
+                overlay.style.pointerEvents = 'none'
+
+                // Ensure chart area allows positioned children
+                chartArea.style.position = 'relative'
+
+                chartArea.appendChild(overlay)
+              }
             }
           })
         }
@@ -440,49 +608,24 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
     }
   }, [ganttApi, ganttData.data.length, ganttData.start, publicHolidays, isWeekend])
 
+  // No need for header styling - weekends/holidays keep default header style
+  // Only the chart area gets grey overlays
+
   if (!isOpen) return null
 
   return (
     <>
       <style>
         {`
-          /* Weekend overlay styling - grey columns in chart area only, not header */
-
-          /* Make weekend columns narrower */
-          .wx-cell.weekend-day {
-            width: 20px !important;
-            min-width: 20px !important;
-            max-width: 20px !important;
-          }
-
-          /* Hide text in weekend cells */
-          .wx-cell.weekend-day {
-            font-size: 0 !important;
-            color: transparent !important;
-            background-color: transparent !important;
-            background: none !important;
-          }
-
-          .wx-cell.weekend-day * {
-            font-size: 0 !important;
-            color: transparent !important;
-            visibility: hidden !important;
-          }
-
-          /* Remove any background from weekend header cells - make them match the header */
-          .wx-scale .wx-cell.weekend-day,
-          [class*="wx-scale"] .wx-cell.weekend-day {
-            background-color: #2c3e50 !important;
-            background: #2c3e50 !important;
-          }
+          /* Weekend and holiday styling handled via overlays only */
 
           /* Match SVAR website styling */
           .wx-gantt {
             --wx-gantt-header-background: #2c3e50;
             --wx-gantt-header-color: #ffffff;
             --wx-gantt-border-color: #dee2e6;
-            --wx-gantt-row-background: #ffffff;
-            --wx-gantt-row-alt-background: #f8f9fa;
+            --wx-gantt-row-background: transparent;
+            --wx-gantt-row-alt-background: transparent;
             --wx-gantt-task-background: #3498db;
             --wx-gantt-task-progress-background: #2980b9;
             --wx-gantt-link-color: #95a5a6;
@@ -512,6 +655,142 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
           .wx-gantt-chart {
             overflow-x: auto;
           }
+
+          /* Fill empty space below rows with light grey background */
+          [class*="wx-chart"] {
+            background-color: #f8f9fa !important;
+            background-image: repeating-linear-gradient(
+              0deg,
+              #ffffff 0px,
+              #ffffff 44px,
+              #f8f9fa 44px,
+              #f8f9fa 88px
+            ) !important;
+            min-height: 100% !important;
+            height: 100% !important;
+          }
+
+          /* Force background on all row elements */
+          .wx-gantt .wx-row {
+            background: transparent !important;
+          }
+
+          /* Ensure the rows container shows the background */
+          .wx-gantt [class*="wx-rows"] {
+            background-color: #f8f9fa !important;
+            background-image: repeating-linear-gradient(
+              0deg,
+              #ffffff 0px,
+              #ffffff 44px,
+              #f8f9fa 44px,
+              #f8f9fa 88px
+            ) !important;
+          }
+
+          /* Make Gantt container fill available height */
+          .wx-gantt {
+            height: 100% !important;
+            background-color: white !important;
+          }
+
+          /* Add border to left panel with horizontal stripe pattern */
+          .wx-gantt [class*="wx-grid"] {
+            border-right: 1px solid #dee2e6 !important;
+            height: 100% !important;
+            background-color: #f8f9fa !important;
+            background-image: repeating-linear-gradient(
+              0deg,
+              #ffffff 0px,
+              #ffffff 44px,
+              #f8f9fa 44px,
+              #f8f9fa 88px
+            ) !important;
+          }
+
+          /* Chart area with white background - weekend overlays will be added */
+          .wx-gantt [class*="wx-chart-container"],
+          .wx-gantt [class*="wx-chart"] {
+            background-color: white !important;
+            height: 100% !important;
+          }
+
+          /* Make grid body transparent to show stripe pattern */
+          .wx-gantt [class*="wx-grid"] [class*="wx-data"],
+          .wx-gantt [class*="wx-grid"] [class*="body"],
+          .wx-gantt [class*="wx-grid"] [class*="viewport"] {
+            background-color: transparent !important;
+            background-image: none !important;
+          }
+
+          /* Ensure grid rows container expands to fill viewport */
+          .wx-gantt [class*="wx-grid"] [class*="rows"] {
+            min-height: 100% !important;
+            background-color: transparent !important;
+          }
+
+          /* Ensure chart area is visible */
+          .wx-gantt [class*="wx-chart-container"],
+          .wx-gantt [class*="chart"] {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+          }
+
+          /* Chart area should expand to fill remaining space */
+          .wx-layout {
+            height: 100% !important;
+            min-height: 100% !important;
+          }
+
+          .wx-content {
+            height: 100% !important;
+            min-height: 100% !important;
+          }
+
+          .wx-data-area {
+            height: 100% !important;
+            min-height: 100% !important;
+          }
+
+          /* Ensure chart content fills the data area */
+          .wx-chart-container {
+            height: 100% !important;
+            min-height: 100% !important;
+          }
+
+          /* Make the chart wrapper fill all available space */
+          [class*="wx-chart-wrapper"] {
+            height: 100% !important;
+            min-height: 100% !important;
+          }
+
+          /* Chart areas should be white - weekends will be shown via overlays */
+          .wx-gantt [class*="wx-chart"] [class*="wx-data"],
+          .wx-gantt [class*="wx-chart"] [class*="body"],
+          .wx-gantt [class*="wx-chart"] [class*="viewport"] {
+            background-color: white !important;
+            background-image: none !important;
+          }
+
+          /* Ensure chart rows container expands to fill viewport */
+          .wx-gantt [class*="wx-chart"] [class*="rows"] {
+            min-height: 100% !important;
+            background-color: transparent !important;
+          }
+
+
+          /* Hide left panel (task grid) when toggled off */
+          ${!showLeftPanel ? `
+            [class*="wx-grid"] {
+              display: none !important;
+            }
+            [class*="wx-scales"] {
+              grid-column: 1 / -1 !important;
+            }
+            [class*="wx-chart-container"] {
+              grid-column: 1 / -1 !important;
+            }
+          ` : ''}
 
           /* Enhanced Context Menu Styling */
           .wx-menu {
@@ -676,17 +955,124 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
               Drag and drop on task bars to create dependency links
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Column Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setShowColumnMenu(!showColumnMenu)}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                title="Select columns"
+              >
+                <Bars3Icon className="h-5 w-5" />
+                <span>Columns</span>
+              </button>
+
+              {showColumnMenu && (
+                <>
+                  {/* Backdrop to close menu */}
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowColumnMenu(false)}
+                  />
+
+                  {/* Dropdown menu */}
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-20">
+                    <div className="p-2">
+                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                        Show Columns
+                      </div>
+
+                      <label className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns.taskName}
+                          onChange={(e) => setVisibleColumns({ ...visibleColumns, taskName: e.target.checked })}
+                          className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Task Name</span>
+                        {visibleColumns.taskName && <CheckIcon className="h-4 w-4 text-indigo-600 ml-auto" />}
+                      </label>
+
+                      <label className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns.predecessors}
+                          onChange={(e) => setVisibleColumns({ ...visibleColumns, predecessors: e.target.checked })}
+                          className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Predecessors</span>
+                        {visibleColumns.predecessors && <CheckIcon className="h-4 w-4 text-indigo-600 ml-auto" />}
+                      </label>
+
+                      <label className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns.supplierGroup}
+                          onChange={(e) => setVisibleColumns({ ...visibleColumns, supplierGroup: e.target.checked })}
+                          className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Supplier/Group</span>
+                        {visibleColumns.supplierGroup && <CheckIcon className="h-4 w-4 text-indigo-600 ml-auto" />}
+                      </label>
+
+                      <label className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns.duration}
+                          onChange={(e) => setVisibleColumns({ ...visibleColumns, duration: e.target.checked })}
+                          className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Duration</span>
+                        {visibleColumns.duration && <CheckIcon className="h-4 w-4 text-indigo-600 ml-auto" />}
+                      </label>
+
+                      <label className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns.startDay}
+                          onChange={(e) => setVisibleColumns({ ...visibleColumns, startDay: e.target.checked })}
+                          className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Start Day</span>
+                        {visibleColumns.startDay && <CheckIcon className="h-4 w-4 text-indigo-600 ml-auto" />}
+                      </label>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Hide/Show Panel Toggle */}
+            <button
+              onClick={() => setShowLeftPanel(!showLeftPanel)}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              title={showLeftPanel ? 'Hide task list' : 'Show task list'}
+            >
+              {showLeftPanel ? (
+                <>
+                  <EyeSlashIcon className="h-5 w-5" />
+                  <span>Hide Panel</span>
+                </>
+              ) : (
+                <>
+                  <EyeIcon className="h-5 w-5" />
+                  <span>Show Panel</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
         {/* Gantt Chart */}
-        <div className="flex-1 overflow-auto">
-          <div className="h-full w-full">
+        <div className="flex-1 overflow-hidden relative">
+          <div className="relative h-full w-full">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
@@ -716,9 +1102,47 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
                     holidays={ganttData.holidays}
                     readonly={false}
                     onAdd={handleLinkAdd}
-                    onUpdate={(task) => {
-                      // Handle task updates if needed
-                      console.log('Task updated:', task)
+                    onUpdate={(updatedTask) => {
+                      // Sync task updates back to Schedule Master grid
+                      console.log('Task updated in Gantt:', updatedTask)
+
+                      // Find the original task
+                      const originalTask = tasks.find(t => t.id === updatedTask.id)
+                      if (!originalTask) return
+
+                      // Check what changed and update accordingly
+                      const updates = {}
+
+                      // If dates changed, recalculate duration as business days
+                      if (updatedTask.start || updatedTask.end) {
+                        const startDate = new Date(updatedTask.start)
+                        const endDate = new Date(updatedTask.end)
+                        let businessDays = 0
+                        const current = new Date(startDate)
+
+                        // Count business days between start and end
+                        while (current < endDate) {
+                          if (isWorkingDay(current)) {
+                            businessDays++
+                          }
+                          current.setDate(current.getDate() + 1)
+                        }
+
+                        if (businessDays !== originalTask.duration) {
+                          updates.duration = businessDays
+                        }
+                      }
+
+                      // If duration was directly changed
+                      if (updatedTask.duration !== undefined && updatedTask.duration !== originalTask.duration) {
+                        updates.duration = updatedTask.duration
+                      }
+
+                      // Only update if there are actual changes
+                      if (Object.keys(updates).length > 0) {
+                        console.log('Syncing updates to Schedule Master:', updates)
+                        onUpdateTask(originalTask.id, updates)
+                      }
                     }}
                     onDelete={handleLinkDelete}
                     onCellClick={(ev) => {
