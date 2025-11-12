@@ -386,7 +386,7 @@ export default function ScheduleMasterTemplatesTab() {
       </div>
 
       {/* Toast Notifications */}
-      {toast && <Toast message={toast.message} type={toast.type} />}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   )
 }

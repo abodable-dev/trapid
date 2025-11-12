@@ -180,7 +180,7 @@ export default function ScheduleMasterTab({ constructionId }) {
           constructionId={constructionId}
         />
 
-        {toast && <Toast message={toast.message} type={toast.type} />}
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </div>
     )
   }
@@ -268,7 +268,7 @@ export default function ScheduleMasterTab({ constructionId }) {
       />
 
       {/* Toast Notifications */}
-      {toast && <Toast message={toast.message} type={toast.type} />}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   )
 }
