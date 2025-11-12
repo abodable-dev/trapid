@@ -3,8 +3,8 @@ module Api
     class ScheduleTemplateRowsController < ApplicationController
       before_action :authorize_request
       before_action :set_template
-      before_action :set_row, only: [:update, :destroy]
-      before_action :check_can_edit_templates
+      before_action :set_row, only: [:update, :destroy, :audit_logs]
+      before_action :check_can_edit_templates, except: [:audit_logs]
 
       # POST /api/v1/schedule_templates/:template_id/rows
       def create
@@ -25,11 +25,16 @@ module Api
 
       # PATCH /api/v1/schedule_templates/:template_id/rows/:id
       def update
+        # Set current user for audit logging
+        Thread.current[:current_audit_user_id] = @current_user&.id
+
         if @row.update(row_params)
           render json: row_json(@row)
         else
           render json: { errors: @row.errors.full_messages }, status: :unprocessable_entity
         end
+      ensure
+        Thread.current[:current_audit_user_id] = nil
       end
 
       # DELETE /api/v1/schedule_templates/:template_id/rows/:id
@@ -42,6 +47,9 @@ module Api
       def bulk_update
         updates = params[:updates] || []
         errors = []
+
+        # Set current user for audit logging
+        Thread.current[:current_audit_user_id] = @current_user&.id
 
         ActiveRecord::Base.transaction do
           updates.each do |update_data|
@@ -59,6 +67,8 @@ module Api
         else
           render json: { errors: errors }, status: :unprocessable_entity
         end
+      ensure
+        Thread.current[:current_audit_user_id] = nil
       end
 
       # POST /api/v1/schedule_templates/:template_id/rows/reorder
@@ -75,6 +85,16 @@ module Api
         render json: { success: true }
       rescue StandardError => e
         render json: { error: e.message }, status: :unprocessable_entity
+      end
+
+      # GET /api/v1/schedule_templates/:template_id/rows/:id/audit_logs
+      def audit_logs
+        audits = @row.audits
+                     .includes(:user)
+                     .recent
+                     .limit(100)
+
+        render json: audits.map { |audit| audit_json(audit) }
       end
 
       private
@@ -120,6 +140,12 @@ module Api
           :call_up_required,
           :plan_required,
           :duration,
+          :start_date,
+          :manually_positioned,
+          :confirm,
+          :supplier_confirm,
+          :start,
+          :complete,
           predecessor_ids: [:id, :type, :lag],
           price_book_item_ids: [],
           documentation_category_ids: [],
@@ -155,6 +181,12 @@ module Api
           :call_up_required,
           :plan_required,
           :duration,
+          :start_date,
+          :manually_positioned,
+          :confirm,
+          :supplier_confirm,
+          :start,
+          :complete,
           predecessor_ids: [:id, :type, :lag],
           price_book_item_ids: [],
           documentation_category_ids: [],
@@ -203,7 +235,28 @@ module Api
           order_required: row.order_required,
           call_up_required: row.call_up_required,
           plan_required: row.plan_required,
-          duration: row.duration
+          duration: row.duration,
+          start_date: row.start_date,
+          manually_positioned: row.manually_positioned,
+          confirm: row.confirm,
+          supplier_confirm: row.supplier_confirm,
+          start: row.start,
+          complete: row.complete
+        }
+      end
+
+      def audit_json(audit)
+        {
+          id: audit.id,
+          field_name: audit.field_name,
+          old_value: audit.old_value,
+          new_value: audit.new_value,
+          changed_at: audit.changed_at,
+          user: {
+            id: audit.user.id,
+            name: audit.user.name,
+            email: audit.user.email
+          }
         }
       end
     end

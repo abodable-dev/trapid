@@ -2,6 +2,7 @@ class ScheduleTemplateRow < ApplicationRecord
   belongs_to :schedule_template
   belongs_to :supplier, optional: true  # Supplier is only required if po_required is true
   belongs_to :linked_template, class_name: 'ScheduleTemplate', optional: true
+  has_many :audits, class_name: 'ScheduleTemplateRowAudit', dependent: :destroy
 
   # Serialize JSON fields
   serialize :linked_task_ids, coder: JSON
@@ -19,6 +20,7 @@ class ScheduleTemplateRow < ApplicationRecord
 
   # Callbacks
   before_save :sync_photos_category
+  after_update :create_audit_logs
 
   # Scopes
   scope :in_sequence, -> { order(sequence_order: :asc) }
@@ -125,6 +127,29 @@ class ScheduleTemplateRow < ApplicationRecord
     else
       # Remove Photos category if present
       self.documentation_category_ids -= [photos_category.id]
+    end
+  end
+
+  def create_audit_logs
+    # Track changes to status checkbox fields
+    audit_fields = %w[confirm supplier_confirm start complete]
+
+    audit_fields.each do |field|
+      if saved_change_to_attribute?(field)
+        old_value, new_value = saved_change_to_attribute(field)
+
+        # Create audit log entry
+        # The user_id should be set by the controller via @current_audit_user
+        user_id = Thread.current[:current_audit_user_id] || 1 # Fallback to admin if no user context
+
+        audits.create!(
+          user_id: user_id,
+          field_name: field,
+          old_value: old_value,
+          new_value: new_value,
+          changed_at: Time.current
+        )
+      end
     end
   end
 end

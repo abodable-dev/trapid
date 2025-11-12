@@ -276,6 +276,9 @@ Rails.application.routes.draw do
             post :bulk_update
             post :reorder
           end
+          member do
+            get :audit_logs
+          end
         end
       end
 

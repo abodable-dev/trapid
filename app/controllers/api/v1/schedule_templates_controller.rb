@@ -173,7 +173,13 @@ module Api
           order_required: row.order_required,
           call_up_required: row.call_up_required,
           plan_required: row.plan_required,
-          duration: row.duration
+          duration: row.duration,
+          start_date: row.start_date,
+          manually_positioned: row.manually_positioned,
+          confirm: row.confirm,
+          supplier_confirm: row.supplier_confirm,
+          start: row.start,
+          complete: row.complete
         }
       end
     end
