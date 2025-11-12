@@ -83,10 +83,17 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
   // Calculate the actual finish date (last working day) from start date and duration
   // The start date counts as day 1, so for a 2-day task starting Wednesday,
   // it finishes on Thursday (Wed=day 1, Thu=day 2)
+  // Skips weekends and holidays during the task duration
   const calculateFinishDate = (startDate, days) => {
     if (days <= 0) return new Date(startDate)
 
     let current = new Date(startDate)
+
+    // Make sure we start on a working day
+    while (!isWorkingDay(current)) {
+      current.setDate(current.getDate() + 1)
+    }
+
     let remainingDays = days - 1 // Subtract 1 because start day counts as day 1
 
     while (remainingDays > 0) {
