@@ -3504,7 +3504,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                   onUpdateTask(task.id, {
                     [field]: checked,
                     manually_positioned: false,
-                    start_date: null  // Clear start_date to auto-calculate
+                    start_date: 0  // 0 means auto-calculate from today
                   })
 
                   setShowPositionDialog(false)
