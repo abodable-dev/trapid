@@ -4,6 +4,7 @@ class PurchaseOrder < ApplicationRecord
   belongs_to :supplier, optional: true, counter_cache: true
   belongs_to :estimate, optional: true
   has_many :line_items, class_name: 'PurchaseOrderLineItem', dependent: :destroy
+  has_many :payments, dependent: :destroy
   has_many :project_tasks, dependent: :nullify
   has_many :schedule_tasks, dependent: :nullify
   has_many :workflow_instances, as: :subject, dependent: :destroy

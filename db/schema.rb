@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_12_092812) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_12_213631) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -101,6 +101,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_092812) do
     t.string "logo_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "construction_contacts", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.bigint "contact_id", null: false
+    t.boolean "primary", default: false, null: false
+    t.string "role"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id", "contact_id"], name: "index_construction_contacts_on_construction_id_and_contact_id", unique: true
+    t.index ["construction_id", "primary"], name: "index_construction_contacts_on_construction_id_and_primary"
+    t.index ["construction_id"], name: "index_construction_contacts_on_construction_id"
+    t.index ["contact_id"], name: "index_construction_contacts_on_contact_id"
   end
 
   create_table "construction_documentation_tabs", force: :cascade do |t|
@@ -218,6 +231,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_092812) do
     t.index ["contact_id"], name: "index_contact_persons_on_contact_id"
     t.index ["email"], name: "index_contact_persons_on_email"
     t.index ["xero_contact_person_id"], name: "index_contact_persons_on_xero_contact_person_id"
+  end
+
+  create_table "contact_relationships", force: :cascade do |t|
+    t.bigint "source_contact_id", null: false
+    t.bigint "related_contact_id", null: false
+    t.string "relationship_type", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["related_contact_id"], name: "index_contact_relationships_on_related_contact_id"
+    t.index ["source_contact_id", "related_contact_id"], name: "index_contact_relationships_on_source_and_related", unique: true
+    t.index ["source_contact_id"], name: "index_contact_relationships_on_source_contact_id"
   end
 
   create_table "contacts", force: :cascade do |t|
@@ -521,6 +546,26 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_092812) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_outlook_credentials_on_user_id"
+  end
+
+  create_table "payments", force: :cascade do |t|
+    t.bigint "purchase_order_id", null: false
+    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.date "payment_date", null: false
+    t.string "payment_method"
+    t.string "reference_number"
+    t.text "notes"
+    t.string "xero_payment_id"
+    t.datetime "xero_synced_at"
+    t.text "xero_sync_error"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_payments_on_created_by_id"
+    t.index ["payment_date"], name: "index_payments_on_payment_date"
+    t.index ["purchase_order_id", "payment_date"], name: "index_payments_on_purchase_order_id_and_payment_date"
+    t.index ["purchase_order_id"], name: "index_payments_on_purchase_order_id"
+    t.index ["xero_payment_id"], name: "index_payments_on_xero_payment_id"
   end
 
   create_table "price_histories", force: :cascade do |t|
@@ -1814,6 +1859,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_092812) do
   add_foreign_key "chat_messages", "projects"
   add_foreign_key "chat_messages", "users"
   add_foreign_key "columns", "tables"
+  add_foreign_key "construction_contacts", "constructions"
+  add_foreign_key "construction_contacts", "contacts"
   add_foreign_key "construction_documentation_tabs", "constructions"
   add_foreign_key "constructions", "designs"
   add_foreign_key "contact_activities", "contacts"
@@ -1821,6 +1868,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_092812) do
   add_foreign_key "contact_group_memberships", "contact_groups"
   add_foreign_key "contact_group_memberships", "contacts"
   add_foreign_key "contact_persons", "contacts"
+  add_foreign_key "contact_relationships", "contacts", column: "related_contact_id"
+  add_foreign_key "contact_relationships", "contacts", column: "source_contact_id"
   add_foreign_key "document_tasks", "constructions"
   add_foreign_key "emails", "constructions"
   add_foreign_key "estimate_line_items", "estimates"
@@ -1833,6 +1882,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_092812) do
   add_foreign_key "one_drive_credentials", "constructions"
   add_foreign_key "organization_one_drive_credentials", "users", column: "connected_by_id"
   add_foreign_key "outlook_credentials", "users"
+  add_foreign_key "payments", "purchase_orders"
+  add_foreign_key "payments", "users", column: "created_by_id"
   add_foreign_key "price_histories", "contacts", column: "supplier_id", name: "fk_rails_price_histories_contact"
   add_foreign_key "price_histories", "pricebook_items"
   add_foreign_key "pricebook_items", "contacts", column: "default_supplier_id", name: "fk_rails_pricebook_items_default_supplier"

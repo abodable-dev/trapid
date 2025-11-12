@@ -102,7 +102,7 @@ module Api
             # Filter preloaded price histories for this contact (no N+1)
             price_histories = item.price_histories
               .select { |ph| ph.supplier_id == @contact.id }
-              .sort_by { |ph| [ph.date_effective, ph.created_at] }
+              .sort_by { |ph| [(ph.date_effective || Time.at(0)).to_time, (ph.created_at || Time.at(0)).to_time] }
               .reverse
               .map do |ph|
                 ph.as_json(only: [:id, :old_price, :new_price, :date_effective, :lga, :change_reason, :user_name, :created_at])

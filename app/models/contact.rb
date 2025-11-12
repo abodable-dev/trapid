@@ -21,6 +21,13 @@ class Contact < ApplicationRecord
   has_many :purchase_orders, foreign_key: :supplier_id, dependent: :restrict_with_error
   has_many :price_histories, foreign_key: :supplier_id, dependent: :destroy
 
+  # Contact relationships (bidirectional)
+  has_many :outgoing_relationships, class_name: 'ContactRelationship',
+           foreign_key: :source_contact_id, dependent: :destroy
+  has_many :incoming_relationships, class_name: 'ContactRelationship',
+           foreign_key: :related_contact_id, dependent: :destroy
+  has_many :related_contacts, through: :outgoing_relationships, source: :related_contact
+
   # Constants
   CONTACT_TYPES = %w[customer supplier sales land_agent].freeze
 
