@@ -28,16 +28,41 @@ export default function UserManagementTab() {
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
 
-  // Column order state with localStorage persistence
+  // Column order state with localStorage persistence and migration
   const [columnOrder, setColumnOrder] = useState(() => {
     const saved = localStorage.getItem('users_columnOrder')
-    return saved ? JSON.parse(saved) : ['name', 'email', 'mobile', 'password', 'role', 'group', 'lastLogin', 'actions']
+    const defaultOrder = ['name', 'email', 'mobile', 'password', 'role', 'group', 'lastLogin', 'actions']
+
+    if (!saved) return defaultOrder
+
+    try {
+      const parsed = JSON.parse(saved)
+      // Migrate: add missing columns
+      const missingColumns = defaultOrder.filter(col => !parsed.includes(col))
+      if (missingColumns.length > 0) {
+        // Insert mobile and password after email
+        const emailIndex = parsed.indexOf('email')
+        if (emailIndex !== -1 && !parsed.includes('mobile')) {
+          parsed.splice(emailIndex + 1, 0, 'mobile')
+        }
+        if (emailIndex !== -1 && !parsed.includes('password')) {
+          const mobileIndex = parsed.indexOf('mobile')
+          parsed.splice(mobileIndex !== -1 ? mobileIndex + 1 : emailIndex + 1, 0, 'password')
+        }
+        // Save migrated order
+        localStorage.setItem('users_columnOrder', JSON.stringify(parsed))
+        return parsed
+      }
+      return parsed
+    } catch {
+      return defaultOrder
+    }
   })
 
-  // Column widths with localStorage persistence
+  // Column widths with localStorage persistence and migration
   const [columnWidths, setColumnWidths] = useState(() => {
     const saved = localStorage.getItem('users_columnWidths')
-    return saved ? JSON.parse(saved) : {
+    const defaultWidths = {
       name: 200,
       email: 250,
       mobile: 150,
@@ -46,6 +71,20 @@ export default function UserManagementTab() {
       group: 180,
       lastLogin: 150,
       actions: 100
+    }
+
+    if (!saved) return defaultWidths
+
+    try {
+      const parsed = JSON.parse(saved)
+      // Add missing column widths
+      const merged = { ...defaultWidths, ...parsed }
+      if (Object.keys(merged).length !== Object.keys(parsed).length) {
+        localStorage.setItem('users_columnWidths', JSON.stringify(merged))
+      }
+      return merged
+    } catch {
+      return defaultWidths
     }
   })
 
