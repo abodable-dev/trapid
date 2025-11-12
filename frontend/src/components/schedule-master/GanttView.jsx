@@ -83,6 +83,7 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
   // Calculate end date from start date and business days duration
   // The start date counts as day 1, so for a 2-day task starting Wednesday,
   // it ends on Thursday (Wed=day 1, Thu=day 2)
+  // The Gantt library expects end date to be the day AFTER the last day (exclusive end)
   const addBusinessDays = (startDate, days) => {
     if (days <= 0) return new Date(startDate)
 
@@ -96,6 +97,8 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
       }
     }
 
+    // Add one more day since Gantt expects exclusive end date
+    current.setDate(current.getDate() + 1)
     return current
   }
 
