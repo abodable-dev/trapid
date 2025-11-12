@@ -1122,6 +1122,7 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
                     end={ganttData.end}
                     holidays={ganttData.holidays}
                     readonly={false}
+                    columnResize={true}
                     onAdd={handleLinkAdd}
                     onUpdate={(updatedTask) => {
                       console.log('Task updated in Gantt:', updatedTask)
