@@ -1093,46 +1093,9 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
                     readonly={false}
                     onAdd={handleLinkAdd}
                     onUpdate={(updatedTask) => {
-                      // Sync task updates back to Schedule Master grid
+                      // Log updates but don't sync automatically to avoid rendering issues
                       console.log('Task updated in Gantt:', updatedTask)
-
-                      // Find the original task
-                      const originalTask = tasks.find(t => t.id === updatedTask.id)
-                      if (!originalTask) return
-
-                      // Check what changed and update accordingly
-                      const updates = {}
-
-                      // If dates changed, recalculate duration as business days
-                      if (updatedTask.start || updatedTask.end) {
-                        const startDate = new Date(updatedTask.start)
-                        const endDate = new Date(updatedTask.end)
-                        let businessDays = 0
-                        const current = new Date(startDate)
-
-                        // Count business days between start and end
-                        while (current < endDate) {
-                          if (isWorkingDay(current)) {
-                            businessDays++
-                          }
-                          current.setDate(current.getDate() + 1)
-                        }
-
-                        if (businessDays !== originalTask.duration) {
-                          updates.duration = businessDays
-                        }
-                      }
-
-                      // If duration was directly changed
-                      if (updatedTask.duration !== undefined && updatedTask.duration !== originalTask.duration) {
-                        updates.duration = updatedTask.duration
-                      }
-
-                      // Only update if there are actual changes
-                      if (Object.keys(updates).length > 0) {
-                        console.log('Syncing updates to Schedule Master:', updates)
-                        onUpdateTask(originalTask.id, updates)
-                      }
+                      // TODO: Implement safe two-way sync for duration changes
                     }}
                     onDelete={handleLinkDelete}
                     onCellClick={(ev) => {
