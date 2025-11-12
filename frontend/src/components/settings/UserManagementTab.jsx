@@ -14,7 +14,9 @@ import {
   CheckCircleIcon,
   TrashIcon,
   XMarkIcon,
-  XCircleIcon
+  XCircleIcon,
+  KeyIcon,
+  PhoneIcon
 } from '@heroicons/react/24/outline'
 
 export default function UserManagementTab() {
@@ -29,7 +31,7 @@ export default function UserManagementTab() {
   // Column order state with localStorage persistence
   const [columnOrder, setColumnOrder] = useState(() => {
     const saved = localStorage.getItem('users_columnOrder')
-    return saved ? JSON.parse(saved) : ['name', 'email', 'role', 'group', 'lastLogin', 'actions']
+    return saved ? JSON.parse(saved) : ['name', 'email', 'mobile', 'password', 'role', 'group', 'lastLogin', 'actions']
   })
 
   // Column widths with localStorage persistence
@@ -38,6 +40,8 @@ export default function UserManagementTab() {
     return saved ? JSON.parse(saved) : {
       name: 200,
       email: 250,
+      mobile: 150,
+      password: 180,
       role: 180,
       group: 180,
       lastLogin: 150,
@@ -189,6 +193,28 @@ export default function UserManagementTab() {
     }
   }
 
+  const handleResetPassword = async (userId, userEmail, userName) => {
+    if (!confirm(`Send password reset email to ${userName} (${userEmail})?`)) {
+      return
+    }
+
+    try {
+      const response = await api.post(`/api/v1/users/${userId}/reset_password`)
+      if (response.success) {
+        setToast({
+          message: `Password reset email sent to ${userEmail}`,
+          type: 'success'
+        })
+      }
+    } catch (err) {
+      console.error('Failed to send reset email:', err)
+      setToast({
+        message: 'Failed to send password reset email. Please try again.',
+        type: 'error'
+      })
+    }
+  }
+
   const handleRemoveUser = async (userId, userName) => {
     if (!confirm(`Are you sure you want to remove ${userName}? This action cannot be undone.`)) {
       return
@@ -302,6 +328,8 @@ export default function UserManagementTab() {
         return user.name?.toLowerCase() || ''
       case 'email':
         return user.email?.toLowerCase() || ''
+      case 'mobile':
+        return user.mobile_phone?.toLowerCase() || ''
       case 'role':
         return user.role?.toLowerCase() || ''
       case 'group':
@@ -328,6 +356,8 @@ export default function UserManagementTab() {
             return item.name?.toLowerCase().includes(lowerFilter)
           case 'email':
             return item.email?.toLowerCase().includes(lowerFilter)
+          case 'mobile':
+            return item.mobile_phone?.toLowerCase().includes(lowerFilter)
           case 'role':
             return item.role?.toLowerCase().includes(lowerFilter)
           case 'group':
@@ -356,6 +386,8 @@ export default function UserManagementTab() {
   const columnsConfig = {
     name: { key: 'name', label: 'Name', searchable: true, filterType: 'search' },
     email: { key: 'email', label: 'Email', searchable: true, filterType: 'search' },
+    mobile: { key: 'mobile', label: 'Mobile', searchable: true, filterType: 'search' },
+    password: { key: 'password', label: 'Password', searchable: false },
     role: { key: 'role', label: 'Role', searchable: true, filterType: 'dropdown' },
     group: { key: 'group', label: 'Group', searchable: true, filterType: 'dropdown' },
     lastLogin: { key: 'lastLogin', label: 'Last Login', searchable: false },
@@ -402,6 +434,35 @@ export default function UserManagementTab() {
                 {user.email}
               </span>
             </div>
+          </td>
+        )
+
+      case 'mobile':
+        return (
+          <td key="mobile" style={cellStyle} className={`px-6 py-4 ${isEdited || editedUsers[user.id]?.mobile_phone !== undefined ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+            <div className="flex items-center gap-1">
+              <PhoneIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+              <input
+                type="text"
+                value={getCurrentValue(user, 'mobile_phone') || ''}
+                onChange={(e) => handleEditUser(user.id, 'mobile_phone', e.target.value)}
+                placeholder="04XX XXX XXX"
+                className="block w-full rounded-md border-0 py-1.5 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-600"
+              />
+            </div>
+          </td>
+        )
+
+      case 'password':
+        return (
+          <td key="password" style={cellStyle} className="px-6 py-4 whitespace-nowrap">
+            <button
+              onClick={() => handleResetPassword(user.id, user.email, user.name)}
+              className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-md transition-colors"
+            >
+              <KeyIcon className="h-3.5 w-3.5" />
+              Reset Password
+            </button>
           </td>
         )
 

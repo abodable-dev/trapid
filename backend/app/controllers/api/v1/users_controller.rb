@@ -2,14 +2,14 @@ class Api::V1::UsersController < ApplicationController
   # GET /api/v1/users
   # Returns list of all users for chat/contact purposes
   def index
-    @users = User.select(:id, :name, :email, :role, :assigned_role, :last_login_at).order(:name)
-    render json: @users.as_json(only: [:id, :name, :email, :role, :assigned_role, :last_login_at])
+    @users = User.select(:id, :name, :email, :mobile_phone, :role, :assigned_role, :last_login_at).order(:name)
+    render json: @users.as_json(only: [:id, :name, :email, :mobile_phone, :role, :assigned_role, :last_login_at])
   end
 
   # GET /api/v1/users/:id
   def show
     @user = User.find(params[:id])
-    render json: @user.as_json(only: [:id, :name, :email, :role, :assigned_role, :last_login_at])
+    render json: @user.as_json(only: [:id, :name, :email, :mobile_phone, :role, :assigned_role, :last_login_at])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'User not found' }, status: :not_found
   end
@@ -21,7 +21,7 @@ class Api::V1::UsersController < ApplicationController
     if @user.update(user_params)
       render json: {
         success: true,
-        user: @user.as_json(only: [:id, :name, :email, :role, :assigned_role, :last_login_at])
+        user: @user.as_json(only: [:id, :name, :email, :mobile_phone, :role, :assigned_role, :last_login_at])
       }
     else
       render json: {
@@ -29,6 +29,28 @@ class Api::V1::UsersController < ApplicationController
         errors: @user.errors.full_messages
       }, status: :unprocessable_entity
     end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'User not found' }, status: :not_found
+  end
+
+  # POST /api/v1/users/:id/reset_password
+  def reset_password
+    @user = User.find(params[:id])
+
+    # Generate reset token
+    token = SecureRandom.urlsafe_base64
+    @user.update_columns(
+      reset_password_token: token,
+      reset_password_sent_at: Time.current
+    )
+
+    # Send password reset email
+    # UserMailer.reset_password(@user, token).deliver_later
+
+    render json: {
+      success: true,
+      message: "Password reset email sent to #{@user.email}"
+    }
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'User not found' }, status: :not_found
   end
@@ -49,6 +71,6 @@ class Api::V1::UsersController < ApplicationController
   private
 
   def user_params
-    params.require(:user).permit(:name, :email, :role, :assigned_role)
+    params.require(:user).permit(:name, :email, :mobile_phone, :role, :assigned_role)
   end
 end

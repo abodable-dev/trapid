@@ -186,7 +186,11 @@ Rails.application.routes.draw do
       end
 
       # Users management
-      resources :users, only: [:index, :show, :update, :destroy]
+      resources :users, only: [:index, :show, :update, :destroy] do
+        member do
+          post :reset_password
+        end
+      end
 
       # Workflow management
       resources :workflow_definitions

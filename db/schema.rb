@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_211238) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_12_014328) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -138,6 +138,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_211238) do
     t.string "design_name"
     t.datetime "onedrive_folders_created_at"
     t.string "onedrive_folder_creation_status", default: "not_requested"
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
     t.index ["created_at"], name: "index_constructions_on_created_at"
     t.index ["design_id"], name: "index_constructions_on_design_id"
     t.index ["design_name"], name: "index_constructions_on_design_name"
@@ -856,6 +858,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_211238) do
     t.boolean "call_up_required", default: false, null: false
     t.boolean "plan_required", default: false, null: false
     t.integer "duration", default: 0, null: false
+    t.integer "start_date", default: 0, null: false
     t.index ["documentation_category_ids"], name: "index_schedule_template_rows_on_documentation_category_ids", using: :gin
     t.index ["schedule_template_id", "sequence_order"], name: "idx_on_schedule_template_id_sequence_order_1bea5d762b"
     t.index ["schedule_template_id"], name: "index_schedule_template_rows_on_schedule_template_id"
@@ -1677,6 +1680,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_211238) do
     t.datetime "reset_password_sent_at"
     t.string "assigned_role"
     t.datetime "last_login_at"
+    t.string "mobile_phone"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["role"], name: "index_users_on_role"
   end
