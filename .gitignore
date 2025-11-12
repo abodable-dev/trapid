@@ -21,3 +21,11 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 .vercel
+
+# Rails temporary files
+/tmp/
+/tmp/pids/
+/tmp/cache/
+/tmp/sockets/
+/storage/
+/public/uploads/
