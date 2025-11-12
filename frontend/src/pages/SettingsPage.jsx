@@ -13,7 +13,7 @@ import XeroFieldMappingTab from '../components/settings/XeroFieldMappingTab'
 import TablesTab from '../components/settings/TablesTab'
 import SchemaPage from './SchemaPage'
 import DocumentationCategoriesTab from '../components/settings/DocumentationCategoriesTab'
-import UserManagementTab from '../components/settings/UserManagementTab'
+import RolesAndGroupsTab from '../components/settings/RolesAndGroupsTab'
 import SupervisorChecklistTab from '../components/settings/SupervisorChecklistTab'
 import WorkflowAdminPage from './WorkflowAdminPage'
 import PublicHolidaysPage from './PublicHolidaysPage'
@@ -75,7 +75,7 @@ export default function SettingsPage() {
       console.error('Error pulling setup data:', error)
       setPullStatus({
         type: 'error',
-        message: error.response?.data?.error || 'Failed to pull setup data from local'
+        message: error?.response?.data?.error || error?.message || 'Failed to pull setup data from local'
       })
     } finally {
       setIsPullingData(false)
@@ -107,7 +107,7 @@ export default function SettingsPage() {
         ...prev,
         [type]: {
           type: 'error',
-          message: error.response?.data?.error || `Failed to sync ${type}`
+          message: error?.response?.data?.error || error?.message || `Failed to sync ${type}`
         }
       }))
     } finally {
@@ -301,7 +301,7 @@ export default function SettingsPage() {
           {/* Users Tab */}
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <UserManagementTab />
+              <RolesAndGroupsTab />
             </div>
           </TabPanel>
 
