@@ -578,7 +578,8 @@ export default function PDFMeasurementTool({ pdfUrl, onClose }) {
                   className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
                 >
                 Next
-              </button>
+                </button>
+              </div>
             </div>
           </div>
         </div>

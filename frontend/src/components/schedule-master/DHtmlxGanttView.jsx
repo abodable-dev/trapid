@@ -1311,6 +1311,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     // Initialize gantt
     gantt.init(ganttContainer.current)
+
+    // Force a layout recalculation after init to fix row alignment with resizable columns
+    setTimeout(() => {
+      gantt.render()
+    }, 0)
+
     setGanttReady(true)
 
     // Add event delegation for checkbox clicks
@@ -2057,6 +2063,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       data: ganttTasks,
       links: ganttLinks
     })
+
+    // Immediately render to ensure proper row alignment
+    gantt.render()
 
     console.log('Loaded:', ganttTasks.length, 'tasks and', ganttLinks.length, 'links')
 
