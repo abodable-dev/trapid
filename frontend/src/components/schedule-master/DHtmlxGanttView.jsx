@@ -2860,21 +2860,31 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           pointer-events: none !important;
         }
 
-        /* Make duration resize handles (left/right arrows) much bigger and easier to grab */
+        /* Task bar content - make HIGHLY grabbable with move cursor for repositioning tasks */
+        .dhtmlx-gantt-container .gantt_task_content {
+          cursor: move !important; /* Hand/move cursor for dragging task to new date */
+          pointer-events: auto !important;
+          z-index: 5 !important;
+          padding: 0 25px !important; /* Padding to avoid resize handles */
+        }
+
+        /* Make duration resize handles smaller and positioned outside */
+        /* IMPORTANT: Handles extend OUTSIDE the task bar for easy duration changes */
         .dhtmlx-gantt-container .gantt_task_drag {
-          width: 30px !important;
+          width: 16px !important; /* Narrower to not block task bar */
           height: 100% !important;
-          background-color: rgba(59, 130, 246, 0.4) !important;
+          background-color: rgba(59, 130, 246, 0.9) !important;
           cursor: ew-resize !important;
-          opacity: 0.5 !important;
-          transition: opacity 0.2s, background-color 0.2s !important;
+          opacity: 0 !important; /* Hidden by default, show on hover */
+          transition: opacity 0.2s, background-color 0.2s, transform 0.2s !important;
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
           position: absolute !important;
           top: 0 !important;
           bottom: 0 !important;
-          z-index: 10 !important;
+          z-index: 25 !important; /* Above task bar and content */
+          pointer-events: auto !important;
         }
 
         /* Increase z-index of task line when hovering to show resize handles above other tasks */
@@ -2882,40 +2892,44 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           z-index: 15 !important;
         }
 
+        /* Show resize handles on task hover */
         .dhtmlx-gantt-container .gantt_task_line:hover .gantt_task_drag {
-          opacity: 1 !important;
+          opacity: 0.8 !important;
         }
 
+        /* Full opacity when hovering handle directly */
         .dhtmlx-gantt-container .gantt_task_drag:hover {
-          background-color: rgba(59, 130, 246, 0.8) !important;
+          opacity: 1 !important;
+          background-color: rgba(59, 130, 246, 1) !important;
+          transform: scale(1.15) !important;
         }
 
-        /* Left resize handle with arrow */
+        /* Left resize handle with arrow - EXTENDS TO THE LEFT */
         .dhtmlx-gantt-container .gantt_task_drag.task_left {
-          border-top-left-radius: 4px !important;
-          border-bottom-left-radius: 4px !important;
+          left: -12px !important; /* Extends 12px outside the left edge */
+          border-radius: 4px !important;
         }
 
         .dhtmlx-gantt-container .gantt_task_drag.task_left::before {
           content: '◄' !important;
           color: white !important;
-          font-size: 18px !important;
+          font-size: 14px !important;
           font-weight: bold !important;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
         }
 
-        /* Right resize handle with arrow */
+        /* Right resize handle with arrow - EXTENDS TO THE RIGHT */
         .dhtmlx-gantt-container .gantt_task_drag.task_right {
-          border-top-right-radius: 4px !important;
-          border-bottom-right-radius: 4px !important;
+          right: -12px !important; /* Extends 12px outside the right edge */
+          border-radius: 4px !important;
         }
 
         .dhtmlx-gantt-container .gantt_task_drag.task_right::before {
           content: '►' !important;
           color: white !important;
-          font-size: 18px !important;
+          font-size: 14px !important;
           font-weight: bold !important;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
         }
 
         /* Critical path styling (PRO feature) */
