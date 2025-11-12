@@ -27,7 +27,7 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
       taskName: true,
       predecessors: true,
       supplierGroup: true,
-      duration: false,
+      duration: true,  // Changed to true to show duration column by default
       startDay: true
     }
   })
@@ -133,6 +133,7 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
     setSelectedTask(null)
   }
 
+
   // Memoize columns configuration to prevent re-renders
   const columns = useMemo(() => {
     const allColumns = [
@@ -162,7 +163,6 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
         width: 100,
         key: 'duration',
         align: 'center',
-        editor: 'number',
         template: (value, row) => {
           // Show the task's duration directly from the data
           const duration = row.duration !== undefined && row.duration !== null ? row.duration : value
@@ -1122,70 +1122,9 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
                     start={ganttData.start}
                     end={ganttData.end}
                     holidays={ganttData.holidays}
-                    readonly={false}
                     columnResize={true}
                     onAdd={handleLinkAdd}
-                    onEditCell={(cell) => {
-                      console.log('Cell edited in Gantt:', cell)
-                      // Handle duration edits
-                      if (cell.columnId === 'duration' && cell.value !== undefined) {
-                        const taskId = cell.id
-                        const newDuration = parseInt(cell.value)
-                        if (!isNaN(newDuration) && newDuration >= 0) {
-                          console.log('Syncing duration edit:', taskId, newDuration)
-                          onUpdateTask(taskId, { duration: newDuration })
-                        }
-                      }
-                    }}
-                    onUpdate={(updatedTask) => {
-                      console.log('Task updated in Gantt:', updatedTask)
-
-                      // Find the original task
-                      const originalTask = tasks.find(t => t.id === updatedTask.id)
-                      if (!originalTask) return
-
-                      // Use setTimeout to avoid blocking render
-                      setTimeout(() => {
-                        const updates = {}
-
-                        // If dates changed, recalculate duration as business days
-                        if (updatedTask.start && updatedTask.end) {
-                          const startDate = new Date(updatedTask.start)
-                          const endDate = new Date(updatedTask.end)
-                          let businessDays = 0
-                          let current = new Date(startDate)
-
-                          // Safely count business days with a max limit to prevent infinite loops
-                          let maxIterations = 1000
-                          while (current < endDate && maxIterations > 0) {
-                            if (isWorkingDay(current)) {
-                              businessDays++
-                            }
-                            current.setDate(current.getDate() + 1)
-                            maxIterations--
-                          }
-
-                          if (businessDays !== originalTask.duration) {
-                            updates.duration = businessDays
-                          }
-                        }
-
-                        // Only update if there are actual changes
-                        if (Object.keys(updates).length > 0) {
-                          console.log('Syncing duration update to Schedule Master:', updates)
-                          onUpdateTask(originalTask.id, updates)
-                        }
-                      }, 0)
-                    }}
                     onDelete={handleLinkDelete}
-                    onCellClick={(ev) => {
-                      console.log('onCellClick triggered:', ev)
-                      // Open editor when Actions column is clicked
-                      if (ev.columnId === 'actions') {
-                        console.log('Actions column clicked, taskId:', ev.id)
-                        handleTaskClick(ev.id)
-                      }
-                    }}
                   />
                 </ContextMenu>
               </Willow>
