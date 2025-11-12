@@ -18,6 +18,10 @@ Rails.application.routes.draw do
       post 'auth/login', to: 'authentication#login'
       get 'auth/me', to: 'authentication#me'
 
+      # OmniAuth routes
+      get 'auth/microsoft_office365/callback', to: 'omniauth_callbacks#microsoft_office365'
+      get 'auth/failure', to: 'omniauth_callbacks#failure'
+
       # Import routes
       post 'imports/upload', to: 'imports#upload'
       post 'imports/execute', to: 'imports#execute'

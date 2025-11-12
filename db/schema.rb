@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_12_014328) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_12_015015) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -1681,6 +1681,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_014328) do
     t.string "assigned_role"
     t.datetime "last_login_at"
     t.string "mobile_phone"
+    t.string "provider"
+    t.string "uid"
+    t.text "oauth_token"
+    t.datetime "oauth_expires_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["role"], name: "index_users_on_role"
   end

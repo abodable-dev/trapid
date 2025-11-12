@@ -15,6 +15,11 @@ gem "bcrypt", "~> 3.1.7"
 # JWT for token-based authentication
 gem "jwt", "~> 2.7"
 
+# OAuth authentication
+gem "omniauth", "~> 2.1"
+gem "omniauth-microsoft-office365", "~> 0.0.8"
+gem "omniauth-rails_csrf_protection", "~> 1.0"  # Security fix for Rails
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 

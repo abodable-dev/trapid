@@ -37,6 +37,7 @@ import ChatPage from './pages/ChatPage'
 import WorkflowsPage from './pages/WorkflowsPage'
 import WorkflowAdminPage from './pages/WorkflowAdminPage'
 import PublicHolidaysPage from './pages/PublicHolidaysPage'
+import AuthCallback from './pages/AuthCallback'
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
       <BrowserRouter>
         <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
         <Route path="/chat" element={<AppLayout><ChatPage /></AppLayout>} />
         <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
