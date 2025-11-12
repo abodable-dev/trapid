@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_12_070512) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_12_092812) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -54,6 +54,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_070512) do
     t.bigint "construction_id"
     t.boolean "saved_to_job", default: false
     t.index ["channel", "created_at"], name: "index_chat_messages_on_channel_and_created_at"
+    t.index ["construction_id", "channel", "created_at"], name: "index_chat_messages_on_construction_channel_created"
     t.index ["construction_id"], name: "index_chat_messages_on_construction_id"
     t.index ["created_at"], name: "index_chat_messages_on_created_at"
     t.index ["project_id", "created_at"], name: "index_chat_messages_on_project_id_and_created_at"
@@ -384,6 +385,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_070512) do
     t.datetime "imported_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["construction_id", "status"], name: "index_estimates_on_construction_and_status"
     t.index ["construction_id"], name: "index_estimates_on_construction_id"
     t.index ["imported_at"], name: "index_estimates_on_imported_at"
     t.index ["source"], name: "index_estimates_on_source"
@@ -570,6 +572,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_070512) do
     t.string "image_file_id"
     t.string "spec_file_id"
     t.string "qr_code_file_id"
+    t.index ["category", "is_active", "supplier_id"], name: "index_pricebook_items_on_category_active_supplier"
     t.index ["category"], name: "index_pricebook_items_on_category"
     t.index ["default_supplier_id"], name: "index_pricebook_items_on_default_supplier_id"
     t.index ["image_fetch_status"], name: "index_pricebook_items_on_image_fetch_status"
@@ -648,6 +651,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_070512) do
     t.index ["is_critical_path"], name: "index_project_tasks_on_is_critical_path"
     t.index ["parent_task_id"], name: "index_project_tasks_on_parent_task_id"
     t.index ["planned_start_date", "planned_end_date"], name: "index_project_tasks_on_planned_start_date_and_planned_end_date"
+    t.index ["project_id", "status", "planned_start_date"], name: "index_project_tasks_on_project_status_start"
     t.index ["project_id", "status"], name: "index_project_tasks_on_project_id_and_status"
     t.index ["project_id"], name: "index_project_tasks_on_project_id"
     t.index ["purchase_order_id"], name: "index_project_tasks_on_purchase_order_id"
@@ -764,6 +768,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_070512) do
     t.date "invoice_date"
     t.string "invoice_reference"
     t.bigint "estimate_id"
+    t.index ["construction_id", "status"], name: "index_purchase_orders_on_construction_and_status"
     t.index ["construction_id"], name: "index_purchase_orders_on_construction_id"
     t.index ["creates_schedule_tasks"], name: "index_purchase_orders_on_creates_schedule_tasks"
     t.index ["estimate_id"], name: "index_purchase_orders_on_estimate_id"
