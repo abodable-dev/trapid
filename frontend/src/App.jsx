@@ -15,10 +15,12 @@ import SupplierEditPage from './pages/SupplierEditPage'
 import SupplierNewPage from './pages/SupplierNewPage'
 import ContactsPage from './pages/ContactsPage'
 import ContactDetailPage from './pages/ContactDetailPage'
+import AccountsPage from './pages/AccountsPage'
 import UsersPage from './pages/UsersPage'
 import HealthPage from './pages/HealthPage'
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage'
 import PurchaseOrderEditPage from './pages/PurchaseOrderEditPage'
+import PurchaseOrdersPage from './pages/PurchaseOrdersPage'
 import MasterSchedulePage from './pages/MasterSchedulePage'
 import DesignerHome from './pages/designer/DesignerHome'
 import TableSettings from './pages/designer/TableSettings'
@@ -30,6 +32,7 @@ import Experiences from './pages/designer/Experiences'
 import SettingsPage from './pages/SettingsPage'
 import SchemaPage from './pages/SchemaPage'
 import XeroCallbackPage from './pages/XeroCallbackPage'
+import XeroSyncPage from './pages/XeroSyncPage'
 import OutlookPage from './pages/OutlookPage'
 import OneDrivePage from './pages/OneDrivePage'
 import DocumentsPage from './pages/DocumentsPage'
@@ -39,6 +42,8 @@ import WorkflowAdminPage from './pages/WorkflowAdminPage'
 import PublicHolidaysPage from './pages/PublicHolidaysPage'
 import AuthCallback from './pages/AuthCallback'
 import PDFMeasurementTestPage from './pages/PDFMeasurementTestPage'
+import TrainingPage from './pages/TrainingPage'
+import TrainingSessionPage from './pages/TrainingSessionPage'
 
 function App() {
   return (
@@ -60,12 +65,14 @@ function App() {
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
         <Route path="/contacts" element={<AppLayout><ContactsPage /></AppLayout>} />
         <Route path="/contacts/:id" element={<AppLayout><ContactDetailPage /></AppLayout>} />
+        <Route path="/accounts" element={<AppLayout><AccountsPage /></AppLayout>} />
         <Route path="/users" element={<AppLayout><UsersPage /></AppLayout>} />
         <Route path="/health" element={<AppLayout><HealthPage /></AppLayout>} />
         <Route path="/suppliers" element={<Navigate to="/contacts" replace />} />
         <Route path="/suppliers/new" element={<AppLayout><SupplierNewPage /></AppLayout>} />
         <Route path="/suppliers/:id/edit" element={<AppLayout><SupplierEditPage /></AppLayout>} />
         <Route path="/suppliers/:id" element={<AppLayout><SupplierDetailPage /></AppLayout>} />
+        <Route path="/purchase-orders" element={<AppLayout><PurchaseOrdersPage /></AppLayout>} />
         <Route path="/purchase-orders/:id/edit" element={<AppLayout><PurchaseOrderEditPage /></AppLayout>} />
         <Route path="/purchase-orders/:id" element={<AppLayout><PurchaseOrderDetailPage /></AppLayout>} />
         <Route path="/import" element={<AppLayout><ImportPage /></AppLayout>} />
@@ -85,11 +92,14 @@ function App() {
         <Route path="/settings/integrations" element={<AppLayout><SettingsPage /></AppLayout>} />
         <Route path="/settings/schema" element={<AppLayout><SchemaPage /></AppLayout>} />
         <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
+        <Route path="/xero" element={<AppLayout><XeroSyncPage /></AppLayout>} />
         <Route path="/outlook" element={<AppLayout><OutlookPage /></AppLayout>} />
         <Route path="/onedrive" element={<AppLayout><OneDrivePage /></AppLayout>} />
         <Route path="/workflows" element={<AppLayout><WorkflowsPage /></AppLayout>} />
         <Route path="/admin/workflows" element={<AppLayout><WorkflowAdminPage /></AppLayout>} />
         <Route path="/admin/public-holidays" element={<AppLayout><PublicHolidaysPage /></AppLayout>} />
+        <Route path="/training" element={<AppLayout><TrainingPage /></AppLayout>} />
+        <Route path="/training/:sessionId" element={<TrainingSessionPage />} />
         </Routes>
       </BrowserRouter>
     </ErrorBoundary>

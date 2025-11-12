@@ -58,13 +58,13 @@ export default function SupplierNewPage() {
       {/* Page Header with Gradient */}
       <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Link
-            to="/suppliers"
+          <button
+            onClick={() => navigate(-1)}
             className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 mb-6 group"
           >
             <ArrowLeftIcon className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Suppliers
-          </Link>
+            Back
+          </button>
 
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">

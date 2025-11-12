@@ -1,7 +1,7 @@
 {
   "name": "trapid-frontend",
   "private": true,
-  "version": "1.99.33",
+  "version": "1.99.38",
   "type": "module",
   "scripts": {
     "dev": "node scripts/increment-version.js && vite",
@@ -15,12 +15,14 @@
   "dependencies": {
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
+    "@jitsi/react-sdk": "^1.4.4",
     "@svar-ui/react-gantt": "^2.3.3",
     "axios": "^1.13.1",
     "dhtmlx-gantt": "^9.1.0",
     "frappe-gantt": "^1.0.4",
     "isomorphic-dompurify": "^2.31.0",
     "leaflet": "^1.9.4",
+    "nanoid": "^5.1.6",
     "pdfjs-dist": "^4.4.168",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

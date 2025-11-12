@@ -8,6 +8,8 @@ class Construction < ApplicationRecord
   has_many :chat_messages, dependent: :nullify
   has_many :emails, dependent: :nullify
   has_many :construction_documentation_tabs, dependent: :destroy
+  has_many :construction_contacts, dependent: :destroy
+  has_many :contacts, through: :construction_contacts
 
   # Enums
   enum :onedrive_folder_creation_status, {
@@ -22,6 +24,7 @@ class Construction < ApplicationRecord
   validates :title, presence: true
   validates :status, presence: true
   validates :site_supervisor_name, presence: true
+  validate :must_have_at_least_one_contact, on: :update
 
   # Callbacks
   after_create :create_documentation_tabs_from_categories
@@ -97,7 +100,32 @@ class Construction < ApplicationRecord
     CreateJobFoldersJob.perform_later(id, template_id)
   end
 
+  # Get primary contact
+  def primary_contact
+    construction_contacts.primary.first&.contact
+  end
+
+  # Get all contacts with their relationship info
+  def contacts_with_details
+    construction_contacts.includes(contact: :outgoing_relationships).map do |cc|
+      {
+        id: cc.id,
+        contact_id: cc.contact_id,
+        primary: cc.primary,
+        role: cc.role,
+        contact: cc.contact,
+        relationships_count: cc.contact.outgoing_relationships.count
+      }
+    end
+  end
+
   private
+
+  def must_have_at_least_one_contact
+    if construction_contacts.empty?
+      errors.add(:base, "Job must have at least one contact")
+    end
+  end
 
   # Create job-specific documentation tabs from global categories
   def create_documentation_tabs_from_categories

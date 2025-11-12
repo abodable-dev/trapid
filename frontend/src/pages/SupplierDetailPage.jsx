@@ -314,11 +314,11 @@ export default function SupplierDetailPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Back Button */}
           <button
-            onClick={() => navigate('/suppliers')}
+            onClick={() => navigate(-1)}
             className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 mb-6 group"
           >
             <ArrowLeftIcon className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Suppliers
+            Back
           </button>
 
           {/* Header Content */}

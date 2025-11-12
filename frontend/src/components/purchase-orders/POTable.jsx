@@ -512,7 +512,7 @@ export default function POTable({ purchaseOrders, onEdit, onDelete, onApprove, o
                         return (
                           <td key="poNumber" style={cellStyle} className="px-4 py-5 text-sm font-medium text-gray-900 dark:text-white" onClick={(e) => e.stopPropagation()}>
                             <button
-                              onClick={() => navigate(`/purchase-orders/${po.id}/edit`)}
+                              onClick={() => navigate(`/purchase-orders/${po.id}`)}
                               className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 hover:underline"
                             >
                               {po.purchase_order_number}

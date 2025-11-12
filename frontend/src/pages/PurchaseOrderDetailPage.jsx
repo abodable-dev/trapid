@@ -26,10 +26,13 @@ import {
   FaceFrownIcon,
   HandThumbUpIcon,
   XMarkIcon as XMarkIconMini,
+  BanknotesIcon,
 } from '@heroicons/react/20/solid'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
 import { api } from '../api'
 import { formatCurrency } from '../utils/formatters'
+import PaymentsList from '../components/purchase-orders/PaymentsList'
+import NewPaymentModal from '../components/purchase-orders/NewPaymentModal'
 
 const moods = [
   { name: 'Excited', value: 'excited', icon: FireIcon, iconColor: 'text-white', bgColor: 'bg-red-500' },
@@ -58,9 +61,14 @@ export default function PurchaseOrderDetailPage() {
   const [error, setError] = useState(null)
   const [selected, setSelected] = useState(moods[5])
   const [comment, setComment] = useState('')
+  const [payments, setPayments] = useState([])
+  const [paymentSummary, setPaymentSummary] = useState(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentLoading, setPaymentLoading] = useState(false)
 
   useEffect(() => {
     loadPurchaseOrder()
+    loadPayments()
   }, [id])
 
   const loadPurchaseOrder = async () => {
@@ -73,6 +81,53 @@ export default function PurchaseOrderDetailPage() {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadPayments = async () => {
+    try {
+      const response = await api.get(`/api/v1/purchase_orders/${id}/payments`)
+      if (response.success) {
+        setPayments(response.payments || [])
+        setPaymentSummary(response.summary || null)
+      }
+    } catch (err) {
+      console.error('Failed to load payments:', err)
+    }
+  }
+
+  const handleRecordPayment = async (paymentData) => {
+    try {
+      setPaymentLoading(true)
+      const response = await api.post(`/api/v1/purchase_orders/${id}/payments`, {
+        payment: paymentData
+      })
+
+      if (response.success) {
+        await loadPayments()
+        await loadPurchaseOrder() // Reload to update payment status
+        setShowPaymentModal(false)
+        alert('Payment recorded successfully!')
+      } else {
+        alert(response.errors?.join(', ') || 'Failed to record payment')
+      }
+    } catch (err) {
+      console.error('Failed to record payment:', err)
+      alert('Failed to record payment. Please try again.')
+    } finally {
+      setPaymentLoading(false)
+    }
+  }
+
+  const handleDeletePayment = async (paymentId) => {
+    try {
+      await api.delete(`/api/v1/payments/${paymentId}`)
+      await loadPayments()
+      await loadPurchaseOrder() // Reload to update payment status
+      alert('Payment deleted successfully')
+    } catch (err) {
+      console.error('Failed to delete payment:', err)
+      alert('Failed to delete payment. Please try again.')
     }
   }
 
@@ -244,13 +299,13 @@ export default function PurchaseOrderDetailPage() {
 
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="mb-4">
-            <Link
-              to="/active-jobs"
+            <button
+              onClick={() => navigate(-1)}
               className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             >
               <ArrowLeftIcon className="mr-2 h-4 w-4" />
-              Back to Jobs
-            </Link>
+              Back
+            </button>
           </div>
 
           <div className="mx-auto flex max-w-2xl items-center justify-between gap-x-8 lg:mx-0 lg:max-w-none">
@@ -420,6 +475,39 @@ export default function PurchaseOrderDetailPage() {
                   </div>
                 )}
               </dl>
+
+              {/* Payment Summary */}
+              {paymentSummary && (
+                <div className="mt-6 border-t border-gray-900/5 px-6 pt-6 dark:border-white/10">
+                  <div className="flex items-center justify-between mb-4">
+                    <dt className="flex items-center gap-x-2">
+                      <BanknotesIcon aria-hidden="true" className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">Payments</span>
+                    </dt>
+                  </div>
+                  <dl className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <dt className="text-gray-500 dark:text-gray-400">Total Paid</dt>
+                      <dd className="font-medium text-green-600 dark:text-green-400">
+                        {formatCurrency(paymentSummary.total_paid || 0)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-gray-500 dark:text-gray-400">Remaining</dt>
+                      <dd className="font-medium text-gray-900 dark:text-white">
+                        {formatCurrency(paymentSummary.remaining || 0)}
+                      </dd>
+                    </div>
+                  </dl>
+                  <button
+                    onClick={() => setShowPaymentModal(true)}
+                    className="mt-4 w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                  >
+                    Record Payment
+                  </button>
+                </div>
+              )}
+
               {purchaseOrder.status === 'paid' && (
                 <div className="mt-6 border-t border-gray-900/5 px-6 py-6 dark:border-white/10">
                   <button className="text-sm/6 font-semibold text-gray-900 dark:text-white">
@@ -695,6 +783,24 @@ export default function PurchaseOrderDetailPage() {
                 </tr>
               </tfoot>
             </table>
+
+            {/* Payments Section */}
+            <div className="mt-16 border-t border-gray-900/5 pt-8 dark:border-white/10">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-base font-semibold text-gray-900 dark:text-white">Payments</h2>
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                >
+                  Record Payment
+                </button>
+              </div>
+              <PaymentsList
+                payments={payments}
+                summary={paymentSummary}
+                onDelete={handleDeletePayment}
+              />
+            </div>
           </div>
 
           <div className="lg:col-start-3 print-hide-activity">
@@ -820,6 +926,15 @@ export default function PurchaseOrderDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <NewPaymentModal
+        open={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSubmit={handleRecordPayment}
+        purchaseOrder={{ ...purchaseOrder, payments }}
+        loading={paymentLoading}
+      />
     </main>
   )
 }

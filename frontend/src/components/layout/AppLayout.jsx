@@ -32,6 +32,8 @@ import {
   DocumentTextIcon,
   CloudIcon,
   ChatBubbleLeftRightIcon,
+  AcademicCapIcon,
+  BanknotesIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
@@ -41,7 +43,9 @@ const navigation = [
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
   { name: 'Contacts', href: '/contacts', icon: UsersIcon },
+  { name: 'Accounts', href: '/accounts', icon: BanknotesIcon },
   { name: 'Documents', href: '/documents', icon: DocumentTextIcon },
+  { name: 'Training', href: '/training', icon: AcademicCapIcon },
   { name: 'Outlook', href: '/outlook', icon: EnvelopeIcon },
   { name: 'OneDrive', href: '/onedrive', icon: CloudIcon },
   { name: 'Health', href: '/health', icon: PlusIcon },
@@ -401,6 +405,12 @@ export default function AppLayout({ children }) {
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
+              </Link>
+
+              {/* Training Icon */}
+              <Link to="/training" className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-white" title="Training Sessions">
+                <span className="sr-only">Training Sessions</span>
+                <AcademicCapIcon aria-hidden="true" className="size-6" />
               </Link>
 
               <button type="button" className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-white">

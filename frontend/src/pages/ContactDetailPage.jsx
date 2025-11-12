@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { api } from '../api'
 import {
   EnvelopeIcon,
@@ -24,6 +24,7 @@ import LinkXeroContactModal from '../components/contacts/LinkXeroContactModal'
 import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
 import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
 import ContactGroupsSection from '../components/contacts/ContactGroupsSection'
+import ContactRelationshipsSection from '../components/contacts/ContactRelationshipsSection'
 
 // Helper function to format ABN as XX XXX XXX XXX
 const formatABN = (abn) => {
@@ -98,6 +99,17 @@ export default function ContactDetailPage() {
   const [contactGroups, setContactGroups] = useState([])
   const [xeroAccounts, setXeroAccounts] = useState([]) // Xero chart of accounts for dropdown
   const [loadingXeroAccounts, setLoadingXeroAccounts] = useState(false)
+
+  // Tab navigation using URL search params
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeTab = searchParams.get('tab') || 'overview'
+
+  // Ensure URL always has tab parameter
+  useEffect(() => {
+    if (!searchParams.get('tab')) {
+      setSearchParams({ tab: 'overview' }, { replace: true })
+    }
+  }, [])
 
   useEffect(() => {
     loadContact()
@@ -739,9 +751,12 @@ export default function ContactDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center py-12">
           <div className="text-red-600 dark:text-red-400 mb-4">{error || 'Contact not found'}</div>
-          <Link to="/suppliers" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
-            Back to Suppliers
-          </Link>
+          <button
+            onClick={() => navigate(-1)}
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+          >
+            Back
+          </button>
         </div>
       </div>
     )
@@ -752,11 +767,11 @@ export default function ContactDetailPage() {
       {/* Header */}
       <div className="mb-6">
         <button
-          onClick={() => navigate('/suppliers')}
+          onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 mb-4"
         >
           <ArrowLeftIcon className="h-5 w-5" />
-          Back to Suppliers
+          Back
         </button>
 
         <div className="flex items-start justify-between">
@@ -821,9 +836,48 @@ export default function ContactDetailPage() {
             </button>
           </div>
         </div>
+
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200 dark:border-gray-700 mt-6">
+          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            <button
+              onClick={() => setSearchParams({ tab: 'overview' })}
+              className={`${
+                activeTab === 'overview'
+                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setSearchParams({ tab: 'relationships' })}
+              className={`${
+                activeTab === 'relationships'
+                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+            >
+              Related Contacts
+            </button>
+            {contact['is_supplier?'] && (
+              <button
+                onClick={() => setSearchParams({ tab: 'pricebook' })}
+                className={`${
+                  activeTab === 'pricebook'
+                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+              >
+                Price Book
+              </button>
+            )}
+          </nav>
+        </div>
       </div>
 
-      {/* Contact Information and Business Details in sidebar */}
+      {/* Overview Tab */}
+      {activeTab === 'overview' && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
@@ -1682,10 +1736,17 @@ export default function ContactDetailPage() {
           </div>
         </div>
       </div>
+      )}
 
+      {/* Related Contacts Tab */}
+      {activeTab === 'relationships' && (
+        <div className="mt-6">
+          <ContactRelationshipsSection contactId={id} isEditMode={isPageEditMode} />
+        </div>
+      )}
 
-      {/* Price Book Items - Full width for supplier contacts */}
-      {contact['is_supplier?'] && (
+      {/* Price Book Tab */}
+      {activeTab === 'pricebook' && contact['is_supplier?'] && (
         <div className="mt-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">

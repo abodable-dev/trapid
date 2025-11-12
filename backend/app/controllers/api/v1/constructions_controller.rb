@@ -37,7 +37,25 @@ module Api
 
       # GET /api/v1/constructions/:id
       def show
-        render json: @construction
+        # Include contacts with their relationships in the response
+        construction_json = @construction.as_json
+        construction_json[:contacts] = @construction.construction_contacts
+                                                     .includes(contact: :outgoing_relationships)
+                                                     .order(primary: :desc, created_at: :asc)
+                                                     .map do |cc|
+          {
+            id: cc.id,
+            contact_id: cc.contact_id,
+            primary: cc.primary,
+            role: cc.role,
+            contact: cc.contact.as_json(
+              only: [:id, :first_name, :last_name, :full_name, :company_name, :email, :mobile_phone, :office_phone]
+            ),
+            relationships_count: cc.contact.outgoing_relationships.count
+          }
+        end
+
+        render json: construction_json
       end
 
       # POST /api/v1/constructions

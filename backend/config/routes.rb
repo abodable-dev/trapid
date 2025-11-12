@@ -50,6 +50,9 @@ Rails.application.routes.draw do
           get :documentation_tabs
         end
 
+        # Construction contacts (nested under constructions)
+        resources :construction_contacts, only: [:index, :create, :update, :destroy]
+
         # Schedule tasks (nested under constructions)
         resources :schedule_tasks, only: [:index, :create] do
           collection do
@@ -112,6 +115,15 @@ Rails.application.routes.draw do
           get :available_documents
           post :attach_documents
         end
+        # Payments nested under purchase orders
+        resources :payments, only: [:index, :create]
+      end
+
+      # Payments (standalone routes)
+      resources :payments, only: [:show, :update, :destroy] do
+        member do
+          post :sync_to_xero
+        end
       end
 
       # Price Book management
@@ -171,6 +183,9 @@ Rails.application.routes.draw do
           get :activities
           post :link_xero_contact
         end
+
+        # Contact relationships (nested under contacts)
+        resources :relationships, controller: 'contact_relationships', only: [:index, :create, :show, :update, :destroy]
       end
 
       # Chat messages

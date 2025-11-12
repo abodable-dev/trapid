@@ -70,6 +70,9 @@ group :development, :test do
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
 
+  # Ruby LSP for modern IDE support
+  gem "ruby-lsp", require: false
+
   # Testing framework
   gem "rspec-rails", "~> 7.1"
   gem "factory_bot_rails", "~> 6.4"

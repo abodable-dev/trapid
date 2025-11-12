@@ -370,6 +370,143 @@ import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 </div>
 ```
 
+### Tab Navigation
+
+**IMPORTANT:** Always use URL-based tab navigation with `useSearchParams` to persist tab state in the URL.
+
+**Why URL-based tabs:**
+- ✅ Users can bookmark specific tabs
+- ✅ Tab state persists on page refresh
+- ✅ Shareable URLs with pre-selected tabs
+- ✅ Browser back/forward navigation works
+
+**Standard Implementation:**
+```jsx
+import { useSearchParams } from 'react-router-dom'
+
+export default function MyPage() {
+  // Get tab from URL, default to 'overview'
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeTab = searchParams.get('tab') || 'overview'
+
+  // Ensure URL always has tab parameter on mount
+  useEffect(() => {
+    if (!searchParams.get('tab')) {
+      setSearchParams({ tab: 'overview' }, { replace: true })
+    }
+  }, [])
+
+  return (
+    <div>
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200 dark:border-gray-700">
+        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          <button
+            onClick={() => setSearchParams({ tab: 'overview' })}
+            className={`${
+              activeTab === 'overview'
+                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setSearchParams({ tab: 'details' })}
+            className={`${
+              activeTab === 'details'
+                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+          >
+            Details
+          </button>
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <div className="mt-6">
+          {/* Overview content */}
+        </div>
+      )}
+
+      {activeTab === 'details' && (
+        <div className="mt-6">
+          {/* Details content */}
+        </div>
+      )}
+    </div>
+  )
+}
+```
+
+**Example URLs:**
+- `/contacts/123` - Defaults to Overview tab
+- `/contacts/123?tab=relationships` - Opens Related Contacts tab
+- `/contacts/123?tab=pricebook` - Opens Price Book tab
+
+**Reference Implementation:**
+See [ContactDetailPage.jsx](frontend/src/pages/ContactDetailPage.jsx) for a complete example with conditional tabs.
+
+### Back Button Navigation
+
+**IMPORTANT:** Always use browser history navigation (`navigate(-1)`) instead of hardcoded paths for back buttons.
+
+**Why browser history navigation:**
+- ✅ Works with the URL state (including tabs, filters, etc.)
+- ✅ Takes users back to wherever they came from, not a fixed location
+- ✅ Respects the actual navigation flow
+- ✅ Supports bookmarked URLs and deep links properly
+
+**Standard Implementation:**
+```jsx
+import { useNavigate } from 'react-router-dom'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+
+export default function MyDetailPage() {
+  const navigate = useNavigate()
+
+  return (
+    <div>
+      {/* Back Button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+      >
+        <ArrowLeftIcon className="h-4 w-4" />
+        Back
+      </button>
+
+      {/* Page content */}
+    </div>
+  )
+}
+```
+
+**❌ Don't do this:**
+```jsx
+// Bad - hardcoded path
+<Link to="/suppliers">Back to Suppliers</Link>
+
+// Bad - hardcoded path with navigate
+<button onClick={() => navigate('/suppliers')}>Back to Suppliers</button>
+```
+
+**✅ Do this:**
+```jsx
+// Good - browser history navigation
+<button onClick={() => navigate(-1)}>Back</button>
+```
+
+**Text Convention:**
+- Always use just "Back" as the button text
+- Don't use "Back to [Page Name]" - the navigation history knows where to go
+- You can use an icon (ArrowLeftIcon) with or without text
+
+**Reference Implementation:**
+See [ContactDetailPage.jsx](frontend/src/pages/ContactDetailPage.jsx:770-774) or [SupplierDetailPage.jsx](frontend/src/pages/SupplierDetailPage.jsx:317) for examples.
+
 ---
 
 ## Deployment

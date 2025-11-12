@@ -322,7 +322,7 @@ export default function PriceBookItemDetailPage() {
               className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
             >
               <ArrowLeftIcon className="h-4 w-4 mr-2" />
-              Back to Price Books
+              Back
             </button>
           </div>
         </div>
@@ -340,7 +340,7 @@ export default function PriceBookItemDetailPage() {
             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-4"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-2" />
-            Back to Price Books
+            Back
           </button>
 
           <div className="flex items-start justify-between">

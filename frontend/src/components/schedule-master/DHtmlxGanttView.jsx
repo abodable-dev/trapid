@@ -24,7 +24,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   const clickTimeout = useRef(null)
   const highlightTimeout = useRef(null) // Timeout to auto-clear highlighting after 10 seconds
   const manuallyPositionedTasks = useRef(new Set()) // Track which task IDs are manually positioned
+  const pendingUnlocks = useRef(new Set()) // Track tasks that are pending unlock (prevent re-locking during data reload)
   const isDragging = useRef(false) // Track if we're currently dragging a task
+  const renderTimeout = useRef(null) // PERFORMANCE: Debounce render calls to batch multiple updates
   const [publicHolidays, setPublicHolidays] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTask, setSelectedTask] = useState(null)
@@ -105,7 +107,6 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
   // Task name search filter
   const [taskNameSearch, setTaskNameSearch] = useState('')
-  const [dataReloadTrigger, setDataReloadTrigger] = useState(0) // Trigger task reload after zoom
 
   // Fetch public holidays from API
   useEffect(() => {
@@ -144,6 +145,19 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   const isWorkingDay = (date) => {
     const dateStr = date.toISOString().split('T')[0]
     return !isWeekend(date) && !isPublicHoliday(dateStr)
+  }
+
+  // PERFORMANCE: Debounced render to batch multiple render requests and reduce flashing
+  const debouncedRender = (delay = 0) => {
+    if (renderTimeout.current) {
+      clearTimeout(renderTimeout.current)
+    }
+    renderTimeout.current = setTimeout(() => {
+      if (ganttReady) {
+        gantt.render()
+      }
+      renderTimeout.current = null
+    }, delay)
   }
 
   // Initialize DHTMLX Gantt (only once when modal opens)
@@ -189,12 +203,33 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     gantt.config.task_height = 40  // MUST match row_height for correct positioning
     gantt.config.bar_height = 40   // MUST also match - DHtmlx uses this for Y calculations!
     gantt.config.round_dnd_dates = true // Round dates to full days
-    gantt.config.grid_width = 350 // Width of the grid (left side) - smaller to see more timeline
-    gantt.config.grid_resize = true // Allow user to resize grid by dragging
-    gantt.config.column_resize = true // Re-enabled - not the cause of alignment issue
-    gantt.config.smart_rendering = false // Disable smart rendering to fix alignment
-    gantt.config.static_background = false // Dynamic background works better with absolute positioning fix
+    gantt.config.column_resize = true // Allow resizing individual columns
+    gantt.config.smart_rendering = true // PERFORMANCE: Enable smart rendering - only renders visible tasks
+    gantt.config.static_background = true // PERFORMANCE: Static background is faster
     gantt.config.autosize = false // Disable autosize to maintain fixed heights
+    gantt.config.show_errors = false // PERFORMANCE: Disable error popups during drag
+
+    // Extend timeline range to allow dragging far into the future
+    // Set start date to today
+    const timelineStart = new Date()
+    timelineStart.setHours(0, 0, 0, 0)
+
+    // Set end date to 2 years from today to give plenty of room for dragging
+    const timelineEnd = new Date()
+    timelineEnd.setFullYear(timelineEnd.getFullYear() + 2)
+    timelineEnd.setHours(23, 59, 59, 999)
+
+    gantt.config.start_date = timelineStart
+    gantt.config.end_date = timelineEnd
+    gantt.config.fit_tasks = false // Disable fit_tasks since we're setting explicit range
+
+    // Enable grid resizing and scrollbars
+    gantt.config.grid_width = 350
+    gantt.config.grid_resize = true
+    gantt.config.min_grid_column_width = 50 // Minimum column width
+    gantt.config.scroll_size = 18 // Set scrollbar size (makes them always visible)
+    gantt.config.keep_grid_width = false // Allow grid to resize freely
+    gantt.config.resize_rows = false // Disable row resizing (only enable grid/timeline resize)
 
     // ===== DHTMLX DataProcessor Configuration =====
     // This is a PRO feature that auto-syncs changes to backend
@@ -976,10 +1011,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           taskStartDate.setHours(0, 0, 0, 0)
           const dayOffset = Math.floor((taskStartDate - projectStartDate) / (1000 * 60 * 60 * 24))
 
+          // CRITICAL: Preserve predecessor_ids when saving position
           const updateData = {
             duration: task.duration,
             start_date: dayOffset,  // Send as integer day offset, not date string
-            manually_positioned: true
+            manually_positioned: true,
+            predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
           }
           console.log('💾 Saving manually positioned task to backend:', updateData, 'Date:', task.start_date, 'Offset:', dayOffset)
           onUpdateTask(task.id, updateData)
@@ -1002,9 +1039,11 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         taskStartDate.setHours(0, 0, 0, 0)
         const dayOffset = Math.floor((taskStartDate - projectStartDate) / (1000 * 60 * 60 * 24))
 
+        // CRITICAL: Preserve predecessor_ids when saving duration
         const updateData = {
           duration: task.duration,
-          start_date: dayOffset
+          start_date: dayOffset,
+          predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
         }
         console.log('💾 Saving resized task duration to backend:', updateData)
         onUpdateTask(task.id, updateData)
@@ -1328,23 +1367,13 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         ...prev,
         [column.name]: column.width
       }))
-
-      // CRITICAL: Force layout recalculation after column resize to maintain row alignment
-      setTimeout(() => {
-        gantt.setSizes()
-        gantt.render()
-      }, 0)
+      // PERFORMANCE: Debounced render after column resize - gantt auto-renders on resize
     })
 
     // Handle grid resize (dragging divider between left grid and right timeline)
     gantt.attachEvent('onGridResizeEnd', (oldWidth, newWidth) => {
       console.log('📏 Grid resized from', oldWidth, 'to', newWidth)
-
-      // CRITICAL: Force layout recalculation after grid resize to maintain row alignment
-      setTimeout(() => {
-        gantt.setSizes()
-        gantt.render()
-      }, 50)
+      // PERFORMANCE: Gantt auto-renders on grid resize, no manual render needed
     })
 
     // Initialize gantt
@@ -1554,15 +1583,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       }
     }
 
-    // Force a layout recalculation after init to fix row alignment with resizable columns
-    setTimeout(() => {
-      gantt.setSizes()  // Recalculate all dimensions
-      gantt.render()
-
-      // Debug dimensions after first render - DISABLED (alignment issue fixed)
-      // setTimeout(debugDimensions, 100)
-    }, 0)
-
+    // PERFORMANCE: Gantt auto-renders after init, no manual render needed
     setGanttReady(true)
 
     // Add event delegation for checkbox clicks
@@ -1603,21 +1624,18 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             }
 
             gantt.updateTask(taskId)
-            gantt.refreshTask(taskId)
-
-            // Force layout recalculation to maintain row alignment
-            gantt.setSizes()
-            gantt.render()
+            // PERFORMANCE: refreshTask already triggers render, no need for manual render
 
             // Re-enable task updates after a short delay
             setTimeout(() => {
               isDragging.current = false
             }, 100)
 
-            // Save to backend
+            // Save to backend - CRITICAL: Preserve predecessor_ids
             const updateData = {
               [field]: checked,
-              manually_positioned: task.manually_positioned
+              manually_positioned: task.manually_positioned,
+              predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
             }
             console.log('💾 Saving checkbox state to backend:', updateData)
             onUpdateTask(taskId, updateData)
@@ -1626,11 +1644,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             // Revert the checkbox state in the UI until user confirms in dialog
             task[field] = !checked
             gantt.updateTask(taskId)
-            gantt.refreshTask(taskId)
-
-            // Force layout recalculation to maintain row alignment
-            gantt.setSizes()
-            gantt.render()
+            // PERFORMANCE: updateTask already triggers render
 
             setPositionDialogTask({ task, field, checked })
             setShowPositionDialog(true)
@@ -1673,16 +1687,13 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             const dayOffset = Math.floor((taskStartDate - projectStartDate) / (1000 * 60 * 60 * 24))
 
             gantt.updateTask(taskId)
-            gantt.refreshTask(taskId)
+            // PERFORMANCE: updateTask already triggers render
 
-            // Force layout recalculation to maintain row alignment
-            gantt.setSizes()
-            gantt.render()
-
-            // Save to backend
+            // Save to backend - CRITICAL: Preserve predecessor_ids
             const updateData = {
               manually_positioned: true,
-              start_date: dayOffset
+              start_date: dayOffset,
+              predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
             }
             console.log('💾 Locking task position for task', taskId, ':', updateData)
             console.log('💾 Calling onUpdateTask with:', { taskId, updateData })
@@ -1700,11 +1711,85 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             task.manually_positioned = false
             task.$manuallyPositioned = false
             manuallyPositionedTasks.current.delete(taskId)
+            pendingUnlocks.current.add(taskId) // Prevent re-locking during data reload
+
+            // Immediately recalculate task position based on predecessors
+            const projectStartDate = new Date()
+            projectStartDate.setHours(0, 0, 0, 0)
+
+            // Find the original task data
+            const originalTask = tasks.find(t => t.id === taskId)
+
+            // Also update the original task to prevent it from being restored as manually positioned
+            if (originalTask) {
+              originalTask.manually_positioned = false
+              console.log('✅ Updated original task manually_positioned flag to false')
+            }
+
+            // Calculate earliest start based on predecessors
+            let newStartDate = projectStartDate
+
+            if (originalTask && originalTask.predecessor_ids && originalTask.predecessor_ids.length > 0) {
+              console.log('🔍 Recalculating position for task with', originalTask.predecessor_ids.length, 'predecessors')
+
+              // Find latest finish date from all predecessors
+              originalTask.predecessor_ids.forEach(pred => {
+                const predData = typeof pred === 'object' ? pred : { id: pred, type: 'FS', lag: 0 }
+                const predTaskData = tasks[predData.id - 1]
+
+                if (predTaskData) {
+                  try {
+                    const predGanttTask = gantt.getTask(predTaskData.id)
+                    const predEndDate = new Date(predGanttTask.end_date)
+
+                    // For FS (Finish to Start), task starts after predecessor ends
+                    if (predData.type === 'FS' || !predData.type) {
+                      let possibleStart = new Date(predEndDate)
+                      possibleStart.setDate(possibleStart.getDate() + 1)
+
+                      // Skip to next working day
+                      while (!isWorkingDay(possibleStart)) {
+                        possibleStart.setDate(possibleStart.getDate() + 1)
+                      }
+
+                      // Apply lag if any
+                      if (predData.lag && predData.lag > 0) {
+                        let lagDays = predData.lag
+                        while (lagDays > 0) {
+                          possibleStart.setDate(possibleStart.getDate() + 1)
+                          if (isWorkingDay(possibleStart)) {
+                            lagDays--
+                          }
+                        }
+                      }
+
+                      // Use the latest date from all predecessors
+                      if (possibleStart > newStartDate) {
+                        newStartDate = possibleStart
+                      }
+                    }
+                  } catch (e) {
+                    console.log('Could not find predecessor task', predTaskData.id, 'in gantt')
+                  }
+                }
+              })
+            }
+
+            console.log('📅 Recalculated start date:', newStartDate)
+
+            // Update the task position in gantt immediately
+            task.start_date = newStartDate
+            gantt.updateTask(taskId)
+
+            // Force full render to update checkbox and task bar color
+            gantt.render()
 
             // Save to backend (start_date: 0 means auto-calculate from today)
+            // CRITICAL: Preserve predecessor_ids
             const updateData = {
               manually_positioned: false,
-              start_date: 0
+              start_date: 0,
+              predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
             }
             console.log('💾 Unlocking task', taskId, '- will auto-calculate position:', updateData)
             console.log('💾 Calling onUpdateTask with:', { taskId, updateData })
@@ -1712,9 +1797,6 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             try {
               onUpdateTask(taskId, updateData)
               console.log('✅ onUpdateTask called successfully for unlock')
-
-              // Note: The task will reload from backend with recalculated position
-              // The gantt chart will refresh automatically when tasks reload
             } catch (error) {
               console.error('❌ Error calling onUpdateTask for unlock:', error)
             }
@@ -1879,14 +1961,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     gantt.config.columns = columns
     gantt.setSizes()
-    gantt.render()
-
-    // CRITICAL: Force another recalculation after column changes to fix alignment
-    setTimeout(() => {
-      gantt.setSizes()
-      gantt.render()
-    }, 50)
-  }, [visibleColumns, ganttReady, tasks, showCheckboxes, columnWidths])
+    // PERFORMANCE: Use single debounced render instead of immediate + delayed render
+    debouncedRender(10)
+  }, [visibleColumns, ganttReady, tasks, showCheckboxes, columnWidths, debouncedRender])
 
   // Handle zoom level changes
   useEffect(() => {
@@ -1922,26 +1999,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     console.log('🔍 Zoom level changed to:', zoomLevel)
 
-    // Force sizes and render immediately
+    // PERFORMANCE: Single render after zoom change
     gantt.setSizes()
-    gantt.render()
-
-    // Check if data disappeared and trigger task reload if needed
-    setTimeout(() => {
-      const taskCount = gantt.getTaskCount()
-      console.log('📊 After zoom, gantt has', taskCount, 'tasks loaded')
-
-      if (taskCount === 0) {
-        console.warn('⚠️ DHtmlx cleared tasks during zoom! Triggering reload by updating state...')
-        // Trigger the task loading effect to reload data
-        setDataReloadTrigger(prev => prev + 1)
-      } else {
-        // Tasks are still there, just need to re-render
-        gantt.setSizes()
-        gantt.render()
-      }
-    }, 10)
-  }, [zoomLevel, ganttReady])
+    debouncedRender(10)
+  }, [zoomLevel, ganttReady, debouncedRender])
 
   // Handle task name search filtering
   useEffect(() => {
@@ -1959,9 +2020,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       return taskName.includes(searchLower) || taskSupplier.includes(searchLower)
     })
 
-    gantt.render()
+    // PERFORMANCE: Use debounced render for search filter
+    debouncedRender(10)
     console.log('🔎 Search filter applied:', taskNameSearch)
-  }, [taskNameSearch, ganttReady])
+  }, [taskNameSearch, ganttReady, debouncedRender])
 
   // Handle link updates (when dependencies change)
   const handleLinkUpdate = () => {
@@ -2162,10 +2224,16 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     console.log('Loading tasks into DHTMLX Gantt:', tasks.length)
 
-    // Clear existing data
-    gantt.clearAll()
+    // Declare variables outside batchUpdate so they're accessible after
+    let ganttTasks = []
+    let ganttLinks = []
 
-    // Calculate start dates for all tasks (same logic as SVAR implementation)
+    // PERFORMANCE: Use batchUpdate for better performance instead of clearAll + parse
+    gantt.batchUpdate(() => {
+      // Clear existing data
+      gantt.clearAll()
+
+      // Calculate start dates for all tasks (same logic as SVAR implementation)
     const taskStartDates = new Map()
     const calculating = new Set() // Track tasks currently being calculated to detect circular dependencies
     const projectStartDate = new Date()
@@ -2286,7 +2354,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     })
 
     // Convert tasks to DHTMLX format (using sorted order)
-    const ganttTasks = sortedTasks.map(task => {
+    ganttTasks = sortedTasks.map(task => {
       const duration = task.duration !== undefined && task.duration !== null ? task.duration : 1
       const startDate = taskStartDates.get(task.id) || projectStartDate
 
@@ -2299,8 +2367,15 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       cleanStartDate.setHours(0, 0, 0, 0)
 
       // If task is manually positioned from backend, add to our tracking set
-      if (task.manually_positioned) {
+      // BUT: Skip if task is pending unlock (prevents race condition during data reload)
+      if (task.manually_positioned && !pendingUnlocks.current.has(task.id)) {
         manuallyPositionedTasks.current.add(task.id)
+      }
+
+      // If task is no longer manually positioned and was pending unlock, clear the pending flag
+      if (!task.manually_positioned && pendingUnlocks.current.has(task.id)) {
+        pendingUnlocks.current.delete(task.id)
+        console.log('✅ Cleared pending unlock for task', task.id, '- backend update confirmed')
       }
 
       return {
@@ -2323,7 +2398,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     })
 
     // Convert links to DHTMLX format
-    const ganttLinks = []
+    ganttLinks = []
     tasks.forEach((task, index) => {
       if (task.predecessor_ids && task.predecessor_ids.length > 0) {
         task.predecessor_ids.forEach(pred => {
@@ -2346,44 +2421,20 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       }
     })
 
-    // Load data into gantt
-    gantt.parse({
-      data: ganttTasks,
-      links: ganttLinks
-    })
-
-    // Immediately recalculate sizes and render to ensure proper row alignment
-    gantt.setSizes()
-    gantt.render()
-
-    // Force another render after a brief delay to ensure alignment
-    setTimeout(() => {
-      gantt.setSizes()
-      gantt.render()
-
-      // DEBUG: Log dimensions after data load - DISABLED (alignment issue fixed)
-      // setTimeout(() => {
-      //   const gridData = document.querySelector('.gantt_grid_data')
-      //   const taskData = document.querySelector('.gantt_data_area')
-      //   const gridRows = document.querySelectorAll('.gantt_grid_data .gantt_row')
-      //   const taskRows = document.querySelectorAll('.gantt_data_area .gantt_task_row')
-      //   console.log('🔍 AFTER DATA LOAD - Dimensions:')
-      //   console.log('Grid data height:', gridData?.offsetHeight, 'Task data height:', taskData?.offsetHeight)
-      //   console.log('Grid rows:', gridRows?.length, 'Task rows:', taskRows?.length)
-      //   if (gridRows && taskRows && gridRows.length > 0 && taskRows.length > 0) {
-      //     console.log('Row heights - Grid:', gridRows[0]?.offsetHeight, 'Task:', taskRows[0]?.offsetHeight)
-      //     console.log('Grid row Y positions:', Array.from(gridRows).slice(0, 5).map(r => r.offsetTop))
-      //     console.log('Task row Y positions:', Array.from(taskRows).slice(0, 5).map(r => r.offsetTop))
-      //     const offset = taskRows[0]?.offsetTop - gridRows[0]?.offsetTop
-      //     console.log('⚠️ OFFSET between grid and task rows:', offset, 'pixels')
-      //   }
-      // }, 100)
-    }, 100)
+      // Load data into gantt
+      gantt.parse({
+        data: ganttTasks,
+        links: ganttLinks
+      })
+    }) // End batchUpdate - PERFORMANCE: Single render for all data changes
 
     console.log('Loaded:', ganttTasks.length, 'tasks and', ganttLinks.length, 'links')
 
+    // PERFORMANCE: Single render after data load with setSizes
+    gantt.setSizes()
+    debouncedRender(20)
+
     // Scroll to show the first task (or today if no tasks)
-    // Use setTimeout to ensure Gantt has finished rendering before scrolling
     if (ganttTasks.length > 0) {
       setTimeout(() => {
         // Find the earliest task start date
@@ -2395,11 +2446,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         if (earliestDate) {
           console.log('📅 Scrolling Gantt to show earliest task at:', earliestDate)
           gantt.showDate(earliestDate)
-          gantt.render() // Force re-render after scroll
         }
-      }, 100) // Small delay to let Gantt finish rendering
+      }, 50) // Reduced delay
     }
-  }, [ganttReady, tasks, publicHolidays, dataReloadTrigger])
+  }, [ganttReady, tasks, publicHolidays, debouncedRender])
 
   // Handle saving task dependencies from editor
   const handleSaveDependencies = (taskId, predecessors) => {
@@ -3483,16 +3533,14 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                   }
 
                   gantt.updateTask(task.id)
-                  gantt.refreshTask(task.id)
-
-                  // Force layout recalculation to maintain row alignment
-                  gantt.setSizes()
-                  gantt.render()
+                  // PERFORMANCE: updateTask already triggers render
 
                   // Save to backend - uncheck the checkbox and keep locked
+                  // CRITICAL: Preserve predecessor_ids
                   onUpdateTask(task.id, {
                     [field]: checked,
-                    manually_positioned: true
+                    manually_positioned: true,
+                    predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
                   })
 
                   setShowPositionDialog(false)
@@ -3516,17 +3564,15 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                   task[field] = checked
 
                   gantt.updateTask(task.id)
-                  gantt.refreshTask(task.id)
-
-                  // Force layout recalculation to maintain row alignment
-                  gantt.setSizes()
-                  gantt.render()
+                  // PERFORMANCE: updateTask already triggers render
 
                   // Save to backend - uncheck the checkbox and unlock
+                  // CRITICAL: Preserve predecessor_ids
                   onUpdateTask(task.id, {
                     [field]: checked,
                     manually_positioned: false,
-                    start_date: 0  // 0 means auto-calculate from today
+                    start_date: 0,  // 0 means auto-calculate from today
+                    predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
                   })
 
                   setShowPositionDialog(false)

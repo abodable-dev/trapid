@@ -139,10 +139,10 @@ export default function MasterSchedulePage() {
           <p className="text-red-600">{error}</p>
           <button
             type="button"
-            onClick={() => navigate(`/jobs/${id}`)}
+            onClick={() => navigate(-1)}
             className="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
           >
-            Back to Job
+            Back
           </button>
         </div>
       </div>
@@ -164,9 +164,9 @@ export default function MasterSchedulePage() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => navigate(`/jobs/${id}`)}
+                onClick={() => navigate(-1)}
                 className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100 transition-colors"
-                title="Back to Job"
+                title="Back"
               >
                 <ArrowLeftIcon className="h-5 w-5" />
               </button>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import ColumnManager from '../../components/designer/ColumnManager'
@@ -11,7 +11,17 @@ export default function TableSettings() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState('columns')
+
+  // Tab navigation using URL search params
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeTab = searchParams.get('tab') || 'columns'
+
+  // Ensure URL always has tab parameter on mount
+  useEffect(() => {
+    if (!searchParams.get('tab')) {
+      setSearchParams({ tab: 'columns' }, { replace: true })
+    }
+  }, [])
 
   useEffect(() => {
     fetchTable()
@@ -94,13 +104,13 @@ export default function TableSettings() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <Link
-          to="/designer"
+        <button
+          onClick={() => navigate(-1)}
           className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
         >
           <ArrowLeftIcon className="h-4 w-4 mr-1" />
-          Back to Designer
-        </Link>
+          Back
+        </button>
         <div className="mt-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{table.name}</h1>
@@ -126,7 +136,7 @@ export default function TableSettings() {
           {tabs.map((tab) => (
             <button
               key={tab.value}
-              onClick={() => setActiveTab(tab.value)}
+              onClick={() => setSearchParams({ tab: tab.value })}
               className={`
                 whitespace-nowrap border-b-2 px-1 pb-4 text-sm font-medium
                 ${activeTab === tab.value
