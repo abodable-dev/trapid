@@ -43,6 +43,9 @@ gem "thruster", require: false
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
 gem "rack-cors"
 
+# Rate limiting and throttling
+gem "rack-attack", "~> 6.7"
+
 # File processing for spreadsheet import/export
 gem "roo", "~> 2.10.0"  # Excel/CSV parsing
 gem "caxlsx", "~> 4.1.0"  # Excel generation
