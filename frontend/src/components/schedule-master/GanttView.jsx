@@ -80,11 +80,10 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
     return !isWeekend(date) && !isPublicHoliday(dateStr)
   }
 
-  // Calculate end date from start date and business days duration
+  // Calculate the actual finish date (last working day) from start date and duration
   // The start date counts as day 1, so for a 2-day task starting Wednesday,
-  // it ends on Thursday (Wed=day 1, Thu=day 2)
-  // The Gantt library expects end date to be the day AFTER the last day (exclusive end)
-  const addBusinessDays = (startDate, days) => {
+  // it finishes on Thursday (Wed=day 1, Thu=day 2)
+  const calculateFinishDate = (startDate, days) => {
     if (days <= 0) return new Date(startDate)
 
     let current = new Date(startDate)
@@ -97,9 +96,17 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
       }
     }
 
-    // Add one more day since Gantt expects exclusive end date
-    current.setDate(current.getDate() + 1)
     return current
+  }
+
+  // Calculate end date for Gantt (exclusive end = day after finish)
+  // The Gantt library expects end date to be the day AFTER the last day (exclusive end)
+  const addBusinessDays = (startDate, days) => {
+    const finishDate = calculateFinishDate(startDate, days)
+    // Add one more day since Gantt expects exclusive end date
+    const endDate = new Date(finishDate)
+    endDate.setDate(endDate.getDate() + 1)
+    return endDate
   }
 
   // Handle task click to open editor
@@ -264,11 +271,30 @@ export default function GanttView({ isOpen, onClose, tasks, onUpdateTask }) {
             // Recursively calculate predecessor's start date
             const predStart = calculateStartDate(predTask)
             const predDuration = predTask.duration !== undefined && predTask.duration !== null ? predTask.duration : 1
-            const predEnd = addBusinessDays(predStart, predDuration > 0 ? predDuration : 1)
+            const predFinish = calculateFinishDate(predStart, predDuration > 0 ? predDuration : 1)
 
-            // For FS (Finish-to-Start), task starts after predecessor finishes
+            // For FS (Finish-to-Start), task starts the next calendar day after predecessor finishes
             if (predData.type === 'FS' || !predData.type) {
-              const taskStart = addBusinessDays(predEnd, predData.lag || 0)
+              // Start the calendar day after the predecessor finishes
+              let taskStart = new Date(predFinish)
+              taskStart.setDate(taskStart.getDate() + 1)
+
+              // Skip to next working day if the day after finish is a weekend/holiday
+              while (!isWorkingDay(taskStart)) {
+                taskStart.setDate(taskStart.getDate() + 1)
+              }
+
+              // Apply lag (in business days) if specified
+              if (predData.lag && predData.lag > 0) {
+                taskStart = calculateFinishDate(taskStart, predData.lag)
+                // Move to day after the lag period
+                taskStart.setDate(taskStart.getDate() + 1)
+                // Skip to next working day
+                while (!isWorkingDay(taskStart)) {
+                  taskStart.setDate(taskStart.getDate() + 1)
+                }
+              }
+
               if (taskStart > latestDate) {
                 latestDate = taskStart
               }
