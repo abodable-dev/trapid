@@ -2836,27 +2836,35 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           position: relative !important;
         }
 
+        /* Wider resize area for easier grabbing */
         .dhtmlx-gantt-container .gantt_grid_head_cell .gantt_grid_head_cell_resize_area {
-          width: 8px !important;
-          right: -4px !important;
+          width: 12px !important;
+          right: -6px !important;
           cursor: col-resize !important;
           background-color: transparent !important;
-          transition: background-color 0.2s !important;
+          transition: all 0.2s !important;
+          z-index: 10 !important;
         }
 
+        /* Strong hover effect for resize handles */
         .dhtmlx-gantt-container .gantt_grid_head_cell .gantt_grid_head_cell_resize_area:hover {
-          background-color: rgba(99, 102, 241, 0.2) !important;
+          background-color: rgba(59, 130, 246, 0.15) !important;
         }
 
-        /* Add visual indicator for resize area */
-        .dhtmlx-gantt-container .gantt_grid_head_cell:hover::after {
+        /* Always visible resize border line - more prominent */
+        .dhtmlx-gantt-container .gantt_grid_head_cell::after {
           content: '' !important;
           position: absolute !important;
           right: 0 !important;
-          top: 25% !important;
-          bottom: 25% !important;
-          width: 2px !important;
-          background-color: rgba(99, 102, 241, 0.3) !important;
+          top: 20% !important;
+          bottom: 20% !important;
+          width: 3px !important;
+          background: linear-gradient(to bottom,
+            transparent 0%,
+            rgba(209, 213, 219, 0.6) 20%,
+            rgba(209, 213, 219, 0.8) 50%,
+            rgba(209, 213, 219, 0.6) 80%,
+            transparent 100%) !important;
           pointer-events: none !important;
         }
 
