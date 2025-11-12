@@ -828,8 +828,13 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       console.log('🎯 onBeforeTaskDrag fired:', { id, mode })
 
       // CRITICAL: Hide tooltip immediately when drag starts to avoid blocking interaction
-      if (gantt.ext && gantt.ext.tooltips) {
-        gantt.ext.tooltips.hide()
+      try {
+        if (gantt.ext && gantt.ext.tooltips && typeof gantt.ext.tooltips.hide === 'function') {
+          gantt.ext.tooltips.hide()
+        }
+      } catch (err) {
+        // Tooltip hide may not be available in all versions - ignore error
+        console.log('Tooltip hide not available:', err.message)
       }
 
       // Only check for conflicts when dragging the task position (not resizing)
