@@ -105,6 +105,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
   // Task name search filter
   const [taskNameSearch, setTaskNameSearch] = useState('')
+  const [dataReloadTrigger, setDataReloadTrigger] = useState(0) // Trigger task reload after zoom
 
   // Fetch public holidays from API
   useEffect(() => {
@@ -185,10 +186,15 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     gantt.config.scale_height = 60
     gantt.config.row_height = 40
+    gantt.config.task_height = 40  // MUST match row_height for correct positioning
+    gantt.config.bar_height = 40   // MUST also match - DHtmlx uses this for Y calculations!
     gantt.config.round_dnd_dates = true // Round dates to full days
     gantt.config.grid_width = 350 // Width of the grid (left side) - smaller to see more timeline
     gantt.config.grid_resize = true // Allow user to resize grid by dragging
-    gantt.config.column_resize = true // Allow resizing individual columns
+    gantt.config.column_resize = true // Re-enabled - not the cause of alignment issue
+    gantt.config.smart_rendering = false // Disable smart rendering to fix alignment
+    gantt.config.static_background = false // Dynamic background works better with absolute positioning fix
+    gantt.config.autosize = false // Disable autosize to maintain fixed heights
 
     // ===== DHTMLX DataProcessor Configuration =====
     // This is a PRO feature that auto-syncs changes to backend
@@ -366,6 +372,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       tooltip: true,
       undo: true
     })
+
+    // Add delay to tooltip so dragging can start before tooltip appears
+    gantt.config.tooltip_timeout = 1000 // Show tooltip after 1 second of hovering (allows dragging first)
+    gantt.config.tooltip_hide_timeout = 3000 // Hide after 3 seconds
 
     // Configure the lightbox (task editor modal)
     gantt.config.lightbox.sections = [
@@ -816,6 +826,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     // Store original position before drag starts
     gantt.attachEvent('onBeforeTaskDrag', (id, mode, event) => {
       console.log('🎯 onBeforeTaskDrag fired:', { id, mode })
+
+      // CRITICAL: Hide tooltip immediately when drag starts to avoid blocking interaction
+      if (gantt.ext && gantt.ext.tooltips) {
+        gantt.ext.tooltips.hide()
+      }
+
       // Only check for conflicts when dragging the task position (not resizing)
       if (mode === 'move') {
         const task = gantt.getTask(id)
@@ -1307,14 +1323,239 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         ...prev,
         [column.name]: column.width
       }))
+
+      // CRITICAL: Force layout recalculation after column resize to maintain row alignment
+      setTimeout(() => {
+        gantt.setSizes()
+        gantt.render()
+      }, 0)
+    })
+
+    // Handle grid resize (dragging divider between left grid and right timeline)
+    gantt.attachEvent('onGridResizeEnd', (oldWidth, newWidth) => {
+      console.log('📏 Grid resized from', oldWidth, 'to', newWidth)
+
+      // CRITICAL: Force layout recalculation after grid resize to maintain row alignment
+      setTimeout(() => {
+        gantt.setSizes()
+        gantt.render()
+      }, 50)
     })
 
     // Initialize gantt
     gantt.init(ganttContainer.current)
 
+    // DEBUG: Log dimensions after init - RE-ENABLED to diagnose alignment issue
+    const debugDimensions = () => {
+      /* eslint-disable */
+      const gridData = document.querySelector('.gantt_grid_data')
+      const taskData = document.querySelector('.gantt_data_area')
+      const gridRows = document.querySelectorAll('.gantt_grid_data .gantt_row')
+      const taskRows = document.querySelectorAll('.gantt_data_area .gantt_task_row')
+
+      console.log('🔍 DHTMLX Gantt Dimensions Debug:')
+      console.log('Container:', ganttContainer.current?.offsetWidth, 'x', ganttContainer.current?.offsetHeight)
+      console.log('Grid data height:', gridData?.offsetHeight)
+      console.log('Task data height:', taskData?.offsetHeight)
+      console.log('Grid rows count:', gridRows?.length)
+      console.log('Task rows count:', taskRows?.length)
+
+      if (gridRows && taskRows && gridRows.length > 0) {
+        console.log('First grid row height:', gridRows[0]?.offsetHeight)
+        console.log('First task row height:', taskRows[0]?.offsetHeight)
+
+        // OLD METHOD: offsetTop (relative to offsetParent)
+        console.log('📍 OLD - Grid row offsetTop (relative):', Array.from(gridRows).slice(0, 5).map(r => r.offsetTop))
+        console.log('📍 OLD - Task row offsetTop (relative):', Array.from(taskRows).slice(0, 5).map(r => r.offsetTop))
+
+        // NEW METHOD: getBoundingClientRect (ABSOLUTE viewport position)
+        const gridRects = Array.from(gridRows).slice(0, 5).map(r => r.getBoundingClientRect().top)
+        const taskRects = Array.from(taskRows).slice(0, 5).map(r => r.getBoundingClientRect().top)
+        console.log('🎯 NEW - Grid row ABSOLUTE positions (viewport):', gridRects)
+        console.log('🎯 NEW - Task row ABSOLUTE positions (viewport):', taskRects)
+
+        // Calculate the ACTUAL visual offset between rows
+        if (gridRects.length > 0 && taskRects.length > 0) {
+          const visualOffset = taskRects[0] - gridRects[0]
+          console.log('🚨 VISUAL OFFSET (first row):', visualOffset, 'pixels')
+          if (Math.abs(visualOffset) > 0.5) {
+            console.log('🔧 FOUND IT! Timeline rows are', visualOffset, 'pixels', visualOffset > 0 ? 'BELOW' : 'ABOVE', 'grid rows!')
+          }
+
+          // Show all offsets
+          for (let i = 0; i < Math.min(gridRects.length, taskRects.length); i++) {
+            const offset = taskRects[i] - gridRects[i]
+            if (Math.abs(offset) > 0.5) {
+              console.log(`  Row ${i}: offset = ${offset.toFixed(2)}px`)
+            }
+          }
+        }
+
+        // Check for CSS transforms or positioning
+        if (gridData && taskData) {
+          const gridStyle = window.getComputedStyle(gridData)
+          const taskStyle = window.getComputedStyle(taskData)
+          console.log('🎨 Grid container transform:', gridStyle.transform)
+          console.log('🎨 Task container transform:', taskStyle.transform)
+          console.log('🎨 Grid container top:', gridStyle.top, 'position:', gridStyle.position)
+          console.log('🎨 Task container top:', taskStyle.top, 'position:', taskStyle.position)
+        }
+
+        // Check scroll positions
+        const gridScroll = gridData?.parentElement
+        const taskScroll = taskData?.parentElement
+        console.log('🔄 Grid scroll container scrollTop:', gridScroll?.scrollTop || 0)
+        console.log('🔄 Task scroll container scrollTop:', taskScroll?.scrollTop || 0)
+        const scrollOffset = (taskScroll?.scrollTop || 0) - (gridScroll?.scrollTop || 0)
+        console.log('⚠️ SCROLL OFFSET between grid and timeline:', scrollOffset, 'pixels')
+
+        // Check header/scale heights
+        const gridScale = document.querySelector('.gantt_grid_scale')
+        const taskScale = document.querySelector('.gantt_task .gantt_task_scale')
+        console.log('📏 Grid header actual height:', gridScale?.offsetHeight || 'N/A')
+        console.log('📏 Timeline header actual height:', taskScale?.offsetHeight || 'N/A')
+
+        if (gridScale && taskScale) {
+          const headerDiff = taskScale.offsetHeight - gridScale.offsetHeight
+          console.log('🔴 HEADER HEIGHT DIFFERENCE:', headerDiff, 'pixels')
+          if (headerDiff !== 0) {
+            console.log('🔧 FOUND IT! Headers have different heights - timeline is', headerDiff, 'pixels taller!')
+          }
+
+          // Check absolute positions of headers too
+          const gridScaleRect = gridScale.getBoundingClientRect()
+          const taskScaleRect = taskScale.getBoundingClientRect()
+          console.log('🎯 Grid header absolute top:', gridScaleRect.top)
+          console.log('🎯 Task header absolute top:', taskScaleRect.top)
+          console.log('🚨 HEADER VISUAL OFFSET:', taskScaleRect.top - gridScaleRect.top, 'pixels')
+        }
+
+        if (scrollOffset !== 0) {
+          console.log('🔧 FOUND THE PROBLEM! Scroll offset is', scrollOffset, 'pixels - syncing now...')
+          if (gridScroll && taskScroll) {
+            taskScroll.scrollTop = gridScroll.scrollTop
+          }
+        }
+
+        // GRID-SPECIFIC DEBUGGING - Since dependency lines are correct, the GRID must be offset!
+        console.log('\n🔎 GRID-SPECIFIC DEBUG (grid is likely offset):')
+        const ganttLayout = document.querySelector('.gantt_layout')
+        const ganttGrid = document.querySelector('.gantt_grid')
+        const ganttTask = document.querySelector('.gantt_task')
+
+        if (ganttLayout) {
+          const layoutRect = ganttLayout.getBoundingClientRect()
+          console.log('📦 Gantt layout container absolute top:', layoutRect.top)
+        }
+
+        if (ganttGrid && ganttTask) {
+          const gridRect = ganttGrid.getBoundingClientRect()
+          const taskRect = ganttTask.getBoundingClientRect()
+          console.log('📦 Grid container (.gantt_grid) absolute top:', gridRect.top)
+          console.log('📦 Task container (.gantt_task) absolute top:', taskRect.top)
+          console.log('🚨 GRID vs TASK CONTAINER OFFSET:', gridRect.top - taskRect.top, 'pixels')
+
+          const gridStyle = window.getComputedStyle(ganttGrid)
+          const taskStyle = window.getComputedStyle(ganttTask)
+          console.log('🎨 Grid container: top=', gridStyle.top, 'paddingTop=', gridStyle.paddingTop, 'marginTop=', gridStyle.marginTop)
+          console.log('🎨 Task container: top=', taskStyle.top, 'paddingTop=', taskStyle.paddingTop, 'marginTop=', taskStyle.marginTop)
+        }
+
+        if (gridScale && taskScale) {
+          const gridScaleStyle = window.getComputedStyle(gridScale)
+          const taskScaleStyle = window.getComputedStyle(taskScale)
+          console.log('📏 Grid header: height=', gridScaleStyle.height, 'paddingTop=', gridScaleStyle.paddingTop, 'paddingBottom=', gridScaleStyle.paddingBottom)
+          console.log('📏 Task header: height=', taskScaleStyle.height, 'paddingTop=', taskScaleStyle.paddingTop, 'paddingBottom=', taskScaleStyle.paddingBottom)
+        }
+
+        if (gridData && taskData) {
+          const gridDataStyle = window.getComputedStyle(gridData)
+          const taskDataStyle = window.getComputedStyle(taskData)
+          console.log('📊 Grid data area: top=', gridDataStyle.top, 'paddingTop=', gridDataStyle.paddingTop)
+          console.log('📊 Task data area: top=', taskDataStyle.top, 'paddingTop=', taskDataStyle.paddingTop)
+        }
+
+        // CHECK THE ACTUAL GANTT BARS (.gantt_task_line) - these might be offset within rows!
+        console.log('\n🎯 GANTT BAR POSITION DEBUG:')
+        const ganttBars = document.querySelectorAll('.gantt_task_line')
+        console.log('Found', ganttBars.length, 'gantt bars')
+
+        if (ganttBars.length > 0 && taskRows.length > 0) {
+          // Check first 3 bars
+          for (let i = 0; i < Math.min(3, ganttBars.length, taskRows.length); i++) {
+            const bar = ganttBars[i]
+            const row = taskRows[i]
+            const barRect = bar.getBoundingClientRect()
+            const rowRect = row.getBoundingClientRect()
+
+            console.log(`Bar ${i}:`)
+            console.log(`  Row top: ${rowRect.top}, height: ${rowRect.height}`)
+            console.log(`  Bar top: ${barRect.top}, height: ${barRect.height}`)
+            console.log(`  Bar offset from row top: ${barRect.top - rowRect.top}px`)
+
+            // Check CSS top property
+            const barStyle = window.getComputedStyle(bar)
+            console.log(`  Bar CSS: top=${barStyle.top}, position=${barStyle.position}, transform=${barStyle.transform}`)
+          }
+
+          // Check if grid rows and bars are in sync
+          if (gridRows.length > 0 && ganttBars.length > 0) {
+            const firstGridRect = gridRows[0].getBoundingClientRect()
+            const firstBarRect = ganttBars[0].getBoundingClientRect()
+            const offset = firstBarRect.top - firstGridRect.top
+            console.log(`\n🔴 FIRST GRID ROW vs FIRST GANTT BAR:`)
+            console.log(`  Grid row top: ${firstGridRect.top}`)
+            console.log(`  Gantt bar top: ${firstBarRect.top}`)
+            console.log(`  🚨 OFFSET: ${offset.toFixed(2)}px`)
+
+            if (Math.abs(offset) > 1) {
+              console.log(`  ⚠️ FOUND IT! Gantt bars are ${offset.toFixed(2)}px ${offset > 0 ? 'BELOW' : 'ABOVE'} grid rows!`)
+
+              // NOW CHECK THE PARENT CONTAINERS OF THE BARS - they might have scroll offset!
+              const firstBar = ganttBars[0]
+              let parent = firstBar.parentElement
+              console.log(`\n🔬 INVESTIGATING BAR PARENT CHAIN:`)
+              let level = 0
+              while (parent && level < 10) {
+                const parentRect = parent.getBoundingClientRect()
+                const parentStyle = window.getComputedStyle(parent)
+                console.log(`  Level ${level}: ${parent.className || parent.tagName}`)
+                console.log(`    AbsoluteTop: ${parentRect.top}, Position: ${parentStyle.position}`)
+                console.log(`    ScrollTop: ${parent.scrollTop}, ScrollLeft: ${parent.scrollLeft}`)
+                console.log(`    CSS top: ${parentStyle.top}, transform: ${parentStyle.transform}`)
+
+                if (parent.classList?.contains('gantt_task_bg') ||
+                    parent.classList?.contains('gantt_bars_area') ||
+                    parent.classList?.contains('gantt_data_area') ||
+                    parent.classList?.contains('gantt_task')) {
+                  console.log(`    ⚠️ KEY CONTAINER - This might be causing the offset!`)
+                }
+
+                parent = parent.parentElement
+                level++
+                if (parent?.classList?.contains('gantt_container')) break
+              }
+
+              // ATTEMPT TO FIX IT - Try to force correct positioning
+              console.log(`\n🔧 ATTEMPTING TO FIX BAR POSITIONING...`)
+              const taskBg = document.querySelector('.gantt_task_bg')
+              if (taskBg) {
+                const taskBgStyle = window.getComputedStyle(taskBg)
+                console.log(`Found .gantt_task_bg - top: ${taskBgStyle.top}, position: ${taskBgStyle.position}, transform: ${taskBgStyle.transform}`)
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Force a layout recalculation after init to fix row alignment with resizable columns
     setTimeout(() => {
+      gantt.setSizes()  // Recalculate all dimensions
       gantt.render()
+
+      // Debug dimensions after first render - DISABLED (alignment issue fixed)
+      // setTimeout(debugDimensions, 100)
     }, 0)
 
     setGanttReady(true)
@@ -1359,6 +1600,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             gantt.updateTask(taskId)
             gantt.refreshTask(taskId)
 
+            // Force layout recalculation to maintain row alignment
+            gantt.setSizes()
+            gantt.render()
+
             // Re-enable task updates after a short delay
             setTimeout(() => {
               isDragging.current = false
@@ -1377,6 +1622,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             task[field] = !checked
             gantt.updateTask(taskId)
             gantt.refreshTask(taskId)
+
+            // Force layout recalculation to maintain row alignment
+            gantt.setSizes()
+            gantt.render()
 
             setPositionDialogTask({ task, field, checked })
             setShowPositionDialog(true)
@@ -1421,39 +1670,48 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             gantt.updateTask(taskId)
             gantt.refreshTask(taskId)
 
+            // Force layout recalculation to maintain row alignment
+            gantt.setSizes()
+            gantt.render()
+
             // Save to backend
             const updateData = {
               manually_positioned: true,
               start_date: dayOffset
             }
-            console.log('💾 Locking task position:', updateData)
-            onUpdateTask(taskId, updateData)
+            console.log('💾 Locking task position for task', taskId, ':', updateData)
+            console.log('💾 Calling onUpdateTask with:', { taskId, updateData })
+            try {
+              onUpdateTask(taskId, updateData)
+              console.log('✅ onUpdateTask called successfully for lock')
+            } catch (error) {
+              console.error('❌ Error calling onUpdateTask for lock:', error)
+            }
           } else {
             // User wants to unlock and revert to auto-calculated position
+            console.log('🔓 Unlocking task', taskId)
+
+            // Clear manual positioning flags
             task.manually_positioned = false
             task.$manuallyPositioned = false
             manuallyPositionedTasks.current.delete(taskId)
 
-            // Recalculate position based on predecessors
-            const originalTask = tasks.find(t => t.id === taskId)
-            if (originalTask) {
-              const autoCalculatedStart = calculateStartDate(originalTask)
-              task.start_date = autoCalculatedStart
+            // Save to backend (start_date: 0 means auto-calculate from today)
+            const updateData = {
+              manually_positioned: false,
+              start_date: 0
+            }
+            console.log('💾 Unlocking task', taskId, '- will auto-calculate position:', updateData)
+            console.log('💾 Calling onUpdateTask with:', { taskId, updateData })
 
-              // Update the original task in the tasks array
-              originalTask.manually_positioned = false
-              originalTask.start_date = null // Clear start_date so it auto-calculates
-
-              gantt.updateTask(taskId)
-              gantt.refreshTask(taskId)
-
-              // Save to backend (start_date: null means auto-calculate)
-              const updateData = {
-                manually_positioned: false,
-                start_date: null
-              }
-              console.log('💾 Unlocking task - will auto-calculate position:', updateData)
+            try {
               onUpdateTask(taskId, updateData)
+              console.log('✅ onUpdateTask called successfully for unlock')
+
+              // Note: The task will reload from backend with recalculated position
+              // The gantt chart will refresh automatically when tasks reload
+            } catch (error) {
+              console.error('❌ Error calling onUpdateTask for unlock:', error)
             }
           }
 
@@ -1615,7 +1873,14 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     })
 
     gantt.config.columns = columns
+    gantt.setSizes()
     gantt.render()
+
+    // CRITICAL: Force another recalculation after column changes to fix alignment
+    setTimeout(() => {
+      gantt.setSizes()
+      gantt.render()
+    }, 50)
   }, [visibleColumns, ganttReady, tasks, showCheckboxes, columnWidths])
 
   // Handle zoom level changes
@@ -1650,9 +1915,27 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     gantt.config.scales = currentZoom.scales
     gantt.config.min_column_width = currentZoom.min_column_width
 
-    // Force a full re-render of the gantt to apply the new zoom level
-    gantt.render()
     console.log('🔍 Zoom level changed to:', zoomLevel)
+
+    // Force sizes and render immediately
+    gantt.setSizes()
+    gantt.render()
+
+    // Check if data disappeared and trigger task reload if needed
+    setTimeout(() => {
+      const taskCount = gantt.getTaskCount()
+      console.log('📊 After zoom, gantt has', taskCount, 'tasks loaded')
+
+      if (taskCount === 0) {
+        console.warn('⚠️ DHtmlx cleared tasks during zoom! Triggering reload by updating state...')
+        // Trigger the task loading effect to reload data
+        setDataReloadTrigger(prev => prev + 1)
+      } else {
+        // Tasks are still there, just need to re-render
+        gantt.setSizes()
+        gantt.render()
+      }
+    }, 10)
   }, [zoomLevel, ganttReady])
 
   // Handle task name search filtering
@@ -2064,8 +2347,33 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       links: ganttLinks
     })
 
-    // Immediately render to ensure proper row alignment
+    // Immediately recalculate sizes and render to ensure proper row alignment
+    gantt.setSizes()
     gantt.render()
+
+    // Force another render after a brief delay to ensure alignment
+    setTimeout(() => {
+      gantt.setSizes()
+      gantt.render()
+
+      // DEBUG: Log dimensions after data load - DISABLED (alignment issue fixed)
+      // setTimeout(() => {
+      //   const gridData = document.querySelector('.gantt_grid_data')
+      //   const taskData = document.querySelector('.gantt_data_area')
+      //   const gridRows = document.querySelectorAll('.gantt_grid_data .gantt_row')
+      //   const taskRows = document.querySelectorAll('.gantt_data_area .gantt_task_row')
+      //   console.log('🔍 AFTER DATA LOAD - Dimensions:')
+      //   console.log('Grid data height:', gridData?.offsetHeight, 'Task data height:', taskData?.offsetHeight)
+      //   console.log('Grid rows:', gridRows?.length, 'Task rows:', taskRows?.length)
+      //   if (gridRows && taskRows && gridRows.length > 0 && taskRows.length > 0) {
+      //     console.log('Row heights - Grid:', gridRows[0]?.offsetHeight, 'Task:', taskRows[0]?.offsetHeight)
+      //     console.log('Grid row Y positions:', Array.from(gridRows).slice(0, 5).map(r => r.offsetTop))
+      //     console.log('Task row Y positions:', Array.from(taskRows).slice(0, 5).map(r => r.offsetTop))
+      //     const offset = taskRows[0]?.offsetTop - gridRows[0]?.offsetTop
+      //     console.log('⚠️ OFFSET between grid and task rows:', offset, 'pixels')
+      //   }
+      // }, 100)
+    }, 100)
 
     console.log('Loaded:', ganttTasks.length, 'tasks and', ganttLinks.length, 'links')
 
@@ -2086,7 +2394,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         }
       }, 100) // Small delay to let Gantt finish rendering
     }
-  }, [ganttReady, tasks, publicHolidays])
+  }, [ganttReady, tasks, publicHolidays, dataReloadTrigger])
 
   // Handle saving task dependencies from editor
   const handleSaveDependencies = (taskId, predecessors) => {
@@ -2359,6 +2667,93 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           margin: 0 !important;
         }
 
+        /* Fix row alignment - force exact same heights for grid and timeline rows */
+        .dhtmlx-gantt-container .gantt_row,
+        .dhtmlx-gantt-container .gantt_task_row,
+        .dhtmlx-gantt-container .gantt_row.odd,
+        .dhtmlx-gantt-container .gantt_row.gantt_row_task,
+        .dhtmlx-gantt-container .gantt_task .gantt_task_row {
+          height: 40px !important;
+          line-height: 40px !important;
+          min-height: 40px !important;
+          max-height: 40px !important;
+          box-sizing: border-box !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          border: none !important;
+        }
+
+        /* Force exact scale/header heights - container should be 60px total */
+        .dhtmlx-gantt-container .gantt_grid_scale,
+        .dhtmlx-gantt-container .gantt_task_scale {
+          height: 60px !important;
+          min-height: 60px !important;
+          max-height: 60px !important;
+        }
+
+        /* Each scale row (line) should be 30px so two rows fit in 60px */
+        .dhtmlx-gantt-container .gantt_scale_line {
+          height: 30px !important;
+          line-height: 30px !important;
+          min-height: 30px !important;
+          max-height: 30px !important;
+        }
+
+        /* Make month/year and day numbers fit in 30px rows */
+        .dhtmlx-gantt-container .gantt_scale_cell {
+          font-size: 12px !important;
+          line-height: 30px !important;
+          height: 30px !important;
+        }
+
+        /* Force data area heights to sync */
+        .dhtmlx-gantt-container .gantt_data_area,
+        .dhtmlx-gantt-container .gantt_grid_data {
+          overflow-y: hidden !important;
+        }
+
+        /* Task bars fill the full 40px row height for perfect alignment */
+        .dhtmlx-gantt-container .gantt_task_line {
+          top: 0px !important;
+          height: 40px !important;
+          pointer-events: auto !important; /* Ensure task bars are clickable/draggable */
+          cursor: move !important; /* Show move cursor on hover */
+        }
+
+        /* FIX: Force gantt_bars_area to ignore gantt_task_bg flow with flexbox */
+        .dhtmlx-gantt-container .gantt_task {
+          display: flex !important;
+          flex-direction: column !important;
+        }
+
+        .dhtmlx-gantt-container .gantt_task_bg {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          z-index: 0 !important;
+          pointer-events: none !important;
+        }
+
+        .dhtmlx-gantt-container .gantt_bars_area {
+          position: relative !important;
+          z-index: 1 !important;
+          flex: 1 !important;
+        }
+
+        /* FIX: Task rows must match grid row height exactly to prevent drift */
+        .dhtmlx-gantt-container .gantt_task_row {
+          height: 40px !important;
+          min-height: 40px !important;
+          max-height: 40px !important;
+          box-sizing: border-box !important;
+          border: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          pointer-events: none !important; /* Allow clicks to pass through to task bars */
+        }
+
         /* Today's date - light green column with higher specificity */
         .dhtmlx-gantt-container .gantt_task_cell.today,
         .dhtmlx-gantt-container .gantt_scale_cell.today,
@@ -2402,7 +2797,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           background-color: #4f46e5;
         }
 
-        /* Make dependency drag handles (circles) more visible */
+        /* Dependency drag handles (circles) - hidden by default to avoid blocking clicks */
         .dhtmlx-gantt-container .gantt_link_point {
           width: 12px !important;
           height: 12px !important;
@@ -2410,22 +2805,25 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           border: 2px solid #3b82f6 !important;
           background-color: white !important;
           border-radius: 50% !important;
-          opacity: 0.9 !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          transition: opacity 0.2s, width 0.2s, height 0.2s !important;
         }
 
+        /* Show and enable link points ONLY when hovering the task bar */
+        .dhtmlx-gantt-container .gantt_task_line:hover .gantt_link_point {
+          opacity: 1 !important;
+          pointer-events: auto !important;
+        }
+
+        /* Enlarge link points when hovering them directly */
         .dhtmlx-gantt-container .gantt_link_point:hover {
           width: 16px !important;
           height: 16px !important;
           margin-top: -8px !important;
           border-width: 3px !important;
           background-color: #3b82f6 !important;
-          opacity: 1 !important;
           box-shadow: 0 0 8px rgba(59, 130, 246, 0.5) !important;
-        }
-
-        /* Make task bars show the link points on hover */
-        .dhtmlx-gantt-container .gantt_task_line:hover .gantt_link_point {
-          opacity: 1 !important;
         }
 
         /* Make column resize handles more visible and easier to grab */
@@ -3060,6 +3458,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                   gantt.updateTask(task.id)
                   gantt.refreshTask(task.id)
 
+                  // Force layout recalculation to maintain row alignment
+                  gantt.setSizes()
+                  gantt.render()
+
                   // Save to backend - uncheck the checkbox and keep locked
                   onUpdateTask(task.id, {
                     [field]: checked,
@@ -3088,6 +3490,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
                   gantt.updateTask(task.id)
                   gantt.refreshTask(task.id)
+
+                  // Force layout recalculation to maintain row alignment
+                  gantt.setSizes()
+                  gantt.render()
 
                   // Save to backend - uncheck the checkbox and unlock
                   onUpdateTask(task.id, {

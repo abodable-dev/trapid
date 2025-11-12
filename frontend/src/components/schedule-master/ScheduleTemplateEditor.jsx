@@ -590,18 +590,22 @@ export default function ScheduleTemplateEditor() {
 
   const handleUpdateRow = async (rowId, updates) => {
     try {
-      console.log('ScheduleTemplateEditor: Updating row', rowId, 'with:', updates)
-      await api.patch(
+      console.log('🔵 ScheduleTemplateEditor: handleUpdateRow called with rowId:', rowId, 'updates:', updates)
+      console.log('🔵 Making API call to:', `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`)
+      const response = await api.patch(
         `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`,
         { schedule_template_row: updates }
       )
+      console.log('✅ API response:', response.data)
 
-      console.log('ScheduleTemplateEditor: Row updated, reloading all rows...')
+      console.log('🔵 ScheduleTemplateEditor: Row updated, reloading all rows...')
       // Reload all rows to get updated calculated fields like predecessor_display
       await loadTemplateRows(selectedTemplate.id)
-      console.log('ScheduleTemplateEditor: Rows reloaded successfully')
+      console.log('✅ ScheduleTemplateEditor: Rows reloaded successfully')
     } catch (err) {
-      console.error('Failed to update row:', err)
+      console.error('❌ Failed to update row:', err)
+      console.error('❌ Error response:', err.response?.data)
+      console.error('❌ Error status:', err.response?.status)
       showToast('Failed to update row', 'error')
     }
   }
