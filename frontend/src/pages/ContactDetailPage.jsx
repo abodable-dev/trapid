@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { api } from '../api'
 import {
@@ -100,6 +100,10 @@ export default function ContactDetailPage() {
   const [xeroAccounts, setXeroAccounts] = useState([]) // Xero chart of accounts for dropdown
   const [loadingXeroAccounts, setLoadingXeroAccounts] = useState(false)
 
+  // Scroll spy and navigation state
+  const [activeSection, setActiveSection] = useState('contact-information')
+  const sectionRefs = useRef({})
+
   // Tab navigation using URL search params
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = searchParams.get('tab') || 'overview'
@@ -138,6 +142,56 @@ export default function ContactDetailPage() {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [showSupplierDropdown])
+
+  // Scroll spy for section navigation
+  useEffect(() => {
+    if (activeTab !== 'overview') return
+
+    const handleScroll = () => {
+      const sections = Object.keys(sectionRefs.current)
+      const scrollPosition = window.scrollY + 200 // Offset for header
+
+      for (const sectionId of sections) {
+        const element = sectionRefs.current[sectionId]
+        if (element) {
+          const { offsetTop, offsetHeight } = element
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveSection(sectionId)
+            break
+          }
+        }
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    handleScroll() // Initial check
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [activeTab])
+
+  // Navigation sections configuration
+  const navigationSections = [
+    { id: 'contact-information', label: 'Contact Information' },
+    { id: 'contact-persons', label: 'Contact Persons' },
+    { id: 'contact-addresses', label: 'Contact Addresses' },
+    { id: 'contact-groups', label: 'Contact Groups' },
+    { id: 'business-details', label: 'Business Details' },
+    { id: 'location', label: 'Location' },
+    { id: 'system-info', label: 'System Info' },
+    { id: 'quick-stats', label: 'Quick Stats' }
+  ]
+
+  // Scroll to section with smooth behavior
+  const scrollToSection = (sectionId) => {
+    const element = sectionRefs.current[sectionId]
+    if (element) {
+      const yOffset = -220 // Offset for sticky header (208px) plus some padding
+      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset
+      window.scrollTo({ top: y, behavior: 'smooth' })
+    }
+  }
 
   const loadContact = async () => {
     try {
@@ -764,81 +818,83 @@ export default function ContactDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 mb-4"
-        >
-          <ArrowLeftIcon className="h-5 w-5" />
-          Back
-        </button>
+      {/* Sticky Header & Tabs */}
+      <div className="sticky top-0 z-20 bg-gray-50 dark:bg-gray-900 pb-4 mb-6">
+        {/* Header */}
+        <div className="pt-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 mb-4"
+          >
+            <ArrowLeftIcon className="h-5 w-5" />
+            Back
+          </button>
 
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {contact.full_name || contact.first_name || 'Unnamed Contact'}
-            </h1>
-            {contact.parent && (
-              <p className="text-gray-600 dark:text-gray-400">
-                Parent: {contact.parent}
-              </p>
-            )}
-          </div>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                {contact.full_name || contact.first_name || 'Unnamed Contact'}
+              </h1>
+              {contact.parent && (
+                <p className="text-gray-600 dark:text-gray-400">
+                  Parent: {contact.parent}
+                </p>
+              )}
+            </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => navigate(`/contacts`)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              <ArrowLeftIcon className="h-5 w-5" />
-              Back to Contacts
-            </button>
-            {!isPageEditMode ? (
+            <div className="flex gap-2">
               <button
-                onClick={() => setIsPageEditMode(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                onClick={() => navigate(`/contacts`)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
               >
-                <PencilIcon className="h-5 w-5" />
-                Edit
+                <ArrowLeftIcon className="h-5 w-5" />
+                Back to Contacts
               </button>
-            ) : (
-              <>
+              {!isPageEditMode ? (
                 <button
-                  onClick={async () => {
-                    // Save all changes and exit edit mode
-                    setIsPageEditMode(false)
-                    await loadContact() // Reload to get fresh data
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                  onClick={() => setIsPageEditMode(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
                 >
-                  <CheckCircleIcon className="h-5 w-5" />
-                  Save & Lock
+                  <PencilIcon className="h-5 w-5" />
+                  Edit
                 </button>
-                <button
-                  onClick={() => {
-                    setIsPageEditMode(false)
-                    loadContact() // Reload to discard changes
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
-                >
-                  <XCircleIcon className="h-5 w-5" />
-                  Cancel
-                </button>
-              </>
-            )}
-            <button
-              onClick={deleteContact}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            >
-              <TrashIcon className="h-5 w-5" />
-              Delete
-            </button>
+              ) : (
+                <>
+                  <button
+                    onClick={async () => {
+                      // Save all changes and exit edit mode
+                      setIsPageEditMode(false)
+                      await loadContact() // Reload to get fresh data
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                  >
+                    <CheckCircleIcon className="h-5 w-5" />
+                    Save & Lock
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsPageEditMode(false)
+                      loadContact() // Reload to discard changes
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                  >
+                    <XCircleIcon className="h-5 w-5" />
+                    Cancel
+                  </button>
+                </>
+              )}
+              <button
+                onClick={deleteContact}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              >
+                <TrashIcon className="h-5 w-5" />
+                Delete
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Tab Navigation */}
-        <div className="border-b border-gray-200 dark:border-gray-700 mt-6">
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-200 dark:border-gray-700 mt-6">
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
             <button
               onClick={() => setSearchParams({ tab: 'overview' })}
@@ -874,16 +930,49 @@ export default function ContactDetailPage() {
             )}
           </nav>
         </div>
+        </div>
       </div>
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Info */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Contact Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Contact Information</h2>
+      <div className="flex gap-6">
+        {/* Sticky Navigation Menu (hidden on mobile) */}
+        <div className="hidden lg:block w-56 flex-shrink-0">
+          <div className="sticky top-52">
+            <nav className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 px-2">On this page</h3>
+              <ul className="space-y-1">
+                {navigationSections.map((section) => (
+                  <li key={section.id}>
+                    <button
+                      onClick={() => scrollToSection(section.id)}
+                      className={`w-full text-left px-2 py-1.5 text-sm rounded-md transition-colors ${
+                        activeSection === section.id
+                          ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      {section.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 min-w-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Info */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Contact Information */}
+              <div
+                ref={(el) => (sectionRefs.current['contact-information'] = el)}
+                id="contact-information"
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+              >
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Contact Information</h2>
 
             <div className="space-y-4">
               {/* Email with inline editing */}
@@ -1084,31 +1173,50 @@ export default function ContactDetailPage() {
           </div>
 
           {/* Contact Persons Section */}
-          <ContactPersonsSection
-            contactPersons={contactPersons}
-            onUpdate={handleContactPersonsUpdate}
-            isEditMode={isPageEditMode}
-            contactId={id}
-          />
+          <div
+            ref={(el) => (sectionRefs.current['contact-persons'] = el)}
+            id="contact-persons"
+          >
+            <ContactPersonsSection
+              contactPersons={contactPersons}
+              onUpdate={handleContactPersonsUpdate}
+              isEditMode={isPageEditMode}
+              contactId={id}
+            />
+          </div>
 
           {/* Contact Addresses Section */}
-          <ContactAddressesSection
-            contactAddresses={contactAddresses}
-            onUpdate={handleContactAddressesUpdate}
-            isEditMode={isPageEditMode}
-            contactId={id}
-          />
+          <div
+            ref={(el) => (sectionRefs.current['contact-addresses'] = el)}
+            id="contact-addresses"
+          >
+            <ContactAddressesSection
+              contactAddresses={contactAddresses}
+              onUpdate={handleContactAddressesUpdate}
+              isEditMode={isPageEditMode}
+              contactId={id}
+            />
+          </div>
 
           {/* Contact Groups Section */}
-          <ContactGroupsSection
-            contactGroups={contactGroups}
-            onUpdate={handleContactGroupsUpdate}
-            isEditMode={isPageEditMode}
-            contactId={id}
-          />
+          <div
+            ref={(el) => (sectionRefs.current['contact-groups'] = el)}
+            id="contact-groups"
+          >
+            <ContactGroupsSection
+              contactGroups={contactGroups}
+              onUpdate={handleContactGroupsUpdate}
+              isEditMode={isPageEditMode}
+              contactId={id}
+            />
+          </div>
 
           {/* Business Details */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div
+            ref={(el) => (sectionRefs.current['business-details'] = el)}
+            id="business-details"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+          >
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Business Details</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1571,34 +1679,46 @@ export default function ContactDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Location & Region */}
-          {(contact.contact_region || contact.contact_region_id) && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <MapPinIcon className="h-5 w-5 text-gray-400" />
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Location</h2>
-              </div>
+          {/* Location - LGAs */}
+          <div
+            ref={(el) => (sectionRefs.current['location'] = el)}
+            id="location"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <MapPinIcon className="h-5 w-5 text-gray-400" />
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Location</h2>
+            </div>
 
-              <div className="space-y-3">
-                {contact.contact_region && (
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Region</p>
-                    <p className="text-gray-900 dark:text-white font-medium">{contact.contact_region}</p>
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Local Government Areas</p>
+                {contact.lgas && contact.lgas.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {contact.lgas.map((lga, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
+                      >
+                        {lga}
+                      </span>
+                    ))}
                   </div>
-                )}
-
-                {contact.contact_region_id && (
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Region ID</p>
-                    <p className="text-gray-900 dark:text-white font-mono text-sm">{contact.contact_region_id}</p>
-                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                    {isPageEditMode ? 'Scroll down to Business Details to add LGAs' : 'No LGAs assigned'}
+                  </p>
                 )}
               </div>
             </div>
-          )}
+          </div>
 
           {/* System Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div
+            ref={(el) => (sectionRefs.current['system-info'] = el)}
+            id="system-info"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+          >
             <div className="flex items-center gap-2 mb-4">
               <BuildingOfficeIcon className="h-5 w-5 text-gray-400" />
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">System Info</h2>
@@ -1654,68 +1774,59 @@ export default function ContactDetailPage() {
                   </p>
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* Xero Integration */}
-          {(contact.xero_id || contact.sync_with_xero || contact.last_synced_at || contact.xero_sync_error) && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Xero Integration</h2>
-              </div>
+              {/* Xero Sync Status */}
+              <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Xero Integration</p>
 
-              <div className="space-y-3">
-                {contact.xero_id && (
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Xero Contact ID</p>
-                    <p className="text-gray-900 dark:text-white font-mono text-sm break-all">{contact.xero_id}</p>
-                  </div>
-                )}
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Sync with Xero</p>
-                  <p className="text-gray-900 dark:text-white text-sm">
-                    {contact.sync_with_xero ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
-                        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        Enabled
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                        Disabled
-                      </span>
-                    )}
-                  </p>
+                <div className="mb-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Xero ID</p>
+                  {contact.xero_id ? (
+                    <p className="text-gray-900 dark:text-white text-sm font-mono break-all">{contact.xero_id}</p>
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 italic">Not linked to Xero</p>
+                  )}
                 </div>
 
-                {contact.last_synced_at && (
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Last Synced</p>
+                <div className="mb-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Last Synced</p>
+                  {contact.last_synced_at ? (
                     <p className="text-gray-900 dark:text-white text-sm">
                       {new Date(contact.last_synced_at).toLocaleDateString()} at {new Date(contact.last_synced_at).toLocaleTimeString()}
                     </p>
-                  </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 italic">Never synced</p>
+                  )}
+                </div>
+
+                {contact.sync_with_xero && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
+                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Sync Enabled
+                  </span>
                 )}
 
                 {contact.xero_sync_error && (
-                  <div>
-                    <p className="text-sm text-red-500 dark:text-red-400 font-medium mb-1">Sync Error</p>
-                    <p className="text-sm text-gray-900 dark:text-white bg-red-50 dark:bg-red-900/20 p-2 rounded border border-red-200 dark:border-red-800">
+                  <div className="mt-2">
+                    <p className="text-xs text-red-500 dark:text-red-400 font-medium">Sync Error:</p>
+                    <p className="text-xs text-gray-900 dark:text-white bg-red-50 dark:bg-red-900/20 p-2 rounded border border-red-200 dark:border-red-800 mt-1">
                       {contact.xero_sync_error}
                     </p>
                   </div>
                 )}
               </div>
             </div>
-          )}
+          </div>
+
 
           {/* Quick Stats */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div
+            ref={(el) => (sectionRefs.current['quick-stats'] = el)}
+            id="quick-stats"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+          >
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h2>
 
             <div className="space-y-3">
@@ -1733,6 +1844,8 @@ export default function ContactDetailPage() {
                 </span>
               </div>
             </div>
+          </div>
+        </div>
           </div>
         </div>
       </div>

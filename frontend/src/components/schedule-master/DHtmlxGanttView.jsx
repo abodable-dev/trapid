@@ -72,27 +72,62 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
   // Load column visibility from localStorage or use defaults
   const [visibleColumns, setVisibleColumns] = useState(() => {
-    const saved = localStorage.getItem('dhtmlxGanttColumns')
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch (e) {
-        console.error('Failed to parse saved column visibility:', e)
-      }
-    }
-    return {
+    const defaults = {
       taskNumber: true,
       taskName: true,
       predecessors: true,
       supplier: true,
-      duration: true
+      duration: true,
+      confirm: true,
+      supplierConfirm: true,
+      start: true,
+      complete: true,
+      lock: true
     }
+    const saved = localStorage.getItem('dhtmlxGanttColumns')
+    if (saved) {
+      try {
+        const savedColumns = JSON.parse(saved)
+        // Migration: Merge saved with defaults to ensure all columns have visibility settings
+        return { ...defaults, ...savedColumns }
+      } catch (e) {
+        console.error('Failed to parse saved column visibility:', e)
+      }
+    }
+    return defaults
   })
 
   // Save column visibility to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('dhtmlxGanttColumns', JSON.stringify(visibleColumns))
   }, [visibleColumns])
+
+  // Load column order from localStorage or use default
+  const [columnOrder, setColumnOrder] = useState(() => {
+    const defaultOrder = ['taskNumber', 'taskName', 'predecessors', 'supplier', 'duration', 'confirm', 'supplierConfirm', 'start', 'complete', 'lock']
+    const saved = localStorage.getItem('dhtmlxGanttColumnOrder')
+    if (saved) {
+      try {
+        const savedOrder = JSON.parse(saved)
+        // Migration: Add any missing columns from defaultOrder that aren't in savedOrder
+        const mergedOrder = [...savedOrder]
+        defaultOrder.forEach(col => {
+          if (!mergedOrder.includes(col)) {
+            mergedOrder.push(col)
+          }
+        })
+        return mergedOrder
+      } catch (e) {
+        console.error('Failed to parse saved column order:', e)
+      }
+    }
+    return defaultOrder
+  })
+
+  // Save column order to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('dhtmlxGanttColumnOrder', JSON.stringify(columnOrder))
+  }, [columnOrder])
 
   // Load zoom level from localStorage or use default
   const [zoomLevel, setZoomLevel] = useState(() => {
@@ -164,6 +199,20 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   useEffect(() => {
     if (!ganttContainer.current || !isOpen) return
 
+    // Enable Undo/Redo plugin (PRO feature)
+    gantt.plugins({
+      undo: true
+    })
+
+    // Configure undo settings
+    gantt.config.undo = true
+    gantt.config.redo = true
+    gantt.config.undo_steps = 10 // Keep last 10 actions
+    gantt.config.undo_types = {
+      link: 'link',
+      task: 'task'
+    }
+
     // Configure DHTMLX Gantt date format
     gantt.config.date_format = '%Y-%m-%d'
     gantt.config.xml_date = '%Y-%m-%d'
@@ -203,11 +252,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     gantt.config.task_height = 40  // MUST match row_height for correct positioning
     gantt.config.bar_height = 40   // MUST also match - DHtmlx uses this for Y calculations!
     gantt.config.round_dnd_dates = true // Round dates to full days
-    gantt.config.column_resize = true // Allow resizing individual columns
+    gantt.config.column_resize = true // Enable resizing individual columns by dragging headers
     gantt.config.smart_rendering = true // PERFORMANCE: Enable smart rendering - only renders visible tasks
     gantt.config.static_background = true // PERFORMANCE: Static background is faster
     gantt.config.autosize = false // Disable autosize to maintain fixed heights
     gantt.config.show_errors = false // PERFORMANCE: Disable error popups during drag
+    gantt.config.inline_editors_date_processing = 'keepDates' // Keep original date values when editing
 
     // Extend timeline range to allow dragging far into the future
     // Set start date to today
@@ -223,13 +273,29 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     gantt.config.end_date = timelineEnd
     gantt.config.fit_tasks = false // Disable fit_tasks since we're setting explicit range
 
-    // Enable grid resizing and scrollbars
-    gantt.config.grid_width = 350
-    gantt.config.grid_resize = true
-    gantt.config.min_grid_column_width = 50 // Minimum column width
-    gantt.config.scroll_size = 18 // Set scrollbar size (makes them always visible)
-    gantt.config.keep_grid_width = false // Allow grid to resize freely
-    gantt.config.resize_rows = false // Disable row resizing (only enable grid/timeline resize)
+    // Configure separate scrollbars for grid and timeline
+    gantt.config.scroll_size = 20 // Set scrollbar size
+
+    // Custom layout with separate scrollbars
+    gantt.config.layout = {
+      css: "gantt_container",
+      cols: [
+        {
+          width: 450,
+          rows: [
+            { view: "grid", scrollX: "gridScroll", scrollable: true, scrollY: "scrollVer" },
+            { view: "scrollbar", id: "gridScroll", group: "horizontal" }
+          ]
+        },
+        {
+          rows: [
+            { view: "timeline", scrollX: "timelineScroll", scrollable: true, scrollY: "scrollVer" },
+            { view: "scrollbar", id: "timelineScroll", group: "horizontal" }
+          ]
+        },
+        { view: "scrollbar", id: "scrollVer", group: "vertical" }
+      ]
+    }
 
     // ===== DHTMLX DataProcessor Configuration =====
     // This is a PRO feature that auto-syncs changes to backend
@@ -856,6 +922,39 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       handleTaskUpdate(task)
       return true
     })
+
+    // ====================================================================
+    // AUTO-SELECT TEXT IN INLINE EDITORS
+    // ====================================================================
+    // IMPORTANT: This handler ensures that when clicking on ANY editable
+    // field in the gantt grid, the current value is:
+    // 1. VISIBLE (not empty) - handled by editor's map_to property
+    // 2. SELECTED/HIGHLIGHTED - handled by this event listener
+    //
+    // This allows users to:
+    // - See what the old value was before changing it
+    // - Immediately start typing to replace the value
+    // - Use arrow keys or click to edit partially
+    //
+    // Apply this pattern to ALL editable columns by:
+    // 1. Adding editor: { type: 'text|number', map_to: 'field_name' } to column config
+    // 2. This handler will automatically select the text for any input field
+    // ====================================================================
+    const handleEditorClick = (e) => {
+      const target = e.target
+      // Check if clicked element is any type of input field (text, number, etc.)
+      if (target && target.tagName === 'INPUT' && (target.type === 'text' || target.type === 'number')) {
+        // Small delay to ensure the editor is fully initialized
+        setTimeout(() => {
+          target.select() // Highlight/select all text in the input
+        }, 10)
+      }
+    }
+
+    // Add event listener to gantt container for inline editor auto-select
+    if (ganttContainer.current) {
+      ganttContainer.current.addEventListener('click', handleEditorClick)
+    }
 
     // Intercept task drag to check for predecessor conflicts
     // Store original position before drag starts
@@ -1816,6 +1915,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     return () => {
       ganttContainer.current?.removeEventListener('click', handleCheckboxClick)
       ganttContainer.current?.removeEventListener('click', handleLockCheckboxClick)
+      ganttContainer.current?.removeEventListener('click', handleEditorClick)
       gantt.clearAll()
     }
   }, [isOpen, publicHolidays, zoomLevel, onUpdateTask])
@@ -1824,10 +1924,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   useEffect(() => {
     if (!ganttReady) return
 
-    const columns = []
-
-    if (visibleColumns.taskNumber) {
-      columns.push({
+    // Define all available column configurations
+    const columnDefinitions = {
+      taskNumber: {
         name: 'task_number',
         label: '#',
         width: columnWidths.task_number || 40,
@@ -1837,21 +1936,15 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           const taskIndex = tasks.findIndex(t => t.id === task.id)
           return taskIndex >= 0 ? `#${taskIndex + 1}` : ''
         }
-      })
-    }
-
-    if (visibleColumns.taskName) {
-      columns.push({
+      },
+      taskName: {
         name: 'text',
         label: 'Task Name',
         width: columnWidths.text || 150,
         tree: false,
         resize: true
-      })
-    }
-
-    if (visibleColumns.predecessors) {
-      columns.push({
+      },
+      predecessors: {
         name: 'predecessors',
         label: 'Predecessors',
         width: columnWidths.predecessors || 100,
@@ -1860,11 +1953,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         template: (task) => {
           return task.predecessors || '-'
         }
-      })
-    }
-
-    if (visibleColumns.supplier) {
-      columns.push({
+      },
+      supplier: {
         name: 'supplier',
         label: 'Supplier/Group',
         width: columnWidths.supplier || 120,
@@ -1872,25 +1962,24 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         template: (task) => {
           return task.supplier || '-'
         }
-      })
-    }
-
-    if (visibleColumns.duration) {
-      columns.push({
+      },
+      duration: {
         name: 'duration',
         label: 'Duration',
         width: columnWidths.duration || 70,
         align: 'center',
         resize: true,
+        editor: {
+          type: 'number',
+          map_to: 'duration',
+          min: 1,
+          max: 999
+        },
         template: (task) => {
           return task.duration ? `${task.duration} ${task.duration === 1 ? 'day' : 'days'}` : '-'
         }
-      })
-    }
-
-    // Add checkbox columns if visible
-    if (showCheckboxes) {
-      columns.push({
+      },
+      confirm: {
         name: 'confirm',
         label: 'Confirm',
         width: columnWidths.confirm || 80,
@@ -1900,9 +1989,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           const checked = task.confirm ? 'checked' : ''
           return `<input type="checkbox" class="gantt-checkbox" data-task-id="${task.id}" data-field="confirm" ${checked} />`
         }
-      })
-
-      columns.push({
+      },
+      supplierConfirm: {
         name: 'supplier_confirm',
         label: 'Supplier Confirm',
         width: columnWidths.supplier_confirm || 120,
@@ -1912,9 +2000,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           const checked = task.supplier_confirm ? 'checked' : ''
           return `<input type="checkbox" class="gantt-checkbox" data-task-id="${task.id}" data-field="supplier_confirm" ${checked} />`
         }
-      })
-
-      columns.push({
+      },
+      start: {
         name: 'start',
         label: 'Start',
         width: columnWidths.start || 70,
@@ -1924,9 +2011,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           const checked = task.start ? 'checked' : ''
           return `<input type="checkbox" class="gantt-checkbox" data-task-id="${task.id}" data-field="start" ${checked} />`
         }
-      })
-
-      columns.push({
+      },
+      complete: {
         name: 'complete',
         label: 'Complete',
         width: columnWidths.complete || 90,
@@ -1936,23 +2022,33 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           const checked = task.complete ? 'checked' : ''
           return `<input type="checkbox" class="gantt-checkbox" data-task-id="${task.id}" data-field="complete" ${checked} />`
         }
-      })
+      },
+      lock: {
+        name: 'lock_position',
+        label: 'Lock',
+        width: columnWidths.lock_position || 70,
+        align: 'center',
+        resize: true,
+        template: (task) => {
+          const checked = task.$manuallyPositioned || task.manually_positioned ? 'checked' : ''
+          return `<input type="checkbox" class="gantt-lock-checkbox" data-task-id="${task.id}" ${checked} />`
+        }
+      }
     }
 
-    // Always add the lock column
-    columns.push({
-      name: 'lock_position',
-      label: 'Lock',
-      width: columnWidths.lock_position || 70,
-      align: 'center',
-      resize: true,
-      template: (task) => {
-        const checked = task.$manuallyPositioned || task.manually_positioned ? 'checked' : ''
-        return `<input type="checkbox" class="gantt-lock-checkbox" data-task-id="${task.id}" ${checked} />`
+    // Build columns array based on columnOrder and visibility
+    const columns = []
+    columnOrder.forEach(columnKey => {
+      // For checkbox columns, also check if showCheckboxes is true
+      const isCheckboxColumn = ['confirm', 'supplierConfirm', 'start', 'complete', 'lock'].includes(columnKey)
+      if (visibleColumns[columnKey] && columnDefinitions[columnKey]) {
+        if (!isCheckboxColumn || showCheckboxes) {
+          columns.push(columnDefinitions[columnKey])
+        }
       }
     })
 
-    // Always add the "add" column
+    // Always add the "add" column at the end
     columns.push({
       name: 'add',
       label: '',
@@ -1963,7 +2059,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     gantt.setSizes()
     // PERFORMANCE: Use single debounced render instead of immediate + delayed render
     debouncedRender(10)
-  }, [visibleColumns, ganttReady, tasks, showCheckboxes, columnWidths, debouncedRender])
+  }, [visibleColumns, columnOrder, ganttReady, tasks, showCheckboxes, columnWidths, debouncedRender])
 
   // Handle zoom level changes
   useEffect(() => {
@@ -2148,12 +2244,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     return current
   }
 
-  // Handle task updates (when dates or duration change via drag)
+  // Handle task updates (when dates or duration change via drag or inline editing)
   const handleTaskUpdate = (task) => {
     const duration = task.duration
     const startDate = task.start_date
 
-    console.log('Task updated via drag:', {
+    console.log('Task updated:', {
       id: task.id,
       duration: duration,
       start_date: startDate,
@@ -2168,19 +2264,33 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       return
     }
 
-    // Skip auto-updates for manually positioned tasks - they should only be updated via explicit drag
-    if (task.$manuallyPositioned) {
-      console.log('⏸️ Skipping auto-update for manually positioned task', task.id, '- position is locked')
-      return
+    // For manually positioned tasks, check if this is a duration change (inline edit)
+    // Duration changes should be allowed even for manually positioned tasks
+    const originalTask = tasks.find(t => t.id === task.id)
+    if (task.$manuallyPositioned && originalTask) {
+      // Check if duration changed (inline edit)
+      if (originalTask.duration !== duration) {
+        console.log('✏️ Duration edited for manually positioned task', task.id, '- saving duration change')
+        const updateData = {
+          duration: duration,
+          predecessor_ids: task.predecessor_ids || []
+        }
+        onUpdateTask(task.id, updateData)
+        return
+      } else {
+        // Position change for manually positioned task - skip
+        console.log('⏸️ Skipping auto-update for manually positioned task', task.id, '- position is locked')
+        return
+      }
     }
 
-    // Save the update to backend
+    // Save the update to backend for non-manually-positioned tasks
     // Note: Conflict checking now happens in onAfterTaskDrag event
-    const originalTask = tasks.find(t => t.id === task.id)
     if (originalTask) {
       const updateData = {
         duration: duration,
-        start_date: startDate ? startDate.toISOString().split('T')[0] : null
+        start_date: startDate ? startDate.toISOString().split('T')[0] : null,
+        predecessor_ids: task.predecessor_ids || []
       }
 
       onUpdateTask(task.id, updateData)
@@ -2538,6 +2648,24 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               </button>
             </div>
 
+            {/* Undo/Redo Buttons */}
+            <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-lg">
+              <button
+                onClick={() => gantt.undo()}
+                className="px-3 py-1.5 text-xs font-medium rounded transition-colors text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Undo (Ctrl+Z)"
+              >
+                ↶ Undo
+              </button>
+              <button
+                onClick={() => gantt.redo()}
+                className="px-3 py-1.5 text-xs font-medium rounded transition-colors text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Redo (Ctrl+Y)"
+              >
+                ↷ Redo
+              </button>
+            </div>
+
             {/* Checkbox Toggle Button */}
             <button
               onClick={() => setShowCheckboxes(!showCheckboxes)}
@@ -2557,76 +2685,66 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                 Columns
               </Menu.Button>
 
-              <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right bg-white border border-gray-200 rounded-lg shadow-lg focus:outline-none z-10">
+              <Menu.Items className="absolute right-0 mt-2 w-64 origin-top-right bg-white border border-gray-200 rounded-lg shadow-lg focus:outline-none z-10">
                 <div className="p-2">
                   <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">
-                    Show/Hide Columns
+                    Show/Hide & Reorder Columns
                   </div>
-                  <Menu.Item>
-                    {() => (
-                      <label className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 rounded">
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns.taskNumber}
-                          onChange={(e) => setVisibleColumns({ ...visibleColumns, taskNumber: e.target.checked })}
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-gray-700"># (Task Number)</span>
-                      </label>
-                    )}
-                  </Menu.Item>
-                  <Menu.Item>
-                    {() => (
-                      <label className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 rounded">
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns.taskName}
-                          onChange={(e) => setVisibleColumns({ ...visibleColumns, taskName: e.target.checked })}
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-gray-700">Task Name</span>
-                      </label>
-                    )}
-                  </Menu.Item>
-                  <Menu.Item>
-                    {() => (
-                      <label className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 rounded">
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns.predecessors}
-                          onChange={(e) => setVisibleColumns({ ...visibleColumns, predecessors: e.target.checked })}
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-gray-700">Predecessors</span>
-                      </label>
-                    )}
-                  </Menu.Item>
-                  <Menu.Item>
-                    {() => (
-                      <label className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 rounded">
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns.supplier}
-                          onChange={(e) => setVisibleColumns({ ...visibleColumns, supplier: e.target.checked })}
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-gray-700">Supplier/Group</span>
-                      </label>
-                    )}
-                  </Menu.Item>
-                  <Menu.Item>
-                    {() => (
-                      <label className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 rounded">
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns.duration}
-                          onChange={(e) => setVisibleColumns({ ...visibleColumns, duration: e.target.checked })}
-                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-gray-700">Duration</span>
-                      </label>
-                    )}
-                  </Menu.Item>
+                  <div className="text-xs text-gray-400 px-3 pb-2">Drag ⠿ to reorder</div>
+                  {columnOrder.map((columnKey, index) => {
+                    const columnLabels = {
+                      taskNumber: '# (Task Number)',
+                      taskName: 'Task Name',
+                      predecessors: 'Predecessors',
+                      supplier: 'Supplier/Group',
+                      duration: 'Duration',
+                      confirm: 'Confirm',
+                      supplierConfirm: 'Supplier Confirm',
+                      start: 'Start',
+                      complete: 'Complete',
+                      lock: 'Lock'
+                    }
+
+                    return (
+                      <Menu.Item key={columnKey}>
+                        {() => (
+                          <div
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.effectAllowed = 'move'
+                              e.dataTransfer.setData('text/plain', index.toString())
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault()
+                              e.dataTransfer.dropEffect = 'move'
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault()
+                              const fromIndex = parseInt(e.dataTransfer.getData('text/plain'))
+                              const toIndex = index
+                              if (fromIndex !== toIndex) {
+                                const newOrder = [...columnOrder]
+                                const [removed] = newOrder.splice(fromIndex, 1)
+                                newOrder.splice(toIndex, 0, removed)
+                                setColumnOrder(newOrder)
+                              }
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded cursor-move"
+                          >
+                            <span className="text-gray-400 cursor-grab active:cursor-grabbing">⠿</span>
+                            <input
+                              type="checkbox"
+                              checked={visibleColumns[columnKey]}
+                              onChange={(e) => setVisibleColumns({ ...visibleColumns, [columnKey]: e.target.checked })}
+                              onClick={(e) => e.stopPropagation()}
+                              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="text-sm text-gray-700 select-none">{columnLabels[columnKey]}</span>
+                          </div>
+                        )}
+                      </Menu.Item>
+                    )
+                  })}
                 </div>
               </Menu.Items>
             </Menu>
