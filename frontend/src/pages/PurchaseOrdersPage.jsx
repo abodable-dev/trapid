@@ -5,7 +5,7 @@ import { api } from '../api'
 import POTable from '../components/purchase-orders/POTable'
 
 export default function PurchaseOrdersPage() {
-  const [purchaseOrders, setP PurchaseOrders] = useState([])
+  const [purchaseOrders, setPurchaseOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
