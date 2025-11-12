@@ -38,6 +38,7 @@ import WorkflowsPage from './pages/WorkflowsPage'
 import WorkflowAdminPage from './pages/WorkflowAdminPage'
 import PublicHolidaysPage from './pages/PublicHolidaysPage'
 import AuthCallback from './pages/AuthCallback'
+import PDFMeasurementTestPage from './pages/PDFMeasurementTestPage'
 
 function App() {
   return (
@@ -50,9 +51,11 @@ function App() {
         <Route path="/chat" element={<AppLayout><ChatPage /></AppLayout>} />
         <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
         <Route path="/documents" element={<AppLayout><DocumentsPage /></AppLayout>} />
-        <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />
+        <Route path="/pdf-measure-test" element={<AppLayout><PDFMeasurementTestPage /></AppLayout>} />
         <Route path="/jobs/:id/setup" element={<AppLayout><JobSetupPage /></AppLayout>} />
         <Route path="/jobs/:id/schedule" element={<AppLayout><MasterSchedulePage /></AppLayout>} />
+        <Route path="/jobs/:id/:tab" element={<AppLayout><JobDetailPage /></AppLayout>} />
+        <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />
         <Route path="/price-books" element={<AppLayout><PriceBooksPage /></AppLayout>} />
         <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
         <Route path="/contacts" element={<AppLayout><ContactsPage /></AppLayout>} />

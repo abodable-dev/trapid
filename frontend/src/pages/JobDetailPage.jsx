@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import {
   BriefcaseIcon,
   CurrencyDollarIcon,
@@ -24,20 +24,22 @@ import DocumentationTab from '../components/documentation/DocumentationTab'
 import SetupGuideModal from '../components/documentation/SetupGuideModal'
 import JobMessagesTab from '../components/messages/JobMessagesTab'
 import JobEmailsTab from '../components/emails/JobEmailsTab'
+import LocationMapCard from '../components/job-detail/LocationMapCard'
+import AddressAutocomplete from '../components/common/AddressAutocomplete'
 
 const tabs = [
-  { name: 'Overview' },
-  { name: 'Purchase Orders' },
-  { name: 'Estimates' },
-  { name: 'Activity' },
-  { name: 'Budget' },
-  { name: 'Schedule Master' },
-  { name: 'Documents' },
-  { name: 'Messages' },
-  { name: 'Emails' },
-  { name: 'Team' },
-  { name: 'Settings' },
-  { name: 'Documentation' },
+  { name: 'Overview', slug: 'overview' },
+  { name: 'Purchase Orders', slug: 'purchase-orders' },
+  { name: 'Estimates', slug: 'estimates' },
+  { name: 'Activity', slug: 'activity' },
+  { name: 'Budget', slug: 'budget' },
+  { name: 'Schedule Master', slug: 'schedule-master' },
+  { name: 'Documents', slug: 'documents' },
+  { name: 'Messages', slug: 'messages' },
+  { name: 'Emails', slug: 'emails' },
+  { name: 'Team', slug: 'team' },
+  { name: 'Settings', slug: 'settings' },
+  { name: 'Documentation', slug: 'documentation' },
 ]
 
 function classNames(...classes) {
@@ -45,9 +47,8 @@ function classNames(...classes) {
 }
 
 export default function JobDetailPage() {
-  const { id } = useParams()
+  const { id, tab } = useParams()
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
   const [job, setJob] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -55,7 +56,7 @@ export default function JobDetailPage() {
   const [editedJob, setEditedJob] = useState(null)
   const [saving, setSaving] = useState(false)
 
-  const activeTab = searchParams.get('tab') || 'Overview'
+  const activeTab = tab || 'overview'
 
   // Purchase Orders state
   const [purchaseOrders, setPurchaseOrders] = useState([])
@@ -70,6 +71,13 @@ export default function JobDetailPage() {
   useEffect(() => {
     loadJob()
   }, [id])
+
+  // Redirect to default tab if no tab is specified in URL
+  useEffect(() => {
+    if (!tab) {
+      navigate(`/jobs/${id}/overview`, { replace: true })
+    }
+  }, [id, tab, navigate])
 
   // Check if this is the first time visiting (for setup guide)
   useEffect(() => {
@@ -124,6 +132,7 @@ export default function JobDetailPage() {
   const handleSave = async () => {
     try {
       setSaving(true)
+      console.log('Saving job with data:', editedJob)
       await api.put(`/api/v1/constructions/${id}`, {
         construction: editedJob
       })
@@ -138,6 +147,7 @@ export default function JobDetailPage() {
   }
 
   const handleFieldChange = (field, value) => {
+    console.log('Field change:', field, '=', value)
     setEditedJob(prev => ({
       ...prev,
       [field]: value
@@ -180,7 +190,7 @@ export default function JobDetailPage() {
   }
 
   useEffect(() => {
-    if (activeTab === 'Purchase Orders') {
+    if (activeTab === 'purchase-orders') {
       loadPurchaseOrders()
       loadSuppliers()
     }
@@ -335,9 +345,9 @@ export default function JobDetailPage() {
                 {tabs.map((tab) => (
                   <button
                     key={tab.name}
-                    onClick={() => setSearchParams({ tab: tab.name })}
+                    onClick={() => navigate(`/jobs/${id}/${tab.slug}`)}
                     className={classNames(
-                      activeTab === tab.name
+                      activeTab === tab.slug
                         ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300',
                       'whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium'
@@ -386,8 +396,9 @@ export default function JobDetailPage() {
           </div>
 
           {/* Tab content */}
-          {activeTab === 'Overview' && (
-            <div className="space-y-6">
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Job Details - Left Side */}
               <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="px-4 py-5 sm:p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -425,7 +436,7 @@ export default function JobDetailPage() {
                   </div>
 
                   {isEditing ? (
-                    <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-x-4 gap-y-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Title
@@ -531,7 +542,7 @@ export default function JobDetailPage() {
                       </div>
                     </div>
                   ) : (
-                    <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <dl className="grid grid-cols-1 gap-x-4 gap-y-6">
                       <div>
                         <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Title</dt>
                         <dd className="mt-1 text-sm text-gray-900 dark:text-white">{job.title || '-'}</dd>
@@ -584,14 +595,34 @@ export default function JobDetailPage() {
                           {job.start_date ? new Date(job.start_date).toLocaleDateString() : '-'}
                         </dd>
                       </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Location / Address</dt>
+                        <dd className="mt-1 text-sm text-gray-900 dark:text-white">{job.location || '-'}</dd>
+                      </div>
                     </dl>
                   )}
                 </div>
               </div>
+
+              {/* Location Map - Right Side */}
+              <LocationMapCard
+                jobId={job.id}
+                location={job.location}
+                latitude={job.latitude}
+                longitude={job.longitude}
+                onLocationUpdate={(updatedData) => {
+                  // Update job state with new location data and title if provided
+                  setJob({ ...job, ...updatedData })
+                  // Also update editedJob if in edit mode
+                  if (isEditing) {
+                    setEditedJob({ ...editedJob, ...updatedData })
+                  }
+                }}
+              />
             </div>
           )}
 
-          {activeTab === 'Purchase Orders' && (
+          {activeTab === 'purchase-orders' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white">
@@ -641,11 +672,11 @@ export default function JobDetailPage() {
             </div>
           )}
 
-          {activeTab === 'Estimates' && (
+          {activeTab === 'estimates' && (
             <EstimatesTab jobId={id} />
           )}
 
-          {activeTab === 'Activity' && (
+          {activeTab === 'activity' && (
             <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="px-4 py-5 sm:p-6">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
@@ -658,7 +689,7 @@ export default function JobDetailPage() {
             </div>
           )}
 
-          {activeTab === 'Budget' && (
+          {activeTab === 'budget' && (
             <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="px-4 py-5 sm:p-6">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
@@ -671,23 +702,23 @@ export default function JobDetailPage() {
             </div>
           )}
 
-          {activeTab === 'Schedule Master' && (
+          {activeTab === 'schedule-master' && (
             <ScheduleMasterTab constructionId={id} />
           )}
 
-          {activeTab === 'Documents' && (
+          {activeTab === 'documents' && (
             <JobDocumentsTab jobId={id} jobTitle={job?.title} />
           )}
 
-          {activeTab === 'Messages' && (
+          {activeTab === 'messages' && (
             <JobMessagesTab constructionId={id} />
           )}
 
-          {activeTab === 'Emails' && (
+          {activeTab === 'emails' && (
             <JobEmailsTab constructionId={id} />
           )}
 
-          {activeTab === 'Team' && (
+          {activeTab === 'team' && (
             <TeamSettings
               job={job}
               onSave={async (teamData) => {
@@ -708,7 +739,7 @@ export default function JobDetailPage() {
             />
           )}
 
-          {activeTab === 'Settings' && (
+          {activeTab === 'settings' && (
             <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="px-4 py-5 sm:p-6">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
@@ -721,7 +752,7 @@ export default function JobDetailPage() {
             </div>
           )}
 
-          {activeTab === 'Documentation' && (
+          {activeTab === 'documentation' && (
             <DocumentationTab />
           )}
         </div>

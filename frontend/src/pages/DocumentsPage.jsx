@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { DocumentTextIcon, CloudArrowUpIcon, XMarkIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import { DocumentTextIcon, CloudArrowUpIcon, XMarkIcon, MagnifyingGlassIcon, FunnelIcon, ArrowsPointingOutIcon } from '@heroicons/react/24/outline'
+import PDFMeasurementTool from '../components/documents/PDFMeasurementTool'
 
 export default function DocumentsPage() {
   const [dragActive, setDragActive] = useState(false)
@@ -7,6 +8,8 @@ export default function DocumentsPage() {
   const [analyzing, setAnalyzing] = useState(false)
   const [selectedFile, setSelectedFile] = useState(null)
   const fileInputRef = useRef(null)
+  const [showMeasureTool, setShowMeasureTool] = useState(false)
+  const [measurePdfUrl, setMeasurePdfUrl] = useState(null)
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('')
@@ -617,6 +620,18 @@ export default function DocumentsPage() {
                       <span className="text-sm text-gray-500 dark:text-gray-400">
                         {(fileData.extractedData.confidence * 100).toFixed(0)}% confidence
                       </span>
+                      {fileData.type === 'application/pdf' && (
+                        <button
+                          onClick={() => {
+                            setMeasurePdfUrl(fileData.previewUrl)
+                            setShowMeasureTool(true)
+                          }}
+                          className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                        >
+                          <ArrowsPointingOutIcon className="h-4 w-4" />
+                          Measure
+                        </button>
+                      )}
                       {fileData.extractedData.matchedEntity?.type === 'construction' ? (
                         <div className="flex items-center gap-2 px-3 py-1 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded">
                           <svg className="h-4 w-4 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
@@ -960,6 +975,17 @@ export default function DocumentsPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* PDF Measurement Tool */}
+      {showMeasureTool && measurePdfUrl && (
+        <PDFMeasurementTool
+          pdfUrl={measurePdfUrl}
+          onClose={() => {
+            setShowMeasureTool(false)
+            setMeasurePdfUrl(null)
+          }}
+        />
       )}
 
     </div>

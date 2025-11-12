@@ -20,6 +20,7 @@ import {
   FolderIcon,
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
+import AddressAutocomplete from '../common/AddressAutocomplete'
 
 const STAGES = [
   'Planning',
@@ -381,10 +382,9 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                           </div>
                           Location / Address <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          type="text"
+                        <AddressAutocomplete
                           value={formData.location}
-                          onChange={(e) => handleChange('location', e.target.value)}
+                          onChange={(value) => handleChange('location', value)}
                           placeholder="e.g., 123 Main Street, Sydney NSW 2000"
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white transition-all"
                           required

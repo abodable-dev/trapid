@@ -16,7 +16,10 @@ import {
   XMarkIcon,
   XCircleIcon,
   KeyIcon,
-  PhoneIcon
+  PhoneIcon,
+  AdjustmentsHorizontalIcon,
+  EyeIcon,
+  EyeSlashIcon
 } from '@heroicons/react/24/outline'
 
 export default function UserManagementTab() {
@@ -97,6 +100,15 @@ export default function UserManagementTab() {
   const [columnFilters, setColumnFilters] = useState({})
   const [draggedColumn, setDraggedColumn] = useState(null)
 
+  // Column visibility state with localStorage persistence
+  const [hiddenColumns, setHiddenColumns] = useState(() => {
+    const saved = localStorage.getItem('users_hiddenColumns')
+    return saved ? JSON.parse(saved) : []
+  })
+
+  // Column settings menu state
+  const [showColumnSettings, setShowColumnSettings] = useState(false)
+
   // Sort state
   const [sortBy, setSortBy] = useState('name')
   const [sortDirection, setSortDirection] = useState('asc')
@@ -114,6 +126,31 @@ export default function UserManagementTab() {
   useEffect(() => {
     localStorage.setItem('users_columnOrder', JSON.stringify(columnOrder))
   }, [columnOrder])
+
+  // Persist hidden columns to localStorage
+  useEffect(() => {
+    localStorage.setItem('users_hiddenColumns', JSON.stringify(hiddenColumns))
+  }, [hiddenColumns])
+
+  // Toggle column visibility
+  const toggleColumnVisibility = (columnKey) => {
+    setHiddenColumns(prev => {
+      if (prev.includes(columnKey)) {
+        return prev.filter(key => key !== columnKey)
+      } else {
+        // Don't allow hiding all columns - ensure at least one remains visible
+        const visibleColumns = columnOrder.filter(key => !prev.includes(key))
+        if (visibleColumns.length <= 1) {
+          setToast({
+            message: 'At least one column must remain visible',
+            type: 'error'
+          })
+          return prev
+        }
+        return [...prev, columnKey]
+      }
+    })
+  }
 
   const loadUsers = async () => {
     try {
@@ -192,12 +229,30 @@ export default function UserManagementTab() {
     return date.toLocaleDateString()
   }
 
+  // Format mobile phone number as 04XX XXX XXX
+  const formatMobilePhone = (value) => {
+    // Remove all non-digit characters
+    const digits = value.replace(/\D/g, '')
+
+    // Format as 04XX XXX XXX
+    if (digits.length <= 4) {
+      return digits
+    } else if (digits.length <= 7) {
+      return `${digits.slice(0, 4)} ${digits.slice(4)}`
+    } else {
+      return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 10)}`
+    }
+  }
+
   const handleEditUser = (userId, field, value) => {
+    // Format mobile phone number if that's the field being edited
+    const formattedValue = field === 'mobile_phone' ? formatMobilePhone(value) : value
+
     setEditedUsers(prev => ({
       ...prev,
       [userId]: {
         ...prev[userId],
-        [field]: value
+        [field]: formattedValue
       }
     }))
   }
@@ -433,12 +488,19 @@ export default function UserManagementTab() {
     actions: { key: 'actions', label: 'Actions', searchable: false }
   }
 
-  const columns = columnOrder.map(key => columnsConfig[key])
+  // Filter out hidden columns
+  const columns = columnOrder
+    .filter(key => !hiddenColumns.includes(key))
+    .map(key => columnsConfig[key])
 
   // Get current value (edited or original)
   const getCurrentValue = (user, field) => {
     if (editedUsers[user.id] && editedUsers[user.id][field] !== undefined) {
       return editedUsers[user.id][field]
+    }
+    // Format mobile phone numbers for display
+    if (field === 'mobile_phone' && user[field]) {
+      return formatMobilePhone(user[field])
     }
     return user[field]
   }
@@ -608,6 +670,58 @@ export default function UserManagementTab() {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
             />
           </div>
+        </div>
+
+        {/* Column Visibility Menu */}
+        <div className="relative">
+          <button
+            onClick={() => setShowColumnSettings(!showColumnSettings)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium shadow-sm"
+          >
+            <AdjustmentsHorizontalIcon className="h-5 w-5" />
+            Columns
+          </button>
+
+          {showColumnSettings && (
+            <>
+              {/* Backdrop to close menu when clicking outside */}
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowColumnSettings(false)}
+              />
+
+              {/* Dropdown menu */}
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
+                <div className="p-2">
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
+                    Show/Hide Columns
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    {columnOrder.map((columnKey) => {
+                      const column = columnsConfig[columnKey]
+                      const isVisible = !hiddenColumns.includes(columnKey)
+                      return (
+                        <button
+                          key={columnKey}
+                          onClick={() => toggleColumnVisibility(columnKey)}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                        >
+                          {isVisible ? (
+                            <EyeIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                          ) : (
+                            <EyeSlashIcon className="h-4 w-4 text-gray-400" />
+                          )}
+                          <span className={isVisible ? 'font-medium' : 'text-gray-500 dark:text-gray-500'}>
+                            {column.label}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {Object.keys(editedUsers).length > 0 && (

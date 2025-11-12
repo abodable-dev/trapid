@@ -18,6 +18,7 @@ import LinkedTasksModal from './LinkedTasksModal'
 import AutoCompleteTasksModal from './AutoCompleteTasksModal'
 import SubtasksModal from './SubtasksModal'
 import GanttView from './GanttView'
+import DHtmlxGanttView from './DHtmlxGanttView'
 
 /**
  * Schedule Template Editor - Full 14-column grid interface for creating/editing schedule templates
@@ -85,23 +86,24 @@ const defaultColumnConfig = {
   supplierGroup: { visible: true, width: 150, label: 'Supplier / Group', order: 2 },
   predecessors: { visible: true, width: 100, label: 'Predecessors', order: 3 },
   duration: { visible: true, width: 80, label: 'Duration', order: 4 },
-  poRequired: { visible: true, width: 80, label: 'PO Req', order: 5 },
-  autoPo: { visible: true, width: 80, label: 'Auto PO', order: 6 },
-  priceItems: { visible: true, width: 120, label: 'Price Items', order: 7 },
-  critical: { visible: true, width: 80, label: 'Critical', order: 8 },
-  tags: { visible: true, width: 100, label: 'Tags', order: 9 },
-  photo: { visible: true, width: 80, label: 'Photo', order: 10 },
-  cert: { visible: true, width: 80, label: 'Cert', order: 11 },
-  certLag: { visible: true, width: 80, label: 'Cert Lag', order: 12 },
-  supCheck: { visible: true, width: 120, label: 'Sup Check', order: 13 },
-  autoComplete: { visible: true, width: 120, label: 'Auto Complete', order: 14 },
-  subtasks: { visible: true, width: 120, label: 'Subtasks', order: 15 },
-  linkedTasks: { visible: true, width: 120, label: 'Linked Tasks', order: 16 },
-  manualTask: { visible: true, width: 80, label: 'Manual', order: 17 },
-  multipleItems: { visible: true, width: 80, label: 'Multi', order: 18 },
-  orderRequired: { visible: true, width: 100, label: 'Order Time', order: 19 },
-  callUpRequired: { visible: true, width: 100, label: 'Call Up', order: 20 },
-  planType: { visible: true, width: 80, label: 'Plan', order: 21 },
+  startDate: { visible: true, width: 110, label: 'Start Date', order: 5 },
+  poRequired: { visible: true, width: 80, label: 'PO Req', order: 6 },
+  autoPo: { visible: true, width: 80, label: 'Auto PO', order: 7 },
+  priceItems: { visible: true, width: 120, label: 'Price Items', order: 8 },
+  critical: { visible: true, width: 80, label: 'Critical', order: 9 },
+  tags: { visible: true, width: 100, label: 'Tags', order: 10 },
+  photo: { visible: true, width: 80, label: 'Photo', order: 11 },
+  cert: { visible: true, width: 80, label: 'Cert', order: 12 },
+  certLag: { visible: true, width: 80, label: 'Cert Lag', order: 13 },
+  supCheck: { visible: true, width: 120, label: 'Sup Check', order: 14 },
+  autoComplete: { visible: true, width: 120, label: 'Auto Complete', order: 15 },
+  subtasks: { visible: true, width: 120, label: 'Subtasks', order: 16 },
+  linkedTasks: { visible: true, width: 120, label: 'Linked Tasks', order: 17 },
+  manualTask: { visible: true, width: 80, label: 'Manual', order: 18 },
+  multipleItems: { visible: true, width: 80, label: 'Multi', order: 19 },
+  orderRequired: { visible: true, width: 100, label: 'Order Time', order: 20 },
+  callUpRequired: { visible: true, width: 100, label: 'Call Up', order: 21 },
+  planType: { visible: true, width: 80, label: 'Plan', order: 22 },
   actions: { visible: true, width: 80, label: 'Actions', order: 100 }
 }
 
@@ -121,6 +123,10 @@ export default function ScheduleTemplateEditor() {
   const [columnFilters, setColumnFilters] = useState({})
   const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false)
   const [showGanttView, setShowGanttView] = useState(false)
+  const [ganttViewType, setGanttViewType] = useState(() => {
+    // Remember user's preference for Gantt view type
+    return localStorage.getItem('gantt-view-type') || 'svar'
+  })
   const hasCollapsedOnLoad = useRef(false)
 
   // Column resize state
@@ -132,7 +138,7 @@ export default function ScheduleTemplateEditor() {
   const [draggedColumn, setDraggedColumn] = useState(null)
 
   // Sort state
-  const [sortBy, setSortBy] = useState('sequence')
+  const [sortBy, setSortBy] = useState('startDate')
   const [sortDirection, setSortDirection] = useState('asc')
 
   // Column configuration with localStorage persistence
@@ -339,10 +345,31 @@ export default function ScheduleTemplateEditor() {
     // Create workbook and worksheet
     const wb = XLSX.utils.book_new()
 
-    // Prepare header row
+    // Helper function to format predecessors with Excel row numbers (including header)
+    const formatPredecessorsForExcel = (predecessorIds) => {
+      if (!predecessorIds || predecessorIds.length === 0) return ''
+
+      return predecessorIds.map(pred => {
+        const taskId = pred.id || pred['id']
+        const depType = pred.type || pred['type'] || 'FS'
+        const lag = (pred.lag || pred['lag'] || 0)
+
+        // Add 1 to task ID to account for Excel header row
+        // Task 1 becomes row 2, task 2 becomes row 3, etc.
+        let result = `${taskId + 1}${depType}`
+        if (lag !== 0) {
+          result += lag >= 0 ? `+${lag}` : lag
+        }
+        return result
+      }).join(', ')
+    }
+
+    // Prepare header row with individual documentation category columns
     const headerRow = [
-      'Task Name', 'Supplier', 'Predecessors', 'PO Required', 'Auto PO',
-      'Critical', 'Tags', 'Photo', 'Cert', 'Cert Lag',
+      'Task Name', 'Supplier', 'Predecessors', 'Duration', 'Start Date',
+      // Add a column for each documentation category
+      ...documentationCategories.map(cat => cat.name),
+      'PO Required', 'Auto PO', 'Critical', 'Tags', 'Photo', 'Cert', 'Cert Lag',
       'Manual', 'Multi', 'Order Time', 'Call Up', 'Plan'
     ]
 
@@ -350,7 +377,13 @@ export default function ScheduleTemplateEditor() {
     const data = rows.map(row => [
       row.name || '',
       row.supplier_name || '',
-      row.predecessor_display || '',
+      formatPredecessorsForExcel(row.predecessor_ids),
+      row.duration || 0,
+      row.start_date || 0,
+      // Add Yes/No for each documentation category
+      ...documentationCategories.map(cat =>
+        (row.documentation_category_ids || []).includes(cat.id) ? 'Yes' : 'No'
+      ),
       row.po_required ? 'Yes' : 'No',
       row.create_po_on_job_start ? 'Yes' : 'No',
       row.critical_po ? 'Yes' : 'No',
@@ -369,10 +402,18 @@ export default function ScheduleTemplateEditor() {
     const ws = XLSX.utils.aoa_to_sheet([headerRow, ...data])
 
     // Set column widths
-    ws['!cols'] = [
+    const baseColumns = [
       { wch: 30 }, // Task Name
       { wch: 20 }, // Supplier
       { wch: 15 }, // Predecessors
+      { wch: 10 }, // Duration
+      { wch: 12 }, // Start Date
+    ]
+
+    // Add column widths for each documentation category
+    const docCategoryColumns = documentationCategories.map(() => ({ wch: 12 }))
+
+    const remainingColumns = [
       { wch: 12 }, // PO Required
       { wch: 10 }, // Auto PO
       { wch: 10 }, // Critical
@@ -386,6 +427,8 @@ export default function ScheduleTemplateEditor() {
       { wch: 10 }, // Call Up
       { wch: 8 }   // Plan
     ]
+
+    ws['!cols'] = [...baseColumns, ...docCategoryColumns, ...remainingColumns]
 
     XLSX.utils.book_append_sheet(wb, ws, 'Tasks')
 
@@ -416,7 +459,9 @@ export default function ScheduleTemplateEditor() {
         }
 
         // Helper function to parse predecessors from format "2FS+3, 5SS-1"
-        const parsePredecessors = (predecessorStr) => {
+        // Note: Excel row numbers include the header, so row 2 = task 1, row 3 = task 2, etc.
+        // We need to subtract 1 to convert from Excel row number to task sequence number
+        const parsePredecessors = (predecessorStr, currentRowIndex) => {
           if (!predecessorStr || predecessorStr === 'None' || predecessorStr.trim() === '') {
             return []
           }
@@ -425,25 +470,49 @@ export default function ScheduleTemplateEditor() {
           const parts = predecessorStr.split(',').map(p => p.trim())
 
           for (const part of parts) {
-            // Parse format like "2FS+3" or "5SS" or "1FF-2"
+            // Parse format like "2FS+3" (where 2 is the Excel row number including header)
             const match = part.match(/^(\d+)([A-Z]{2})([+-]?\d+)?$/)
             if (match) {
-              predecessors.push({
-                id: parseInt(match[1]),
-                type: match[2],
-                lag: match[3] ? parseInt(match[3]) : 0
-              })
+              const excelRowNumber = parseInt(match[1])
+              // Convert Excel row number to task sequence (Excel row 2 = task 1, so subtract 1)
+              const taskSequence = excelRowNumber - 1
+
+              // Only add valid predecessors (must reference earlier tasks)
+              if (taskSequence > 0 && taskSequence <= currentRowIndex + 1) {
+                predecessors.push({
+                  id: taskSequence,
+                  type: match[2],
+                  lag: match[3] ? parseInt(match[3]) : 0
+                })
+              }
             }
           }
 
           return predecessors
         }
 
+        // Helper function to parse individual documentation category columns
+        const parseDocumentationCategoryIds = (row) => {
+          const categoryIds = []
+
+          // Check each documentation category column
+          documentationCategories.forEach(category => {
+            if (row[category.name] === 'Yes') {
+              categoryIds.push(category.id)
+            }
+          })
+
+          return categoryIds
+        }
+
         // Convert Excel data to task format
         const importedRows = jsonData.map((row, index) => ({
           name: row['Task Name'] || `Task ${index + 1}`,
           supplier_id: null, // Will need to be mapped manually
-          predecessor_ids: parsePredecessors(row['Predecessors']),
+          predecessor_ids: parsePredecessors(row['Predecessors'], index),
+          duration: parseInt(row['Duration']) || 0,
+          start_date: parseInt(row['Start Date']) || 0,
+          documentation_category_ids: parseDocumentationCategoryIds(row),
           po_required: row['PO Required'] === 'Yes',
           create_po_on_job_start: row['Auto PO'] === 'Yes',
           critical_po: row['Critical'] === 'Yes',
@@ -486,6 +555,8 @@ export default function ScheduleTemplateEditor() {
       supplier_id: null,
       assigned_role: null,
       predecessor_ids: [],
+      duration: 0,
+      start_date: 0,
       po_required: false,
       create_po_on_job_start: false,
       price_book_item_ids: [],
@@ -733,6 +804,8 @@ export default function ScheduleTemplateEditor() {
     taskName: "The name of the task that will appear in the schedule. Be descriptive so builders know exactly what needs to be done.",
     supplierGroup: "For PO tasks: select a supplier. For internal work: assign to a team (Admin, Sales, Site, Supervisor, Builder, Estimator).",
     predecessors: "Tasks that must be completed before this one starts. Supports FS (Finish-to-Start), SS (Start-to-Start), FF (Finish-to-Finish), and SF (Start-to-Finish) dependencies with lag days.",
+    duration: "Number of days this task will take to complete.",
+    startDate: "Calculated start date based on predecessors and durations. Tasks with no predecessors start on Day 0 (project start).",
     poRequired: "Check if this task requires a purchase order. This tracks whether a PO is needed, but doesn't automatically create one.",
     autoPo: "Automatically create and send a purchase order to the supplier when the job starts. Requires a supplier to be selected.",
     priceItems: "Link price book items to this task. These items will be included in the auto-generated purchase order.",
@@ -853,6 +926,14 @@ export default function ScheduleTemplateEditor() {
             aVal = a.cert_lag_days || 0
             bVal = b.cert_lag_days || 0
             break
+          case 'duration':
+            aVal = a.duration || 0
+            bVal = b.duration || 0
+            break
+          case 'startDate':
+            aVal = a.start_date || 0
+            bVal = b.start_date || 0
+            break
           case 'priceItems':
             aVal = a.price_book_item_ids?.length || 0
             bVal = b.price_book_item_ids?.length || 0
@@ -954,12 +1035,28 @@ export default function ScheduleTemplateEditor() {
                 className="hidden"
               />
             </label>
+            {/* Two Separate Gantt Buttons */}
             <button
-              onClick={() => setShowGanttView(true)}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400"
-              title="View Gantt Chart"
+              onClick={() => {
+                setGanttViewType('svar')
+                localStorage.setItem('gantt-view-type', 'svar')
+                setShowGanttView(true)
+              }}
+              className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200 dark:border-purple-800 rounded-md transition-colors"
+              title="View SVAR Gantt (Current)"
             >
-              <ChartBarIcon className="h-5 w-5" />
+              SVAR Gantt
+            </button>
+            <button
+              onClick={() => {
+                setGanttViewType('dhtmlx')
+                localStorage.setItem('gantt-view-type', 'dhtmlx')
+                setShowGanttView(true)
+              }}
+              className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 border border-green-200 dark:border-green-800 rounded-md transition-colors"
+              title="View DHTMLX Gantt (Trial)"
+            >
+              DHTMLX Gantt
             </button>
             {!selectedTemplate.is_default && (
               <button
@@ -1450,9 +1547,24 @@ export default function ScheduleTemplateEditor() {
         </div>
       )}
 
-      {/* Gantt View Modal */}
-      {showGanttView && (
+      {/* Gantt View Modal - Render appropriate view based on selection */}
+      {showGanttView && ganttViewType === 'svar' && (
         <GanttView
+          isOpen={showGanttView}
+          onClose={() => setShowGanttView(false)}
+          tasks={rows}
+          onUpdateTask={(taskId, updates) => {
+            // Find the row and update it
+            const rowIndex = rows.findIndex(r => r.id === taskId)
+            if (rowIndex !== -1) {
+              handleUpdateRow(taskId, updates)
+            }
+          }}
+        />
+      )}
+
+      {showGanttView && ganttViewType === 'dhtmlx' && (
+        <DHtmlxGanttView
           isOpen={showGanttView}
           onClose={() => setShowGanttView(false)}
           tasks={rows}
@@ -1487,11 +1599,61 @@ function ScheduleTemplateRow({
   const [showAutoCompleteModal, setShowAutoCompleteModal] = useState(false)
   const [showSubtasksModal, setShowSubtasksModal] = useState(false)
 
+  // Calculate start date based on predecessors
+  const calculateStartDate = useCallback(() => {
+    if (!row.predecessor_ids || row.predecessor_ids.length === 0) {
+      return 0 // No predecessors = start at project start (Day 0)
+    }
+
+    // Find the latest end date of all predecessors
+    let latestEnd = 0
+    row.predecessor_ids.forEach(pred => {
+      const predData = typeof pred === 'object' ? pred : { id: pred, type: 'FS', lag: 0 }
+      const predTask = allRows[predData.id - 1] // Task numbers are 1-indexed
+
+      if (predTask) {
+        // Recursively calculate predecessor's start (simplified - assumes it's already calculated)
+        const predStart = predTask.start_date || 0
+        const predDuration = predTask.duration || 0
+        const predEnd = predStart + predDuration
+
+        // For FS (Finish-to-Start), task starts after predecessor finishes
+        if (predData.type === 'FS' || !predData.type) {
+          const taskStart = predEnd + (predData.lag || 0)
+          if (taskStart > latestEnd) {
+            latestEnd = taskStart
+          }
+        }
+      }
+    })
+
+    return latestEnd
+  }, [row.predecessor_ids, allRows, row.start_date])
+
+  const calculatedStartDate = calculateStartDate()
+
   // Sync local state when row data changes
   useEffect(() => {
     setLocalName(row.name)
     setLocalDuration(row.duration || 0)
   }, [row.name, row.duration])
+
+  // Update start_date in database when it changes due to predecessors/duration
+  // Skip auto-updates for manually positioned tasks
+  useEffect(() => {
+    if (row.manually_positioned) {
+      // Skip auto-calculation for manually positioned tasks
+      return
+    }
+
+    if (calculatedStartDate !== row.start_date) {
+      // Debounce the update to avoid excessive API calls
+      const timer = setTimeout(() => {
+        onUpdate({ start_date: calculatedStartDate })
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [calculatedStartDate, row.start_date, row.manually_positioned, onUpdate])
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -1640,6 +1802,15 @@ function ScheduleTemplateRow({
               className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm"
               placeholder="0"
             />
+          </td>
+        )
+
+      case 'startDate':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
+            <div className="w-full px-2 py-1 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+              {calculatedStartDate}
+            </div>
           </td>
         )
 

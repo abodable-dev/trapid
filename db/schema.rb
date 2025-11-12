@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_12_015015) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_12_063827) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -140,6 +140,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_015015) do
     t.string "onedrive_folder_creation_status", default: "not_requested"
     t.decimal "latitude", precision: 10, scale: 6
     t.decimal "longitude", precision: 10, scale: 6
+    t.string "location"
     t.index ["created_at"], name: "index_constructions_on_created_at"
     t.index ["design_id"], name: "index_constructions_on_design_id"
     t.index ["design_name"], name: "index_constructions_on_design_name"
@@ -859,6 +860,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_015015) do
     t.boolean "plan_required", default: false, null: false
     t.integer "duration", default: 0, null: false
     t.integer "start_date", default: 0, null: false
+    t.boolean "manually_positioned", default: false, null: false
+    t.boolean "confirm", default: false, null: false
+    t.boolean "supplier_confirm", default: false, null: false
+    t.boolean "start", default: false, null: false
+    t.boolean "complete", default: false, null: false
     t.index ["documentation_category_ids"], name: "index_schedule_template_rows_on_documentation_category_ids", using: :gin
     t.index ["schedule_template_id", "sequence_order"], name: "idx_on_schedule_template_id_sequence_order_1bea5d762b"
     t.index ["schedule_template_id"], name: "index_schedule_template_rows_on_schedule_template_id"
