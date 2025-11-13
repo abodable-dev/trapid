@@ -1,0 +1,6 @@
+import React from'react';
+import { cn} from'../../lib/utils';
+import { CornerHover} from'./CornerHover';
+/** * StatCard - Dashboard metric card with optional trend indicator * * Displays key metrics with labels, values, and optional change indicators. * Wraps content in CornerHover for premium feel. * * @example * <StatCard * label="Active Jobs" * value="24" * change="+3" * changeType="positive" * /> */
+export function StatCard({ label, value, change, changeType ='neutral', //'positive' |'negative' |'neutral' icon: Icon, className, ...props}) { const changeColors = { positive:'text-success', negative:'text-error', neutral:'text-gray-400',}; return ( <CornerHover className={cn("bg-gray-900 border border-[#272727] p-6 hover:border-gray-600 transition-colors duration-150", className )} {...props} > <div className="flex items-start justify-between mb-4"> <span className="text-xs font-mono uppercase tracking-wider text-gray-500"> {label} </span> {Icon && <Icon className="w-4 h-4 text-gray-500" />} </div> <div className="flex items-end justify-between gap-4"> <div className="font-mono text-3xl font-semibold text-white"> {value} </div> {change && ( <div className={cn("text-xs font-mono", changeColors[changeType])}> {change} </div> )} </div> </CornerHover> );}
+export default StatCard;
