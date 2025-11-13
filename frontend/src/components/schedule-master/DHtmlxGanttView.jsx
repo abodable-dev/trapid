@@ -1459,6 +1459,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       console.log('🖱️ Empty space clicked in timeline')
 
       try {
+        // Guard: Check if event object exists
+        if (!e || !e.clientY) {
+          console.log('⚠️ Empty click event missing clientY, skipping')
+          return true
+        }
+
         // Get the timeline container
         const timeline = gantt.$task_data
         if (!timeline) {
@@ -3976,23 +3982,18 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                 onClick={() => {
                   const { task: dialogTask, field, checked } = positionDialogTask
 
-                  // Get fresh task reference from gantt to ensure we're modifying the latest state
+                  // Get task reference to access its properties
                   const task = gantt.getTask(dialogTask.id)
 
-                  // Unlock the task and let it auto-calculate
+                  // Update local tracking immediately
                   task.manually_positioned = false
                   task.$manuallyPositioned = false
                   manuallyPositionedTasks.current.delete(task.id)
-
-                  // Update the checkbox state now that dialog is confirmed
                   task[field] = checked
-
-                  gantt.updateTask(task.id)
-                  // Force refresh of this specific task's grid row to update lock checkbox
-                  gantt.refreshTask(task.id)
 
                   // Save to backend - uncheck the checkbox and unlock
                   // CRITICAL: Preserve predecessor_ids
+                  // Backend reload will automatically update the UI
                   onUpdateTask(task.id, {
                     [field]: checked,
                     manually_positioned: false,
