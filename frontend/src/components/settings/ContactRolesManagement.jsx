@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { PlusIcon, PencilIcon, TrashIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import api from '../../services/api'
+import api from '../../api'
 
 export default function ContactRolesManagement() {
   const [roles, setRoles] = useState([])
