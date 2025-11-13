@@ -93,11 +93,11 @@ export default function ContactMapCard({ address }) {
         )}
 
         {mapPosition && !loading && (
-          <div className="rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+          <div className="rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600 relative z-0">
             <MapContainer
               center={mapPosition}
               zoom={15}
-              style={{ height: '300px', width: '100%' }}
+              style={{ height: '300px', width: '100%', zIndex: 0 }}
               scrollWheelZoom={true}
               zoomControl={true}
             >

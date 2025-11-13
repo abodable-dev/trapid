@@ -6,3 +6,17 @@ body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
+
+/* Leaflet map z-index constraints to prevent overlap with navigation/header */
+.leaflet-container {
+  z-index: 0 !important;
+}
+
+.leaflet-pane {
+  z-index: auto !important;
+}
+
+.leaflet-control-zoom,
+.leaflet-control-attribution {
+  z-index: 10 !important;
+}
