@@ -28,6 +28,7 @@ import {
  BookOpen,
  Users,
  Calculator,
+ Variable,
 } from 'lucide-react'
 import TrapidLogo from '../icons/TrapidLogo'
 
@@ -38,6 +39,7 @@ const navigation = [
  { name: 'Price Books', href: '/price-books', icon: BookOpen },
  { name: 'Contacts', href: '/contacts', icon: Users },
  { name: 'Sam Quick Est', href: '/sam-quick-est', icon: Calculator },
+ { name: 'Unreal Variables', href: '/unreal-variables', icon: Variable },
 ]
 
 // Bottom navigation items
