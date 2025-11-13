@@ -53,7 +53,7 @@ module Api
             failed: get_failed_jobs_count
           },
           records: {
-            jobs: Job.count,
+            constructions: Construction.count,
             contacts: Contact.count,
             purchase_orders: PurchaseOrder.count,
             estimates: Estimate.count
