@@ -222,3 +222,53 @@ FolderTemplate.seed_defaults
 
 puts "Created #{FolderTemplate.count} folder templates"
 puts "Folder Templates seed complete!"
+
+# Unreal Variables Seed Data
+puts "\n" + "="*50
+puts "Seeding Unreal Variables..."
+
+variables = [
+  '1525Bath', '1675Bath', '1750Bath', '2waySwitch', '450GrabRails', '600GrabRails',
+  '750GrabRails', '900GrabRails', 'AC_kW', 'AC_System', 'Alfresco_Area', 'Alfresco_Lm',
+  'Balcony_Area', 'Balcony_Lm', 'Bath', 'Bedroom1_Floor', 'Bedroom2_Floor', 'Bedroom3_Floor',
+  'Bedroom4_Floor', 'Bedroom5_Floor', 'Bedroom6_Floor', 'Bedroom_Carpet', 'Bedroom_Tiles',
+  'Bed_Linen', 'Bins', 'Bricks_Lm', 'Build_Time_Hrs', 'CeramicFloorTiles', 'CeramicWallTiles',
+  'Cladding_Lm', 'ClayTiles', 'CleaningLabour', 'Clothesline', 'ColdWaterHose', 'ConcreteTiles',
+  'Count', 'CoverMeterBox', 'Curtains', 'DAIKINS09', 'DAIKINS12', 'DAIKINS15', 'DAIKINS18',
+  'DGU_All_Areas', 'DGU_Bed', 'DGU_Kitchen_Living', 'DGU_Laundry_Bathrooms', 'DGU_M2',
+  'Dimmer2w', 'DoorBell', 'Door_Jambs', 'DoubleGlazing', 'EnsuiteBath_Toilet', 'EnsuiteBath_Vanity',
+  'FF_LivingArea', 'FF_floor', 'FittedBathSheets', 'FittedKitchenBlinds', 'FittedLaundryblinds',
+  'FloorWasteEnsuite', 'FloorWasteMain', 'FoldingClotheslineWall', 'GF_LivingArea', 'Garage_Area',
+  'Garage_Door', 'Garage_Lm', 'GasCooktop', 'GasCooktop5Burner', 'GasHeating', 'GasMeterBoxCover',
+  'GasStorage', 'HWS_Gas', 'HWS_Solar', 'HamperCupboard', 'HotWaterHose', 'InductionCooktop',
+  'InductionCooktop5Zone', 'Internal_M2', 'JamDoubleDoor_Hinged', 'JamDoubleDoor_Sliding',
+  'JamSingleDoor_2040', 'JamSingleDoor_2340', 'JamSingleDoor_2540', 'JamSingleDoor_Hinged',
+  'JamSingleDoor_Pocket', 'JamSingleDoor_Sliding', 'Kitchen_sink', 'LED_Downlight', 'Labour',
+  'LetterBox', 'LinenCupboard', 'M2', 'MEL_Bed', 'MEL_Kitchen', 'MEL_Laundry', 'MEL_Living',
+  'MEL_Main', 'MEL_Vanity', 'MainBath_Toilet', 'MainBath_Vanity', 'Materials', 'MirrorBathMain',
+  'MirrorBathShaving', 'MirrorBathVanity', 'MirrorBathWall', 'MirrorEnsuite', 'MirrorPowder',
+  'NBN_Connection', 'ODPP', 'PowderBath_Toilet', 'PowderBath_Vanity', 'PowerPoints', 'PowderFloorWaste',
+  'PowderMirror', 'PowderShower', 'PowderToilet', 'PowderVanity', 'PowderVanityMixer',
+  'PowderWasteGully', 'RWD_Down', 'RWD_M', 'RWD_Up', 'Rebate', 'SMSW_Oven', 'SPS', 'SW_1w',
+  'SW_2w', 'SW_3w', 'SW_4w', 'SW_5w', 'SW_6w', 'SanitaryPiping', 'Saves_Client', 'Saves_Company',
+  'Sensor1w', 'Sensor2w', 'ShowerMixer', 'ShowerRose', 'ShowerScreen1525', 'ShowerScreen1675',
+  'ShowerScreen1750', 'ShowerScreenEnsuite', 'ShowerScreenMain', 'SingleLevelExcavation',
+  'Sink_mixer', 'SlidingDoor2100', 'SlidingDoor2340', 'SlidingDoor2540', 'Splashback',
+  'Stormwater', 'TV_Lounge', 'TV_Master', 'TV_Points', 'TV_Rumpus', 'TelephonePoint',
+  'Tiles_Client', 'Tiles_Standard', 'Tiles_Type', 'Toilet_mixer', 'ToiletRollHolder',
+  'Towel_rail', 'TubSet', 'Under_Build', 'VJ_Walls', 'Vanity_mixer', 'WM_Taps', 'WasteGully',
+  'WasteGullyEnsuite', 'WasteGullyMain', 'WaterMeterBoxCover', 'WaterPoints', 'WaterproofBath',
+  'WaterproofBathEnsuite', 'WaterproofBathMain', 'WaterproofBathPowder', 'WaterproofShower',
+  'WaterproofShowerEnsuite', 'WaterproofShowerMain', 'WaterproofShowerPowder', 'WaterproofWalls',
+  'WaterproofWallsEnsuite', 'WaterproofWallsMain', 'WaterproofWallsPowder', 'internal_Lm',
+  'internal_M2', 'perimeter_Lm'
+]
+
+variables.each do |variable_name|
+  UnrealVariable.find_or_create_by!(variable_name: variable_name) do |var|
+    var.claude_value = 0
+  end
+end
+
+puts "Created #{UnrealVariable.count} unreal variables"
+puts "Unreal Variables seed complete!"
