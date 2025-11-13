@@ -1,9 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { UserCircleIcon, PencilIcon, TrashIcon, PlusIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/solid'
+import api from '../../services/api'
 
 export default function ContactPersonsSection({ contactPersons = [], onUpdate, isEditMode, contactId }) {
   const [editingPerson, setEditingPerson] = useState(null)
   const [newPerson, setNewPerson] = useState(null)
+  const [availableRoles, setAvailableRoles] = useState([])
+  const [showCustomRole, setShowCustomRole] = useState({})
+
+  useEffect(() => {
+    fetchRoles()
+  }, [])
+
+  const fetchRoles = async () => {
+    try {
+      const response = await api.get('/contact_roles')
+      setAvailableRoles(response.data.filter(role => role.active))
+    } catch (error) {
+      console.error('Failed to fetch roles:', error)
+    }
+  }
 
   const startEditing = (person) => {
     if (!isEditMode) return
@@ -15,9 +31,23 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
       first_name: '',
       last_name: '',
       email: '',
+      role: '',
       include_in_emails: true,
       is_primary: contactPersons.length === 0
     })
+  }
+
+  const handleRoleChange = (person, value, isNew = false) => {
+    const setter = isNew ? setNewPerson : setEditingPerson
+    const key = isNew ? 'new' : person.id
+
+    if (value === 'Other') {
+      setShowCustomRole(prev => ({ ...prev, [key]: true }))
+      setter({ ...person, role: '' })
+    } else {
+      setShowCustomRole(prev => ({ ...prev, [key]: false }))
+      setter({ ...person, role: value })
+    }
   }
 
   const cancelEditing = () => {
@@ -121,6 +151,32 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
                     className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                   />
                 </div>
+                <div>
+                  <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">
+                    Role
+                  </label>
+                  {showCustomRole[editingPerson.id] || (editingPerson.role && !availableRoles.find(r => r.name === editingPerson.role)) ? (
+                    <input
+                      type="text"
+                      placeholder="Enter custom role"
+                      value={editingPerson.role || ''}
+                      onChange={(e) => setEditingPerson({ ...editingPerson, role: e.target.value })}
+                      className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    />
+                  ) : (
+                    <select
+                      value={editingPerson.role || ''}
+                      onChange={(e) => handleRoleChange(editingPerson, e.target.value, false)}
+                      className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">Select role...</option>
+                      {availableRoles.map(role => (
+                        <option key={role.id} value={role.name}>{role.name}</option>
+                      ))}
+                      <option value="Other">Other (custom)</option>
+                    </select>
+                  )}
+                </div>
                 <div className="flex items-center gap-4">
                   <label className="flex items-center gap-2 text-sm">
                     <input
@@ -176,6 +232,11 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
                     <a href={`mailto:${person.email}`} className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400">
                       {person.email}
                     </a>
+                  )}
+                  {person.role && (
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                      <span className="font-medium">Role:</span> {person.role}
+                    </p>
                   )}
                   {person.include_in_emails && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Included in emails</p>
@@ -247,6 +308,32 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
                   onChange={(e) => setNewPerson({ ...newPerson, email: e.target.value })}
                   className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">
+                  Role
+                </label>
+                {showCustomRole['new'] || (newPerson.role && !availableRoles.find(r => r.name === newPerson.role)) ? (
+                  <input
+                    type="text"
+                    placeholder="Enter custom role"
+                    value={newPerson.role || ''}
+                    onChange={(e) => setNewPerson({ ...newPerson, role: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                ) : (
+                  <select
+                    value={newPerson.role || ''}
+                    onChange={(e) => handleRoleChange(newPerson, e.target.value, true)}
+                    className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">Select role...</option>
+                    {availableRoles.map(role => (
+                      <option key={role.id} value={role.name}>{role.name}</option>
+                    ))}
+                    <option value="Other">Other (custom)</option>
+                  </select>
+                )}
               </div>
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 text-sm">

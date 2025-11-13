@@ -3,6 +3,7 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import UserManagementTab from './UserManagementTab'
 import RolesManagement from './RolesManagement'
 import GroupsManagement from './GroupsManagement'
+import ContactRolesManagement from './ContactRolesManagement'
 
 export default function RolesAndGroupsTab() {
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -32,7 +33,7 @@ export default function RolesAndGroupsTab() {
             }`
           }
         >
-          Roles
+          User Roles
         </Tab>
         <Tab
           className={({ selected }) =>
@@ -46,6 +47,18 @@ export default function RolesAndGroupsTab() {
         >
           Groups
         </Tab>
+        <Tab
+          className={({ selected }) =>
+            `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+            ${
+              selected
+                ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+            }`
+          }
+        >
+          Contact Roles
+        </Tab>
       </TabList>
 
       <TabPanels>
@@ -57,6 +70,9 @@ export default function RolesAndGroupsTab() {
         </TabPanel>
         <TabPanel>
           <GroupsManagement />
+        </TabPanel>
+        <TabPanel>
+          <ContactRolesManagement />
         </TabPanel>
       </TabPanels>
     </TabGroup>
