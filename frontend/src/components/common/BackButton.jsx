@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 export default function BackButton({ className = '' }) {
   const navigate = useNavigate()
@@ -10,10 +11,11 @@ export default function BackButton({ className = '' }) {
   return (
     <button
       onClick={handleBack}
-      className={`text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors ${className}`}
+      className={`inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors ${className}`}
       aria-label="Go back"
     >
-      AI Builder
+      <ArrowLeftIcon className="h-3 w-3" />
+      Back
     </button>
   )
 }
