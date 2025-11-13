@@ -28,7 +28,8 @@ module Api
               item_code: item.item_code,
               item_name: item.item_name,
               unit_of_measure: item.unit_of_measure,
-              current_price: item.current_price
+              current_price: item.current_price,
+              claude_estimate: item.claude_estimate
             }
           },
           pagination: {
@@ -47,7 +48,8 @@ module Api
           item_code: @item.item_code,
           item_name: @item.item_name,
           unit_of_measure: @item.unit_of_measure,
-          current_price: @item.current_price
+          current_price: @item.current_price,
+          claude_estimate: @item.claude_estimate
         }
       end
 
@@ -83,14 +85,15 @@ module Api
 
         # Generate CSV
         csv_data = CSV.generate(headers: true) do |csv|
-          csv << ['Item Code', 'Item Name', 'Unit', 'Price']
+          csv << ['Item Code', 'Item Name', 'Unit', 'Price', 'Claude Estimate']
 
           items.each do |item|
             csv << [
               item.item_code,
               item.item_name,
               item.unit_of_measure,
-              item.current_price
+              item.current_price,
+              item.claude_estimate
             ]
           end
         end
@@ -119,6 +122,7 @@ module Api
           :item_name,
           :unit_of_measure,
           :current_price,
+          :claude_estimate,
           :is_active
         )
       end

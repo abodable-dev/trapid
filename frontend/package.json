@@ -1,7 +1,7 @@
 {
   "name": "trapid-frontend",
   "private": true,
-  "version": "1.99.18",
+  "version": "1.99.20",
   "type": "module",
   "scripts": {
     "dev": "node scripts/increment-version.js && vite",
@@ -27,7 +27,8 @@
     "react-router-dom": "^7.9.4",
     "reactflow": "^11.11.4",
     "recharts": "^3.3.0",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

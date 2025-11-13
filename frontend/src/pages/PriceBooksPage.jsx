@@ -579,7 +579,7 @@ export default function PriceBooksPage() {
  {/* Frosted glass backdrop - only visible when search is active */}
  {(searchQuery || isSearchFocused) && (
  <div
- className="fixed inset-0 bg-black/40 backdrop-blur-sm z-10 transition-opacity duration-[240ms]"
+ className="fixed inset-0 bg-black/40 z-10 transition-opacity duration-[240ms]"
  onClick={handleBackdropClick}
  />
  )}

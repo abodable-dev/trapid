@@ -106,12 +106,15 @@ export default function SamQuickEstPage() {
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Price
                 </th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Claude Estimate
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center">
+                  <td colSpan="5" className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Loading items...</p>
@@ -120,7 +123,7 @@ export default function SamQuickEstPage() {
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <td colSpan="5" className="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
                     {searchQuery ? 'No items match your search.' : 'No items found.'}
                   </td>
                 </tr>
@@ -141,6 +144,9 @@ export default function SamQuickEstPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono font-medium text-gray-900 dark:text-white">
                       {item.current_price ? formatCurrency(item.current_price, false) : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono font-medium text-gray-900 dark:text-white">
+                      {item.claude_estimate ? formatCurrency(item.claude_estimate, false) : '-'}
                     </td>
                   </tr>
                 ))
