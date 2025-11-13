@@ -260,9 +260,9 @@ export default function SystemPerformancePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
               <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                {metrics?.records?.jobs?.toLocaleString() || '0'}
+                {metrics?.records?.constructions?.toLocaleString() || '0'}
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Jobs</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">Constructions</div>
             </div>
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">

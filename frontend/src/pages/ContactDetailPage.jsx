@@ -22,7 +22,7 @@ import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/re
 import ActivityTimeline from '../components/contacts/ActivityTimeline'
 import LinkXeroContactModal from '../components/contacts/LinkXeroContactModal'
 import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
-import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
+import ContactMapCard from '../components/contacts/ContactMapCard'
 import ContactGroupsSection from '../components/contacts/ContactGroupsSection'
 import ContactRelationshipsSection from '../components/contacts/ContactRelationshipsSection'
 
@@ -95,7 +95,6 @@ export default function ContactDetailPage() {
   const [xeroFieldValues, setXeroFieldValues] = useState({}) // Temp values while editing
   const [isPageEditMode, setIsPageEditMode] = useState(false) // Global edit mode for the entire page
   const [contactPersons, setContactPersons] = useState([])
-  const [contactAddresses, setContactAddresses] = useState([])
   const [contactGroups, setContactGroups] = useState([])
   const [xeroAccounts, setXeroAccounts] = useState([]) // Xero chart of accounts for dropdown
   const [loadingXeroAccounts, setLoadingXeroAccounts] = useState(false)
@@ -175,7 +174,6 @@ export default function ContactDetailPage() {
   const navigationSections = [
     { id: 'contact-information', label: 'Contact Information' },
     { id: 'contact-persons', label: 'Contact Persons' },
-    { id: 'contact-addresses', label: 'Contact Addresses' },
     { id: 'contact-groups', label: 'Contact Groups' },
     { id: 'business-details', label: 'Business Details' },
     { id: 'location', label: 'Location' },
@@ -200,7 +198,6 @@ export default function ContactDetailPage() {
       const contactData = response.contact
       setContact(contactData)
       setContactPersons(contactData.contact_persons || [])
-      setContactAddresses(contactData.contact_addresses || [])
       setContactGroups(contactData.contact_groups || [])
     } catch (err) {
       setError('Failed to load contact')
@@ -735,37 +732,6 @@ export default function ContactDetailPage() {
     }
   }
 
-  const handleContactAddressesUpdate = async (updatedAddresses) => {
-    try {
-      const contact_addresses_attributes = updatedAddresses.map(address => ({
-        id: address.id,
-        address_type: address.address_type,
-        line1: address.line1,
-        line2: address.line2,
-        line3: address.line3,
-        line4: address.line4,
-        city: address.city,
-        region: address.region,
-        postal_code: address.postal_code,
-        country: address.country,
-        attention_to: address.attention_to,
-        is_primary: address.is_primary,
-        _destroy: address._destroy
-      }))
-
-      const response = await api.patch(`/api/v1/contacts/${id}`, {
-        contact: { contact_addresses_attributes }
-      })
-
-      if (response.success) {
-        await loadContact()
-      }
-    } catch (error) {
-      console.error('Failed to update contact addresses:', error)
-      alert('Failed to update contact addresses')
-    }
-  }
-
   const handleContactGroupsUpdate = async (updatedGroups) => {
     try {
       const contact_group_ids = updatedGroups
@@ -841,17 +807,14 @@ export default function ContactDetailPage() {
                   Parent: {contact.parent}
                 </p>
               )}
-              {contactAddresses && contactAddresses.length > 0 && contactAddresses[0].street_address && (
+              {contact.address && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 flex items-start gap-1">
                   <svg className="h-3 w-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                   </svg>
                   <span>
-                    {contactAddresses[0].street_address}
-                    {contactAddresses[0].city && `, ${contactAddresses[0].city}`}
-                    {contactAddresses[0].state && ` ${contactAddresses[0].state}`}
-                    {contactAddresses[0].postcode && ` ${contactAddresses[0].postcode}`}
+                    {contact.address}
                   </span>
                 </p>
               )}
@@ -1198,19 +1161,6 @@ export default function ContactDetailPage() {
             <ContactPersonsSection
               contactPersons={contactPersons}
               onUpdate={handleContactPersonsUpdate}
-              isEditMode={isPageEditMode}
-              contactId={id}
-            />
-          </div>
-
-          {/* Contact Addresses Section */}
-          <div
-            ref={(el) => (sectionRefs.current['contact-addresses'] = el)}
-            id="contact-addresses"
-          >
-            <ContactAddressesSection
-              contactAddresses={contactAddresses}
-              onUpdate={handleContactAddressesUpdate}
               isEditMode={isPageEditMode}
               contactId={id}
             />
@@ -1697,6 +1647,11 @@ export default function ContactDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Address Map */}
+          {contact.address && (
+            <ContactMapCard address={contact.address} />
+          )}
+
           {/* Location - LGAs */}
           <div
             ref={(el) => (sectionRefs.current['location'] = el)}
