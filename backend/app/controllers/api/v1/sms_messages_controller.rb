@@ -2,7 +2,6 @@ module Api
   module V1
     class SmsMessagesController < ApplicationController
       before_action :set_contact, only: [:index, :create]
-      skip_before_action :verify_authenticity_token, only: [:webhook, :status_webhook]
 
       # GET /api/v1/contacts/:contact_id/sms_messages
       def index
