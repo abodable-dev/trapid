@@ -146,7 +146,7 @@ export default function SamQuickEstPage() {
                       {item.current_price ? formatCurrency(item.current_price, false) : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono font-medium text-gray-900 dark:text-white">
-                      {item.claude_estimate ? formatCurrency(item.claude_estimate, false) : '-'}
+                      {item.claude_estimate !== null && item.claude_estimate !== undefined ? item.claude_estimate : '-'}
                     </td>
                   </tr>
                 ))
