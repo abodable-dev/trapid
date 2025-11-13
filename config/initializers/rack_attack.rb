@@ -2,6 +2,11 @@ class Rack::Attack
   # Redis cache store for tracking requests
   Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
 
+  # Whitelist localhost for development
+  safelist('allow-localhost') do |req|
+    req.ip == '127.0.0.1' || req.ip == '::1' || req.ip == 'localhost'
+  end
+
   # Throttle all requests by IP (prevent general abuse)
   throttle('req/ip', limit: 300, period: 5.minutes) do |req|
     req.ip
