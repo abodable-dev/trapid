@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_13_053052) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_13_232341) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -490,6 +490,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_053052) do
     t.index ["token_expires_at"], name: "index_organization_one_drive_credentials_on_token_expires_at"
   end
 
+  create_table "organization_outlook_credentials", force: :cascade do |t|
+    t.text "access_token"
+    t.text "refresh_token"
+    t.datetime "expires_at"
+    t.string "email"
+    t.string "tenant_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "price_histories", force: :cascade do |t|
     t.bigint "pricebook_item_id", null: false
     t.decimal "old_price", precision: 10, scale: 2
@@ -758,6 +768,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_053052) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.tsvector "searchable_text"
+    t.decimal "claude_estimate", precision: 10, scale: 2
     t.index ["category"], name: "index_sam_quick_est_items_on_category"
     t.index ["default_supplier_id"], name: "index_sam_quick_est_items_on_default_supplier_id"
     t.index ["image_fetch_status"], name: "index_sam_quick_est_items_on_image_fetch_status"
@@ -1108,6 +1119,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_053052) do
     t.index ["project_task_id"], name: "index_task_updates_on_project_task_id"
     t.index ["update_date"], name: "index_task_updates_on_update_date"
     t.index ["user_id"], name: "index_task_updates_on_user_id"
+  end
+
+  create_table "unreal_variables", force: :cascade do |t|
+    t.string "variable_name", null: false
+    t.decimal "claude_value", precision: 10, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["variable_name"], name: "index_unreal_variables_on_variable_name", unique: true
   end
 
   create_table "user_9_30_upload_4b12581f", force: :cascade do |t|
