@@ -58,6 +58,8 @@ class PurchaseOrder < ApplicationRecord
   scope :overdue, -> { where('required_date < ? AND status NOT IN (?)', Date.today, ['received', 'cancelled']) }
   scope :pending_approval, -> { where(status: 'pending') }
   scope :for_schedule, -> { where(creates_schedule_tasks: true) }
+  scope :visible_to_suppliers, -> { where(visible_to_supplier: true) }
+  scope :by_supplier, ->(supplier_id) { where(supplier_id: supplier_id) if supplier_id.present? }
 
   # Instance methods
   def calculate_totals
@@ -211,6 +213,33 @@ class PurchaseOrder < ApplicationRecord
     end
 
     new_status
+  end
+
+  # Portal-specific methods
+  def make_visible_to_supplier!
+    update!(visible_to_supplier: true)
+  end
+
+  def hide_from_supplier!
+    update!(visible_to_supplier: false)
+  end
+
+  def payment_schedule_summary
+    return [] unless payment_schedule.is_a?(Array)
+    payment_schedule
+  end
+
+  def portal_summary
+    {
+      po_number: purchase_order_number,
+      status: status,
+      total: total,
+      ordered_date: ordered_date,
+      required_date: required_date,
+      payment_status: payment_status,
+      payments_received: payments.sum(:amount),
+      payment_schedule: payment_schedule_summary
+    }
   end
 
   private

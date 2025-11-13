@@ -36,6 +36,6 @@ class Api::V1::ContactRolesController < ApplicationController
   end
 
   def contact_role_params
-    params.require(:contact_role).permit(:name, :active)
+    params.require(:contact_role).permit(:name, :active, :contact_type)
   end
 end
