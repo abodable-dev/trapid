@@ -1,11 +1,11 @@
 namespace :sam_quick_est do
-  desc "Copy aircon items from pricebook to Sam Quick Est"
+  desc "Copy air conditioning items from pricebook to Sam Quick Est"
   task copy_aircon: :environment do
-    puts "Searching for items with 'aircon' in item_name..."
+    puts "Searching for items with category 'air conditioning'..."
 
-    aircon_items = PricebookItem.active.where('LOWER(item_name) LIKE ?', '%aircon%')
+    aircon_items = PricebookItem.active.where('LOWER(category) = ?', 'air conditioning')
 
-    puts "Found #{aircon_items.count} aircon items in pricebook"
+    puts "Found #{aircon_items.count} air conditioning items in pricebook"
 
     if aircon_items.count == 0
       puts "No aircon items found. Exiting."
