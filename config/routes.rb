@@ -75,6 +75,9 @@ Rails.application.routes.draw do
           end
         end
 
+        # Rain logs (nested under constructions)
+        resources :rain_logs, only: [:index, :show, :create, :update, :destroy]
+
       end
 
       # Schedule tasks (non-nested routes)

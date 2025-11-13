@@ -10,6 +10,7 @@ class Construction < ApplicationRecord
   has_many :construction_documentation_tabs, dependent: :destroy
   has_many :construction_contacts, dependent: :destroy
   has_many :contacts, through: :construction_contacts
+  has_many :rain_logs, dependent: :destroy
 
   # Enums
   enum :onedrive_folder_creation_status, {
