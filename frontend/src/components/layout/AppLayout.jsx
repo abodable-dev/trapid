@@ -37,6 +37,7 @@ import {
   AcademicCapIcon,
   BanknotesIcon,
   ChartBarIcon,
+  BeakerIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
@@ -44,6 +45,7 @@ import { ChevronDownIcon } from '@heroicons/react/20/solid'
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Active Jobs', href: '/active-jobs', icon: BriefcaseIcon },
+  { name: 'Xest', href: '/xest', icon: BeakerIcon },
   { name: 'Price Books', href: '/price-books', icon: BookOpenIcon },
   { name: 'Contacts', href: '/contacts', icon: UsersIcon },
   { name: 'Accounts', href: '/accounts', icon: BanknotesIcon },

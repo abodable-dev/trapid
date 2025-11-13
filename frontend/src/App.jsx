@@ -10,6 +10,7 @@ import AuthCallback from './pages/AuthCallback'
 
 // Lazy load: Everything else (loads on-demand)
 const ActiveJobsPage = lazy(() => import('./pages/ActiveJobsPage'))
+const XestPage = lazy(() => import('./pages/XestPage'))
 const JobDetailPage = lazy(() => import('./pages/JobDetailPage'))
 const JobSetupPage = lazy(() => import('./pages/JobSetupPage'))
 const PriceBooksPage = lazy(() => import('./pages/PriceBooksPage'))
@@ -77,6 +78,7 @@ function App() {
         <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
         <Route path="/chat" element={<AppLayout><ChatPage /></AppLayout>} />
         <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
+        <Route path="/xest" element={<AppLayout><XestPage /></AppLayout>} />
         <Route path="/documents" element={<AppLayout><DocumentsPage /></AppLayout>} />
         <Route path="/pdf-measure-test" element={<AppLayout><PDFMeasurementTestPage /></AppLayout>} />
         <Route path="/jobs/:id/setup" element={<AppLayout><JobSetupPage /></AppLayout>} />
