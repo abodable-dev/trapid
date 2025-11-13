@@ -114,6 +114,14 @@ Rails.application.routes.draw do
         end
       end
 
+      # Sam Quick Est management
+      resources :sam_quick_est, controller: 'sam_quick_est_items', path: 'sam_quick_est' do
+        collection do
+          patch :bulk_update
+          get :export
+        end
+      end
+
       # Suppliers management
       resources :suppliers do
         collection do
