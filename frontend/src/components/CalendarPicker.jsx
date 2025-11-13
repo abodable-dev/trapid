@@ -69,7 +69,7 @@ export default function CalendarPicker({ value, onChange, label }) {
     }
 
     return calendarDays
-  }, [currentMonth, selectedDate])
+  }, [currentMonth, selectedDate, isToday])
 
   const formatDate = (date) => {
     const year = date.getFullYear()
@@ -147,7 +147,7 @@ export default function CalendarPicker({ value, onChange, label }) {
           <div>S</div>
         </div>
         <div className="isolate grid grid-cols-7 gap-px rounded-lg bg-gray-200 text-sm shadow ring-1 ring-gray-200 dark:bg-white/15 dark:shadow-none dark:ring-white/15">
-          {days.map((day, index) => (
+          {days.map((day) => (
             <button
               key={day.date}
               type="button"

@@ -165,16 +165,7 @@ export default function BudgetTab({ jobId }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                {budget_items.map((item, index) => {
-                  let runningBudget = 0
-                  let runningInvoiced = 0
-
-                  // Calculate running totals up to current row
-                  for (let i = 0; i <= index; i++) {
-                    runningBudget += budget_items[i].budgeted
-                    runningInvoiced += budget_items[i].invoiced
-                  }
-
+                {budget_items.map((item) => {
                   return (
                     <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                       <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900 dark:text-white">
