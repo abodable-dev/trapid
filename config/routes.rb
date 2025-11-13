@@ -194,7 +194,14 @@ Rails.application.routes.draw do
 
         # Contact relationships (nested under contacts)
         resources :relationships, controller: 'contact_relationships', only: [:index, :create, :show, :update, :destroy]
+
+        # SMS messages (nested under contacts)
+        resources :sms_messages, only: [:index, :create]
       end
+
+      # SMS webhooks (Twilio callbacks - not nested)
+      post 'sms/webhook', to: 'sms_messages#webhook'
+      post 'sms/status', to: 'sms_messages#status_webhook'
 
       # Chat messages
       resources :chat_messages, only: [:index, :create, :destroy] do
@@ -249,7 +256,9 @@ Rails.application.routes.draw do
       resources :designs
 
       # Company Settings
-      resource :company_settings, only: [:show, :update]
+      resource :company_settings, only: [:show, :update] do
+        post :test_twilio, on: :collection
+      end
 
       # Folder Templates for OneDrive sync
       resources :folder_templates do

@@ -18,6 +18,24 @@ module Api
         end
       end
 
+      # POST /api/v1/company_settings/test_twilio
+      def test_twilio
+        result = TwilioService.test_connection
+
+        if result[:success]
+          render json: {
+            success: true,
+            message: 'Twilio connection successful',
+            account: result[:account]
+          }
+        else
+          render json: {
+            success: false,
+            error: result[:error]
+          }, status: :unprocessable_entity
+        end
+      end
+
       private
 
       def company_setting_params
@@ -28,7 +46,11 @@ module Api
           :email,
           :phone,
           :address,
-          :logo_url
+          :logo_url,
+          :twilio_account_sid,
+          :twilio_auth_token,
+          :twilio_phone_number,
+          :twilio_enabled
         )
       end
     end

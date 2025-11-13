@@ -17,7 +17,15 @@ module Api
 
       # GET /api/v1/schedule_templates/:id
       def show
-        render json: template_json_with_rows(@schedule_template)
+        response_json = template_json_with_rows(@schedule_template)
+
+        # DEBUG: Log what we're returning for row 2
+        row_2 = response_json[:rows].find { |r| r[:id] == 2 }
+        if row_2
+          Rails.logger.info "📊 GET TEMPLATE - Row 2: manually_positioned=#{row_2[:manually_positioned]}, supplier_confirm=#{row_2[:supplier_confirm]}"
+        end
+
+        render json: response_json
       end
 
       # POST /api/v1/schedule_templates
@@ -179,7 +187,8 @@ module Api
           confirm: row.confirm,
           supplier_confirm: row.supplier_confirm,
           start: row.start,
-          complete: row.complete
+          complete: row.complete,
+          dependencies_broken: row.dependencies_broken
         }
       end
     end
