@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { XMarkIcon, ExclamationTriangleIcon, CheckCircleIcon, LockClosedIcon } from '@heroicons/react/24/outline'
 
 /**
@@ -16,25 +16,111 @@ export default function CascadeDependenciesModal({
   const [selectedTaskIds, setSelectedTaskIds] = useState([])
   // Map of parent task ID -> Set of locked successor IDs to keep (not break)
   const [lockedSuccessorsToKeep, setLockedSuccessorsToKeep] = useState({})
+  // Track if we've initialized the state
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
     // By default, select all unlocked successors to cascade
-    // Do NOT keep locked successors by default (they will be unticked/unchecked - will break)
-    if (isOpen) {
-      setSelectedTaskIds(unlockedSuccessors.map(s => s.task.id))
-
-      // Initialize empty - locked successors will break by default (unticked)
+    // KEEP locked successors by default (they will be ticked/checked) - representing current state
+    if (!isOpen) {
+      // Reset state when modal closes
+      setSelectedTaskIds([])
       setLockedSuccessorsToKeep({})
-
-      console.log('🔓 Initialized with all locked successors set to BREAK (unticked)')
+      setIsInitialized(false)
+      return
     }
+
+    // Initialize with locked successor dependencies UNTICKED (break the link to avoid conflicts)
+    // This allows unlocked parents to move while keeping locked children stationary
+    const initialLockedSuccessors = {}
+    blockedSuccessors.forEach(blockedInfo => {
+      if (blockedInfo.lockedSuccessors && blockedInfo.lockedSuccessors.length > 0) {
+        // Initialize with EMPTY set (all unticked) - breaks dependencies to locked children
+        initialLockedSuccessors[blockedInfo.task.id] = new Set()
+      }
+    })
+
+    // Select ALL unlocked successors for cascading (including those with locked dependencies)
+    // The locked dependencies will be broken (unticked) to avoid conflicts
+    const allUnlockedIds = unlockedSuccessors.map(s => s.task.id)
+
+    console.log('🔓 Initialized with locked successor dependencies UNTICKED (breaks links to avoid conflicts):', Object.fromEntries(
+      Object.entries(initialLockedSuccessors).map(([k, v]) => [k, Array.from(v)])
+    ))
+    console.log('✅ Auto-selected ALL unlocked tasks for cascading:', allUnlockedIds)
+
+    // Batch state updates together
+    setLockedSuccessorsToKeep(initialLockedSuccessors)
+    setSelectedTaskIds(allUnlockedIds)
+    setIsInitialized(true)
   }, [isOpen, unlockedSuccessors, blockedSuccessors])
 
   if (!isOpen) return null
 
+  // Don't render until state is initialized to avoid conflicts
+  if (!isInitialized) return null
+
+  // Detect conflicts: cascading a parent while keeping link to locked child
+  // Use defensive checks to prevent errors
+  const getConflicts = () => {
+    const conflictList = []
+
+    try {
+      if (!Array.isArray(selectedTaskIds)) return []
+      if (!Array.isArray(blockedSuccessors)) return []
+      if (!lockedSuccessorsToKeep) return []
+
+      selectedTaskIds.forEach(taskId => {
+        const blockedInfo = blockedSuccessors.find(b => b && b.task && b.task.id === taskId)
+        if (!blockedInfo || !Array.isArray(blockedInfo.lockedSuccessors)) return
+
+        const keptLockedSuccessors = blockedInfo.lockedSuccessors.filter(ls => {
+          if (!ls || !ls.id) return false
+          const keptSet = lockedSuccessorsToKeep[taskId]
+          // Only consider it a conflict if the checkbox is actually checked (kept in the Set)
+          return keptSet && keptSet.has && keptSet.has(ls.id)
+        })
+
+        if (keptLockedSuccessors.length > 0) {
+          conflictList.push({
+            parentTask: blockedInfo.task,
+            lockedSuccessors: keptLockedSuccessors
+          })
+        }
+      })
+    } catch (error) {
+      console.error('Error computing conflicts:', error)
+      return []
+    }
+
+    return conflictList
+  }
+
+  const conflicts = getConflicts()
+  const hasConflicts = conflicts.length > 0
+
   const handleToggleTask = (taskId, isBlocked) => {
     if (isBlocked) return // Can't toggle blocked tasks
 
+    // Check current state to determine if we're selecting or deselecting
+    const willBeSelected = !selectedTaskIds.includes(taskId)
+
+    // If we're selecting this task to cascade, auto-uncheck all its locked successors
+    // (because you can't cascade a task while keeping locked dependencies)
+    if (willBeSelected) {
+      const blockedInfo = blockedSuccessors.find(b => b.task.id === taskId)
+      if (blockedInfo && blockedInfo.lockedSuccessors && blockedInfo.lockedSuccessors.length > 0) {
+        setLockedSuccessorsToKeep(prevLocked => {
+          const newMap = { ...prevLocked }
+          // Clear all locked successors for this task (untick them all)
+          newMap[taskId] = new Set()
+          console.log(`✅ Auto-unchecked all locked successors for task #${taskId} because cascade was selected`)
+          return newMap
+        })
+      }
+    }
+
+    // Update selected tasks (separate state update, not nested)
     setSelectedTaskIds(prev => {
       if (prev.includes(taskId)) {
         return prev.filter(id => id !== taskId)
@@ -57,6 +143,15 @@ export default function CascadeDependenciesModal({
         // Currently breaking, so user wants to keep it - add to keep set
         currentSet.add(lockedSuccessorId)
         console.log(`🔒 Checked: Will now KEEP dependency from #${parentTaskId} to #${lockedSuccessorId}`)
+
+        // Auto-uncheck the parent cascade checkbox because you can't cascade while keeping locked dependencies
+        setSelectedTaskIds(prevSelected => {
+          if (prevSelected.includes(parentTaskId)) {
+            console.log(`✅ Auto-unchecked cascade for task #${parentTaskId} because locked dependency was selected to keep`)
+            return prevSelected.filter(id => id !== parentTaskId)
+          }
+          return prevSelected
+        })
       }
 
       newMap[parentTaskId] = currentSet
@@ -113,36 +208,6 @@ export default function CascadeDependenciesModal({
   const totalAffected = unlockedSuccessors.length + blockedSuccessors.length
   const selectedCount = selectedTaskIds.length
 
-  // Detect conflicts: cascading a parent while keeping link to locked child
-  const conflicts = []
-  selectedTaskIds.forEach(taskId => {
-    const blockedInfo = blockedSuccessors.find(b => b.task.id === taskId)
-    if (blockedInfo && blockedInfo.lockedSuccessors) {
-      const keptLockedSuccessors = blockedInfo.lockedSuccessors.filter(ls => {
-        const keptSet = lockedSuccessorsToKeep[taskId]
-        // Only consider it a conflict if the checkbox is actually checked (kept in the Set)
-        return keptSet && keptSet.has(ls.id)
-      })
-      if (keptLockedSuccessors.length > 0) {
-        conflicts.push({
-          parentTask: blockedInfo.task,
-          lockedSuccessors: keptLockedSuccessors
-        })
-      }
-    }
-  })
-
-  const hasConflicts = conflicts.length > 0
-
-  console.log('🔍 Conflict check:', {
-    selectedTaskIds,
-    lockedSuccessorsToKeep: Object.fromEntries(
-      Object.entries(lockedSuccessorsToKeep).map(([k, v]) => [k, Array.from(v)])
-    ),
-    conflicts,
-    hasConflicts
-  })
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style={{ zIndex: '2147483647' }}>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col">
@@ -155,7 +220,12 @@ export default function CascadeDependenciesModal({
                 Cascade Dependencies?
               </h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Moving "{movedTask?.text || 'this task'}" affects {totalAffected} dependent task{totalAffected !== 1 ? 's' : ''}
+                Moving "{movedTask?.text || 'this task'}" to {(() => {
+                  if (!movedTask?.start_date) return 'new date';
+                  const moveDate = new Date(movedTask.start_date);
+                  moveDate.setHours(0, 0, 0, 0);
+                  return moveDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+                })()} affects {totalAffected} dependent task{totalAffected !== 1 ? 's' : ''}
               </p>
             </div>
           </div>
@@ -238,12 +308,12 @@ export default function CascadeDependenciesModal({
                               ? 'Started'
                               : 'Completed'
 
-                            // Format the locked date
+                            // Format the task's scheduled start date
                             const projectStartDate = new Date()
                             projectStartDate.setHours(0, 0, 0, 0)
-                            const lockedDate = new Date(projectStartDate)
-                            lockedDate.setDate(lockedDate.getDate() + (lockedTask.start_date || 0))
-                            const lockedDateStr = lockedDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+                            const taskDate = new Date(projectStartDate)
+                            taskDate.setDate(taskDate.getDate() + (lockedTask.start_date || 0))
+                            const taskDateStr = taskDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
 
                             return (
                               <div key={lockedTask.id} className={`flex items-center gap-2 ${lockColor} relative`}>
@@ -259,7 +329,7 @@ export default function CascadeDependenciesModal({
                                   {lockReason}
                                 </span>
                                 <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded font-mono">
-                                  Locked: {lockedDateStr}
+                                  Scheduled: {taskDateStr}
                                 </span>
                               </div>
                             )
@@ -319,9 +389,15 @@ export default function CascadeDependenciesModal({
                             <span className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">
                               {depType}{depLag > 0 ? '+' + depLag : depLag < 0 ? depLag : ''}
                             </span>
-                            {successor.requiredStart && (
+                            {successor.requiredStart !== undefined && (
                               <span className="text-xs px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded font-mono">
-                                Will move to: {new Date(successor.requiredStart).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                                Will move to: {(() => {
+                                  // requiredStart is a Date object
+                                  const moveDate = new Date(successor.requiredStart)
+                                  moveDate.setHours(0, 0, 0, 0)
+                                  console.log(`📅 Modal display - Task #${task.id}: requiredStart=${successor.requiredStart}, moveDate=${moveDate.toISOString().split('T')[0]}, formatted=${moveDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`)
+                                  return moveDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+                                })()}
                               </span>
                             )}
                             {task.dependencies_broken && (
@@ -346,10 +422,10 @@ export default function CascadeDependenciesModal({
 
                           <p className="text-xs text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1">
                             <span>⚠️</span>
-                            <span>Cascading this task will break these locked dependencies:</span>
+                            <span>These locked dependencies conflict with cascading:</span>
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 ml-4 italic">
-                            Unchecked by default (will break). Check to keep the dependency (will cause conflict and prevent cascading).
+                            Unchecked by default (breaks dependency). Check to keep the link and prevent cascading.
                           </p>
                           {blockedInfo.lockedSuccessors.map((lockedTask) => {
                             const isKept = lockedSuccessorsToKeep[task.id]?.has(lockedTask.id)
@@ -367,10 +443,8 @@ export default function CascadeDependenciesModal({
                               : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700'
 
                             // Format the locked date
-                            const projectStartDate = new Date()
-                            projectStartDate.setHours(0, 0, 0, 0)
-                            const lockedDate = new Date(projectStartDate)
-                            lockedDate.setDate(lockedDate.getDate() + (lockedTask.start_date || 0))
+                            const lockedDate = new Date(lockedTask.start_date)
+                            lockedDate.setHours(0, 0, 0, 0)
                             const lockedDateStr = lockedDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
 
                             return (
@@ -387,8 +461,8 @@ export default function CascadeDependenciesModal({
                                   type="checkbox"
                                   checked={isKept}
                                   onChange={() => handleToggleLockedSuccessor(task.id, lockedTask.id)}
-                                  className="mt-0.5 h-3 w-3 text-green-600 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
-                                  title={isKept ? "Checked - Keeping dependency causes conflict. Uncheck to break dependency and allow cascading." : "Unchecked (default) - Dependency will break. Check to keep it (causes conflict)."}
+                                  className="mt-0.5 h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                  title={isKept ? "Checked (default) - Reflects current locked state. Uncheck to break dependency and allow cascading." : "Unchecked - Will break this dependency to allow cascading"}
                                 />
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap text-xs">
@@ -403,15 +477,15 @@ export default function CascadeDependenciesModal({
                                       {lockReason}
                                     </span>
                                     <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded text-xs font-mono">
-                                      Locked: {lockedDateStr}
+                                      Scheduled: {lockedDateStr}
                                     </span>
                                     {isKept ? (
-                                      <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded text-xs font-semibold">
-                                        ⚠️ Will Keep (Causes Conflict)
+                                      <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded text-xs font-semibold">
+                                        ⚠️ Locked (Default)
                                       </span>
                                     ) : (
                                       <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs font-semibold">
-                                        ✓ Will Break (Default)
+                                        ✓ Will Break
                                       </span>
                                     )}
                                   </div>
@@ -422,13 +496,13 @@ export default function CascadeDependenciesModal({
                                     <label className="flex items-center gap-1 text-xs cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-1 py-0.5">
                                       <input
                                         type="checkbox"
-                                        checked={false}
+                                        checked={!isKept}
                                         onChange={() => handleUnlockTask(lockedTask)}
                                         className="h-3 w-3 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
-                                        title={`Remove ${lockReason} status to unlock this task`}
+                                        title={!isKept ? `Checked - Task IS ${lockReason} (locked and will stay stationary)` : `Unchecked - Will remove ${lockReason} status to allow cascading`}
                                       />
                                       <span className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                        Remove {lockReason}
+                                        {lockReason}
                                       </span>
                                     </label>
                                   </div>
@@ -495,9 +569,9 @@ export default function CascadeDependenciesModal({
                     const breakCount = totalLocked - keptCount
 
                     if (keptCount > 0) {
-                      return `⚠️ ${keptCount} locked successor${keptCount !== 1 ? 's' : ''} checked - causing conflict. Uncheck to break ${keptCount !== 1 ? 'dependencies' : 'dependency'}.`
+                      return `⚠️ ${keptCount} locked ${keptCount !== 1 ? 'dependencies' : 'dependency'} checked (default - reflects current state) - causing conflict. Uncheck to break and allow cascading.`
                     } else {
-                      return `✓ ${breakCount} locked successor${breakCount !== 1 ? 's' : ''} will have ${breakCount !== 1 ? 'dependencies' : 'dependency'} broken (default)`
+                      return `✓ ${breakCount} locked ${breakCount !== 1 ? 'dependencies' : 'dependency'} will be broken`
                     }
                   })()}
                 </li>

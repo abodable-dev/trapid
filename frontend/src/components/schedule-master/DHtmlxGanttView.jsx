@@ -1541,6 +1541,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                     case 'FS': // Successor should start >= moved task end + lag
                       requiredSuccessorStart = new Date(movedTaskEnd)
                       requiredSuccessorStart.setDate(requiredSuccessorStart.getDate() + depLag)
+                      console.log(`📅 FS Dep: Task #${successorTask.id} - Moved end: ${movedTaskEnd.toISOString().split('T')[0]}, Lag: ${depLag}, Required start: ${requiredSuccessorStart.toISOString().split('T')[0]}`)
                       break
                     case 'SS': // Successor should start >= moved task start + lag
                       requiredSuccessorStart = new Date(movedTaskStart)
@@ -2890,12 +2891,16 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       const taskSupplier = (task.supplier || '').toLowerCase()
 
       // Show task if name or supplier matches search term
-      return taskName.includes(searchLower) || taskSupplier.includes(searchLower)
+      const matches = taskName.includes(searchLower) || taskSupplier.includes(searchLower)
+      if (!matches) {
+        console.log(`🔍 Task #${task.id} "${task.text}" filtered out by search: "${taskNameSearch}"`)
+      }
+      return matches
     })
 
     // PERFORMANCE: Use debounced render for search filter
     debouncedRender(10)
-    console.log('🔎 Search filter applied:', taskNameSearch)
+    console.log('🔎 Search filter applied:', taskNameSearch || '(no filter - showing all tasks)')
   }, [taskNameSearch, ganttReady, debouncedRender])
 
   // Handle link updates (when dependencies change)
@@ -3346,6 +3351,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     }) // End batchUpdate - PERFORMANCE: Single render for all data changes
 
     console.log('Loaded:', ganttTasks.length, 'tasks and', ganttLinks.length, 'links')
+    console.log('📋 All loaded tasks:', ganttTasks.map(t => `#${t.id}: ${t.text} (start: ${t.start_date.toISOString().split('T')[0]})`).join(', '))
 
     // CRITICAL: Force immediate render to update lock checkbox states
     // (debounced render was causing lock checkboxes to not update after data reload)
@@ -3393,11 +3399,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     projectStartDate.setHours(0, 0, 0, 0)
     const movedTaskDayOffset = Math.floor((movedTaskStart - projectStartDate) / (1000 * 60 * 60 * 24))
 
-    console.log(`💾 Saving moved task #${movedTask.id} to day ${movedTaskDayOffset}`)
+    console.log(`💾 Saving moved task #${movedTask.id} to day ${movedTaskDayOffset} with manually_positioned=true`)
     onUpdateTask(movedTask.id, {
       duration: movedTask.duration,
       start_date: movedTaskDayOffset,
-      predecessor_ids: movedTask.predecessor_ids || []
+      predecessor_ids: movedTask.predecessor_ids || [],
+      manually_positioned: true
     }, { skipReload: true })
 
     // Cascade selected tasks
