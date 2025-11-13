@@ -52,7 +52,7 @@ export default function ContactGroupsSection({ contactGroups = [], onUpdate, isE
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
           </svg>
         </h3>
-        {isEditMode && !isAddingGroup && (
+        {!isAddingGroup && (
           <button
             onClick={() => setIsAddingGroup(true)}
             className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
@@ -64,7 +64,7 @@ export default function ContactGroupsSection({ contactGroups = [], onUpdate, isE
       </div>
 
       {contactGroups.length === 0 && !isAddingGroup && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">Not assigned to any groups</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Not assigned to any groups yet</p>
       )}
 
       <div className="space-y-2">

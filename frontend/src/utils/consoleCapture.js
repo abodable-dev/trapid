@@ -1,0 +1,166 @@
+// Console Capture Utility - Intercepts and stores all console output
+
+class ConsoleCapture {
+  constructor() {
+    this.logs = []
+    this.maxLogs = 1000 // Keep last 1000 log entries
+    this.originalConsole = {
+      log: console.log,
+      error: console.error,
+      warn: console.warn,
+      info: console.info,
+      debug: console.debug
+    }
+    this.listeners = []
+  }
+
+  initialize() {
+    // Intercept console.log
+    console.log = (...args) => {
+      this.capture('log', args)
+      this.originalConsole.log.apply(console, args)
+    }
+
+    // Intercept console.error
+    console.error = (...args) => {
+      this.capture('error', args)
+      this.originalConsole.error.apply(console, args)
+    }
+
+    // Intercept console.warn
+    console.warn = (...args) => {
+      this.capture('warn', args)
+      this.originalConsole.warn.apply(console, args)
+    }
+
+    // Intercept console.info
+    console.info = (...args) => {
+      this.capture('info', args)
+      this.originalConsole.info.apply(console, args)
+    }
+
+    // Intercept console.debug
+    console.debug = (...args) => {
+      this.capture('debug', args)
+      this.originalConsole.debug.apply(console, args)
+    }
+
+    // Capture unhandled errors
+    window.addEventListener('error', (event) => {
+      this.capture('error', [`Unhandled Error: ${event.message}`, event.filename, `Line: ${event.lineno}:${event.colno}`])
+    })
+
+    // Capture unhandled promise rejections
+    window.addEventListener('unhandledrejection', (event) => {
+      this.capture('error', [`Unhandled Promise Rejection: ${event.reason}`])
+    })
+  }
+
+  capture(type, args) {
+    const timestamp = new Date().toISOString()
+    const message = args.map(arg => {
+      if (typeof arg === 'object') {
+        try {
+          return JSON.stringify(arg, null, 2)
+        } catch (e) {
+          return String(arg)
+        }
+      }
+      return String(arg)
+    }).join(' ')
+
+    this.logs.push({
+      timestamp,
+      type,
+      message
+    })
+
+    // Keep only the last maxLogs entries
+    if (this.logs.length > this.maxLogs) {
+      this.logs.shift()
+    }
+
+    // Notify listeners
+    this.notifyListeners()
+  }
+
+  getLogs() {
+    return this.logs
+  }
+
+  getFormattedLogs() {
+    return this.logs.map(log => {
+      const time = new Date(log.timestamp).toLocaleTimeString()
+      return `[${time}] [${log.type.toUpperCase()}] ${log.message}`
+    }).join('\n\n')
+  }
+
+  copyToClipboard() {
+    const formatted = this.getFormattedLogs()
+
+    if (formatted.length === 0) {
+      return 'No console logs captured yet'
+    }
+
+    const header = `=== Console Logs Captured ===\nTotal Entries: ${this.logs.length}\nCaptured at: ${new Date().toLocaleString()}\n\n`
+    const fullText = header + formatted
+
+    // Use modern clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(fullText)
+        .then(() => `Copied ${this.logs.length} console entries to clipboard!`)
+        .catch(err => `Failed to copy: ${err.message}`)
+    } else {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea')
+      textarea.value = fullText
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+
+      try {
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+        return Promise.resolve(`Copied ${this.logs.length} console entries to clipboard!`)
+      } catch (err) {
+        document.body.removeChild(textarea)
+        return Promise.reject(new Error(`Failed to copy: ${err.message}`))
+      }
+    }
+  }
+
+  clear() {
+    this.logs = []
+    this.notifyListeners()
+  }
+
+  subscribe(listener) {
+    this.listeners.push(listener)
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener)
+    }
+  }
+
+  notifyListeners() {
+    this.listeners.forEach(listener => listener(this.logs))
+  }
+}
+
+// Create singleton instance
+const consoleCapture = new ConsoleCapture()
+
+// Auto-initialize in browser environment - only on localhost or staging
+if (typeof window !== 'undefined') {
+  const isDev = import.meta.env.DEV
+  const isStaging = window.location.hostname.includes('vercel.app') ||
+                    window.location.hostname.includes('staging') ||
+                    window.location.hostname === 'localhost' ||
+                    window.location.hostname === '127.0.0.1'
+
+  if (isDev || isStaging) {
+    consoleCapture.initialize()
+  }
+}
+
+export default consoleCapture

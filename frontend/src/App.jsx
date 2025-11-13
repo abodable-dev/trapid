@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import AppLayout from './components/layout/AppLayout'
+import CopyConsoleButton from './components/CopyConsoleButton'
 
 // Eager load: Critical pages that should load immediately
 import Dashboard from './pages/Dashboard'
@@ -68,6 +69,7 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <CopyConsoleButton />
         <Suspense fallback={<PageLoader />}>
           <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

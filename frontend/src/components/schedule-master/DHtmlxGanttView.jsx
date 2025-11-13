@@ -26,6 +26,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   const manuallyPositionedTasks = useRef(new Set()) // Track which task IDs are manually positioned
   const pendingUnlocks = useRef(new Set()) // Track tasks that are pending unlock (prevent re-locking during data reload)
   const isDragging = useRef(false) // Track if we're currently dragging a task
+  const isSaving = useRef(false) // Track if we're currently saving a task update (prevent infinite loops)
   const renderTimeout = useRef(null) // PERFORMANCE: Debounce render calls to batch multiple updates
   const [publicHolidays, setPublicHolidays] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -1187,7 +1188,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
         if (actuallyMoved) {
           // Check if task has dependencies
+          console.log('🔍 Checking dependencies for task:', task.id, task.text)
+          console.log('🔍 task.predecessor_ids:', task.predecessor_ids)
           const hasDependencies = task.predecessor_ids && task.predecessor_ids.length > 0
+          console.log('🔍 hasDependencies:', hasDependencies)
 
           if (hasDependencies) {
             // Ask user if they want to remove dependencies
@@ -1196,6 +1200,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               return `#${predId}`
             }).join(', ')
 
+            console.log('⚠️ Showing dependency dialog for task:', task.id, 'with predecessors:', predecessorList)
             const confirmed = window.confirm(
               `This task has dependencies (${predecessorList}).\n\n` +
               `Moving it to a manual position will break the automatic scheduling.\n\n` +
@@ -1935,6 +1940,13 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
           // Check if ANY checkbox will be checked after this change
           const willHaveAnyChecked = task.confirm || task.supplier_confirm || task.start || task.complete
+          console.log('🔍 Checkbox states:', {
+            confirm: task.confirm,
+            supplier_confirm: task.supplier_confirm,
+            start: task.start,
+            complete: task.complete,
+            willHaveAnyChecked: willHaveAnyChecked
+          })
 
           if (willHaveAnyChecked) {
             // Lock the task at its current position
@@ -1972,18 +1984,19 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             onUpdateTask(taskId, updateData)
           } else {
             // All checkboxes are now unchecked - show dialog to ask user what to do
+            console.log('⚠️ All checkboxes unchecked - showing position dialog')
             // Revert the checkbox state in the UI until user confirms in dialog
             task[field] = !checked
             gantt.updateTask(taskId)
             // PERFORMANCE: updateTask already triggers render
 
+            // IMMEDIATELY re-enable task updates (don't wait for timeout)
+            isDragging.current = false
+
+            console.log('📋 Setting position dialog state:', { task: task.id, field, checked })
             setPositionDialogTask({ task, field, checked })
             setShowPositionDialog(true)
-
-            // Re-enable task updates
-            setTimeout(() => {
-              isDragging.current = false
-            }, 100)
+            console.log('✅ Position dialog should now be visible')
           }
         }
       }
@@ -2488,8 +2501,15 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       start_date: startDate,
       end_date: task.end_date,
       manuallyPositioned: task.$manuallyPositioned,
-      isDragging: isDragging.current
+      isDragging: isDragging.current,
+      isSaving: isSaving.current
     })
+
+    // Skip if we're currently saving (prevents infinite loops from data reloads)
+    if (isSaving.current) {
+      console.log('⏸️ Skipping update - already saving changes')
+      return
+    }
 
     // Skip saving during drag - onAfterTaskDrag will handle it
     if (isDragging.current) {
@@ -2508,7 +2528,17 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           duration: duration,
           predecessor_ids: task.predecessor_ids || []
         }
+
+        // Set saving flag to prevent infinite loops
+        isSaving.current = true
         onUpdateTask(task.id, updateData)
+
+        // Reset flag after data reload completes (2 second timeout)
+        setTimeout(() => {
+          isSaving.current = false
+          console.log('💾 Save cooldown complete - ready for next update')
+        }, 2000)
+
         return
       } else {
         // Position change for manually positioned task - skip
@@ -2526,7 +2556,15 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         predecessor_ids: task.predecessor_ids || []
       }
 
+      // Set saving flag to prevent infinite loops
+      isSaving.current = true
       onUpdateTask(task.id, updateData)
+
+      // Reset flag after data reload completes (2 second timeout)
+      setTimeout(() => {
+        isSaving.current = false
+        console.log('💾 Save cooldown complete - ready for next update')
+      }, 2000)
     }
   }
 
@@ -3893,7 +3931,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             <div className="space-y-3">
               <button
                 onClick={() => {
-                  const { task, field, checked } = positionDialogTask
+                  const { task: dialogTask, field, checked } = positionDialogTask
+
+                  // Get fresh task reference from gantt to ensure we're modifying the latest state
+                  const task = gantt.getTask(dialogTask.id)
 
                   // Keep the task locked at current position
                   task.manually_positioned = true
@@ -3912,7 +3953,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                   }
 
                   gantt.updateTask(task.id)
-                  // PERFORMANCE: updateTask already triggers render
+                  // Force refresh of this specific task's grid row to update lock checkbox
+                  gantt.refreshTask(task.id)
 
                   // Save to backend - uncheck the checkbox and keep locked
                   // CRITICAL: Preserve predecessor_ids
@@ -3932,7 +3974,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
               <button
                 onClick={() => {
-                  const { task, field, checked } = positionDialogTask
+                  const { task: dialogTask, field, checked } = positionDialogTask
+
+                  // Get fresh task reference from gantt to ensure we're modifying the latest state
+                  const task = gantt.getTask(dialogTask.id)
 
                   // Unlock the task and let it auto-calculate
                   task.manually_positioned = false
@@ -3943,7 +3988,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                   task[field] = checked
 
                   gantt.updateTask(task.id)
-                  gantt.render() // Force full render to update lock checkbox
+                  // Force refresh of this specific task's grid row to update lock checkbox
+                  gantt.refreshTask(task.id)
 
                   // Save to backend - uncheck the checkbox and unlock
                   // CRITICAL: Preserve predecessor_ids

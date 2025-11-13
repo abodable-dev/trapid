@@ -174,11 +174,10 @@ export default function ContactDetailPage() {
   const navigationSections = [
     { id: 'contact-information', label: 'Contact Information' },
     { id: 'contact-persons', label: 'Contact Persons' },
-    { id: 'contact-groups', label: 'Contact Groups' },
     { id: 'business-details', label: 'Business Details' },
-    { id: 'location', label: 'Location' },
     { id: 'system-info', label: 'System Info' },
-    { id: 'quick-stats', label: 'Quick Stats' }
+    { id: 'quick-stats', label: 'Quick Stats' },
+    { id: 'contact-groups', label: 'Contact Groups' }
   ]
 
   // Scroll to section with smooth behavior
@@ -642,6 +641,30 @@ export default function ContactDetailPage() {
     }
   }
 
+  const handleInlineEdit = async (fieldName, value) => {
+    try {
+      const response = await api.patch(`/api/v1/contacts/${id}`, {
+        contact: { [fieldName]: value }
+      })
+
+      if (response.success) {
+        // Update the local contact state
+        setContact(prev => ({
+          ...prev,
+          [fieldName]: value
+        }))
+
+        // Auto-enter edit mode when updating LGAs so user can continue selecting
+        if (fieldName === 'lgas') {
+          setIsPageEditMode(true)
+        }
+      }
+    } catch (err) {
+      console.error(`Failed to update ${fieldName}:`, err)
+      alert(`Failed to update ${fieldName}. Please try again.`)
+    }
+  }
+
   const handleDeletePriceHistory = async (itemId, historyId) => {
     if (!confirm('Are you sure you want to delete this price history entry?')) return
 
@@ -821,13 +844,6 @@ export default function ContactDetailPage() {
             </div>
 
             <div className="flex gap-1">
-              <button
-                onClick={() => navigate(`/contacts`)}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-              >
-                <ArrowLeftIcon className="h-3 w-3" />
-                Back to Contacts
-              </button>
               {!isPageEditMode ? (
                 <button
                   onClick={() => setIsPageEditMode(true)}
@@ -1161,19 +1177,6 @@ export default function ContactDetailPage() {
             <ContactPersonsSection
               contactPersons={contactPersons}
               onUpdate={handleContactPersonsUpdate}
-              isEditMode={isPageEditMode}
-              contactId={id}
-            />
-          </div>
-
-          {/* Contact Groups Section */}
-          <div
-            ref={(el) => (sectionRefs.current['contact-groups'] = el)}
-            id="contact-groups"
-          >
-            <ContactGroupsSection
-              contactGroups={contactGroups}
-              onUpdate={handleContactGroupsUpdate}
               isEditMode={isPageEditMode}
               contactId={id}
             />
@@ -1652,40 +1655,6 @@ export default function ContactDetailPage() {
             <ContactMapCard address={contact.address} />
           )}
 
-          {/* Location - LGAs */}
-          <div
-            ref={(el) => (sectionRefs.current['location'] = el)}
-            id="location"
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <MapPinIcon className="h-5 w-5 text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Location</h2>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Local Government Areas</p>
-                {contact.lgas && contact.lgas.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {contact.lgas.map((lga, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
-                      >
-                        {lga}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                    {isPageEditMode ? 'Scroll down to Business Details to add LGAs' : 'No LGAs assigned'}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
           {/* System Information */}
           <div
             ref={(el) => (sectionRefs.current['system-info'] = el)}
@@ -1817,6 +1786,19 @@ export default function ContactDetailPage() {
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Contact Groups Section */}
+          <div
+            ref={(el) => (sectionRefs.current['contact-groups'] = el)}
+            id="contact-groups"
+          >
+            <ContactGroupsSection
+              contactGroups={contactGroups}
+              onUpdate={handleContactGroupsUpdate}
+              isEditMode={isPageEditMode}
+              contactId={id}
+            />
           </div>
         </div>
           </div>

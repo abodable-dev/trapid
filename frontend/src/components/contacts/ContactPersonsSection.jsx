@@ -59,7 +59,7 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
           Contact Persons
           <ShieldCheckIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
         </h3>
-        {isEditMode && (
+        {!newPerson && (
           <button
             onClick={startAdding}
             className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
@@ -71,7 +71,7 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
       </div>
 
       {contactPersons.length === 0 && !newPerson && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">No contact persons</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No contact persons added yet</p>
       )}
 
       <div className="space-y-3">
