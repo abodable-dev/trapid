@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_13_032802) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_13_082745) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -151,7 +151,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_032802) do
     t.integer "purchase_orders_count", default: 0, null: false
     t.string "site_supervisor_name", default: "Andrew Clement"
     t.string "site_supervisor_email"
-    t.string "site_supervisor_phone"
+    t.string "site_supervisor_phone", default: "0407 150 081"
     t.bigint "design_id"
     t.string "design_name"
     t.datetime "onedrive_folders_created_at"
@@ -837,6 +837,25 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_032802) do
     t.index ["required_on_site_date"], name: "index_purchase_orders_on_required_on_site_date"
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
+  end
+
+  create_table "rain_logs", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.date "date", null: false
+    t.decimal "rainfall_mm", precision: 10, scale: 2
+    t.decimal "hours_affected", precision: 5, scale: 2
+    t.string "severity"
+    t.string "source", default: "manual", null: false
+    t.bigint "created_by_user_id"
+    t.text "notes"
+    t.jsonb "weather_api_response"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id", "date"], name: "index_rain_logs_on_construction_id_and_date", unique: true
+    t.index ["construction_id"], name: "index_rain_logs_on_construction_id"
+    t.index ["created_by_user_id"], name: "index_rain_logs_on_created_by_user_id"
+    t.index ["date"], name: "index_rain_logs_on_date"
+    t.index ["source"], name: "index_rain_logs_on_source"
   end
 
   create_table "schedule_task_checklist_items", force: :cascade do |t|
@@ -1941,6 +1960,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_032802) do
   add_foreign_key "purchase_orders", "constructions"
   add_foreign_key "purchase_orders", "contacts", column: "supplier_id", name: "fk_rails_purchase_orders_contact"
   add_foreign_key "purchase_orders", "estimates"
+  add_foreign_key "rain_logs", "constructions"
+  add_foreign_key "rain_logs", "users", column: "created_by_user_id"
   add_foreign_key "schedule_task_checklist_items", "schedule_tasks"
   add_foreign_key "schedule_tasks", "constructions"
   add_foreign_key "schedule_tasks", "purchase_orders"

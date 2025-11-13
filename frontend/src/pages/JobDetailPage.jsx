@@ -29,6 +29,7 @@ import LocationMapCard from '../components/job-detail/LocationMapCard'
 import AddressAutocomplete from '../components/common/AddressAutocomplete'
 import JobContactsSection from '../components/job-detail/JobContactsSection'
 import BackButton from '../components/common/BackButton'
+import RainLogTab from '../components/rain-log/RainLogTab'
 
 const tabs = [
   { name: 'Overview', slug: 'overview' },
@@ -37,6 +38,7 @@ const tabs = [
   { name: 'Activity', slug: 'activity' },
   { name: 'Budget', slug: 'budget' },
   { name: 'Schedule Master', slug: 'schedule-master' },
+  { name: 'Rain Log', slug: 'rain-log' },
   { name: 'Documents', slug: 'documents' },
   { name: 'Coms', slug: 'coms' },
   { name: 'Team', slug: 'team' },
@@ -742,6 +744,10 @@ export default function JobDetailPage() {
 
           {activeTab === 'schedule-master' && (
             <ScheduleMasterTab constructionId={id} />
+          )}
+
+          {activeTab === 'rain-log' && (
+            <RainLogTab constructionId={id} />
           )}
 
           {activeTab === 'documents' && (
