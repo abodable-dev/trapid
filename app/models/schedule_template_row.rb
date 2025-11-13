@@ -60,6 +60,12 @@ class ScheduleTemplateRow < ApplicationRecord
     predecessor_task_ids.map { |pred| format_predecessor(pred) }.compact.join(", ")
   end
 
+  # Format predecessors using task names: "Excavation (FS+3), Foundation (SS)" etc
+  def predecessor_display_names
+    return "None" if predecessor_task_ids.empty?
+    predecessor_task_ids.map { |pred| format_predecessor_with_name(pred) }.compact.join(", ")
+  end
+
   # Display linked tasks as "1, 3, 5"
   def linked_tasks_display
     return "None" if linked_task_list.empty?
@@ -105,6 +111,33 @@ class ScheduleTemplateRow < ApplicationRecord
     else
       # Legacy format: just an integer ID (assume FS with no lag)
       "#{pred_data}FS"
+    end
+  end
+
+  def format_predecessor_with_name(pred_data)
+    # pred_data format: { id: 2, type: "FS", lag: 3 }
+    # Output: "Excavation (FS+3)" or "Foundation (SS-2)" or "Framing (FS)"
+    if pred_data.is_a?(Hash)
+      task_id = pred_data['id'] || pred_data[:id]
+      dep_type = pred_data['type'] || pred_data[:type] || 'FS'
+      lag = (pred_data['lag'] || pred_data[:lag] || 0).to_i
+
+      return nil unless task_id # Skip invalid entries
+
+      # Find the predecessor task by ID in the same template
+      predecessor_row = schedule_template.schedule_template_rows.find_by(id: task_id)
+      task_name = predecessor_row&.name || "Task #{task_id}" # Fallback if not found
+
+      # Build the dependency string
+      dep_string = dep_type
+      dep_string += lag >= 0 ? "+#{lag}" : lag.to_s if lag != 0
+
+      "#{task_name} (#{dep_string})"
+    else
+      # Legacy format: just an integer ID (assume FS with no lag)
+      predecessor_row = schedule_template.schedule_template_rows.find_by(id: pred_data)
+      task_name = predecessor_row&.name || "Task #{pred_data}"
+      "#{task_name} (FS)"
     end
   end
 

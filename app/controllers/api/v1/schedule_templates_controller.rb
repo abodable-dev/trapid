@@ -154,6 +154,7 @@ module Api
           assigned_user_id: row.assigned_user_id,
           predecessor_ids: row.predecessor_ids,
           predecessor_display: row.predecessor_display,
+          predecessor_display_names: row.predecessor_display_names,
           po_required: row.po_required,
           create_po_on_job_start: row.create_po_on_job_start,
           price_book_item_ids: row.price_book_item_ids,
