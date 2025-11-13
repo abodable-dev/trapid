@@ -1,55 +1,74 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import AppLayout from './components/layout/AppLayout'
+
+// Eager load: Critical pages that should load immediately
 import Dashboard from './pages/Dashboard'
-import ImportPage from './pages/ImportPage'
-import TablePage from './pages/TablePage'
-import ActiveJobsPage from './pages/ActiveJobsPage'
-import JobDetailPage from './pages/JobDetailPage'
-import JobSetupPage from './pages/JobSetupPage'
-import PriceBooksPage from './pages/PriceBooksPage'
-import PriceBookItemDetailPage from './pages/PriceBookItemDetailPage'
-import SuppliersPage from './pages/SuppliersPage'
-import SupplierDetailPage from './pages/SupplierDetailPage'
-import SupplierEditPage from './pages/SupplierEditPage'
-import SupplierNewPage from './pages/SupplierNewPage'
-import ContactsPage from './pages/ContactsPage'
-import ContactDetailPage from './pages/ContactDetailPage'
-import AccountsPage from './pages/AccountsPage'
-import UsersPage from './pages/UsersPage'
-import HealthPage from './pages/HealthPage'
-import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage'
-import PurchaseOrderEditPage from './pages/PurchaseOrderEditPage'
-import PurchaseOrdersPage from './pages/PurchaseOrdersPage'
-import MasterSchedulePage from './pages/MasterSchedulePage'
-import DesignerHome from './pages/designer/DesignerHome'
-import TableSettings from './pages/designer/TableSettings'
-import TableBuilder from './pages/designer/TableBuilder'
-import Features from './pages/designer/Features'
-import Menus from './pages/designer/Menus'
-import Pages from './pages/designer/Pages'
-import Experiences from './pages/designer/Experiences'
-import SettingsPage from './pages/SettingsPage'
-import SchemaPage from './pages/SchemaPage'
-import XeroCallbackPage from './pages/XeroCallbackPage'
-import XeroSyncPage from './pages/XeroSyncPage'
-import OutlookPage from './pages/OutlookPage'
-import OneDrivePage from './pages/OneDrivePage'
-import DocumentsPage from './pages/DocumentsPage'
-import ChatPage from './pages/ChatPage'
-import WorkflowsPage from './pages/WorkflowsPage'
-import WorkflowAdminPage from './pages/WorkflowAdminPage'
-import PublicHolidaysPage from './pages/PublicHolidaysPage'
 import AuthCallback from './pages/AuthCallback'
-import PDFMeasurementTestPage from './pages/PDFMeasurementTestPage'
-import TrainingPage from './pages/TrainingPage'
-import TrainingSessionPage from './pages/TrainingSessionPage'
+
+// Lazy load: Everything else (loads on-demand)
+const ActiveJobsPage = lazy(() => import('./pages/ActiveJobsPage'))
+const JobDetailPage = lazy(() => import('./pages/JobDetailPage'))
+const JobSetupPage = lazy(() => import('./pages/JobSetupPage'))
+const PriceBooksPage = lazy(() => import('./pages/PriceBooksPage'))
+const PriceBookItemDetailPage = lazy(() => import('./pages/PriceBookItemDetailPage'))
+const ContactsPage = lazy(() => import('./pages/ContactsPage'))
+const ContactDetailPage = lazy(() => import('./pages/ContactDetailPage'))
+const AccountsPage = lazy(() => import('./pages/AccountsPage'))
+const UsersPage = lazy(() => import('./pages/UsersPage'))
+const HealthPage = lazy(() => import('./pages/HealthPage'))
+const PurchaseOrderDetailPage = lazy(() => import('./pages/PurchaseOrderDetailPage'))
+const PurchaseOrderEditPage = lazy(() => import('./pages/PurchaseOrderEditPage'))
+const PurchaseOrdersPage = lazy(() => import('./pages/PurchaseOrdersPage'))
+const SupplierDetailPage = lazy(() => import('./pages/SupplierDetailPage'))
+const SupplierEditPage = lazy(() => import('./pages/SupplierEditPage'))
+const SupplierNewPage = lazy(() => import('./pages/SupplierNewPage'))
+const ImportPage = lazy(() => import('./pages/ImportPage'))
+const TablePage = lazy(() => import('./pages/TablePage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const SchemaPage = lazy(() => import('./pages/SchemaPage'))
+const XeroCallbackPage = lazy(() => import('./pages/XeroCallbackPage'))
+const XeroSyncPage = lazy(() => import('./pages/XeroSyncPage'))
+const OutlookPage = lazy(() => import('./pages/OutlookPage'))
+const OneDrivePage = lazy(() => import('./pages/OneDrivePage'))
+const WorkflowsPage = lazy(() => import('./pages/WorkflowsPage'))
+const WorkflowAdminPage = lazy(() => import('./pages/WorkflowAdminPage'))
+const PublicHolidaysPage = lazy(() => import('./pages/PublicHolidaysPage'))
+
+// Heavy components: Lazy load with priority (biggest bundle impact)
+const MasterSchedulePage = lazy(() => import('./pages/MasterSchedulePage')) // 3,952 lines Gantt!
+const PDFMeasurementTestPage = lazy(() => import('./pages/PDFMeasurementTestPage')) // PDF library
+const DocumentsPage = lazy(() => import('./pages/DocumentsPage')) // PDF library
+const ChatPage = lazy(() => import('./pages/ChatPage')) // AI chat
+const TrainingPage = lazy(() => import('./pages/TrainingPage')) // Jitsi video
+const TrainingSessionPage = lazy(() => import('./pages/TrainingSessionPage')) // Jitsi video
+
+// Designer pages (admin tools)
+const DesignerHome = lazy(() => import('./pages/designer/DesignerHome'))
+const TableSettings = lazy(() => import('./pages/designer/TableSettings'))
+const TableBuilder = lazy(() => import('./pages/designer/TableBuilder'))
+const Features = lazy(() => import('./pages/designer/Features'))
+const Menus = lazy(() => import('./pages/designer/Menus'))
+const Pages = lazy(() => import('./pages/designer/Pages'))
+const Experiences = lazy(() => import('./pages/designer/Experiences'))
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="flex flex-col items-center gap-4">
+      <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+      <p className="text-sm text-gray-600 dark:text-gray-400">Loading...</p>
+    </div>
+  </div>
+)
 
 function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
@@ -100,7 +119,8 @@ function App() {
         <Route path="/admin/public-holidays" element={<AppLayout><PublicHolidaysPage /></AppLayout>} />
         <Route path="/training" element={<AppLayout><TrainingPage /></AppLayout>} />
         <Route path="/training/:sessionId" element={<TrainingSessionPage />} />
-        </Routes>
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </ErrorBoundary>
   )
