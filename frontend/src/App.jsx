@@ -9,6 +9,7 @@ import JobSetupPage from './pages/JobSetupPage'
 import PriceBooksPage from './pages/PriceBooksPage'
 import PriceBookItemDetailPage from './pages/PriceBookItemDetailPage'
 import SamQuickEstPage from './pages/SamQuickEstPage'
+import UnrealVariablesPage from './pages/UnrealVariablesPage'
 import SuppliersPage from './pages/SuppliersPage'
 import SupplierDetailPage from './pages/SupplierDetailPage'
 import SupplierEditPage from './pages/SupplierEditPage'
@@ -29,7 +30,6 @@ import Experiences from './pages/designer/Experiences'
 import SettingsPage from './pages/SettingsPage'
 import SchemaPage from './pages/SchemaPage'
 import XeroCallbackPage from './pages/XeroCallbackPage'
-import ComponentsDemo from './pages/ComponentsDemo'
 import SearchDemoPage from './pages/SearchDemoPage'
 
 function App() {
@@ -46,6 +46,7 @@ function App() {
  <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
  <Route path="/sam-quick-est" element={<AppLayout><SamQuickEstPage /></AppLayout>} />
  <Route path="/sam-quick-est/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
+ <Route path="/unreal-variables" element={<AppLayout><UnrealVariablesPage /></AppLayout>} />
  <Route path="/contacts" element={<AppLayout><ContactsPage /></AppLayout>} />
  <Route path="/contacts/:id" element={<AppLayout><ContactDetailPage /></AppLayout>} />
  <Route path="/suppliers" element={<Navigate to="/contacts" replace />} />
@@ -70,7 +71,6 @@ function App() {
  <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
  <Route path="/settings/integrations" element={<AppLayout><SettingsPage /></AppLayout>} />
  <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
- <Route path="/components-demo" element={<AppLayout><ComponentsDemo /></AppLayout>} />
  <Route path="/search-demo" element={<AppLayout><SearchDemoPage /></AppLayout>} />
  </Routes>
  </BrowserRouter>

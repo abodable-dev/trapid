@@ -141,6 +141,9 @@ Rails.application.routes.draw do
         end
       end
 
+      # Unreal Variables management
+      resources :unreal_variables, path: 'unreal_variables'
+
       # Suppliers management
       resources :suppliers do
         collection do

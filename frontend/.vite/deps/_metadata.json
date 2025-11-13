@@ -1,0 +1,97 @@
+{
+  "hash": "b8edb199",
+  "configHash": "abc68599",
+  "lockfileHash": "64614ad2",
+  "browserHash": "c6560145",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "69936e23",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "d35f5357",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "d2444871",
+      "needsInterop": false
+    },
+    "lucide-react": {
+      "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
+      "file": "lucide-react.js",
+      "fileHash": "4baf837c",
+      "needsInterop": false
+    },
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "464b144a",
+      "needsInterop": false
+    },
+    "@headlessui/react": {
+      "src": "../../node_modules/@headlessui/react/dist/headlessui.esm.js",
+      "file": "@headlessui_react.js",
+      "fileHash": "2ec761a4",
+      "needsInterop": false
+    },
+    "react-dom": {
+      "src": "../../node_modules/react-dom/index.js",
+      "file": "react-dom.js",
+      "fileHash": "06beec0b",
+      "needsInterop": true
+    },
+    "@heroicons/react/24/outline": {
+      "src": "../../node_modules/@heroicons/react/24/outline/esm/index.js",
+      "file": "@heroicons_react_24_outline.js",
+      "fileHash": "c54762da",
+      "needsInterop": false
+    },
+    "@heroicons/react/24/solid": {
+      "src": "../../node_modules/@heroicons/react/24/solid/esm/index.js",
+      "file": "@heroicons_react_24_solid.js",
+      "fileHash": "27ddb757",
+      "needsInterop": false
+    },
+    "@heroicons/react/20/solid": {
+      "src": "../../node_modules/@heroicons/react/20/solid/esm/index.js",
+      "file": "@heroicons_react_20_solid.js",
+      "fileHash": "aa1341bc",
+      "needsInterop": false
+    },
+    "reactflow": {
+      "src": "../../node_modules/reactflow/dist/esm/index.mjs",
+      "file": "reactflow.js",
+      "fileHash": "ac58d922",
+      "needsInterop": false
+    },
+    "@heroicons/react/16/solid": {
+      "src": "../../node_modules/@heroicons/react/16/solid/esm/index.js",
+      "file": "@heroicons_react_16_solid.js",
+      "fileHash": "3adf092a",
+      "needsInterop": false
+    },
+    "frappe-gantt": {
+      "src": "../../node_modules/frappe-gantt/dist/frappe-gantt.es.js",
+      "file": "frappe-gantt.js",
+      "fileHash": "8969d364",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-OUWKCDPP": {
+      "file": "chunk-OUWKCDPP.js"
+    },
+    "chunk-4BPZ7PBZ": {
+      "file": "chunk-4BPZ7PBZ.js"
+    },
+    "chunk-G3PMV62Z": {
+      "file": "chunk-G3PMV62Z.js"
+    }
+  }
+}
