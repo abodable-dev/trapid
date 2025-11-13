@@ -1,6 +1,7 @@
 module Api
   module V1
     class SamQuickEstItemsController < ApplicationController
+      skip_before_action :authorize_request
       before_action :set_sam_quick_est_item, only: [:show, :update, :destroy]
 
       # GET /api/v1/sam_quick_est
