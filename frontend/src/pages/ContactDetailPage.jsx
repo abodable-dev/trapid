@@ -176,8 +176,8 @@ export default function ContactDetailPage() {
     { id: 'contact-persons', label: 'Contact Persons' },
     { id: 'business-details', label: 'Business Details' },
     { id: 'system-info', label: 'System Info' },
-    { id: 'quick-stats', label: 'Quick Stats' },
-    { id: 'contact-groups', label: 'Contact Groups' }
+    { id: 'contact-groups', label: 'Contact Groups' },
+    { id: 'quick-stats', label: 'Quick Stats' }
   ]
 
   // Scroll to section with smooth behavior
@@ -1763,6 +1763,19 @@ export default function ContactDetailPage() {
           </div>
 
 
+          {/* Contact Groups Section */}
+          <div
+            ref={(el) => (sectionRefs.current['contact-groups'] = el)}
+            id="contact-groups"
+          >
+            <ContactGroupsSection
+              contactGroups={contactGroups}
+              onUpdate={handleContactGroupsUpdate}
+              isEditMode={isPageEditMode}
+              contactId={id}
+            />
+          </div>
+
           {/* Quick Stats */}
           <div
             ref={(el) => (sectionRefs.current['quick-stats'] = el)}
@@ -1786,19 +1799,6 @@ export default function ContactDetailPage() {
                 </span>
               </div>
             </div>
-          </div>
-
-          {/* Contact Groups Section */}
-          <div
-            ref={(el) => (sectionRefs.current['contact-groups'] = el)}
-            id="contact-groups"
-          >
-            <ContactGroupsSection
-              contactGroups={contactGroups}
-              onUpdate={handleContactGroupsUpdate}
-              isEditMode={isPageEditMode}
-              contactId={id}
-            />
           </div>
         </div>
           </div>
