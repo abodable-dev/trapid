@@ -50,6 +50,17 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     localStorage.setItem('dhtmlxGanttShowCheckboxes', JSON.stringify(showCheckboxes))
   }, [showCheckboxes])
 
+  // Load predecessor display mode from localStorage or use default ('numbers')
+  const [predecessorDisplayMode, setPredecessorDisplayMode] = useState(() => {
+    const saved = localStorage.getItem('dhtmlxGanttPredecessorDisplayMode')
+    return saved || 'numbers' // 'numbers' or 'names'
+  })
+
+  // Save predecessor display mode to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('dhtmlxGanttPredecessorDisplayMode', predecessorDisplayMode)
+  }, [predecessorDisplayMode])
+
   // Load column widths from localStorage or use defaults
   const [columnWidths, setColumnWidths] = useState(() => {
     const saved = localStorage.getItem('dhtmlxGanttColumnWidths')
@@ -924,7 +935,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               onUpdateTask(successorTaskId, {
                 predecessor_ids: successorTask.predecessor_ids,
                 dependencies_broken: false
-              })
+              }, { skipReload: true })
 
               // Update the Gantt chart
               gantt.updateTask(successorTaskId)
@@ -1401,7 +1412,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                   predecessor_ids: successorTask.predecessor_ids,
                   dependencies_broken: true
                 }
-                onUpdateTask(successorTask.id, updateData)
+                onUpdateTask(successorTask.id, updateData, { skipReload: true })
 
                 // Update UI
                 gantt.updateTask(successorTask.id)
@@ -1421,70 +1432,322 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             }
           }
 
-          // SECOND: Check if THIS task has dependencies (existing logic)
+          // BETWEEN: Check for UNLOCKED successors that would need to cascade
+          console.log('🔍 Checking for unlocked successor tasks that may need to cascade')
+          const unlockedSuccessorsToMove = []
+
+          gantt.eachTask((successorTask) => {
+            if (successorTask.id === task.id) return // Skip self
+
+            if (successorTask.predecessor_ids && successorTask.predecessor_ids.length > 0) {
+              // Find if this successor depends on the moved task
+              const dependency = successorTask.predecessor_ids.find(pred => {
+                const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+                return predId === task.id
+              })
+
+              if (dependency) {
+                // Check if this successor is NOT locked
+                const isLocked = successorTask.confirm || successorTask.supplier_confirm ||
+                                successorTask.start || successorTask.complete
+
+                if (!isLocked) {
+                  // Calculate where this successor would need to be to maintain dependency
+                  const depType = typeof dependency === 'object' ? (dependency.type || dependency['type'] || 'FS') : 'FS'
+                  const depLag = typeof dependency === 'object' ? (dependency.lag || dependency['lag'] || 0) : 0
+
+                  const movedTaskStart = new Date(task.start_date)
+                  movedTaskStart.setHours(0, 0, 0, 0)
+                  const movedTaskEnd = new Date(movedTaskStart)
+                  movedTaskEnd.setDate(movedTaskEnd.getDate() + (task.duration || 1))
+
+                  const currentSuccessorStart = new Date(successorTask.start_date)
+                  currentSuccessorStart.setHours(0, 0, 0, 0)
+
+                  let requiredSuccessorStart = null
+
+                  switch (depType) {
+                    case 'FS': // Successor should start >= moved task end + lag
+                      requiredSuccessorStart = new Date(movedTaskEnd)
+                      requiredSuccessorStart.setDate(requiredSuccessorStart.getDate() + depLag)
+                      break
+                    case 'SS': // Successor should start >= moved task start + lag
+                      requiredSuccessorStart = new Date(movedTaskStart)
+                      requiredSuccessorStart.setDate(requiredSuccessorStart.getDate() + depLag)
+                      break
+                    case 'FF': // Maintain finish relationship
+                      const movedTaskFinish = new Date(movedTaskEnd)
+                      movedTaskFinish.setDate(movedTaskFinish.getDate() + depLag)
+                      requiredSuccessorStart = new Date(movedTaskFinish)
+                      requiredSuccessorStart.setDate(requiredSuccessorStart.getDate() - (successorTask.duration || 1))
+                      break
+                    case 'SF': // Start-to-Finish relationship
+                      const requiredFinish = new Date(movedTaskStart)
+                      requiredFinish.setDate(requiredFinish.getDate() + depLag)
+                      requiredSuccessorStart = new Date(requiredFinish)
+                      requiredSuccessorStart.setDate(requiredSuccessorStart.getDate() - (successorTask.duration || 1))
+                      break
+                  }
+
+                  // Check if successor would violate dependency in its current position
+                  let needsToMove = false
+                  const currentSuccessorEnd = new Date(currentSuccessorStart)
+                  currentSuccessorEnd.setDate(currentSuccessorEnd.getDate() + (successorTask.duration || 1))
+
+                  switch (depType) {
+                    case 'FS':
+                      needsToMove = currentSuccessorStart < movedTaskEnd
+                      break
+                    case 'SS':
+                      needsToMove = currentSuccessorStart < movedTaskStart
+                      break
+                    case 'FF':
+                      const requiredEndFF = new Date(movedTaskEnd)
+                      requiredEndFF.setDate(requiredEndFF.getDate() + depLag)
+                      needsToMove = currentSuccessorEnd < requiredEndFF
+                      break
+                    case 'SF':
+                      const requiredEndSF = new Date(movedTaskStart)
+                      requiredEndSF.setDate(requiredEndSF.getDate() + depLag)
+                      needsToMove = currentSuccessorEnd < requiredEndSF
+                      break
+                  }
+
+                  if (needsToMove) {
+                    console.log(`📌 Successor #${successorTask.id} needs to move: current=${currentSuccessorStart.toISOString().split('T')[0]}, required=${requiredSuccessorStart.toISOString().split('T')[0]}`)
+                    unlockedSuccessorsToMove.push({
+                      task: successorTask,
+                      currentStart: currentSuccessorStart,
+                      requiredStart: requiredSuccessorStart,
+                      depType,
+                      depLag
+                    })
+                  }
+                }
+              }
+            }
+          })
+
+          if (unlockedSuccessorsToMove.length > 0) {
+            // Show cascade dialog
+            const successorList = unlockedSuccessorsToMove.map(s =>
+              `  • #${s.task.id} ${s.task.text} (${s.depType}${s.depLag > 0 ? '+' + s.depLag : s.depLag < 0 ? s.depLag : ''})`
+            ).join('\n')
+
+            console.log('⚠️ Showing cascade dialog for successors:', successorList)
+            const cascade = window.confirm(
+              `⚠️ Cascade Dependencies!\n\n` +
+              `Moving this task affects ${unlockedSuccessorsToMove.length} dependent task(s):\n${successorList}\n\n` +
+              `Do you want to move all dependent tasks to maintain dependencies?\n\n` +
+              `• YES: Move dependent tasks (cascade the change)\n` +
+              `• NO: Choose to break dependencies or cancel`
+            )
+
+            if (cascade) {
+              // Cascade - move all successors
+              console.log('✅ User chose to cascade - moving dependent tasks')
+              unlockedSuccessorsToMove.forEach(({ task: successorTask, requiredStart }) => {
+                successorTask.start_date = requiredStart
+
+                // Calculate day offset for API
+                const projectStartDate = new Date()
+                projectStartDate.setHours(0, 0, 0, 0)
+                const dayOffset = Math.floor((requiredStart - projectStartDate) / (1000 * 60 * 60 * 24))
+
+                const updateData = {
+                  duration: successorTask.duration,
+                  start_date: dayOffset,
+                  predecessor_ids: successorTask.predecessor_ids || []
+                }
+
+                console.log(`🔄 Cascading task #${successorTask.id} to day ${dayOffset}`)
+                onUpdateTask(successorTask.id, updateData, { skipReload: true })
+                gantt.updateTask(successorTask.id)
+              })
+              gantt.render()
+            } else {
+              // Show second dialog: break dependencies or cancel
+              const breakDeps = window.confirm(
+                `Do you want to break dependencies instead?\n\n` +
+                `• YES: Remove dependencies (tasks will show checkered pattern)\n` +
+                `• NO: Cancel the entire move operation`
+              )
+
+              if (breakDeps) {
+                // Break dependencies
+                console.log('✂️ User chose to break dependencies')
+                unlockedSuccessorsToMove.forEach(({ task: successorTask }) => {
+                  // Remove this task from predecessor_ids
+                  successorTask.predecessor_ids = successorTask.predecessor_ids.filter(pred => {
+                    const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+                    return predId !== task.id
+                  })
+
+                  successorTask.dependencies_broken = true
+                  successorTask.$dependenciesBroken = true
+
+                  const updateData = {
+                    predecessor_ids: successorTask.predecessor_ids,
+                    dependencies_broken: true
+                  }
+
+                  console.log(`🔗❌ Breaking dependency for task #${successorTask.id}`)
+                  onUpdateTask(successorTask.id, updateData, { skipReload: true })
+                  gantt.updateTask(successorTask.id)
+                })
+                gantt.render()
+              } else {
+                // Cancel - revert the entire move
+                console.log('↩️ User cancelled cascade - reverting move')
+                task.start_date = originalStart
+                gantt.updateTask(task.id)
+                gantt.render()
+                isDragging.current = false
+                delete task.$originalStart
+                return false
+              }
+            }
+          }
+
+          // SECOND: Check if THIS task has dependencies and if the new position violates them
           console.log('🔍 Checking dependencies for task:', task.id, task.text)
           console.log('🔍 task.predecessor_ids:', task.predecessor_ids)
           const hasDependencies = task.predecessor_ids && task.predecessor_ids.length > 0
           console.log('🔍 hasDependencies:', hasDependencies)
 
           if (hasDependencies) {
-            // Ask user if they want to remove dependencies
-            const predecessorList = task.predecessor_ids.map(pred => {
-              const predId = typeof pred === 'object' ? pred.id : pred
-              return `#${predId}`
-            }).join(', ')
+            // Check if any dependencies would be violated by the new position
+            const violatedDependencies = []
+            const newTaskStart = new Date(task.start_date)
+            newTaskStart.setHours(0, 0, 0, 0)
+            const newTaskEnd = new Date(newTaskStart)
+            newTaskEnd.setDate(newTaskEnd.getDate() + (task.duration || 1))
 
-            console.log('⚠️ Showing dependency dialog for task:', task.id, 'with predecessors:', predecessorList)
-            const confirmed = window.confirm(
-              `This task has dependencies (${predecessorList}).\n\n` +
-              `Moving it to a manual position will break the automatic scheduling.\n\n` +
-              `Do you want to:\n` +
-              `• YES: Remove dependencies and lock position\n` +
-              `• NO: Keep dependencies (task may reschedule automatically)`
-            )
+            task.predecessor_ids.forEach(pred => {
+              const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+              const predType = (typeof pred === 'object' ? (pred.type || pred['type']) : 'FS') || 'FS'
+              const predLag = (typeof pred === 'object' ? (pred.lag || pred['lag'] || 0) : 0)
 
-            if (confirmed) {
-              // User chose to remove dependencies and lock position
-              console.log('🔓 User chose to remove dependencies and lock position')
+              // Find the predecessor task
+              const predecessorTask = gantt.getTask(predId)
+              if (predecessorTask) {
+                const predStart = new Date(predecessorTask.start_date)
+                predStart.setHours(0, 0, 0, 0)
+                const predEnd = new Date(predStart)
+                predEnd.setDate(predEnd.getDate() + (predecessorTask.duration || 1))
 
-              // Remove dependencies
-              task.predecessor_ids = []
+                // Check dependency constraint based on type
+                let isViolated = false
+                switch (predType) {
+                  case 'FS': // Finish-to-Start: task should start >= predecessor end + lag
+                    const requiredStartFS = new Date(predEnd)
+                    requiredStartFS.setDate(requiredStartFS.getDate() + predLag)
+                    isViolated = newTaskStart < requiredStartFS
+                    console.log(`📊 FS Check: Task ${task.id} starts ${newTaskStart.toISOString().split('T')[0]}, must start >= ${requiredStartFS.toISOString().split('T')[0]} (after pred ${predId} ends ${predEnd.toISOString().split('T')[0]} + ${predLag} days)`, isViolated ? '❌ VIOLATED' : '✅ OK')
+                    break
+                  case 'SS': // Start-to-Start: task should start >= predecessor start + lag
+                    const requiredStartSS = new Date(predStart)
+                    requiredStartSS.setDate(requiredStartSS.getDate() + predLag)
+                    isViolated = newTaskStart < requiredStartSS
+                    console.log(`📊 SS Check: Task ${task.id} starts ${newTaskStart.toISOString().split('T')[0]}, must start >= ${requiredStartSS.toISOString().split('T')[0]}`, isViolated ? '❌ VIOLATED' : '✅ OK')
+                    break
+                  case 'FF': // Finish-to-Finish: task should finish >= predecessor end + lag
+                    const requiredEndFF = new Date(predEnd)
+                    requiredEndFF.setDate(requiredEndFF.getDate() + predLag)
+                    isViolated = newTaskEnd < requiredEndFF
+                    console.log(`📊 FF Check: Task ${task.id} ends ${newTaskEnd.toISOString().split('T')[0]}, must end >= ${requiredEndFF.toISOString().split('T')[0]}`, isViolated ? '❌ VIOLATED' : '✅ OK')
+                    break
+                  case 'SF': // Start-to-Finish: task should finish >= predecessor start + lag
+                    const requiredEndSF = new Date(predStart)
+                    requiredEndSF.setDate(requiredEndSF.getDate() + predLag)
+                    isViolated = newTaskEnd < requiredEndSF
+                    console.log(`📊 SF Check: Task ${task.id} ends ${newTaskEnd.toISOString().split('T')[0]}, must end >= ${requiredEndSF.toISOString().split('T')[0]}`, isViolated ? '❌ VIOLATED' : '✅ OK')
+                    break
+                }
 
-              // Mark that dependencies were broken (for visual indicator)
-              task.dependencies_broken = true
-              task.$dependenciesBroken = true
-
-              // Auto-check the lock checkbox
-              task.manually_positioned = true
-              task.$manuallyPositioned = true
-              manuallyPositionedTasks.current.add(task.id)
-
-              // Calculate day offset
-              const projectStartDate = new Date()
-              projectStartDate.setHours(0, 0, 0, 0)
-              const taskStartDate = new Date(task.start_date)
-              taskStartDate.setHours(0, 0, 0, 0)
-              const dayOffset = Math.floor((taskStartDate - projectStartDate) / (1000 * 60 * 60 * 24))
-
-              // Save with no dependencies and manually_positioned = true
-              const updateData = {
-                duration: task.duration,
-                start_date: dayOffset,
-                manually_positioned: true,
-                dependencies_broken: true,  // Mark as broken
-                predecessor_ids: [] // Empty - dependencies removed
+                if (isViolated) {
+                  violatedDependencies.push({
+                    id: predId,
+                    text: predecessorTask.text,
+                    type: predType,
+                    lag: predLag
+                  })
+                }
               }
+            })
 
-              console.log('💾 Saving with removed dependencies:', updateData)
-              isDragging.current = false
-              onUpdateTask(task.id, updateData)
+            console.log('🔍 Violated dependencies:', violatedDependencies)
 
-              // Update UI
-              gantt.updateTask(task.id)
-              gantt.render() // Full render to update checkbox and styling
+            // Only show warning if dependencies are violated
+            if (violatedDependencies.length > 0) {
+              const predecessorList = violatedDependencies.map(pred => {
+                let lagStr = ''
+                if (pred.lag > 0) lagStr = `+${pred.lag}`
+                else if (pred.lag < 0) lagStr = pred.lag.toString()
+                return `#${pred.id} ${pred.text} (${pred.type}${lagStr})`
+              }).join(', ')
+
+              console.log('⚠️ Showing dependency violation dialog for task:', task.id, 'with violated predecessors:', predecessorList)
+              const confirmed = window.confirm(
+                `⚠️ Dependency Violation!\n\n` +
+                `This position violates dependencies with: ${predecessorList}\n\n` +
+                `Do you want to:\n` +
+                `• YES: Remove dependencies and lock position (task will show checkered pattern)\n` +
+                `• NO: Cancel move and keep dependencies intact`
+              )
+
+              if (confirmed) {
+                // User chose to remove dependencies and lock position
+                console.log('🔓 User chose to remove dependencies and lock position')
+
+                // Remove dependencies
+                task.predecessor_ids = []
+
+                // Mark that dependencies were broken (for visual indicator)
+                task.dependencies_broken = true
+                task.$dependenciesBroken = true
+
+                // Auto-check the lock checkbox
+                task.manually_positioned = true
+                task.$manuallyPositioned = true
+                manuallyPositionedTasks.current.add(task.id)
+
+                // Calculate day offset
+                const projectStartDate = new Date()
+                projectStartDate.setHours(0, 0, 0, 0)
+                const taskStartDate = new Date(task.start_date)
+                taskStartDate.setHours(0, 0, 0, 0)
+                const dayOffset = Math.floor((taskStartDate - projectStartDate) / (1000 * 60 * 60 * 24))
+
+                // Save with no dependencies and manually_positioned = true
+                const updateData = {
+                  duration: task.duration,
+                  start_date: dayOffset,
+                  manually_positioned: true,
+                  dependencies_broken: true,  // Mark as broken
+                  predecessor_ids: [] // Empty - dependencies removed
+                }
+
+                console.log('💾 Saving with removed dependencies:', updateData)
+                isDragging.current = false
+                onUpdateTask(task.id, updateData, { skipReload: true })
+
+                // Update UI
+                gantt.updateTask(task.id)
+                gantt.render() // Full render to update checkbox and styling
+              } else {
+                // User cancelled - revert the task to original position
+                console.log('↩️ User cancelled violation - reverting to original position')
+                task.start_date = originalStart
+                gantt.updateTask(task.id)
+                gantt.render()
+                isDragging.current = false
+                delete task.$originalStart
+                return false // Stop further processing
+              }
             } else {
-              // User chose to keep dependencies
-              console.log('📌 User chose to keep dependencies - not locking')
+              // Dependencies exist but are NOT violated - allow move without warning
+              console.log('✅ Dependencies exist but not violated - allowing move')
 
               // Mark as manually positioned but keep dependencies
               task.$manuallyPositioned = true
@@ -1504,9 +1767,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                 predecessor_ids: task.predecessor_ids || []
               }
 
-              console.log('💾 Saving with preserved dependencies:', updateData)
+              console.log('💾 Saving with preserved dependencies (no violation):', updateData)
               isDragging.current = false
-              onUpdateTask(task.id, updateData)
+              onUpdateTask(task.id, updateData, { skipReload: true })
 
               gantt.updateTask(task.id)
               gantt.refreshTask(task.id)
@@ -1535,7 +1798,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               predecessor_ids: []
             }
             console.log('💾 Saving manually positioned task (no dependencies):', updateData)
-            onUpdateTask(task.id, updateData)
+            onUpdateTask(task.id, updateData, { skipReload: true })
           }
         } else {
           console.log('↩️ Task did not actually move - not marking as manually positioned')
@@ -1563,7 +1826,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
         }
         console.log('💾 Saving resized task duration to backend:', updateData)
-        onUpdateTask(task.id, updateData)
+        onUpdateTask(task.id, updateData, { skipReload: true })
       }
       return true
     })
@@ -1876,13 +2139,30 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               return checkDependency(predecessorTaskNumber)
             }
 
-            // Check all new predecessors for circular dependencies
+            // Check all new predecessors for circular dependencies and auto-remove them
+            const validPredecessors = []
+            const removedPredecessors = []
+
             for (const pred of predecessorsData) {
               if (wouldCreateCircularDependency(pred.id, predecessorsData)) {
-                console.error('CIRCULAR DEPENDENCY DETECTED for task #' + pred.id)
-                alert(`Error: Adding task #${pred.id} as a predecessor would create a circular dependency. Please remove this predecessor and try again.`)
-                return false // Prevent the save
+                console.error('CIRCULAR DEPENDENCY DETECTED for task #' + pred.id + ' - auto-removing')
+                removedPredecessors.push(pred.id)
+              } else {
+                validPredecessors.push(pred)
               }
+            }
+
+            // If we removed any, update the predecessorsData array and show a warning
+            if (removedPredecessors.length > 0) {
+              predecessorsData.splice(0, predecessorsData.length, ...validPredecessors)
+              console.warn(`Removed ${removedPredecessors.length} circular dependencies: ${removedPredecessors.join(', ')}`)
+
+              // Show a non-blocking notification
+              setTimeout(() => {
+                const message = `Removed circular dependency: Task #${removedPredecessors.join(', #')} would create a loop.`
+                console.log('📢 ' + message)
+                // You could add a toast notification here instead of alert
+              }, 100)
             }
           }
 
@@ -2982,8 +3262,11 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       const duration = task.duration !== undefined && task.duration !== null ? task.duration : 1
       const startDate = taskStartDates.get(task.id) || projectStartDate
 
+      // Use the appropriate predecessor display based on toggle mode
       const predecessorDisplay = task.predecessor_ids && task.predecessor_ids.length > 0
-        ? task.predecessor_ids.map(formatPredecessor).join(', ')
+        ? (predecessorDisplayMode === 'names'
+            ? task.predecessor_display_names || '' // Use names from backend
+            : task.predecessor_ids.map(formatPredecessor).join(', ')) // Use numbers (IDs)
         : ''
 
       // Set start date to midnight (00:00)
@@ -3072,7 +3355,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       gantt.showDate(yesterday)
       console.log('✅ Scroll command executed')
     }, 300) // Longer delay to ensure gantt is fully rendered and sized
-  }, [ganttReady, tasks, publicHolidays, debouncedRender])
+  }, [ganttReady, tasks, publicHolidays, debouncedRender, predecessorDisplayMode])
 
   // Handle saving task dependencies from editor
   const handleSaveDependencies = (taskId, predecessors) => {
@@ -3208,6 +3491,15 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               title={showCheckboxes ? 'Hide status checkboxes' : 'Show status checkboxes'}
             >
               {showCheckboxes ? 'Hide' : 'Show'} Checkboxes
+            </button>
+
+            {/* Predecessor Display Mode Toggle */}
+            <button
+              onClick={() => setPredecessorDisplayMode(mode => mode === 'numbers' ? 'names' : 'numbers')}
+              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200`}
+              title={predecessorDisplayMode === 'numbers' ? 'Switch to task names' : 'Switch to task numbers'}
+            >
+              {predecessorDisplayMode === 'numbers' ? '#' : 'ABC'}
             </button>
 
             <Menu as="div" className="relative">

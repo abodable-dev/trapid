@@ -615,9 +615,9 @@ export default function ScheduleTemplateEditor() {
     }
   }
 
-  const handleUpdateRow = async (rowId, updates) => {
+  const handleUpdateRow = async (rowId, updates, options = {}) => {
     try {
-      console.log('🔵 ScheduleTemplateEditor: handleUpdateRow called with rowId:', rowId, 'updates:', updates)
+      console.log('🔵 ScheduleTemplateEditor: handleUpdateRow called with rowId:', rowId, 'updates:', updates, 'options:', options)
       console.log('🔵 Making API call to:', `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`)
       const response = await api.patch(
         `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`,
@@ -625,10 +625,17 @@ export default function ScheduleTemplateEditor() {
       )
       console.log('✅ API response:', response.data)
 
-      console.log('🔵 ScheduleTemplateEditor: Row updated, reloading all rows...')
-      // Reload all rows to get updated calculated fields like predecessor_display
-      await loadTemplateRows(selectedTemplate.id)
-      console.log('✅ ScheduleTemplateEditor: Rows reloaded successfully')
+      // Skip reload if skipReload option is set (used during drag operations to prevent loops)
+      if (!options.skipReload) {
+        console.log('🔵 ScheduleTemplateEditor: Row updated, reloading all rows...')
+        // Reload all rows to get updated calculated fields like predecessor_display
+        await loadTemplateRows(selectedTemplate.id)
+        console.log('✅ ScheduleTemplateEditor: Rows reloaded successfully')
+      } else {
+        console.log('⏭️ ScheduleTemplateEditor: Skipping reload (skipReload=true)')
+        // Update just the local row data without full reload
+        setRows(prevRows => prevRows.map(r => r.id === rowId ? { ...r, ...updates } : r))
+      }
 
       // Return the response data for callers who need it
       return response.data
@@ -1588,11 +1595,11 @@ export default function ScheduleTemplateEditor() {
           isOpen={showGanttView}
           onClose={() => setShowGanttView(false)}
           tasks={rows}
-          onUpdateTask={(taskId, updates) => {
+          onUpdateTask={(taskId, updates, options) => {
             // Find the row and update it
             const rowIndex = rows.findIndex(r => r.id === taskId)
             if (rowIndex !== -1) {
-              handleUpdateRow(taskId, updates)
+              handleUpdateRow(taskId, updates, options)
             }
           }}
         />
@@ -1603,11 +1610,11 @@ export default function ScheduleTemplateEditor() {
           isOpen={showGanttView}
           onClose={() => setShowGanttView(false)}
           tasks={rows}
-          onUpdateTask={async (taskId, updates) => {
+          onUpdateTask={async (taskId, updates, options) => {
             // Find the row and update it
             const rowIndex = rows.findIndex(r => r.id === taskId)
             if (rowIndex !== -1) {
-              return await handleUpdateRow(taskId, updates)
+              return await handleUpdateRow(taskId, updates, options)
             }
           }}
         />

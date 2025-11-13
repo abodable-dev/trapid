@@ -105,16 +105,26 @@ export default function PredecessorEditor({ isOpen, onClose, currentRow, allRows
       return false
     }
 
-    // Check if adding these predecessors would create a cycle
+    // Check if adding these predecessors would create a cycle and auto-remove them
+    const nonCircularPreds = []
+    const removedDueToCircular = []
+
     for (const pred of validPreds) {
       if (checkCircularDependency(pred.id)) {
-        alert(`Error: Adding task ${pred.id} as a predecessor would create a circular dependency.`)
-        return
+        console.warn(`Circular dependency detected for task ${pred.id} - auto-removing`)
+        removedDueToCircular.push(pred.id)
+      } else {
+        nonCircularPreds.push(pred)
       }
     }
 
-    // Save as array of objects
-    onSave(validPreds)
+    // Log if we removed any
+    if (removedDueToCircular.length > 0) {
+      console.log(`Auto-removed ${removedDueToCircular.length} circular dependencies: ${removedDueToCircular.join(', ')}`)
+    }
+
+    // Save as array of objects (with circular dependencies removed)
+    onSave(nonCircularPreds)
     onClose()
   }
 
