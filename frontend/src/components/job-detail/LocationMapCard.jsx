@@ -52,9 +52,12 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
   const [searchingAddress, setSearchingAddress] = useState(false)
   const [searchingSuburb, setSearchingSuburb] = useState(false)
   const [lotNumber, setLotNumber] = useState('')
+  const [streetNumber, setStreetNumber] = useState('')
   const [streetAddress, setStreetAddress] = useState('')
   const [showLotNumberPrompt, setShowLotNumberPrompt] = useState(false)
   const [pendingSaveData, setPendingSaveData] = useState(null)
+  const [extractedNumber, setExtractedNumber] = useState('')
+  const [numberType, setNumberType] = useState('lot') // 'lot' or 'street'
 
   useEffect(() => {
     // If we have saved coordinates, use them
@@ -70,6 +73,27 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
       setLoading(false)
     }
   }, [location, latitude, longitude])
+
+  // Scroll modal into view when it opens
+  useEffect(() => {
+    if (showLotNumberPrompt) {
+      setTimeout(() => {
+        const modal = document.querySelector('.lot-number-modal')
+        if (modal) {
+          // Get modal position relative to viewport
+          const rect = modal.getBoundingClientRect()
+          const isFullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight
+
+          if (!isFullyVisible) {
+            // Scroll so modal is centered in viewport
+            const absoluteTop = window.pageYOffset + rect.top
+            const middle = absoluteTop - (window.innerHeight / 2) + (rect.height / 2)
+            window.scrollTo({ top: middle, behavior: 'smooth' })
+          }
+        }
+      }, 100)
+    }
+  }, [showLotNumberPrompt])
 
   // Debounced address search
   useEffect(() => {
@@ -89,33 +113,86 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
     return () => clearTimeout(timer)
   }, [searchSuburb])
 
+  // Mapbox geocoding helper
+  const searchAddressMapbox = async (query, options = {}) => {
+    const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN
+
+    if (!MAPBOX_TOKEN || MAPBOX_TOKEN === 'your_mapbox_access_token_here') {
+      throw new Error('Mapbox token not configured')
+    }
+
+    const { country = 'au', limit = 10, types = 'address,place' } = options
+
+    const params = new URLSearchParams({
+      access_token: MAPBOX_TOKEN,
+      country,
+      limit: limit.toString(),
+      types,
+      proximity: '153.0251,-27.4698', // Brisbane
+      autocomplete: 'true',
+    })
+
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?${params}`
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      throw new Error(`Mapbox API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    return data.features.map(feature => ({
+      id: feature.id,
+      text: feature.text,
+      placeName: feature.place_name,
+      center: feature.center,
+      address: {
+        houseNumber: feature.address || '',
+        street: feature.text || '',
+        suburb: feature.context?.find(c => c.id.startsWith('place.'))?.text || '',
+        city: feature.context?.find(c => c.id.startsWith('place.'))?.text || '',
+        state: feature.context?.find(c => c.id.startsWith('region.'))?.text || '',
+        postcode: feature.context?.find(c => c.id.startsWith('postcode.'))?.text || '',
+      },
+      relevance: feature.relevance,
+    }))
+  }
+
   const geocodeAddress = async (address) => {
     setLoading(true)
     setError(null)
 
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?` +
-        `q=${encodeURIComponent(address)}, Australia&` +
-        `format=json&` +
-        `limit=1`
-      )
+      // Try Mapbox first
+      const results = await searchAddressMapbox(address, { limit: 1 })
 
-      const data = await response.json()
-
-      if (data && data.length > 0) {
-        const lat = parseFloat(data[0].lat)
-        const lon = parseFloat(data[0].lon)
+      if (results && results.length > 0) {
+        const [lon, lat] = results[0].center
         setMapPosition([lat, lon])
       } else {
         setError('Location not found on map - Click Edit to place pin manually')
-        // Default to Brisbane if geocoding fails
         setMapPosition([-27.4698, 153.0251])
       }
     } catch (err) {
       console.error('Error geocoding address:', err)
-      setError('Unable to load map - Click Edit to place pin manually')
-      setMapPosition([-27.4698, 153.0251])
+      // Fallback to Nominatim
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?` +
+          `q=${encodeURIComponent(address)}, Australia&format=json&limit=1`
+        )
+        const data = await response.json()
+
+        if (data && data.length > 0) {
+          setMapPosition([parseFloat(data[0].lat), parseFloat(data[0].lon)])
+        } else {
+          setError('Location not found on map - Click Edit to place pin manually')
+          setMapPosition([-27.4698, 153.0251])
+        }
+      } catch (fallbackErr) {
+        setError('Unable to load map - Click Edit to place pin manually')
+        setMapPosition([-27.4698, 153.0251])
+      }
     } finally {
       setLoading(false)
     }
@@ -130,63 +207,78 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
 
     setSearchingAddress(true)
     try {
-      // Try multiple search strategies in parallel for better results
-      const searches = [
-        // Main search - restrict to Australia only
-        fetch(
-          `https://nominatim.openstreetmap.org/search?` +
-          `q=${encodeURIComponent(query)}&` +
-          `format=json&` +
-          `addressdetails=1&` +
-          `countrycodes=au&` +
-          `limit=10`
-        ),
-        // If query looks like a street number + name, also try with "Queensland" appended
-        query.match(/^\d+\s+\w+/) ? fetch(
-          `https://nominatim.openstreetmap.org/search?` +
-          `q=${encodeURIComponent(query + ', Queensland')}&` +
-          `format=json&` +
-          `addressdetails=1&` +
-          `countrycodes=au&` +
-          `limit=10`
-        ) : null,
-      ].filter(Boolean)
-
-      const responses = await Promise.all(searches)
-      const allData = await Promise.all(responses.map(r => r.json()))
-
-      // Combine and deduplicate results based on place_id
-      const combined = allData.flat()
-      const unique = Array.from(new Map(combined.map(item => [item.place_id, item])).values())
-
-      // Filter to only Australian addresses with suburb and postcode
-      // Street address is NOT required - we'll prompt user to enter it manually
-      const validAddresses = unique.filter(item => {
-        const isAustralian = item.address?.country === 'Australia' ||
-                            item.address?.country_code === 'au' ||
-                            item.display_name?.includes('Australia')
-        const hasSuburb = !!(item.address?.suburb || item.address?.city || item.address?.town)
-        const hasPostcode = !!item.address?.postcode
-
-        return isAustralian && hasSuburb && hasPostcode
+      // Try Mapbox first
+      const results = await searchAddressMapbox(query, {
+        country: 'au',
+        limit: 10,
+        types: 'address,place',
       })
 
-      // Sort by relevance (prefer results with house numbers)
+      console.log('✅ Mapbox search found:', results.length, 'results')
+      console.log('First result:', results[0])
+
+      // Filter to only show results with proper Australian addresses
+      const validAddresses = results.filter(result => {
+        const addr = result.address
+        const hasSuburb = !!(addr.suburb || addr.city)
+        const hasPostcode = !!addr.postcode
+        return hasSuburb && hasPostcode
+      })
+
+      // Sort by relevance (Mapbox provides relevance score)
       const sorted = validAddresses.sort((a, b) => {
-        const aHasNumber = a.address?.house_number ? 1 : 0
-        const bHasNumber = b.address?.house_number ? 1 : 0
-        return bHasNumber - aHasNumber
+        return (b.relevance || 0) - (a.relevance || 0)
       })
 
-      console.log('Address search found:', sorted.length, 'results')
-      console.log('First result:', sorted[0])
       const suggestionsToShow = sorted.slice(0, 8)
       console.log('Setting suggestions:', suggestionsToShow)
       setAddressSuggestions(suggestionsToShow)
       setShowAddressSuggestions(suggestionsToShow.length > 0)
       console.log('Show suggestions set to:', suggestionsToShow.length > 0)
     } catch (err) {
-      console.error('Error searching address:', err)
+      console.warn('⚠️ Mapbox search failed, falling back to Nominatim:', err.message)
+
+      // Fallback to Nominatim (old method)
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?` +
+          `q=${encodeURIComponent(query)}&` +
+          `format=json&` +
+          `addressdetails=1&` +
+          `countrycodes=au&` +
+          `limit=10`
+        )
+        const data = await response.json()
+
+        // Convert Nominatim format to match Mapbox format
+        const converted = data
+          .filter(item => {
+            const isAustralian = item.address?.country === 'Australia' ||
+                                item.address?.country_code === 'au' ||
+                                item.display_name?.includes('Australia')
+            const hasSuburb = !!(item.address?.suburb || item.address?.city || item.address?.town)
+            const hasPostcode = !!item.address?.postcode
+            return isAustralian && hasSuburb && hasPostcode
+          })
+          .map(item => ({
+            id: item.place_id,
+            placeName: item.display_name,
+            center: [parseFloat(item.lon), parseFloat(item.lat)],
+            address: {
+              houseNumber: item.address?.house_number || '',
+              street: item.address?.road || '',
+              suburb: item.address?.suburb || item.address?.city || item.address?.town || '',
+              state: item.address?.state || '',
+              postcode: item.address?.postcode || '',
+            }
+          }))
+
+        setAddressSuggestions(converted.slice(0, 8))
+        setShowAddressSuggestions(converted.length > 0)
+      } catch (fallbackErr) {
+        console.error('Nominatim fallback also failed:', fallbackErr)
+        setError('Address search temporarily unavailable. Please try again.')
+      }
     } finally {
       setSearchingAddress(false)
     }
@@ -201,34 +293,54 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
 
     setSearchingSuburb(true)
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?` +
-        `q=${encodeURIComponent(query)}, Australia&` +
-        `format=json&` +
-        `addressdetails=1&` +
-        `limit=5&` +
-        `featuretype=city`
-      )
-      const data = await response.json()
-      setSuburbSuggestions(data)
-      setShowSuburbSuggestions(true)
+      // Try Mapbox for suburb search
+      const results = await searchAddressMapbox(query, {
+        country: 'au',
+        limit: 8,
+        types: 'place',
+      })
+      setSuburbSuggestions(results)
+      setShowSuburbSuggestions(results.length > 0)
     } catch (err) {
-      console.error('Error searching suburb:', err)
+      console.warn('Mapbox suburb search failed:', err.message)
+      // Fallback to Nominatim
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?` +
+          `q=${encodeURIComponent(query)}, Australia&format=json&addressdetails=1&limit=8&featuretype=city`
+        )
+        const data = await response.json()
+
+        const converted = data.map(item => ({
+          id: item.place_id,
+          placeName: item.display_name,
+          center: [parseFloat(item.lon), parseFloat(item.lat)],
+          address: {
+            suburb: item.address?.suburb || item.address?.city || '',
+            state: item.address?.state || '',
+          }
+        }))
+
+        setSuburbSuggestions(converted)
+        setShowSuburbSuggestions(converted.length > 0)
+      } catch (fallbackErr) {
+        console.error('Nominatim suburb search also failed:', fallbackErr)
+      }
     } finally {
       setSearchingSuburb(false)
     }
   }
 
-  // Helper to parse address components from Nominatim result
+  // Helper to parse address components from Mapbox result
   const parseAddressComponents = (suggestion) => {
     const addr = suggestion.address || {}
     return {
-      lotNumber: addr.house_number || '',
-      street: addr.road || '',
-      suburb: addr.suburb || addr.city || addr.town || '',
+      lotNumber: addr.houseNumber || '',
+      street: addr.street || suggestion.text || '',
+      suburb: addr.suburb || addr.city || '',
       state: addr.state || '',
       postcode: addr.postcode || '',
-      fullAddress: suggestion.display_name
+      fullAddress: suggestion.placeName || ''
     }
   }
 
@@ -245,12 +357,21 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
     }
   }
 
-  // Helper to format address for job title (Lot XX Street Suburb State)
-  const formatAddressForTitle = (lotNumber, street, suburb, state) => {
+  // Helper to format address for job title
+  // Format: "Lot 160 (33) Alperton Road Burbank QLD" or "Lot 160 Alperton Road Burbank QLD"
+  const formatAddressForTitle = (lotNumber, streetNumber, street, suburb, state) => {
     const parts = []
 
-    if (lotNumber) {
+    // Handle lot and street numbers
+    if (lotNumber && streetNumber) {
+      // Both: "Lot 160 (33)"
+      parts.push(`Lot ${lotNumber} (${streetNumber})`)
+    } else if (lotNumber) {
+      // Just lot: "Lot 160"
       parts.push(`Lot ${lotNumber}`)
+    } else if (streetNumber) {
+      // Just street number: "33"
+      parts.push(streetNumber)
     }
 
     // Only include street if provided (it's optional)
@@ -282,7 +403,7 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
 
   // Save location with validation and title update
   const saveLocationWithValidation = async (locationData) => {
-    const { location, latitude, longitude, lotNumber: lot, street, suburb, state, updateTitle = true } = locationData
+    const { location, latitude, longitude, lotNumber: lot, streetNumber: streetNum, street, suburb, state, updateTitle = true } = locationData
 
     setSaving(true)
     try {
@@ -294,9 +415,9 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
         longitude
       }
 
-      // If we have lot number, update the title with full address
-      if (updateTitle && lot) {
-        const newTitle = formatAddressForTitle(lot, street, suburb, state)
+      // If we have lot number or street number, update the title with full address
+      if (updateTitle && (lot || streetNum)) {
+        const newTitle = formatAddressForTitle(lot, streetNum, street, suburb, state)
         updateData.title = newTitle
         console.log('Also updating job title to:', newTitle)
       }
@@ -320,7 +441,10 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
       setShowLotNumberPrompt(false)
       setPendingSaveData(null)
       setLotNumber('')
+      setStreetNumber('')
       setStreetAddress('')
+      setExtractedNumber('')
+      setNumberType('lot')
       setError(null)
     } catch (err) {
       console.error('Error saving location:', err)
@@ -332,12 +456,12 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
   }
 
   const handleAddressSelect = async (suggestion) => {
-    console.log('handleAddressSelect called with:', suggestion.display_name)
-    const lat = parseFloat(suggestion.lat)
-    const lon = parseFloat(suggestion.lon)
+    console.log('handleAddressSelect called with:', suggestion.placeName)
+    // Mapbox returns [longitude, latitude] in center array
+    const [lon, lat] = suggestion.center
     setTempPosition([lat, lon])
     setMapPosition([lat, lon])
-    setSearchAddress(suggestion.display_name)
+    setSearchAddress(suggestion.placeName)
     setShowAddressSuggestions(false)
 
     // Parse and validate address
@@ -360,17 +484,29 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
       setStreetAddress('')
     }
 
+    // Extract and store the number for user to classify
+    if (components.lotNumber) {
+      setExtractedNumber(components.lotNumber)
+      setNumberType('lot') // Default to lot number
+      setLotNumber(components.lotNumber)
+      setStreetNumber('')
+    } else {
+      setExtractedNumber('')
+      setLotNumber('')
+      setStreetNumber('')
+    }
+
     // Store the address data for later save, but don't save yet
     // Allow user to enter lot number and street address, then adjust pin position
     setPendingSaveData({
-      location: suggestion.display_name,
+      location: suggestion.placeName, // Fixed: use placeName instead of display_name
       latitude: lat,
       longitude: lon,
       street: components.street || '', // May be empty - user will enter it
       suburb: components.suburb,
       state: components.state,
-      lotNumber: '', // User must enter lot number
-      hasLotNumber: false // Always require lot number input
+      lotNumber: components.lotNumber || '', // Pre-fill if available
+      hasLotNumber: !!components.lotNumber // True if we extracted a lot number
     })
 
     // Always prompt for lot number and street address
@@ -378,10 +514,25 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
     setError(null)
   }
 
+  // Handle number type change (lot vs street)
+  const handleNumberTypeChange = (type) => {
+    setNumberType(type)
+    if (extractedNumber) {
+      if (type === 'lot') {
+        setLotNumber(extractedNumber)
+        setStreetNumber('')
+      } else {
+        setStreetNumber(extractedNumber)
+        setLotNumber('')
+      }
+    }
+  }
+
   // Handle lot number and street address submission from prompt
   const handleLotNumberSubmit = () => {
-    if (!lotNumber.trim()) {
-      setError('Please enter a lot number')
+    // Must have at least lot number OR street number
+    if (!lotNumber.trim() && !streetNumber.trim()) {
+      setError('Please enter either a lot number or street number')
       return
     }
 
@@ -415,24 +566,30 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
       return
     }
 
-    // Update pending save data with the lot number and street address
+    // Update pending save data with the lot number, street number, and street address
     setPendingSaveData({
       ...pendingSaveData,
       lotNumber: lotNumber.trim(),
+      streetNumber: streetNumber.trim(),
       street: street, // Use entered street or keep existing
-      hasLotNumber: true
+      hasLotNumber: !!(lotNumber.trim() || streetNumber.trim())
     })
 
     // Close the prompt and let user adjust pin before saving
     setShowLotNumberPrompt(false)
     setError(null)
+
+    // Clear address search and suggestions
+    setSearchAddress('')
+    setAddressSuggestions([])
+    setShowAddressSuggestions(false)
   }
 
   const handleSuburbSelect = (suggestion) => {
-    const lat = parseFloat(suggestion.lat)
-    const lon = parseFloat(suggestion.lon)
+    // Mapbox returns [longitude, latitude] in center array
+    const [lon, lat] = suggestion.center
     setMapPosition([lat, lon])
-    setSearchSuburb(suggestion.display_name)
+    setSearchSuburb(suggestion.placeName)
     setShowSuburbSuggestions(false)
     setError(null)
   }
@@ -457,7 +614,10 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
     setShowLotNumberPrompt(false)
     setPendingSaveData(null)
     setLotNumber('')
+    setStreetNumber('')
     setStreetAddress('')
+    setExtractedNumber('')
+    setNumberType('lot')
   }
 
   const handleMapClick = useCallback((latlng) => {
@@ -473,9 +633,9 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
 
     // If we have pending save data (from address selection), use it with validation
     if (pendingSaveData) {
-      // Check if we have lot number
-      if (!pendingSaveData.hasLotNumber) {
-        setError('Please enter a lot number before saving')
+      // Check if we have at least one: lot number OR street number
+      if (!pendingSaveData.lotNumber && !pendingSaveData.streetNumber) {
+        setError('Please enter either a lot number or street number before saving')
         setShowLotNumberPrompt(true)
         return
       }
@@ -486,6 +646,7 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
         latitude: tempPosition[0], // Use the adjusted position
         longitude: tempPosition[1],
         lotNumber: pendingSaveData.lotNumber,
+        streetNumber: pendingSaveData.streetNumber,
         street: pendingSaveData.street,
         suburb: pendingSaveData.suburb,
         state: pendingSaveData.state
@@ -584,31 +745,61 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
 
             {/* Lot Number and Street Address Prompt Modal */}
             {showLotNumberPrompt && (
-              <div className="mb-3 p-4 bg-white dark:bg-gray-800 rounded-lg border-2 border-indigo-500 dark:border-indigo-400 shadow-lg">
+              <div className="lot-number-modal mb-3 p-4 bg-white dark:bg-gray-800 rounded-lg border-2 border-indigo-500 dark:border-indigo-400 shadow-lg">
                 <h4 className="text-base font-semibold text-gray-900 dark:text-white mb-2">
-                  Enter Lot Number and Street Address
+                  Classify Address Number
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  Please enter the lot number and street address. Both are required. You can then adjust the pin location on the map if needed.
-                  {pendingSaveData && lotNumber && streetAddress && (
-                    <>
-                      <br /><br />
-                      The job title will be: <strong>"Lot {lotNumber} {streetAddress || pendingSaveData.street} {pendingSaveData.suburb} {pendingSaveData.state === 'Queensland' ? 'QLD' : pendingSaveData.state}"</strong>
-                    </>
+                  {extractedNumber ? (
+                    <>We found the number <strong>{extractedNumber}</strong> in the address. Please choose whether this is a lot number or street number.</>
+                  ) : (
+                    <>Please enter either a lot number or street number, and the street address.</>
                   )}
                 </p>
+
                 <div className="space-y-3">
+                  {/* Number Type Selector - only show if we extracted a number */}
+                  {extractedNumber && (
+                    <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        The number "{extractedNumber}" is a:
+                      </label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            value="lot"
+                            checked={numberType === 'lot'}
+                            onChange={() => handleNumberTypeChange('lot')}
+                            className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">Lot Number</span>
+                        </label>
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            value="street"
+                            checked={numberType === 'street'}
+                            onChange={() => handleNumberTypeChange('street')}
+                            className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">Street Number</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Lot Number Field */}
                   <div>
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Lot Number <span className="text-red-500">*</span>
+                      Lot Number {!extractedNumber && <span className="text-gray-500">(at least one required)</span>}
                     </label>
                     <input
                       type="text"
                       value={lotNumber}
                       onChange={(e) => setLotNumber(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && lotNumber.trim()) {
+                        if (e.key === 'Enter' && (lotNumber.trim() || streetNumber.trim())) {
                           // Move to street address field or submit if filled
                           const streetInput = document.getElementById('street-address-input')
                           if (streetInput && !streetAddress.trim()) {
@@ -620,7 +811,32 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
                       }}
                       placeholder="e.g., 123"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      autoFocus
+                      autoFocus={!extractedNumber}
+                    />
+                  </div>
+
+                  {/* Street Number Field */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Street Number {!extractedNumber && <span className="text-gray-500">(at least one required)</span>}
+                    </label>
+                    <input
+                      type="text"
+                      value={streetNumber}
+                      onChange={(e) => setStreetNumber(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && (lotNumber.trim() || streetNumber.trim())) {
+                          // Move to street address field or submit if filled
+                          const streetInput = document.getElementById('street-address-input')
+                          if (streetInput && !streetAddress.trim()) {
+                            streetInput.focus()
+                          } else {
+                            handleLotNumberSubmit()
+                          }
+                        }
+                      }}
+                      placeholder="e.g., 33"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
 
@@ -635,7 +851,7 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
                       value={streetAddress}
                       onChange={(e) => setStreetAddress(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && lotNumber.trim() && streetAddress.trim()) {
+                        if (e.key === 'Enter' && (lotNumber.trim() || streetNumber.trim()) && streetAddress.trim()) {
                           handleLotNumberSubmit()
                         }
                       }}
@@ -644,11 +860,27 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
                     />
                   </div>
 
+                  {/* Preview of job title */}
+                  {pendingSaveData && (lotNumber.trim() || streetNumber.trim()) && streetAddress.trim() && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Job title will be:</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {formatAddressForTitle(
+                          lotNumber.trim(),
+                          streetNumber.trim(),
+                          streetAddress.trim() || pendingSaveData.street,
+                          pendingSaveData.suburb,
+                          pendingSaveData.state
+                        )}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Buttons */}
                   <div className="flex gap-2 pt-2">
                     <button
                       onClick={handleLotNumberSubmit}
-                      disabled={!lotNumber.trim() || (!streetAddress.trim() && !pendingSaveData?.street)}
+                      disabled={!(lotNumber.trim() || streetNumber.trim()) || (!streetAddress.trim() && !pendingSaveData?.street)}
                       className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-50"
                     >
                       <CheckIcon className="h-4 w-4 mr-2" />
@@ -659,7 +891,10 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
                         setShowLotNumberPrompt(false)
                         setPendingSaveData(null)
                         setLotNumber('')
+                        setStreetNumber('')
                         setStreetAddress('')
+                        setExtractedNumber('')
+                        setNumberType('lot')
                       }}
                       className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
@@ -702,12 +937,12 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
                     {addressSuggestions.length > 0 ? (
                       addressSuggestions.map((suggestion, index) => (
                         <button
-                          key={index}
+                          key={suggestion.id || index}
                           type="button"
                           onClick={() => handleAddressSelect(suggestion)}
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                         >
-                          {suggestion.display_name}
+                          {suggestion.placeName}
                         </button>
                       ))
                     ) : (
@@ -740,12 +975,12 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
                   <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {suburbSuggestions.map((suggestion, index) => (
                       <button
-                        key={index}
+                        key={suggestion.id || index}
                         type="button"
                         onClick={() => handleSuburbSelect(suggestion)}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       >
-                        {suggestion.display_name}
+                        {suggestion.placeName}
                       </button>
                     ))}
                   </div>

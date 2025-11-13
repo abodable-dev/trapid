@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   UserIcon,
@@ -14,8 +14,9 @@ import {
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { api } from '../../api'
 
-export default function JobContactsSection({ jobId, contacts: initialContacts, onUpdate }) {
+export default function JobContactsSection({ jobId, contacts: initialContacts, onUpdate, triggerAddContact, onAddContactTriggered }) {
   const navigate = useNavigate()
+  const searchInputRef = useRef(null)
   const [contacts, setContacts] = useState(initialContacts || [])
   const [loading, setLoading] = useState(false)
   const [showAddContact, setShowAddContact] = useState(false)
@@ -30,6 +31,23 @@ export default function JobContactsSection({ jobId, contacts: initialContacts, o
       loadContacts()
     }
   }, [jobId, initialContacts])
+
+  // Handle trigger from parent to open add contact modal
+  useEffect(() => {
+    if (triggerAddContact) {
+      setShowAddContact(true)
+      onAddContactTriggered?.()
+    }
+  }, [triggerAddContact])
+
+  // Auto-focus search input when add contact modal opens
+  useEffect(() => {
+    if (showAddContact && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus()
+      }, 100)
+    }
+  }, [showAddContact])
 
   const loadContacts = async () => {
     try {
@@ -218,6 +236,7 @@ export default function JobContactsSection({ jobId, contacts: initialContacts, o
                 <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
               </div>
               <input
+                ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

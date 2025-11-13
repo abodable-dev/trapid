@@ -1,7 +1,7 @@
 {
   "name": "trapid-frontend",
   "private": true,
-  "version": "1.99.48",
+  "version": "1.99.49",
   "type": "module",
   "scripts": {
     "dev": "node scripts/increment-version.js && vite",
@@ -16,6 +16,7 @@
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
     "@jitsi/react-sdk": "^1.4.4",
+    "@mapbox/mapbox-gl-geocoder": "^5.1.2",
     "@svar-ui/react-gantt": "^2.3.3",
     "axios": "^1.13.1",
     "dhtmlx-gantt": "^9.1.0",
@@ -23,6 +24,7 @@
     "html2canvas": "^1.4.1",
     "isomorphic-dompurify": "^2.31.0",
     "leaflet": "^1.9.4",
+    "mapbox-gl": "^3.16.0",
     "nanoid": "^5.1.6",
     "pdfjs-dist": "^4.4.168",
     "react": "^19.1.1",
