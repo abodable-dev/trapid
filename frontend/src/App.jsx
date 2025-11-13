@@ -8,6 +8,7 @@ import JobDetailPage from './pages/JobDetailPage'
 import JobSetupPage from './pages/JobSetupPage'
 import PriceBooksPage from './pages/PriceBooksPage'
 import PriceBookItemDetailPage from './pages/PriceBookItemDetailPage'
+import SamQuickEstPage from './pages/SamQuickEstPage'
 import SuppliersPage from './pages/SuppliersPage'
 import SupplierDetailPage from './pages/SupplierDetailPage'
 import SupplierEditPage from './pages/SupplierEditPage'
@@ -43,6 +44,8 @@ function App() {
  <Route path="/jobs/:id/schedule" element={<AppLayout><MasterSchedulePage /></AppLayout>} />
  <Route path="/price-books" element={<AppLayout><PriceBooksPage /></AppLayout>} />
  <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
+ <Route path="/sam-quick-est" element={<AppLayout><SamQuickEstPage /></AppLayout>} />
+ <Route path="/sam-quick-est/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
  <Route path="/contacts" element={<AppLayout><ContactsPage /></AppLayout>} />
  <Route path="/contacts/:id" element={<AppLayout><ContactDetailPage /></AppLayout>} />
  <Route path="/suppliers" element={<Navigate to="/contacts" replace />} />

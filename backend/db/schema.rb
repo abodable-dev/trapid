@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_13_053052) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -131,7 +131,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.integer "purchase_orders_count", default: 0, null: false
     t.string "site_supervisor_name", default: "Andrew Clement"
     t.string "site_supervisor_email"
-    t.string "site_supervisor_phone"
+    t.string "site_supervisor_phone", default: "0407 150 081"
     t.bigint "design_id"
     t.string "design_name"
     t.datetime "onedrive_folders_created_at"
@@ -490,27 +490,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.index ["token_expires_at"], name: "index_organization_one_drive_credentials_on_token_expires_at"
   end
 
-  create_table "organization_outlook_credentials", force: :cascade do |t|
-    t.text "access_token"
-    t.text "refresh_token"
-    t.datetime "expires_at"
-    t.string "email"
-    t.string "tenant_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "outlook_credentials", force: :cascade do |t|
-    t.bigint "user_id", null: false
-    t.text "access_token"
-    t.text "refresh_token"
-    t.datetime "expires_at"
-    t.string "email"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["user_id"], name: "index_outlook_credentials_on_user_id"
-  end
-
   create_table "price_histories", force: :cascade do |t|
     t.bigint "pricebook_item_id", null: false
     t.decimal "old_price", precision: 10, scale: 2
@@ -582,7 +561,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.integer "sequence_order", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "response_type"
+    t.string "response_type", default: "checkbox"
     t.text "response_note"
     t.string "response_photo_url"
     t.index ["is_completed"], name: "index_project_task_checklist_items_on_is_completed"
@@ -749,6 +728,47 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
   end
 
+  create_table "sam_quick_est_items", force: :cascade do |t|
+    t.string "item_code", null: false
+    t.string "item_name", null: false
+    t.string "category"
+    t.string "unit_of_measure", default: "Each"
+    t.decimal "current_price", precision: 10, scale: 2
+    t.bigint "supplier_id"
+    t.string "brand"
+    t.text "notes"
+    t.boolean "is_active", default: true
+    t.boolean "needs_pricing_review", default: false
+    t.datetime "price_last_updated_at"
+    t.string "image_url"
+    t.string "image_source"
+    t.datetime "image_fetched_at"
+    t.string "image_fetch_status"
+    t.bigint "default_supplier_id"
+    t.string "qr_code_url"
+    t.boolean "requires_photo", default: false
+    t.boolean "requires_spec", default: false
+    t.string "spec_url"
+    t.string "gst_code"
+    t.boolean "photo_attached", default: false
+    t.boolean "spec_attached", default: false
+    t.string "image_file_id"
+    t.string "spec_file_id"
+    t.string "qr_code_file_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.tsvector "searchable_text"
+    t.index ["category"], name: "index_sam_quick_est_items_on_category"
+    t.index ["default_supplier_id"], name: "index_sam_quick_est_items_on_default_supplier_id"
+    t.index ["image_fetch_status"], name: "index_sam_quick_est_items_on_image_fetch_status"
+    t.index ["is_active"], name: "index_sam_quick_est_items_on_is_active"
+    t.index ["item_code"], name: "index_sam_quick_est_items_on_item_code", unique: true
+    t.index ["needs_pricing_review"], name: "index_sam_quick_est_items_on_needs_pricing_review"
+    t.index ["price_last_updated_at"], name: "index_sam_quick_est_items_on_price_last_updated_at"
+    t.index ["searchable_text"], name: "idx_sam_quick_est_search", using: :gin
+    t.index ["supplier_id"], name: "index_sam_quick_est_items_on_supplier_id"
+  end
+
   create_table "schedule_task_checklist_items", force: :cascade do |t|
     t.bigint "schedule_task_id", null: false
     t.string "name", null: false
@@ -760,7 +780,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.integer "sequence_order", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "response_type"
+    t.string "response_type", default: "checkbox"
     t.text "response_note"
     t.string "response_photo_url"
     t.index ["is_completed"], name: "index_schedule_task_checklist_items_on_is_completed"
@@ -821,12 +841,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.datetime "updated_at", null: false
     t.string "assigned_user_id"
     t.integer "documentation_category_ids", default: [], array: true
+    t.integer "supervisor_checklist_template_ids", default: [], array: true
     t.text "linked_task_ids", default: "[]"
     t.integer "linked_template_id"
     t.index ["documentation_category_ids"], name: "index_schedule_template_rows_on_documentation_category_ids", using: :gin
     t.index ["schedule_template_id", "sequence_order"], name: "idx_on_schedule_template_id_sequence_order_1bea5d762b"
     t.index ["schedule_template_id"], name: "index_schedule_template_rows_on_schedule_template_id"
     t.index ["sequence_order"], name: "index_schedule_template_rows_on_sequence_order"
+    t.index ["supervisor_checklist_template_ids"], name: "idx_on_supervisor_checklist_template_ids_08080bc25c", using: :gin
     t.index ["supplier_id"], name: "index_schedule_template_rows_on_supplier_id"
   end
 
@@ -973,7 +995,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
     t.boolean "is_active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "response_type"
+    t.string "response_type", default: "checkbox"
     t.index ["category"], name: "index_supervisor_checklist_templates_on_category"
     t.index ["name"], name: "index_supervisor_checklist_templates_on_name", unique: true
     t.index ["sequence_order"], name: "index_supervisor_checklist_templates_on_sequence_order"
@@ -1763,7 +1785,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
   add_foreign_key "grok_plans", "users"
   add_foreign_key "one_drive_credentials", "constructions"
   add_foreign_key "organization_one_drive_credentials", "users", column: "connected_by_id"
-  add_foreign_key "outlook_credentials", "users"
   add_foreign_key "price_histories", "contacts", column: "supplier_id", name: "fk_rails_price_histories_contact"
   add_foreign_key "price_histories", "pricebook_items"
   add_foreign_key "pricebook_items", "contacts", column: "default_supplier_id", name: "fk_rails_pricebook_items_default_supplier"
@@ -1785,6 +1806,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_11_061713) do
   add_foreign_key "purchase_orders", "constructions"
   add_foreign_key "purchase_orders", "contacts", column: "supplier_id", name: "fk_rails_purchase_orders_contact"
   add_foreign_key "purchase_orders", "estimates"
+  add_foreign_key "sam_quick_est_items", "contacts", column: "default_supplier_id"
+  add_foreign_key "sam_quick_est_items", "contacts", column: "supplier_id"
   add_foreign_key "schedule_task_checklist_items", "schedule_tasks"
   add_foreign_key "schedule_tasks", "constructions"
   add_foreign_key "schedule_tasks", "purchase_orders"

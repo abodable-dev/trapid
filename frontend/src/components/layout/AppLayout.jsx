@@ -27,6 +27,7 @@ import {
  Briefcase,
  BookOpen,
  Users,
+ Calculator,
 } from 'lucide-react'
 import TrapidLogo from '../icons/TrapidLogo'
 
@@ -36,6 +37,7 @@ const navigation = [
  { name: 'Active Jobs', href: '/active-jobs', icon: Briefcase },
  { name: 'Price Books', href: '/price-books', icon: BookOpen },
  { name: 'Contacts', href: '/contacts', icon: Users },
+ { name: 'Sam Quick Est', href: '/sam-quick-est', icon: Calculator },
 ]
 
 // Bottom navigation items
