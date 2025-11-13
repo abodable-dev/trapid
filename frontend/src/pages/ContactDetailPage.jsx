@@ -25,7 +25,7 @@ import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
 import ContactMapCard from '../components/contacts/ContactMapCard'
 import ContactGroupsSection from '../components/contacts/ContactGroupsSection'
 import ContactRelationshipsSection from '../components/contacts/ContactRelationshipsSection'
-import SmsConversation from '../components/contacts/SmsConversation'
+import CommunicationsTab from '../components/communications/CommunicationsTab'
 
 // Helper function to format ABN as XX XXX XXX XXX
 const formatABN = (abn) => {
@@ -914,14 +914,14 @@ export default function ContactDetailPage() {
               Related Contacts
             </button>
             <button
-              onClick={() => setSearchParams({ tab: 'sms' })}
+              onClick={() => setSearchParams({ tab: 'coms' })}
               className={`${
-                activeTab === 'sms'
+                activeTab === 'coms'
                   ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } whitespace-nowrap py-1 px-1 border-b-2 font-medium text-xs transition-colors`}
             >
-              SMS
+              Coms
             </button>
             {contact['is_supplier?'] && (
               <button
@@ -1825,10 +1825,15 @@ export default function ContactDetailPage() {
         </div>
       )}
 
-      {/* SMS Tab */}
-      {activeTab === 'sms' && (
-        <div className="mt-6 max-w-4xl mx-auto">
-          <SmsConversation contact={contact} />
+      {/* Coms Tab */}
+      {activeTab === 'coms' && (
+        <div className="mt-6">
+          <CommunicationsTab
+            entityType="contact"
+            entityId={id}
+            entityName={contact?.trading_name || contact?.business_name}
+            contact={contact}
+          />
         </div>
       )}
 

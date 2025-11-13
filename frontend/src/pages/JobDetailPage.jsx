@@ -12,6 +12,8 @@ import {
   QuestionMarkCircleIcon,
   ArrowsPointingOutIcon,
   ArrowsPointingInIcon,
+  ExclamationTriangleIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import { formatCurrency, formatPercentage } from '../utils/formatters'
@@ -22,8 +24,7 @@ import EstimatesTab from '../components/estimates/EstimatesTab'
 import ScheduleMasterTab from '../components/schedule-master/ScheduleMasterTab'
 import DocumentationTab from '../components/documentation/DocumentationTab'
 import SetupGuideModal from '../components/documentation/SetupGuideModal'
-import JobMessagesTab from '../components/messages/JobMessagesTab'
-import JobEmailsTab from '../components/emails/JobEmailsTab'
+import CommunicationsTab from '../components/communications/CommunicationsTab'
 import LocationMapCard from '../components/job-detail/LocationMapCard'
 import AddressAutocomplete from '../components/common/AddressAutocomplete'
 import JobContactsSection from '../components/job-detail/JobContactsSection'
@@ -36,8 +37,7 @@ const tabs = [
   { name: 'Budget', slug: 'budget' },
   { name: 'Schedule Master', slug: 'schedule-master' },
   { name: 'Documents', slug: 'documents' },
-  { name: 'Messages', slug: 'messages' },
-  { name: 'Emails', slug: 'emails' },
+  { name: 'Coms', slug: 'coms' },
   { name: 'Team', slug: 'team' },
   { name: 'Settings', slug: 'settings' },
   { name: 'Documentation', slug: 'documentation' },
@@ -68,6 +68,9 @@ export default function JobDetailPage() {
 
   // Documentation state
   const [showSetupGuide, setShowSetupGuide] = useState(false)
+
+  // Contact modal trigger
+  const [triggerAddContact, setTriggerAddContact] = useState(false)
 
   useEffect(() => {
     loadJob()
@@ -364,6 +367,49 @@ export default function JobDetailPage() {
 
         {/* Content */}
         <div className="p-8">
+          {/* No Contacts Warning */}
+          {(!job.contacts || job.contacts.length === 0) && (
+            <div className="mb-6 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-4 border-l-4 border-yellow-400 dark:border-yellow-600">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400 dark:text-yellow-500" aria-hidden="true" />
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                    No contacts added to this job
+                  </h3>
+                  <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                    <p>
+                      This job has no contacts. You must add at least one contact before you can save location data or perform other important operations.
+                    </p>
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      onClick={() => {
+                        if (activeTab !== 'overview') {
+                          navigate(`/jobs/${id}/overview`)
+                        }
+                        // Trigger the add contact modal
+                        setTriggerAddContact(true)
+                        // Scroll to contacts section after a brief delay
+                        setTimeout(() => {
+                          const contactsSection = document.querySelector('[data-section="job-contacts"]')
+                          if (contactsSection) {
+                            contactsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          }
+                        }, 100)
+                      }}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                    >
+                      <UserGroupIcon className="h-4 w-4 mr-2" />
+                      Add Client
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Stats */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
             {stats.map((stat) => (
@@ -606,11 +652,15 @@ export default function JobDetailPage() {
               </div>
 
               {/* Job Contacts Section - Full Width */}
-              <JobContactsSection
-                jobId={id}
-                contacts={job.contacts}
-                onUpdate={loadJob}
-              />
+              <div data-section="job-contacts">
+                <JobContactsSection
+                  jobId={id}
+                  contacts={job.contacts}
+                  onUpdate={loadJob}
+                  triggerAddContact={triggerAddContact}
+                  onAddContactTriggered={() => setTriggerAddContact(false)}
+                />
+              </div>
             </div>
           )}
 
@@ -702,12 +752,8 @@ export default function JobDetailPage() {
             <JobDocumentsTab jobId={id} jobTitle={job?.title} />
           )}
 
-          {activeTab === 'messages' && (
-            <JobMessagesTab constructionId={id} />
-          )}
-
-          {activeTab === 'emails' && (
-            <JobEmailsTab constructionId={id} />
+          {activeTab === 'coms' && (
+            <CommunicationsTab entityType="job" entityId={id} entityName={job?.title} />
           )}
 
           {activeTab === 'team' && (
