@@ -187,7 +187,7 @@ export default function ContactDetailPage() {
   const scrollToSection = (sectionId) => {
     const element = sectionRefs.current[sectionId]
     if (element) {
-      const yOffset = -220 // Offset for sticky header (208px) plus some padding
+      const yOffset = -200 // Offset for AppLayout top bar (64px) + contact header (~100px) + padding
       const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset
       window.scrollTo({ top: y, behavior: 'smooth' })
     }
@@ -817,45 +817,60 @@ export default function ContactDetailPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div>
       {/* Sticky Header & Tabs */}
-      <div className="sticky top-0 z-20 bg-gray-50 dark:bg-gray-900 pb-4 mb-6">
+      <div className="sticky top-0 lg:top-16 z-20 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto pt-1 pb-1">
         {/* Header */}
-        <div className="pt-4">
+        <div>
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 mb-4"
+            className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 mb-1"
           >
-            <ArrowLeftIcon className="h-5 w-5" />
+            <ArrowLeftIcon className="h-3 w-3" />
             Back
           </button>
 
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              <h1 className="text-base font-bold text-gray-900 dark:text-white">
                 {contact.full_name || contact.first_name || 'Unnamed Contact'}
               </h1>
               {contact.parent && (
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Parent: {contact.parent}
+                </p>
+              )}
+              {contactAddresses && contactAddresses.length > 0 && contactAddresses[0].street_address && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 flex items-start gap-1">
+                  <svg className="h-3 w-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                  </svg>
+                  <span>
+                    {contactAddresses[0].street_address}
+                    {contactAddresses[0].city && `, ${contactAddresses[0].city}`}
+                    {contactAddresses[0].state && ` ${contactAddresses[0].state}`}
+                    {contactAddresses[0].postcode && ` ${contactAddresses[0].postcode}`}
+                  </span>
                 </p>
               )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-1">
               <button
                 onClick={() => navigate(`/contacts`)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition"
               >
-                <ArrowLeftIcon className="h-5 w-5" />
+                <ArrowLeftIcon className="h-3 w-3" />
                 Back to Contacts
               </button>
               {!isPageEditMode ? (
                 <button
                   onClick={() => setIsPageEditMode(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
                 >
-                  <PencilIcon className="h-5 w-5" />
+                  <PencilIcon className="h-3 w-3" />
                   Edit
                 </button>
               ) : (
@@ -866,9 +881,9 @@ export default function ContactDetailPage() {
                       setIsPageEditMode(false)
                       await loadContact() // Reload to get fresh data
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition"
                   >
-                    <CheckCircleIcon className="h-5 w-5" />
+                    <CheckCircleIcon className="h-3 w-3" />
                     Save & Lock
                   </button>
                   <button
@@ -876,33 +891,33 @@ export default function ContactDetailPage() {
                       setIsPageEditMode(false)
                       loadContact() // Reload to discard changes
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition"
                   >
-                    <XCircleIcon className="h-5 w-5" />
+                    <XCircleIcon className="h-3 w-3" />
                     Cancel
                   </button>
                 </>
               )}
               <button
                 onClick={deleteContact}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition"
               >
-                <TrashIcon className="h-5 w-5" />
+                <TrashIcon className="h-3 w-3" />
                 Delete
               </button>
             </div>
           </div>
 
           {/* Tab Navigation */}
-          <div className="border-b border-gray-200 dark:border-gray-700 mt-6">
-          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          <div className="border-b border-gray-200 dark:border-gray-700 mt-1">
+          <nav className="-mb-px flex space-x-6" aria-label="Tabs">
             <button
               onClick={() => setSearchParams({ tab: 'overview' })}
               className={`${
                 activeTab === 'overview'
                   ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+              } whitespace-nowrap py-1 px-1 border-b-2 font-medium text-xs transition-colors`}
             >
               Overview
             </button>
@@ -912,7 +927,7 @@ export default function ContactDetailPage() {
                 activeTab === 'relationships'
                   ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+              } whitespace-nowrap py-1 px-1 border-b-2 font-medium text-xs transition-colors`}
             >
               Related Contacts
             </button>
@@ -923,7 +938,7 @@ export default function ContactDetailPage() {
                   activeTab === 'pricebook'
                     ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                } whitespace-nowrap py-1 px-1 border-b-2 font-medium text-xs transition-colors`}
               >
                 Price Book
               </button>
@@ -932,13 +947,16 @@ export default function ContactDetailPage() {
         </div>
         </div>
       </div>
+      </div>
 
+      {/* Content Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Overview Tab */}
       {activeTab === 'overview' && (
-      <div className="flex gap-6">
+      <div className="flex gap-6 py-8">
         {/* Sticky Navigation Menu (hidden on mobile) */}
         <div className="hidden lg:block w-56 flex-shrink-0">
-          <div className="sticky top-52">
+          <div className="sticky top-4 lg:top-48">
             <nav className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 px-2">On this page</h3>
               <ul className="space-y-1">
@@ -2869,6 +2887,7 @@ export default function ContactDetailPage() {
           </div>
         </div>
       )}
+      </div>
 
       {/* Edit Contact Modal */}
       <Dialog open={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} className="relative z-50">

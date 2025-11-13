@@ -35,6 +35,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   const [positionDialogTask, setPositionDialogTask] = useState(null)
   const [ganttReady, setGanttReady] = useState(false)
   const [dragConflict, setDragConflict] = useState(null) // { task, originalStart, newStart, blockingPredecessors }
+  const [canUndo, setCanUndo] = useState(false) // Track if undo is available
+  const [canRedo, setCanRedo] = useState(false) // Track if redo is available
 
   // Load checkbox visibility from localStorage or use default
   const [showCheckboxes, setShowCheckboxes] = useState(() => {
@@ -171,6 +173,14 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     return day === 0 || day === 6 // Sunday or Saturday
   }
 
+  // Helper function to format date as YYYY-MM-DD in LOCAL timezone (not UTC)
+  const formatDateLocal = (date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   // Check if a date is a public holiday
   const isPublicHoliday = (dateStr) => {
     return publicHolidays.includes(dateStr)
@@ -178,7 +188,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
   // Check if a date is a working day
   const isWorkingDay = (date) => {
-    const dateStr = date.toISOString().split('T')[0]
+    const dateStr = formatDateLocal(date) // Use LOCAL timezone, not UTC
     return !isWeekend(date) && !isPublicHoliday(dateStr)
   }
 
@@ -212,6 +222,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       link: 'link',
       task: 'task'
     }
+
+    // Enable row selection on single click (highlights both grid row and timeline bar)
+    gantt.config.select_task = true // Enable task selection
+    gantt.config.scroll_on_click = false // Don't auto-scroll when selecting
 
     // Configure DHTMLX Gantt date format
     gantt.config.date_format = '%Y-%m-%d'
@@ -259,9 +273,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     gantt.config.show_errors = false // PERFORMANCE: Disable error popups during drag
     gantt.config.inline_editors_date_processing = 'keepDates' // Keep original date values when editing
 
-    // Extend timeline range to allow dragging far into the future
-    // Set start date to today
+    // Extend timeline range to show past and future dates
+    // Set start date to 6 months BEFORE today (to see historical data)
     const timelineStart = new Date()
+    timelineStart.setMonth(timelineStart.getMonth() - 6)
     timelineStart.setHours(0, 0, 0, 0)
 
     // Set end date to 2 years from today to give plenty of room for dragging
@@ -817,6 +832,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         classes.push('manually-positioned-task')
       }
 
+      // Add checkered pattern if dependencies were broken
+      if (task.$dependenciesBroken || task.dependencies_broken) {
+        console.log('🔗❌ task_class: Task', task.id, 'has broken dependencies, adding checkered pattern')
+        classes.push('broken-dependencies-task')
+      }
+
       if (task.$highlighted) {
         const colorIndex = task.$colorIndex !== undefined ? task.$colorIndex : 0
         classes.push(`highlighted-task highlighted-task-color-${colorIndex}`)
@@ -856,12 +877,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     // Style weekends, public holidays, and today
     gantt.templates.timeline_cell_class = (task, date) => {
-      const dateStr = date.toISOString().split('T')[0]
+      const dateStr = formatDateLocal(date) // Use LOCAL timezone
 
       // Get today's date dynamically
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      const todayStr = today.toISOString().split('T')[0]
+      const todayStr = formatDateLocal(today) // Use LOCAL timezone
 
       // Today gets priority styling
       if (dateStr === todayStr) {
@@ -878,12 +899,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     // Style scale cells (header)
     gantt.templates.scale_cell_class = (date) => {
-      const dateStr = date.toISOString().split('T')[0]
+      const dateStr = formatDateLocal(date) // Use LOCAL timezone
 
       // Get today's date dynamically
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      const todayStr = today.toISOString().split('T')[0]
+      const todayStr = formatDateLocal(today) // Use LOCAL timezone
 
       // Today gets priority styling
       if (dateStr === todayStr) {
@@ -900,7 +921,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     // Log today's date for debugging
     const debugToday = new Date()
-    console.log('DHTMLX Gantt - Today\'s date:', debugToday.toISOString().split('T')[0])
+    console.log('DHTMLX Gantt - Today\'s date (LOCAL):', formatDateLocal(debugToday))
+    console.log('DHTMLX Gantt - Public holidays:', publicHolidays)
 
     // Handle link creation (drag-and-drop dependencies)
     gantt.attachEvent('onAfterLinkAdd', (id, link) => {
@@ -916,10 +938,52 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       return true
     })
 
+    // Update undo/redo button states
+    const updateUndoRedoButtons = () => {
+      if (gantt.getUndoStack && gantt.getRedoStack) {
+        const undoStack = gantt.getUndoStack()
+        const redoStack = gantt.getRedoStack()
+        setCanUndo(undoStack.length > 0)
+        setCanRedo(redoStack.length > 0)
+        console.log('📚 Undo/Redo stacks:', { undo: undoStack.length, redo: redoStack.length })
+      }
+    }
+
     // Handle task updates (drag to change dates)
     gantt.attachEvent('onAfterTaskUpdate', (id, task) => {
       console.log('Task updated:', task)
       handleTaskUpdate(task)
+      updateUndoRedoButtons() // Update button states after change
+      return true
+    })
+
+    gantt.attachEvent('onAfterTaskAdd', () => {
+      updateUndoRedoButtons()
+      return true
+    })
+
+    gantt.attachEvent('onAfterTaskDelete', () => {
+      updateUndoRedoButtons()
+      return true
+    })
+
+    gantt.attachEvent('onAfterLinkAdd', () => {
+      updateUndoRedoButtons()
+      return true
+    })
+
+    gantt.attachEvent('onAfterLinkDelete', () => {
+      updateUndoRedoButtons()
+      return true
+    })
+
+    gantt.attachEvent('onAfterUndo', () => {
+      updateUndoRedoButtons()
+      return true
+    })
+
+    gantt.attachEvent('onAfterRedo', () => {
+      updateUndoRedoButtons()
       return true
     })
 
@@ -940,20 +1004,55 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     // 1. Adding editor: { type: 'text|number', map_to: 'field_name' } to column config
     // 2. This handler will automatically select the text for any input field
     // ====================================================================
-    const handleEditorClick = (e) => {
+    const handleEditorFocus = (e) => {
       const target = e.target
-      // Check if clicked element is any type of input field (text, number, etc.)
+      // Auto-select text when editor input receives focus (after double-click to open)
       if (target && target.tagName === 'INPUT' && (target.type === 'text' || target.type === 'number')) {
-        // Small delay to ensure the editor is fully initialized
-        setTimeout(() => {
-          target.select() // Highlight/select all text in the input
-        }, 10)
+        console.log('🎯 Duration editor focused, auto-selecting text...')
+        // Select all text so user can immediately type to replace
+        target.select()
+        console.log('✅ Text selected, value:', target.value)
       }
     }
 
-    // Add event listener to gantt container for inline editor auto-select
+    const handleEditorKeyDown = (e) => {
+      const target = e.target
+      // Keep editor open and save on Enter without closing
+      if (target && target.tagName === 'INPUT' && (target.type === 'text' || target.type === 'number')) {
+        if (e.key === 'Enter') {
+          console.log('⏎ Enter pressed in editor - saving but keeping open')
+          e.preventDefault() // Prevent default Enter behavior (which closes editor)
+          e.stopPropagation()
+
+          // Get the task ID from the closest row
+          const row = target.closest('.gantt_row')
+          if (row) {
+            const taskId = row.getAttribute('task_id')
+            if (taskId) {
+              // Trigger save by updating the task
+              const task = gantt.getTask(taskId)
+              const newValue = parseInt(target.value)
+              if (!isNaN(newValue) && newValue > 0) {
+                task.duration = newValue
+                gantt.updateTask(taskId) // This will trigger our handleTaskUpdate
+                console.log('💾 Saved new duration:', newValue)
+
+                // Keep focus in the input so it stays open
+                setTimeout(() => {
+                  target.focus()
+                  target.select()
+                }, 10)
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Add event listeners to keep editor open
     if (ganttContainer.current) {
-      ganttContainer.current.addEventListener('click', handleEditorClick)
+      ganttContainer.current.addEventListener('focus', handleEditorFocus, true) // Use capture phase
+      ganttContainer.current.addEventListener('keydown', handleEditorKeyDown, true) // Capture Enter before it closes
     }
 
     // Intercept task drag to check for predecessor conflicts
@@ -1087,38 +1186,118 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         const actuallyMoved = finalStart.getTime() !== originalStartDate.getTime()
 
         if (actuallyMoved) {
-          // Mark this task as manually positioned only if it actually moved
-          task.$manuallyPositioned = true
-          manuallyPositionedTasks.current.add(task.id) // Store in ref so it persists across reloads
-          console.log('🟤 Marked task', task.id, 'as manually positioned - will show in light brown')
-          console.log('   Task object after marking:', task)
-          console.log('   Manually positioned tasks:', Array.from(manuallyPositionedTasks.current))
+          // Check if task has dependencies
+          const hasDependencies = task.predecessor_ids && task.predecessor_ids.length > 0
 
-          // Force Gantt to re-render the task with new styling
-          gantt.updateTask(task.id)
-          gantt.refreshTask(task.id)
+          if (hasDependencies) {
+            // Ask user if they want to remove dependencies
+            const predecessorList = task.predecessor_ids.map(pred => {
+              const predId = typeof pred === 'object' ? pred.id : pred
+              return `#${predId}`
+            }).join(', ')
 
-          console.log('   Task after refresh:', gantt.getTask(task.id))
+            const confirmed = window.confirm(
+              `This task has dependencies (${predecessorList}).\n\n` +
+              `Moving it to a manual position will break the automatic scheduling.\n\n` +
+              `Do you want to:\n` +
+              `• YES: Remove dependencies and lock position\n` +
+              `• NO: Keep dependencies (task may reschedule automatically)`
+            )
 
-          // Now save to backend with manually_positioned flag
-          isDragging.current = false // Clear drag flag so handleTaskUpdate can save
+            if (confirmed) {
+              // User chose to remove dependencies and lock position
+              console.log('🔓 User chose to remove dependencies and lock position')
 
-          // Calculate day offset from today (project start)
-          const projectStartDate = new Date()
-          projectStartDate.setHours(0, 0, 0, 0)
-          const taskStartDate = new Date(task.start_date)
-          taskStartDate.setHours(0, 0, 0, 0)
-          const dayOffset = Math.floor((taskStartDate - projectStartDate) / (1000 * 60 * 60 * 24))
+              // Remove dependencies
+              task.predecessor_ids = []
 
-          // CRITICAL: Preserve predecessor_ids when saving position
-          const updateData = {
-            duration: task.duration,
-            start_date: dayOffset,  // Send as integer day offset, not date string
-            manually_positioned: true,
-            predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
+              // Mark that dependencies were broken (for visual indicator)
+              task.dependencies_broken = true
+              task.$dependenciesBroken = true
+
+              // Auto-check the lock checkbox
+              task.manually_positioned = true
+              task.$manuallyPositioned = true
+              manuallyPositionedTasks.current.add(task.id)
+
+              // Calculate day offset
+              const projectStartDate = new Date()
+              projectStartDate.setHours(0, 0, 0, 0)
+              const taskStartDate = new Date(task.start_date)
+              taskStartDate.setHours(0, 0, 0, 0)
+              const dayOffset = Math.floor((taskStartDate - projectStartDate) / (1000 * 60 * 60 * 24))
+
+              // Save with no dependencies and manually_positioned = true
+              const updateData = {
+                duration: task.duration,
+                start_date: dayOffset,
+                manually_positioned: true,
+                dependencies_broken: true,  // Mark as broken
+                predecessor_ids: [] // Empty - dependencies removed
+              }
+
+              console.log('💾 Saving with removed dependencies:', updateData)
+              isDragging.current = false
+              onUpdateTask(task.id, updateData)
+
+              // Update UI
+              gantt.updateTask(task.id)
+              gantt.render() // Full render to update checkbox and styling
+            } else {
+              // User chose to keep dependencies
+              console.log('📌 User chose to keep dependencies - not locking')
+
+              // Mark as manually positioned but keep dependencies
+              task.$manuallyPositioned = true
+              manuallyPositionedTasks.current.add(task.id)
+
+              const projectStartDate = new Date()
+              projectStartDate.setHours(0, 0, 0, 0)
+              const taskStartDate = new Date(task.start_date)
+              taskStartDate.setHours(0, 0, 0, 0)
+              const dayOffset = Math.floor((taskStartDate - projectStartDate) / (1000 * 60 * 60 * 24))
+
+              // Save with dependencies preserved, manually_positioned = true
+              const updateData = {
+                duration: task.duration,
+                start_date: dayOffset,
+                manually_positioned: true,
+                predecessor_ids: task.predecessor_ids || []
+              }
+
+              console.log('💾 Saving with preserved dependencies:', updateData)
+              isDragging.current = false
+              onUpdateTask(task.id, updateData)
+
+              gantt.updateTask(task.id)
+              gantt.refreshTask(task.id)
+            }
+          } else {
+            // No dependencies - just mark as manually positioned
+            task.$manuallyPositioned = true
+            manuallyPositionedTasks.current.add(task.id)
+            console.log('🟤 Marked task', task.id, 'as manually positioned (no dependencies)')
+
+            gantt.updateTask(task.id)
+            gantt.refreshTask(task.id)
+
+            isDragging.current = false
+
+            const projectStartDate = new Date()
+            projectStartDate.setHours(0, 0, 0, 0)
+            const taskStartDate = new Date(task.start_date)
+            taskStartDate.setHours(0, 0, 0, 0)
+            const dayOffset = Math.floor((taskStartDate - projectStartDate) / (1000 * 60 * 60 * 24))
+
+            const updateData = {
+              duration: task.duration,
+              start_date: dayOffset,
+              manually_positioned: true,
+              predecessor_ids: []
+            }
+            console.log('💾 Saving manually positioned task (no dependencies):', updateData)
+            onUpdateTask(task.id, updateData)
           }
-          console.log('💾 Saving manually positioned task to backend:', updateData, 'Date:', task.start_date, 'Offset:', dayOffset)
-          onUpdateTask(task.id, updateData)
         } else {
           console.log('↩️ Task did not actually move - not marking as manually positioned')
           // Task snapped back to its original position, don't mark as manually positioned
@@ -1268,6 +1447,58 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       console.log('Task double-clicked, ID:', id)
       console.log('details_on_dblclick config:', gantt.config.details_on_dblclick)
       return true // Allow default DHTMLX lightbox to open
+    })
+
+    // Handle empty space click in timeline - select the row at that Y position
+    gantt.attachEvent('onEmptyClick', (id, e) => {
+      console.log('🖱️ Empty space clicked in timeline')
+
+      try {
+        // Get the timeline container
+        const timeline = gantt.$task_data
+        if (!timeline) {
+          console.log('Timeline container not found')
+          return true
+        }
+
+        // Get Y coordinate relative to the timeline
+        const timelineRect = timeline.getBoundingClientRect()
+        const relativeY = e.clientY - timelineRect.top + timeline.scrollTop
+
+        // Calculate which row was clicked (row_height from config)
+        const rowHeight = gantt.config.row_height || 40
+        const rowIndex = Math.floor(relativeY / rowHeight)
+
+        console.log('📍 Click position:', {
+          clientY: e.clientY,
+          timelineTop: timelineRect.top,
+          scrollTop: timeline.scrollTop,
+          relativeY: relativeY,
+          rowHeight: rowHeight,
+          rowIndex: rowIndex
+        })
+
+        // Get all visible tasks in order
+        const visibleTasks = []
+        gantt.eachTask((task) => {
+          visibleTasks.push(task)
+        })
+
+        console.log('👁️ Visible tasks:', visibleTasks.length)
+
+        // Select the task at this row index
+        if (rowIndex >= 0 && rowIndex < visibleTasks.length) {
+          const taskToSelect = visibleTasks[rowIndex]
+          gantt.selectTask(taskToSelect.id)
+          console.log('✅ Selected task from empty space:', taskToSelect.id, taskToSelect.text)
+        } else {
+          console.log('⚠️ Row index out of range:', rowIndex, '/', visibleTasks.length)
+        }
+      } catch (err) {
+        console.error('❌ Error handling empty click:', err)
+      }
+
+      return true
     })
 
     // Handle before lightbox
@@ -1730,10 +1961,11 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               isDragging.current = false
             }, 100)
 
-            // Save to backend - CRITICAL: Preserve predecessor_ids
+            // Save to backend - CRITICAL: Preserve predecessor_ids AND lock position
             const updateData = {
               [field]: checked,
               manually_positioned: task.manually_positioned,
+              start_date: dayOffset,  // Lock at current position!
               predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
             }
             console.log('💾 Saving checkbox state to backend:', updateData)
@@ -1915,7 +2147,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     return () => {
       ganttContainer.current?.removeEventListener('click', handleCheckboxClick)
       ganttContainer.current?.removeEventListener('click', handleLockCheckboxClick)
-      ganttContainer.current?.removeEventListener('click', handleEditorClick)
+      ganttContainer.current?.removeEventListener('focus', handleEditorFocus, true)
+      ganttContainer.current?.removeEventListener('keydown', handleEditorKeyDown, true)
       gantt.clearAll()
     }
   }, [isOpen, publicHolidays, zoomLevel, onUpdateTask])
@@ -2503,7 +2736,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         confirm: task.confirm || false,
         supplier_confirm: task.supplier_confirm || false,
         start: task.start || false,
-        complete: task.complete || false
+        complete: task.complete || false,
+        dependencies_broken: task.dependencies_broken || false,
+        $dependenciesBroken: task.dependencies_broken || false  // For visual indicator
       }
     })
 
@@ -2544,21 +2779,16 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     gantt.setSizes()
     debouncedRender(20)
 
-    // Scroll to show the first task (or today if no tasks)
-    if (ganttTasks.length > 0) {
-      setTimeout(() => {
-        // Find the earliest task start date
-        const earliestDate = ganttTasks.reduce((earliest, task) => {
-          const taskDate = new Date(task.start_date)
-          return !earliest || taskDate < earliest ? taskDate : earliest
-        }, null)
+    // Scroll to show yesterday's date (after gantt fully renders)
+    setTimeout(() => {
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      yesterday.setHours(0, 0, 0, 0)
 
-        if (earliestDate) {
-          console.log('📅 Scrolling Gantt to show earliest task at:', earliestDate)
-          gantt.showDate(earliestDate)
-        }
-      }, 50) // Reduced delay
-    }
+      console.log('📅 Scrolling Gantt to show yesterday:', formatDateLocal(yesterday))
+      gantt.showDate(yesterday)
+      console.log('✅ Scroll command executed')
+    }, 300) // Longer delay to ensure gantt is fully rendered and sized
   }, [ganttReady, tasks, publicHolidays, debouncedRender])
 
   // Handle saving task dependencies from editor
@@ -2651,16 +2881,34 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             {/* Undo/Redo Buttons */}
             <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-lg">
               <button
-                onClick={() => gantt.undo()}
+                onClick={() => {
+                  console.log('🔄 Undo clicked')
+                  if (gantt.undo) {
+                    gantt.undo()
+                    console.log('✅ Undo called')
+                  } else {
+                    console.error('❌ gantt.undo() not available - undo plugin may not be loaded')
+                  }
+                }}
+                disabled={!canUndo}
                 className="px-3 py-1.5 text-xs font-medium rounded transition-colors text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Undo (Ctrl+Z)"
+                title={canUndo ? "Undo (Ctrl+Z)" : "No actions to undo"}
               >
                 ↶ Undo
               </button>
               <button
-                onClick={() => gantt.redo()}
+                onClick={() => {
+                  console.log('🔄 Redo clicked')
+                  if (gantt.redo) {
+                    gantt.redo()
+                    console.log('✅ Redo called')
+                  } else {
+                    console.error('❌ gantt.redo() not available - undo plugin may not be loaded')
+                  }
+                }}
+                disabled={!canRedo}
                 className="px-3 py-1.5 text-xs font-medium rounded transition-colors text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Redo (Ctrl+Y)"
+                title={canRedo ? "Redo (Ctrl+Y)" : "No actions to redo"}
               >
                 ↷ Redo
               </button>
@@ -3118,6 +3366,19 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         .dhtmlx-gantt-container .gantt_task_line.manually-positioned-task {
           background-color: #d2691e !important; /* Chocolate/light brown */
           border-color: #a0522d !important; /* Sienna (darker brown) */
+        }
+
+        /* Broken dependencies - checkered pattern overlay */
+        .dhtmlx-gantt-container .gantt_task_line.broken-dependencies-task {
+          background-image: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(255, 255, 255, 0.4) 10px,
+            rgba(255, 255, 255, 0.4) 20px
+          ) !important;
+          border: 2px dashed #ef4444 !important; /* Red dashed border */
+          box-shadow: 0 0 10px rgba(239, 68, 68, 0.5) !important; /* Red glow */
         }
 
         /* Manually positioned row highlight */
@@ -3682,7 +3943,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                   task[field] = checked
 
                   gantt.updateTask(task.id)
-                  // PERFORMANCE: updateTask already triggers render
+                  gantt.render() // Force full render to update lock checkbox
 
                   // Save to backend - uncheck the checkbox and unlock
                   // CRITICAL: Preserve predecessor_ids

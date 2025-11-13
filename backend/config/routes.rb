@@ -37,6 +37,11 @@ Rails.application.routes.draw do
       # Git integration
       get 'git/branch_status', to: 'git#branch_status'
 
+      # System & Performance Monitoring
+      get 'system/health', to: 'system#health'
+      get 'system/performance', to: 'system#performance'
+      get 'system/metrics', to: 'system#metrics'
+
       # Health checks
       get 'health/pricebook', to: 'health#pricebook'
       get 'health/pricebook/missing_items', to: 'health#missing_items'

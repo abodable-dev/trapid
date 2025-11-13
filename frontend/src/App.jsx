@@ -35,6 +35,7 @@ const OneDrivePage = lazy(() => import('./pages/OneDrivePage'))
 const WorkflowsPage = lazy(() => import('./pages/WorkflowsPage'))
 const WorkflowAdminPage = lazy(() => import('./pages/WorkflowAdminPage'))
 const PublicHolidaysPage = lazy(() => import('./pages/PublicHolidaysPage'))
+const SystemPerformancePage = lazy(() => import('./pages/SystemPerformancePage'))
 
 // Heavy components: Lazy load with priority (biggest bundle impact)
 const MasterSchedulePage = lazy(() => import('./pages/MasterSchedulePage')) // 3,952 lines Gantt!
@@ -87,6 +88,7 @@ function App() {
         <Route path="/accounts" element={<AppLayout><AccountsPage /></AppLayout>} />
         <Route path="/users" element={<AppLayout><UsersPage /></AppLayout>} />
         <Route path="/health" element={<AppLayout><HealthPage /></AppLayout>} />
+        <Route path="/system/performance" element={<AppLayout><SystemPerformancePage /></AppLayout>} />
         <Route path="/suppliers" element={<Navigate to="/contacts" replace />} />
         <Route path="/suppliers/new" element={<AppLayout><SupplierNewPage /></AppLayout>} />
         <Route path="/suppliers/:id/edit" element={<AppLayout><SupplierEditPage /></AppLayout>} />

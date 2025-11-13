@@ -16,6 +16,7 @@ import {
   Bars3Icon,
   BellIcon,
   Cog6ToothIcon,
+  CpuChipIcon,
   HomeIcon,
   ArrowUpTrayIcon,
   XMarkIcon,
@@ -49,6 +50,7 @@ const navigation = [
   { name: 'Outlook', href: '/outlook', icon: EnvelopeIcon },
   { name: 'OneDrive', href: '/onedrive', icon: CloudIcon },
   { name: 'Health', href: '/health', icon: PlusIcon },
+  { name: 'Performance', href: '/system/performance', icon: CpuChipIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ]
 
