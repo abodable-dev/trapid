@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
-import GanttChart from '../components/gantt/GanttChart'
+import DHtmlxGanttView from '../components/schedule-master/DHtmlxGanttView'
 import TaskTable from '../components/gantt/TaskTable'
-import ColorCustomizationMenu from '../components/gantt/ColorCustomizationMenu'
 import Toast from '../components/Toast'
-import { getStoredColorConfig, saveColorConfig } from '../components/gantt/utils/colorSchemes'
 
 export default function MasterSchedulePage() {
   const { id } = useParams() // Get job/construction ID from URL
@@ -16,16 +14,10 @@ export default function MasterSchedulePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [viewMode, setViewMode] = useState('gantt') // 'gantt' or 'table'
-  const [colorBy, setColorBy] = useState('status') // 'status', 'category', or 'type'
-  const [colorConfig, setColorConfig] = useState(getStoredColorConfig())
+  const [showGanttView, setShowGanttView] = useState(false)
   const [toast, setToast] = useState(null)
   const [saving, setSaving] = useState(false)
   const navigate = useNavigate()
-
-  // Save color config when it changes
-  useEffect(() => {
-    saveColorConfig(colorConfig)
-  }, [colorConfig])
 
   useEffect(() => {
     loadConstructionAndSchedule()
@@ -184,7 +176,10 @@ export default function MasterSchedulePage() {
             <div className="mt-8 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setViewMode('gantt')}
+                  onClick={() => {
+                    setViewMode('gantt')
+                    setShowGanttView(true)
+                  }}
                   className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                     viewMode === 'gantt'
                       ? 'bg-indigo-600 text-white shadow-sm'
@@ -210,60 +205,43 @@ export default function MasterSchedulePage() {
                 <p className="text-sm text-gray-500">
                   {scheduleData?.tasks?.length || 0} tasks
                 </p>
-
-                {/* Color By Dropdown */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-600">Color by:</span>
-                  <select
-                    value={colorBy}
-                    onChange={(e) => setColorBy(e.target.value)}
-                    className="text-xs border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="status">Status</option>
-                    <option value="category">Category</option>
-                    <option value="type">Type</option>
-                  </select>
-                </div>
-
-                {/* Color Customization Menu */}
-                {scheduleData && scheduleData.tasks && (
-                  <ColorCustomizationMenu
-                    tasks={scheduleData.tasks}
-                    colorConfig={colorConfig}
-                    onColorChange={setColorConfig}
-                    colorBy={colorBy}
-                  />
-                )}
               </div>
             </div>
 
-            {/* Gantt Chart or Table View */}
+            {/* Table View */}
             <div className="mt-4">
-              {scheduleData && scheduleData.tasks && (
-                <>
-                  {viewMode === 'gantt' && (
-                    <GanttChart
-                      tasks={scheduleData.tasks}
-                      projectInfo={scheduleData.project}
-                      colorBy={colorBy}
-                      colorConfig={colorConfig}
-                    />
-                  )}
-                  {viewMode === 'table' && (
-                    <TaskTable
-                      tasks={scheduleData.tasks}
-                      colorBy={colorBy}
-                      colorConfig={colorConfig}
-                      onTaskUpdate={handleTaskUpdate}
-                      saving={saving}
-                    />
-                  )}
-                </>
+              {scheduleData && scheduleData.tasks && viewMode === 'table' && (
+                <TaskTable
+                  tasks={scheduleData.tasks}
+                  onTaskUpdate={handleTaskUpdate}
+                  saving={saving}
+                />
               )}
             </div>
           </div>
         </main>
       </div>
+
+      {/* DHtmlx Gantt View Modal */}
+      {showGanttView && scheduleData && scheduleData.tasks && (
+        <DHtmlxGanttView
+          isOpen={showGanttView}
+          onClose={() => {
+            setShowGanttView(false)
+            setViewMode('table')
+          }}
+          tasks={scheduleData.tasks}
+          onUpdateTask={async (taskId, updates) => {
+            // Handle task updates from Gantt
+            for (const [field, value] of Object.entries(updates)) {
+              await handleTaskUpdate(taskId, field, value)
+            }
+          }}
+        />
+      )}
+
+      {/* Toast */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   )
 }

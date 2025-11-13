@@ -88,14 +88,61 @@ module Api
         row_ids = params[:row_ids] || []
 
         ActiveRecord::Base.transaction do
+          # Step 1: Get all rows and build old sequence mapping (id -> old_sequence)
+          all_rows = @template.schedule_template_rows.order(:sequence_order)
+          old_sequence_map = {}
+          all_rows.each_with_index do |row, idx|
+            old_sequence_map[row.id] = idx + 1  # 1-based sequence
+          end
+
+          # Step 2: Build new sequence mapping (id -> new_sequence)
+          new_sequence_map = {}
+          row_ids.each_with_index do |row_id, index|
+            new_sequence_map[row_id] = index + 1  # 1-based sequence
+          end
+
+          # Step 3: Build reverse mapping (old_sequence -> new_sequence)
+          sequence_changes = {}
+          old_sequence_map.each do |row_id, old_seq|
+            new_seq = new_sequence_map[row_id]
+            sequence_changes[old_seq] = new_seq if old_seq != new_seq
+          end
+
+          Rails.logger.info "🔄 REORDER - Old to New mapping: #{sequence_changes.inspect}"
+
+          # Step 4: Update sequence_order for all rows
           row_ids.each_with_index do |row_id, index|
             row = @template.schedule_template_rows.find(row_id)
-            row.update!(sequence_order: index)
+            row.update_column(:sequence_order, index)
+          end
+
+          # Step 5: Update predecessor_ids for all rows that reference moved tasks
+          if sequence_changes.any?
+            all_rows.each do |row|
+              next if row.predecessor_ids.blank?
+
+              updated_predecessors = row.predecessor_ids.map do |pred|
+                pred_id = pred['id'].to_i
+                new_pred_id = sequence_changes[pred_id] || pred_id
+
+                if new_pred_id != pred_id
+                  Rails.logger.info "  📝 Row #{row.id}: Updating predecessor #{pred_id} -> #{new_pred_id}"
+                end
+
+                { 'id' => new_pred_id, 'type' => pred['type'], 'lag' => pred['lag'] }
+              end
+
+              if updated_predecessors != row.predecessor_ids
+                row.update_column(:predecessor_ids, updated_predecessors)
+              end
+            end
           end
         end
 
         render json: { success: true }
       rescue StandardError => e
+        Rails.logger.error "❌ REORDER FAILED: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
         render json: { error: e.message }, status: :unprocessable_entity
       end
 

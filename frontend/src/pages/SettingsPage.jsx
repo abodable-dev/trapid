@@ -15,6 +15,7 @@ import TablesTab from '../components/settings/TablesTab'
 import SchemaPage from './SchemaPage'
 import DocumentationCategoriesTab from '../components/settings/DocumentationCategoriesTab'
 import RolesAndGroupsTab from '../components/settings/RolesAndGroupsTab'
+import ContactRolesManagement from '../components/settings/ContactRolesManagement'
 import SupervisorChecklistTab from '../components/settings/SupervisorChecklistTab'
 import WorkflowAdminPage from './WorkflowAdminPage'
 import PublicHolidaysPage from './PublicHolidaysPage'
@@ -25,7 +26,7 @@ export default function SettingsPage() {
   const location = useLocation()
 
   // Map tab names to indices
-  const tabs = ['integrations', 'users', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'git', 'deployment']
+  const tabs = ['integrations', 'users', 'contact-roles', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'git', 'deployment']
 
   // Get initial tab index from URL query parameter
   const getInitialTabIndex = () => {
@@ -145,6 +146,18 @@ export default function SettingsPage() {
               }
             >
               Users
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Contact Roles
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -305,6 +318,13 @@ export default function SettingsPage() {
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
               <RolesAndGroupsTab />
+            </div>
+          </TabPanel>
+
+          {/* Contact Roles Tab */}
+          <TabPanel>
+            <div className="px-4 sm:px-6 lg:px-8 py-10">
+              <ContactRolesManagement />
             </div>
           </TabPanel>
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { UserCircleIcon, TrashIcon, PlusIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { api } from '../../api'
 
-export default function ContactPersonsSection({ contactPersons = [], onUpdate, isEditMode }) {
+export default function ContactPersonsSection({ contact, contactPersons = [], onUpdate, isEditMode }) {
   const [editingPerson, setEditingPerson] = useState(null)
   const [newPerson, setNewPerson] = useState(null)
   const [availableRoles, setAvailableRoles] = useState([])
@@ -19,6 +19,38 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
     } catch (error) {
       console.error('Failed to fetch roles:', error)
     }
+  }
+
+  // Get roles organized by contact type
+  const getOrganizedRoles = () => {
+    if (!contact || !contact.contact_types || contact.contact_types.length === 0) {
+      return availableRoles
+    }
+
+    const contactTypes = contact.contact_types
+    const organized = []
+
+    // Add shared roles first
+    const sharedRoles = availableRoles.filter(role => !role.contact_type)
+    if (sharedRoles.length > 0) {
+      organized.push({ type: 'shared', label: 'All Types', roles: sharedRoles })
+    }
+
+    // Add type-specific roles
+    contactTypes.forEach(type => {
+      const typeRoles = availableRoles.filter(role => role.contact_type === type)
+      if (typeRoles.length > 0) {
+        const typeLabels = {
+          customer: 'Customer',
+          supplier: 'Supplier',
+          sales: 'Sales',
+          land_agent: 'Land Agent'
+        }
+        organized.push({ type, label: typeLabels[type] || type, roles: typeRoles })
+      }
+    })
+
+    return organized
   }
 
   const startEditing = (person) => {
@@ -90,7 +122,7 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Contact Persons</h2>
           <ShieldCheckIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
         </div>
-        {isEditMode && !newPerson && (
+        {!newPerson && (
           <button
             onClick={startAdding}
             className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
@@ -183,9 +215,21 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
                       className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     >
                       <option value="">Select role...</option>
-                      {availableRoles.map(role => (
-                        <option key={role.id} value={role.name}>{role.name}</option>
-                      ))}
+                      {getOrganizedRoles().length > 0 && Array.isArray(getOrganizedRoles()[0].roles) ? (
+                        // Organized by type
+                        getOrganizedRoles().map(group => (
+                          <optgroup key={group.type} label={group.label}>
+                            {group.roles.map(role => (
+                              <option key={role.id} value={role.name}>{role.name}</option>
+                            ))}
+                          </optgroup>
+                        ))
+                      ) : (
+                        // Flat list
+                        getOrganizedRoles().map(role => (
+                          <option key={role.id} value={role.name}>{role.name}</option>
+                        ))
+                      )}
                       <option value="Other">Other (custom)</option>
                     </select>
                   )}
@@ -412,9 +456,21 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
                     className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                   >
                     <option value="">Select role...</option>
-                    {availableRoles.map(role => (
-                      <option key={role.id} value={role.name}>{role.name}</option>
-                    ))}
+                    {getOrganizedRoles().length > 0 && Array.isArray(getOrganizedRoles()[0].roles) ? (
+                      // Organized by type
+                      getOrganizedRoles().map(group => (
+                        <optgroup key={group.type} label={group.label}>
+                          {group.roles.map(role => (
+                            <option key={role.id} value={role.name}>{role.name}</option>
+                          ))}
+                        </optgroup>
+                      ))
+                    ) : (
+                      // Flat list
+                      getOrganizedRoles().map(role => (
+                        <option key={role.id} value={role.name}>{role.name}</option>
+                      ))
+                    )}
                     <option value="Other">Other (custom)</option>
                   </select>
                 )}

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { PlusIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, DocumentDuplicateIcon, ChartBarIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import ScheduleImporter from './ScheduleImporter'
 import ScheduleStats from './ScheduleStats'
 import ScheduleTaskList from './ScheduleTaskList'
-import ScheduleGanttChart from './ScheduleGanttChart'
+import DHtmlxGanttView from './DHtmlxGanttView'
 import TaskMatchModal from './TaskMatchModal'
 import AddScheduleTaskModal from './AddScheduleTaskModal'
 import CopyFromTemplateModal from './CopyFromTemplateModal'
@@ -21,19 +21,12 @@ export default function ScheduleMasterTab({ constructionId }) {
   const [showCopyFromTemplateModal, setShowCopyFromTemplateModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [toast, setToast] = useState(null)
-  const [ganttData, setGanttData] = useState(null)
+  const [showGanttView, setShowGanttView] = useState(false)
 
   // Load schedule tasks on mount
   useEffect(() => {
     loadScheduleTasks()
   }, [constructionId])
-
-  // Load gantt data when matched count changes
-  useEffect(() => {
-    if (matchedCount > 0) {
-      loadGanttData()
-    }
-  }, [matchedCount])
 
   const loadScheduleTasks = async () => {
     try {
@@ -48,15 +41,6 @@ export default function ScheduleMasterTab({ constructionId }) {
       showToast('Failed to load schedule tasks', 'error')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const loadGanttData = async () => {
-    try {
-      const response = await api.get(`/api/v1/constructions/${constructionId}/schedule_tasks/gantt_data`)
-      setGanttData(response)
-    } catch (err) {
-      console.error('Failed to load gantt data:', err)
     }
   }
 
@@ -196,6 +180,15 @@ export default function ScheduleMasterTab({ constructionId }) {
 
       {/* Action Buttons */}
       <div className="flex justify-end gap-3">
+        {matchedCount > 0 && (
+          <button
+            onClick={() => setShowGanttView(true)}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            <ChartBarIcon className="h-5 w-5 mr-2" />
+            View Gantt Chart
+          </button>
+        )}
         <button
           onClick={() => setShowCopyFromTemplateModal(true)}
           className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -225,16 +218,17 @@ export default function ScheduleMasterTab({ constructionId }) {
         onUnmatch={handleUnmatch}
       />
 
-      {/* Gantt Chart (only show if tasks are matched) */}
-      {matchedCount > 0 && ganttData && (
-        <div className="mt-8">
-          <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Timeline View
-            </h3>
-            <ScheduleGanttChart ganttData={ganttData} />
-          </div>
-        </div>
+      {/* DHtmlx Gantt View Modal */}
+      {showGanttView && matchedCount > 0 && (
+        <DHtmlxGanttView
+          isOpen={showGanttView}
+          onClose={() => setShowGanttView(false)}
+          tasks={scheduleTasks}
+          onUpdateTask={async (taskId, updates) => {
+            // Handle task updates if needed
+            await loadScheduleTasks()
+          }}
+        />
       )}
 
       {/* Match Modal */}

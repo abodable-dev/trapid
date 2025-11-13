@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_13_084037) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_13_222651) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -256,7 +256,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_084037) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_contact_roles_on_name", unique: true
+    t.string "contact_type", comment: "customer, supplier, sales, land_agent, or null for shared roles"
+    t.index ["contact_type"], name: "index_contact_roles_on_contact_type"
+    t.index ["name", "contact_type"], name: "index_contact_roles_on_name_and_type", unique: true
   end
 
   create_table "contacts", force: :cascade do |t|
@@ -312,12 +314,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_084037) do
     t.decimal "accounts_receivable_overdue", precision: 15, scale: 2
     t.decimal "accounts_payable_outstanding", precision: 15, scale: 2
     t.decimal "accounts_payable_overdue", precision: 15, scale: 2
+    t.boolean "portal_enabled", default: false
+    t.datetime "portal_welcome_sent_at"
+    t.decimal "trapid_rating", precision: 3, scale: 2
+    t.integer "total_ratings_count", default: 0
     t.index ["contact_types"], name: "index_contacts_on_contact_types", using: :gin
     t.index ["email"], name: "index_contacts_on_email"
     t.index ["is_active"], name: "index_contacts_on_is_active"
+    t.index ["portal_enabled"], name: "index_contacts_on_portal_enabled"
     t.index ["primary_contact_type"], name: "index_contacts_on_primary_contact_type"
     t.index ["rating"], name: "index_contacts_on_rating"
     t.index ["supplier_code"], name: "index_contacts_on_supplier_code", unique: true, where: "(supplier_code IS NOT NULL)"
+    t.index ["trapid_rating"], name: "index_contacts_on_trapid_rating"
     t.index ["xero_contact_number"], name: "index_contacts_on_xero_contact_number"
     t.index ["xero_contact_status"], name: "index_contacts_on_xero_contact_status"
     t.index ["xero_id", "last_synced_at"], name: "index_contacts_on_xero_id_and_last_synced_at"
@@ -506,6 +514,36 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_084037) do
     t.index ["table_id"], name: "index_import_sessions_on_table_id"
   end
 
+  create_table "maintenance_requests", force: :cascade do |t|
+    t.bigint "construction_id", null: false
+    t.bigint "supplier_contact_id"
+    t.bigint "reported_by_user_id"
+    t.bigint "purchase_order_id"
+    t.string "request_number", null: false
+    t.string "status", default: "open", null: false
+    t.string "priority", default: "medium"
+    t.string "category"
+    t.string "title", null: false
+    t.text "description"
+    t.text "resolution_notes"
+    t.date "reported_date", null: false
+    t.date "due_date"
+    t.date "resolved_date"
+    t.boolean "warranty_claim", default: false
+    t.decimal "estimated_cost", precision: 10, scale: 2
+    t.decimal "actual_cost", precision: 10, scale: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id", "status"], name: "index_maintenance_requests_on_construction_id_and_status"
+    t.index ["construction_id"], name: "index_maintenance_requests_on_construction_id"
+    t.index ["purchase_order_id"], name: "index_maintenance_requests_on_purchase_order_id"
+    t.index ["reported_by_user_id"], name: "index_maintenance_requests_on_reported_by_user_id"
+    t.index ["request_number"], name: "index_maintenance_requests_on_request_number", unique: true
+    t.index ["status"], name: "index_maintenance_requests_on_status"
+    t.index ["supplier_contact_id", "status"], name: "index_maintenance_requests_on_supplier_contact_id_and_status"
+    t.index ["supplier_contact_id"], name: "index_maintenance_requests_on_supplier_contact_id"
+  end
+
   create_table "one_drive_credentials", force: :cascade do |t|
     t.bigint "construction_id", null: false
     t.text "access_token"
@@ -580,6 +618,39 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_084037) do
     t.index ["purchase_order_id", "payment_date"], name: "index_payments_on_purchase_order_id_and_payment_date"
     t.index ["purchase_order_id"], name: "index_payments_on_purchase_order_id"
     t.index ["xero_payment_id"], name: "index_payments_on_xero_payment_id"
+  end
+
+  create_table "portal_access_logs", force: :cascade do |t|
+    t.bigint "portal_user_id", null: false
+    t.string "action"
+    t.string "ip_address"
+    t.string "user_agent"
+    t.jsonb "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["action"], name: "index_portal_access_logs_on_action"
+    t.index ["created_at"], name: "index_portal_access_logs_on_created_at"
+    t.index ["portal_user_id", "created_at"], name: "index_portal_access_logs_on_portal_user_id_and_created_at"
+    t.index ["portal_user_id"], name: "index_portal_access_logs_on_portal_user_id"
+  end
+
+  create_table "portal_users", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.string "email", null: false
+    t.string "password_digest", null: false
+    t.string "portal_type", null: false
+    t.boolean "active", default: true
+    t.datetime "last_login_at"
+    t.string "reset_password_token"
+    t.datetime "reset_password_sent_at"
+    t.integer "failed_login_attempts", default: 0
+    t.datetime "locked_until"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id", "portal_type"], name: "index_portal_users_on_contact_id_and_portal_type", unique: true
+    t.index ["contact_id"], name: "index_portal_users_on_contact_id"
+    t.index ["email"], name: "index_portal_users_on_email", unique: true
+    t.index ["reset_password_token"], name: "index_portal_users_on_reset_password_token", unique: true
   end
 
   create_table "price_histories", force: :cascade do |t|
@@ -827,6 +898,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_084037) do
     t.date "invoice_date"
     t.string "invoice_reference"
     t.bigint "estimate_id"
+    t.boolean "visible_to_supplier", default: false
+    t.jsonb "payment_schedule"
     t.index ["construction_id", "status"], name: "index_purchase_orders_on_construction_and_status"
     t.index ["construction_id"], name: "index_purchase_orders_on_construction_id"
     t.index ["creates_schedule_tasks"], name: "index_purchase_orders_on_creates_schedule_tasks"
@@ -837,6 +910,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_084037) do
     t.index ["required_on_site_date"], name: "index_purchase_orders_on_required_on_site_date"
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
+    t.index ["visible_to_supplier"], name: "index_purchase_orders_on_visible_to_supplier"
   end
 
   create_table "rain_logs", force: :cascade do |t|
@@ -1151,6 +1225,29 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_084037) do
     t.index ["contact_id"], name: "index_supplier_contacts_on_contact_id"
     t.index ["supplier_id", "contact_id"], name: "index_supplier_contacts_on_supplier_id_and_contact_id", unique: true
     t.index ["supplier_id"], name: "index_supplier_contacts_on_supplier_id"
+  end
+
+  create_table "supplier_ratings", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.bigint "rated_by_user_id", null: false
+    t.bigint "construction_id"
+    t.bigint "purchase_order_id"
+    t.integer "quality_rating"
+    t.integer "timeliness_rating"
+    t.integer "communication_rating"
+    t.integer "professionalism_rating"
+    t.integer "value_rating"
+    t.decimal "overall_rating", precision: 3, scale: 2
+    t.text "positive_feedback"
+    t.text "areas_for_improvement"
+    t.text "internal_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["construction_id"], name: "index_supplier_ratings_on_construction_id"
+    t.index ["contact_id", "created_at"], name: "index_supplier_ratings_on_contact_id_and_created_at"
+    t.index ["contact_id"], name: "index_supplier_ratings_on_contact_id"
+    t.index ["purchase_order_id"], name: "index_supplier_ratings_on_purchase_order_id"
+    t.index ["rated_by_user_id"], name: "index_supplier_ratings_on_rated_by_user_id"
   end
 
   create_table "suppliers", force: :cascade do |t|
@@ -1935,11 +2032,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_084037) do
   add_foreign_key "folder_template_items", "folder_templates"
   add_foreign_key "folder_templates", "users", column: "created_by_id"
   add_foreign_key "grok_plans", "users"
+  add_foreign_key "maintenance_requests", "constructions"
+  add_foreign_key "maintenance_requests", "contacts", column: "supplier_contact_id"
+  add_foreign_key "maintenance_requests", "purchase_orders"
+  add_foreign_key "maintenance_requests", "users", column: "reported_by_user_id"
   add_foreign_key "one_drive_credentials", "constructions"
   add_foreign_key "organization_one_drive_credentials", "users", column: "connected_by_id"
   add_foreign_key "outlook_credentials", "users"
   add_foreign_key "payments", "purchase_orders"
   add_foreign_key "payments", "users", column: "created_by_id"
+  add_foreign_key "portal_access_logs", "portal_users"
+  add_foreign_key "portal_users", "contacts"
   add_foreign_key "price_histories", "contacts", column: "supplier_id", name: "fk_rails_price_histories_contact"
   add_foreign_key "price_histories", "pricebook_items"
   add_foreign_key "pricebook_items", "contacts", column: "default_supplier_id", name: "fk_rails_pricebook_items_default_supplier"
@@ -1981,6 +2084,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_084037) do
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "supplier_contacts", "contacts"
   add_foreign_key "supplier_contacts", "suppliers"
+  add_foreign_key "supplier_ratings", "constructions"
+  add_foreign_key "supplier_ratings", "contacts"
+  add_foreign_key "supplier_ratings", "purchase_orders"
+  add_foreign_key "supplier_ratings", "users", column: "rated_by_user_id"
   add_foreign_key "task_dependencies", "project_tasks", column: "predecessor_task_id"
   add_foreign_key "task_dependencies", "project_tasks", column: "successor_task_id"
   add_foreign_key "task_updates", "project_tasks"

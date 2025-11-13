@@ -159,7 +159,20 @@ if (typeof window !== 'undefined') {
                     window.location.hostname === '127.0.0.1'
 
   if (isDev || isStaging) {
+    // Check if we should clear console BEFORE initializing to avoid capturing anything
+    const shouldClear = sessionStorage.getItem('clearConsoleAfterReload') === 'true'
+    if (shouldClear) {
+      sessionStorage.removeItem('clearConsoleAfterReload')
+    }
+
     consoleCapture.initialize()
+
+    // Clear immediately after initialization if flag was set
+    if (shouldClear) {
+      consoleCapture.clear()
+      console.clear()
+      console.log('✨ Console cleared after refresh')
+    }
   }
 }
 

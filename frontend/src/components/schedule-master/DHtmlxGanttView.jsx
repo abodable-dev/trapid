@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import gantt from 'dhtmlx-gantt'
 import 'dhtmlx-gantt/codebase/dhtmlxgantt.css'
 import { XMarkIcon, PencilSquareIcon, AdjustmentsHorizontalIcon, TrashIcon } from '@heroicons/react/24/outline'
@@ -6,6 +6,7 @@ import { api } from '../../api'
 import TaskDependencyEditor from './TaskDependencyEditor'
 import CascadeDependenciesModal from './CascadeDependenciesModal'
 import { Menu } from '@headlessui/react'
+import { createDebouncedStorageSetter } from '../../utils/debounce'
 
 /**
  * DHtmlxGanttView - DHTMLX Gantt implementation for comparison with SVAR Gantt
@@ -41,16 +42,19 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   const [canRedo, setCanRedo] = useState(false) // Track if redo is available
   const [cascadeModal, setCascadeModal] = useState(null) // { movedTask, unlockedSuccessors, blockedSuccessors, originalStart }
 
+  // PERFORMANCE: Create debounced localStorage setter (500ms delay)
+  const debouncedSaveToStorage = useMemo(() => createDebouncedStorageSetter(500), [])
+
   // Load checkbox visibility from localStorage or use default
   const [showCheckboxes, setShowCheckboxes] = useState(() => {
     const saved = localStorage.getItem('dhtmlxGanttShowCheckboxes')
     return saved !== null ? JSON.parse(saved) : true
   })
 
-  // Save checkbox visibility to localStorage whenever it changes
+  // Save checkbox visibility to localStorage whenever it changes (debounced)
   useEffect(() => {
-    localStorage.setItem('dhtmlxGanttShowCheckboxes', JSON.stringify(showCheckboxes))
-  }, [showCheckboxes])
+    debouncedSaveToStorage('dhtmlxGanttShowCheckboxes', showCheckboxes)
+  }, [showCheckboxes, debouncedSaveToStorage])
 
   // Load predecessor display mode from localStorage or use default ('numbers')
   const [predecessorDisplayMode, setPredecessorDisplayMode] = useState(() => {
@@ -58,10 +62,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     return saved || 'numbers' // 'numbers' or 'names'
   })
 
-  // Save predecessor display mode to localStorage whenever it changes
+  // Save predecessor display mode to localStorage whenever it changes (debounced)
   useEffect(() => {
-    localStorage.setItem('dhtmlxGanttPredecessorDisplayMode', predecessorDisplayMode)
-  }, [predecessorDisplayMode])
+    debouncedSaveToStorage('dhtmlxGanttPredecessorDisplayMode', predecessorDisplayMode)
+  }, [predecessorDisplayMode, debouncedSaveToStorage])
 
   // Load column widths from localStorage or use defaults
   const [columnWidths, setColumnWidths] = useState(() => {
@@ -81,10 +85,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     }
   })
 
-  // Save column widths to localStorage whenever they change
+  // Save column widths to localStorage whenever they change (debounced)
   useEffect(() => {
-    localStorage.setItem('dhtmlxGanttColumnWidths', JSON.stringify(columnWidths))
-  }, [columnWidths])
+    debouncedSaveToStorage('dhtmlxGanttColumnWidths', columnWidths)
+  }, [columnWidths, debouncedSaveToStorage])
 
   // Load column visibility from localStorage or use defaults
   const [visibleColumns, setVisibleColumns] = useState(() => {
@@ -113,10 +117,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     return defaults
   })
 
-  // Save column visibility to localStorage whenever it changes
+  // Save column visibility to localStorage whenever it changes (debounced)
   useEffect(() => {
-    localStorage.setItem('dhtmlxGanttColumns', JSON.stringify(visibleColumns))
-  }, [visibleColumns])
+    debouncedSaveToStorage('dhtmlxGanttColumns', visibleColumns)
+  }, [visibleColumns, debouncedSaveToStorage])
 
   // Load column order from localStorage or use default
   const [columnOrder, setColumnOrder] = useState(() => {
@@ -140,10 +144,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     return defaultOrder
   })
 
-  // Save column order to localStorage whenever it changes
+  // Save column order to localStorage whenever it changes (debounced)
   useEffect(() => {
-    localStorage.setItem('dhtmlxGanttColumnOrder', JSON.stringify(columnOrder))
-  }, [columnOrder])
+    debouncedSaveToStorage('dhtmlxGanttColumnOrder', columnOrder)
+  }, [columnOrder, debouncedSaveToStorage])
 
   // Load zoom level from localStorage or use default
   const [zoomLevel, setZoomLevel] = useState(() => {
@@ -151,10 +155,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     return saved || 'day'
   })
 
-  // Save zoom level to localStorage whenever it changes
+  // Save zoom level to localStorage whenever it changes (debounced)
   useEffect(() => {
-    localStorage.setItem('dhtmlxGanttZoom', zoomLevel)
-  }, [zoomLevel])
+    debouncedSaveToStorage('dhtmlxGanttZoom', zoomLevel)
+  }, [zoomLevel, debouncedSaveToStorage])
 
   // Task name search filter
   const [taskNameSearch, setTaskNameSearch] = useState('')
@@ -363,7 +367,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         align: 'center',
         resize: true,
         template: (task) => {
-          const taskIndex = tasks.findIndex(t => t.id === task.id)
+          const taskIndex = tasks.filter(t => t).findIndex(t => t.id === task.id)
           return taskIndex >= 0 ? `#${taskIndex + 1}` : ''
         }
       },
@@ -571,8 +575,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         const addButton = node.querySelector('.add-predecessor-btn')
 
         // Get available tasks (all except current task)
-        const availableTasks = tasks.filter(t => t.id !== task.id)
-        const currentTaskIndex = tasks.findIndex(t => t.id === task.id)
+        const availableTasks = tasks.filter(t => t && t.id !== task.id)
+        const currentTaskIndex = tasks.filter(t => t).findIndex(t => t.id === task.id)
 
         // Parse existing predecessors from the DHTMLX Gantt task object
         let predecessors = []
@@ -997,13 +1001,11 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         classes.push('task-confirm')
       } else if (task.$manuallyPositioned) {
         // Only show manually positioned color if no status checkboxes are set
-        console.log('🎨 task_class: Task', task.id, 'is manually positioned, adding brown class')
         classes.push('manually-positioned-task')
       }
 
       // Add checkered pattern if dependencies were broken
       if (task.$dependenciesBroken || task.dependencies_broken) {
-        console.log('🔗❌ task_class: Task', task.id, 'has broken dependencies, adding checkered pattern')
         classes.push('broken-dependencies-task')
       }
 
@@ -1012,11 +1014,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         classes.push(`highlighted-task highlighted-task-color-${colorIndex}`)
       }
 
-      const result = classes.join(' ')
-      if (result) {
-        console.log('🎨 task_class: Returning classes for task', task.id, ':', result)
-      }
-      return result
+      return classes.join(' ')
     }
 
     // Highlight grid rows for selected tasks
@@ -1114,13 +1112,19 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         const redoStack = gantt.getRedoStack()
         setCanUndo(undoStack.length > 0)
         setCanRedo(redoStack.length > 0)
-        console.log('📚 Undo/Redo stacks:', { undo: undoStack.length, redo: redoStack.length })
+        // Skip logging during drag to prevent visual lag
+        if (!isDragging.current) {
+          console.log('📚 Undo/Redo stacks:', { undo: undoStack.length, redo: redoStack.length })
+        }
       }
     }
 
     // Handle task updates (drag to change dates)
     gantt.attachEvent('onAfterTaskUpdate', (id, task) => {
-      console.log('Task updated:', task)
+      // Skip logging during drag to prevent visual lag (fires ~50 times per drag)
+      if (!isDragging.current) {
+        console.log('Task updated:', task)
+      }
       handleTaskUpdate(task)
       updateUndoRedoButtons() // Update button states after change
       return true
@@ -1227,8 +1231,6 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     // Intercept task drag to check for predecessor conflicts
     // Store original position before drag starts
     gantt.attachEvent('onBeforeTaskDrag', (id, mode, event) => {
-      console.log('🎯 onBeforeTaskDrag fired:', { id, mode })
-
       // CRITICAL: Hide tooltip immediately when drag starts to avoid blocking interaction
       try {
         if (gantt.ext && gantt.ext.tooltips && typeof gantt.ext.tooltips.hide === 'function') {
@@ -1236,7 +1238,6 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         }
       } catch (err) {
         // Tooltip hide may not be available in all versions - ignore error
-        console.log('Tooltip hide not available:', err.message)
       }
 
       // Only check for conflicts when dragging the task position (not resizing)
@@ -1249,10 +1250,11 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           return false // Block the drag
         }
 
-        isDragging.current = true // Mark that we're dragging
-        // Store original position in case we need to revert
-        task.$originalStart = new Date(task.start_date)
-        console.log('📍 Stored original start date:', task.$originalStart)
+        // Store original start date only once at the start of drag
+        if (!isDragging.current) {
+          isDragging.current = true // Mark that we're dragging
+          task.$originalStart = new Date(task.start_date)
+        }
       }
       return true // Allow drag to start
     })
@@ -1361,6 +1363,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
           // Find all tasks that have this task as a predecessor
           gantt.eachTask((successorTask) => {
+            // Skip undefined/invalid tasks
+            if (!successorTask || !successorTask.id) return
             if (successorTask.predecessor_ids && successorTask.predecessor_ids.length > 0) {
               const dependsOnThisTask = successorTask.predecessor_ids.some(pred => {
                 const predId = typeof pred === 'object' ? pred.id : pred
@@ -1440,6 +1444,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           const blockedSuccessors = [] // Successors that can't cascade due to locked dependencies
 
           gantt.eachTask((successorTask) => {
+            // Skip undefined/invalid tasks
+            if (!successorTask || !successorTask.id) return
             if (successorTask.id === task.id) return // Skip self
 
             // Check BOTH active predecessors AND broken predecessors
@@ -1466,6 +1472,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                   // Check if this successor has any LOCKED successors that would block cascading
                   const hasLockedSuccessors = []
                   gantt.eachTask((nestedSuccessor) => {
+                    // Skip undefined/invalid tasks
+                    if (!nestedSuccessor || !nestedSuccessor.id) return
+
                     console.log(`  🔍 Examining nested task #${nestedSuccessor.id} "${nestedSuccessor.text}"`)
 
                     if (nestedSuccessor.id === successorTask.id) {
@@ -1854,6 +1863,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       clickTimeout.current = setTimeout(() => {
         // Clear any previous highlighting
         gantt.eachTask((task) => {
+          // Skip undefined/invalid tasks
+          if (!task || !task.id) return
           task.$highlighted = false
           task.$colorIndex = undefined
         })
@@ -1900,6 +1911,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         // Highlight successors (tasks that depend on this task)
         let successorIndex = clickedTask.predecessor_ids ? clickedTask.predecessor_ids.length + 1 : 1
         gantt.eachTask((task) => {
+          // Skip undefined/invalid tasks
+          if (!task || !task.id) return
           if (task.predecessor_ids && task.predecessor_ids.length > 0) {
             const hasDependency = task.predecessor_ids.some(pred => {
               const predId = typeof pred === 'object' ? pred.id : pred
@@ -1930,6 +1943,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         highlightTimeout.current = setTimeout(() => {
           console.log('⏰ Auto-clearing task highlighting after 10 seconds')
           gantt.eachTask((task) => {
+            // Skip undefined/invalid tasks
+            if (!task || !task.id) return
             task.$highlighted = false
             task.$colorIndex = undefined
           })
@@ -1998,6 +2013,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         // Get all visible tasks in order
         const visibleTasks = []
         gantt.eachTask((task) => {
+          // Skip undefined/invalid tasks
+          if (!task || !task.id) return
           visibleTasks.push(task)
         })
 
@@ -2711,7 +2728,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         align: 'center',
         resize: true,
         template: (task) => {
-          const taskIndex = tasks.findIndex(t => t.id === task.id)
+          const taskIndex = tasks.filter(t => t).findIndex(t => t.id === task.id)
           return taskIndex >= 0 ? `#${taskIndex + 1}` : ''
         }
       },
@@ -3031,25 +3048,13 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     const duration = task.duration
     const startDate = task.start_date
 
-    console.log('Task updated:', {
-      id: task.id,
-      duration: duration,
-      start_date: startDate,
-      end_date: task.end_date,
-      manuallyPositioned: task.$manuallyPositioned,
-      isDragging: isDragging.current,
-      isSaving: isSaving.current
-    })
-
     // Skip if we're currently saving (prevents infinite loops from data reloads)
     if (isSaving.current) {
-      console.log('⏸️ Skipping update - already saving changes')
       return
     }
 
     // Skip saving during drag - onAfterTaskDrag will handle it
     if (isDragging.current) {
-      console.log('⏸️ Skipping save during drag - will save in onAfterTaskDrag')
       return
     }
 
@@ -3128,18 +3133,21 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
   // Load tasks into gantt
   useEffect(() => {
-    console.log('📊 DHtmlxGanttView - Tasks prop changed:', {
-      ganttReady,
-      tasksCount: tasks?.length || 0,
-      tasks: tasks
-    })
+    console.log('🐛 DHtmlxGanttView - useEffect triggered (tasks prop changed)')
+    console.log('  - ganttReady:', ganttReady)
+    console.log('  - tasks count:', tasks?.length || 0)
+    console.log('  - tasks IDs:', tasks?.filter(t => t).map(t => t.id) || [])
+    console.log('  - tasks names:', tasks?.filter(t => t).map(t => t.name) || [])
 
-    if (!ganttReady || !tasks || tasks.length === 0) {
-      console.log('⏸️ Skipping task load:', { ganttReady, hasTasks: !!tasks, tasksLength: tasks?.length })
+    // Filter out undefined/null tasks
+    const validTasks = tasks?.filter(t => t && t.id) || []
+
+    if (!ganttReady || validTasks.length === 0) {
+      console.log('⏸️ Skipping task load:', { ganttReady, hasTasks: !!tasks, validTasksLength: validTasks.length })
       return
     }
 
-    console.log('Loading tasks into DHTMLX Gantt:', tasks.length)
+    console.log('🐛 DHtmlxGanttView: Starting to load', validTasks.length, 'tasks into DHTMLX Gantt')
 
     // Declare variables outside batchUpdate so they're accessible after
     let ganttTasks = []
@@ -3261,10 +3269,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     }
 
     // Calculate start dates for all tasks first
-    tasks.forEach(task => calculateStartDate(task))
+    validTasks.forEach(task => calculateStartDate(task))
 
     // Sort tasks by calculated start date
-    const sortedTasks = [...tasks].sort((a, b) => {
+    const sortedTasks = [...validTasks].sort((a, b) => {
       const dateA = taskStartDates.get(a.id) || projectStartDate
       const dateB = taskStartDates.get(b.id) || projectStartDate
       return dateA - dateB
@@ -3321,14 +3329,14 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     // Convert links to DHTMLX format
     ganttLinks = []
-    tasks.forEach((task, index) => {
+    validTasks.forEach((task, index) => {
       if (task.predecessor_ids && task.predecessor_ids.length > 0) {
         task.predecessor_ids.forEach(pred => {
           const predData = typeof pred === 'object' ? pred : { id: pred, type: 'FS', lag: 0 }
 
           // Convert task number to task ID
           // predData.id is a task NUMBER (1-based), we need to get the actual task ID
-          const predecessorTask = tasks[predData.id - 1]
+          const predecessorTask = validTasks[predData.id - 1]
 
           if (predecessorTask) {
             ganttLinks.push({
@@ -3350,7 +3358,11 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       })
     }) // End batchUpdate - PERFORMANCE: Single render for all data changes
 
-    console.log('Loaded:', ganttTasks.length, 'tasks and', ganttLinks.length, 'links')
+    console.log('🐛 DHtmlxGanttView: gantt.parse() completed')
+    console.log('  - Parsed tasks count:', ganttTasks.length)
+    console.log('  - Parsed links count:', ganttLinks.length)
+    console.log('  - Parsed task IDs:', ganttTasks.map(t => t.id))
+    console.log('  - Parsed task names:', ganttTasks.map(t => t.text))
     console.log('📋 All loaded tasks:', ganttTasks.map(t => `#${t.id}: ${t.text} (start: ${t.start_date.toISOString().split('T')[0]})`).join(', '))
 
     // CRITICAL: Force immediate render to update lock checkbox states
@@ -3373,7 +3385,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
   // Handle saving task dependencies from editor
   const handleSaveDependencies = (taskId, predecessors) => {
-    console.log('DHtmlxGanttView: Saving dependencies for task', taskId, ':', predecessors)
+    console.log('🐛 DHtmlxGanttView: handleSaveDependencies called')
+    console.log('  - Task ID:', taskId)
+    console.log('  - New predecessors:', predecessors)
+    console.log('  - Current tasks count:', tasks?.length || 0)
+    console.log('  - Current task IDs:', tasks?.filter(t => t).map(t => t.id) || [])
+    console.log('  - Calling onUpdateTask...')
     onUpdateTask(taskId, { predecessor_ids: predecessors })
     setShowEditor(false)
     setSelectedTask(null)

@@ -161,7 +161,13 @@ export const api = {
       }
       throw new Error(errorMessage);
     }
-    return response.json();
+    // Handle 204 No Content responses
+    if (response.status === 204) {
+      return null;
+    }
+    // Try to parse JSON, return null if empty
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
   },
 
   // Xero Integration APIs

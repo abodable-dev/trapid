@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   PlusIcon, TrashIcon, PencilIcon, DocumentDuplicateIcon,
   CheckIcon, ArrowUpIcon, ArrowDownIcon, InformationCircleIcon,
   MagnifyingGlassIcon, XMarkIcon, Cog6ToothIcon, EyeIcon, EyeSlashIcon,
   Bars3Icon, ChevronUpIcon, ChevronDownIcon, ArrowDownTrayIcon, ArrowUpTrayIcon,
-  ChartBarIcon
+  ChartBarIcon, BookOpenIcon, ClipboardDocumentIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import Toast from '../Toast'
@@ -17,8 +17,8 @@ import SupervisorChecklistModal from './SupervisorChecklistModal'
 import LinkedTasksModal from './LinkedTasksModal'
 import AutoCompleteTasksModal from './AutoCompleteTasksModal'
 import SubtasksModal from './SubtasksModal'
-import GanttView from './GanttView'
 import DHtmlxGanttView from './DHtmlxGanttView'
+import GanttRulesModal from './GanttRulesModal'
 
 /**
  * Schedule Template Editor - Full 14-column grid interface for creating/editing schedule templates
@@ -81,6 +81,7 @@ const PLAN_TYPES = [
 
 // Default column configuration
 const defaultColumnConfig = {
+  select: { visible: true, width: 40, label: '', order: -1 },
   sequence: { visible: true, width: 40, label: '#', order: 0 },
   taskName: { visible: true, width: 200, label: 'Task Name', order: 1 },
   supplierGroup: { visible: true, width: 150, label: 'Supplier / Group', order: 2 },
@@ -109,6 +110,7 @@ const defaultColumnConfig = {
 
 export default function ScheduleTemplateEditor() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [templates, setTemplates] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [rows, setRows] = useState([])
@@ -123,10 +125,7 @@ export default function ScheduleTemplateEditor() {
   const [columnFilters, setColumnFilters] = useState({})
   const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false)
   const [showGanttView, setShowGanttView] = useState(false)
-  const [ganttViewType, setGanttViewType] = useState(() => {
-    // Remember user's preference for Gantt view type
-    return localStorage.getItem('gantt-view-type') || 'svar'
-  })
+  const [showRulesModal, setShowRulesModal] = useState(false)
   const hasCollapsedOnLoad = useRef(false)
 
   // Column resize state
@@ -137,9 +136,12 @@ export default function ScheduleTemplateEditor() {
   // Column drag/reorder state
   const [draggedColumn, setDraggedColumn] = useState(null)
 
-  // Sort state
+  // Sort state - Default to startDate for Gantt timeline view
   const [sortBy, setSortBy] = useState('startDate')
   const [sortDirection, setSortDirection] = useState('asc')
+
+  // Row selection state for bulk operations
+  const [selectedRows, setSelectedRows] = useState(new Set())
 
   // Column configuration with localStorage persistence
   const [columnConfig, setColumnConfig] = useState(() => {
@@ -238,20 +240,27 @@ export default function ScheduleTemplateEditor() {
     }
   }, [location])
 
-  // Auto-open DHTMLX Gantt view when openGantt query parameter is present
+  // Track if we've auto-opened for the current URL to prevent reopening on close
+  const autoOpenedRef = useRef(false)
+
+  // Auto-open DHtmlx Gantt view when openGantt query parameter is present (from sidebar button)
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const openGanttParam = params.get('openGantt')
 
-    if (openGanttParam === 'dhtmlx' && selectedTemplate && rows.length > 0) {
+    if (openGanttParam && selectedTemplate && rows.length > 0 && !showGanttView && !autoOpenedRef.current) {
+      // Mark that we've auto-opened for this URL
+      autoOpenedRef.current = true
+
       // Small delay to ensure everything is loaded
       setTimeout(() => {
-        setGanttViewType('dhtmlx')
-        localStorage.setItem('gantt-view-type', 'dhtmlx')
         setShowGanttView(true)
       }, 300)
+    } else if (!openGanttParam) {
+      // Reset the flag when URL parameter is removed
+      autoOpenedRef.current = false
     }
-  }, [location.search, selectedTemplate, rows])
+  }, [location.search, selectedTemplate, rows.length])
 
   useEffect(() => {
     if (selectedTemplate) {
@@ -272,16 +281,28 @@ export default function ScheduleTemplateEditor() {
     }
   }
 
-  const loadTemplateRows = async (templateId) => {
+  const loadTemplateRows = async (templateId, showLoadingState = true) => {
     try {
-      setLoading(true)
+      if (showLoadingState) {
+        setLoading(true)
+      }
+      console.log('🐛 loadTemplateRows: Fetching rows for template', templateId)
       const response = await api.get(`/api/v1/schedule_templates/${templateId}`)
-      setRows(response.rows || [])
+      console.log('🐛 loadTemplateRows: API response received')
+      console.log('  - Response rows count:', response.rows?.length || 0)
+      console.log('  - Response row IDs:', response.rows?.map(r => r?.id) || [])
+      console.log('  - Response row names:', response.rows?.map(r => r?.name) || [])
+      // Filter out any undefined/null rows as a safety measure
+      const validRows = (response.rows || []).filter(r => r && r.id)
+      setRows(validRows)
+      console.log('🐛 loadTemplateRows: State updated with', validRows.length, 'valid rows')
     } catch (err) {
       console.error('Failed to load template rows:', err)
       showToast('Failed to load template rows', 'error')
     } finally {
-      setLoading(false)
+      if (showLoadingState) {
+        setLoading(false)
+      }
     }
   }
 
@@ -348,6 +369,54 @@ export default function ScheduleTemplateEditor() {
     } catch (err) {
       console.error('Failed to set default template:', err)
       showToast('Failed to set default template', 'error')
+    }
+  }
+
+  const handleDeleteTemplate = async () => {
+    if (!selectedTemplate) return
+
+    // Prevent deleting the default template
+    if (selectedTemplate.is_default) {
+      showToast('Cannot delete the default template. Set another template as default first.', 'error')
+      return
+    }
+
+    // Confirm deletion
+    const confirmMessage = `Are you sure you want to delete "${selectedTemplate.name}"?\n\nThis will permanently delete the template and all its tasks. This action cannot be undone.`
+    if (!confirm(confirmMessage)) return
+
+    try {
+      await api.delete(`/api/v1/schedule_templates/${selectedTemplate.id}`)
+      showToast('Template deleted successfully', 'success')
+
+      // Reload templates and select the first one
+      const response = await api.get('/api/v1/schedule_templates')
+      setTemplates(response)
+      setSelectedTemplate(response.length > 0 ? response[0] : null)
+      setRows([])
+    } catch (err) {
+      console.error('Failed to delete template:', err)
+      showToast(err.message || 'Failed to delete template', 'error')
+    }
+  }
+
+  const handleCopyGanttRules = async () => {
+    try {
+      // Fetch the Gantt rules file from the project root
+      const response = await fetch('/GANTT_SCHEDULE_RULES.md')
+      if (!response.ok) {
+        throw new Error('Failed to load Gantt rules')
+      }
+
+      const rulesText = await response.text()
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(rulesText)
+
+      showToast('Gantt rules copied to clipboard!', 'success')
+    } catch (err) {
+      console.error('Failed to copy Gantt rules:', err)
+      showToast('Failed to copy Gantt rules', 'error')
     }
   }
 
@@ -603,11 +672,15 @@ export default function ScheduleTemplateEditor() {
     }
 
     try {
+      console.log('🐛 handleAddRow: Creating new task')
       const response = await api.post(
         `/api/v1/schedule_templates/${selectedTemplate.id}/rows`,
         { schedule_template_row: newRow }
       )
-      setRows([...rows, response])
+      console.log('🐛 handleAddRow: Task created with ID:', response.id)
+      console.log('🐛 handleAddRow: Adding to rows state')
+      setRows(prevRows => [...prevRows, response])
+      console.log('🐛 handleAddRow: Task added to state')
       showToast('Row added', 'success')
     } catch (err) {
       console.error('Failed to add row:', err)
@@ -617,32 +690,78 @@ export default function ScheduleTemplateEditor() {
 
   const handleUpdateRow = async (rowId, updates, options = {}) => {
     try {
-      console.log('🔵 ScheduleTemplateEditor: handleUpdateRow called with rowId:', rowId, 'updates:', updates, 'options:', options)
-      console.log('🔵 Making API call to:', `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`)
+      console.log('🐛 ScheduleTemplateEditor: handleUpdateRow called')
+      console.log('  - Row ID:', rowId)
+      console.log('  - Updates:', updates)
+      console.log('  - Options:', options)
+
+      // Optimistically update the row immediately to prevent flashing
+      setRows(prevRows => {
+        const existingRowIndex = prevRows.findIndex(r => r && r.id === rowId)
+
+        if (existingRowIndex !== -1) {
+          // Update existing row
+          return prevRows.map(r => (r && r.id === rowId) ? { ...r, ...updates } : r)
+        } else {
+          // Row doesn't exist yet (race condition during create), skip optimistic update
+          console.log('⚠️ Skipping optimistic update - row not found:', rowId)
+          // Return prevRows unchanged (don't filter out undefined elements)
+          return prevRows
+        }
+      })
+
+      // Make API call in background
       const response = await api.patch(
         `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`,
         { schedule_template_row: updates }
       )
-      console.log('✅ API response:', response.data)
 
-      // Skip reload if skipReload option is set (used during drag operations to prevent loops)
-      if (!options.skipReload) {
-        console.log('🔵 ScheduleTemplateEditor: Row updated, reloading all rows...')
-        // Reload all rows to get updated calculated fields like predecessor_display
-        await loadTemplateRows(selectedTemplate.id)
-        console.log('✅ ScheduleTemplateEditor: Rows reloaded successfully')
+      // Check if this update affects calculated fields that impact other tasks
+      // Only reload if predecessors OR duration changed (those affect dependent tasks)
+      // Skip reload for start_date-only changes (happens during dragging/cascading)
+      const predecessorsChanged = updates.predecessor_ids !== undefined
+      const durationChanged = updates.duration !== undefined
+      const onlyStartDateChanged = updates.start_date !== undefined &&
+                                   !predecessorsChanged &&
+                                   !durationChanged
+
+      // Only reload if predecessors or duration changed (affects other tasks' calculations)
+      // Skip reload for start_date-only updates (dragging or auto-cascade from dependencies)
+      const needsReload = (predecessorsChanged || durationChanged) && !options.skipReload
+
+      if (needsReload) {
+        // Only reload all rows if dependencies/duration changed (affects other rows)
+        console.log('🔄 Reloading all rows (calculation fields changed)')
+        await loadTemplateRows(selectedTemplate.id, false) // false = don't show loading spinner
       } else {
-        console.log('⏭️ ScheduleTemplateEditor: Skipping reload (skipReload=true)')
-        // Update just the local row data without full reload
-        setRows(prevRows => prevRows.map(r => r.id === rowId ? { ...r, ...updates } : r))
+        // Just update the specific row with server response
+        // No flash for drag operations or cascading updates
+        if (onlyStartDateChanged) {
+          console.log('✋ Skipping reload for start_date-only update (drag or cascade)')
+        }
+        setRows(prevRows => {
+          const existingRowIndex = prevRows.findIndex(r => r && r.id === rowId)
+
+          if (existingRowIndex !== -1) {
+            // Update existing row with server response
+            console.log('📥 Updating row in state with server response:', response)
+            return prevRows.map(r => (r && r.id === rowId) ? response : r)
+          } else {
+            // Row doesn't exist (race condition during create)
+            // Force a full reload to get the latest state including the new task
+            console.log('⚠️ Row not found in state, triggering reload:', rowId)
+            loadTemplateRows(selectedTemplate.id, false)
+            // Return prevRows unchanged (don't filter out undefined elements)
+            return prevRows
+          }
+        })
       }
 
-      // Return the response data for callers who need it
-      return response.data
+      return response
     } catch (err) {
       console.error('❌ Failed to update row:', err)
-      console.error('❌ Error response:', err.response?.data)
-      console.error('❌ Error status:', err.response?.status)
+      // Revert optimistic update on error (without loading spinner)
+      await loadTemplateRows(selectedTemplate.id, false)
       showToast('Failed to update row', 'error')
       throw err
     }
@@ -653,7 +772,7 @@ export default function ScheduleTemplateEditor() {
 
     try {
       await api.delete(`/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`)
-      setRows(rows.filter(r => r.id !== rowId))
+      setRows(prevRows => prevRows.filter(r => r.id !== rowId))
       showToast('Row deleted', 'success')
     } catch (err) {
       console.error('Failed to delete row:', err)
@@ -663,27 +782,128 @@ export default function ScheduleTemplateEditor() {
 
   const handleMoveRow = async (index, direction) => {
     const newIndex = direction === 'up' ? index - 1 : index + 1
-    if (newIndex < 0 || newIndex >= rows.length) return
 
-    const newRows = [...rows]
-    ;[newRows[index], newRows[newIndex]] = [newRows[newIndex], newRows[index]]
+    // Optimistically update the UI using functional update
+    let reorderedRowIds = null
+    setRows(prevRows => {
+      if (newIndex < 0 || newIndex >= prevRows.length) return prevRows
 
-    setRows(newRows)
+      const newRows = [...prevRows]
+      ;[newRows[index], newRows[newIndex]] = [newRows[newIndex], newRows[index]]
+
+      // Store IDs for API call
+      reorderedRowIds = newRows.map(r => r.id)
+
+      return newRows
+    })
+
+    // If validation failed, bail out
+    if (!reorderedRowIds) return
 
     try {
       await api.post(
         `/api/v1/schedule_templates/${selectedTemplate.id}/rows/reorder`,
-        { row_ids: newRows.map(r => r.id) }
+        { row_ids: reorderedRowIds }
       )
+
+      // Reload to get updated predecessor_ids from backend
+      await loadTemplateRows(selectedTemplate.id, false)
+      showToast('Row reordered successfully', 'success')
     } catch (err) {
       console.error('Failed to reorder rows:', err)
       showToast('Failed to reorder rows', 'error')
+      // Reload to restore correct order on error
+      await loadTemplateRows(selectedTemplate.id, false)
     }
   }
 
   const showToast = (message, type = 'info') => {
     setToast({ message, type })
     setTimeout(() => setToast(null), 4000)
+  }
+
+  // Handle closing Gantt view and removing URL parameter
+  const handleCloseGantt = () => {
+    setShowGanttView(false)
+
+    // Remove openGantt parameter from URL to prevent auto-reopening
+    const params = new URLSearchParams(location.search)
+    if (params.has('openGantt')) {
+      params.delete('openGantt')
+      const newSearch = params.toString()
+      navigate({
+        pathname: location.pathname,
+        search: newSearch ? `?${newSearch}` : ''
+      }, { replace: true })
+    }
+  }
+
+  // Row selection handlers
+  const handleSelectRow = (rowId) => {
+    const newSelected = new Set(selectedRows)
+    if (newSelected.has(rowId)) {
+      newSelected.delete(rowId)
+    } else {
+      newSelected.add(rowId)
+    }
+    setSelectedRows(newSelected)
+  }
+
+  const handleSelectAll = () => {
+    if (selectedRows.size === filteredAndSortedRows.length) {
+      setSelectedRows(new Set())
+    } else {
+      setSelectedRows(new Set(filteredAndSortedRows.map(r => r.id)))
+    }
+  }
+
+  const handleBulkUpdate = async (field, value) => {
+    if (selectedRows.size === 0) return
+
+    try {
+      const updates = Array.from(selectedRows).map(rowId => ({
+        id: rowId,
+        [field]: value
+      }))
+
+      // Update all selected rows
+      await Promise.all(
+        updates.map(update =>
+          api.patch(
+            `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${update.id}`,
+            { schedule_template_row: { [field]: value } }
+          )
+        )
+      )
+
+      // Reload all rows (without loading spinner to prevent flash)
+      await loadTemplateRows(selectedTemplate.id, false)
+      setSelectedRows(new Set())
+      showToast(`Updated ${updates.length} rows`, 'success')
+    } catch (err) {
+      console.error('Failed to bulk update rows:', err)
+      showToast('Failed to bulk update rows', 'error')
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedRows.size === 0) return
+    if (!confirm(`Delete ${selectedRows.size} selected rows?`)) return
+
+    try {
+      await Promise.all(
+        Array.from(selectedRows).map(rowId =>
+          api.delete(`/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`)
+        )
+      )
+
+      setRows(prevRows => prevRows.filter(r => !selectedRows.has(r.id)))
+      setSelectedRows(new Set())
+      showToast(`Deleted ${selectedRows.size} rows`, 'success')
+    } catch (err) {
+      console.error('Failed to bulk delete rows:', err)
+      showToast('Failed to bulk delete rows', 'error')
+    }
   }
 
   // Column configuration handlers
@@ -879,6 +1099,9 @@ export default function ScheduleTemplateEditor() {
   const filteredAndSortedRows = (() => {
     // First, filter rows based on search query and column filters
     const filtered = rows.filter(row => {
+      // Safety check - skip undefined rows
+      if (!row || !row.id) return false
+
       // Global search filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase()
@@ -1026,13 +1249,31 @@ export default function ScheduleTemplateEditor() {
             Create reusable schedule templates with full task dependencies and automation
           </p>
         </div>
-        <button
-          onClick={() => setShowTemplateModal(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          New Template
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowRulesModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+            title="View Development Rules & Documentation"
+          >
+            <BookOpenIcon className="h-5 w-5 mr-2" />
+            Gantt Rules
+          </button>
+          <button
+            onClick={handleCopyGanttRules}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+            title="Copy Gantt Rules to Clipboard"
+          >
+            <ClipboardDocumentIcon className="h-5 w-5 mr-2" />
+            Copy Gantt Rules
+          </button>
+          <button
+            onClick={() => setShowTemplateModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            New Template
+          </button>
+        </div>
       </div>
 
       {/* Template Selector */}
@@ -1077,37 +1318,31 @@ export default function ScheduleTemplateEditor() {
                 className="hidden"
               />
             </label>
-            {/* Two Separate Gantt Buttons */}
+            {/* Gantt Chart Button */}
             <button
-              onClick={() => {
-                setGanttViewType('svar')
-                localStorage.setItem('gantt-view-type', 'svar')
-                setShowGanttView(true)
-              }}
-              className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200 dark:border-purple-800 rounded-md transition-colors"
-              title="View SVAR Gantt (Current)"
+              onClick={() => setShowGanttView(true)}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+              title="View Gantt Chart"
             >
-              SVAR Gantt
-            </button>
-            <button
-              onClick={() => {
-                setGanttViewType('dhtmlx')
-                localStorage.setItem('gantt-view-type', 'dhtmlx')
-                setShowGanttView(true)
-              }}
-              className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 border border-green-200 dark:border-green-800 rounded-md transition-colors"
-              title="View DHTMLX Gantt (Trial)"
-            >
-              DHTMLX Gantt
+              <ChartBarIcon className="h-5 w-5" />
             </button>
             {!selectedTemplate.is_default && (
-              <button
-                onClick={handleSetAsDefault}
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400"
-                title="Set as Default"
-              >
-                <CheckIcon className="h-5 w-5" />
-              </button>
+              <>
+                <button
+                  onClick={handleSetAsDefault}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400"
+                  title="Set as Default"
+                >
+                  <CheckIcon className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={handleDeleteTemplate}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                  title="Delete Template"
+                >
+                  <TrashIcon className="h-5 w-5" />
+                </button>
+              </>
             )}
           </>
         )}
@@ -1213,8 +1448,8 @@ export default function ScheduleTemplateEditor() {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {getSortedColumns().map(([key, config]) => {
-                      // Don't show sequence and actions in settings (always visible)
-                      if (key === 'sequence' || key === 'actions') return null
+                      // Don't show sequence, select, and actions in settings (always visible)
+                      if (key === 'sequence' || key === 'actions' || key === 'select') return null
                       // Skip doc tab columns - they're shown in their own section
                       if (key.startsWith('docTab_')) return null
 
@@ -1372,16 +1607,60 @@ export default function ScheduleTemplateEditor() {
         </div>
       )}
 
+      {/* Bulk Operations Toolbar */}
+      {selectedRows.size > 0 && (
+        <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="text-sm font-medium text-indigo-900 dark:text-indigo-300">
+              {selectedRows.size} row{selectedRows.size !== 1 ? 's' : ''} selected
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => handleBulkUpdate('po_required', true)}
+                className="px-3 py-1.5 text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-white dark:bg-gray-800 border border-indigo-300 dark:border-indigo-700 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+              >
+                Set PO Required
+              </button>
+              <button
+                onClick={() => handleBulkUpdate('po_required', false)}
+                className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Clear PO Required
+              </button>
+              <button
+                onClick={() => handleBulkUpdate('create_po_on_job_start', true)}
+                className="px-3 py-1.5 text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-white dark:bg-gray-800 border border-indigo-300 dark:border-indigo-700 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+              >
+                Enable Auto PO
+              </button>
+              <button
+                onClick={() => handleBulkUpdate('create_po_on_job_start', false)}
+                className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Disable Auto PO
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors flex items-center gap-1"
+              >
+                <TrashIcon className="h-4 w-4" />
+                Delete Selected
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Dynamic Column Table */}
       {selectedTemplate && (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto max-h-[calc(100vh-300px)] overflow-y-auto">
           <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
               <tr>
                 {getSortedColumns().map(([key, config]) => {
                   if (!config.visible) return null
                   const isSorted = sortBy === key
-                  const isSortable = key !== 'sequence' && key !== 'actions'
+                  const isSortable = key !== 'sequence' && key !== 'actions' && key !== 'select'
 
                   return (
                     <th
@@ -1404,20 +1683,30 @@ export default function ScheduleTemplateEditor() {
                         </div>
 
                         {/* Column label with sort functionality */}
-                        <span
-                          className={`text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${isSortable ? 'cursor-pointer' : ''}`}
-                          onClick={() => isSortable && handleSort(key)}
-                        >
-                          {key === 'sequence' ? (
-                            '#'
-                          ) : key === 'actions' ? (
-                            'Actions'
-                          ) : columnTooltips[key] ? (
-                            <ColumnTooltip text={config.label} tooltip={columnTooltips[key]} />
-                          ) : (
-                            config.label
-                          )}
-                        </span>
+                        {key === 'select' ? (
+                          <input
+                            type="checkbox"
+                            checked={selectedRows.size === filteredAndSortedRows.length && filteredAndSortedRows.length > 0}
+                            onChange={handleSelectAll}
+                            className="h-4 w-4 text-indigo-600 rounded cursor-pointer"
+                            title="Select all rows"
+                          />
+                        ) : (
+                          <span
+                            className={`text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${isSortable ? 'cursor-pointer' : ''}`}
+                            onClick={() => isSortable && handleSort(key)}
+                          >
+                            {key === 'sequence' ? (
+                              '#'
+                            ) : key === 'actions' ? (
+                              'Actions'
+                            ) : columnTooltips[key] ? (
+                              <ColumnTooltip text={config.label} tooltip={columnTooltips[key]} />
+                            ) : (
+                              config.label
+                            )}
+                          </span>
+                        )}
 
                         {/* Sort indicators */}
                         {isSortable && isSorted && (
@@ -1489,23 +1778,31 @@ export default function ScheduleTemplateEditor() {
                   </td>
                 </tr>
               ) : (
-                filteredAndSortedRows.map((row, index) => (
-                  <ScheduleTemplateRow
-                    key={row.id}
-                    row={row}
-                    index={rows.findIndex(r => r.id === row.id)}
-                    suppliers={suppliers}
-                    columnConfig={columnConfig}
-                    getSortedColumns={getSortedColumns}
-                    allRows={rows}
-                    onUpdate={(updates) => handleUpdateRow(row.id, updates)}
-                    onDelete={() => handleDeleteRow(row.id)}
-                    onMoveUp={() => handleMoveRow(rows.findIndex(r => r.id === row.id), 'up')}
-                    onMoveDown={() => handleMoveRow(rows.findIndex(r => r.id === row.id), 'down')}
-                    canMoveUp={rows.findIndex(r => r.id === row.id) > 0}
-                    canMoveDown={rows.findIndex(r => r.id === row.id) < rows.length - 1}
-                  />
-                ))
+                filteredAndSortedRows.map((row, index) => {
+                  const rowIndex = rows.findIndex(r => r && r.id === row.id)
+                  // Skip rows that can't be found in the main array (safety check)
+                  if (rowIndex === -1) return null
+
+                  return (
+                    <ScheduleTemplateRow
+                      key={row.id}
+                      row={row}
+                      index={rowIndex}
+                      suppliers={suppliers}
+                      columnConfig={columnConfig}
+                      getSortedColumns={getSortedColumns}
+                      allRows={rows}
+                      onUpdate={(updates) => handleUpdateRow(row.id, updates)}
+                      onDelete={() => handleDeleteRow(row.id)}
+                      onMoveUp={() => handleMoveRow(rowIndex, 'up')}
+                      onMoveDown={() => handleMoveRow(rowIndex, 'down')}
+                      canMoveUp={rowIndex > 0}
+                      canMoveDown={rowIndex < rows.length - 1}
+                      isSelected={selectedRows.has(row.id)}
+                      onSelectRow={handleSelectRow}
+                    />
+                  )
+                })
               )}
             </tbody>
           </table>
@@ -1589,26 +1886,11 @@ export default function ScheduleTemplateEditor() {
         </div>
       )}
 
-      {/* Gantt View Modal - Render appropriate view based on selection */}
-      {showGanttView && ganttViewType === 'svar' && (
-        <GanttView
-          isOpen={showGanttView}
-          onClose={() => setShowGanttView(false)}
-          tasks={rows}
-          onUpdateTask={(taskId, updates, options) => {
-            // Find the row and update it
-            const rowIndex = rows.findIndex(r => r.id === taskId)
-            if (rowIndex !== -1) {
-              handleUpdateRow(taskId, updates, options)
-            }
-          }}
-        />
-      )}
-
-      {showGanttView && ganttViewType === 'dhtmlx' && (
+      {/* Gantt View Modal - DHtmlx Gantt */}
+      {showGanttView && (
         <DHtmlxGanttView
           isOpen={showGanttView}
-          onClose={() => setShowGanttView(false)}
+          onClose={handleCloseGantt}
           tasks={rows}
           onUpdateTask={async (taskId, updates, options) => {
             // Find the row and update it
@@ -1620,6 +1902,12 @@ export default function ScheduleTemplateEditor() {
         />
       )}
 
+      {/* Gantt Rules Modal */}
+      <GanttRulesModal
+        isOpen={showRulesModal}
+        onClose={() => setShowRulesModal(false)}
+      />
+
       {/* Toast */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
@@ -1629,7 +1917,8 @@ export default function ScheduleTemplateEditor() {
 // Individual row component
 function ScheduleTemplateRow({
   row, index, suppliers, columnConfig, getSortedColumns, allRows,
-  onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown
+  onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown,
+  isSelected, onSelectRow
 }) {
   const [localName, setLocalName] = useState(row.name)
   const [localDuration, setLocalDuration] = useState(row.duration || 0)
@@ -1761,6 +2050,18 @@ function ScheduleTemplateRow({
     const cellWidth = config.width
 
     switch (key) {
+      case 'select':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onSelectRow(row.id)}
+              className="h-4 w-4 text-indigo-600 rounded cursor-pointer"
+            />
+          </td>
+        )
+
       case 'sequence':
         return (
           <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">

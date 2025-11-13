@@ -1,7 +1,7 @@
 module Api
   module V1
     class ContactsController < ApplicationController
-      before_action :set_contact, only: [:show, :update, :destroy, :activities, :link_xero_contact]
+      before_action :set_contact, only: [:show, :update, :destroy, :activities, :link_xero_contact, :create_portal_user, :update_portal_user, :delete_portal_user]
 
       # GET /api/v1/contacts
       def index
@@ -48,8 +48,11 @@ module Api
         render json: {
           success: true,
           contacts: @contacts.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas, :xero_id, :sync_with_xero, :last_synced_at],
-            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
+            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas, :xero_id, :sync_with_xero, :last_synced_at, :total_purchase_orders_count, :total_purchase_orders_value, :trapid_rating],
+            include: {
+              portal_user: { only: [:id, :email, :portal_type, :active] }
+            },
+            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?, :display_name]
           )
         }
       end
@@ -75,7 +78,8 @@ module Api
           include: {
             contact_persons: { only: [:id, :first_name, :last_name, :email, :include_in_emails, :is_primary, :xero_contact_person_id] },
             contact_addresses: { only: [:id, :address_type, :line1, :line2, :line3, :line4, :city, :region, :postal_code, :country, :attention_to, :is_primary] },
-            contact_groups: { only: [:id, :name, :status, :xero_contact_group_id] }
+            contact_groups: { only: [:id, :name, :status, :xero_contact_group_id] },
+            portal_user: { only: [:id, :email, :portal_type, :active, :last_login_at, :created_at] }
           },
           methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
         )
@@ -960,6 +964,86 @@ module Api
             error: "Failed to link contact: #{e.message}"
           }, status: :internal_server_error
         end
+      end
+
+      # POST /api/v1/contacts/:id/portal_user
+      def create_portal_user
+        portal_type = params[:portal_type] || 'supplier'
+        email = params[:email]
+        password = params[:password]
+
+        if email.blank? || password.blank?
+          return render json: {
+            success: false,
+            error: "Email and password are required"
+          }, status: :unprocessable_entity
+        end
+
+        begin
+          @contact.enable_portal!(portal_type, email: email, password: password)
+
+          render json: {
+            success: true,
+            portal_user: @contact.portal_user.as_json(only: [:id, :email, :portal_type, :active, :created_at]),
+            plain_password: password  # Return password so UI can display it
+          }
+        rescue => e
+          render json: {
+            success: false,
+            error: e.message
+          }, status: :unprocessable_entity
+        end
+      end
+
+      # PATCH /api/v1/contacts/:id/portal_user
+      def update_portal_user
+        portal_user = @contact.portal_user
+
+        unless portal_user
+          return render json: {
+            success: false,
+            error: "No portal user exists for this contact"
+          }, status: :not_found
+        end
+
+        update_params = {}
+        update_params[:email] = params[:email] if params[:email].present?
+        update_params[:password] = params[:password] if params[:password].present?
+        update_params[:portal_type] = params[:portal_type] if params[:portal_type].present?
+        update_params[:active] = params[:active] unless params[:active].nil?
+
+        if portal_user.update(update_params)
+          render json: {
+            success: true,
+            portal_user: portal_user.as_json(only: [:id, :email, :portal_type, :active, :created_at]),
+            plain_password: params[:password]  # Return password if it was changed
+          }
+        else
+          render json: {
+            success: false,
+            errors: portal_user.errors.full_messages
+          }, status: :unprocessable_entity
+        end
+      end
+
+      # DELETE /api/v1/contacts/:id/portal_user
+      def delete_portal_user
+        portal_user = @contact.portal_user
+
+        unless portal_user
+          return render json: {
+            success: false,
+            error: "No portal user exists for this contact"
+          }, status: :not_found
+        end
+
+        portal_user.destroy
+        @contact.update(portal_enabled: false)
+
+        render json: {
+          success: true,
+          message: "Portal user deleted successfully"
+        }
       end
 
       private

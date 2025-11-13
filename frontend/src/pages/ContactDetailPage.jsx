@@ -27,6 +27,7 @@ import ContactGroupsSection from '../components/contacts/ContactGroupsSection'
 import ContactRelationshipsSection from '../components/contacts/ContactRelationshipsSection'
 import CommunicationsTab from '../components/communications/CommunicationsTab'
 import BackButton from '../components/common/BackButton'
+import PortalUserSection from '../components/contacts/PortalUserSection'
 
 // Helper function to format ABN as XX XXX XXX XXX
 const formatABN = (abn) => {
@@ -211,10 +212,9 @@ export default function ContactDetailPage() {
 
   const loadAllContacts = async () => {
     try {
-      const response = await api.get('/api/v1/contacts?type=suppliers')
-      // Filter out the current contact
-      const otherContacts = response.contacts.filter(c => c.id !== parseInt(id))
-      setAllContacts(otherContacts)
+      const response = await api.get('/api/v1/contacts')
+      // Include all contacts (suppliers and customers)
+      setAllContacts(response.contacts || [])
     } catch (err) {
       console.error('Failed to load contacts:', err)
     }
@@ -925,6 +925,16 @@ export default function ContactDetailPage() {
                 Price Book
               </button>
             )}
+            <button
+              onClick={() => setSearchParams({ tab: 'portal' })}
+              className={`${
+                activeTab === 'portal'
+                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              } whitespace-nowrap py-1 px-1 border-b-2 font-medium text-xs transition-colors`}
+            >
+              Portal Access
+            </button>
           </nav>
         </div>
         </div>
@@ -1178,6 +1188,7 @@ export default function ContactDetailPage() {
             id="contact-persons"
           >
             <ContactPersonsSection
+              contact={contact}
               contactPersons={contactPersons}
               onUpdate={handleContactPersonsUpdate}
               isEditMode={isPageEditMode}
@@ -2838,6 +2849,21 @@ export default function ContactDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Portal Access Tab */}
+      {activeTab === 'portal' && (
+        <div className="mt-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Portal Access Management</h2>
+
+            <PortalUserSection
+              contact={contact}
+              contactPersons={contactPersons}
+              onUpdate={loadContact}
+            />
+          </div>
+        </div>
+      )}
       </div>
 
       {/* Edit Contact Modal */}
@@ -3362,7 +3388,7 @@ export default function ContactDetailPage() {
         contact={contact}
         onSuccess={(updatedContact) => {
           setContact({ ...contact, ...updatedContact })
-          fetchContact()
+          loadContact()
         }}
       />
     </div>

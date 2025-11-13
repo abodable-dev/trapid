@@ -29,6 +29,11 @@ class Contact < ApplicationRecord
            foreign_key: :related_contact_id, dependent: :destroy
   has_many :related_contacts, through: :outgoing_relationships, source: :related_contact
 
+  # Portal-related associations
+  has_one :portal_user, dependent: :destroy
+  has_many :supplier_ratings, dependent: :destroy
+  has_many :maintenance_requests, foreign_key: :supplier_contact_id, dependent: :destroy
+
   # Constants
   CONTACT_TYPES = %w[customer supplier sales land_agent].freeze
 
@@ -91,6 +96,47 @@ class Contact < ApplicationRecord
 
   def total_purchase_orders_value
     purchase_orders.sum(:total_price)
+  end
+
+  # Portal-specific methods
+  def has_portal_access?
+    portal_enabled && portal_user.present? && portal_user.active?
+  end
+
+  def enable_portal!(portal_type, email: nil, password: nil)
+    return if portal_user.present?
+
+    transaction do
+      update!(portal_enabled: true)
+      PortalUser.create!(
+        contact: self,
+        email: email || self.email,
+        password: password || SecureRandom.alphanumeric(16),
+        portal_type: portal_type,
+        active: true
+      )
+    end
+  end
+
+  def disable_portal!
+    portal_user&.deactivate!
+    update!(portal_enabled: false)
+  end
+
+  def average_rating
+    trapid_rating&.round(2)
+  end
+
+  def rating_summary
+    {
+      average: trapid_rating&.round(2),
+      total_ratings: total_ratings_count,
+      recent_ratings: supplier_ratings.recent.limit(5)
+    }
+  end
+
+  def open_maintenance_requests_count
+    maintenance_requests.active.count
   end
 
   private
