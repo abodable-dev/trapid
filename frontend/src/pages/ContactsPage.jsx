@@ -1,27 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Tab, TabGroup, TabList, TabPanel, TabPanels, Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/react'
+import { Tab, TabGroup, TabList, TabPanel, TabPanels, Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import { api } from '../api'
 import {
-  MagnifyingGlassIcon,
-  UserPlusIcon,
-  AdjustmentsHorizontalIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-  GlobeAltIcon,
-  BuildingOfficeIcon,
-  UserGroupIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ChevronDownIcon,
-  ArrowsRightLeftIcon,
-  TrashIcon,
-  Bars3Icon,
-  ChevronUpIcon
-} from '@heroicons/react/24/outline'
+  UserPlus,
+  SlidersHorizontal,
+  Phone,
+  Mail,
+  Globe,
+  Building,
+  CheckCircle,
+  XCircle,
+  ChevronDown
+} from 'lucide-react'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
 import MergeContactsModal from '../components/contacts/MergeContactsModal'
 import Toast from '../components/Toast'
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(' ')
+}
 
 export default function ContactsPage() {
   const navigate = useNavigate()
@@ -46,8 +44,6 @@ export default function ContactsPage() {
 
   const [activeTab, setActiveTab] = useState(getInitialTabIndex())
   const [selectedCategories, setSelectedCategories] = useState([])
-  const [filter, setFilter] = useState('all') // 'all', 'customers', 'suppliers', 'both'
-  const [xeroSyncFilter, setXeroSyncFilter] = useState('all') // 'all', 'synced', 'not_synced'
 
   // Bulk selection state
   const [selectedContacts, setSelectedContacts] = useState(new Set())
@@ -165,7 +161,7 @@ export default function ContactsPage() {
   useEffect(() => {
     loadContacts()
     loadSuppliers()
-  }, [filter, xeroSyncFilter])
+  }, [])
 
   // Listen for global search event from AppLayout
   useEffect(() => {
@@ -196,15 +192,7 @@ export default function ContactsPage() {
   const loadContacts = async () => {
     try {
       setLoading(true)
-      const params = new URLSearchParams()
-      if (filter !== 'all') {
-        params.append('type', filter)
-      }
-      if (xeroSyncFilter !== 'all') {
-        params.append('xero_sync', xeroSyncFilter)
-      }
-      const endpoint = params.toString() ? `/api/v1/contacts?${params.toString()}` : '/api/v1/contacts'
-      const response = await api.get(endpoint)
+      const response = await api.get('/api/v1/contacts')
       setContacts(response.contacts || [])
     } catch (err) {
       setError('Failed to load contacts')
@@ -794,52 +782,17 @@ export default function ContactsPage() {
     )
   ).sort()
 
-  // Helper function to get sort value for a contact by column key
-  const getSortValue = (contact, columnKey) => {
-    switch (columnKey) {
-      case 'name':
-        return contact.full_name?.toLowerCase() || ''
-      case 'type':
-        return contact.primary_contact_type?.toLowerCase() || ''
-      case 'email':
-        return contact.email?.toLowerCase() || ''
-      case 'phone':
-        return contact.mobile_phone?.toLowerCase() || contact.office_phone?.toLowerCase() || ''
-      case 'website':
-        return contact.website?.toLowerCase() || ''
-      case 'xero':
-        return contact.xero_id ? '1' : '0'
-      default:
-        return ''
-    }
-  }
-
-  const filteredContacts = applyColumnFilters(
-    contacts.filter(c =>
+  // Memoize filtered contacts to prevent recalculation on every render
+  const filteredContacts = useMemo(() => {
+    return contacts.filter(c =>
       c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.email?.toLowerCase().includes(searchQuery.toLowerCase())
     )
-  ).sort((a, b) => {
-    // Primary sort
-    const aPrimaryVal = getSortValue(a, sortBy)
-    const bPrimaryVal = getSortValue(b, sortBy)
+  }, [contacts, searchQuery])
 
-    if (aPrimaryVal !== bPrimaryVal) {
-      if (aPrimaryVal < bPrimaryVal) return sortDirection === 'asc' ? -1 : 1
-      if (aPrimaryVal > bPrimaryVal) return sortDirection === 'asc' ? 1 : -1
-    }
-
-    // Secondary sort (if primary values are equal)
-    const aSecondaryVal = getSortValue(a, secondarySortBy)
-    const bSecondaryVal = getSortValue(b, secondarySortBy)
-
-    if (aSecondaryVal < bSecondaryVal) return secondarySortDirection === 'asc' ? -1 : 1
-    if (aSecondaryVal > bSecondaryVal) return secondarySortDirection === 'asc' ? 1 : -1
-    return 0
-  })
-
-  const filteredSuppliers = applyColumnFilters(
-    suppliers.filter(s => {
+  // Memoize filtered suppliers to prevent recalculation on every render
+  const filteredSuppliers = useMemo(() => {
+    return suppliers.filter(s => {
       // Filter by search query
       const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase())
 
@@ -849,26 +802,44 @@ export default function ContactsPage() {
 
       return matchesSearch && matchesCategories
     })
-  )
-
-  const contactStats = {
-    total: contacts.length,
-    withEmail: contacts.filter(c => c.email).length,
-    withPhone: contacts.filter(c => c.mobile_phone || c.office_phone).length,
-    syncedXero: contacts.filter(c => c.xero_id).length
-  }
-
-  const supplierStats = {
-    total: suppliers.length,
-    verified: suppliers.filter(s => s.is_verified).length,
-    needsReview: suppliers.filter(s => s.contact_id && !s.is_verified).length,
-    unmatched: suppliers.filter(s => !s.contact_id).length
-  }
+  }, [suppliers, searchQuery, selectedCategories])
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Skeleton */}
+        <div className="mb-6">
+          <div className="h-4 w-48 bg-gray-800 rounded animate-pulse" />
+        </div>
+
+        {/* Tabs Skeleton */}
+        <div className="bg-gray-800 p-1 mb-8 max-w-md">
+          <div className="flex space-x-1">
+            <div className="h-8 flex-1 bg-gray-700 rounded animate-pulse" />
+            <div className="h-8 flex-1 bg-gray-700 rounded animate-pulse" />
+          </div>
+        </div>
+
+        {/* Actions Bar Skeleton */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="flex-1 h-9 bg-gray-900 rounded animate-pulse" />
+          <div className="flex gap-2">
+            <div className="h-9 w-24 bg-gray-800 rounded animate-pulse" />
+            <div className="h-9 w-32 bg-gray-800 rounded animate-pulse" />
+          </div>
+        </div>
+
+        {/* Table Skeleton - Same structure as real table */}
+        <div className="bg-gray-800 border border-gray-700">
+          <div className="overflow-x-auto">
+            {/* Table Header */}
+            <div className="bg-gray-900/50 h-10 border-b border-gray-700 animate-pulse" />
+            {/* Table Rows */}
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+              <div key={i} className="h-12 border-b border-gray-700 bg-gray-800/30 animate-pulse" />
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
@@ -882,22 +853,19 @@ export default function ContactsPage() {
   }
 
   return (
+    <>
     <div className="-mx-4 sm:-mx-6 lg:-mx-8 h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="px-4 sm:px-6 lg:px-8 pt-8 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Contacts & Suppliers <span className="text-base font-normal text-gray-500 dark:text-gray-400">(contacts)</span></h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage your contacts and supplier relationships</p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-sm font-medium text-gray-900 dark:text-white">Contacts & Suppliers</h1>
       </div>
 
       {/* Tabs */}
-      <div className="px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden flex flex-col">
-        <TabGroup selectedIndex={activeTab} onChange={handleTabChange} className="flex-1 overflow-hidden flex flex-col">
-          <TabList className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 mb-4 max-w-md">
+      <TabGroup onChange={setActiveTab}>
+        <TabList className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 mb-8 max-w-md">
           <Tab
             className={({ selected }) =>
-              `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+              `w-full py-1.5 px-3 text-xs font-medium leading-5 transition-all
               ${
                 selected
                   ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -909,7 +877,7 @@ export default function ContactsPage() {
           </Tab>
           <Tab
             className={({ selected }) =>
-              `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+              `w-full py-1.5 px-3 text-xs font-medium leading-5 transition-all
               ${
                 selected
                   ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -923,185 +891,33 @@ export default function ContactsPage() {
 
         <TabPanels className="flex-1 overflow-hidden flex flex-col">
           {/* Contacts Tab */}
-          <TabPanel className="flex-1 overflow-hidden flex flex-col">
-            {/* Stats for Contacts */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Contacts</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{contactStats.total}</p>
-                  </div>
-                  <div className="h-12 w-12 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <UserGroupIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                </div>
-              </div>
-              <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">With Email</p>
-                    <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">{contactStats.withEmail}</p>
-                  </div>
-                  <div className="h-12 w-12 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <EnvelopeIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
-                  </div>
-                </div>
-              </div>
-              <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">With Phone</p>
-                    <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">{contactStats.withPhone}</p>
-                  </div>
-                  <div className="h-12 w-12 bg-purple-50 dark:bg-purple-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <PhoneIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                </div>
-              </div>
-              <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Synced with Xero</p>
-                    <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">{contactStats.syncedXero}</p>
-                  </div>
-                  <div className="h-12 w-12 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <CheckCircleIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Filter Buttons */}
-            <div className="mb-6">
-              <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-4 flex-wrap">
-                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mr-2">
-                  Contact Type:
-                </div>
-                <button
-                  onClick={() => setFilter('all')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filter === 'all'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setFilter('customers')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filter === 'customers'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  Customers
-                </button>
-                <button
-                  onClick={() => setFilter('suppliers')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filter === 'suppliers'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  Suppliers
-                </button>
-                <button
-                  onClick={() => setFilter('sales')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filter === 'sales'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  Sales
-                </button>
-                <button
-                  onClick={() => setFilter('land_agents')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filter === 'land_agents'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  Land Agents
-                </button>
-
-                <div className="h-8 w-px bg-gray-300 dark:bg-gray-600 mx-2"></div>
-
-                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mr-2">
-                  Xero Sync:
-                </div>
-                <button
-                  onClick={() => setXeroSyncFilter('all')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    xeroSyncFilter === 'all'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setXeroSyncFilter('synced')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    xeroSyncFilter === 'synced'
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  Synced with Xero
-                </button>
-                <button
-                  onClick={() => setXeroSyncFilter('not_synced')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    xeroSyncFilter === 'not_synced'
-                      ? 'bg-red-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  Not Synced
-                </button>
-
-                <div className="ml-auto">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {contacts.length} {filter === 'all' ? 'total' : filter} contacts
-                  </p>
-                </div>
-              </div>
-            </div>
-
+          <TabPanel>
             {/* Actions Bar */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
               <div className="flex-1">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search contacts..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
+                <input
+                  type="text"
+                  placeholder="Lookup.."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-gray-900 text-xs font-sans text-white placeholder:text-gray-500 outline-none transition-colors"
+                />
               </div>
 
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowColumnModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
                 >
-                  <AdjustmentsHorizontalIcon className="h-5 w-5" />
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
                   Columns
                 </button>
 
                 <button
                   onClick={() => navigate('/suppliers/new')}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/30 transition-all duration-200 font-medium"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
                 >
-                  <UserPlusIcon className="h-5 w-5" />
+                  <UserPlus className="h-3.5 w-3.5" />
                   New Contact
                 </button>
               </div>
@@ -1109,7 +925,7 @@ export default function ContactsPage() {
 
             {/* Bulk Update Toolbar */}
             {selectedContacts.size > 0 && (
-              <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 p-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-4 flex-1">
                   <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
                     {selectedContacts.size} contact{selectedContacts.size !== 1 ? 's' : ''} selected
@@ -1123,7 +939,7 @@ export default function ContactsPage() {
                       id="bulk-contact-type"
                       value={bulkContactType}
                       onChange={(e) => setBulkContactType(e.target.value)}
-                      className="block rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 dark:text-white bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      className="block border-0 py-1.5 pl-3 pr-10 text-gray-900 dark:text-white bg-white dark:bg-gray-800 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-indigo-600 text-xs font-medium"
                     >
                       <option value="">Select type...</option>
                       <option value="customer">Customer</option>
@@ -1164,23 +980,23 @@ export default function ContactsPage() {
                   <button
                     onClick={handleBulkUpdate}
                     disabled={updating || !bulkContactType || selectedContacts.size === 0}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
                   >
                     {updating ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span className="loading loading-sm"></span>
                         Updating...
                       </>
                     ) : (
                       <>
-                        <CheckCircleIcon className="h-5 w-5" />
+                        <CheckCircle className="h-3.5 w-3.5" />
                         Update Type
                       </>
                     )}
                   </button>
                   <button
                     onClick={handleClearSelection}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
                   >
                     Cancel
                   </button>
@@ -1189,93 +1005,54 @@ export default function ContactsPage() {
             )}
 
             {/* Contacts Table */}
-            <div className="flex-1 overflow-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#9CA3AF #E5E7EB'
-            }}>
-              <div className="w-full h-full">
-                <table key={`contacts-${filter}-${contacts.length}`} className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
+            <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 overflow-visible">
+              <div className="overflow-x-auto overflow-y-visible">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-900/50">
                     <tr>
-                      <th style={{ minWidth: '50px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left">
+                      <th className="px-3 py-2 text-left">
                         <input
                           type="checkbox"
                           checked={selectedContacts.size === filteredContacts.length && filteredContacts.length > 0}
                           onChange={(e) => handleSelectAll(e.target.checked)}
-                          className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
+                          className="h-4 w-4 border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
                         />
                       </th>
-                      {contactColumns.map((column) => {
-                        if (!visibleContactColumns[column.key]) return null
-                        const width = columnWidths[column.key]
-                        const isSortable = column.key !== 'actions'
-                        const isSorted = sortBy === column.key
-                        return (
-                          <th
-                            key={column.key}
-                            style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
-                            className={`px-6 py-2 border-r border-gray-200 dark:border-gray-700 ${column.key === 'actions' ? 'text-right' : 'text-left'} ${draggedColumn === column.key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, column.key)}
-                            onDragOver={handleDragOver}
-                            onDrop={(e) => handleDrop(e, column.key)}
-                          >
-                            <div
-                              className={`flex items-center gap-2 ${isSortable ? 'cursor-pointer' : 'cursor-move'}`}
-                              onClick={() => isSortable && handleSort(column.key)}
-                            >
-                              <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{column.label}</span>
-                              {isSortable && isSorted && (
-                                sortDirection === 'asc' ?
-                                  <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
-                                  <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                              )}
-                            </div>
-                            {column.searchable && (
-                              column.filterType === 'dropdown' ? (
-                                <select
-                                  value={columnFilters[column.key] || ''}
-                                  onChange={(e) => handleColumnFilterChange(column.key, e.target.value)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                                >
-                                  {column.key === 'type' ? (
-                                    <>
-                                      <option value="">All Types</option>
-                                      <option value="customer">Customer</option>
-                                      <option value="supplier">Supplier</option>
-                                      <option value="sales">Sales</option>
-                                      <option value="land_agent">Land Agent</option>
-                                    </>
-                                  ) : column.key === 'xero' ? (
-                                    <>
-                                      <option value="">All Status</option>
-                                      <option value="synced">Synced</option>
-                                      <option value="not_synced">Not Synced</option>
-                                    </>
-                                  ) : null}
-                                </select>
-                              ) : (
-                                <input
-                                  type="text"
-                                  placeholder={`Search...`}
-                                  value={columnFilters[column.key] || ''}
-                                  onChange={(e) => handleColumnFilterChange(column.key, e.target.value)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                                />
-                              )
-                            )}
-                            {/* Resize handle */}
-                            <div
-                              className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
-                              onMouseDown={(e) => handleResizeStart(e, column.key)}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </th>
-                        )
-                      })}
+                      {visibleContactColumns.name && (
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Contact Name
+                        </th>
+                      )}
+                      {visibleContactColumns.type && (
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Contact Type
+                        </th>
+                      )}
+                      {visibleContactColumns.email && (
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Email
+                        </th>
+                      )}
+                      {visibleContactColumns.phone && (
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Phone Numbers
+                        </th>
+                      )}
+                      {visibleContactColumns.website && (
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Website
+                        </th>
+                      )}
+                      {visibleContactColumns.xero && (
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Xero Status
+                        </th>
+                      )}
+                      {visibleContactColumns.actions && (
+                        <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -1285,18 +1062,203 @@ export default function ContactsPage() {
                         className={`transition-colors duration-150 ${
                           selectedContacts.has(contact.id)
                             ? 'bg-indigo-50 dark:bg-indigo-900/20'
-                            : 'hover:bg-gray-50 dark:hover:bg-gray-750'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                         }`}
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-2.5 whitespace-nowrap">
                           <input
                             type="checkbox"
                             checked={selectedContacts.has(contact.id)}
                             onChange={(e) => handleSelectContact(contact.id, e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
+                            className="h-4 w-4 border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
                           />
                         </td>
-                        {contactColumns.map((column) => renderContactCell(contact, column.key))}
+                        {visibleContactColumns.name && (
+                          <td className="px-3 py-2.5 whitespace-nowrap">
+                            <Link
+                              to={`/contacts/${contact.id}`}
+                              className="text-xs font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                            >
+                              {contact.full_name}
+                            </Link>
+                            {(contact.first_name || contact.last_name) && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {contact.first_name} {contact.last_name}
+                              </div>
+                            )}
+                          </td>
+                        )}
+                        {visibleContactColumns.type && (
+                          <td className="px-3 py-2.5">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {updatingContactId === contact.id ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="loading loading-sm"></span>
+                                  <span className="text-xs text-gray-500">Updating...</span>
+                                </div>
+                              ) : contact.primary_contact_type ? (
+                                <div className="relative">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setOpenDropdownId(openDropdownId === contact.id ? null : contact.id)
+                                    }}
+                                    className={`inline-flex items-center px-2 py-1 text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${getTypeBadge(contact.primary_contact_type).className}`}
+                                  >
+                                    {getTypeBadge(contact.primary_contact_type).label}
+                                    <ChevronDown className="ml-1 h-3 w-3" />
+                                  </button>
+                                  {openDropdownId === contact.id && (
+                                    <>
+                                      <div
+                                        className="fixed inset-0 z-10"
+                                        onClick={() => setOpenDropdownId(null)}
+                                      />
+                                      <div className="absolute z-20 mt-1 w-56 bg-white dark:bg-gray-800 shadow-lg py-2 text-sm border border-gray-200 dark:border-gray-700">
+                                        <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                                          Select Types
+                                        </div>
+                                        {['customer', 'supplier', 'sales', 'land_agent'].map((type) => {
+                                          const badge = getTypeBadge(type)
+                                          const isSelected = contact.contact_types?.includes(type)
+                                          const isPrimary = contact.primary_contact_type === type
+                                          return (
+                                            <div
+                                              key={type}
+                                              className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                                            >
+                                              <label className="flex items-center gap-2 cursor-pointer flex-1">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isSelected}
+                                                  onChange={() => {
+                                                    const currentTypes = contact.contact_types || []
+                                                    let newTypes
+                                                    let newPrimaryType = contact.primary_contact_type
+
+                                                    if (isSelected) {
+                                                      newTypes = currentTypes.filter(t => t !== type)
+                                                      if (isPrimary) {
+                                                        newPrimaryType = newTypes[0] || null
+                                                      }
+                                                    } else {
+                                                      newTypes = [...currentTypes, type]
+                                                    }
+
+                                                    handleUpdateSingleContact(contact.id, newTypes, newPrimaryType)
+                                                  }}
+                                                  className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                                />
+                                                <span className={isSelected ? 'font-medium' : 'font-normal'}>
+                                                  {badge.label}
+                                                </span>
+                                              </label>
+                                              {isSelected && (
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    handleUpdateSingleContact(contact.id, contact.contact_types, type)
+                                                  }}
+                                                  className={`text-xs px-2 py-0.5 ${
+                                                    isPrimary
+                                                      ? 'bg-indigo-600 text-white'
+                                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                                  }`}
+                                                >
+                                                  {isPrimary ? 'Primary' : 'Set Primary'}
+                                                </button>
+                                              )}
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">No type</span>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                        {visibleContactColumns.email && (
+                          <td className="px-3 py-2.5">
+                            {contact.email ? (
+                              <a
+                                href={`mailto:${contact.email}`}
+                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                              >
+                                <Mail className="h-3.5 w-3.5" />
+                                {contact.email}
+                              </a>
+                            ) : (
+                              <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
+                            )}
+                          </td>
+                        )}
+                        {visibleContactColumns.phone && (
+                          <td className="px-3 py-2.5">
+                            <div className="space-y-1">
+                              {contact.mobile_phone && (
+                                <div className="text-xs text-gray-900 dark:text-white flex items-center gap-1">
+                                  <Phone className="h-3.5 w-3.5" />
+                                  {contact.mobile_phone}
+                                </div>
+                              )}
+                              {contact.office_phone && (
+                                <div className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                  <Building className="h-3.5 w-3.5" />
+                                  {contact.office_phone}
+                                </div>
+                              )}
+                              {!contact.mobile_phone && !contact.office_phone && (
+                                <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                        {visibleContactColumns.website && (
+                          <td className="px-3 py-2.5">
+                            {contact.website ? (
+                              <a
+                                href={contact.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                              >
+                                <Globe className="h-3.5 w-3.5" />
+                                Visit
+                              </a>
+                            ) : (
+                              <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
+                            )}
+                          </td>
+                        )}
+                        {visibleContactColumns.xero && (
+                          <td className="px-3 py-2.5 whitespace-nowrap">
+                            {contact.sync_with_xero ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50">
+                                <CheckCircle className="h-3.5 w-3.5" />
+                                Synced
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800/50">
+                                <XCircle className="h-3.5 w-3.5" />
+                                Not Synced
+                              </span>
+                            )}
+                          </td>
+                        )}
+                        {visibleContactColumns.actions && (
+                          <td className="px-3 py-2.5 whitespace-nowrap text-right text-xs font-medium">
+                            <Link
+                              to={`/contacts/${contact.id}`}
+                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                            >
+                              View
+                            </Link>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -1306,170 +1268,144 @@ export default function ContactsPage() {
           </TabPanel>
 
           {/* Suppliers Tab */}
-          <TabPanel className="flex-1 overflow-hidden flex flex-col">
-            {/* Stats for Suppliers */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Suppliers</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{supplierStats.total}</p>
-                  </div>
-                  <div className="h-12 w-12 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <UserPlusIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                </div>
-              </div>
-              <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Verified</p>
-                    <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">{supplierStats.verified}</p>
-                  </div>
-                  <div className="h-12 w-12 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
-                  </div>
-                </div>
-              </div>
-              <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Needs Review</p>
-                    <p className="text-3xl font-bold text-yellow-800 dark:text-yellow-500 mt-2">{supplierStats.needsReview}</p>
-                  </div>
-                  <div className="h-12 w-12 bg-yellow-100 dark:bg-yellow-400/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <CheckCircleIcon className="h-6 w-6 text-yellow-800 dark:text-yellow-500" />
-                  </div>
-                </div>
-              </div>
-              <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unmatched</p>
-                    <p className="text-3xl font-bold text-red-600 dark:text-red-400 mt-2">{supplierStats.unmatched}</p>
-                  </div>
-                  <div className="h-12 w-12 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <XCircleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
+          <TabPanel>
             {/* Actions Bar */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
               <div className="flex-1">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search suppliers..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
+                <input
+                  type="text"
+                  placeholder="Lookup.."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-gray-900 text-xs font-sans text-white placeholder:text-gray-500 outline-none transition-colors"
+                />
               </div>
 
               <div className="flex gap-2">
                 {/* Category Filter */}
-                <Listbox value={selectedCategories} onChange={setSelectedCategories} multiple>
-                  <div className="relative">
-                    <ListboxButton className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition min-w-[140px] justify-between">
-                      <span className="truncate">
-                        {selectedCategories.length === 0
-                          ? 'All Categories'
-                          : `${selectedCategories.length} selected`}
-                      </span>
-                      <ChevronDownIcon className="h-5 w-5" />
-                    </ListboxButton>
-                    <ListboxOptions className="absolute z-50 mt-1 max-h-60 w-64 overflow-auto rounded-md bg-white dark:bg-gray-800 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                      {allCategories.map((category) => (
-                        <ListboxOption
-                          key={category}
-                          value={category}
-                          className={({ active }) =>
-                            `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
-                              active ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
-                            }`
-                          }
-                        >
-                          {({ selected }) => (
-                            <>
-                              <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
-                                {category}
-                              </span>
-                              {selected && (
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
-                                  <CheckCircleIcon className="h-5 w-5" />
-                                </span>
+                <Menu as="div" className="relative">
+                  <MenuButton className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors min-w-[140px] justify-between outline-none">
+                    <span className="truncate">
+                      {selectedCategories.length === 0
+                        ? 'All Categories'
+                        : `${selectedCategories.length} selected`}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </MenuButton>
+
+                  <MenuItems
+                    transition
+                    className="absolute right-0 z-50 mt-1 min-w-[240px] max-h-60 overflow-auto origin-top-right rounded-none bg-gray-900 border border-gray-800 p-1 shadow-lg focus:outline-none transition duration-100 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
+                  >
+                    {allCategories.map((category) => {
+                      const isSelected = selectedCategories.includes(category)
+                      return (
+                        <MenuItem key={category}>
+                          {({ focus }) => (
+                            <button
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedCategories(selectedCategories.filter(c => c !== category))
+                                } else {
+                                  setSelectedCategories([...selectedCategories, category])
+                                }
+                              }}
+                              className={classNames(
+                                focus ? 'bg-gray-800 text-white' : 'text-gray-300',
+                                'flex items-center gap-2 rounded-none h-8 px-3 text-xs outline-none cursor-pointer transition-colors duration-200 w-full text-left'
                               )}
-                            </>
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <span className={isSelected ? 'font-medium' : 'font-normal'}>
+                                  {category}
+                                </span>
+                                {isSelected && (
+                                  <CheckCircle className="h-3.5 w-3.5 text-white" />
+                                )}
+                              </div>
+                            </button>
                           )}
-                        </ListboxOption>
-                      ))}
-                    </ListboxOptions>
-                  </div>
-                </Listbox>
+                        </MenuItem>
+                      )
+                    })}
+
+                    {selectedCategories.length > 0 && (
+                      <>
+                        <div className="h-px bg-gray-800 my-1" />
+                        <MenuItem>
+                          {({ focus }) => (
+                            <button
+                              onClick={() => setSelectedCategories([])}
+                              className={classNames(
+                                focus ? 'bg-gray-800 text-white' : 'text-gray-300',
+                                'flex items-center gap-2 rounded-none h-8 px-3 text-xs outline-none cursor-pointer transition-colors duration-200 w-full text-left'
+                              )}
+                            >
+                              Clear All
+                            </button>
+                          )}
+                        </MenuItem>
+                      </>
+                    )}
+                  </MenuItems>
+                </Menu>
 
                 <button
                   onClick={() => setShowColumnModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
                 >
-                  <AdjustmentsHorizontalIcon className="h-5 w-5" />
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
                   Columns
                 </button>
 
                 <button
                   onClick={() => navigate('/suppliers/new')}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/30 transition-all duration-200 font-medium"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
                 >
-                  <UserPlusIcon className="h-5 w-5" />
+                  <UserPlus className="h-3.5 w-3.5" />
                   New Contact
                 </button>
               </div>
             </div>
 
             {/* Suppliers Table */}
-            <div className="flex-1 overflow-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#9CA3AF #E5E7EB'
-            }}>
-              <div className="w-full h-full">
-                <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
+            <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-900/50">
                     <tr>
                       {visibleClientColumns.supplier && (
-                        <th style={{ minWidth: '200px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Supplier
                         </th>
                       )}
                       {visibleClientColumns.categories && (
-                        <th style={{ minWidth: '250px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Trade Categories
                         </th>
                       )}
                       {visibleClientColumns.rating && (
-                        <th style={{ minWidth: '100px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Rating
                         </th>
                       )}
                       {visibleClientColumns.items && (
-                        <th style={{ minWidth: '100px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Items
                         </th>
                       )}
                       {visibleClientColumns.contact && (
-                        <th style={{ minWidth: '200px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Contact
                         </th>
                       )}
                       {visibleClientColumns.status && (
-                        <th style={{ minWidth: '150px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Status
                         </th>
                       )}
                       {visibleClientColumns.actions && (
-                        <th style={{ minWidth: '100px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Actions
                         </th>
                       )}
@@ -1477,19 +1413,19 @@ export default function ContactsPage() {
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {filteredSuppliers.map((supplier) => (
-                      <tr key={supplier.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150">
+                      <tr key={supplier.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150">
                         {visibleClientColumns.supplier && (
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 py-2.5 whitespace-nowrap">
                             <Link
                               to={`/suppliers/${supplier.id}`}
-                              className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                              className="text-xs font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
                             >
                               {supplier.name}
                             </Link>
                           </td>
                         )}
                         {visibleClientColumns.categories && (
-                          <td className="px-6 py-4">
+                          <td className="px-3 py-2.5">
                             <div className="flex flex-wrap gap-1.5">
                               {supplier.trade_categories && supplier.trade_categories.length > 0 ? (
                                 supplier.trade_categories.slice(0, 3).map((category, idx) => (
@@ -1501,7 +1437,7 @@ export default function ContactsPage() {
                                   </span>
                                 ))
                               ) : (
-                                <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
+                                <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
                               )}
                               {supplier.trade_categories && supplier.trade_categories.length > 3 && (
                                 <span className="text-xs text-gray-500 dark:text-gray-400 self-center">
@@ -1512,9 +1448,9 @@ export default function ContactsPage() {
                           </td>
                         )}
                         {visibleClientColumns.rating && (
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 py-2.5 whitespace-nowrap">
                             <div className="flex items-center gap-1">
-                              <span className="text-sm text-gray-900 dark:text-white">
+                              <span className="text-xs font-mono text-gray-900 dark:text-white">
                                 {supplier.rating || 0}
                               </span>
                               <span className="text-xs text-gray-500 dark:text-gray-400">/ 5</span>
@@ -1522,45 +1458,45 @@ export default function ContactsPage() {
                           </td>
                         )}
                         {visibleClientColumns.items && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm text-gray-900 dark:text-white">
+                          <td className="px-3 py-2.5 whitespace-nowrap">
+                            <span className="text-xs font-mono text-gray-900 dark:text-white">
                               {supplier.pricebook_items?.length || 0}
                             </span>
                           </td>
                         )}
                         {visibleClientColumns.contact && (
-                          <td className="px-6 py-4">
+                          <td className="px-3 py-2.5">
                             {supplier.contact ? (
-                              <span className="text-sm text-gray-900 dark:text-white font-medium">
+                              <span className="text-xs text-gray-900 dark:text-white font-medium">
                                 {supplier.contact.full_name}
                               </span>
                             ) : (
-                              <span className="text-sm text-gray-500 dark:text-gray-400">No contact</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">No contact</span>
                             )}
                           </td>
                         )}
                         {visibleClientColumns.status && (
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 py-2.5 whitespace-nowrap">
                             {!supplier.contact_id ? (
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/50">
-                                <XCircleIcon className="h-3.5 w-3.5" />
+                                <XCircle className="h-3.5 w-3.5" />
                                 Unmatched
                               </span>
                             ) : supplier.is_verified ? (
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50">
-                                <CheckCircleIcon className="h-3.5 w-3.5" />
+                                <CheckCircle className="h-3.5 w-3.5" />
                                 Verified
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md bg-yellow-100 text-yellow-800 dark:bg-yellow-400/10 dark:text-yellow-500">
-                                <CheckCircleIcon className="h-3.5 w-3.5" />
+                              <span className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-400/10 dark:text-yellow-500">
+                                <CheckCircle className="h-3.5 w-3.5" />
                                 Needs Review
                               </span>
                             )}
                           </td>
                         )}
                         {visibleClientColumns.actions && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <td className="px-3 py-2.5 whitespace-nowrap text-right text-xs font-medium">
                             <Link
                               to={`/suppliers/${supplier.id}`}
                               className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
@@ -1607,6 +1543,6 @@ export default function ContactsPage() {
         onClose={() => setToast(null)}
       />
     )}
-  </div>
+  </>
   )
 }

@@ -56,7 +56,7 @@ module Schedule
     end
 
     def create_task_from_row(row)
-      ProjectTask.create!(
+      task = ProjectTask.create!(
         project: project,
         schedule_template_row: row,
         name: row.name,
@@ -73,6 +73,13 @@ module Schedule
         auto_complete_predecessors: row.auto_complete_predecessors,
         notes: build_task_notes(row)
       )
+
+      # Create checklist items from templates if supervisor check is required
+      if row.require_supervisor_check && row.supervisor_checklist_template_ids.present?
+        create_checklist_items_for_task(task, row)
+      end
+
+      task
     end
 
     def determine_task_type(row)
@@ -246,6 +253,27 @@ module Schedule
           end_date: latest_task.planned_end_date
         )
       end
+    end
+
+    def create_checklist_items_for_task(task, row)
+      # Load the supervisor checklist templates
+      templates = SupervisorChecklistTemplate.where(id: row.supervisor_checklist_template_ids)
+
+      templates.each_with_index do |template, index|
+        task.project_task_checklist_items.create!(
+          name: template.name,
+          description: template.description,
+          category: template.category,
+          response_type: template.response_type,
+          sequence_order: index,
+          is_completed: false
+        )
+      end
+
+      Rails.logger.info("Created #{templates.count} checklist items for task #{task.name}")
+    rescue StandardError => e
+      Rails.logger.error("Failed to create checklist items for task #{task.name}: #{e.message}")
+      @errors << "Checklist creation failed for #{task.name}: #{e.message}"
     end
   end
 end

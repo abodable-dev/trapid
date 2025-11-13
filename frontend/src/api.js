@@ -31,7 +31,10 @@ export const api = {
       } else {
         errorMessage = errorData.error || `API request failed with status ${response.status}`;
       }
-      throw new Error(errorMessage);
+      const error = new Error(errorMessage);
+      error.status = response.status;
+      error.data = errorData;
+      throw error;
     }
     return response.json();
   },

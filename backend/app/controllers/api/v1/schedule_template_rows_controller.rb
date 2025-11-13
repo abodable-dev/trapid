@@ -101,7 +101,7 @@ module Api
         params.require(:schedule_template_row).permit(
           :name,
           :supplier_id,
-          :assigned_role,
+          :assigned_user_id,
           :po_required,
           :create_po_on_job_start,
           :critical_po,
@@ -113,11 +113,14 @@ module Api
           :has_subtasks,
           :subtask_count,
           :sequence_order,
+          :linked_template_id,
           predecessor_ids: [],
           price_book_item_ids: [],
           documentation_category_ids: [],
+          supervisor_checklist_template_ids: [],
           tags: [],
-          subtask_names: []
+          subtask_names: [],
+          linked_task_ids: []
         )
       end
 
@@ -125,7 +128,7 @@ module Api
         ActionController::Parameters.new(hash).permit(
           :name,
           :supplier_id,
-          :assigned_role,
+          :assigned_user_id,
           :po_required,
           :create_po_on_job_start,
           :critical_po,
@@ -137,11 +140,14 @@ module Api
           :has_subtasks,
           :subtask_count,
           :sequence_order,
+          :linked_template_id,
           predecessor_ids: [],
           price_book_item_ids: [],
           documentation_category_ids: [],
+          supervisor_checklist_template_ids: [],
           tags: [],
-          subtask_names: []
+          subtask_names: [],
+          linked_task_ids: []
         )
       end
 
@@ -151,13 +157,14 @@ module Api
           name: row.name,
           supplier_id: row.supplier_id,
           supplier_name: row.supplier&.name,
-          assigned_role: row.assigned_role,
+          assigned_user_id: row.assigned_user_id,
           predecessor_ids: row.predecessor_ids,
           predecessor_display: row.predecessor_display,
           po_required: row.po_required,
           create_po_on_job_start: row.create_po_on_job_start,
           price_book_item_ids: row.price_book_item_ids,
           documentation_category_ids: row.documentation_category_ids,
+          supervisor_checklist_template_ids: row.supervisor_checklist_template_ids,
           critical_po: row.critical_po,
           tags: row.tags,
           require_photo: row.require_photo,
@@ -168,7 +175,11 @@ module Api
           has_subtasks: row.has_subtasks,
           subtask_count: row.subtask_count,
           subtask_names: row.subtask_names,
-          sequence_order: row.sequence_order
+          sequence_order: row.sequence_order,
+          linked_task_ids: row.linked_task_ids,
+          linked_tasks_display: row.linked_tasks_display,
+          linked_template_id: row.linked_template_id,
+          linked_template_name: row.linked_template_name
         }
       end
     end

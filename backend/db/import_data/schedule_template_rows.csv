@@ -1,0 +1,6 @@
+schedule_template_id,name,supplier_id,assigned_role,predecessor_ids,po_required,create_po_on_job_start,critical_po,price_book_item_ids,documentation_category_ids,tags,require_photo,require_certificate,cert_lag_days,require_supervisor_check,auto_complete_predecessors,has_subtasks,subtask_count,subtask_names,sequence_order
+1,Req Roof Trusses,491,,[],true,true,false,[],"[6,7]",[],true,true,10,true,true,false,0,[],0
+1,Req Fascia and Gutter,491,,[],true,true,true,"[10973,11697]",[],[],false,false,10,false,false,false,0,[],1
+1,Send Quote to Client,,,[],true,false,false,[],[],[],false,false,10,false,false,false,0,[],2
+1,Req Frame Certificate,,admin,[],false,false,false,[],"[4,5]",[],false,true,10,false,false,false,0,[],3
+1,New Task,,,[],false,false,false,[],[],[],false,false,10,false,false,false,0,[],3

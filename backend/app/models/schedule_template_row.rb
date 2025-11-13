@@ -1,6 +1,10 @@
 class ScheduleTemplateRow < ApplicationRecord
   belongs_to :schedule_template
   belongs_to :supplier, optional: true  # Supplier is only required if po_required is true
+  belongs_to :linked_template, class_name: 'ScheduleTemplate', optional: true
+
+  # Serialize JSON fields
+  serialize :linked_task_ids, coder: JSON
 
   # Role/group constants for internal work assignment
   ASSIGNABLE_ROLES = %w[admin sales site supervisor builder estimator].freeze
@@ -12,6 +16,9 @@ class ScheduleTemplateRow < ApplicationRecord
   validates :subtask_count, numericality: { only_integer: true, greater_than_or_equal_to: 1 }, if: :has_subtasks?
   validate :supplier_required_if_po_required
   validate :subtask_names_match_count
+
+  # Callbacks
+  before_save :sync_photos_category
 
   # Scopes
   scope :in_sequence, -> { order(sequence_order: :asc) }
@@ -25,6 +32,10 @@ class ScheduleTemplateRow < ApplicationRecord
   # Helper methods
   def predecessor_task_ids
     predecessor_ids || []
+  end
+
+  def linked_task_list
+    linked_task_ids || []
   end
 
   def price_book_items
@@ -45,6 +56,17 @@ class ScheduleTemplateRow < ApplicationRecord
   def predecessor_display
     return "None" if predecessor_task_ids.empty?
     predecessor_task_ids.map { |pred| format_predecessor(pred) }.join(", ")
+  end
+
+  # Display linked tasks as "1, 3, 5"
+  def linked_tasks_display
+    return "None" if linked_task_list.empty?
+    linked_task_list.join(", ")
+  end
+
+  # Get the linked template name
+  def linked_template_name
+    linked_template&.name
   end
 
   private
@@ -79,6 +101,28 @@ class ScheduleTemplateRow < ApplicationRecord
     else
       # Legacy format: just an integer ID (assume FS with no lag)
       "#{pred_data}FS"
+    end
+  end
+
+  def sync_photos_category
+    return unless require_photo_changed?
+
+    # Find or create the "Photos" documentation category
+    photos_category = DocumentationCategory.find_or_create_by(name: 'Photos') do |category|
+      category.color = '#10b981' # emerald green
+      category.description = 'Photo documentation required'
+      category.sequence_order = DocumentationCategory.maximum(:sequence_order).to_i + 1
+    end
+
+    # Initialize array if nil
+    self.documentation_category_ids ||= []
+
+    if require_photo?
+      # Add Photos category if not already present
+      self.documentation_category_ids |= [photos_category.id]
+    else
+      # Remove Photos category if present
+      self.documentation_category_ids -= [photos_category.id]
     end
   end
 end

@@ -1,21 +1,33 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Tab } from '@headlessui/react'
+import { api } from '../../api'
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
 
-const documentCategories = [
-  { id: 'site-plan', name: 'Site Plan' },
-  { id: 'sales', name: 'Sales' },
-  { id: 'certification', name: 'Certification' },
-  { id: 'client', name: 'Client' },
-  { id: 'client-photo', name: 'Client Photo' },
-  { id: 'final-certificate', name: 'Final Certificate' },
-]
-
 export default function DocumentCategoryTabs({ jobId, onCategoryChange, children }) {
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [documentCategories, setDocumentCategories] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchDocumentationTabs()
+  }, [jobId])
+
+  const fetchDocumentationTabs = async () => {
+    try {
+      setLoading(true)
+      const response = await api.get(`/api/v1/constructions/${jobId}/documentation_tabs`)
+      setDocumentCategories(response)
+    } catch (error) {
+      console.error('Failed to fetch documentation tabs:', error)
+      // Fallback to empty array on error
+      setDocumentCategories([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleChange = (index) => {
     setSelectedIndex(index)
@@ -24,10 +36,31 @@ export default function DocumentCategoryTabs({ jobId, onCategoryChange, children
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="flex items-center gap-x-3">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent dark:border-indigo-500"></div>
+          <span className="text-sm text-gray-600 dark:text-gray-400">Loading documentation tabs...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (documentCategories.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          No documentation categories found. Please create categories in Settings.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <Tab.Group selectedIndex={selectedIndex} onChange={handleChange}>
       <div className="border-b border-gray-200 dark:border-gray-700">
-        <Tab.List className="flex space-x-8 px-4">
+        <Tab.List className="flex space-x-8 px-4 overflow-x-auto">
           {documentCategories.map((category) => (
             <Tab
               key={category.id}
@@ -40,7 +73,9 @@ export default function DocumentCategoryTabs({ jobId, onCategoryChange, children
                 )
               }
             >
-              {category.name}
+              <div className="flex items-center gap-2">
+                {category.name} ({category.document_count || 0})
+              </div>
             </Tab>
           ))}
         </Tab.List>

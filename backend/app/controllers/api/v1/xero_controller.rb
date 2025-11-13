@@ -497,6 +497,55 @@ module Api
         end
       end
 
+      # GET /api/v1/xero/accounts
+      # Fetches and syncs chart of accounts from Xero
+      def accounts
+        begin
+          client = XeroApiClient.new
+          result = client.get_accounts
+
+          if result[:success]
+            # Allow filtering by account class (e.g., EXPENSE for purchase accounts)
+            accounts = result[:accounts]
+            if params[:account_class].present?
+              accounts = accounts.where(account_class: params[:account_class])
+            end
+
+            render json: {
+              success: true,
+              accounts: accounts.map { |acc|
+                {
+                  code: acc.code,
+                  name: acc.name,
+                  display_name: acc.display_name,
+                  account_type: acc.account_type,
+                  account_class: acc.account_class,
+                  tax_type: acc.tax_type,
+                  description: acc.description
+                }
+              }
+            }
+          else
+            render json: {
+              success: false,
+              error: result[:error]
+            }, status: :unprocessable_entity
+          end
+        rescue XeroApiClient::AuthenticationError => e
+          Rails.logger.error("Xero accounts auth error: #{e.message}")
+          render json: {
+            success: false,
+            error: 'Not authenticated with Xero'
+          }, status: :unauthorized
+        rescue StandardError => e
+          Rails.logger.error("Xero accounts error: #{e.message}")
+          render json: {
+            success: false,
+            error: 'Failed to fetch accounts'
+          }, status: :internal_server_error
+        end
+      end
+
       # GET /api/v1/xero/search_contacts?query=search_term
       # Search for Xero contacts by name, email, or tax number
       def search_contacts

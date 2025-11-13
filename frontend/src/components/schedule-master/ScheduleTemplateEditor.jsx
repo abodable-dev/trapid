@@ -10,6 +10,9 @@ import Toast from '../Toast'
 import PredecessorEditor from './PredecessorEditor'
 import PriceBookItemsModal from './PriceBookItemsModal'
 import DocumentationTabsModal from './DocumentationTabsModal'
+import SupervisorChecklistModal from './SupervisorChecklistModal'
+import LinkedTasksModal from './LinkedTasksModal'
+import LinkedTemplateModal from './LinkedTemplateModal'
 
 /**
  * Schedule Template Editor - Full 14-column grid interface for creating/editing schedule templates
@@ -57,10 +60,12 @@ const defaultColumnConfig = {
   photo: { visible: true, width: 80, label: 'Photo', order: 10 },
   cert: { visible: true, width: 80, label: 'Cert', order: 10 },
   certLag: { visible: true, width: 80, label: 'Cert Lag', order: 11 },
-  supCheck: { visible: true, width: 80, label: 'Sup Check', order: 12 },
+  supCheck: { visible: true, width: 120, label: 'Sup Check', order: 12 },
   autoComplete: { visible: true, width: 80, label: 'Auto ✓', order: 13 },
   subtasks: { visible: true, width: 120, label: 'Subtasks', order: 14 },
-  actions: { visible: true, width: 80, label: 'Actions', order: 15 }
+  linkedTasks: { visible: true, width: 120, label: 'Linked Tasks', order: 15 },
+  linkedTemplate: { visible: true, width: 150, label: 'Linked Template', order: 16 },
+  actions: { visible: true, width: 80, label: 'Actions', order: 17 }
 }
 
 export default function ScheduleTemplateEditor() {
@@ -225,6 +230,8 @@ export default function ScheduleTemplateEditor() {
       has_subtasks: false,
       subtask_count: 0,
       subtask_names: [],
+      linked_task_ids: [],
+      linked_template_id: null,
       sequence_order: rows.length
     }
 
@@ -435,7 +442,9 @@ export default function ScheduleTemplateEditor() {
     certLag: "Number of days after task completion when the certificate is due. Default is 10 days.",
     supCheck: "Require a supervisor to check in on this task. Supervisor will get a prompt to visit the site and verify quality.",
     autoComplete: "Automatically mark all predecessor tasks as complete when this task is completed. Useful for cleanup or milestone tasks.",
-    subtasks: "Automatically create subtasks when this task starts. Useful for breaking down complex tasks into smaller steps."
+    subtasks: "Automatically create subtasks when this task starts. Useful for breaking down complex tasks into smaller steps.",
+    linkedTasks: "Link this task to other tasks in the schedule. Useful for grouping related tasks or creating task dependencies across templates.",
+    linkedTemplate: "Attach an entire schedule template to this task. The linked template will be automatically instantiated when this task is created in a job."
   }
 
   // Handle column filter change
@@ -986,6 +995,9 @@ function ScheduleTemplateRow({
   const [showPredecessorEditor, setShowPredecessorEditor] = useState(false)
   const [showPriceItemsModal, setShowPriceItemsModal] = useState(false)
   const [showDocTabsModal, setShowDocTabsModal] = useState(false)
+  const [showChecklistModal, setShowChecklistModal] = useState(false)
+  const [showLinkedTasksModal, setShowLinkedTasksModal] = useState(false)
+  const [showLinkedTemplateModal, setShowLinkedTemplateModal] = useState(false)
 
   // Debounced update for text fields
   const handleTextChange = (field, value) => {
@@ -1223,13 +1235,24 @@ function ScheduleTemplateRow({
 
       case 'supCheck':
         return (
-          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
-            <input
-              type="checkbox"
-              checked={row.require_supervisor_check}
-              onChange={(e) => handleFieldChange('require_supervisor_check', e.target.checked)}
-              className="h-4 w-4"
-            />
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-2 py-3 border-r border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={row.require_supervisor_check}
+                onChange={(e) => handleFieldChange('require_supervisor_check', e.target.checked)}
+                className="h-4 w-4"
+              />
+              {row.require_supervisor_check && (
+                <button
+                  onClick={handleOpenChecklistModal}
+                  className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer whitespace-nowrap"
+                  title="Click to assign checklist items"
+                >
+                  {row.supervisor_checklist_template_ids?.length || 0} items
+                </button>
+              )}
+            </div>
           </td>
         )
 
@@ -1249,6 +1272,32 @@ function ScheduleTemplateRow({
         return (
           <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center text-xs text-gray-600 dark:text-gray-400">
             {row.has_subtasks ? `${row.subtask_count} subs` : '-'}
+          </td>
+        )
+
+      case 'linkedTasks':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <button
+              onClick={() => setShowLinkedTasksModal(true)}
+              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+              title="Click to select linked tasks"
+            >
+              {row.linked_task_ids?.length || 0} tasks
+            </button>
+          </td>
+        )
+
+      case 'linkedTemplate':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => setShowLinkedTemplateModal(true)}
+              className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-900 dark:text-white text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-left cursor-pointer truncate"
+              title="Click to select a template"
+            >
+              {row.linked_template_name || 'None'}
+            </button>
           </td>
         )
 
@@ -1301,6 +1350,25 @@ function ScheduleTemplateRow({
     setShowDocTabsModal(true)
   }
 
+  // Handler for saving supervisor checklist templates
+  const handleSaveChecklistTemplates = (templateIds) => {
+    onUpdate({ supervisor_checklist_template_ids: templateIds })
+  }
+
+  const handleOpenChecklistModal = () => {
+    setShowChecklistModal(true)
+  }
+
+  // Handler for saving linked tasks
+  const handleSaveLinkedTasks = (taskIds) => {
+    onUpdate({ linked_task_ids: taskIds })
+  }
+
+  // Handler for saving linked template
+  const handleSaveLinkedTemplate = (templateId) => {
+    onUpdate({ linked_template_id: templateId })
+  }
+
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
       {getSortedColumns().map(([key, config]) => {
@@ -1339,6 +1407,40 @@ function ScheduleTemplateRow({
             onClose={() => setShowDocTabsModal(false)}
             currentRow={row}
             onSave={handleSaveDocTabs}
+          />
+        </td>
+      )}
+
+      {showChecklistModal && typeof document !== 'undefined' && (
+        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
+          <SupervisorChecklistModal
+            isOpen={showChecklistModal}
+            onClose={() => setShowChecklistModal(false)}
+            currentRow={row}
+            onSave={handleSaveChecklistTemplates}
+          />
+        </td>
+      )}
+
+      {showLinkedTasksModal && typeof document !== 'undefined' && (
+        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
+          <LinkedTasksModal
+            isOpen={showLinkedTasksModal}
+            onClose={() => setShowLinkedTasksModal(false)}
+            currentRow={row}
+            allRows={allRows}
+            onSave={handleSaveLinkedTasks}
+          />
+        </td>
+      )}
+
+      {showLinkedTemplateModal && typeof document !== 'undefined' && (
+        <td style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, padding: 0, border: 0, overflow: 'hidden' }}>
+          <LinkedTemplateModal
+            isOpen={showLinkedTemplateModal}
+            onClose={() => setShowLinkedTemplateModal(false)}
+            currentRow={row}
+            onSave={handleSaveLinkedTemplate}
           />
         </td>
       )}

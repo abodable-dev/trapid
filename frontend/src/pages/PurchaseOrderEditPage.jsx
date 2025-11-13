@@ -1,614 +1,311 @@
 import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { api } from '../api'
 import { ArrowLeftIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../utils/formatters'
+import PODocumentsTab from '../components/purchase-orders/PODocumentsTab'
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(' ')
+}
 
 export default function PurchaseOrderEditPage() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState(null)
-  const [purchaseOrder, setPurchaseOrder] = useState(null)
-  const [lineItems, setLineItems] = useState([])
-  const [itemSearchResults, setItemSearchResults] = useState({})
-  const [showSearchDropdown, setShowSearchDropdown] = useState({})
-  const [showDescriptionDropdown, setShowDescriptionDropdown] = useState({})
-  const [dropdownPosition, setDropdownPosition] = useState({})
-  const [allSupplierItems, setAllSupplierItems] = useState([])
-  const [scheduleTasks, setScheduleTasks] = useState([])
-  const [selectedScheduleTaskId, setSelectedScheduleTaskId] = useState(null)
-  const searchRefs = useRef({})
-  const inputRefs = useRef({})
-  const dropdownRefs = useRef({})
+ const { id } = useParams()
+ const navigate = useNavigate()
+ const [loading, setLoading] = useState(true)
+ const [saving, setSaving] = useState(false)
+ const [error, setError] = useState(null)
+ const [suppliers, setSuppliers] = useState([])
+ const [formData, setFormData] = useState({
+ supplier_id: '',
+ description: '',
+ delivery_address: '',
+ special_instructions: '',
+ budget: '',
+ required_date: '',
+ ordered_date: '',
+ expected_delivery_date: '',
+ ted_task: '',
+ estimation_check: false,
+ part_payment: false
+ })
 
-  useEffect(() => {
-    loadPurchaseOrder()
-  }, [id])
+ useEffect(() => {
+ loadPurchaseOrder()
+ loadSuppliers()
+ }, [id])
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      // Check if click is on any input or dropdown
-      const isClickOnInput = Object.values(inputRefs.current).some(ref => ref && ref.contains(event.target))
-      const isClickOnDropdown = Object.values(dropdownRefs.current).some(ref => ref && ref.contains(event.target))
+ const loadSuppliers = async () => {
+ try {
+ const response = await api.get('/api/v1/suppliers')
+ setSuppliers(response.suppliers || [])
+ } catch (err) {
+ console.error('Failed to load suppliers:', err)
+ }
+ }
 
-      if (!isClickOnInput && !isClickOnDropdown) {
-        setShowSearchDropdown({})
-        setShowDescriptionDropdown({})
-      }
-    }
+ const loadPurchaseOrder = async () => {
+ try {
+ setLoading(true)
+ const response = await api.get(`/api/v1/purchase_orders/${id}`)
+ const po = response
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+ setFormData({
+ supplier_id: po.supplier_id || '',
+ description: po.description || '',
+ delivery_address: po.delivery_address || '',
+ special_instructions: po.special_instructions || '',
+ budget: po.budget || '',
+ required_date: po.required_date || '',
+ ordered_date: po.ordered_date || '',
+ expected_delivery_date: po.expected_delivery_date || '',
+ ted_task: po.ted_task || '',
+ estimation_check: po.estimation_check || false,
+ part_payment: po.part_payment || false
+ })
+ } catch (err) {
+ setError('Failed to load purchase order')
+ console.error(err)
+ } finally {
+ setLoading(false)
+ }
+ }
 
-  const loadPurchaseOrder = async () => {
-    try {
-      setLoading(true)
-      const response = await api.get(`/api/v1/purchase_orders/${id}`)
-      setPurchaseOrder(response)
+ const handleSubmit = async (e) => {
+ e.preventDefault()
+ setSaving(true)
+ setError(null)
 
-      // Load all items for this supplier
-      if (response.supplier_id) {
-        loadAllSupplierItems(response.supplier_id)
-      }
+ try {
+ await api.put(`/api/v1/purchase_orders/${id}`, { purchase_order: formData })
+ navigate(`/purchase-orders/${id}`)
+ } catch (err) {
+ setError(err.response?.data?.errors?.join(', ') || 'Failed to update purchase order')
+ console.error(err)
+ } finally {
+ setSaving(false)
+ }
+ }
 
-      // Load schedule tasks for this construction
-      if (response.construction_id) {
-        loadScheduleTasks(response.construction_id)
-      }
+ const handleChange = (e) => {
+ const { name, value, type, checked } = e.target
+ setFormData(prev => ({
+ ...prev,
+ [name]: type === 'checkbox' ? checked : value
+ }))
+ }
 
-      // Set the currently selected schedule task
-      if (response.schedule_tasks && response.schedule_tasks.length > 0) {
-        setSelectedScheduleTaskId(response.schedule_tasks[0].id)
-      }
+ if (loading) {
+ return (
+ <div className="flex items-center justify-center py-12">
+ <div className="text-gray-600 dark:text-gray-400">Loading purchase order...</div>
+ </div>
+ )
+ }
 
-      // Initialize line items - if none exist, add one empty row
-      if (response.line_items && response.line_items.length > 0) {
-        setLineItems(response.line_items.map(item => ({
-          id: item.id,
-          pricebook_item_id: item.pricebook_item_id,
-          item_code: item.pricebook_item?.item_code || '',
-          description: item.description || item.pricebook_item?.item_name || '',
-          quantity: item.quantity || 1,
-          unit_price: item.unit_price || 0,
-          _destroy: false
-        })))
-      } else {
-        setLineItems([{ item_code: '', description: '', quantity: 1, unit_price: 0 }])
-      }
-    } catch (err) {
-      setError('Failed to load purchase order')
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
+ return (
+ <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+ <div className="mb-6">
+ <Link
+ to={`/purchase-orders/${id}`}
+ className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 mb-4"
+ >
+ <ArrowLeftIcon className="h-5 w-5" />
+ Back to Purchase Order
+ </Link>
 
-  const loadAllSupplierItems = async (supplierId) => {
-    try {
-      const response = await api.get('/api/v1/pricebook', {
-        params: {
-          supplier_id: supplierId,
-          per_page: 1000 // Get all items for this supplier
-        }
-      })
-      setAllSupplierItems(response.items || [])
-    } catch (err) {
-      console.error('Failed to load supplier items:', err)
-    }
-  }
+ <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+ Edit Purchase Order
+ </h1>
+ </div>
 
-  const loadScheduleTasks = async (constructionId) => {
-    try {
-      const response = await api.get(`/api/v1/constructions/${constructionId}/schedule_tasks`)
-      setScheduleTasks(response.schedule_tasks || [])
-    } catch (err) {
-      console.error('Failed to load schedule tasks:', err)
-    }
-  }
+ {error && (
+ <div className="mb-4 bg-red-50 dark:bg-red-900/10 p-4">
+ <p className="text-sm text-red-800 dark:text-red-400">{error}</p>
+ </div>
+ )}
 
-  const searchPricebookItems = (searchTerm, index) => {
-    if (!searchTerm) {
-      setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
-      return
-    }
+ <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6">
+ <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+ <div className="sm:col-span-2">
+ <label htmlFor="supplier_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+ Supplier
+ </label>
+ <select
+ id="supplier_id"
+ name="supplier_id"
+ value={formData.supplier_id}
+ onChange={handleChange}
+ className="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+ >
+ <option value="">Select a supplier</option>
+ {suppliers.map(supplier => (
+ <option key={supplier.id} value={supplier.id}>
+ {supplier.name}
+ </option>
+ ))}
+ </select>
+ </div>
 
-    // Filter the already-loaded supplier items client-side
-    const searchLower = searchTerm.toLowerCase()
-    const filtered = allSupplierItems.filter(item =>
-      item.item_code?.toLowerCase().includes(searchLower) ||
-      item.item_name?.toLowerCase().includes(searchLower)
-    )
-    setItemSearchResults(prev => ({ ...prev, [index]: filtered }))
-  }
+ <div className="sm:col-span-2">
+ <label htmlFor="ted_task" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+ Task Description
+ </label>
+ <textarea
+ id="ted_task"
+ name="ted_task"
+ rows={2}
+ value={formData.ted_task}
+ onChange={handleChange}
+ className="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+ />
+ </div>
 
-  const handleItemCodeChange = (index, value) => {
-    const newLineItems = [...lineItems]
-    newLineItems[index].item_code = value
-    setLineItems(newLineItems)
+ <div className="sm:col-span-2">
+ <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+ Description
+ </label>
+ <textarea
+ id="description"
+ name="description"
+ rows={3}
+ value={formData.description}
+ onChange={handleChange}
+ className="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+ />
+ </div>
 
-    // Calculate dropdown position if not already set
-    const inputEl = inputRefs.current[`code-${index}`]
-    if (inputEl && !dropdownPosition[`code-${index}`]) {
-      const rect = inputEl.getBoundingClientRect()
-      setDropdownPosition(prev => ({
-        ...prev,
-        [`code-${index}`]: {
-          top: rect.bottom + window.scrollY,
-          left: rect.left + window.scrollX,
-          width: rect.width
-        }
-      }))
-    }
+ <div>
+ <label htmlFor="budget" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+ Budget
+ </label>
+ <input
+ type="number"
+ step="0.01"
+ id="budget"
+ name="budget"
+ value={formData.budget}
+ onChange={handleChange}
+ className="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+ />
+ </div>
 
-    // Search as user types
-    if (value.length >= 2) {
-      searchPricebookItems(value, index)
-      setShowSearchDropdown(prev => ({ ...prev, [index]: true }))
-    } else if (value.length === 0) {
-      // Show all supplier items when field is empty
-      setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
-      setShowSearchDropdown(prev => ({ ...prev, [index]: true }))
-    } else {
-      setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
-    }
-  }
+ <div>
+ <label htmlFor="required_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+ Required Date
+ </label>
+ <input
+ type="date"
+ id="required_date"
+ name="required_date"
+ value={formData.required_date}
+ onChange={handleChange}
+ className="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+ />
+ </div>
 
-  const handleItemCodeFocus = (index) => {
-    // Close description dropdown
-    setShowDescriptionDropdown(prev => ({ ...prev, [index]: false }))
+ <div>
+ <label htmlFor="ordered_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+ Ordered Date
+ </label>
+ <input
+ type="date"
+ id="ordered_date"
+ name="ordered_date"
+ value={formData.ordered_date}
+ onChange={handleChange}
+ className="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+ />
+ </div>
 
-    // Calculate dropdown position
-    const inputEl = inputRefs.current[`code-${index}`]
-    if (inputEl) {
-      const rect = inputEl.getBoundingClientRect()
-      setDropdownPosition(prev => ({
-        ...prev,
-        [`code-${index}`]: {
-          top: rect.bottom + window.scrollY,
-          left: rect.left + window.scrollX,
-          width: rect.width
-        }
-      }))
-    }
+ <div>
+ <label htmlFor="expected_delivery_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+ Expected Delivery Date
+ </label>
+ <input
+ type="date"
+ id="expected_delivery_date"
+ name="expected_delivery_date"
+ value={formData.expected_delivery_date}
+ onChange={handleChange}
+ className="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+ />
+ </div>
 
-    // Always show all supplier items when focusing on item code field
-    setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
-    setShowSearchDropdown(prev => ({ ...prev, [index]: true }))
-  }
+ <div className="sm:col-span-2">
+ <label htmlFor="delivery_address" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+ Delivery Address
+ </label>
+ <textarea
+ id="delivery_address"
+ name="delivery_address"
+ rows={3}
+ value={formData.delivery_address}
+ onChange={handleChange}
+ className="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+ />
+ </div>
 
-  const handleSelectItem = (index, item) => {
-    const newLineItems = [...lineItems]
-    newLineItems[index] = {
-      ...newLineItems[index],
-      pricebook_item_id: item.id,
-      item_code: item.item_code,
-      description: item.item_name,
-      unit_price: item.current_price || 0
-    }
-    setLineItems(newLineItems)
-    // Close both dropdowns
-    setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
-    setShowDescriptionDropdown(prev => ({ ...prev, [index]: false }))
-  }
+ <div className="sm:col-span-2">
+ <label htmlFor="special_instructions" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+ Special Instructions
+ </label>
+ <textarea
+ id="special_instructions"
+ name="special_instructions"
+ rows={3}
+ value={formData.special_instructions}
+ onChange={handleChange}
+ className="mt-1 block w-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+ />
+ </div>
 
-  const handleDescriptionChange = (index, value) => {
-    const newLineItems = [...lineItems]
-    newLineItems[index].description = value
-    setLineItems(newLineItems)
+ <div className="flex items-center">
+ <input
+ type="checkbox"
+ id="estimation_check"
+ name="estimation_check"
+ checked={formData.estimation_check}
+ onChange={handleChange}
+ className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+ />
+ <label htmlFor="estimation_check" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+ Estimation Check
+ </label>
+ </div>
 
-    // Close item code dropdown when typing in description
-    setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
+ <div className="flex items-center">
+ <input
+ type="checkbox"
+ id="part_payment"
+ name="part_payment"
+ checked={formData.part_payment}
+ onChange={handleChange}
+ className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+ />
+ <label htmlFor="part_payment" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+ Part Payment
+ </label>
+ </div>
+ </div>
 
-    // Calculate dropdown position if not already set
-    const inputEl = inputRefs.current[`desc-${index}`]
-    if (inputEl && !dropdownPosition[`desc-${index}`]) {
-      const rect = inputEl.getBoundingClientRect()
-      setDropdownPosition(prev => ({
-        ...prev,
-        [`desc-${index}`]: {
-          top: rect.bottom + window.scrollY,
-          left: rect.left + window.scrollX,
-          width: rect.width
-        }
-      }))
-    }
-
-    // Search as user types in description
-    if (value.length >= 2) {
-      searchPricebookItems(value, index)
-      setShowDescriptionDropdown(prev => ({ ...prev, [index]: true }))
-    } else if (value.length === 0) {
-      // Show all supplier items when field is empty
-      setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
-      setShowDescriptionDropdown(prev => ({ ...prev, [index]: true }))
-    } else {
-      setShowDescriptionDropdown(prev => ({ ...prev, [index]: false }))
-    }
-  }
-
-  const handleDescriptionFocus = (index) => {
-    // Close item code dropdown
-    setShowSearchDropdown(prev => ({ ...prev, [index]: false }))
-
-    // Calculate dropdown position
-    const inputEl = inputRefs.current[`desc-${index}`]
-    if (inputEl) {
-      const rect = inputEl.getBoundingClientRect()
-      setDropdownPosition(prev => ({
-        ...prev,
-        [`desc-${index}`]: {
-          top: rect.bottom + window.scrollY,
-          left: rect.left + window.scrollX,
-          width: rect.width
-        }
-      }))
-    }
-
-    // Always show all supplier items when focusing on description field
-    setItemSearchResults(prev => ({ ...prev, [index]: allSupplierItems }))
-    setShowDescriptionDropdown(prev => ({ ...prev, [index]: true }))
-  }
-
-  const handleLineItemChange = (index, field, value) => {
-    const newLineItems = [...lineItems]
-    newLineItems[index][field] = value
-    setLineItems(newLineItems)
-  }
-
-  const addLineItem = () => {
-    setLineItems([...lineItems, { item_code: '', description: '', quantity: 1, unit_price: 0 }])
-  }
-
-  const removeLineItem = (index) => {
-    const newLineItems = [...lineItems]
-    if (newLineItems[index].id) {
-      // Mark existing items for deletion
-      newLineItems[index]._destroy = true
-    } else {
-      // Remove new items completely
-      newLineItems.splice(index, 1)
-    }
-    setLineItems(newLineItems)
-  }
-
-  const calculateSubtotal = () => {
-    return lineItems
-      .filter(item => !item._destroy)
-      .reduce((sum, item) => sum + (parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0), 0)
-  }
-
-  const calculateGST = () => {
-    return calculateSubtotal() * 0.1 // 10% GST
-  }
-
-  const calculateTotal = () => {
-    return calculateSubtotal() + calculateGST()
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    // Validate that we have at least one line item
-    const validItems = lineItems.filter(item => !item._destroy && item.description)
-    if (validItems.length === 0) {
-      setError('Please add at least one line item')
-      return
-    }
-
-    setSaving(true)
-    setError(null)
-
-    try {
-      await api.put(`/api/v1/purchase_orders/${id}`, {
-        purchase_order: {
-          schedule_task_id: selectedScheduleTaskId || null,
-          line_items_attributes: lineItems.map(item => ({
-            id: item.id,
-            pricebook_item_id: item.pricebook_item_id,
-            description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            _destroy: item._destroy || false
-          }))
-        }
-      })
-      navigate(`/purchase-orders/${id}`)
-    } catch (err) {
-      setError(err.message || 'Failed to update purchase order')
-      console.error(err)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-600 dark:text-gray-400">Loading purchase order...</div>
-      </div>
-    )
-  }
-
-  if (error && !purchaseOrder) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-600 dark:text-red-400">{error}</div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <Link
-            to={`/jobs/${purchaseOrder?.construction_id}?tab=Purchase+Orders`}
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-4"
-          >
-            <ArrowLeftIcon className="mr-2 h-4 w-4" />
-            Back to Job
-          </Link>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Purchase Order #{purchaseOrder?.purchase_order_number}
-              </h1>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                Job: {purchaseOrder?.construction?.title || 'Unknown Job'}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Supplier: {purchaseOrder?.supplier?.name || 'No supplier selected'}
-              </p>
-              <div className="flex items-center gap-x-2 text-sm text-gray-600 dark:text-gray-400">
-                <span>Schedule Task:</span>
-                <select
-                  value={selectedScheduleTaskId || ''}
-                  onChange={(e) => setSelectedScheduleTaskId(e.target.value || null)}
-                  className="inline-flex px-2 py-0.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">Select schedule task...</option>
-                  {scheduleTasks.map((task) => (
-                    <option key={task.id} value={task.id}>
-                      {task.title} {task.supplier_category && `(${task.supplier_category})`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleSubmit}>
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4">
-              <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-            </div>
-          )}
-
-          {/* Line Items Table */}
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-visible">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Line Items</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Click on item code field to see all items, or type to search
-              </p>
-            </div>
-
-            <div className="overflow-x-auto overflow-y-visible">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
-                      Item Code
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
-                      Quantity
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
-                      Unit Price
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
-                      Total
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {lineItems.filter(item => !item._destroy).map((item, index) => (
-                    <tr key={index} ref={el => searchRefs.current[index] = el}>
-                      <td className="px-6 py-4 overflow-visible">
-                        <div className="relative">
-                          <input
-                            ref={el => inputRefs.current[`code-${index}`] = el}
-                            type="text"
-                            value={item.item_code}
-                            onChange={(e) => handleItemCodeChange(index, e.target.value)}
-                            onFocus={() => handleItemCodeFocus(index)}
-                            placeholder="Type code..."
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                          {showSearchDropdown[index] && dropdownPosition[`code-${index}`] && createPortal(
-                            <div
-                              ref={el => dropdownRefs.current[`code-${index}`] = el}
-                              className="fixed z-[9999] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-96 overflow-y-auto"
-                              style={{
-                                top: `${dropdownPosition[`code-${index}`].top}px`,
-                                left: `${dropdownPosition[`code-${index}`].left}px`,
-                                minWidth: '16rem'
-                              }}
-                            >
-                              {(itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).length > 0 ? (
-                                (itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).map((searchItem) => (
-                                  <button
-                                    key={searchItem.id}
-                                    type="button"
-                                    onClick={() => handleSelectItem(index, searchItem)}
-                                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                                  >
-                                    <div className="font-medium text-gray-900 dark:text-white">{searchItem.item_code}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{searchItem.item_name}</div>
-                                    <div className="text-xs text-gray-600 dark:text-gray-300">{formatCurrency(searchItem.current_price)}</div>
-                                  </button>
-                                ))
-                              ) : (
-                                <div className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
-                                  {allSupplierItems.length === 0 ? 'Loading items...' : 'No items found'}
-                                </div>
-                              )}
-                            </div>,
-                            document.body
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 overflow-visible">
-                        <div className="relative">
-                          <input
-                            ref={el => inputRefs.current[`desc-${index}`] = el}
-                            type="text"
-                            value={item.description}
-                            onChange={(e) => handleDescriptionChange(index, e.target.value)}
-                            onFocus={() => handleDescriptionFocus(index)}
-                            placeholder="Description..."
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                          {showDescriptionDropdown[index] && dropdownPosition[`desc-${index}`] && createPortal(
-                            <div
-                              ref={el => dropdownRefs.current[`desc-${index}`] = el}
-                              className="fixed z-[9999] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-96 overflow-y-auto"
-                              style={{
-                                top: `${dropdownPosition[`desc-${index}`].top}px`,
-                                left: `${dropdownPosition[`desc-${index}`].left}px`,
-                                minWidth: '24rem'
-                              }}
-                            >
-                              {(itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).length > 0 ? (
-                                (itemSearchResults[index] !== undefined ? itemSearchResults[index] : allSupplierItems).map((searchItem) => (
-                                  <button
-                                    key={searchItem.id}
-                                    type="button"
-                                    onClick={() => handleSelectItem(index, searchItem)}
-                                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                                  >
-                                    <div className="font-medium text-gray-900 dark:text-white">{searchItem.item_code}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{searchItem.item_name}</div>
-                                    <div className="text-xs text-gray-600 dark:text-gray-300">{formatCurrency(searchItem.current_price)}</div>
-                                  </button>
-                                ))
-                              ) : (
-                                <div className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
-                                  {allSupplierItems.length === 0 ? 'Loading items...' : 'No items found'}
-                                </div>
-                              )}
-                            </div>,
-                            document.body
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => handleLineItemChange(index, 'quantity', e.target.value)}
-                          onFocus={(e) => e.target.select()}
-                          min="0"
-                          step="1"
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-right bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <input
-                          type="number"
-                          value={item.unit_price}
-                          onChange={(e) => handleLineItemChange(index, 'unit_price', e.target.value)}
-                          onFocus={(e) => e.target.select()}
-                          min="0"
-                          step="0.01"
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-right bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm font-medium text-gray-900 dark:text-white">
-                        {formatCurrency((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0))}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => removeLineItem(index)}
-                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-              <button
-                type="button"
-                onClick={addLineItem}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add Line Item
-              </button>
-            </div>
-          </div>
-
-          {/* Totals */}
-          <div className="mt-6 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <div className="max-w-md ml-auto space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Subtotal (Ex GST)</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(calculateSubtotal())}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">GST (10%)</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(calculateGST())}</span>
-              </div>
-              <div className="flex justify-between text-lg font-bold border-t border-gray-200 dark:border-gray-700 pt-3">
-                <span className="text-gray-900 dark:text-white">Total (Inc GST)</span>
-                <span className="text-gray-900 dark:text-white">{formatCurrency(calculateTotal())}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(`/purchase-orders/${id}`)}
-              className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-6 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? 'Saving...' : 'Save Purchase Order'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
+ <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+ <Link
+ to={`/purchase-orders/${id}`}
+ className="bg-white dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+ >
+ Cancel
+ </Link>
+ <button
+ type="submit"
+ disabled={saving}
+ className="bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-indigo-500 dark:hover:bg-indigo-400"
+ >
+ {saving ? 'Saving...' : 'Save Changes'}
+ </button>
+ </div>
+ </form>
+ </div>
+ )
 }

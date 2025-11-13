@@ -22,6 +22,9 @@ class ProjectTask < ApplicationRecord
   # Progress tracking
   has_many :task_updates, dependent: :destroy
 
+  # Supervisor checklist items
+  has_many :project_task_checklist_items, dependent: :destroy
+
   validates :name, presence: true
   validates :task_type, presence: true
   validates :category, presence: true
@@ -219,5 +222,28 @@ class ProjectTask < ApplicationRecord
   rescue StandardError => e
     Rails.logger.error("Failed to auto-complete predecessors for task #{id}: #{e.message}")
     # Don't raise - we don't want to block the completion
+  end
+
+  # Auto-complete all subtasks for this task
+  public
+  def auto_complete_all_subtasks!(user_name = nil)
+    return 0 unless spawned_tasks.subtasks.any?
+
+    completed_count = 0
+    spawned_tasks.subtasks.where.not(status: 'complete').find_each do |subtask|
+      subtask.update!(
+        status: 'complete',
+        progress_percentage: 100,
+        actual_end_date: Date.current,
+        completed_by: user_name
+      )
+      completed_count += 1
+      Rails.logger.info("Auto-completed subtask #{subtask.id} (#{subtask.name}) for parent task #{id}")
+    end
+
+    completed_count
+  rescue StandardError => e
+    Rails.logger.error("Failed to auto-complete subtasks for task #{id}: #{e.message}")
+    raise
   end
 end

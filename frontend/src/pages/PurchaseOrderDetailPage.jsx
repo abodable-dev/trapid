@@ -1,825 +1,981 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useEffect, useState } from"react";
+import { useParams, useNavigate, Link } from"react-router-dom";
+import { Menu, MenuButton, MenuItem, MenuItems } from"@headlessui/react";
 import {
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions,
-  Label,
-} from '@headlessui/react'
-import {
-  ArrowLeftIcon,
-  EllipsisVerticalIcon,
-  UserCircleIcon,
-  CalendarDaysIcon,
-  BuildingStorefrontIcon,
-  PaperClipIcon,
-  PrinterIcon,
-  FaceSmileIcon,
-  FireIcon,
-  HeartIcon,
-  FaceSmileIcon as FaceHappyIcon,
-  FaceFrownIcon,
-  HandThumbUpIcon,
-  XMarkIcon as XMarkIconMini,
-} from '@heroicons/react/20/solid'
-import { CheckCircleIcon } from '@heroicons/react/24/solid'
-import { api } from '../api'
-import { formatCurrency } from '../utils/formatters'
-
-const moods = [
-  { name: 'Excited', value: 'excited', icon: FireIcon, iconColor: 'text-white', bgColor: 'bg-red-500' },
-  { name: 'Loved', value: 'loved', icon: HeartIcon, iconColor: 'text-white', bgColor: 'bg-pink-400' },
-  { name: 'Happy', value: 'happy', icon: FaceHappyIcon, iconColor: 'text-white', bgColor: 'bg-green-400' },
-  { name: 'Sad', value: 'sad', icon: FaceFrownIcon, iconColor: 'text-white', bgColor: 'bg-yellow-400' },
-  { name: 'Thumbsy', value: 'thumbsy', icon: HandThumbUpIcon, iconColor: 'text-white', bgColor: 'bg-blue-500' },
-  { name: 'I feel nothing', value: null, icon: XMarkIconMini, iconColor: 'text-gray-400', bgColor: 'bg-transparent' },
-]
-
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
-}
+ ArrowLeft,
+ MapPin,
+ Phone,
+ Mail,
+ User,
+ MoreHorizontal,
+ CheckCircle2,
+ Download,
+} from"lucide-react";
+import { api } from"../api";
+import { formatCurrency } from"../utils/formatters";
+import Toast from"../components/Toast";
 
 function formatDate(dateString) {
-  if (!dateString) return '-'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+ if (!dateString) return"-";
+ const date = new Date(dateString);
+ return date.toLocaleDateString("en-US", {
+ year:"numeric",
+ month:"long",
+ day:"numeric",
+ });
 }
 
 export default function PurchaseOrderDetailPage() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const [purchaseOrder, setPurchaseOrder] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [selected, setSelected] = useState(moods[5])
-  const [comment, setComment] = useState('')
+ const { id } = useParams();
+ const navigate = useNavigate();
+ const [purchaseOrder, setPurchaseOrder] = useState(null);
+ const [loading, setLoading] = useState(true);
+ const [error, setError] = useState(null);
+ const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    loadPurchaseOrder()
-  }, [id])
+ // Add print styles
+ useEffect(() => {
+ const style = document.createElement('style');
+ style.innerHTML = `
+ @media print {
+ /* Force exact color reproduction - CRITICAL for dark theme */
+ * {
+ -webkit-print-color-adjust: exact !important;
+ print-color-adjust: exact !important;
+ color-adjust: exact !important;
+ }
 
-  const loadPurchaseOrder = async () => {
-    try {
-      setLoading(true)
-      const response = await api.get(`/api/v1/purchase_orders/${id}`)
-      setPurchaseOrder(response)
-    } catch (err) {
-      setError('Failed to load purchase order')
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
+ /* CRITICAL: Zero page margins for edge-to-edge black */
+ @page {
+ size: A4 portrait;
+ margin: 0 !important;
+ }
 
-  const handleApprove = async () => {
-    try {
-      await api.post(`/api/v1/purchase_orders/${id}/approve`)
-      await loadPurchaseOrder()
-    } catch (err) {
-      console.error('Failed to approve purchase order:', err)
-      alert('Failed to approve purchase order')
-    }
-  }
+ /* Hide everything except print wrapper */
+ body > *:not(.print-wrapper) {
+ display: none !important;
+ }
 
-  const handleSendToSupplier = async () => {
-    try {
-      await api.post(`/api/v1/purchase_orders/${id}/send_to_supplier`)
-      await loadPurchaseOrder()
-    } catch (err) {
-      console.error('Failed to send to supplier:', err)
-      alert('Failed to send to supplier')
-    }
-  }
+ /* Print wrapper fills entire page - edge to edge black */
+ .print-wrapper {
+ position: fixed !important;
+ top: 0 !important;
+ left: 0 !important;
+ right: 0 !important;
+ bottom: 0 !important;
+ width: 210mm !important;
+ height: 297mm !important;
+ background-color: #000000 !important;
+ margin: 0 !important;
+ padding: 0 !important;
+ overflow: visible !important;
+ display: block !important;
+ }
 
-  const handleMarkReceived = async () => {
-    try {
-      await api.post(`/api/v1/purchase_orders/${id}/mark_received`)
-      await loadPurchaseOrder()
-    } catch (err) {
-      console.error('Failed to mark as received:', err)
-      alert('Failed to mark as received')
-    }
-  }
+ /* Print container - centered with MINIMAL padding for single-page fit */
+ .print-container {
+ position: absolute !important;
+ top: 0 !important;
+ left: 0 !important;
+ right: 0 !important;
+ bottom: 0 !important;
+ padding: 8mm !important;
+ background-color: #000000 !important;
+ box-sizing: border-box !important;
+ }
 
-  const getStatusBadgeClass = (status) => {
-    const classes = {
-      draft: 'bg-gray-50 text-gray-600 ring-gray-500/10 dark:bg-gray-500/10 dark:text-gray-500 dark:ring-gray-500/30',
-      pending: 'bg-yellow-50 text-yellow-600 ring-yellow-600/20 dark:bg-yellow-500/10 dark:text-yellow-500 dark:ring-yellow-500/30',
-      approved: 'bg-blue-50 text-blue-600 ring-blue-600/20 dark:bg-blue-500/10 dark:text-blue-500 dark:ring-blue-500/30',
-      sent: 'bg-indigo-50 text-indigo-600 ring-indigo-600/20 dark:bg-indigo-500/10 dark:text-indigo-500 dark:ring-indigo-500/30',
-      received: 'bg-green-50 text-green-600 ring-green-600/20 dark:bg-green-500/10 dark:text-green-500 dark:ring-green-500/30',
-      invoiced: 'bg-purple-50 text-purple-600 ring-purple-600/20 dark:bg-purple-500/10 dark:text-purple-500 dark:ring-purple-500/30',
-      paid: 'bg-green-50 text-green-600 ring-green-600/20 dark:bg-green-500/10 dark:text-green-500 dark:ring-green-500/30',
-      cancelled: 'bg-red-50 text-red-600 ring-red-600/20 dark:bg-red-500/10 dark:text-red-500 dark:ring-red-500/30',
-    }
-    return classes[status] || classes.draft
-  }
+ /* Override all responsive max-width constraints */
+ .print-container .max-w-4xl,
+ .print-container .max-w-7xl {
+ max-width: none !important;
+ width: 100% !important;
+ padding-left: 0 !important;
+ padding-right: 0 !important;
+ margin: 0 !important;
+ }
 
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault()
-    // TODO: Implement comment submission
-    console.log('Comment:', comment, 'Mood:', selected)
-    setComment('')
-    setSelected(moods[5])
-  }
+ /* Force all grid columns to desktop layout */
+ .print-container .grid-cols-1 {
+ grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+ }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500 dark:text-gray-400">Loading...</div>
-      </div>
-    )
-  }
+ .print-container .md\:grid-cols-3 {
+ grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+ }
 
-  if (error || !purchaseOrder) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-600 dark:text-red-400">{error || 'Purchase order not found'}</div>
-      </div>
-    )
-  }
+ .print-container .md\:grid-cols-2 {
+ grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+ }
 
-  return (
-    <main>
-      <style>{`
-        @media print {
-          /* Hide navigation and action buttons */
-          .print-hide {
-            display: none !important;
-          }
+ .print-container .sm\:grid-cols-4 {
+ grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+ }
 
-          /* Hide the sidebar summary on print */
-          .print-hide-sidebar {
-            display: none !important;
-          }
+ /* Optimized font sizes for single-page fit */
+ .print-container .text-xs {
+ font-size: 0.65rem !important;
+ line-height: 1.2 !important;
+ }
 
-          /* Hide activity feed on print */
-          .print-hide-activity {
-            display: none !important;
-          }
+ .print-container .text-sm {
+ font-size: 0.75rem !important;
+ line-height: 1.3 !important;
+ }
 
-          /* Reset colors for print */
-          body {
-            background: white !important;
-          }
+ .print-container .text-base {
+ font-size: 0.85rem !important;
+ line-height: 1.3 !important;
+ }
 
-          /* Full width for main content on print */
-          .print-full-width {
-            grid-column: span 3 !important;
-          }
+ .print-container .text-xl {
+ font-size: 1rem !important;
+ line-height: 1.3 !important;
+ }
 
-          /* Remove shadows and borders that don't print well */
-          .shadow, .shadow-sm, .shadow-lg {
-            box-shadow: none !important;
-          }
+ .print-container .text-2xl {
+ font-size: 1.2rem !important;
+ line-height: 1.3 !important;
+ }
 
-          /* Ensure page breaks are clean */
-          .print-page-break {
-            page-break-before: always;
-          }
+ /* Preserve all dark theme colors */
+ .bg-black {
+ background-color: #000000 !important;
+ }
 
-          /* Hide decorative elements */
-          header {
-            display: none !important;
-          }
+ .bg-gray-900, .bg-gray-900\/50 {
+ background-color: #111827 !important;
+ }
 
-          /* Add some padding to printed content */
-          main {
-            padding-top: 0 !important;
-          }
+ .bg-gray-800, .bg-gray-800\/50 {
+ background-color: #1f2937 !important;
+ }
 
-          /* Remove top container padding */
-          .mx-auto.max-w-7xl {
-            padding-top: 0 !important;
-            padding-bottom: 0 !important;
-          }
+ .text-white {
+ color: #ffffff !important;
+ }
 
-          /* Reduce spacing to fit on one page */
-          .print-full-width {
-            padding: 1rem !important;
-            font-size: 0.875rem !important;
-          }
+ .text-gray-300 {
+ color: #d1d5db !important;
+ }
 
-          /* Compact table spacing */
-          table {
-            font-size: 0.75rem !important;
-          }
+ .text-gray-400 {
+ color: #9ca3af !important;
+ }
 
-          /* Reduce margins and padding */
-          h2, h3 {
-            margin-top: 0.5rem !important;
-            margin-bottom: 0.5rem !important;
-          }
+ .text-gray-500 {
+ color: #6b7280 !important;
+ }
 
-          dl {
-            margin-top: 0.5rem !important;
-            margin-bottom: 0.5rem !important;
-          }
+ .border-gray-800 {
+ border-color: #1f2937 !important;
+ }
 
-          /* Scale down to fit */
-          @page {
-            size: A4;
-            margin: 0.5cm;
-          }
-        }
-      `}</style>
-      <header className="relative isolate print-hide">
-        <div aria-hidden="true" className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute left-16 top-full -mt-16 transform-gpu opacity-50 blur-3xl xl:left-1/2 xl:-ml-80 dark:opacity-30">
-            <div
-              style={{
-                clipPath:
-                  'polygon(100% 38.5%, 82.6% 100%, 60.2% 37.7%, 52.4% 32.1%, 47.5% 41.8%, 45.2% 65.6%, 27.5% 23.4%, 0.1% 35.3%, 17.9% 0%, 27.7% 23.4%, 76.2% 2.5%, 74.2% 56%, 100% 38.5%)',
-              }}
-              className="aspect-[1154/678] w-[72.125rem] bg-gradient-to-br from-[#FF80B5] to-[#9089FC]"
-            />
-          </div>
-          <div className="absolute inset-x-0 bottom-0 h-px bg-gray-900/5 dark:bg-white/5" />
-        </div>
+ .border-gray-700 {
+ border-color: #374151 !important;
+ }
 
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="mb-4">
-            <Link
-              to="/active-jobs"
-              className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-            >
-              <ArrowLeftIcon className="mr-2 h-4 w-4" />
-              Back to Jobs
-            </Link>
-          </div>
+ /* Preserve status badge colors */
+ .bg-success\/10 {
+ background-color: rgba(34, 197, 94, 0.1) !important;
+ }
 
-          <div className="mx-auto flex max-w-2xl items-center justify-between gap-x-8 lg:mx-0 lg:max-w-none">
-            <div className="flex items-center gap-x-6">
-              <div className="size-16 flex items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-500/10 outline outline-1 -outline-offset-1 outline-black/5 dark:outline-white/10">
-                <BuildingStorefrontIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-500" />
-              </div>
-              <h1>
-                <div className="text-sm/6 text-gray-500 dark:text-gray-400">
-                  Purchase Order <span className="text-gray-700 dark:text-gray-300">#{purchaseOrder.purchase_order_number}</span>
-                </div>
-                <div className="mt-1 text-base font-semibold text-gray-900 dark:text-white">
-                  {purchaseOrder.construction?.title || 'No Construction Job'}
-                </div>
-              </h1>
+ .text-success {
+ color: #22c55e !important;
+ }
+
+ .border-success\/20 {
+ border-color: rgba(34, 197, 94, 0.2) !important;
+ }
+
+ /* Preserve other badge colors */
+ .bg-warning\/10 {
+ background-color: rgba(234, 179, 8, 0.1) !important;
+ }
+
+ .text-warning {
+ color: #eab308 !important;
+ }
+
+ .bg-info\/10 {
+ background-color: rgba(59, 130, 246, 0.1) !important;
+ }
+
+ .text-info {
+ color: #3b82f6 !important;
+ }
+
+ /* Prevent page breaks in critical sections */
+ .bg-gray-900.border {
+ page-break-inside: avoid;
+ break-inside: avoid;
+ }
+
+ table {
+ page-break-inside: auto;
+ }
+
+ tr {
+ page-break-inside: avoid;
+ page-break-after: auto;
+ }
+
+ /* Reduce spacing globally for single-page fit */
+ .print-container .p-4 {
+ padding: 0.5rem !important;
+ }
+
+ .print-container .p-3 {
+ padding: 0.4rem !important;
+ }
+
+ .print-container .py-2 {
+ padding-top: 0.3rem !important;
+ padding-bottom: 0.3rem !important;
+ }
+
+ .print-container .pb-2 {
+ padding-bottom: 0.3rem !important;
+ }
+
+ .print-container .mb-2 {
+ margin-bottom: 0.3rem !important;
+ }
+
+ .print-container .mb-4 {
+ margin-bottom: 0.5rem !important;
+ }
+
+ .print-container .mt-4 {
+ margin-top: 0.5rem !important;
+ }
+
+ .print-container .space-y-1 > * + * {
+ margin-top: 0.15rem !important;
+ }
+
+ .print-container .space-y-2 > * + * {
+ margin-top: 0.3rem !important;
+ }
+
+ .print-container .gap-3 {
+ gap: 0.4rem !important;
+ }
+
+ .print-container .gap-4 {
+ gap: 0.5rem !important;
+ }
+
+ /* Reduce logo size */
+ .print-container img {
+ max-height: 20px !important;
+ margin-bottom: 0.25rem !important;
+ }
+
+ /* Tighter table spacing */
+ .print-container table td,
+ .print-container table th {
+ padding-top: 0.25rem !important;
+ padding-bottom: 0.25rem !important;
+ }
+
+ /* Hide Activity Timeline to save space */
+ .print-container .activity-timeline {
+ display: none !important;
+ }
+
+ /* Make remittance section more compact */
+ .print-container .remittance-section {
+ padding: 0.4rem !important;
+ }
+
+ /* Make conditions section more compact */
+ .print-container .conditions-section {
+ padding: 0.4rem !important;
+ }
+
+ .print-container .conditions-section ul {
+ margin: 0 !important;
+ }
+
+ .print-container .conditions-section li {
+ margin-bottom: 0.1rem !important;
+ line-height: 1.2 !important;
+ }
+ }
+ `;
+ document.head.appendChild(style);
+
+ return () => {
+ document.head.removeChild(style);
+ };
+ }, []);
+
+ useEffect(() => {
+ loadPurchaseOrder();
+ }, [id]);
+
+ const loadPurchaseOrder = async () => {
+ try {
+ setLoading(true);
+ const response = await api.get(`/api/v1/purchase_orders/${id}`);
+ setPurchaseOrder(response);
+ } catch (err) {
+ setError("Failed to load purchase order");
+ console.error(err);
+ } finally {
+ setLoading(false);
+ }
+ };
+
+ const handleApprove = async () => {
+ try {
+ await api.post(`/api/v1/purchase_orders/${id}/approve`);
+ await loadPurchaseOrder();
+ setToast({
+ message:"Purchase order approved successfully",
+ type:"success"
+ });
+ } catch (err) {
+ console.error("Failed to approve purchase order:", err);
+ setToast({
+ message:"Failed to approve purchase order. Please try again.",
+ type:"error"
+ });
+ }
+ };
+
+ const handleSendToSupplier = async () => {
+ try {
+ await api.post(`/api/v1/purchase_orders/${id}/send_to_supplier`);
+ await loadPurchaseOrder();
+ setToast({
+ message:"Purchase order sent to supplier successfully",
+ type:"success"
+ });
+ } catch (err) {
+ console.error("Failed to send to supplier:", err);
+ setToast({
+ message:"Failed to send to supplier. Please try again.",
+ type:"error"
+ });
+ }
+ };
+
+ const handleMarkReceived = async () => {
+ try {
+ await api.post(`/api/v1/purchase_orders/${id}/mark_received`);
+ await loadPurchaseOrder();
+ setToast({
+ message:"Purchase order marked as received",
+ type:"success"
+ });
+ } catch (err) {
+ console.error("Failed to mark as received:", err);
+ setToast({
+ message:"Failed to mark as received. Please try again.",
+ type:"error"
+ });
+ }
+ };
+
+ const handleDownloadPdf = () => {
+ // Use native browser print dialog
+ // User can choose "Save as PDF" to get a PDF file
+ // Print styles (defined in useEffect above) will preserve dark theme
+ window.print();
+ };
+
+ const getStatusBadgeClass = (status) => {
+ const classes = {
+ draft:"bg-gray-800/50 text-gray-400 border-gray-700",
+ pending:"bg-warning/10 text-warning border-warning/20",
+ approved:"bg-info/10 text-info border-info/20",
+ sent:"bg-blue-500/10 text-blue-400 border-blue-500/20",
+ received:"bg-success/10 text-success border-success/20",
+ invoiced:"bg-purple-500/10 text-purple-400 border-purple-500/20",
+ paid:"bg-success/10 text-success border-success/20",
+ cancelled:"bg-error/10 text-error border-error/20",
+ };
+ return classes[status] || classes.draft;
+ };
+
+ if (loading) {
+ return (
+ <div className="flex items-center justify-center min-h-screen bg-black">
+ <div className="text-gray-500">Loading...</div>
+ </div>
+ );
+ }
+
+ if (error || !purchaseOrder) {
+ return (
+ <div className="flex items-center justify-center min-h-screen bg-black">
+ <div className="text-error">{error ||"Purchase order not found"}</div>
+ </div>
+ );
+ }
+
+ return (
+ <>
+ <main className="min-h-screen bg-black">
+ {/* Minimal Header */}
+ <div className="border-b border-gray-800 no-print">
+ <div className="mx-auto max-w-7xl px-6 py-4">
+ <div className="flex items-center justify-between">
+ <Link
+ to="/active-jobs"
+ className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+ >
+ <ArrowLeft className="w-4 h-4" />
+ Back
+ </Link>
+
+ <div className="flex items-center gap-3">
+ {purchaseOrder.can_edit && (
+ <button
+ onClick={() => navigate(`/purchase-orders/${id}/edit`)}
+ className="text-sm text-gray-400 hover:text-white transition-colors"
+ >
+ Edit
+ </button>
+ )}
+
+ <button
+ onClick={handleDownloadPdf}
+ className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-400 hover:text-white border border-gray-700 hover:border-gray-600 transition-colors"
+ >
+ <Download className="w-4 h-4" />
+ Print/Save PDF
+ </button>
+
+ {purchaseOrder.status ==="draft" && (
+ <button
+ onClick={handleApprove}
+ className="bg-white text-black px-4 py-2 text-sm font-medium hover:opacity-90 transition-all"
+ >
+ Submit for Approval
+ </button>
+ )}
+ {purchaseOrder.status ==="approved" && (
+ <button
+ onClick={handleSendToSupplier}
+ className="bg-white text-black px-4 py-2 text-sm font-medium hover:opacity-90 transition-all"
+ >
+ Send to Supplier
+ </button>
+ )}
+ {purchaseOrder.status ==="sent" && (
+ <button
+ onClick={handleMarkReceived}
+ className="bg-success text-white px-4 py-2 text-sm font-medium hover:opacity-90 transition-all"
+ >
+ Mark Received
+ </button>
+ )}
+
+ <Menu as="div" className="relative">
+ <MenuButton className="text-gray-400 hover:text-white transition-colors">
+ <MoreHorizontal className="w-5 h-5" />
+ </MenuButton>
+ <MenuItems className="absolute right-0 z-10 mt-2 w-48 origin-top-right bg-gray-900 border border-gray-800 py-2 transition">
+ <MenuItem>
+ {({ active }) => (
+ <button
+ onClick={() =>
+ navigate(`/jobs/${purchaseOrder.construction_id}`)
+ }
+ className={`block w-full px-4 py-2 text-left text-sm ${
+ active ?"bg-gray-800 text-white" :"text-gray-400"
+ }`}
+ >
+ View Job
+ </button>
+ )}
+ </MenuItem>
+ {purchaseOrder.status ==="paid" && (
+ <MenuItem>
+ {({ active }) => (
+ <button
+ className={`flex items-center gap-2 w-full px-4 py-2 text-left text-sm ${
+ active ?"bg-gray-800 text-white" :"text-gray-400"
+ }`}
+ >
+ <Download className="w-4 h-4" />
+ Download Receipt
+ </button>
+ )}
+ </MenuItem>
+ )}
+ </MenuItems>
+ </Menu>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ {/* Main Invoice Container */}
+ <div className="mx-auto max-w-4xl px-6 py-6">
+ {/* PO Header with Title & Status */}
+ <div className="flex items-start justify-between mb-6 no-print">
+ <div>
+ <div className="flex items-center gap-3 mb-1">
+ <h1 className="text-2xl font-semibold text-white">
+ Purchase Order
+ </h1>
+ <span
+ className={`inline-flex items-center px-2 py-0.5 text-xs font-medium border ${getStatusBadgeClass(purchaseOrder.status)}`}
+ >
+ {purchaseOrder.status.charAt(0).toUpperCase() +
+ purchaseOrder.status.slice(1)}
+ </span>
+ </div>
+ <p className="text-xs text-gray-400">
+ PO #{purchaseOrder.purchase_order_number}
+ </p>
+ </div>
+ <div className="flex items-end">
+        {/* Total Amount */}
+ <div className="text-right">
+ <div className="text-2xl font-mono font-semibold text-white mb-0.5">
+ {formatCurrency(purchaseOrder.total || 0)}
+ </div>
+ <p className="text-xs text-gray-500">Total Amount</p>
+ </div>
+ </div>
+ </div>
+
+ {/* Print Wrapper - for print styles only */}
+ <div className="print-wrapper">
+ <div className="print-container">
+
+ {/* Main Card */}
+ <div className="bg-gray-900 border border-gray-800 overflow-hidden">
+ {/* Company Header */}
+ <div className="border-b border-gray-800 p-4">
+ <div className="flex items-start justify-between mb-4">
+ <div>
+ <img
+ src="/tekna_logo_white.png"
+ alt={purchaseOrder.company_setting?.company_name || "Tekna Homes"}
+ className="h-8 w-auto mb-2"
+ />
+ <p className="text-xs text-gray-400">
+ {purchaseOrder.description ||"Quality Construction Services"}
+ </p>
+ </div>
+ <div className="text-right text-xs space-y-0.5">
+            <div className="text-white">
+              {purchaseOrder.construction?.site_supervisor_info?.name ||
+                purchaseOrder.construction?.site_supervisor_name ||
+                "TBD"}
             </div>
-            <div className="flex items-center gap-x-4 sm:gap-x-6">
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="inline-flex items-center gap-x-1.5 text-sm/6 font-semibold text-gray-900 dark:text-white"
-              >
-                <PrinterIcon className="h-5 w-5" />
-                Print/PDF
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate(`/jobs/${purchaseOrder.construction_id}`)}
-                className="hidden text-sm/6 font-semibold text-gray-900 sm:block dark:text-white"
-              >
-                View Job
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate(`/purchase-orders/${id}/edit`)}
-                className="hidden text-sm/6 font-semibold text-gray-900 sm:block dark:text-white"
-              >
-                Edit
-              </button>
-              {purchaseOrder.status === 'draft' && (
-                <button
-                  onClick={handleApprove}
-                  className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:shadow-none dark:hover:bg-indigo-400 dark:focus-visible:outline-indigo-500"
-                >
-                  Submit for Approval
-                </button>
-              )}
-              {purchaseOrder.status === 'approved' && (
-                <button
-                  onClick={handleSendToSupplier}
-                  className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:shadow-none dark:hover:bg-indigo-400 dark:focus-visible:outline-indigo-500"
-                >
-                  Send to Supplier
-                </button>
-              )}
-              {purchaseOrder.status === 'sent' && (
-                <button
-                  onClick={handleMarkReceived}
-                  className="rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 dark:bg-green-500 dark:shadow-none dark:hover:bg-green-400 dark:focus-visible:outline-green-500"
-                >
-                  Mark Received
-                </button>
-              )}
-
-              <Menu as="div" className="relative sm:hidden">
-                <MenuButton className="relative block">
-                  <span className="absolute -inset-3" />
-                  <span className="sr-only">More</span>
-                  <EllipsisVerticalIcon aria-hidden="true" className="size-5 text-gray-500 dark:text-gray-400" />
-                </MenuButton>
-
-                <MenuItems
-                  transition
-                  className="absolute right-0 z-10 mt-0.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg outline outline-1 outline-gray-900/5 transition data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in dark:bg-gray-800 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10"
-                >
-                  <MenuItem>
-                    <button
-                      type="button"
-                      className="block w-full px-3 py-1 text-left text-sm/6 text-gray-900 data-[focus]:bg-gray-50 data-[focus]:outline-none dark:text-white dark:data-[focus]:bg-white/5"
-                    >
-                      View Job
-                    </button>
-                  </MenuItem>
-                  <MenuItem>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/purchase-orders/${id}/edit`)}
-                      className="block w-full px-3 py-1 text-left text-sm/6 text-gray-900 data-[focus]:bg-gray-50 data-[focus]:outline-none dark:text-white dark:data-[focus]:bg-white/5"
-                    >
-                      Edit
-                    </button>
-                  </MenuItem>
-                </MenuItems>
-              </Menu>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 items-start gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-          {/* PO Summary */}
-          <div className="lg:col-start-3 lg:row-end-1 print-hide-sidebar">
-            <h2 className="sr-only">Summary</h2>
-            <div className="rounded-lg bg-gray-50 shadow-sm outline outline-1 outline-gray-900/5 dark:bg-gray-800/50 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10">
-              <dl className="flex flex-wrap">
-                <div className="flex-auto pl-6 pt-6 pb-6">
-                  <dt className="text-sm/6 font-semibold text-gray-900 dark:text-white">Amount</dt>
-                  <dd className="mt-1 text-base font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(purchaseOrder.total || 0)}
-                  </dd>
+            {(() => {
+              const phone =
+                purchaseOrder.construction?.site_supervisor_info?.phone ||
+                "TBD";
+              return phone === "TBD" ? (
+                <div className="text-gray-400">
+                  <span className="text-gray-500">p:</span> {phone}
                 </div>
-                <div className="flex-none self-end px-6 pt-4 pb-6">
-                  <dt className="sr-only">Status</dt>
-                  <dd className={`rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusBadgeClass(purchaseOrder.status)}`}>
-                    {purchaseOrder.status.charAt(0).toUpperCase() + purchaseOrder.status.slice(1)}
-                  </dd>
-                </div>
-                <div className="mt-6 flex w-full flex-none gap-x-4 border-t border-gray-900/5 px-6 pt-6 dark:border-white/10">
-                  <dt className="flex-none">
-                    <span className="sr-only">Supplier</span>
-                    <BuildingStorefrontIcon aria-hidden="true" className="h-6 w-5 text-gray-400 dark:text-gray-500" />
-                  </dt>
-                  <dd className="text-sm/6 font-medium text-gray-900 dark:text-white">
-                    {purchaseOrder.supplier?.name || 'No supplier'}
-                  </dd>
-                </div>
-                <div className="mt-4 flex w-full flex-none gap-x-4 px-6">
-                  <dt className="flex-none">
-                    <span className="sr-only">Required date</span>
-                    <CalendarDaysIcon aria-hidden="true" className="h-6 w-5 text-gray-400 dark:text-gray-500" />
-                  </dt>
-                  <dd className="text-sm/6 text-gray-500 dark:text-gray-400">
-                    {purchaseOrder.required_date ? (
-                      <time dateTime={purchaseOrder.required_date}>{formatDate(purchaseOrder.required_date)}</time>
-                    ) : (
-                      'No date set'
-                    )}
-                  </dd>
-                </div>
-                {purchaseOrder.schedule_tasks && purchaseOrder.schedule_tasks.length > 0 && (
-                  <div className="mt-4 flex w-full flex-none gap-x-4 px-6">
-                    <dt className="flex-none">
-                      <span className="sr-only">Schedule Task</span>
-                      <CalendarDaysIcon aria-hidden="true" className="h-6 w-5 text-gray-400 dark:text-gray-500" />
-                    </dt>
-                    <dd className="text-sm/6 text-gray-500 dark:text-gray-400">
-                      {purchaseOrder.schedule_tasks.map((task, index) => (
-                        <div key={task.id}>
-                          {task.title}
-                          {task.supplier_category && ` (${task.supplier_category})`}
-                          {index < purchaseOrder.schedule_tasks.length - 1 && <br />}
-                        </div>
-                      ))}
-                    </dd>
-                  </div>
-                )}
-                {purchaseOrder.budget && (
-                  <div className="mt-4 flex w-full flex-none gap-x-4 px-6">
-                    <dt className="flex-none">
-                      <span className="sr-only">Budget</span>
-                      <UserCircleIcon aria-hidden="true" className="h-6 w-5 text-gray-400 dark:text-gray-500" />
-                    </dt>
-                    <dd className="text-sm/6 text-gray-500 dark:text-gray-400">
-                      Budget: {formatCurrency(purchaseOrder.budget)}
-                    </dd>
-                  </div>
-                )}
-              </dl>
-              {purchaseOrder.status === 'paid' && (
-                <div className="mt-6 border-t border-gray-900/5 px-6 py-6 dark:border-white/10">
-                  <button className="text-sm/6 font-semibold text-gray-900 dark:text-white">
-                    Download receipt <span aria-hidden="true">&rarr;</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Purchase Order Details */}
-          <div className="-mx-4 px-4 py-8 shadow-sm ring-1 ring-gray-900/5 sm:mx-0 sm:rounded-lg sm:px-8 sm:pb-14 lg:col-span-2 lg:row-span-2 lg:row-end-2 xl:px-16 xl:pb-20 xl:pt-16 dark:shadow-none dark:ring-white/10 print-full-width">
-            {/* Tekna Homes Company Header */}
-            <div className="mb-8 pb-6 border-b-2 border-indigo-600 dark:border-indigo-500">
-              <div className="flex items-start justify-between">
+              ) : (
                 <div>
-                  <h2 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">Tekna Homes</h2>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Quality Construction Services</p>
-                </div>
-                <div className="text-right text-sm">
-                  <p className="font-semibold text-gray-900 dark:text-white">Contact: Robert</p>
-                  <p className="text-gray-600 dark:text-gray-400">robert@tekna.com.au</p>
-                  <p className="text-gray-600 dark:text-gray-400">0407 397 541</p>
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">QBCC License:</span>{' '}
-                  <span className="text-gray-600 dark:text-gray-400">15344273</span>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Service Areas:</span>{' '}
-                  <span className="text-gray-600 dark:text-gray-400">Brisbane, Gold Coast, Sunshine Coast, Ipswich, Logan</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Purchase Order</h2>
-              <div className="text-right">
-                <p className="text-lg font-bold text-gray-900 dark:text-white">#{purchaseOrder.purchase_order_number}</p>
-              </div>
-            </div>
-            <dl className="mt-6 grid grid-cols-1 text-sm/6 sm:grid-cols-2">
-              <div className="sm:pr-4">
-                <dt className="inline text-gray-500 dark:text-gray-400">Created on</dt>{' '}
-                <dd className="inline text-gray-700 dark:text-gray-300">
-                  <time dateTime={purchaseOrder.created_at}>{formatDate(purchaseOrder.created_at)}</time>
-                </dd>
-              </div>
-              <div className="mt-2 sm:mt-0 sm:pl-4">
-                <dt className="inline text-gray-500 dark:text-gray-400">Required by</dt>{' '}
-                <dd className="inline text-gray-700 dark:text-gray-300">
-                  {purchaseOrder.required_date ? (
-                    <time dateTime={purchaseOrder.required_date}>{formatDate(purchaseOrder.required_date)}</time>
-                  ) : (
-                    'Not specified'
-                  )}
-                </dd>
-              </div>
-              <div className="mt-6 border-t border-gray-900/5 pt-6 sm:pr-4 dark:border-white/10">
-                <dt className="font-semibold text-gray-900 dark:text-white">From</dt>
-                <dd className="mt-2 text-gray-500 dark:text-gray-400">
-                  {purchaseOrder.company_setting ? (
-                    <>
-                      <span className="font-medium text-gray-900 dark:text-white">{purchaseOrder.company_setting.company_name}</span>
-                      <br />
-                      {purchaseOrder.company_setting.address && purchaseOrder.company_setting.address}
-                      {purchaseOrder.company_setting.abn && (
-                        <>
-                          <br />
-                          ABN: {purchaseOrder.company_setting.abn}
-                        </>
-                      )}
-                      {purchaseOrder.company_setting.gst_number && (
-                        <>
-                          <br />
-                          GST: {purchaseOrder.company_setting.gst_number}
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    'Company details not configured'
-                  )}
-                </dd>
-              </div>
-              {purchaseOrder.supplier && (
-                <div className="mt-8 sm:mt-6 sm:border-t sm:border-gray-900/5 sm:pl-4 sm:pt-6 dark:sm:border-white/10">
-                  <dt className="font-semibold text-gray-900 dark:text-white">To</dt>
-                  <dd className="mt-2 text-gray-500 dark:text-gray-400">
-                    <span className="font-medium text-gray-900 dark:text-white">{purchaseOrder.supplier.name}</span>
-                    {purchaseOrder.supplier.address && (
-                      <>
-                        <br />
-                        <span className="text-xs text-gray-400 dark:text-gray-500">Address: </span>
-                        {purchaseOrder.supplier.address}
-                      </>
-                    )}
-                    {purchaseOrder.supplier.contact_person && (
-                      <>
-                        <br />
-                        <span className="text-xs text-gray-400 dark:text-gray-500">Contact: </span>
-                        <span className="font-medium">{purchaseOrder.supplier.contact_person}</span>
-                      </>
-                    )}
-                    {purchaseOrder.supplier.email && (
-                      <>
-                        <br />
-                        <span className="text-xs text-gray-400 dark:text-gray-500">Email: </span>
-                        <a href={`mailto:${purchaseOrder.supplier.email}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">
-                          {purchaseOrder.supplier.email}
-                        </a>
-                      </>
-                    )}
-                    {purchaseOrder.supplier.phone && (
-                      <>
-                        <br />
-                        <span className="text-xs text-gray-400 dark:text-gray-500">Phone: </span>
-                        <a href={`tel:${purchaseOrder.supplier.phone}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">
-                          {purchaseOrder.supplier.phone}
-                        </a>
-                      </>
-                    )}
-                  </dd>
-                </div>
-              )}
-              {purchaseOrder.construction?.site_supervisor_name && (
-                <div className="mt-8 sm:mt-6 sm:border-t sm:border-gray-900/5 sm:pt-6 dark:sm:border-white/10">
-                  <dt className="font-semibold text-gray-900 dark:text-white">Site Supervisor</dt>
-                  <dd className="mt-2 text-gray-500 dark:text-gray-400">
-                    <span className="font-medium text-gray-900 dark:text-white">{purchaseOrder.construction.site_supervisor_name}</span>
-                    {purchaseOrder.construction.site_supervisor_email && (
-                      <>
-                        <br />
-                        <span className="text-xs text-gray-400 dark:text-gray-500">Email: </span>
-                        <a href={`mailto:${purchaseOrder.construction.site_supervisor_email}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">
-                          {purchaseOrder.construction.site_supervisor_email}
-                        </a>
-                      </>
-                    )}
-                    {purchaseOrder.construction.site_supervisor_phone && (
-                      <>
-                        <br />
-                        <span className="text-xs text-gray-400 dark:text-gray-500">Phone: </span>
-                        <a href={`tel:${purchaseOrder.construction.site_supervisor_phone}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">
-                          {purchaseOrder.construction.site_supervisor_phone}
-                        </a>
-                      </>
-                    )}
-                  </dd>
-                </div>
-              )}
-              {purchaseOrder.delivery_address && (
-                <div className="mt-8 sm:mt-6 sm:border-t sm:border-gray-900/5 sm:pt-6 dark:sm:border-white/10">
-                  <dt className="font-semibold text-gray-900 dark:text-white">Delivery Address</dt>
-                  <dd className="mt-2 text-gray-500 dark:text-gray-400 whitespace-pre-line">
-                    {purchaseOrder.delivery_address}
-                  </dd>
-                </div>
-              )}
-            </dl>
-
-            {/* Description */}
-            {purchaseOrder.description && (
-              <div className="mt-6 border-t border-gray-900/5 pt-6 dark:border-white/10">
-                <dt className="font-semibold text-gray-900 dark:text-white">Description</dt>
-                <dd className="mt-2 text-sm text-gray-500 dark:text-gray-400 whitespace-pre-line">
-                  {purchaseOrder.description}
-                </dd>
-              </div>
-            )}
-
-            {/* Special Instructions */}
-            {purchaseOrder.special_instructions && (
-              <div className="mt-6 border-t border-gray-900/5 pt-6 dark:border-white/10">
-                <dt className="font-semibold text-gray-900 dark:text-white">Special Instructions</dt>
-                <dd className="mt-2 text-sm text-gray-500 dark:text-gray-400 whitespace-pre-line">
-                  {purchaseOrder.special_instructions}
-                </dd>
-              </div>
-            )}
-
-            {/* Line Items Table */}
-            <table className="mt-16 w-full whitespace-nowrap text-left text-sm/6">
-              <colgroup>
-                <col className="w-full" />
-                <col />
-                <col />
-                <col />
-              </colgroup>
-              <thead className="border-b border-gray-200 text-gray-900 dark:border-white/15 dark:text-white">
-                <tr>
-                  <th scope="col" className="px-0 py-3 font-semibold">
-                    Item
-                  </th>
-                  <th scope="col" className="hidden py-3 pl-8 pr-0 text-right font-semibold sm:table-cell">
-                    Qty
-                  </th>
-                  <th scope="col" className="hidden py-3 pl-8 pr-0 text-right font-semibold sm:table-cell">
-                    Unit Price
-                  </th>
-                  <th scope="col" className="py-3 pl-8 pr-0 text-right font-semibold">
-                    Total
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {purchaseOrder.line_items?.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-100 dark:border-white/10">
-                    <td className="max-w-0 px-0 py-5 align-top">
-                      <div className="truncate font-medium text-gray-900 dark:text-white">{item.description}</div>
-                      {item.notes && (
-                        <div className="truncate text-gray-500 dark:text-gray-400">{item.notes}</div>
-                      )}
-                    </td>
-                    <td className="hidden py-5 pl-8 pr-0 text-right align-top tabular-nums text-gray-700 sm:table-cell dark:text-gray-300">
-                      {item.quantity}
-                    </td>
-                    <td className="hidden py-5 pl-8 pr-0 text-right align-top tabular-nums text-gray-700 sm:table-cell dark:text-gray-300">
-                      {formatCurrency(item.unit_price, false)}
-                    </td>
-                    <td className="py-5 pl-8 pr-0 text-right align-top tabular-nums text-gray-700 dark:text-gray-300">
-                      {formatCurrency(item.quantity * item.unit_price, false)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <th scope="row" className="px-0 pb-0 pt-6 font-normal text-gray-700 sm:hidden dark:text-gray-300">
-                    Subtotal
-                  </th>
-                  <th
-                    scope="row"
-                    colSpan={3}
-                    className="hidden px-0 pb-0 pt-6 text-right font-normal text-gray-700 sm:table-cell dark:text-gray-300"
+                  <span className="text-gray-500">p:</span>{" "}
+                  <a
+                    href={`tel:${phone}`}
+                    className="text-white hover:text-blue-400 transition-colors"
                   >
-                    Subtotal
-                  </th>
-                  <td className="pb-0 pl-8 pr-0 pt-6 text-right tabular-nums text-gray-900 dark:text-white">
-                    {formatCurrency(purchaseOrder.sub_total, false)}
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row" className="pt-4 font-normal text-gray-700 sm:hidden dark:text-gray-300">
-                    Tax (GST)
-                  </th>
-                  <th
-                    scope="row"
-                    colSpan={3}
-                    className="hidden pt-4 text-right font-normal text-gray-700 sm:table-cell dark:text-gray-300"
-                  >
-                    Tax (GST)
-                  </th>
-                  <td className="pb-0 pl-8 pr-0 pt-4 text-right tabular-nums text-gray-900 dark:text-white">
-                    {formatCurrency(purchaseOrder.tax, false)}
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row" className="pt-4 font-semibold text-gray-900 sm:hidden dark:text-white">
-                    Total
-                  </th>
-                  <th
-                    scope="row"
-                    colSpan={3}
-                    className="hidden pt-4 text-right font-semibold text-gray-900 sm:table-cell dark:text-white"
-                  >
-                    Total
-                  </th>
-                  <td className="pb-0 pl-8 pr-0 pt-4 text-right font-semibold tabular-nums text-gray-900 dark:text-white">
-                    {formatCurrency(purchaseOrder.total, false)}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          <div className="lg:col-start-3 print-hide-activity">
-            {/* Activity feed */}
-            <h2 className="text-sm/6 font-semibold text-gray-900 dark:text-white">Activity</h2>
-            <ul role="list" className="mt-6 space-y-6">
-              <li className="relative flex gap-x-4">
-                <div className="absolute left-0 top-0 flex w-6 justify-center h-6">
-                  <div className="w-px bg-gray-200 dark:bg-white/10" />
+                    {phone}
+                  </a>
                 </div>
-                <div className="relative flex size-6 flex-none items-center justify-center bg-white dark:bg-gray-900">
-                  <CheckCircleIcon
-                    aria-hidden="true"
-                    className="size-6 text-indigo-600 dark:text-indigo-500"
-                  />
-                </div>
-                <p className="flex-auto py-0.5 text-xs/5 text-gray-500 dark:text-gray-400">
-                  <span className="font-medium text-gray-900 dark:text-white">System</span> created the purchase order.
-                </p>
-                <time className="flex-none py-0.5 text-xs/5 text-gray-500 dark:text-gray-400">
-                  {formatDate(purchaseOrder.created_at)}
-                </time>
-              </li>
-            </ul>
-
-            {/* New comment form */}
-            <div className="mt-6 flex gap-x-3">
-              <div className="size-6 flex-none rounded-full bg-gray-100 dark:bg-gray-800 outline outline-1 -outline-offset-1 outline-black/5 dark:outline-white/10" />
-              <form onSubmit={handleCommentSubmit} className="relative flex-auto">
-                <div className="overflow-hidden rounded-lg pb-12 outline outline-1 -outline-offset-1 outline-gray-300 focus-within:outline focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-600 dark:bg-white/5 dark:outline-white/10 dark:focus-within:outline-indigo-500">
-                  <label htmlFor="comment" className="sr-only">
-                    Add your comment
-                  </label>
-                  <textarea
-                    id="comment"
-                    name="comment"
-                    rows={2}
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Add your comment..."
-                    className="block w-full resize-none bg-transparent px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline focus:outline-0 sm:text-sm/6 dark:text-white dark:placeholder:text-gray-500"
-                  />
-                </div>
-
-                <div className="absolute inset-x-0 bottom-0 flex justify-between py-2 pl-3 pr-2">
-                  <div className="flex items-center space-x-5">
-                    <div className="flex items-center">
-                      <button
-                        type="button"
-                        className="-m-2.5 flex size-10 items-center justify-center rounded-full text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-white"
-                      >
-                        <PaperClipIcon aria-hidden="true" className="size-5" />
-                        <span className="sr-only">Attach a file</span>
-                      </button>
-                    </div>
-                    <div className="flex items-center">
-                      <Listbox value={selected} onChange={setSelected}>
-                        <Label className="sr-only">Your mood</Label>
-                        <div className="relative">
-                          <ListboxButton className="relative -m-2.5 flex size-10 items-center justify-center rounded-full text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-white">
-                            <span className="flex items-center justify-center">
-                              {selected.value === null ? (
-                                <span>
-                                  <FaceSmileIcon aria-hidden="true" className="size-5 shrink-0" />
-                                  <span className="sr-only">Add your mood</span>
-                                </span>
-                              ) : (
-                                <span>
-                                  <span
-                                    className={classNames(
-                                      selected.bgColor,
-                                      'flex size-8 items-center justify-center rounded-full',
-                                    )}
-                                  >
-                                    <selected.icon aria-hidden="true" className="size-5 shrink-0 text-white" />
-                                  </span>
-                                  <span className="sr-only">{selected.name}</span>
-                                </span>
-                              )}
-                            </span>
-                          </ListboxButton>
-
-                          <ListboxOptions
-                            transition
-                            className="absolute bottom-10 z-10 -ml-6 w-60 rounded-lg bg-white py-3 text-base shadow outline outline-1 outline-black/5 data-[closed]:data-[leave]:opacity-0 data-[leave]:transition data-[leave]:duration-100 data-[leave]:ease-in sm:ml-auto sm:w-64 sm:text-sm dark:bg-gray-800 dark:shadow-none dark:-outline-offset-1 dark:outline-white/10"
-                          >
-                            {moods.map((mood) => (
-                              <ListboxOption
-                                key={mood.value}
-                                value={mood}
-                                className="relative cursor-default select-none bg-white px-3 py-2 text-gray-900 data-[focus]:bg-gray-100 dark:bg-transparent dark:text-white dark:data-[focus]:bg-white/5"
-                              >
-                                <div className="flex items-center">
-                                  <div
-                                    className={classNames(
-                                      mood.bgColor,
-                                      'flex size-8 items-center justify-center rounded-full',
-                                    )}
-                                  >
-                                    <mood.icon
-                                      aria-hidden="true"
-                                      className={classNames(mood.iconColor, 'size-5 shrink-0')}
-                                    />
-                                  </div>
-                                  <span className="ml-3 block truncate font-medium">{mood.name}</span>
-                                </div>
-                              </ListboxOption>
-                            ))}
-                          </ListboxOptions>
-                        </div>
-                      </Listbox>
-                    </div>
-                  </div>
-                  <button
-                    type="submit"
-                    className="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-white/10 dark:text-white dark:shadow-none dark:ring-white/5 dark:hover:bg-white/20"
-                  >
-                    Comment
-                  </button>
-                </div>
-              </form>
+              );
+            })()}
+            <div>
+              <span className="text-gray-500">e:</span>{" "}
+              <a
+                href={`mailto:${
+                  purchaseOrder.construction?.site_supervisor_info?.email ||
+                  "info@teknahomes.com.au"
+                }`}
+                className="text-white hover:text-blue-400 transition-colors"
+              >
+                {purchaseOrder.construction?.site_supervisor_info?.email ||
+                  "info@teknahomes.com.au"}
+              </a>
             </div>
           </div>
-        </div>
-      </div>
-    </main>
-  )
+ </div>
+ <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+ <div>
+ <span className="text-gray-500">PO Number:</span>{""}
+ <span className="text-white font-mono">
+ {purchaseOrder.purchase_order_number}
+ </span>
+ </div>
+ {purchaseOrder.company_setting?.qbcc_number && (
+ <div>
+ <span className="text-gray-500">QBCC:</span>{""}
+ <span className="text-gray-300 font-mono">
+ {purchaseOrder.company_setting.qbcc_number}
+ </span>
+ </div>
+ )}
+ {purchaseOrder.company_setting?.abn && (
+ <div>
+ <span className="text-gray-500">ABN:</span>{""}
+ <span className="text-gray-300 font-mono">
+ {purchaseOrder.company_setting.abn}
+ </span>
+ </div>
+ )}
+ {purchaseOrder.required_date && (
+ <div>
+ <span className="text-gray-500">Delivery:</span>{""}
+ <span className="text-gray-300 font-mono">
+ {formatDate(purchaseOrder.required_date)}
+ </span>
+ </div>
+ )}
+ </div>
+ </div>
+
+ {/* Three-Column Info Section */}
+ <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border-b border-gray-800">
+ {/* Column 1: Service Address */}
+ <div>
+ <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">
+ Service Address
+ </div>
+ <div className="text-xs space-y-1">
+ {(() => {
+ const serviceAddress =
+ purchaseOrder.construction_job?.title ||
+ purchaseOrder.construction?.title ||
+ purchaseOrder.construction?.name ||
+ purchaseOrder.construction_job?.address ||
+ purchaseOrder.construction?.address ||
+ 'No service address provided';
+
+ return serviceAddress === 'No service address provided' ? (
+ <div className="text-gray-500">{serviceAddress}</div>
+ ) : (
+ <div className="flex items-start gap-1.5 text-gray-400">
+ <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+ <span className="whitespace-pre-line">
+ {serviceAddress}
+ </span>
+ </div>
+ );
+ })()}
+ </div>
+ </div>
+
+ {/* Column 2: Supplier */}
+ <div>
+ <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">
+ Supplier
+ </div>
+ {purchaseOrder.supplier ? (
+ <div className="text-xs space-y-1">
+ <div className="text-white font-medium">
+ {purchaseOrder.supplier.name}
+ </div>
+ {purchaseOrder.supplier.contact_person && (
+ <div className="flex items-center gap-1.5 text-gray-400">
+ <User className="w-3.5 h-3.5" />
+ {purchaseOrder.supplier.contact_person}
+ </div>
+ )}
+ {purchaseOrder.supplier.email && (
+ <div className="flex items-center gap-1.5 text-gray-400">
+ <Mail className="w-3.5 h-3.5" />
+ <a
+ href={`mailto:${purchaseOrder.supplier.email}`}
+ className="hover:text-white transition-colors"
+ >
+ {purchaseOrder.supplier.email}
+ </a>
+ </div>
+ )}
+ {purchaseOrder.supplier.phone && (
+ <div className="flex items-center gap-1.5 text-gray-400">
+ <Phone className="w-3.5 h-3.5" />
+ <a
+ href={`tel:${purchaseOrder.supplier.phone}`}
+ className="hover:text-white transition-colors"
+ >
+ {purchaseOrder.supplier.phone}
+ </a>
+ </div>
+ )}
+ </div>
+ ) : (
+ <div className="text-xs text-gray-500">
+ No supplier assigned
+ </div>
+ )}
+ </div>
+
+ {/* Column 3: Project Contacts */}
+ <div>
+ <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">
+ Project Contacts
+ </div>
+ <div className="text-xs space-y-2">
+ {purchaseOrder.estimator_name && (
+ <div>
+ <div className="text-gray-500 mb-0.5">Estimator</div>
+ <div className="text-white">{purchaseOrder.estimator_name}</div>
+ </div>
+ )}
+ {purchaseOrder.area_manager_name && (
+ <div>
+ <div className="text-gray-500 mb-0.5">Area Manager</div>
+ <div className="text-white">{purchaseOrder.area_manager_name}</div>
+ </div>
+ )}
+ {purchaseOrder.whs_officer_name && (
+ <div>
+ <div className="text-gray-500 mb-0.5">WHS Officer</div>
+ <div className="text-white">{purchaseOrder.whs_officer_name}</div>
+ </div>
+ )}
+ {!purchaseOrder.estimator_name &&
+ !purchaseOrder.area_manager_name &&
+ !purchaseOrder.whs_officer_name && (
+ <div className="text-gray-500">No contacts assigned</div>
+ )}
+ </div>
+ </div>
+ </div>
+
+ {/* Line Items Table */}
+ <div className="p-4">
+ <div className="overflow-x-auto">
+ <table className="w-full">
+ <thead>
+ <tr className="border-b border-gray-800">
+ <th className="pb-2 text-left text-xs text-gray-500 uppercase tracking-wide font-medium">
+ Qty
+ </th>
+ <th className="pb-2 text-left text-xs text-gray-500 uppercase tracking-wide font-medium">
+ Description
+ </th>
+ <th className="pb-2 text-left text-xs text-gray-500 uppercase tracking-wide font-medium">
+ Code
+ </th>
+ <th className="pb-2 text-right text-xs text-gray-500 uppercase tracking-wide font-medium">
+ Rate
+ </th>
+ <th className="pb-2 text-center text-xs text-gray-500 uppercase tracking-wide font-medium">
+ Tax
+ </th>
+ <th className="pb-2 text-right text-xs text-gray-500 uppercase tracking-wide font-medium">
+ Amount
+ </th>
+ </tr>
+ </thead>
+ <tbody>
+ {purchaseOrder.line_items?.map((item) => (
+ <tr key={item.id} className="border-b border-gray-800">
+ <td className="py-2 text-xs text-gray-400 font-mono">
+ {item.quantity}
+ </td>
+ <td className="py-2">
+ <div className="text-xs text-white font-medium">
+ {item.description}
+ </div>
+ {item.notes && (
+ <div className="text-xs text-gray-500 mt-0.5">
+ {item.notes}
+ </div>
+ )}
+ </td>
+ <td className="py-2 text-xs text-gray-400 font-mono">
+ {/* TODO: Add item_code field to backend */}
+ {item.item_code ||"-"}
+ </td>
+ <td className="py-2 text-right text-xs text-gray-400 font-mono">
+ {formatCurrency(item.unit_price, false)}
+ </td>
+ <td className="py-2 text-center text-xs">
+ {/* TODO: Add tax_type field to backend (GST/Tax-Free) */}
+ {item.tax_type ==="tax_free" ? (
+ <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-800 text-gray-400 border border-gray-700">
+ Tax-Free
+ </span>
+ ) : (
+ <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-800 text-gray-400 border border-gray-700">
+ GST
+ </span>
+ )}
+ </td>
+ <td className="py-2 text-right text-xs text-white font-mono">
+ {formatCurrency(item.quantity * item.unit_price, false)}
+ </td>
+ </tr>
+ ))}
+ </tbody>
+ </table>
+ </div>
+
+ {/* Notes Section */}
+ {purchaseOrder.special_instructions && (
+ <div className="mt-4 p-3 bg-gray-800/50 border border-gray-700">
+ <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+ Notes
+ </div>
+ <div className="text-xs text-gray-400 whitespace-pre-line">
+ {purchaseOrder.special_instructions}
+ </div>
+ </div>
+ )}
+
+ {/* Totals */}
+ <div className="mt-4 space-y-1">
+ <div className="flex justify-between text-xs">
+ <span className="text-gray-500">Sub Total</span>
+ <span className="text-gray-400 font-mono">
+ {formatCurrency(purchaseOrder.sub_total, false)}
+ </span>
+ </div>
+ <div className="flex justify-between text-xs">
+ <span className="text-gray-500">GST</span>
+ <span className="text-gray-400 font-mono">
+ {formatCurrency(purchaseOrder.tax, false)}
+ </span>
+ </div>
+ <div className="flex justify-between pt-2 border-t border-gray-800">
+ <span className="text-sm font-semibold text-white">
+ Total
+ </span>
+ <span className="text-sm font-semibold text-white font-mono">
+ {formatCurrency(purchaseOrder.total, false)}
+ </span>
+ </div>
+ </div>
+ </div>
+
+ {/* Remittance Section */}
+ <div className="remittance-section border-t border-gray-800 p-4 bg-gray-900/50">
+ <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">
+ Remittance
+ </div>
+ <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+ <div>
+ <div className="text-white font-medium mb-1">Invoice To</div>
+ <div className="text-gray-400 space-y-0.5">
+ {/* TODO: Add remittance fields to backend */}
+ <div>
+ {purchaseOrder.company_setting?.company_name ||
+"Tekna Homes"}
+ </div>
+ <div className="flex items-center gap-1.5">
+ <Mail className="w-3.5 h-3.5" />
+ {purchaseOrder.remittance_email ||
+ purchaseOrder.company_setting?.email ||
+"accounts@tekna.com.au"}
+ </div>
+ <div className="flex items-center gap-1.5">
+ <Phone className="w-3.5 h-3.5" />
+ {purchaseOrder.remittance_phone ||
+ purchaseOrder.company_setting?.phone ||
+"0407 397 541"}
+ </div>
+ </div>
+ </div>
+ <div>
+ <div className="text-white font-medium mb-1">Payment Terms</div>
+ <div className="text-gray-400 space-y-0.5">
+ <div>7-day accounts: Invoiced weekly</div>
+ <div>14-day accounts: Invoiced fortnightly</div>
+ <div>30-day accounts: Invoiced end of month</div>
+ <div className="text-xs text-gray-500 mt-1">
+ All invoices must be tax invoices with correct ABN
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ {/* Conditions of Acceptance */}
+ <div className="conditions-section border-t border-gray-800 p-4">
+ <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">
+ Conditions of Acceptance
+ </div>
+ <div className="text-xs text-gray-400 space-y-1">
+ <ul className="list-disc list-inside space-y-1">
+ <li>
+ If the purchase order is incorrect or unclear, contact the
+ office immediately before proceeding
+ </li>
+ <li>
+ The correct PO number and job address MUST appear on all
+ invoices and delivery dockets
+ </li>
+ <li>
+ Processing or fulfillment of this order acknowledges
+ acceptance of these conditions
+ </li>
+ <li>
+ Supplier is responsible for ensuring materials meet Australian
+ Standards and comply with building codes
+ </li>
+ <li>
+ Any variations to this order must be approved in writing
+ before proceeding
+ </li>
+ <li>
+ Delivery must be made to the specified delivery address during
+ normal business hours unless arranged otherwise
+ </li>
+ <li>
+ Risk in goods passes to purchaser upon delivery to the
+ specified site
+ </li>
+ <li>
+ Payment terms apply from date of receipt of valid tax invoice
+ </li>
+ </ul>
+ </div>
+ </div>
+ </div>
+
+ {/* Activity Timeline - Hidden in print */}
+ <div className="activity-timeline mt-4">
+ <h2 className="text-xs font-medium text-gray-400 mb-2">Activity</h2>
+ <div className="bg-gray-900 border border-gray-800 p-3">
+ <div className="flex items-start gap-3">
+ <div className="flex-shrink-0">
+ <CheckCircle2 className="w-4 h-4 text-success" />
+ </div>
+ <div className="flex-1 min-w-0">
+ <p className="text-xs text-gray-400">
+ <span className="text-white font-medium">System</span> created
+ the purchase order
+ </p>
+ <p className="text-xs text-gray-500 mt-0.5 font-mono">
+ {formatDate(purchaseOrder.created_at)}
+ </p>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ </div>
+ </div>
+ {/* End Print Wrapper */}
+
+ </div>
+ </main>
+
+ {/* Toast Notification */}
+ {toast && (
+ <Toast
+ message={toast.message}
+ type={toast.type}
+ onClose={() => setToast(null)}
+ />
+ )}
+ </>
+ );
 }

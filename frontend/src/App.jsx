@@ -28,56 +28,50 @@ import Experiences from './pages/designer/Experiences'
 import SettingsPage from './pages/SettingsPage'
 import SchemaPage from './pages/SchemaPage'
 import XeroCallbackPage from './pages/XeroCallbackPage'
-import OutlookPage from './pages/OutlookPage'
-import OneDrivePage from './pages/OneDrivePage'
-import DocumentsPage from './pages/DocumentsPage'
-import ChatPage from './pages/ChatPage'
+import ComponentsDemo from './pages/ComponentsDemo'
+import SearchDemoPage from './pages/SearchDemoPage'
 
 function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
-        <Route path="/chat" element={<AppLayout><ChatPage /></AppLayout>} />
-        <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
-        <Route path="/documents" element={<AppLayout><DocumentsPage /></AppLayout>} />
-        <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />
-        <Route path="/jobs/:id/setup" element={<AppLayout><JobSetupPage /></AppLayout>} />
-        <Route path="/jobs/:id/schedule" element={<AppLayout><MasterSchedulePage /></AppLayout>} />
-        <Route path="/price-books" element={<AppLayout><PriceBooksPage /></AppLayout>} />
-        <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
-        <Route path="/contacts" element={<AppLayout><ContactsPage /></AppLayout>} />
-        <Route path="/contacts/:id" element={<AppLayout><ContactDetailPage /></AppLayout>} />
-        <Route path="/health" element={<AppLayout><HealthPage /></AppLayout>} />
-        <Route path="/suppliers" element={<Navigate to="/contacts" replace />} />
-        <Route path="/suppliers/new" element={<AppLayout><SupplierNewPage /></AppLayout>} />
-        <Route path="/suppliers/:id/edit" element={<AppLayout><SupplierEditPage /></AppLayout>} />
-        <Route path="/suppliers/:id" element={<AppLayout><SupplierDetailPage /></AppLayout>} />
-        <Route path="/purchase-orders/:id/edit" element={<AppLayout><PurchaseOrderEditPage /></AppLayout>} />
-        <Route path="/purchase-orders/:id" element={<AppLayout><PurchaseOrderDetailPage /></AppLayout>} />
-        <Route path="/import" element={<AppLayout><ImportPage /></AppLayout>} />
-        <Route path="/tables/:id" element={<AppLayout><TablePage /></AppLayout>} />
-        <Route path="/designer" element={<AppLayout><DesignerHome /></AppLayout>} />
-        <Route path="/designer/tables/new" element={<AppLayout><TableBuilder /></AppLayout>} />
-        <Route path="/designer/tables/:id" element={<AppLayout><TableSettings /></AppLayout>} />
-        <Route path="/designer/menus" element={<AppLayout><Menus /></AppLayout>} />
-        <Route path="/designer/pages" element={<AppLayout><Pages /></AppLayout>} />
-        <Route path="/designer/experiences" element={<AppLayout><Experiences /></AppLayout>} />
-        <Route path="/designer/features" element={
-          <AppLayout>
-            {({ onOpenGrokChat }) => <Features onOpenGrokChat={onOpenGrokChat} />}
-          </AppLayout>
-        } />
-        <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
-        <Route path="/settings/integrations" element={<AppLayout><SettingsPage /></AppLayout>} />
-        <Route path="/settings/schema" element={<AppLayout><SchemaPage /></AppLayout>} />
-        <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
-        <Route path="/outlook" element={<AppLayout><OutlookPage /></AppLayout>} />
-        <Route path="/onedrive" element={<AppLayout><OneDrivePage /></AppLayout>} />
-      </Routes>
-    </BrowserRouter>
-  )
+ return (
+ <BrowserRouter>
+ <Routes>
+ <Route path="/" element={<Navigate to="/dashboard" replace />} />
+ <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
+ <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
+ <Route path="/jobs/:id" element={<AppLayout><JobDetailPage /></AppLayout>} />
+ <Route path="/jobs/:id/setup" element={<AppLayout><JobSetupPage /></AppLayout>} />
+ <Route path="/jobs/:id/schedule" element={<AppLayout><MasterSchedulePage /></AppLayout>} />
+ <Route path="/price-books" element={<AppLayout><PriceBooksPage /></AppLayout>} />
+ <Route path="/price-books/:id" element={<AppLayout><PriceBookItemDetailPage /></AppLayout>} />
+ <Route path="/contacts" element={<AppLayout><ContactsPage /></AppLayout>} />
+ <Route path="/contacts/:id" element={<AppLayout><ContactDetailPage /></AppLayout>} />
+ <Route path="/suppliers" element={<Navigate to="/contacts" replace />} />
+ <Route path="/suppliers/new" element={<AppLayout><SupplierNewPage /></AppLayout>} />
+ <Route path="/suppliers/:id/edit" element={<AppLayout><SupplierEditPage /></AppLayout>} />
+ <Route path="/suppliers/:id" element={<AppLayout><SupplierDetailPage /></AppLayout>} />
+ <Route path="/purchase-orders/:id/edit" element={<AppLayout><PurchaseOrderEditPage /></AppLayout>} />
+ <Route path="/purchase-orders/:id" element={<AppLayout><PurchaseOrderDetailPage /></AppLayout>} />
+ <Route path="/import" element={<AppLayout><ImportPage /></AppLayout>} />
+ <Route path="/tables/:id" element={<AppLayout><TablePage /></AppLayout>} />
+ <Route path="/designer" element={<AppLayout><DesignerHome /></AppLayout>} />
+ <Route path="/designer/tables/new" element={<AppLayout><TableBuilder /></AppLayout>} />
+ <Route path="/designer/tables/:id" element={<AppLayout><TableSettings /></AppLayout>} />
+ <Route path="/designer/menus" element={<AppLayout><Menus /></AppLayout>} />
+ <Route path="/designer/pages" element={<AppLayout><Pages /></AppLayout>} />
+ <Route path="/designer/experiences" element={<AppLayout><Experiences /></AppLayout>} />
+ <Route path="/designer/features" element={
+ <AppLayout>
+ {({ onOpenGrokChat }) => <Features onOpenGrokChat={onOpenGrokChat} />}
+ </AppLayout>
+ } />
+ <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
+ <Route path="/settings/integrations" element={<AppLayout><SettingsPage /></AppLayout>} />
+ <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
+ <Route path="/components-demo" element={<AppLayout><ComponentsDemo /></AppLayout>} />
+ <Route path="/search-demo" element={<AppLayout><SearchDemoPage /></AppLayout>} />
+ </Routes>
+ </BrowserRouter>
+ )
 }
 
 export default App

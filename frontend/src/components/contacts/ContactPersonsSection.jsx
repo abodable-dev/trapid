@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { UserCircleIcon, PencilIcon, TrashIcon, PlusIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import { UserCircleIcon, PencilIcon, TrashIcon, PlusIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/solid'
 
 export default function ContactPersonsSection({ contactPersons = [], onUpdate, isEditMode, contactId }) {
   const [editingPerson, setEditingPerson] = useState(null)
@@ -57,9 +57,7 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
         <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
           <UserCircleIcon className="h-5 w-5" />
           Contact Persons
-          <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-          </svg>
+          <ShieldCheckIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
         </h3>
         {isEditMode && (
           <button
@@ -83,28 +81,46 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
               // Edit mode
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      First Name
+                      <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="First Name"
+                      value={editingPerson.first_name || ''}
+                      onChange={(e) => setEditingPerson({ ...editingPerson, first_name: e.target.value })}
+                      className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                      Last Name
+                      <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Last Name"
+                      value={editingPerson.last_name || ''}
+                      onChange={(e) => setEditingPerson({ ...editingPerson, last_name: e.target.value })}
+                      className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    Email
+                    <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                  </label>
                   <input
-                    type="text"
-                    placeholder="First Name"
-                    value={editingPerson.first_name || ''}
-                    onChange={(e) => setEditingPerson({ ...editingPerson, first_name: e.target.value })}
-                    className="px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Last Name"
-                    value={editingPerson.last_name || ''}
-                    onChange={(e) => setEditingPerson({ ...editingPerson, last_name: e.target.value })}
-                    className="px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    type="email"
+                    placeholder="Email"
+                    value={editingPerson.email || ''}
+                    onChange={(e) => setEditingPerson({ ...editingPerson, email: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                   />
                 </div>
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={editingPerson.email || ''}
-                  onChange={(e) => setEditingPerson({ ...editingPerson, email: e.target.value })}
-                  className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
                 <div className="flex items-center gap-4">
                   <label className="flex items-center gap-2 text-sm">
                     <input
@@ -192,28 +208,46 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
             <p className="text-sm font-medium text-gray-900 dark:text-white mb-3">New Contact Person</p>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    First Name
+                    <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="First Name"
+                    value={newPerson.first_name}
+                    onChange={(e) => setNewPerson({ ...newPerson, first_name: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    Last Name
+                    <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Last Name"
+                    value={newPerson.last_name}
+                    onChange={(e) => setNewPerson({ ...newPerson, last_name: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 mb-1">
+                  Email
+                  <ShieldCheckIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" title="Syncs with Xero" />
+                </label>
                 <input
-                  type="text"
-                  placeholder="First Name"
-                  value={newPerson.first_name}
-                  onChange={(e) => setNewPerson({ ...newPerson, first_name: e.target.value })}
-                  className="px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
-                <input
-                  type="text"
-                  placeholder="Last Name"
-                  value={newPerson.last_name}
-                  onChange={(e) => setNewPerson({ ...newPerson, last_name: e.target.value })}
-                  className="px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  type="email"
+                  placeholder="Email"
+                  value={newPerson.email}
+                  onChange={(e) => setNewPerson({ ...newPerson, email: e.target.value })}
+                  className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 />
               </div>
-              <input
-                type="email"
-                placeholder="Email"
-                value={newPerson.email}
-                onChange={(e) => setNewPerson({ ...newPerson, email: e.target.value })}
-                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              />
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 text-sm">
                   <input
