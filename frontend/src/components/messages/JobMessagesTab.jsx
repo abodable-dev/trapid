@@ -9,14 +9,12 @@ export default function JobMessagesTab({ constructionId }) {
   const [newMessage, setNewMessage] = useState('')
   const [sending, setSending] = useState(false)
   const messagesEndRef = useRef(null)
-  const [pollingInterval, setPollingInterval] = useState(null)
 
   useEffect(() => {
     loadMessages()
 
     // Poll for new messages every 3 seconds
     const interval = setInterval(loadMessages, 3000)
-    setPollingInterval(interval)
 
     return () => {
       if (interval) clearInterval(interval)

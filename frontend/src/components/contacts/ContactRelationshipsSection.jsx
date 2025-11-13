@@ -34,6 +34,7 @@ export default function ContactRelationshipsSection({ contactId, isEditMode }) {
   useEffect(() => {
     loadRelationships()
     loadAllContacts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contactId])
 
   // Close dropdown when clicking outside

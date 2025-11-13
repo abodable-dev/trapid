@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { TagIcon, PlusIcon, XMarkIcon, ShieldCheckIcon } from '@heroicons/react/24/outline'
 
-export default function ContactGroupsSection({ contactGroups = [], onUpdate, isEditMode, contactId }) {
+export default function ContactGroupsSection({ contactGroups = [], onUpdate, isEditMode }) {
   const [isAddingGroup, setIsAddingGroup] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
   const [isLoading, setIsLoading] = useState(false)

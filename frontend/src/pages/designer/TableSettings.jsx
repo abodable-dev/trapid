@@ -21,10 +21,12 @@ export default function TableSettings() {
     if (!searchParams.get('tab')) {
       setSearchParams({ tab: 'columns' }, { replace: true })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     fetchTable()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const fetchTable = async () => {

@@ -65,7 +65,7 @@ const columnConfig = {
   }
 }
 
-export default function POTable({ purchaseOrders, onEdit, onDelete, onApprove, onSend }) {
+export default function POTable({ purchaseOrders, onDelete }) {
   const [expandedPO, setExpandedPO] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
@@ -93,8 +93,8 @@ export default function POTable({ purchaseOrders, onEdit, onDelete, onApprove, o
   // Sort state (primary and secondary)
   const [sortBy, setSortBy] = useState('poNumber')
   const [sortDirection, setSortDirection] = useState('desc')
-  const [secondarySortBy, setSecondarySortBy] = useState('supplier')
-  const [secondarySortDirection, setSecondarySortDirection] = useState('asc')
+  const secondarySortBy = 'supplier'
+  const secondarySortDirection = 'asc'
 
   // Column resize state
   const [resizingColumn, setResizingColumn] = useState(null)

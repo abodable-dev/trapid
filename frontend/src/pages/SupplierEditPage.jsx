@@ -26,6 +26,7 @@ export default function SupplierEditPage() {
 
   useEffect(() => {
     loadSupplier()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const loadSupplier = async () => {

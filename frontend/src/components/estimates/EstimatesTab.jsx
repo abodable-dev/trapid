@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   DocumentTextIcon,
   ChevronDownIcon,
@@ -13,7 +12,6 @@ import EstimateStatusBadge from './EstimateStatusBadge'
 import AiReviewModal from './AiReviewModal'
 
 export default function EstimatesTab({ jobId }) {
-  const navigate = useNavigate()
   const [estimates, setEstimates] = useState([])
   const [loading, setLoading] = useState(true)
   const [expandedEstimate, setExpandedEstimate] = useState(null)
@@ -24,6 +22,7 @@ export default function EstimatesTab({ jobId }) {
 
   useEffect(() => {
     loadEstimates()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId])
 
   const loadEstimates = async () => {

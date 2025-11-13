@@ -17,6 +17,7 @@ const ActivityTimeline = ({ contactId }) => {
 
   useEffect(() => {
     fetchActivities();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contactId]);
 
   const fetchActivities = async () => {
@@ -196,7 +197,7 @@ const ActivityTimeline = ({ contactId }) => {
 
         {/* Activity items */}
         <div className="space-y-6">
-          {activities.map((activity, index) => (
+          {activities.map((activity) => (
             <div key={activity.id} className="relative flex gap-4">
               {/* Icon */}
               <div className={`relative z-10 flex items-center justify-center w-12 h-12 rounded-full ${getActivityColor(activity.activity_type)}`}>

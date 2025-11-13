@@ -60,7 +60,6 @@ export default function PDFMeasurementTool({ pdfUrl, onClose }) {
   const [tempCalibrationPoints, setTempCalibrationPoints] = useState([])
   const [calibrationUnit, setCalibrationUnit] = useState('m')
 
-  const canvasRef = useRef(null)
   const overlayCanvasRef = useRef(null)
   const containerRef = useRef(null)
 
@@ -73,6 +72,7 @@ export default function PDFMeasurementTool({ pdfUrl, onClose }) {
   useEffect(() => {
     // Redraw measurements when they change
     drawMeasurements()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [measurements, scale, pageNumber])
 
   useEffect(() => {
@@ -86,6 +86,7 @@ export default function PDFMeasurementTool({ pdfUrl, onClose }) {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const onDocumentLoadSuccess = ({ numPages }) => {
@@ -399,7 +400,7 @@ export default function PDFMeasurementTool({ pdfUrl, onClose }) {
     }
   }
 
-  const handlePageRender = (page) => {
+  const handlePageRender = () => {
     const canvas = overlayCanvasRef.current
     const pdfCanvas = document.querySelector('.react-pdf__Page__canvas')
 
@@ -649,7 +650,7 @@ export default function PDFMeasurementTool({ pdfUrl, onClose }) {
             </div>
           ) : (
             <div className="space-y-2">
-              {measurements.map((measurement, index) => (
+              {measurements.map((measurement) => (
                 <div
                   key={measurement.id}
                   className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"

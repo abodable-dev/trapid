@@ -64,12 +64,6 @@ const bottomNavigation = [
   { name: 'Import Data', href: '/import', icon: ArrowUpTrayIcon },
 ]
 
-const userNavigation = [
-  { name: 'Your profile', href: '/profile', icon: UserCircleIcon },
-  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
-  { name: 'Sign out', href: '/logout', icon: ArrowRightOnRectangleIcon },
-]
-
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
@@ -105,7 +99,7 @@ export default function AppLayout({ children }) {
           withCredentials: true
         })
         setUnreadCount(response.data.count || 0)
-      } catch (error) {
+      } catch {
         // Silently fail - unread count is not critical
       }
     }

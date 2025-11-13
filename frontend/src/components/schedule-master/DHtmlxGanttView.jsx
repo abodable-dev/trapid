@@ -4,6 +4,7 @@ import 'dhtmlx-gantt/codebase/dhtmlxgantt.css'
 import { XMarkIcon, PencilSquareIcon, AdjustmentsHorizontalIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import TaskDependencyEditor from './TaskDependencyEditor'
+import CascadeDependenciesModal from './CascadeDependenciesModal'
 import { Menu } from '@headlessui/react'
 
 /**
@@ -38,6 +39,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   const [dragConflict, setDragConflict] = useState(null) // { task, originalStart, newStart, blockingPredecessors }
   const [canUndo, setCanUndo] = useState(false) // Track if undo is available
   const [canRedo, setCanRedo] = useState(false) // Track if redo is available
+  const [cascadeModal, setCascadeModal] = useState(null) // { movedTask, unlockedSuccessors, blockedSuccessors, originalStart }
 
   // Load checkbox visibility from localStorage or use default
   const [showCheckboxes, setShowCheckboxes] = useState(() => {
@@ -1435,15 +1437,22 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           // BETWEEN: Check for UNLOCKED successors that would need to cascade
           console.log('🔍 Checking for unlocked successor tasks that may need to cascade')
           const unlockedSuccessorsToMove = []
+          const blockedSuccessors = [] // Successors that can't cascade due to locked dependencies
 
           gantt.eachTask((successorTask) => {
             if (successorTask.id === task.id) return // Skip self
 
-            if (successorTask.predecessor_ids && successorTask.predecessor_ids.length > 0) {
-              // Find if this successor depends on the moved task
-              const dependency = successorTask.predecessor_ids.find(pred => {
+            // Check BOTH active predecessors AND broken predecessors
+            const allPredecessors = [
+              ...(successorTask.predecessor_ids || []),
+              ...(successorTask.broken_predecessor_ids || [])
+            ]
+
+            if (allPredecessors.length > 0) {
+              // Find if this successor depends on the moved task (in either active or broken deps)
+              const dependency = allPredecessors.find(pred => {
                 const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
-                return predId === task.id
+                return Number(predId) === Number(task.id)
               })
 
               if (dependency) {
@@ -1452,6 +1461,68 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                                 successorTask.start || successorTask.complete
 
                 if (!isLocked) {
+                  console.log(`🔎 Checking Task #${successorTask.id} "${successorTask.text}" for locked successors...`)
+
+                  // Check if this successor has any LOCKED successors that would block cascading
+                  const hasLockedSuccessors = []
+                  gantt.eachTask((nestedSuccessor) => {
+                    console.log(`  🔍 Examining nested task #${nestedSuccessor.id} "${nestedSuccessor.text}"`)
+
+                    if (nestedSuccessor.id === successorTask.id) {
+                      console.log(`    ⏭️  Skipping self`)
+                      return
+                    }
+
+                    if (nestedSuccessor.predecessor_ids && nestedSuccessor.predecessor_ids.length > 0) {
+                      console.log(`    📋 Nested task has ${nestedSuccessor.predecessor_ids.length} predecessor(s):`, nestedSuccessor.predecessor_ids)
+
+                      const dependsOnSuccessor = nestedSuccessor.predecessor_ids.some(pred => {
+                        // Handle multiple possible formats
+                        let predId = pred
+                        if (typeof pred === 'object') {
+                          console.log(`      🔍 Predecessor is object with keys:`, Object.keys(pred), pred)
+                          predId = pred.id || pred['id'] || pred.task_id || pred.source
+                        }
+                        // Convert both to numbers for comparison (handles string vs number mismatch)
+                        const predIdNum = Number(predId)
+                        const successorIdNum = Number(successorTask.id)
+                        console.log(`      🔗 Checking if predecessor ${predId} (${predIdNum}) matches successorTask.id ${successorTask.id} (${successorIdNum})`)
+                        return predIdNum === successorIdNum
+                      })
+
+                      if (dependsOnSuccessor) {
+                        console.log(`    ✓ Task #${nestedSuccessor.id} depends on Task #${successorTask.id}`)
+
+                        const nestedIsLocked = nestedSuccessor.confirm || nestedSuccessor.supplier_confirm ||
+                                              nestedSuccessor.start || nestedSuccessor.complete
+                        console.log(`    🔒 Lock status: confirm=${nestedSuccessor.confirm}, supplier_confirm=${nestedSuccessor.supplier_confirm}, start=${nestedSuccessor.start}, complete=${nestedSuccessor.complete} => locked=${nestedIsLocked}`)
+
+                        if (nestedIsLocked) {
+                          console.log(`    🚫 Task #${nestedSuccessor.id} IS LOCKED - blocking cascade!`)
+                          hasLockedSuccessors.push(nestedSuccessor)
+                        } else {
+                          console.log(`    ✓ Task #${nestedSuccessor.id} is not locked`)
+                        }
+                      } else {
+                        console.log(`    ⏭️  Task #${nestedSuccessor.id} does not depend on Task #${successorTask.id}`)
+                      }
+                    } else {
+                      console.log(`    ⏭️  Nested task has no predecessors`)
+                    }
+                  })
+
+                  // Track locked successors for the modal (even if task can cascade)
+                  if (hasLockedSuccessors.length > 0) {
+                    console.log(`⚠️ Task #${successorTask.id} has ${hasLockedSuccessors.length} locked successor(s):`, hasLockedSuccessors.map(s => `#${s.id} "${s.text}"`))
+                    blockedSuccessors.push({
+                      task: successorTask,
+                      lockedSuccessors: hasLockedSuccessors
+                    })
+                    // Don't return - still add to cascade list so user can choose
+                  } else {
+                    console.log(`✅ Task #${successorTask.id} has no locked successors`)
+                  }
+
                   // Calculate where this successor would need to be to maintain dependency
                   const depType = typeof dependency === 'object' ? (dependency.type || dependency['type'] || 'FS') : 'FS'
                   const depLag = typeof dependency === 'object' ? (dependency.lag || dependency['lag'] || 0) : 0
@@ -1528,85 +1599,22 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             }
           })
 
-          if (unlockedSuccessorsToMove.length > 0) {
-            // Show cascade dialog
-            const successorList = unlockedSuccessorsToMove.map(s =>
-              `  • #${s.task.id} ${s.task.text} (${s.depType}${s.depLag > 0 ? '+' + s.depLag : s.depLag < 0 ? s.depLag : ''})`
-            ).join('\n')
+          // Handle cascade and blocked successors - Show custom modal
+          if (blockedSuccessors.length > 0 || unlockedSuccessorsToMove.length > 0) {
+            console.log('📋 Opening cascade dependencies modal')
+            console.log(`  - Unlocked successors: ${unlockedSuccessorsToMove.length}`)
+            console.log(`  - Blocked successors: ${blockedSuccessors.length}`)
 
-            console.log('⚠️ Showing cascade dialog for successors:', successorList)
-            const cascade = window.confirm(
-              `⚠️ Cascade Dependencies!\n\n` +
-              `Moving this task affects ${unlockedSuccessorsToMove.length} dependent task(s):\n${successorList}\n\n` +
-              `Do you want to move all dependent tasks to maintain dependencies?\n\n` +
-              `• YES: Move dependent tasks (cascade the change)\n` +
-              `• NO: Choose to break dependencies or cancel`
-            )
+            // Open the cascade modal
+            setCascadeModal({
+              movedTask: task,
+              unlockedSuccessors: unlockedSuccessorsToMove,
+              blockedSuccessors: blockedSuccessors,
+              originalStart: originalStart
+            })
 
-            if (cascade) {
-              // Cascade - move all successors
-              console.log('✅ User chose to cascade - moving dependent tasks')
-              unlockedSuccessorsToMove.forEach(({ task: successorTask, requiredStart }) => {
-                successorTask.start_date = requiredStart
-
-                // Calculate day offset for API
-                const projectStartDate = new Date()
-                projectStartDate.setHours(0, 0, 0, 0)
-                const dayOffset = Math.floor((requiredStart - projectStartDate) / (1000 * 60 * 60 * 24))
-
-                const updateData = {
-                  duration: successorTask.duration,
-                  start_date: dayOffset,
-                  predecessor_ids: successorTask.predecessor_ids || []
-                }
-
-                console.log(`🔄 Cascading task #${successorTask.id} to day ${dayOffset}`)
-                onUpdateTask(successorTask.id, updateData, { skipReload: true })
-                gantt.updateTask(successorTask.id)
-              })
-              gantt.render()
-            } else {
-              // Show second dialog: break dependencies or cancel
-              const breakDeps = window.confirm(
-                `Do you want to break dependencies instead?\n\n` +
-                `• YES: Remove dependencies (tasks will show checkered pattern)\n` +
-                `• NO: Cancel the entire move operation`
-              )
-
-              if (breakDeps) {
-                // Break dependencies
-                console.log('✂️ User chose to break dependencies')
-                unlockedSuccessorsToMove.forEach(({ task: successorTask }) => {
-                  // Remove this task from predecessor_ids
-                  successorTask.predecessor_ids = successorTask.predecessor_ids.filter(pred => {
-                    const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
-                    return predId !== task.id
-                  })
-
-                  successorTask.dependencies_broken = true
-                  successorTask.$dependenciesBroken = true
-
-                  const updateData = {
-                    predecessor_ids: successorTask.predecessor_ids,
-                    dependencies_broken: true
-                  }
-
-                  console.log(`🔗❌ Breaking dependency for task #${successorTask.id}`)
-                  onUpdateTask(successorTask.id, updateData, { skipReload: true })
-                  gantt.updateTask(successorTask.id)
-                })
-                gantt.render()
-              } else {
-                // Cancel - revert the entire move
-                console.log('↩️ User cancelled cascade - reverting move')
-                task.start_date = originalStart
-                gantt.updateTask(task.id)
-                gantt.render()
-                isDragging.current = false
-                delete task.$originalStart
-                return false
-              }
-            }
+            // Don't continue processing until user responds to modal
+            return false
           }
 
           // SECOND: Check if THIS task has dependencies and if the new position violates them
@@ -3365,6 +3373,232 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     setSelectedTask(null)
   }
 
+  // Handle cascade modal confirmation
+  const handleCascadeConfirm = (selection) => {
+    if (!cascadeModal) return
+
+    const { movedTask, originalStart } = cascadeModal
+    const { cascade, unlinkUnselected, breakBlocked, lockedSuccessorsToKeep = {} } = selection
+
+    console.log('📋 Processing cascade modal response')
+    console.log(`  - Tasks to cascade: ${cascade.length}`)
+    console.log(`  - Tasks to unlink: ${unlinkUnselected.length}`)
+    console.log(`  - Blocked tasks to unlink: ${breakBlocked.length}`)
+    console.log(`  - Locked successors to keep:`, lockedSuccessorsToKeep)
+
+    // FIRST: Save the moved task's new position
+    const movedTaskStart = new Date(movedTask.start_date)
+    movedTaskStart.setHours(0, 0, 0, 0)
+    const projectStartDate = new Date()
+    projectStartDate.setHours(0, 0, 0, 0)
+    const movedTaskDayOffset = Math.floor((movedTaskStart - projectStartDate) / (1000 * 60 * 60 * 24))
+
+    console.log(`💾 Saving moved task #${movedTask.id} to day ${movedTaskDayOffset}`)
+    onUpdateTask(movedTask.id, {
+      duration: movedTask.duration,
+      start_date: movedTaskDayOffset,
+      predecessor_ids: movedTask.predecessor_ids || []
+    }, { skipReload: true })
+
+    // Cascade selected tasks
+    cascade.forEach(({ task: successorTask, requiredStart }) => {
+      successorTask.start_date = requiredStart
+
+      const dayOffset = Math.floor((requiredStart - projectStartDate) / (1000 * 60 * 60 * 24))
+
+      // If this task has broken dependencies, restore them
+      let predecessorIds = successorTask.predecessor_ids || []
+      let dependenciesBroken = successorTask.dependencies_broken || false
+      let brokenPredecessorIds = successorTask.broken_predecessor_ids || []
+
+      if (successorTask.dependencies_broken && brokenPredecessorIds.length > 0) {
+        // Check if any of the broken deps are for the moved task
+        const brokenDepsForMovedTask = brokenPredecessorIds.filter(pred => {
+          const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+          return Number(predId) === Number(movedTask.id)
+        })
+
+        if (brokenDepsForMovedTask.length > 0) {
+          // Restore these dependencies
+          predecessorIds = [...predecessorIds, ...brokenDepsForMovedTask]
+
+          // Remove from broken list
+          brokenPredecessorIds = brokenPredecessorIds.filter(pred => {
+            const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+            return Number(predId) !== Number(movedTask.id)
+          })
+
+          // Clear broken flag if no more broken deps
+          if (brokenPredecessorIds.length === 0) {
+            dependenciesBroken = false
+          }
+
+          console.log(`🔄 Restoring broken dependency for task #${successorTask.id}`)
+        }
+      }
+
+      successorTask.predecessor_ids = predecessorIds
+      successorTask.dependencies_broken = dependenciesBroken
+      successorTask.$dependenciesBroken = dependenciesBroken
+      successorTask.broken_predecessor_ids = brokenPredecessorIds
+
+      const updateData = {
+        duration: successorTask.duration,
+        start_date: dayOffset,
+        predecessor_ids: predecessorIds,
+        dependencies_broken: dependenciesBroken,
+        broken_predecessor_ids: brokenPredecessorIds
+      }
+
+      console.log(`🔄 Cascading task #${successorTask.id} to day ${dayOffset}`)
+      onUpdateTask(successorTask.id, updateData, { skipReload: true })
+      gantt.updateTask(successorTask.id)
+    })
+
+    // Handle nested locked successors - break dependencies for locked successors that weren't selected to keep
+    cascade.forEach(({ task: cascadedTask }) => {
+      const taskIdStr = String(cascadedTask.id)
+      const lockedSuccessorsToKeepForTask = lockedSuccessorsToKeep[taskIdStr] || []
+
+      // Find locked successors for this cascaded task from breakBlocked
+      const lockedSuccessorsForTask = breakBlocked.filter(({ task }) => {
+        // Check if this blocked task is a successor of the cascaded task
+        const allPredecessors = [
+          ...(task.predecessor_ids || []),
+          ...(task.broken_predecessor_ids || [])
+        ]
+        return allPredecessors.some(pred => {
+          const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+          return Number(predId) === Number(cascadedTask.id)
+        })
+      })
+
+      // For each locked successor, check if it should be broken
+      lockedSuccessorsForTask.forEach(({ task: lockedSuccessor }) => {
+        const shouldKeep = lockedSuccessorsToKeepForTask.includes(Number(lockedSuccessor.id))
+
+        if (!shouldKeep) {
+          // Break this dependency: remove cascadedTask from lockedSuccessor's predecessors
+          console.log(`🔗❌ Breaking nested locked successor: Task #${cascadedTask.id} → #${lockedSuccessor.id}`)
+
+          const brokenDeps = lockedSuccessor.predecessor_ids.filter(pred => {
+            const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+            return Number(predId) === Number(cascadedTask.id)
+          })
+
+          const existingBrokenDeps = lockedSuccessor.broken_predecessor_ids || []
+          const newBrokenDeps = [...existingBrokenDeps, ...brokenDeps]
+
+          lockedSuccessor.predecessor_ids = lockedSuccessor.predecessor_ids.filter(pred => {
+            const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+            return Number(predId) !== Number(cascadedTask.id)
+          })
+
+          lockedSuccessor.dependencies_broken = true
+          lockedSuccessor.$dependenciesBroken = true
+          lockedSuccessor.broken_predecessor_ids = newBrokenDeps
+
+          const updateData = {
+            predecessor_ids: lockedSuccessor.predecessor_ids,
+            dependencies_broken: true,
+            broken_predecessor_ids: newBrokenDeps
+          }
+
+          onUpdateTask(lockedSuccessor.id, updateData, { skipReload: true })
+          gantt.updateTask(lockedSuccessor.id)
+        } else {
+          console.log(`✅ Keeping nested locked successor: Task #${cascadedTask.id} → #${lockedSuccessor.id}`)
+        }
+      })
+    })
+
+    // Unlink unselected tasks
+    unlinkUnselected.forEach(({ task: successorTask }) => {
+      // Find the broken dependencies (the ones we're removing)
+      const brokenDeps = successorTask.predecessor_ids.filter(pred => {
+        const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+        return Number(predId) === Number(movedTask.id)
+      })
+
+      // Store them so they can be restored later
+      const existingBrokenDeps = successorTask.broken_predecessor_ids || []
+      const newBrokenDeps = [...existingBrokenDeps, ...brokenDeps]
+
+      // Remove from active predecessors
+      successorTask.predecessor_ids = successorTask.predecessor_ids.filter(pred => {
+        const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+        return Number(predId) !== Number(movedTask.id)
+      })
+
+      successorTask.dependencies_broken = true
+      successorTask.$dependenciesBroken = true
+      successorTask.broken_predecessor_ids = newBrokenDeps
+
+      const updateData = {
+        predecessor_ids: successorTask.predecessor_ids,
+        dependencies_broken: true,
+        broken_predecessor_ids: newBrokenDeps
+      }
+
+      console.log(`🔗❌ Unlinking task #${successorTask.id}, storing broken deps:`, brokenDeps)
+      onUpdateTask(successorTask.id, updateData, { skipReload: true })
+      gantt.updateTask(successorTask.id)
+    })
+
+    // Break dependencies for blocked tasks
+    breakBlocked.forEach(({ task: blockedTask }) => {
+      // Find the broken dependencies (the ones we're removing)
+      const brokenDeps = blockedTask.predecessor_ids.filter(pred => {
+        const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+        return Number(predId) === Number(movedTask.id)
+      })
+
+      // Store them so they can be restored later
+      const existingBrokenDeps = blockedTask.broken_predecessor_ids || []
+      const newBrokenDeps = [...existingBrokenDeps, ...brokenDeps]
+
+      // Remove from active predecessors
+      blockedTask.predecessor_ids = blockedTask.predecessor_ids.filter(pred => {
+        const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+        return Number(predId) !== Number(movedTask.id)
+      })
+
+      blockedTask.dependencies_broken = true
+      blockedTask.$dependenciesBroken = true
+      blockedTask.broken_predecessor_ids = newBrokenDeps
+
+      const updateData = {
+        predecessor_ids: blockedTask.predecessor_ids,
+        dependencies_broken: true,
+        broken_predecessor_ids: newBrokenDeps
+      }
+
+      console.log(`🔗❌ Breaking dependency for blocked task #${blockedTask.id}, storing broken deps:`, brokenDeps)
+      onUpdateTask(blockedTask.id, updateData, { skipReload: true })
+      gantt.updateTask(blockedTask.id)
+    })
+
+    gantt.render()
+    isDragging.current = false
+    delete movedTask.$originalStart
+    setCascadeModal(null)
+  }
+
+  // Handle cascade modal cancellation
+  const handleCascadeCancel = () => {
+    if (!cascadeModal) return
+
+    const { movedTask, originalStart } = cascadeModal
+
+    console.log('↩️ User cancelled cascade - reverting move')
+    movedTask.start_date = originalStart
+    gantt.updateTask(movedTask.id)
+    gantt.render()
+    isDragging.current = false
+    delete movedTask.$originalStart
+    setCascadeModal(null)
+  }
+
   if (!isOpen) return null
 
   return (
@@ -3621,6 +3855,19 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           task={selectedTask}
           tasks={tasks}
           onSave={handleSaveDependencies}
+        />
+      )}
+
+      {/* Cascade Dependencies Modal */}
+      {cascadeModal && (
+        <CascadeDependenciesModal
+          isOpen={!!cascadeModal}
+          onClose={handleCascadeCancel}
+          movedTask={cascadeModal.movedTask}
+          unlockedSuccessors={cascadeModal.unlockedSuccessors}
+          blockedSuccessors={cascadeModal.blockedSuccessors}
+          onConfirm={handleCascadeConfirm}
+          onUpdateTask={onUpdateTask}
         />
       )}
 

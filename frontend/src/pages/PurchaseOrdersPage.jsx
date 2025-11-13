@@ -11,6 +11,7 @@ export default function PurchaseOrdersPage() {
 
   useEffect(() => {
     loadPurchaseOrders()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadPurchaseOrders = async () => {

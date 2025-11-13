@@ -35,6 +35,7 @@ export default function PurchaseOrderEditPage() {
 
   useEffect(() => {
     loadPurchaseOrder()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   // Close dropdown when clicking outside

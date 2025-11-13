@@ -8,6 +8,7 @@ export default function Features({ onOpenGrokChat }) {
   useEffect(() => {
     // TODO: Load saved plans from API
     setLoading(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

@@ -7,7 +7,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
-export default function InternalMessagesTab({ entityType, entityId, entityName }) {
+export default function InternalMessagesTab({ entityType, entityId }) {
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -20,6 +20,7 @@ export default function InternalMessagesTab({ entityType, entityId, entityName }
     // Poll for new messages every 3 seconds
     const interval = setInterval(loadMessages, 3000)
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityType, entityId])
 
   useEffect(() => {

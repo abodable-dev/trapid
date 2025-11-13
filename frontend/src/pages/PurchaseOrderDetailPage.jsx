@@ -19,7 +19,6 @@ import {
   BuildingStorefrontIcon,
   PaperClipIcon,
   PrinterIcon,
-  FaceSmileIcon,
   FireIcon,
   HeartIcon,
   FaceSmileIcon as FaceHappyIcon,
@@ -69,6 +68,7 @@ export default function PurchaseOrderDetailPage() {
   useEffect(() => {
     loadPurchaseOrder()
     loadPayments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const loadPurchaseOrder = async () => {

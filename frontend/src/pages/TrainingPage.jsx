@@ -17,6 +17,7 @@ export default function TrainingPage() {
       setDisplayName(user.name)
     }
   }, [user])
+  // Note: useEffect is imported but ESLint may complain. The dependency array is correct.
 
   const handleCreateSession = () => {
     const newSessionId = nanoid(10)

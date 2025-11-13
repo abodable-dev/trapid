@@ -8,8 +8,7 @@ import {
   XCircleIcon,
   PlusCircleIcon,
   BeakerIcon,
-  ArrowPathIcon,
-  DocumentArrowDownIcon
+  ArrowPathIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import SeverityBadge from './SeverityBadge'
@@ -31,6 +30,7 @@ export default function AiReviewModal({ isOpen, onClose, estimateId, estimateNam
         clearInterval(pollInterval)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, estimateId])
 
   useEffect(() => {

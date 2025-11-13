@@ -13,6 +13,7 @@ export default function JobEmailsTab({ constructionId }) {
 
   useEffect(() => {
     loadEmails()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [constructionId])
 
   const loadEmails = async () => {

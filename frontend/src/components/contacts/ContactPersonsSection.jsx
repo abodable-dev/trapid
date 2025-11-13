@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { UserCircleIcon, TrashIcon, PlusIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { api } from '../../api'
 
-export default function ContactPersonsSection({ contactPersons = [], onUpdate, isEditMode, contactId }) {
+export default function ContactPersonsSection({ contactPersons = [], onUpdate, isEditMode }) {
   const [editingPerson, setEditingPerson] = useState(null)
   const [newPerson, setNewPerson] = useState(null)
   const [availableRoles, setAvailableRoles] = useState([])

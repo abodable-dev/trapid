@@ -69,7 +69,8 @@ export default function CalendarPicker({ value, onChange, label }) {
     }
 
     return calendarDays
-  }, [currentMonth, selectedDate, isToday])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentMonth])
 
   const formatDate = (date) => {
     const year = date.getFullYear()

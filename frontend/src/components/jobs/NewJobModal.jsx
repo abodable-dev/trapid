@@ -59,7 +59,7 @@ const LAND_STATUS_OPTIONS = [
 export default function NewJobModal({ isOpen, onClose, onSuccess }) {
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [direction, setDirection] = useState('forward')
+  const [, setDirection] = useState('forward')
   const [formData, setFormData] = useState({
     title: '',
     location: '',

@@ -189,7 +189,7 @@ export default function LocationMapCard({ jobId, location, latitude, longitude, 
           setError('Location not found on map - Click Edit to place pin manually')
           setMapPosition([-27.4698, 153.0251])
         }
-      } catch (fallbackErr) {
+      } catch {
         setError('Unable to load map - Click Edit to place pin manually')
         setMapPosition([-27.4698, 153.0251])
       }

@@ -8,7 +8,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
-export default function EmailsTab({ entityType, entityId, entityName }) {
+export default function EmailsTab({ entityType, entityId }) {
   const [emails, setEmails] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -26,6 +26,7 @@ export default function EmailsTab({ entityType, entityId, entityName }) {
     // Poll for new emails every 30 seconds
     const interval = setInterval(loadEmails, 30000)
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityType, entityId])
 
   useEffect(() => {

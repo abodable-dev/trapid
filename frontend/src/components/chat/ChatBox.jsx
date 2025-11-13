@@ -9,7 +9,7 @@ export default function ChatBox({ channel = 'general', projectId = null, userId 
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const messagesEndRef = useRef(null)
-  const [pollingInterval, setPollingInterval] = useState(null)
+  const [_pollingInterval, setPollingInterval] = useState(null)
   const [savingMessageId, setSavingMessageId] = useState(null)
   const [constructions, setConstructions] = useState([])
   const [showJobSelector, setShowJobSelector] = useState(null) // message ID
@@ -55,6 +55,7 @@ export default function ChatBox({ channel = 'general', projectId = null, userId 
     return () => {
       if (interval) clearInterval(interval)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channel, projectId, userId])
 
   const loadConstructions = async () => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { XMarkIcon, PaperAirplaneIcon, SparklesIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, PaperAirplaneIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import { useLocation } from 'react-router-dom'
 
@@ -26,7 +26,7 @@ export default function GrokChat({ isOpen, onClose }) {
         content: "Hey! I'm here to help you build out this product. Talk to me the same way you'd talk with Grok - let's wrap our heads around the product and features together. What are you thinking about building?"
       }])
     }
-  }, [isOpen])
+  }, [isOpen, messages.length])
 
   const getContext = () => {
     return {

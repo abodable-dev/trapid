@@ -227,16 +227,19 @@ function SchemaPageContent() {
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     loadSchema()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     if (schema) {
       updateLayout()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schema, searchQuery, filter, layoutType])
 
   const loadSchema = async () => {

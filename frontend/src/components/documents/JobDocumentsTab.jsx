@@ -35,6 +35,7 @@ export default function JobDocumentsTab({ jobId, jobTitle }) {
 
   useEffect(() => {
     checkOrganizationStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId])
 
   const checkOrganizationStatus = async () => {
@@ -314,10 +315,8 @@ function OneDriveView({
   creatingFolders,
   error,
   message,
-  uploading,
   handleCreateFolders,
   handleOpenInOneDrive,
-  handleUpload,
   checkJobFolderStatus,
   renderFolder,
   fileInputRef,

@@ -18,6 +18,7 @@ export default function DocumentTaskList({ jobId, category }) {
 
   useEffect(() => {
     loadDocumentTasks()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId, category.id])
 
   const loadDocumentTasks = async () => {

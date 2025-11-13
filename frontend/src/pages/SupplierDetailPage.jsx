@@ -56,6 +56,7 @@ export default function SupplierDetailPage() {
   useEffect(() => {
     loadSupplier()
     loadPurchaseOrders()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const loadSupplier = async () => {

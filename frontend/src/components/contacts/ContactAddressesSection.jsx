@@ -3,7 +3,7 @@ import { MapPinIcon, PencilIcon, TrashIcon, PlusIcon, CheckCircleIcon, XCircleIc
 
 const ADDRESS_TYPES = ['STREET', 'POBOX', 'DELIVERY']
 
-export default function ContactAddressesSection({ contactAddresses = [], onUpdate, isEditMode, contactId }) {
+export default function ContactAddressesSection({ contactAddresses = [], onUpdate, isEditMode }) {
   const [editingAddress, setEditingAddress] = useState(null)
   const [newAddress, setNewAddress] = useState(null)
 

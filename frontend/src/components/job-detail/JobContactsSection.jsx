@@ -143,7 +143,7 @@ export default function JobContactsSection({ jobId, contacts: initialContacts, o
   const handleSetPrimary = async (constructionContactId) => {
     try {
       setError(null)
-      const response = await api.put(
+      await api.put(
         `/api/v1/constructions/${jobId}/construction_contacts/${constructionContactId}`,
         {
           construction_contact: {

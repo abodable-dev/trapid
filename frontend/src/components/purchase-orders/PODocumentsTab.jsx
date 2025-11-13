@@ -12,7 +12,7 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
 
-export default function PODocumentsTab({ purchaseOrderId, constructionId, scheduleTaskId, onDocumentsChange }) {
+export default function PODocumentsTab({ purchaseOrderId, scheduleTaskId, onDocumentsChange }) {
   const [documents, setDocuments] = useState([])
   const [selectedDocumentIds, setSelectedDocumentIds] = useState([])
   const [loading, setLoading] = useState(true)
@@ -21,7 +21,7 @@ export default function PODocumentsTab({ purchaseOrderId, constructionId, schedu
   const [successMessage, setSuccessMessage] = useState(null)
   const [groupedDocuments, setGroupedDocuments] = useState({})
   const [activeCategory, setActiveCategory] = useState('site-plan')
-  const [scheduleTask, setScheduleTask] = useState(null)
+  const [, setScheduleTask] = useState(null)
   const [categories, setCategories] = useState([])
 
   useEffect(() => {
@@ -154,20 +154,6 @@ export default function PODocumentsTab({ purchaseOrderId, constructionId, schedu
     if (doc.document_url) {
       window.open(doc.document_url, '_blank', 'noopener,noreferrer')
     }
-  }
-
-  const getCategoryLabel = (category) => {
-    const labels = {
-      'site-plan': 'Site',
-      'sales': 'Sales',
-      'certification': 'Precon',
-      'client': 'Client',
-      'client-photo': 'Client Photo',
-      'final-certificate': 'Final Certificate',
-      'photo': 'Photo',
-      'uncategorized': 'Plan'
-    }
-    return labels[category] || category
   }
 
   // Calculate stats

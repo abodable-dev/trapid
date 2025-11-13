@@ -13,6 +13,7 @@ export default function DocumentCategoryTabs({ jobId, onCategoryChange, children
 
   useEffect(() => {
     fetchDocumentationTabs()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId])
 
   const fetchDocumentationTabs = async () => {

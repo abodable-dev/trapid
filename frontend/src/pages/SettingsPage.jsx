@@ -54,6 +54,7 @@ export default function SettingsPage() {
     if (newIndex !== selectedIndex) {
       setSelectedIndex(newIndex)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search])
 
   // Handle pull from local

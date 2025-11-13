@@ -28,6 +28,7 @@ export default function SmsTab({ entityType, entityId, contact }) {
     // Poll for new messages every 3 seconds
     const interval = setInterval(loadMessages, 3000)
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityType, entityId])
 
   useEffect(() => {

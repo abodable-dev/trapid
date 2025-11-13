@@ -28,6 +28,7 @@ export default function PublicHolidaysPage() {
 
   useEffect(() => {
     loadHolidays()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, selectedRegion])
 
   const loadHolidays = async () => {
@@ -61,7 +62,7 @@ export default function PublicHolidaysPage() {
     }
 
     try {
-      const response = await api.post('/api/v1/public_holidays', {
+      await api.post('/api/v1/public_holidays', {
         public_holiday: {
           name: newHoliday.name,
           date: newHoliday.date,

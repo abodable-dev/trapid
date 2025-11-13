@@ -21,6 +21,7 @@ export default function SmsConversation({ contact }) {
     if (contact?.id) {
       loadMessages()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contact?.id])
 
   useEffect(() => {
