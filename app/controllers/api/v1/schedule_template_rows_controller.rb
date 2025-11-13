@@ -160,6 +160,7 @@ module Api
           :complete,
           :dependencies_broken,
           predecessor_ids: [:id, :type, :lag],
+          broken_predecessor_ids: [:id, :type, :lag],
           price_book_item_ids: [],
           documentation_category_ids: [],
           supervisor_checklist_template_ids: [],
@@ -202,6 +203,7 @@ module Api
           :complete,
           :dependencies_broken,
           predecessor_ids: [:id, :type, :lag],
+          broken_predecessor_ids: [:id, :type, :lag],
           price_book_item_ids: [],
           documentation_category_ids: [],
           supervisor_checklist_template_ids: [],
@@ -257,7 +259,8 @@ module Api
           supplier_confirm: row.supplier_confirm,
           start: row.start,
           complete: row.complete,
-          dependencies_broken: row.dependencies_broken
+          dependencies_broken: row.dependencies_broken,
+          broken_predecessor_ids: row.broken_predecessor_ids
         }
       end
 
