@@ -11,6 +11,9 @@ module Api
         # Apply search if provided
         @items = @items.search(params[:search]) if params[:search].present?
 
+        # Sort by claude_estimate descending (nulls last)
+        @items = @items.order(Arel.sql('claude_estimate DESC NULLS LAST'))
+
         # Pagination
         page = [params[:page]&.to_i || 1, 1].max
         limit = (params[:limit] || params[:per_page])&.to_i || 100
