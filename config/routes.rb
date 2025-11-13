@@ -171,6 +171,9 @@ Rails.application.routes.draw do
         end
       end
 
+      # Contact roles management
+      resources :contact_roles, only: [ :index, :create, :update, :destroy ]
+
       # Contacts management
       resources :contacts do
         collection do

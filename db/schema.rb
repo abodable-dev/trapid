@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_12_213631) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_13_020746) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -227,6 +227,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_213631) do
     t.string "xero_contact_person_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "role"
     t.index ["contact_id", "is_primary"], name: "index_contact_persons_on_contact_id_and_is_primary"
     t.index ["contact_id"], name: "index_contact_persons_on_contact_id"
     t.index ["email"], name: "index_contact_persons_on_email"
@@ -243,6 +244,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_12_213631) do
     t.index ["related_contact_id"], name: "index_contact_relationships_on_related_contact_id"
     t.index ["source_contact_id", "related_contact_id"], name: "index_contact_relationships_on_source_and_related", unique: true
     t.index ["source_contact_id"], name: "index_contact_relationships_on_source_contact_id"
+  end
+
+  create_table "contact_roles", force: :cascade do |t|
+    t.string "name", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_contact_roles_on_name", unique: true
   end
 
   create_table "contacts", force: :cascade do |t|
