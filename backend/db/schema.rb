@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_13_020746) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_13_032802) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -101,6 +101,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_020746) do
     t.string "logo_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "twilio_account_sid"
+    t.string "twilio_auth_token"
+    t.string "twilio_phone_number"
+    t.boolean "twilio_enabled", default: false
   end
 
   create_table "construction_contacts", force: :cascade do |t|
@@ -228,6 +232,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_020746) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "role"
+    t.string "mobile"
     t.index ["contact_id", "is_primary"], name: "index_contact_persons_on_contact_id_and_is_primary"
     t.index ["contact_id"], name: "index_contact_persons_on_contact_id"
     t.index ["email"], name: "index_contact_persons_on_email"
@@ -938,6 +943,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_020746) do
     t.boolean "supplier_confirm", default: false, null: false
     t.boolean "start", default: false, null: false
     t.boolean "complete", default: false, null: false
+    t.boolean "dependencies_broken", default: false, null: false
     t.index ["documentation_category_ids"], name: "index_schedule_template_rows_on_documentation_category_ids", using: :gin
     t.index ["schedule_template_id", "sequence_order"], name: "idx_on_schedule_template_id_sequence_order_1bea5d762b"
     t.index ["schedule_template_id"], name: "index_schedule_template_rows_on_schedule_template_id"
@@ -956,6 +962,27 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_020746) do
     t.index ["created_by_id"], name: "index_schedule_templates_on_created_by_id"
     t.index ["is_default"], name: "index_schedule_templates_on_is_default"
     t.index ["name"], name: "index_schedule_templates_on_name"
+  end
+
+  create_table "sms_messages", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.bigint "user_id"
+    t.string "from_phone", null: false
+    t.string "to_phone", null: false
+    t.text "body", null: false
+    t.string "direction", null: false
+    t.string "status"
+    t.string "twilio_sid"
+    t.datetime "sent_at"
+    t.datetime "received_at"
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_id", "created_at"], name: "index_sms_messages_on_contact_id_and_created_at"
+    t.index ["contact_id"], name: "index_sms_messages_on_contact_id"
+    t.index ["direction", "status"], name: "index_sms_messages_on_direction_and_status"
+    t.index ["twilio_sid"], name: "index_sms_messages_on_twilio_sid", unique: true
+    t.index ["user_id"], name: "index_sms_messages_on_user_id"
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
@@ -1922,6 +1949,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_020746) do
   add_foreign_key "schedule_template_rows", "schedule_templates"
   add_foreign_key "schedule_template_rows", "suppliers"
   add_foreign_key "schedule_templates", "users", column: "created_by_id"
+  add_foreign_key "sms_messages", "contacts"
+  add_foreign_key "sms_messages", "users"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

@@ -840,18 +840,43 @@ module Api
 
       # GET /api/v1/contacts/:id/activities
       def activities
-        activities = @contact.contact_activities.recent.limit(50)
+        # Get contact activities
+        contact_activities = @contact.contact_activities.recent.limit(50).map do |activity|
+          {
+            id: "activity_#{activity.id}",
+            activity_type: activity.activity_type,
+            description: activity.description,
+            metadata: activity.metadata,
+            occurred_at: activity.occurred_at,
+            created_at: activity.created_at,
+            performed_by: activity.performed_by
+          }
+        end
+
+        # Get SMS messages
+        sms_messages = @contact.sms_messages.recent.limit(50).map do |sms|
+          {
+            id: "sms_#{sms.id}",
+            activity_type: sms.direction == 'outbound' ? 'sms_sent' : 'sms_received',
+            description: "SMS #{sms.direction == 'outbound' ? 'sent to' : 'received from'} #{sms.direction == 'outbound' ? sms.to_phone : sms.from_phone}: #{sms.body.truncate(100)}",
+            metadata: {
+              sms_id: sms.id,
+              body: sms.body,
+              status: sms.status,
+              direction: sms.direction
+            },
+            occurred_at: sms.sent_at || sms.received_at || sms.created_at,
+            created_at: sms.created_at,
+            performed_by: sms.user
+          }
+        end
+
+        # Combine and sort by occurred_at
+        all_activities = (contact_activities + sms_messages).sort_by { |a| a[:occurred_at] }.reverse.take(50)
 
         render json: {
           success: true,
-          activities: activities.as_json(
-            only: [:id, :activity_type, :description, :metadata, :occurred_at, :created_at],
-            include: {
-              performed_by: {
-                only: [:id, :type]
-              }
-            }
-          )
+          activities: all_activities
         }
       end
 
@@ -1016,7 +1041,7 @@ module Api
           contact_group_ids: [],
           new_contact_group_names: [],
           # Nested attributes for contact persons
-          contact_persons_attributes: [:id, :first_name, :last_name, :email, :role, :include_in_emails, :is_primary, :_destroy],
+          contact_persons_attributes: [:id, :first_name, :last_name, :email, :mobile, :role, :include_in_emails, :is_primary, :_destroy],
           # Nested attributes for contact addresses
           contact_addresses_attributes: [:id, :address_type, :line1, :line2, :line3, :line4, :city, :region, :postal_code, :country, :attention_to, :is_primary, :_destroy]
         )

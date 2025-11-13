@@ -4,6 +4,7 @@ class Contact < ApplicationRecord
   has_many :supplier_contacts, dependent: :destroy
   has_many :linked_suppliers, through: :supplier_contacts, source: :supplier
   has_many :contact_activities, dependent: :destroy
+  has_many :sms_messages, dependent: :destroy
 
   # Xero-related associations
   has_many :contact_persons, dependent: :destroy

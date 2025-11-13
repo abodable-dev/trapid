@@ -28,9 +28,21 @@ module Api
         # Set current user for audit logging
         Thread.current[:current_audit_user_id] = @current_user&.id
 
+        # DEBUG: Log what we're receiving
+        Rails.logger.info "🔵 UPDATE ROW #{@row.id} - Received params: #{row_params.inspect}"
+        Rails.logger.info "🔵 BEFORE UPDATE - manually_positioned: #{@row.manually_positioned}, supplier_confirm: #{@row.supplier_confirm}"
+
         if @row.update(row_params)
-          render json: row_json(@row)
+          # Reload to get fresh data from database
+          @row.reload
+          Rails.logger.info "✅ AFTER UPDATE - manually_positioned: #{@row.manually_positioned}, supplier_confirm: #{@row.supplier_confirm}"
+
+          response_json = row_json(@row)
+          Rails.logger.info "📤 SENDING RESPONSE - manually_positioned: #{response_json[:manually_positioned]}, supplier_confirm: #{response_json[:supplier_confirm]}"
+
+          render json: response_json
         else
+          Rails.logger.error "❌ UPDATE FAILED - Errors: #{@row.errors.full_messages}"
           render json: { errors: @row.errors.full_messages }, status: :unprocessable_entity
         end
       ensure
@@ -146,6 +158,7 @@ module Api
           :supplier_confirm,
           :start,
           :complete,
+          :dependencies_broken,
           predecessor_ids: [:id, :type, :lag],
           price_book_item_ids: [],
           documentation_category_ids: [],
@@ -187,6 +200,7 @@ module Api
           :supplier_confirm,
           :start,
           :complete,
+          :dependencies_broken,
           predecessor_ids: [:id, :type, :lag],
           price_book_item_ids: [],
           documentation_category_ids: [],
@@ -241,7 +255,8 @@ module Api
           confirm: row.confirm,
           supplier_confirm: row.supplier_confirm,
           start: row.start,
-          complete: row.complete
+          complete: row.complete,
+          dependencies_broken: row.dependencies_broken
         }
       end
 

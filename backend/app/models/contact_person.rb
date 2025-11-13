@@ -4,7 +4,8 @@ class ContactPerson < ApplicationRecord
   belongs_to :contact
 
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP, allow_blank: true }
-  validate :only_one_primary_per_contact, if: :is_primary?
+
+  before_save :ensure_single_primary_per_contact
 
   scope :primary, -> { where(is_primary: true) }
   scope :secondary, -> { where(is_primary: false) }
@@ -15,9 +16,11 @@ class ContactPerson < ApplicationRecord
 
   private
 
-  def only_one_primary_per_contact
-    if contact && contact.contact_persons.where(is_primary: true).where.not(id: id).exists?
-      errors.add(:is_primary, 'can only have one primary contact person')
+  # Automatically set other contact persons to non-primary when this one becomes primary
+  def ensure_single_primary_per_contact
+    if is_primary? && is_primary_changed? && contact
+      # Set all other contact persons to non-primary
+      contact.contact_persons.where.not(id: id).update_all(is_primary: false)
     end
   end
 end

@@ -438,6 +438,10 @@ GEM
     thruster (0.1.16-x86_64-linux)
     timeout (0.4.4)
     tsort (0.2.0)
+    twilio-ruby (7.8.6)
+      faraday (>= 0.9, < 3.0)
+      jwt (>= 1.5, < 4.0)
+      nokogiri (>= 1.6, < 2.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (3.2.0)
@@ -505,6 +509,7 @@ DEPENDENCIES
   solid_cache
   solid_queue (~> 1.1.0)
   thruster
+  twilio-ruby (~> 7.3)
   tzinfo-data
   vcr (~> 6.3)
   webmock (~> 3.24)
