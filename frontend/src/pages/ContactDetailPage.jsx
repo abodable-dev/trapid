@@ -26,6 +26,7 @@ import ContactMapCard from '../components/contacts/ContactMapCard'
 import ContactGroupsSection from '../components/contacts/ContactGroupsSection'
 import ContactRelationshipsSection from '../components/contacts/ContactRelationshipsSection'
 import CommunicationsTab from '../components/communications/CommunicationsTab'
+import BackButton from '../components/common/BackButton'
 
 // Helper function to format ABN as XX XXX XXX XXX
 const formatABN = (abn) => {
@@ -797,12 +798,7 @@ export default function ContactDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center py-12">
           <div className="text-red-600 dark:text-red-400 mb-4">{error || 'Contact not found'}</div>
-          <button
-            onClick={() => navigate(-1)}
-            className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
-          >
-            Back
-          </button>
+          <BackButton />
         </div>
       </div>
     )
@@ -815,13 +811,7 @@ export default function ContactDetailPage() {
         <div className="max-w-7xl mx-auto pt-1 pb-1">
         {/* Header */}
         <div>
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 mb-1"
-          >
-            <ArrowLeftIcon className="h-3 w-3" />
-            Back
-          </button>
+          <BackButton className="mb-1" />
 
           <div className="flex items-start justify-between">
             <div>

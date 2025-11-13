@@ -28,6 +28,7 @@ import CommunicationsTab from '../components/communications/CommunicationsTab'
 import LocationMapCard from '../components/job-detail/LocationMapCard'
 import AddressAutocomplete from '../components/common/AddressAutocomplete'
 import JobContactsSection from '../components/job-detail/JobContactsSection'
+import BackButton from '../components/common/BackButton'
 
 const tabs = [
   { name: 'Overview', slug: 'overview' },
@@ -317,12 +318,7 @@ export default function JobDetailPage() {
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
           <div className="px-8 py-6">
-            <button
-              onClick={() => navigate(-1)}
-              className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-4"
-            >
-              ← Back
-            </button>
+            <BackButton className="mb-4" />
 
             <div className="flex items-center gap-4 mb-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-600">
