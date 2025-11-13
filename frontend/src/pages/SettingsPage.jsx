@@ -7,6 +7,7 @@ import { api } from '../api'
 import XeroConnection from '../components/settings/XeroConnection'
 import OneDriveConnection from '../components/settings/OneDriveConnection'
 import OutlookConnection from '../components/settings/OutlookConnection'
+import TwilioConfiguration from '../components/settings/TwilioConfiguration'
 import FolderTemplatesTab from '../components/settings/FolderTemplatesTab'
 import ScheduleTemplateEditor from '../components/schedule-master/ScheduleTemplateEditor'
 import XeroFieldMappingTab from '../components/settings/XeroFieldMappingTab'
@@ -294,6 +295,7 @@ export default function SettingsPage() {
                 <XeroConnection />
                 <OneDriveConnection />
                 <OutlookConnection />
+                <TwilioConfiguration />
               </div>
             </div>
           </TabPanel>

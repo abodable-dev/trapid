@@ -69,46 +69,6 @@ export default function CopyConsoleButton() {
     }
   }
 
-  const handleCopyBoth = async () => {
-    try {
-      // First copy console logs
-      const consoleText = consoleCapture.getFormattedLogs()
-      const header = `=== Console Logs Captured ===\nTotal Entries: ${consoleCapture.getLogs().length}\nCaptured at: ${new Date().toLocaleString()}\n\n`
-      const fullText = header + consoleText
-
-      // Then take screenshot
-      const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(document.body, {
-        logging: false,
-        useCORS: true
-      })
-
-      canvas.toBlob(async (blob) => {
-        try {
-          // Copy both to clipboard - clipboard API supports multiple items
-          await navigator.clipboard.write([
-            new ClipboardItem({
-              'text/plain': new Blob([fullText], { type: 'text/plain' }),
-              'image/png': blob
-            })
-          ])
-          setCopied(true)
-          setTimeout(() => setCopied(false), 2000)
-          console.log('📋📸 Console logs and screenshot copied to clipboard!')
-        } catch (err) {
-          // Fallback: just copy text if combined copy fails
-          await navigator.clipboard.writeText(fullText)
-          console.warn('Could not copy image to clipboard, copied console logs only')
-          setCopied(true)
-          setTimeout(() => setCopied(false), 2000)
-        }
-      })
-    } catch (err) {
-      console.error('Combined copy failed:', err)
-      alert('Failed to copy. Please try again.')
-    }
-  }
-
   // Only show in development or staging
   const isDev = import.meta.env.DEV
   const isStaging = window.location.hostname.includes('vercel.app') ||
@@ -133,20 +93,20 @@ export default function CopyConsoleButton() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/30 dark:bg-gray-800/30 backdrop-blur-md shadow-lg border-t border-gray-200/30 dark:border-gray-700/30 z-[9999] transition-all duration-300 group hover:py-1.5 py-0.5">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-lg border-t border-gray-200 dark:border-gray-700 z-[9999] py-2">
       <div className="flex items-center justify-between gap-3 max-w-screen-2xl mx-auto px-4">
-        {/* Left side - Info (always visible) */}
+        {/* Left side - Info */}
         <div className="flex items-center gap-3">
           <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
             Console
           </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
             {logCount}
           </span>
         </div>
 
-        {/* Center - Actions (visible on hover) */}
-        <div className="flex items-center gap-2 flex-1 justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 max-h-0 group-hover:max-h-10 overflow-hidden">
+        {/* Center - Actions (always visible) */}
+        <div className="flex items-center gap-2 flex-1 justify-center">
           <button
             onClick={handleCopy}
             disabled={logCount === 0}
@@ -191,22 +151,15 @@ export default function CopyConsoleButton() {
           >
             Screenshot
           </button>
-
-          <button
-            onClick={handleCopyBoth}
-            className="px-2.5 py-1 rounded text-xs font-medium bg-indigo-100 dark:bg-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-600 transition-all"
-          >
-            Copy Both
-          </button>
         </div>
 
-        {/* Right side - Close (visible on hover) */}
+        {/* Right side - Close */}
         <button
           onClick={() => setIsVisible(false)}
-          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 transition-colors"
           title="Hide console tools"
         >
-          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>

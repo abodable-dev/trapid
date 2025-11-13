@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import packageJson from '../../../package.json'
+import BackButton from '../common/BackButton'
 import {
   Dialog,
   DialogBackdrop,
@@ -35,6 +36,7 @@ import {
   ChatBubbleLeftRightIcon,
   AcademicCapIcon,
   BanknotesIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
@@ -52,6 +54,7 @@ const navigation = [
   { name: 'Health', href: '/health', icon: PlusIcon },
   { name: 'Performance', href: '/system/performance', icon: CpuChipIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+  { name: 'DHTMLX Gantt', href: '/settings?tab=schedule-master&openGantt=dhtmlx', icon: ChartBarIcon },
 ]
 
 // Bottom navigation items
@@ -496,6 +499,9 @@ export default function AppLayout({ children }) {
           sidebarCollapsed ? "lg:pt-10" : ""
         )}>
           <div className="px-4 sm:px-6 lg:px-8">
+            <div className="mb-4">
+              <BackButton />
+            </div>
             {children}
           </div>
         </main>

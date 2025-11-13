@@ -517,13 +517,13 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       },
       {
         name: 'predecessor_editor',
-        height: 300,
+        height: 150, // Start small, will expand dynamically
         type: 'template',
         map_to: 'my_template'
       },
       {
         name: 'successor_display',
-        height: 250,
+        height: 150, // Start small, will expand dynamically
         type: 'successor_template',
         map_to: 'successor_display'
       }
@@ -536,7 +536,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     // Custom template for embedded predecessor editor
     gantt.form_blocks.template = {
       render: function(sns) {
-        return `<div class='gantt_cal_ltext predecessor-editor-container' style='height:${sns.height}px; overflow-y: auto; padding: 8px;'>
+        return `<div class='gantt_cal_ltext predecessor-editor-container' style='min-height:${sns.height}px; max-height: 500px; overflow-y: auto; padding: 8px;'>
           <div class='predecessor-list'></div>
           <button type='button' class='add-predecessor-btn' style='
             width: 100%;
@@ -724,7 +724,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     // Custom form block for successor (dependent tasks) display
     gantt.form_blocks.successor_template = {
       render: function(sns) {
-        return `<div class='gantt_cal_ltext successor-display-container' style='height:${sns.height}px; overflow-y: auto; padding: 4px 8px; background-color: #f9fafb; border-radius: 4px;'>
+        return `<div class='gantt_cal_ltext successor-display-container' style='min-height:${sns.height}px; max-height: 600px; overflow-y: auto; padding: 4px 8px; background-color: #f9fafb; border-radius: 4px;'>
           <div class='successor-list'></div>
         </div>`
       },
@@ -732,10 +732,25 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         const listContainer = node.querySelector('.successor-list')
         const currentTaskNumber = tasks.findIndex(t => t.id === task.id) + 1
 
-        // Find all tasks that have this task as a predecessor
+        // Find all tasks that have this task as a predecessor OR had it removed
         const successors = []
+        const removedSuccessors = []
+
         tasks.forEach((t, idx) => {
           const taskNumber = idx + 1
+
+          // Check if this task has broken dependencies and used to depend on current task
+          if (t.dependencies_broken) {
+            // This task might have had the current task as a predecessor
+            // We'll show it in the removed section
+            removedSuccessors.push({
+              taskId: t.id,
+              taskNumber: taskNumber,
+              name: t.name
+            })
+          }
+
+          // Check current dependencies
           if (t.predecessor_ids && t.predecessor_ids.length > 0) {
             const hasDependency = t.predecessor_ids.some(pred => {
               const predId = typeof pred === 'object' ? pred.id : pred
@@ -749,6 +764,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               })
 
               successors.push({
+                taskId: t.id,
                 taskNumber: taskNumber,
                 name: t.name,
                 type: typeof relationship === 'object' ? relationship.type : 'FS',
@@ -758,46 +774,185 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           }
         })
 
-        if (successors.length === 0) {
+        if (successors.length === 0 && removedSuccessors.length === 0) {
           listContainer.innerHTML = '<div style="text-align: center; padding: 12px; color: #6b7280; font-size: 13px;">No tasks depend on this task.</div>'
           return
         }
 
         listContainer.innerHTML = `
-          <div style="margin-bottom: 6px; padding: 6px 8px; background: #e0e7ff; border-radius: 4px; border-left: 3px solid #4f46e5;">
-            <div style="font-size: 12px; color: #4338ca; font-weight: 600;">
-              ${successors.length} task${successors.length === 1 ? '' : 's'} depend${successors.length === 1 ? 's' : ''} on this task
+          ${successors.length > 0 ? `
+            <div style="margin-bottom: 6px; padding: 6px 8px; background: #e0e7ff; border-radius: 4px; border-left: 3px solid #4f46e5;">
+              <div style="font-size: 12px; color: #4338ca; font-weight: 600;">
+                ${successors.length} task${successors.length === 1 ? '' : 's'} depend${successors.length === 1 ? 's' : ''} on this task
+              </div>
             </div>
-          </div>
-          ${successors.map(succ => {
-            const relationshipText = `${succ.type}${succ.lag !== 0 ? (succ.lag > 0 ? `+${succ.lag}` : succ.lag) : ''}`
-            const typeLabel = {
-              'FS': 'Finish → Start',
-              'SS': 'Start → Start',
-              'FF': 'Finish → Finish',
-              'SF': 'Start → Finish'
-            }[succ.type] || succ.type
+            ${successors.map(succ => {
+              const relationshipText = `${succ.type}${succ.lag !== 0 ? (succ.lag > 0 ? `+${succ.lag}` : succ.lag) : ''}`
+              const typeLabel = {
+                'FS': 'Finish → Start',
+                'SS': 'Start → Start',
+                'FF': 'Finish → Finish',
+                'SF': 'Start → Finish'
+              }[succ.type] || succ.type
 
-            return `
-              <div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; margin-bottom: 4px; background: white; border: 1px solid #e5e7eb; border-radius: 4px;">
-                <div style="flex-shrink: 0; width: 36px; height: 36px; background: #dbeafe; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #1e40af; font-size: 13px;">
+              return `
+                <div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; margin-bottom: 4px; background: white; border: 1px solid #e5e7eb; border-radius: 4px;">
+                  <div style="flex-shrink: 0; width: 36px; height: 36px; background: #dbeafe; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #1e40af; font-size: 13px;">
+                    #${succ.taskNumber}
+                  </div>
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 13px; font-weight: 500; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                      ${succ.name}
+                    </div>
+                    <div style="font-size: 11px; color: #6b7280; margin-top: 1px;">
+                      ${typeLabel}${succ.lag !== 0 ? ` (${succ.lag > 0 ? '+' : ''}${succ.lag} days)` : ''}
+                    </div>
+                  </div>
+                  <div style="flex-shrink: 0; padding: 3px 6px; background: #f3f4f6; border-radius: 4px; font-size: 11px; font-weight: 600; color: #4b5563;">
+                    ${relationshipText}
+                  </div>
+                </div>
+              `
+            }).join('')}
+          ` : ''}
+
+          ${removedSuccessors.length > 0 ? `
+            <div style="margin-top: ${successors.length > 0 ? '12px' : '0'}; margin-bottom: 6px; padding: 6px 8px; background: #fef3c7; border-radius: 4px; border-left: 3px solid #f59e0b;">
+              <div style="font-size: 12px; color: #d97706; font-weight: 600;">
+                ⚠️ ${removedSuccessors.length} dependency removed
+              </div>
+            </div>
+            ${removedSuccessors.map(succ => `
+              <div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; margin-bottom: 4px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px;">
+                <div style="flex-shrink: 0; width: 36px; height: 36px; background: #fef3c7; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #d97706; font-size: 13px;">
                   #${succ.taskNumber}
                 </div>
                 <div style="flex: 1; min-width: 0;">
-                  <div style="font-size: 13px; font-weight: 500; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <div style="font-size: 13px; font-weight: 500; color: #78350f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     ${succ.name}
                   </div>
-                  <div style="font-size: 11px; color: #6b7280; margin-top: 1px;">
-                    ${typeLabel}${succ.lag !== 0 ? ` (${succ.lag > 0 ? '+' : ''}${succ.lag} days)` : ''}
+                  <div style="font-size: 11px; color: #a16207; margin-top: 1px;">
+                    Dependency removed due to conflict
                   </div>
                 </div>
-                <div style="flex-shrink: 0; padding: 3px 6px; background: #f3f4f6; border-radius: 4px; font-size: 11px; font-weight: 600; color: #4b5563;">
-                  ${relationshipText}
-                </div>
+                <button
+                  type="button"
+                  class="restore-dependency-btn"
+                  data-task-id="${succ.taskId}"
+                  data-predecessor-id="${currentTaskNumber}"
+                  style="flex-shrink: 0; padding: 4px 8px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-size: 11px; font-weight: 500; cursor: pointer; transition: background 0.2s;"
+                  onmouseover="this.style.background='#2563eb'"
+                  onmouseout="this.style.background='#3b82f6'"
+                >
+                  Restore
+                </button>
               </div>
-            `
-          }).join('')}
+            `).join('')}
+          ` : ''}
         `
+
+        // Add event listeners for restore buttons
+        const restoreButtons = listContainer.querySelectorAll('.restore-dependency-btn')
+        restoreButtons.forEach(btn => {
+          btn.addEventListener('click', function(e) {
+            e.preventDefault()
+            const successorTaskId = parseInt(this.getAttribute('data-task-id'))
+            const predecessorTaskNumber = parseInt(this.getAttribute('data-predecessor-id'))
+
+            console.log('🔄 Restoring dependency:', { successorTaskId, predecessorTaskNumber })
+
+            // Find the task in gantt
+            const successorTask = gantt.getTask(successorTaskId)
+            if (successorTask) {
+              // Check if restoring this dependency would create a circular dependency
+              const successorTaskNumber = tasks.findIndex(t => t.id === successorTaskId) + 1
+
+              // First check: Is the task trying to depend on itself?
+              if (predecessorTaskNumber === successorTaskNumber) {
+                const errorMsg = document.createElement('div')
+                errorMsg.style.cssText = 'margin-top: 8px; padding: 8px; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 4px; color: #991b1b; font-size: 12px;'
+                errorMsg.textContent = '⚠️ Cannot restore: A task cannot depend on itself'
+                this.closest('div[style*="background: #fffbeb"]').appendChild(errorMsg)
+                setTimeout(() => errorMsg.remove(), 3000)
+                return
+              }
+
+              // Helper to check circular dependencies
+              const wouldCreateCircular = (taskNum, targetNum, visited = new Set()) => {
+                if (visited.has(taskNum)) return false
+                visited.add(taskNum)
+
+                const taskToCheck = tasks[taskNum - 1]
+                if (!taskToCheck || !taskToCheck.predecessor_ids) return false
+
+                for (const pred of taskToCheck.predecessor_ids) {
+                  const predId = typeof pred === 'object' ? pred.id : pred
+                  if (predId === targetNum) return true
+                  if (wouldCreateCircular(predId, targetNum, new Set(visited))) return true
+                }
+                return false
+              }
+
+              // Check if adding predecessorTaskNumber to successorTaskNumber would create circular dependency
+              if (wouldCreateCircular(predecessorTaskNumber, successorTaskNumber)) {
+                // Show error message in the UI
+                const errorMsg = document.createElement('div')
+                errorMsg.style.cssText = 'margin-top: 8px; padding: 8px; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 4px; color: #991b1b; font-size: 12px;'
+                errorMsg.textContent = '⚠️ Cannot restore: This would create a circular dependency'
+                this.closest('div[style*="background: #fffbeb"]').appendChild(errorMsg)
+
+                // Remove error message after 3 seconds
+                setTimeout(() => errorMsg.remove(), 3000)
+                return
+              }
+
+              // Add the predecessor back
+              if (!successorTask.predecessor_ids) {
+                successorTask.predecessor_ids = []
+              }
+              successorTask.predecessor_ids.push({
+                id: predecessorTaskNumber,
+                type: 'FS',
+                lag: 0
+              })
+
+              // Clear dependencies_broken flag
+              successorTask.dependencies_broken = false
+              successorTask.$dependenciesBroken = false
+
+              // Save to backend
+              onUpdateTask(successorTaskId, {
+                predecessor_ids: successorTask.predecessor_ids,
+                dependencies_broken: false
+              })
+
+              // Update the Gantt chart
+              gantt.updateTask(successorTaskId)
+
+              // Remove the restored dependency from the UI immediately
+              const removedSection = this.closest('div[style*="background: #fffbeb"]')
+              if (removedSection) {
+                removedSection.remove()
+              }
+
+              // Check if there are any more removed dependencies
+              const remainingRemoved = listContainer.querySelectorAll('.restore-dependency-btn')
+              if (remainingRemoved.length === 0) {
+                // Remove the entire warning section if no more removed dependencies
+                const warningSection = listContainer.querySelector('div[style*="background: #fef3c7"]')
+                if (warningSection) {
+                  warningSection.remove()
+                }
+              } else {
+                // Update the count
+                const countText = listContainer.querySelector('div[style*="background: #fef3c7"] div')
+                if (countText) {
+                  countText.textContent = `⚠️ ${remainingRemoved.length} dependency removed`
+                }
+              }
+            }
+          })
+        })
       },
       get_value: function(node, task, section) {
         // Read-only display, no value to return
@@ -1187,7 +1342,86 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         const actuallyMoved = finalStart.getTime() !== originalStartDate.getTime()
 
         if (actuallyMoved) {
-          // Check if task has dependencies
+          // FIRST: Check if any SUCCESSOR tasks (tasks that depend on THIS task) are locked
+          console.log('🔍 Checking for locked successor tasks that depend on task:', task.id, task.text)
+          const lockedSuccessors = []
+
+          // Find all tasks that have this task as a predecessor
+          gantt.eachTask((successorTask) => {
+            if (successorTask.predecessor_ids && successorTask.predecessor_ids.length > 0) {
+              const dependsOnThisTask = successorTask.predecessor_ids.some(pred => {
+                const predId = typeof pred === 'object' ? pred.id : pred
+                return predId === task.id
+              })
+
+              if (dependsOnThisTask) {
+                // Check if this successor is locked (has any status checkbox checked)
+                const isLocked = successorTask.confirm || successorTask.supplier_confirm ||
+                                successorTask.start || successorTask.complete
+                if (isLocked) {
+                  console.log('🔒 Found locked successor:', successorTask.id, successorTask.text)
+                  lockedSuccessors.push(successorTask)
+                }
+              }
+            }
+          })
+
+          if (lockedSuccessors.length > 0) {
+            // Show warning dialog
+            console.log('⚠️ Moving this task will break dependencies with locked successors')
+            const successorNames = lockedSuccessors.map(s => `#${s.id} ${s.text}`).join(', ')
+            const confirmed = window.confirm(
+              `Warning: Moving this task will break dependencies!\n\n` +
+              `The following locked tasks depend on this task:\n${successorNames}\n\n` +
+              `Do you want to:\n` +
+              `• YES: Drop dependencies (successor tasks will show checkered pattern)\n` +
+              `• NO: Cancel move and keep dependencies intact`
+            )
+
+            if (confirmed) {
+              // User chose to drop dependencies
+              console.log('✂️ Dropping dependencies for locked successor tasks')
+
+              // Remove this task from each successor's predecessor_ids and mark as broken
+              lockedSuccessors.forEach(successorTask => {
+                // Remove this task from predecessor_ids
+                successorTask.predecessor_ids = successorTask.predecessor_ids.filter(pred => {
+                  const predId = typeof pred === 'object' ? pred.id : pred
+                  return predId !== task.id
+                })
+
+                // Mark dependencies as broken
+                successorTask.dependencies_broken = true
+                successorTask.$dependenciesBroken = true
+
+                console.log('🔗❌ Marked task', successorTask.id, 'with broken dependencies')
+
+                // Save the successor task with broken dependencies
+                const updateData = {
+                  predecessor_ids: successorTask.predecessor_ids,
+                  dependencies_broken: true
+                }
+                onUpdateTask(successorTask.id, updateData)
+
+                // Update UI
+                gantt.updateTask(successorTask.id)
+              })
+
+              // Full render to update all styling
+              gantt.render()
+            } else {
+              // User cancelled - revert the task to original position
+              console.log('↩️ User cancelled - reverting to original position')
+              task.start_date = originalStart
+              gantt.updateTask(task.id)
+              gantt.render()
+              isDragging.current = false
+              delete task.$originalStart
+              return false // Stop further processing
+            }
+          }
+
+          // SECOND: Check if THIS task has dependencies (existing logic)
           console.log('🔍 Checking dependencies for task:', task.id, task.text)
           console.log('🔍 task.predecessor_ids:', task.predecessor_ids)
           const hasDependencies = task.predecessor_ids && task.predecessor_ids.length > 0
@@ -1991,7 +2225,13 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           } else {
             // All checkboxes are now unchecked - show dialog to ask user what to do
             console.log('⚠️ All checkboxes unchecked - showing position dialog')
-            // Revert the checkbox state in the UI until user confirms in dialog
+
+            // CRITICAL: Set dialog state FIRST, before gantt.updateTask() which might trigger re-render
+            console.log('📋 Setting position dialog state BEFORE gantt.updateTask:', { taskId: task.id, field, checked })
+            setPositionDialogTask({ task, field, checked })
+            setShowPositionDialog(true)
+
+            // Now revert the checkbox state in the UI until user confirms in dialog
             task[field] = !checked
             gantt.updateTask(taskId)
             // PERFORMANCE: updateTask already triggers render
@@ -1999,9 +2239,6 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             // IMMEDIATELY re-enable task updates (don't wait for timeout)
             isDragging.current = false
 
-            console.log('📋 Setting position dialog state:', { task: task.id, field, checked })
-            setPositionDialogTask({ task, field, checked })
-            setShowPositionDialog(true)
             console.log('✅ Position dialog should now be visible')
           }
         }
@@ -2819,9 +3056,11 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     console.log('Loaded:', ganttTasks.length, 'tasks and', ganttLinks.length, 'links')
 
-    // PERFORMANCE: Single render after data load with setSizes
+    // CRITICAL: Force immediate render to update lock checkbox states
+    // (debounced render was causing lock checkboxes to not update after data reload)
     gantt.setSizes()
-    debouncedRender(20)
+    gantt.render()
+    console.log('✅ Forced immediate render after data load')
 
     // Scroll to show yesterday's date (after gantt fully renders)
     setTimeout(() => {
@@ -3979,30 +4218,64 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               </button>
 
               <button
-                onClick={() => {
+                onClick={async () => {
+                  console.log('🔵 Auto-Calculate button clicked!')
                   const { task: dialogTask, field, checked } = positionDialogTask
+                  console.log('🔵 Dialog task data:', { taskId: dialogTask.id, field, checked })
 
                   // Get task reference to access its properties
                   const task = gantt.getTask(dialogTask.id)
+                  console.log('🔵 Got task from gantt:', { id: task.id, manually_positioned: task.manually_positioned })
 
-                  // Update local tracking immediately
-                  task.manually_positioned = false
-                  task.$manuallyPositioned = false
-                  manuallyPositionedTasks.current.delete(task.id)
-                  task[field] = checked
+                  // CRITICAL: Set isSaving flag FIRST to block ALL auto-saves
+                  isSaving.current = true
+                  console.log('🔵 Set isSaving=true to prevent auto-save during unlock')
 
-                  // Save to backend - uncheck the checkbox and unlock
-                  // CRITICAL: Preserve predecessor_ids
-                  // Backend reload will automatically update the UI
-                  onUpdateTask(task.id, {
-                    [field]: checked,
-                    manually_positioned: false,
-                    start_date: 0,  // 0 means auto-calculate from today
-                    predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
-                  })
-
+                  // Close dialog immediately so user sees it's processing
+                  console.log('🔵 Closing dialog')
                   setShowPositionDialog(false)
                   setPositionDialogTask(null)
+
+                  try {
+                    // Make API call FIRST, before any UI updates
+                    // This prevents gantt.updateTask() from triggering unwanted auto-saves
+                    console.log('🔵 Calling onUpdateTask with:', {
+                      [field]: checked,
+                      manually_positioned: false,
+                      start_date: 0,
+                      predecessor_ids: task.predecessor_ids || []
+                    })
+
+                    const responseData = await onUpdateTask(task.id, {
+                      [field]: checked,
+                      manually_positioned: false,
+                      start_date: 0,  // 0 means auto-calculate from today
+                      predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
+                    })
+                    console.log('✅ Backend save completed, response:', responseData)
+
+                    // NOW update local task with confirmed backend data
+                    task.manually_positioned = false
+                    task.$manuallyPositioned = false
+                    task[field] = checked
+                    manuallyPositionedTasks.current.delete(task.id)
+                    console.log('🔵 Updated local task properties with backend data')
+
+                    // Update DHTMLX Gantt UI
+                    gantt.updateTask(task.id)
+                    gantt.render()
+                    console.log('✅ UI updated with unlocked state')
+                  } catch (error) {
+                    console.error('❌ Backend save failed:', error)
+                    // Revert UI on error
+                    task[field] = !checked
+                    gantt.updateTask(task.id)
+                    gantt.render()
+                  } finally {
+                    // Reset isSaving flag after everything completes
+                    isSaving.current = false
+                    console.log('🔵 Reset isSaving=false after all operations complete')
+                  }
                 }}
                 className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg"
               >

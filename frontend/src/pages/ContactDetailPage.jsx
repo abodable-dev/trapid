@@ -25,6 +25,7 @@ import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
 import ContactMapCard from '../components/contacts/ContactMapCard'
 import ContactGroupsSection from '../components/contacts/ContactGroupsSection'
 import ContactRelationshipsSection from '../components/contacts/ContactRelationshipsSection'
+import SmsConversation from '../components/contacts/SmsConversation'
 
 // Helper function to format ABN as XX XXX XXX XXX
 const formatABN = (abn) => {
@@ -175,8 +176,8 @@ export default function ContactDetailPage() {
     { id: 'contact-information', label: 'Contact Information' },
     { id: 'contact-persons', label: 'Contact Persons' },
     { id: 'business-details', label: 'Business Details' },
-    { id: 'system-info', label: 'System Info' },
     { id: 'contact-groups', label: 'Contact Groups' },
+    { id: 'system-info', label: 'System Info' },
     { id: 'quick-stats', label: 'Quick Stats' }
   ]
 
@@ -737,6 +738,8 @@ export default function ContactDetailPage() {
         first_name: person.first_name,
         last_name: person.last_name,
         email: person.email,
+        mobile: person.mobile,
+        role: person.role,
         include_in_emails: person.include_in_emails,
         is_primary: person.is_primary,
         _destroy: person._destroy
@@ -909,6 +912,16 @@ export default function ContactDetailPage() {
               } whitespace-nowrap py-1 px-1 border-b-2 font-medium text-xs transition-colors`}
             >
               Related Contacts
+            </button>
+            <button
+              onClick={() => setSearchParams({ tab: 'sms' })}
+              className={`${
+                activeTab === 'sms'
+                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              } whitespace-nowrap py-1 px-1 border-b-2 font-medium text-xs transition-colors`}
+            >
+              SMS
             </button>
             {contact['is_supplier?'] && (
               <button
@@ -1646,6 +1659,19 @@ export default function ContactDetailPage() {
               <p className="text-gray-500 dark:text-gray-400 text-sm mt-4">No additional business details available</p>
             )}
           </div>
+
+          {/* Contact Groups Section */}
+          <div
+            ref={(el) => (sectionRefs.current['contact-groups'] = el)}
+            id="contact-groups"
+          >
+            <ContactGroupsSection
+              contactGroups={contactGroups}
+              onUpdate={handleContactGroupsUpdate}
+              isEditMode={isPageEditMode}
+              contactId={id}
+            />
+          </div>
         </div>
 
         {/* Sidebar */}
@@ -1762,20 +1788,6 @@ export default function ContactDetailPage() {
             </div>
           </div>
 
-
-          {/* Contact Groups Section */}
-          <div
-            ref={(el) => (sectionRefs.current['contact-groups'] = el)}
-            id="contact-groups"
-          >
-            <ContactGroupsSection
-              contactGroups={contactGroups}
-              onUpdate={handleContactGroupsUpdate}
-              isEditMode={isPageEditMode}
-              contactId={id}
-            />
-          </div>
-
           {/* Quick Stats */}
           <div
             ref={(el) => (sectionRefs.current['quick-stats'] = el)}
@@ -1810,6 +1822,13 @@ export default function ContactDetailPage() {
       {activeTab === 'relationships' && (
         <div className="mt-6">
           <ContactRelationshipsSection contactId={id} isEditMode={isPageEditMode} />
+        </div>
+      )}
+
+      {/* SMS Tab */}
+      {activeTab === 'sms' && (
+        <div className="mt-6 max-w-4xl mx-auto">
+          <SmsConversation contact={contact} />
         </div>
       )}
 

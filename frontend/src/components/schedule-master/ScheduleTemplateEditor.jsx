@@ -238,6 +238,21 @@ export default function ScheduleTemplateEditor() {
     }
   }, [location])
 
+  // Auto-open DHTMLX Gantt view when openGantt query parameter is present
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const openGanttParam = params.get('openGantt')
+
+    if (openGanttParam === 'dhtmlx' && selectedTemplate && rows.length > 0) {
+      // Small delay to ensure everything is loaded
+      setTimeout(() => {
+        setGanttViewType('dhtmlx')
+        localStorage.setItem('gantt-view-type', 'dhtmlx')
+        setShowGanttView(true)
+      }, 300)
+    }
+  }, [location.search, selectedTemplate, rows])
+
   useEffect(() => {
     if (selectedTemplate) {
       loadTemplateRows(selectedTemplate.id)
@@ -514,7 +529,7 @@ export default function ScheduleTemplateEditor() {
           start_date: parseInt(row['Start Date']) || 0,
           documentation_category_ids: parseDocumentationCategoryIds(row),
           po_required: row['PO Required'] === 'Yes',
-          create_po_on_job_start: row['Auto PO'] === 'Yes',
+          create_po_on_job_start: false, // Set to false on import - can enable manually after assigning supplier
           critical_po: row['Critical'] === 'Yes',
           tags: row['Tags'] ? row['Tags'].split(',').map(t => t.trim()) : [],
           require_photo: row['Photo'] === 'Yes',
@@ -538,7 +553,19 @@ export default function ScheduleTemplateEditor() {
         await loadTemplateRows(selectedTemplate.id)
       } catch (err) {
         console.error('Failed to import Excel file:', err)
-        showToast('Failed to import Excel file', 'error')
+        console.error('Error details:', {
+          message: err.message,
+          stack: err.stack,
+          response: err.response?.data,
+          status: err.response?.status
+        })
+
+        const errorMessage = err.response?.data?.error ||
+                           err.response?.data?.message ||
+                           err.message ||
+                           'Unknown error occurred'
+
+        showToast(`Failed to import: ${errorMessage}`, 'error')
       }
     }
     reader.readAsArrayBuffer(file)
@@ -602,11 +629,15 @@ export default function ScheduleTemplateEditor() {
       // Reload all rows to get updated calculated fields like predecessor_display
       await loadTemplateRows(selectedTemplate.id)
       console.log('✅ ScheduleTemplateEditor: Rows reloaded successfully')
+
+      // Return the response data for callers who need it
+      return response.data
     } catch (err) {
       console.error('❌ Failed to update row:', err)
       console.error('❌ Error response:', err.response?.data)
       console.error('❌ Error status:', err.response?.status)
       showToast('Failed to update row', 'error')
+      throw err
     }
   }
 
@@ -1572,11 +1603,11 @@ export default function ScheduleTemplateEditor() {
           isOpen={showGanttView}
           onClose={() => setShowGanttView(false)}
           tasks={rows}
-          onUpdateTask={(taskId, updates) => {
+          onUpdateTask={async (taskId, updates) => {
             // Find the row and update it
             const rowIndex = rows.findIndex(r => r.id === taskId)
             if (rowIndex !== -1) {
-              handleUpdateRow(taskId, updates)
+              return await handleUpdateRow(taskId, updates)
             }
           }}
         />

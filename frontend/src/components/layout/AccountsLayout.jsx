@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
+import BackButton from '../common/BackButton'
 
 const secondaryNavigation = [
   { name: 'Profile', href: '/profile' },
@@ -12,6 +13,11 @@ export default function AccountsLayout({ children }) {
   return (
     <main>
       <h1 className="sr-only">Account Settings</h1>
+
+      {/* Back Button */}
+      <div className="px-4 sm:px-6 lg:px-8 pt-4 mb-4">
+        <BackButton />
+      </div>
 
       <header className="border-b border-gray-200 dark:border-white/5">
         {/* Secondary navigation */}
