@@ -14,8 +14,8 @@ export default function ContactPersonsSection({ contactPersons = [], onUpdate, i
 
   const fetchRoles = async () => {
     try {
-      const response = await api.get('/contact_roles')
-      setAvailableRoles(response.data.filter(role => role.active))
+      const response = await api.get('/api/v1/contact_roles')
+      setAvailableRoles(response.filter(role => role.active))
     } catch (error) {
       console.error('Failed to fetch roles:', error)
     }

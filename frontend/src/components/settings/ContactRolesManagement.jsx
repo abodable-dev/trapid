@@ -15,8 +15,8 @@ export default function ContactRolesManagement() {
 
   const fetchRoles = async () => {
     try {
-      const response = await api.get('/contact_roles')
-      setRoles(response.data)
+      const response = await api.get('/api/v1/contact_roles')
+      setRoles(response)
     } catch (error) {
       console.error('Failed to fetch contact roles:', error)
     } finally {
@@ -28,45 +28,45 @@ export default function ContactRolesManagement() {
     if (!newRole.trim()) return
 
     try {
-      const response = await api.post('/contact_roles', {
+      const response = await api.post('/api/v1/contact_roles', {
         contact_role: {
           name: newRole.trim(),
           active: true
         }
       })
-      setRoles([...roles, response.data])
+      setRoles([...roles, response])
       setNewRole('')
       setShowAddForm(false)
     } catch (error) {
       console.error('Failed to add role:', error)
-      alert(error.response?.data?.errors?.join(', ') || 'Failed to add role')
+      alert(error.message || 'Failed to add role')
     }
   }
 
   const handleUpdateRole = async (role) => {
     try {
-      const response = await api.patch(`/contact_roles/${role.id}`, {
+      const response = await api.patch(`/api/v1/contact_roles/${role.id}`, {
         contact_role: {
           name: role.name,
           active: role.active
         }
       })
-      setRoles(roles.map(r => r.id === role.id ? response.data : r))
+      setRoles(roles.map(r => r.id === role.id ? response : r))
       setEditingRole(null)
     } catch (error) {
       console.error('Failed to update role:', error)
-      alert(error.response?.data?.errors?.join(', ') || 'Failed to update role')
+      alert(error.message || 'Failed to update role')
     }
   }
 
   const handleToggleActive = async (role) => {
     try {
-      const response = await api.patch(`/contact_roles/${role.id}`, {
+      const response = await api.patch(`/api/v1/contact_roles/${role.id}`, {
         contact_role: {
           active: !role.active
         }
       })
-      setRoles(roles.map(r => r.id === role.id ? response.data : r))
+      setRoles(roles.map(r => r.id === role.id ? response : r))
     } catch (error) {
       console.error('Failed to toggle role status:', error)
       alert('Failed to update role status')
@@ -79,7 +79,7 @@ export default function ContactRolesManagement() {
     }
 
     try {
-      await api.delete(`/contact_roles/${roleId}`)
+      await api.delete(`/api/v1/contact_roles/${roleId}`)
       setRoles(roles.filter(r => r.id !== roleId))
     } catch (error) {
       console.error('Failed to delete role:', error)
