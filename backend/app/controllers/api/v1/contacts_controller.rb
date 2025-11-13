@@ -1016,7 +1016,7 @@ module Api
           contact_group_ids: [],
           new_contact_group_names: [],
           # Nested attributes for contact persons
-          contact_persons_attributes: [:id, :first_name, :last_name, :email, :include_in_emails, :is_primary, :_destroy],
+          contact_persons_attributes: [:id, :first_name, :last_name, :email, :role, :include_in_emails, :is_primary, :_destroy],
           # Nested attributes for contact addresses
           contact_addresses_attributes: [:id, :address_type, :line1, :line2, :line3, :line4, :city, :region, :postal_code, :country, :attention_to, :is_primary, :_destroy]
         )
