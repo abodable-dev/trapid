@@ -9,7 +9,7 @@ import OneDriveConnection from '../components/settings/OneDriveConnection'
 import OutlookConnection from '../components/settings/OutlookConnection'
 import TwilioConfiguration from '../components/settings/TwilioConfiguration'
 import FolderTemplatesTab from '../components/settings/FolderTemplatesTab'
-import ScheduleTemplateEditor from '../components/schedule-master/ScheduleTemplateEditor'
+import ScheduleMasterTabs from '../components/schedule-master/ScheduleMasterTabs'
 import XeroFieldMappingTab from '../components/settings/XeroFieldMappingTab'
 import TablesTab from '../components/settings/TablesTab'
 import SchemaPage from './SchemaPage'
@@ -20,13 +20,14 @@ import SupervisorChecklistTab from '../components/settings/SupervisorChecklistTa
 import WorkflowAdminPage from './WorkflowAdminPage'
 import PublicHolidaysPage from './PublicHolidaysPage'
 import GitBranchVisualization from '../components/settings/GitBranchVisualization'
+import CompanySettingsTab from '../components/settings/CompanySettingsTab'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
   // Map tab names to indices
-  const tabs = ['integrations', 'users', 'contact-roles', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'git', 'deployment']
+  const tabs = ['company', 'integrations', 'users', 'contact-roles', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'git', 'deployment']
 
   // Get initial tab index from URL query parameter
   const getInitialTabIndex = () => {
@@ -123,6 +124,18 @@ export default function SettingsPage() {
       <TabGroup selectedIndex={selectedIndex} onChange={handleTabChange}>
         <div className="px-4 sm:px-6 lg:px-8 py-6">
           <TabList className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 max-w-2xl">
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Company
+            </Tab>
             <Tab
               className={({ selected }) =>
                 `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
@@ -295,6 +308,11 @@ export default function SettingsPage() {
         </div>
 
         <TabPanels>
+          {/* Company Settings Tab */}
+          <TabPanel>
+            <CompanySettingsTab />
+          </TabPanel>
+
           {/* Integrations Tab */}
           <TabPanel>
             <div className="grid max-w-7xl grid-cols-1 gap-x-8 gap-y-10 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8">
@@ -342,9 +360,9 @@ export default function SettingsPage() {
             </div>
           </TabPanel>
 
-          {/* Schedule Master Templates Tab */}
+          {/* Schedule Master Tab with nested sub-tabs */}
           <TabPanel>
-            <ScheduleTemplateEditor />
+            <ScheduleMasterTabs />
           </TabPanel>
 
           {/* Documentation Categories Tab */}

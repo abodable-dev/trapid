@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_14_030048) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_14_233430) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -41,6 +41,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_030048) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "bug_hunter_test_runs", force: :cascade do |t|
+    t.string "test_id", null: false
+    t.string "status", null: false
+    t.text "message"
+    t.float "duration"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_bug_hunter_test_runs_on_created_at"
+    t.index ["test_id"], name: "index_bug_hunter_test_runs_on_test_id"
   end
 
   create_table "chat_messages", force: :cascade do |t|
@@ -105,6 +116,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_030048) do
     t.string "twilio_auth_token"
     t.string "twilio_phone_number"
     t.boolean "twilio_enabled", default: false
+    t.string "timezone", default: "Australia/Brisbane"
   end
 
   create_table "construction_contacts", force: :cascade do |t|

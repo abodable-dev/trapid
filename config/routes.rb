@@ -291,6 +291,17 @@ Rails.application.routes.draw do
         end
       end
 
+      # Bug Hunter Tests for Gantt Testing
+      resources :bug_hunter_tests, only: [:index] do
+        collection do
+          get :history
+          delete :cleanup
+        end
+        member do
+          post :run
+        end
+      end
+
       # Public Holidays
       resources :public_holidays, only: [:index, :create, :destroy] do
         collection do
