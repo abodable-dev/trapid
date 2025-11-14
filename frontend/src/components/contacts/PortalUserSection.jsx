@@ -35,7 +35,7 @@ const PortalUserSection = ({ contact, contactPersons = [], onUpdate }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/contacts/${contact.id}/portal_user`, {
+      const response = await fetch(`${API_URL}/api/v1/contacts/${contact.id}/portal_user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +83,7 @@ const PortalUserSection = ({ contact, contactPersons = [], onUpdate }) => {
         updateData.password = password;
       }
 
-      const response = await fetch(`${API_URL}/contacts/${contact.id}/portal_user`, {
+      const response = await fetch(`${API_URL}/api/v1/contacts/${contact.id}/portal_user`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ const PortalUserSection = ({ contact, contactPersons = [], onUpdate }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/contacts/${contact.id}/portal_user`, {
+      const response = await fetch(`${API_URL}/api/v1/contacts/${contact.id}/portal_user`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

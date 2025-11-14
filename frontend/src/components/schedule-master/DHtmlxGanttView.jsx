@@ -29,6 +29,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   const pendingUnlocks = useRef(new Set()) // Track tasks that are pending unlock (prevent re-locking during data reload)
   const isDragging = useRef(false) // Track if we're currently dragging a task
   const isSaving = useRef(false) // Track if we're currently saving a task update (prevent infinite loops)
+  const isLoadingData = useRef(false) // Track if we're programmatically loading data (suppress drag events during parse)
+  const loadingDataTimeout = useRef(null) // Track the timeout ID for isLoadingData reset
   const renderTimeout = useRef(null) // PERFORMANCE: Debounce render calls to batch multiple updates
   const [publicHolidays, setPublicHolidays] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -1263,8 +1265,28 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     gantt.attachEvent('onAfterTaskDrag', (id, mode, event) => {
       console.log('🎯 onAfterTaskDrag fired:', { id, mode })
 
+      // CRITICAL: Determine if this is a real user drag (has $originalStart) or spurious drag from gantt.parse()
+      const task = gantt.getTask(id)
+      const wasRealDrag = task && task.$originalStart !== undefined
+
+      // CRITICAL: Suppress ONLY spurious drag events during programmatic data loading
+      // gantt.parse() triggers drag events, causing infinite loop of re-renders and flickering
+      // BUT: Let real user drags proceed even if isLoadingData is true (they override the lock)
+      if (isLoadingData.current && !wasRealDrag) {
+        console.log('⏸️ Suppressing spurious drag event during data load')
+        // Reset isDragging but NOT isLoadingData (we're still loading)
+        isDragging.current = false
+        return true
+      }
+
+      // If we get here with isLoadingData=true but wasRealDrag=true, clear the flag
+      // This allows the real drag to proceed and trigger a fresh reload
+      if (isLoadingData.current && wasRealDrag) {
+        console.log('🔓 Real user drag during data load - clearing lock to allow it')
+        isLoadingData.current = false
+      }
+
       if (mode === 'move') {
-        const task = gantt.getTask(id)
         const newStart = task.start_date
         const originalStart = task.$originalStart
 
@@ -1276,6 +1298,11 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
         if (!originalStart) {
           console.log('⚠️ No original start found, allowing drag')
+          // CRITICAL: Reset flags before early return
+          isDragging.current = false
+          if (wasRealDrag) {
+            isLoadingData.current = false
+          }
           return true
         }
 
@@ -1333,6 +1360,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
           // Clean up temporary property
           delete task.$originalStart
+
+          // Reset both flags to allow next reload (race condition fix)
+          isDragging.current = false
+          isLoadingData.current = false
 
           return false // Prevent the drag from being saved
         }
@@ -1433,6 +1464,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               gantt.updateTask(task.id)
               gantt.render()
               isDragging.current = false
+              isLoadingData.current = false
               delete task.$originalStart
               return false // Stop further processing
             }
@@ -1622,6 +1654,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               blockedSuccessors: blockedSuccessors,
               originalStart: originalStart
             })
+
+            // Reset both flags - modal will handle the save when user responds (race condition fix)
+            isDragging.current = false
+            isLoadingData.current = false
 
             // Don't continue processing until user responds to modal
             return false
@@ -1846,6 +1882,15 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         console.log('💾 Saving resized task duration to backend:', updateData)
         onUpdateTask(task.id, updateData, { skipReload: true })
       }
+
+      // CRITICAL: Always reset isDragging flag at the end, no matter which code path was taken
+      // DO NOT reset isLoadingData here - it's managed by useEffect's 500ms timeout
+      // Resetting it here caused render loops when overlapping reloads were in progress
+      isDragging.current = false
+      if (wasRealDrag) {
+        console.log('✅ Real drag completed - isDragging cleared')
+      }
+
       return true
     })
 
@@ -3147,11 +3192,32 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       return
     }
 
+    // CRITICAL: Prevent data reload while actively dragging to avoid render loops
+    if (isDragging.current) {
+      console.log('⏸️ Skipping data reload - drag operation in progress')
+      return
+    }
+
+    // CRITICAL: Prevent cascading reloads if already loading data
+    if (isLoadingData.current) {
+      console.log('⏸️ Skipping data reload - already loading data')
+      return
+    }
+
     console.log('🐛 DHtmlxGanttView: Starting to load', validTasks.length, 'tasks into DHTMLX Gantt')
 
     // Declare variables outside batchUpdate so they're accessible after
     let ganttTasks = []
     let ganttLinks = []
+
+    // CRITICAL: Set flag to suppress spurious drag events during data load
+    // This prevents onAfterTaskDrag from firing 20+ times during gantt.parse()
+    // CRITICAL: Clear any pending timeout from previous load to prevent overlapping timeouts
+    if (loadingDataTimeout.current) {
+      clearTimeout(loadingDataTimeout.current)
+      loadingDataTimeout.current = null
+    }
+    isLoadingData.current = true
 
     // PERFORMANCE: Use batchUpdate for better performance instead of clearAll + parse
     gantt.batchUpdate(() => {
@@ -3371,6 +3437,15 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     gantt.render()
     console.log('✅ Forced immediate render after data load')
 
+    // CRITICAL: Reset flag to allow real drag events again
+    // Use longer timeout to ensure all queued state updates and renders have settled
+    // This prevents cascading re-renders from triggering spurious drag events
+    loadingDataTimeout.current = setTimeout(() => {
+      isLoadingData.current = false
+      loadingDataTimeout.current = null
+      console.log('✅ Data loading complete - drag events re-enabled')
+    }, 500)
+
     // Scroll to show yesterday's date (after gantt fully renders)
     setTimeout(() => {
       const yesterday = new Date()
@@ -3381,6 +3456,15 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       gantt.showDate(yesterday)
       console.log('✅ Scroll command executed')
     }, 300) // Longer delay to ensure gantt is fully rendered and sized
+
+    // Cleanup function: Clear the timeout if component unmounts or dependencies change
+    return () => {
+      if (loadingDataTimeout.current) {
+        clearTimeout(loadingDataTimeout.current)
+        loadingDataTimeout.current = null
+        isLoadingData.current = false // Clear the flag on cleanup
+      }
+    }
   }, [ganttReady, tasks, publicHolidays, debouncedRender, predecessorDisplayMode])
 
   // Handle saving task dependencies from editor

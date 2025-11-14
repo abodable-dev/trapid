@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { UserCircleIcon, TrashIcon, PlusIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/solid'
+import { TrashIcon, PlusIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { api } from '../../api'
 
 export default function ContactPersonsSection({ contact, contactPersons = [], onUpdate, isEditMode }) {
@@ -30,15 +30,15 @@ export default function ContactPersonsSection({ contact, contactPersons = [], on
     const contactTypes = contact.contact_types
     const organized = []
 
-    // Add shared roles first
-    const sharedRoles = availableRoles.filter(role => !role.contact_type)
+    // Add shared roles first (roles with empty contact_types array)
+    const sharedRoles = availableRoles.filter(role => !role.contact_types || role.contact_types.length === 0)
     if (sharedRoles.length > 0) {
       organized.push({ type: 'shared', label: 'All Types', roles: sharedRoles })
     }
 
-    // Add type-specific roles
+    // Add type-specific roles (roles that include this contact type)
     contactTypes.forEach(type => {
-      const typeRoles = availableRoles.filter(role => role.contact_type === type)
+      const typeRoles = availableRoles.filter(role => role.contact_types && role.contact_types.includes(type))
       if (typeRoles.length > 0) {
         const typeLabels = {
           customer: 'Customer',

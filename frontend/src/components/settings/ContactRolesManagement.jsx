@@ -4,7 +4,6 @@ import { PlusIcon, PencilIcon, TrashIcon, CheckIcon, XMarkIcon } from '@heroicon
 import { api } from '../../api'
 
 const CONTACT_TYPES = [
-  { value: '', label: 'All Types (Shared)', tabLabel: 'Shared' },
   { value: 'customer', label: 'Customer', tabLabel: 'Customer' },
   { value: 'supplier', label: 'Supplier', tabLabel: 'Supplier' },
   { value: 'sales', label: 'Sales', tabLabel: 'Sales' },
@@ -16,6 +15,7 @@ export default function ContactRolesManagement() {
   const [loading, setLoading] = useState(true)
   const [editingRole, setEditingRole] = useState(null)
   const [newRole, setNewRole] = useState('')
+  const [newRoleTypes, setNewRoleTypes] = useState([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedTabIndex, setSelectedTabIndex] = useState(0)
 
@@ -37,19 +37,17 @@ export default function ContactRolesManagement() {
   const handleAddRole = async () => {
     if (!newRole.trim()) return
 
-    // Get the contact type from the current tab
-    const currentContactType = CONTACT_TYPES[selectedTabIndex].value || null
-
     try {
       const response = await api.post('/api/v1/contact_roles', {
         contact_role: {
           name: newRole.trim(),
-          contact_type: currentContactType,
+          contact_types: newRoleTypes,
           active: true
         }
       })
       setRoles([...roles, response])
       setNewRole('')
+      setNewRoleTypes([])
       setShowAddForm(false)
     } catch (error) {
       console.error('Failed to add role:', error)
@@ -57,13 +55,25 @@ export default function ContactRolesManagement() {
     }
   }
 
+  const handleOpenAddForm = () => {
+    // Pre-select the current tab's contact type
+    const currentContactType = CONTACT_TYPES[selectedTabIndex].value
+    setNewRoleTypes(currentContactType ? [currentContactType] : [])
+    setShowAddForm(true)
+  }
+
+  const handleCancelAddForm = () => {
+    setShowAddForm(false)
+    setNewRole('')
+    setNewRoleTypes([])
+  }
+
   const handleUpdateRole = async (role) => {
     try {
       const response = await api.patch(`/api/v1/contact_roles/${role.id}`, {
         contact_role: {
           name: role.name,
-          // Keep original contact_type - don't allow changing it in edit mode
-          contact_type: role.contact_type || null,
+          contact_types: role.contact_types || [],
           active: role.active
         }
       })
@@ -104,13 +114,13 @@ export default function ContactRolesManagement() {
   }
 
   // Filter roles by contact type for current tab
+  // Roles with empty contact_types array appear in ALL tabs (universal roles)
   const getFilteredRoles = (contactTypeValue) => {
-    if (contactTypeValue === '') {
-      // Shared tab - show roles with null contact_type
-      return roles.filter(role => !role.contact_type)
-    }
-    // Specific type tab - show roles for that type
-    return roles.filter(role => role.contact_type === contactTypeValue)
+    return roles.filter(role => {
+      // Show role if it has no types (universal) OR includes this specific type
+      return (!role.contact_types || role.contact_types.length === 0) ||
+             (role.contact_types && role.contact_types.includes(contactTypeValue))
+    })
   }
 
   // Render a table for a specific contact type
@@ -126,14 +136,12 @@ export default function ContactRolesManagement() {
               {currentType.label} Roles
             </h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {contactTypeValue === ''
-                ? 'These roles are available for all contact types.'
-                : `These roles are only available for ${currentType.label.toLowerCase()} contacts.`}
+              Roles shown here are available for {currentType.label.toLowerCase()} contacts. Universal roles (with no types assigned) appear in all tabs.
             </p>
           </div>
           {!showAddForm && (
             <button
-              onClick={() => setShowAddForm(true)}
+              onClick={handleOpenAddForm}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg"
             >
               <PlusIcon className="h-4 w-4" />
@@ -146,7 +154,7 @@ export default function ContactRolesManagement() {
         {showAddForm && (
           <div className="bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              New {currentType.label} Role
+              New Role
             </label>
             <div className="flex flex-col gap-3">
               <input
@@ -158,6 +166,30 @@ export default function ContactRolesManagement() {
                 className="flex-1 px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 autoFocus
               />
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                <div className="font-medium mb-1">Available for:</div>
+                <div className="space-y-1">
+                  {CONTACT_TYPES.map(type => (
+                    <label key={type.value} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newRoleTypes.includes(type.value)}
+                        onChange={(e) => {
+                          const newTypes = e.target.checked
+                            ? [...newRoleTypes, type.value]
+                            : newRoleTypes.filter(t => t !== type.value)
+                          setNewRoleTypes(newTypes)
+                        }}
+                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span>{type.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-1 text-gray-500 dark:text-gray-500 italic">
+                  {newRoleTypes.length === 0 && '(None selected = Universal role for all types)'}
+                </div>
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={handleAddRole}
@@ -167,10 +199,7 @@ export default function ContactRolesManagement() {
                   Add
                 </button>
                 <button
-                  onClick={() => {
-                    setShowAddForm(false)
-                    setNewRole('')
-                  }}
+                  onClick={handleCancelAddForm}
                   className="inline-flex items-center gap-1 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                 >
                   <XMarkIcon className="h-4 w-4" />
@@ -207,20 +236,55 @@ export default function ContactRolesManagement() {
               ) : (
                 filteredRoles.map((role) => (
                   <tr key={role.id} className={!role.active ? 'opacity-50' : ''}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       {editingRole?.id === role.id ? (
-                        <input
-                          type="text"
-                          value={editingRole.name}
-                          onChange={(e) => setEditingRole({ ...editingRole, name: e.target.value })}
-                          onKeyPress={(e) => e.key === 'Enter' && handleUpdateRole(editingRole)}
-                          className="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                          autoFocus
-                        />
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            value={editingRole.name}
+                            onChange={(e) => setEditingRole({ ...editingRole, name: e.target.value })}
+                            onKeyPress={(e) => e.key === 'Enter' && handleUpdateRole(editingRole)}
+                            className="w-full px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            autoFocus
+                          />
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
+                            <div className="font-medium mb-1">Available for:</div>
+                            <div className="space-y-1">
+                              {CONTACT_TYPES.filter(t => t.value !== '').map(type => (
+                                <label key={type.value} className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={editingRole.contact_types?.includes(type.value) || false}
+                                    onChange={(e) => {
+                                      const currentTypes = editingRole.contact_types || []
+                                      const newTypes = e.target.checked
+                                        ? [...currentTypes, type.value]
+                                        : currentTypes.filter(t => t !== type.value)
+                                      setEditingRole({ ...editingRole, contact_types: newTypes })
+                                    }}
+                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                  />
+                                  <span>{type.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                            <div className="mt-1 text-gray-500 dark:text-gray-500 italic">
+                              {(!editingRole.contact_types || editingRole.contact_types.length === 0) && '(None selected = Universal role for all types)'}
+                            </div>
+                          </div>
+                        </div>
                       ) : (
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {role.name}
-                        </span>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {role.name}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {(!role.contact_types || role.contact_types.length === 0)
+                              ? 'Universal (All Types)'
+                              : role.contact_types.map(t => CONTACT_TYPES.find(ct => ct.value === t)?.label).join(', ')
+                            }
+                          </div>
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -295,26 +359,42 @@ export default function ContactRolesManagement() {
           Contact Person Roles
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Manage roles for contact persons by type. Shared roles are available for all contact types, while type-specific roles only appear for their designated contact type.
+          Manage roles for contact persons by type. Universal roles (with no types assigned) appear in all tabs, while type-specific roles only appear for their designated contact types.
         </p>
       </div>
 
       <TabList className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 mb-6">
-        {CONTACT_TYPES.map((type, index) => (
-          <Tab
-            key={type.value || 'shared'}
-            className={({ selected }) =>
-              `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
-              ${
-                selected
-                  ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
-              }`
-            }
-          >
-            {type.tabLabel}
-          </Tab>
-        ))}
+        {CONTACT_TYPES.map((type, index) => {
+          const count = getFilteredRoles(type.value).length
+          return (
+            <Tab
+              key={type.value || 'shared'}
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              {({ selected }) => (
+                <span className="flex items-center justify-center gap-2">
+                  {type.tabLabel}
+                  <span className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-semibold
+                    ${
+                      selected
+                        ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300'
+                        : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                    }`
+                  }>
+                    {count}
+                  </span>
+                </span>
+              )}
+            </Tab>
+          )
+        })}
       </TabList>
 
       <TabPanels>
@@ -327,7 +407,7 @@ export default function ContactRolesManagement() {
 
       <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg">
         <p className="text-sm text-blue-800 dark:text-blue-200">
-          <strong>Tip:</strong> Shared roles appear for all contact types. Type-specific roles only appear for contacts of that type. Inactive roles won't appear in dropdowns but existing contact persons will still display them.
+          <strong>Tip:</strong> Roles can be assigned to multiple contact types by editing them and checking the desired types. Roles with no types selected become universal and appear in all tabs. Inactive roles won't appear in dropdowns but existing contact persons will still display them.
         </p>
       </div>
     </TabGroup>
