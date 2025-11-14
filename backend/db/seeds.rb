@@ -254,7 +254,9 @@ variables = [
   '#TVPoints', '#TapeSlab', '#ToiletRollHolders', '#Toilets', '#TrenchMesh3TM', '#TrenchMeshSupportSales',
   '#UndermountSink', '#VanityBasins', '#WallMountedBasin', '#WallOvenCab', '#Wall_Mixer', '#Watertank',
   '#Watertank10000L', '#Watertank2000L', '#Watertank3000L', '#Watertank4000L', '#Watertank5000L',
-  '#WindowActuator', '#WindowsLintels', '#WirShelves', '#WireTie', '#ZbarSales'
+  '#WindowActuator', '#WindowsLintels', '#WirShelves', '#WireTie', '#ZbarSales',
+  # Non-# prefixed local variables
+  'DuctedAC', 'WRCQTY', 'WRQTY'
 ]
 
 variables.each do |variable_name|
