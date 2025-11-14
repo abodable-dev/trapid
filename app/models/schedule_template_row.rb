@@ -21,6 +21,7 @@ class ScheduleTemplateRow < ApplicationRecord
   # Callbacks
   before_save :sync_photos_category
   after_update :create_audit_logs
+  after_update :cascade_to_dependents
 
   # Scopes
   scope :in_sequence, -> { order(sequence_order: :asc) }
@@ -184,5 +185,20 @@ class ScheduleTemplateRow < ApplicationRecord
         )
       end
     end
+  end
+
+  def cascade_to_dependents
+    # Only cascade if start_date or duration changed
+    # NOTE: We cascade FROM any task (even manually positioned ones)
+    # The cascade service will skip cascading TO manually positioned tasks
+    return unless saved_change_to_start_date? || saved_change_to_duration?
+
+    # Use ScheduleCascadeService to cascade changes to dependent tasks
+    changed_attrs = []
+    changed_attrs << :start_date if saved_change_to_start_date?
+    changed_attrs << :duration if saved_change_to_duration?
+
+    Rails.logger.info "🔄 CASCADE CALLBACK: Task #{id} changed (#{changed_attrs.join(', ')})"
+    ScheduleCascadeService.cascade_changes(self, changed_attrs)
   end
 end
