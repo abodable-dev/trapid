@@ -19,6 +19,7 @@ import AutoCompleteTasksModal from './AutoCompleteTasksModal'
 import SubtasksModal from './SubtasksModal'
 import DHtmlxGanttView from './DHtmlxGanttView'
 import GanttRulesModal from './GanttRulesModal'
+import { bugHunter } from '../../utils/ganttDebugger'
 
 /**
  * Schedule Template Editor - Full 14-column grid interface for creating/editing schedule templates
@@ -131,6 +132,9 @@ export default function ScheduleTemplateEditor() {
   // Cascade update batching (prevents multiple reloads from backend cascade updates)
   const cascadeUpdatesRef = useRef(new Map()) // Map of rowId -> response
   const cascadeBatchTimeoutRef = useRef(null)
+
+  // Track pending updates to prevent duplicate API calls
+  const pendingUpdatesRef = useRef(new Map()) // Map of "rowId:field" -> value
 
   // Column resize state
   const [resizingColumn, setResizingColumn] = useState(null)
@@ -720,6 +724,67 @@ export default function ScheduleTemplateEditor() {
       console.log('  - Updates:', updates)
       console.log('  - Options:', options)
 
+      // ANTI-LOOP: Deduplicate updates - skip API call if same update is already pending or matches current state
+      const currentRow = rows.find(r => r && r.id === rowId)
+      if (currentRow) {
+        // ATOMIC: Check and set pending in one pass to prevent race conditions
+        // Multiple synchronous calls were checking the empty pending map before any set values
+        const fieldsToUpdate = []
+
+        // DEBUG: Log the entire pending map
+        console.log(`🔍 DEBUG - Checking row ${rowId} | Pending map size: ${pendingUpdatesRef.current.size}`)
+        if (pendingUpdatesRef.current.size > 0) {
+          console.log('🔍 DEBUG - Current pending values:', Array.from(pendingUpdatesRef.current.entries()))
+        }
+
+        for (const key of Object.keys(updates)) {
+          const newValue = updates[key]
+          const currentValue = currentRow[key]
+          const pendingKey = `${rowId}:${key}`
+          const pendingValue = pendingUpdatesRef.current.get(pendingKey)
+
+          console.log(`🔍 DEBUG - Field ${key}: pending=${pendingValue}, current=${currentValue}, new=${newValue}`)
+
+          // Check if this exact update is already pending
+          if (pendingValue !== undefined) {
+            const pendingMatches = Array.isArray(newValue)
+              ? JSON.stringify(newValue) === JSON.stringify(pendingValue)
+              : newValue === pendingValue
+
+            console.log(`🔍 DEBUG - Pending check: ${pendingValue} vs ${newValue} → matches=${pendingMatches}`)
+
+            if (pendingMatches) {
+              console.log(`⏭️ Skipping ${key} update - same value already pending`)
+              continue // Skip this field
+            }
+          }
+
+          // Check against current state
+          let valueChanged = false
+          if (Array.isArray(newValue) && Array.isArray(currentValue)) {
+            valueChanged = JSON.stringify(newValue) !== JSON.stringify(currentValue)
+          } else {
+            valueChanged = newValue !== currentValue
+          }
+
+          console.log(`🔍 DEBUG - State check: ${currentValue} vs ${newValue} → changed=${valueChanged}`)
+
+          if (valueChanged) {
+            // ATOMIC: Set pending IMMEDIATELY when field needs updating
+            console.log(`🔍 DEBUG - Setting pending: ${pendingKey} = ${newValue}`)
+            pendingUpdatesRef.current.set(pendingKey, newValue)
+            fieldsToUpdate.push(key)
+          }
+        }
+
+        if (fieldsToUpdate.length === 0) {
+          console.log('⏭️ Skipping API call - no actual changes detected (all updates match pending or current state)')
+          return currentRow
+        }
+
+        console.log(`✅ Proceeding with API call - ${fieldsToUpdate.length} fields to update:`, fieldsToUpdate)
+      }
+
       // CRITICAL: Detect cascade updates BEFORE optimistic update
       // Cascade updates are start_date-only changes from backend dependency calculations
       const predecessorsChanged = updates.predecessor_ids !== undefined
@@ -750,6 +815,9 @@ export default function ScheduleTemplateEditor() {
       }
 
       // Make API call in background
+      // BUG HUNTER: Track API call
+      bugHunter.trackApiCall('PATCH', `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`, rowId, updates)
+
       const response = await api.patch(
         `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`,
         { schedule_template_row: updates }
@@ -763,7 +831,13 @@ export default function ScheduleTemplateEditor() {
         // Backend handled cascading - apply ALL tasks in one batch
         console.log(`🔄 Backend cascaded to ${response.cascaded_tasks.length} dependent tasks - applying batch update`)
 
+        // BUG HUNTER: Track cascade event
+        bugHunter.trackCascade(rowId, response.cascaded_tasks.map(t => t.id))
+
         const allAffectedTasks = [mainTask, ...response.cascaded_tasks]
+
+        // BUG HUNTER: Track state update
+        bugHunter.trackStateUpdate(`Backend cascade update for task ${rowId}`, allAffectedTasks.map(t => t.id))
 
         // Update all affected tasks in a single state update (no flicker!)
         setRows(prevRows => {
@@ -836,6 +910,16 @@ export default function ScheduleTemplateEditor() {
       await loadTemplateRows(selectedTemplate.id, false)
       showToast('Failed to update row', 'error')
       throw err
+    } finally {
+      // ANTI-LOOP: Delay clearing pending updates to allow state updates and Gantt reloads to complete
+      // If we clear immediately, the Gantt reload will trigger handleUpdateRow again with empty pending tracker
+      setTimeout(() => {
+        Object.keys(updates).forEach(key => {
+          const pendingKey = `${rowId}:${key}`
+          console.log(`🧹 Clearing pending: ${pendingKey}`)
+          pendingUpdatesRef.current.delete(pendingKey)
+        })
+      }, 2000) // Clear after 2 seconds (allows batch updates and Gantt reloads to complete)
     }
   }
 

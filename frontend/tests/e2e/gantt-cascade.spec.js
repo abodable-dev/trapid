@@ -309,25 +309,60 @@ test.describe('Gantt Cascade Functionality', () => {
     console.log('📦 Backend API Response:', JSON.stringify(responseData, null, 2));
 
     // Check if backend returned cascaded tasks
-    if (responseData.cascaded_tasks && responseData.cascaded_tasks.length > 0) {
+    const hasCascadedTasks = responseData.cascaded_tasks && responseData.cascaded_tasks.length > 0;
+    if (hasCascadedTasks) {
       console.log(`🔄 Backend cascaded to ${responseData.cascaded_tasks.length} dependent tasks`);
       console.log('✅ Applied batch update for', responseData.cascaded_tasks.length + 1, 'tasks');
     }
 
-    // Update the Gantt visual to reflect the change
-    await page.evaluate((newStartDate) => {
+    // ANTI-LOOP: Update all Gantt tasks (main + cascaded) WITHOUT triggering API calls
+    // We call the backend API directly in tests, so we need to manually suppress event handlers
+    await page.evaluate((response) => {
       const gantt = window.gantt;
-      const task = gantt.getTask(299);
-      if (task && gantt) {
+      if (!gantt) return;
+
+      // CRITICAL: Disable all event handlers during batch update to prevent API loops
+      // This simulates the isLoadingData flag behavior from the UI's handleUpdateRow
+      const eventsEnabled = gantt._events_enabled;
+      gantt._events_enabled = false;
+
+      try {
         const projectStartDate = new Date();
         projectStartDate.setHours(0, 0, 0, 0);
-        const date = new Date(projectStartDate);
-        date.setDate(date.getDate() + newStartDate);
-        task.start_date = date;
-        gantt.updateTask(task.id);
-        console.log('✅ Updated Gantt visual for task 299');
+
+        // Update main task
+        const mainTask = response.task || response;
+        const mainGanttTask = gantt.getTask(mainTask.id);
+        if (mainGanttTask) {
+          const date = new Date(projectStartDate);
+          date.setDate(date.getDate() + mainTask.start_date);
+          mainGanttTask.start_date = date;
+          mainGanttTask.duration = mainTask.duration;
+          gantt.updateTask(mainGanttTask.id);
+          console.log(`✅ Updated Gantt visual for task ${mainTask.id}`);
+        }
+
+        // Update cascaded tasks to prevent mismatch and API loop
+        if (response.cascaded_tasks) {
+          response.cascaded_tasks.forEach(task => {
+            const ganttTask = gantt.getTask(task.id);
+            if (ganttTask) {
+              const date = new Date(projectStartDate);
+              date.setDate(date.getDate() + task.start_date);
+              ganttTask.start_date = date;
+              ganttTask.duration = task.duration;
+              gantt.updateTask(ganttTask.id);
+              console.log(`✅ Updated Gantt visual for cascaded task ${task.id}`);
+            }
+          });
+        }
+      } finally {
+        // Re-enable event handlers
+        gantt._events_enabled = eventsEnabled;
+        // Force a single render to show the changes
+        gantt.render();
       }
-    }, taskData.newStartDate);
+    }, responseData);
 
     console.log('✅ Task dragged');
 
