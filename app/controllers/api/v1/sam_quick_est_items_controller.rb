@@ -6,7 +6,7 @@ module Api
 
       # GET /api/v1/sam_quick_est
       def index
-        @items = SamQuickEstItem.active
+        @items = SamQuickEstItem.all
 
         # Apply search if provided
         @items = @items.search(params[:search]) if params[:search].present?
@@ -31,8 +31,6 @@ module Api
               id: item.id,
               item_code: item.item_code,
               item_name: item.item_name,
-              unit_of_measure: item.unit_of_measure,
-              current_price: item.current_price,
               claude_estimate: item.claude_estimate
             }
           },
@@ -51,8 +49,6 @@ module Api
           id: @item.id,
           item_code: @item.item_code,
           item_name: @item.item_name,
-          unit_of_measure: @item.unit_of_measure,
-          current_price: @item.current_price,
           claude_estimate: @item.claude_estimate
         }
       end
@@ -79,24 +75,22 @@ module Api
 
       # DELETE /api/v1/sam_quick_est/:id
       def destroy
-        @item.update(is_active: false)
+        @item.destroy
         head :no_content
       end
 
       # GET /api/v1/sam_quick_est/export
       def export
-        items = SamQuickEstItem.active
+        items = SamQuickEstItem.all
 
         # Generate CSV
         csv_data = CSV.generate(headers: true) do |csv|
-          csv << ['Item Code', 'Item Name', 'Unit', 'Price', 'Claude Estimate']
+          csv << ['Item Code', 'Item Name', 'Claude Estimate']
 
           items.each do |item|
             csv << [
               item.item_code,
               item.item_name,
-              item.unit_of_measure,
-              item.current_price,
               item.claude_estimate
             ]
           end
@@ -124,10 +118,7 @@ module Api
         params.require(:sam_quick_est_item).permit(
           :item_code,
           :item_name,
-          :unit_of_measure,
-          :current_price,
-          :claude_estimate,
-          :is_active
+          :claude_estimate
         )
       end
     end

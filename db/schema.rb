@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_14_003026) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_14_003739) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -741,37 +741,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_003026) do
   create_table "sam_quick_est_items", force: :cascade do |t|
     t.string "item_code", null: false
     t.string "item_name", null: false
-    t.string "category"
-    t.string "unit_of_measure", default: "Each"
-    t.decimal "current_price", precision: 10, scale: 2
-    t.bigint "supplier_id"
-    t.boolean "is_active", default: true
-    t.datetime "price_last_updated_at"
-    t.datetime "image_fetched_at"
-    t.string "image_fetch_status"
-    t.bigint "default_supplier_id"
-    t.string "qr_code_url"
-    t.boolean "requires_photo", default: false
-    t.boolean "requires_spec", default: false
-    t.string "spec_url"
-    t.string "gst_code"
-    t.boolean "photo_attached", default: false
-    t.boolean "spec_attached", default: false
-    t.string "image_file_id"
-    t.string "spec_file_id"
-    t.string "qr_code_file_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.tsvector "searchable_text"
     t.decimal "claude_estimate", precision: 10, scale: 2
-    t.index ["category"], name: "index_sam_quick_est_items_on_category"
-    t.index ["default_supplier_id"], name: "index_sam_quick_est_items_on_default_supplier_id"
-    t.index ["image_fetch_status"], name: "index_sam_quick_est_items_on_image_fetch_status"
-    t.index ["is_active"], name: "index_sam_quick_est_items_on_is_active"
     t.index ["item_code"], name: "index_sam_quick_est_items_on_item_code", unique: true
-    t.index ["price_last_updated_at"], name: "index_sam_quick_est_items_on_price_last_updated_at"
-    t.index ["searchable_text"], name: "idx_sam_quick_est_search", using: :gin
-    t.index ["supplier_id"], name: "index_sam_quick_est_items_on_supplier_id"
   end
 
   create_table "schedule_task_checklist_items", force: :cascade do |t|
@@ -1819,8 +1792,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_003026) do
   add_foreign_key "purchase_orders", "constructions"
   add_foreign_key "purchase_orders", "contacts", column: "supplier_id", name: "fk_rails_purchase_orders_contact"
   add_foreign_key "purchase_orders", "estimates"
-  add_foreign_key "sam_quick_est_items", "contacts", column: "default_supplier_id"
-  add_foreign_key "sam_quick_est_items", "contacts", column: "supplier_id"
   add_foreign_key "schedule_task_checklist_items", "schedule_tasks"
   add_foreign_key "schedule_tasks", "constructions"
   add_foreign_key "schedule_tasks", "purchase_orders"
