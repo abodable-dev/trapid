@@ -128,6 +128,10 @@ export default function ScheduleTemplateEditor() {
   const [showRulesModal, setShowRulesModal] = useState(false)
   const hasCollapsedOnLoad = useRef(false)
 
+  // Cascade update batching (prevents multiple reloads from backend cascade updates)
+  const cascadeUpdatesRef = useRef(new Map()) // Map of rowId -> response
+  const cascadeBatchTimeoutRef = useRef(null)
+
   // Column resize state
   const [resizingColumn, setResizingColumn] = useState(null)
   const [resizeStartX, setResizeStartX] = useState(0)
@@ -688,6 +692,27 @@ export default function ScheduleTemplateEditor() {
     }
   }
 
+  // Apply batched cascade updates in a single state update (prevents multiple Gantt reloads)
+  const applyBatchedCascadeUpdates = useCallback(() => {
+    if (cascadeUpdatesRef.current.size === 0) return
+
+    console.log(`📦 Applying ${cascadeUpdatesRef.current.size} batched cascade updates`)
+
+    setRows(prevRows => {
+      let updated = [...prevRows]
+      cascadeUpdatesRef.current.forEach((response, rowId) => {
+        const index = updated.findIndex(r => r && r.id === rowId)
+        if (index !== -1) {
+          updated[index] = response
+        }
+      })
+      return updated
+    })
+
+    // Clear batch
+    cascadeUpdatesRef.current.clear()
+  }, [])
+
   const handleUpdateRow = async (rowId, updates, options = {}) => {
     try {
       console.log('🐛 ScheduleTemplateEditor: handleUpdateRow called')
@@ -695,20 +720,34 @@ export default function ScheduleTemplateEditor() {
       console.log('  - Updates:', updates)
       console.log('  - Options:', options)
 
-      // Optimistically update the row immediately to prevent flashing
-      setRows(prevRows => {
-        const existingRowIndex = prevRows.findIndex(r => r && r.id === rowId)
+      // CRITICAL: Detect cascade updates BEFORE optimistic update
+      // Cascade updates are start_date-only changes from backend dependency calculations
+      const predecessorsChanged = updates.predecessor_ids !== undefined
+      const durationChanged = updates.duration !== undefined
+      const onlyStartDateChanged = updates.start_date !== undefined &&
+                                   !predecessorsChanged &&
+                                   !durationChanged
 
-        if (existingRowIndex !== -1) {
-          // Update existing row
-          return prevRows.map(r => (r && r.id === rowId) ? { ...r, ...updates } : r)
-        } else {
-          // Row doesn't exist yet (race condition during create), skip optimistic update
-          console.log('⚠️ Skipping optimistic update - row not found:', rowId)
-          // Return prevRows unchanged (don't filter out undefined elements)
-          return prevRows
-        }
-      })
+      // ANTI-FLICKER: Skip optimistic update for cascade updates (they'll be batched)
+      // Only apply optimistic update for direct user edits (not start_date-only backend cascades)
+      if (!onlyStartDateChanged) {
+        // Optimistically update the row immediately to prevent flashing
+        setRows(prevRows => {
+          const existingRowIndex = prevRows.findIndex(r => r && r.id === rowId)
+
+          if (existingRowIndex !== -1) {
+            // Update existing row
+            return prevRows.map(r => (r && r.id === rowId) ? { ...r, ...updates } : r)
+          } else {
+            // Row doesn't exist yet (race condition during create), skip optimistic update
+            console.log('⚠️ Skipping optimistic update - row not found:', rowId)
+            // Return prevRows unchanged (don't filter out undefined elements)
+            return prevRows
+          }
+        })
+      } else {
+        console.log('⚡ Skipping optimistic update for cascade (start_date-only) - will batch')
+      }
 
       // Make API call in background
       const response = await api.patch(
@@ -716,15 +755,34 @@ export default function ScheduleTemplateEditor() {
         { schedule_template_row: updates }
       )
 
-      // Check if this update affects calculated fields that impact other tasks
-      // Only reload if predecessors OR duration changed (those affect dependent tasks)
-      // Skip reload for start_date-only changes (happens during dragging/cascading)
-      const predecessorsChanged = updates.predecessor_ids !== undefined
-      const durationChanged = updates.duration !== undefined
-      const onlyStartDateChanged = updates.start_date !== undefined &&
-                                   !predecessorsChanged &&
-                                   !durationChanged
+      // Check if backend returned cascaded tasks (new format)
+      const hasCascadedTasks = response.cascaded_tasks && response.cascaded_tasks.length > 0
+      const mainTask = response.task || response // Support both new format {task, cascaded_tasks} and old format
 
+      if (hasCascadedTasks) {
+        // Backend handled cascading - apply ALL tasks in one batch
+        console.log(`🔄 Backend cascaded to ${response.cascaded_tasks.length} dependent tasks - applying batch update`)
+
+        const allAffectedTasks = [mainTask, ...response.cascaded_tasks]
+
+        // Update all affected tasks in a single state update (no flicker!)
+        setRows(prevRows => {
+          const updatedRows = [...prevRows]
+          allAffectedTasks.forEach(task => {
+            const index = updatedRows.findIndex(r => r && r.id === task.id)
+            if (index !== -1) {
+              updatedRows[index] = task
+            }
+          })
+          return updatedRows
+        })
+
+        console.log('✅ Applied batch update for', allAffectedTasks.length, 'tasks')
+
+        return mainTask
+      }
+
+      // Old flow: Backend didn't cascade, handle normally
       // Only reload if predecessors or duration changed (affects other tasks' calculations)
       // Skip reload for start_date-only updates (dragging or auto-cascade from dependencies)
       const needsReload = (predecessorsChanged || durationChanged) && !options.skipReload
@@ -733,19 +791,33 @@ export default function ScheduleTemplateEditor() {
         // Only reload all rows if dependencies/duration changed (affects other rows)
         console.log('🔄 Reloading all rows (calculation fields changed)')
         await loadTemplateRows(selectedTemplate.id, false) // false = don't show loading spinner
-      } else {
-        // Just update the specific row with server response
-        // No flash for drag operations or cascading updates
-        if (onlyStartDateChanged) {
-          console.log('✋ Skipping reload for start_date-only update (drag or cascade)')
+      } else if (onlyStartDateChanged) {
+        // CRITICAL: Batch cascade updates to prevent multiple Gantt reloads
+        // When backend sends cascade updates for dependent tasks, batch them together
+        console.log('✋ Batching cascade update (start_date-only) - will apply in batch')
+
+        // Add to batch
+        cascadeUpdatesRef.current.set(rowId, mainTask)
+
+        // Clear existing timeout
+        if (cascadeBatchTimeoutRef.current) {
+          clearTimeout(cascadeBatchTimeoutRef.current)
         }
+
+        // Apply all batched updates after 100ms (allows multiple cascade updates to queue)
+        cascadeBatchTimeoutRef.current = setTimeout(() => {
+          applyBatchedCascadeUpdates()
+          cascadeBatchTimeoutRef.current = null
+        }, 100)
+      } else {
+        // Not a cascade update - apply immediately
         setRows(prevRows => {
           const existingRowIndex = prevRows.findIndex(r => r && r.id === rowId)
 
           if (existingRowIndex !== -1) {
             // Update existing row with server response
-            console.log('📥 Updating row in state with server response:', response)
-            return prevRows.map(r => (r && r.id === rowId) ? response : r)
+            console.log('📥 Updating row in state with server response:', mainTask)
+            return prevRows.map(r => (r && r.id === rowId) ? mainTask : r)
           } else {
             // Row doesn't exist (race condition during create)
             // Force a full reload to get the latest state including the new task
@@ -757,7 +829,7 @@ export default function ScheduleTemplateEditor() {
         })
       }
 
-      return response
+      return mainTask
     } catch (err) {
       console.error('❌ Failed to update row:', err)
       // Revert optimistic update on error (without loading spinner)

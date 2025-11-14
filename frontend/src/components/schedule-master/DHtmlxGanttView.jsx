@@ -21,6 +21,15 @@ import { createDebouncedStorageSetter } from '../../utils/debounce'
  * - Performance with large datasets
  */
 
+// DIAGNOSTIC MODE: Set to true to enable detailed logging
+const DIAGNOSTIC_MODE = true
+const diagLog = (emoji, msg) => {
+  if (DIAGNOSTIC_MODE) {
+    const timestamp = performance.now().toFixed(2)
+    console.log(`${emoji} [${timestamp}ms] ${msg}`)
+  }
+}
+
 export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }) {
   const ganttContainer = useRef(null)
   const clickTimeout = useRef(null)
@@ -32,6 +41,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   const isLoadingData = useRef(false) // Track if we're programmatically loading data (suppress drag events during parse)
   const loadingDataTimeout = useRef(null) // Track the timeout ID for isLoadingData reset
   const renderTimeout = useRef(null) // PERFORMANCE: Debounce render calls to batch multiple updates
+  const suppressRender = useRef(false) // ANTI-FLICKER: Completely suppress all renders during drag completion
+
+  // Diagnostic: Track drag start time
+  const dragStartTime = useRef(0)
   const [publicHolidays, setPublicHolidays] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTask, setSelectedTask] = useState(null)
@@ -162,6 +175,46 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     debouncedSaveToStorage('dhtmlxGanttZoom', zoomLevel)
   }, [zoomLevel, debouncedSaveToStorage])
 
+  // Lock body scroll when modal is open to prevent background shake during drag
+  useEffect(() => {
+    if (isOpen) {
+      // Save original styles
+      const originalOverflow = document.body.style.overflow
+      const originalPaddingRight = document.body.style.paddingRight
+      const originalPosition = document.body.style.position
+      const originalTop = document.body.style.top
+      const originalWidth = document.body.style.width
+      const scrollY = window.scrollY
+
+      // Get scrollbar width BEFORE hiding overflow
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+
+      // Use RAF to batch all style changes and prevent layout shift
+      requestAnimationFrame(() => {
+        // Prevent body scroll and layout shift
+        document.body.style.overflow = 'hidden'
+        document.body.style.position = 'fixed'
+        document.body.style.top = `-${scrollY}px`
+        document.body.style.width = '100%'
+
+        // Compensate for scrollbar disappearing
+        if (scrollbarWidth > 0) {
+          document.body.style.paddingRight = `${scrollbarWidth}px`
+        }
+      })
+
+      // Cleanup: restore original styles when modal closes
+      return () => {
+        document.body.style.overflow = originalOverflow
+        document.body.style.position = originalPosition
+        document.body.style.top = originalTop
+        document.body.style.width = originalWidth
+        document.body.style.paddingRight = originalPaddingRight
+        window.scrollTo(0, scrollY)
+      }
+    }
+  }, [isOpen])
+
   // Task name search filter
   const [taskNameSearch, setTaskNameSearch] = useState('')
 
@@ -218,6 +271,20 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       clearTimeout(renderTimeout.current)
     }
     renderTimeout.current = setTimeout(() => {
+      // PERFORMANCE: Skip render during active drag to prevent flickering
+      if (isDragging.current) {
+        console.log('⏸️ Skipping render - drag in progress (reduces flicker)')
+        renderTimeout.current = null
+        return
+      }
+
+      // ANTI-FLICKER: Skip render if suppression is active
+      if (suppressRender.current) {
+        console.log('⏸️ Skipping render - render suppression active (drag completion)')
+        renderTimeout.current = null
+        return
+      }
+
       if (ganttReady) {
         gantt.render()
       }
@@ -501,8 +568,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     gantt.config.details_on_dblclick = true // Enable lightbox on double-click
 
     // Enable undo/redo (PRO feature)
+    // NOTE: auto_scheduling DISABLED - backend cascade service handles all dependency updates
+    // This prevents conflicts between frontend auto-scheduling and backend cascade
     gantt.plugins({
-      auto_scheduling: true,
+      auto_scheduling: false,
       critical_path: true,
       drag_timeline: true,
       tooltip: true,
@@ -1254,6 +1323,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
         // Store original start date only once at the start of drag
         if (!isDragging.current) {
+          dragStartTime.current = performance.now()
+          diagLog('🟢', `DRAG START - Task ${id}`)
           isDragging.current = true // Mark that we're dragging
           task.$originalStart = new Date(task.start_date)
         }
@@ -1261,9 +1332,38 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       return true // Allow drag to start
     })
 
+    diagLog('📋', 'onBeforeTaskDrag handler attached')
+
     // Check for conflicts after drag completes but BEFORE AfterTaskUpdate fires
     gantt.attachEvent('onAfterTaskDrag', (id, mode, event) => {
+      const dragDuration = (performance.now() - dragStartTime.current).toFixed(2)
+      diagLog('🔴', `DRAG END - Task ${id}, Duration: ${dragDuration}ms`)
+      console.log('🚨🚨🚨 onAfterTaskDrag FIRED - Task:', id, 'Mode:', mode, 'Event:', event)
       console.log('🎯 onAfterTaskDrag fired:', { id, mode })
+
+      // CRITICAL: Set drag lock IMMEDIATELY to prevent cascade API calls from auto-scheduling
+      // Auto-scheduling plugin will recalculate dependent tasks and fire onAfterTaskUpdate
+      // for each one. This lock prevents handleTaskUpdate from making API calls for those.
+      isLoadingData.current = true
+      diagLog('🔒', 'Drag lock ENABLED (prevents cascade API calls)')
+
+      // Clear any existing timeout first
+      if (loadingDataTimeout.current) {
+        clearTimeout(loadingDataTimeout.current)
+        loadingDataTimeout.current = null
+      }
+
+      // Set timeout to release lock after 5000ms (extended to absorb cascade updates and auto-scheduling)
+      loadingDataTimeout.current = setTimeout(() => {
+        isLoadingData.current = false
+        loadingDataTimeout.current = null
+        diagLog('🔓', 'Drag lock RELEASED')
+        console.log('✅ Drag lock released - drag events re-enabled')
+      }, 5000)
+
+      // ANTI-FLICKER: Suppress ALL renders during drag completion to prevent shake
+      suppressRender.current = true
+      diagLog('🛡️', 'Render suppression ENABLED')
 
       // CRITICAL: Determine if this is a real user drag (has $originalStart) or spurious drag from gantt.parse()
       const task = gantt.getTask(id)
@@ -1275,7 +1375,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       if (isLoadingData.current && !wasRealDrag) {
         console.log('⏸️ Suppressing spurious drag event during data load')
         // Reset isDragging but NOT isLoadingData (we're still loading)
-        isDragging.current = false
+        // Defer to prevent render flicker
+        requestAnimationFrame(() => {
+          isDragging.current = false
+        })
         return true
       }
 
@@ -1290,6 +1393,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         const newStart = task.start_date
         const originalStart = task.$originalStart
 
+        console.log('🚨🚨🚨 onAfterTaskDrag MOVE mode - task', id)
         console.log('📊 Drag completed:', {
           taskId: id,
           originalStart: originalStart,
@@ -1299,10 +1403,13 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         if (!originalStart) {
           console.log('⚠️ No original start found, allowing drag')
           // CRITICAL: Reset flags before early return
-          isDragging.current = false
-          if (wasRealDrag) {
-            isLoadingData.current = false
-          }
+          // Defer to prevent render flicker
+          requestAnimationFrame(() => {
+            isDragging.current = false
+            if (wasRealDrag) {
+              isLoadingData.current = false
+            }
+          })
           return true
         }
 
@@ -1333,8 +1440,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             task.$manuallyPositioned = false
             task.manually_positioned = false
             manuallyPositionedTasks.current.delete(task.id)
-            gantt.updateTask(task.id)
-            gantt.refreshTask(task.id)
+            // updateTask already called above (line 1353), no need to call again
           }
 
           // Show conflict modal
@@ -1361,9 +1467,11 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           // Clean up temporary property
           delete task.$originalStart
 
-          // Reset both flags to allow next reload (race condition fix)
-          isDragging.current = false
-          isLoadingData.current = false
+          // Reset flags - defer to prevent render flicker
+          requestAnimationFrame(() => {
+            isDragging.current = false
+            isLoadingData.current = false
+          })
 
           return false // Prevent the drag from being saved
         }
@@ -1430,41 +1538,46 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               // User chose to drop dependencies
               console.log('✂️ Dropping dependencies for locked successor tasks')
 
-              // Remove this task from each successor's predecessor_ids and mark as broken
-              lockedSuccessors.forEach(successorTask => {
-                // Remove this task from predecessor_ids
-                successorTask.predecessor_ids = successorTask.predecessor_ids.filter(pred => {
-                  const predId = typeof pred === 'object' ? pred.id : pred
-                  return predId !== task.id
+              // Batch all updates to prevent shake/flicker
+              gantt.batchUpdate(() => {
+                // Remove this task from each successor's predecessor_ids and mark as broken
+                lockedSuccessors.forEach(successorTask => {
+                  // Remove this task from predecessor_ids
+                  successorTask.predecessor_ids = successorTask.predecessor_ids.filter(pred => {
+                    const predId = typeof pred === 'object' ? pred.id : pred
+                    return predId !== task.id
+                  })
+
+                  // Mark dependencies as broken
+                  successorTask.dependencies_broken = true
+                  successorTask.$dependenciesBroken = true
+
+                  console.log('🔗❌ Marked task', successorTask.id, 'with broken dependencies')
+
+                  // Save the successor task with broken dependencies
+                  const updateData = {
+                    predecessor_ids: successorTask.predecessor_ids,
+                    dependencies_broken: true
+                  }
+                  onUpdateTask(successorTask.id, updateData, { skipReload: true })
+
+                  // Update UI
+                  gantt.updateTask(successorTask.id)
                 })
-
-                // Mark dependencies as broken
-                successorTask.dependencies_broken = true
-                successorTask.$dependenciesBroken = true
-
-                console.log('🔗❌ Marked task', successorTask.id, 'with broken dependencies')
-
-                // Save the successor task with broken dependencies
-                const updateData = {
-                  predecessor_ids: successorTask.predecessor_ids,
-                  dependencies_broken: true
-                }
-                onUpdateTask(successorTask.id, updateData, { skipReload: true })
-
-                // Update UI
-                gantt.updateTask(successorTask.id)
               })
-
-              // Full render to update all styling
-              gantt.render()
+              // batchUpdate automatically renders once at the end - no manual render needed
             } else {
               // User cancelled - revert the task to original position
               console.log('↩️ User cancelled - reverting to original position')
               task.start_date = originalStart
-              gantt.updateTask(task.id)
-              gantt.render()
-              isDragging.current = false
-              isLoadingData.current = false
+              gantt.updateTask(task.id) // This handles the visual update, no render needed
+
+              // Defer flag resets to prevent render flicker
+              requestAnimationFrame(() => {
+                isDragging.current = false
+                isLoadingData.current = false
+              })
+
               delete task.$originalStart
               return false // Stop further processing
             }
@@ -1668,6 +1781,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           console.log('🔍 task.predecessor_ids:', task.predecessor_ids)
           const hasDependencies = task.predecessor_ids && task.predecessor_ids.length > 0
           console.log('🔍 hasDependencies:', hasDependencies)
+          console.log('🚨 DEBUG: About to check hasDependencies condition')
 
           if (hasDependencies) {
             // Check if any dependencies would be violated by the new position
@@ -1783,19 +1897,29 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                 }
 
                 console.log('💾 Saving with removed dependencies:', updateData)
-                isDragging.current = false
-                onUpdateTask(task.id, updateData, { skipReload: true })
 
-                // Update UI
-                gantt.updateTask(task.id)
-                gantt.render() // Full render to update checkbox and styling
+                // Delay API call until after visual transition completes (prevents shake)
+                setTimeout(() => {
+                  onUpdateTask(task.id, updateData, { skipReload: true })
+                }, 200)
+
+                // Defer isDragging reset to prevent render flicker
+                requestAnimationFrame(() => {
+                  isDragging.current = false
+                })
+
+                // updateTask handles the visual update, no render needed
               } else {
                 // User cancelled - revert the task to original position
                 console.log('↩️ User cancelled violation - reverting to original position')
                 task.start_date = originalStart
-                gantt.updateTask(task.id)
-                gantt.render()
-                isDragging.current = false
+                gantt.updateTask(task.id) // Handles visual update, no render needed
+
+                // Defer isDragging reset to prevent render flicker
+                requestAnimationFrame(() => {
+                  isDragging.current = false
+                })
+
                 delete task.$originalStart
                 return false // Stop further processing
               }
@@ -1822,22 +1946,41 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               }
 
               console.log('💾 Saving with preserved dependencies (no violation):', updateData)
-              isDragging.current = false
-              onUpdateTask(task.id, updateData, { skipReload: true })
 
-              gantt.updateTask(task.id)
-              gantt.refreshTask(task.id)
+              // Delay API call until after visual transition completes (prevents shake)
+              setTimeout(() => {
+                onUpdateTask(task.id, updateData, { skipReload: true })
+              }, 200)
+
+              // Defer isDragging reset to prevent render flicker
+              // Use requestAnimationFrame to wait until current render cycle completes
+              requestAnimationFrame(() => {
+                isDragging.current = false
+              })
+
+              // No need to call gantt.updateTask/refreshTask - drag operation already updated UI
+              // These calls cause unnecessary re-renders and shake on drop
             }
           } else {
-            // No dependencies - just mark as manually positioned
-            task.$manuallyPositioned = true
-            manuallyPositionedTasks.current.add(task.id)
-            console.log('🟤 Marked task', task.id, 'as manually positioned (no dependencies)')
+            // No predecessors - check if OTHER tasks depend on this one (successors)
+            console.log('🔍 Task has no predecessors, checking for successors...')
+            let hasSuccessors = false
 
-            gantt.updateTask(task.id)
-            gantt.refreshTask(task.id)
+            gantt.eachTask((otherTask) => {
+              if (!otherTask || !otherTask.id || otherTask.id === task.id) return
 
-            isDragging.current = false
+              if (otherTask.predecessor_ids && otherTask.predecessor_ids.length > 0) {
+                const dependsOnThisTask = otherTask.predecessor_ids.some(pred => {
+                  const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
+                  return Number(predId) === Number(task.id)
+                })
+
+                if (dependsOnThisTask) {
+                  hasSuccessors = true
+                  console.log(`  ✓ Task #${otherTask.id} depends on this task`)
+                }
+              }
+            })
 
             const projectStartDate = new Date()
             projectStartDate.setHours(0, 0, 0, 0)
@@ -1845,18 +1988,56 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             taskStartDate.setHours(0, 0, 0, 0)
             const dayOffset = Math.floor((taskStartDate - projectStartDate) / (1000 * 60 * 60 * 24))
 
-            const updateData = {
-              duration: task.duration,
-              start_date: dayOffset,
-              manually_positioned: true,
-              predecessor_ids: []
+            if (hasSuccessors) {
+              // OTHER tasks depend on this one - let backend cascade
+              console.log('🔄 Task has successors - triggering backend cascade')
+              console.log('🚨 DRAG HANDLER: Preparing to save task', task.id, 'with successors')
+
+              const updateData = {
+                duration: task.duration,
+                start_date: dayOffset,
+                manually_positioned: false,  // ✅ Let backend cascade to successors!
+                predecessor_ids: []
+              }
+              console.log('💾 DRAG HANDLER: Saving task to trigger cascade:', updateData)
+
+              // Delay API call until after visual transition completes (prevents shake)
+              setTimeout(() => {
+                onUpdateTask(task.id, updateData, { skipReload: true })
+              }, 200)
+            } else {
+              // No predecessors AND no successors - truly independent task
+              task.$manuallyPositioned = true
+              manuallyPositionedTasks.current.add(task.id)
+              console.log('🟤 Marked task', task.id, 'as manually positioned (no predecessors or successors)')
+
+              const updateData = {
+                duration: task.duration,
+                start_date: dayOffset,
+                manually_positioned: true,
+                predecessor_ids: []
+              }
+              console.log('💾 Saving manually positioned task (no deps):', updateData)
+
+              // Delay API call until after visual transition completes (prevents shake)
+              setTimeout(() => {
+                onUpdateTask(task.id, updateData, { skipReload: true })
+              }, 200)
             }
-            console.log('💾 Saving manually positioned task (no dependencies):', updateData)
-            onUpdateTask(task.id, updateData, { skipReload: true })
+
+            // Defer isDragging reset to prevent render flicker
+            requestAnimationFrame(() => {
+              isDragging.current = false
+            })
           }
         } else {
           console.log('↩️ Task did not actually move - not marking as manually positioned')
           // Task snapped back to its original position, don't mark as manually positioned
+
+          // Defer isDragging reset to prevent render flicker
+          requestAnimationFrame(() => {
+            isDragging.current = false
+          })
         }
 
         // Clean up temporary property
@@ -1880,15 +2061,29 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           predecessor_ids: task.predecessor_ids || []  // Preserve dependencies!
         }
         console.log('💾 Saving resized task duration to backend:', updateData)
-        onUpdateTask(task.id, updateData, { skipReload: true })
+
+        // Delay API call until after visual transition completes (prevents shake)
+        setTimeout(() => {
+          onUpdateTask(task.id, updateData, { skipReload: true })
+        }, 200)
       }
 
-      // CRITICAL: Always reset isDragging flag at the end, no matter which code path was taken
+      // CRITICAL: Always reset flags at the end, no matter which code path was taken
       // DO NOT reset isLoadingData here - it's managed by useEffect's 500ms timeout
-      // Resetting it here caused render loops when overlapping reloads were in progress
-      isDragging.current = false
+      // Defer both isDragging and suppressRender reset to prevent shake
+      requestAnimationFrame(() => {
+        isDragging.current = false
+
+        // Release render suppression after a longer delay to ensure smooth completion
+        setTimeout(() => {
+          suppressRender.current = false
+          console.log('✅ Drag completed - rendering enabled')
+        }, 100)
+      })
+
       if (wasRealDrag) {
-        console.log('✅ Real drag completed - isDragging cleared')
+        console.log('✅ Real drag completed')
+        // REMOVED: Delayed render - no longer needed, causes shake
       }
 
       return true
@@ -2799,6 +2994,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         label: 'Supplier/Group',
         width: columnWidths.supplier || 120,
         resize: true,
+        editor: {
+          type: 'text',
+          map_to: 'supplier'
+        },
         template: (task) => {
           return task.supplier || '-'
         }
@@ -3092,6 +3291,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   const handleTaskUpdate = (task) => {
     const duration = task.duration
     const startDate = task.start_date
+    const supplier = task.supplier
 
     // Skip if we're currently saving (prevents infinite loops from data reloads)
     if (isSaving.current) {
@@ -3103,21 +3303,33 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       return
     }
 
-    // For manually positioned tasks, check if this is a duration change (inline edit)
-    // Duration changes should be allowed even for manually positioned tasks
+    // Skip saving during drag lock period (prevents cascade API calls from auto-scheduling)
+    // This prevents 8+ API calls when dragging a task with dependents
+    if (isLoadingData.current) {
+      diagLog('⏸️', `Skipping cascade update for task ${task.id} - drag lock active`)
+      console.log('⏸️ Skipping cascade update - drag lock active (prevents API spam)')
+      return
+    }
+
+    // For manually positioned tasks, check if this is a duration or supplier change (inline edit)
+    // Duration and supplier changes should be allowed even for manually positioned tasks
     const originalTask = tasks.find(t => t.id === task.id)
     if (task.$manuallyPositioned && originalTask) {
-      // Check if duration changed (inline edit)
-      if (originalTask.duration !== duration) {
-        console.log('✏️ Duration edited for manually positioned task', task.id, '- saving duration change')
+      // Check if duration or supplier changed (inline edit)
+      const durationChanged = originalTask.duration !== duration
+      const supplierChanged = originalTask.supplier !== supplier
+
+      if (durationChanged || supplierChanged) {
+        console.log('✏️ Field edited for manually positioned task', task.id, '- saving changes')
         const updateData = {
           duration: duration,
+          supplier_name: supplier,
           predecessor_ids: task.predecessor_ids || []
         }
 
         // Set saving flag to prevent infinite loops
         isSaving.current = true
-        onUpdateTask(task.id, updateData)
+        onUpdateTask(task.id, updateData, { skipReload: true })
 
         // Reset flag after data reload completes (2 second timeout)
         setTimeout(() => {
@@ -3136,15 +3348,51 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     // Save the update to backend for non-manually-positioned tasks
     // Note: Conflict checking now happens in onAfterTaskDrag event
     if (originalTask) {
+      // CRITICAL: Check if data actually changed before making API call
+      // Prevents infinite loop from gantt.render() firing onAfterTaskUpdate for all tasks
+      const startDateStr = startDate ? startDate.toISOString().split('T')[0] : null
+      const originalStartDateStr = originalTask.start_date ?
+        (typeof originalTask.start_date === 'string' ? originalTask.start_date :
+         new Date(originalTask.start_date).toISOString().split('T')[0]) :
+        null
+
+      const dataChanged =
+        originalTask.duration !== duration ||
+        originalStartDateStr !== startDateStr ||
+        originalTask.supplier !== supplier ||
+        JSON.stringify(originalTask.predecessor_ids || []) !== JSON.stringify(task.predecessor_ids || [])
+
+      if (!dataChanged) {
+        console.log('⏸️ Skipping update - no data changed for task', task.id)
+        return
+      }
+
+      // CRITICAL: Skip saving tasks with predecessors when ONLY start_date changed
+      // These tasks are auto-calculated from dependencies, so start_date changes during
+      // data loading are expected and don't need to be saved (they'll be recalculated anyway)
+      const hasPredecessors = task.predecessor_ids && task.predecessor_ids.length > 0
+      const onlyStartDateChanged = originalStartDateStr !== startDateStr &&
+                                   originalTask.duration === duration &&
+                                   originalTask.supplier === supplier &&
+                                   JSON.stringify(originalTask.predecessor_ids || []) === JSON.stringify(task.predecessor_ids || [])
+
+      if (hasPredecessors && onlyStartDateChanged) {
+        console.log('⏸️ Skipping update - task', task.id, 'has predecessors and only start_date changed (auto-calculated)')
+        return
+      }
+
+      console.log('✏️ Data changed for task', task.id, '- saving to backend')
+
       const updateData = {
         duration: duration,
-        start_date: startDate ? startDate.toISOString().split('T')[0] : null,
+        start_date: startDateStr,
+        supplier_name: supplier,
         predecessor_ids: task.predecessor_ids || []
       }
 
       // Set saving flag to prevent infinite loops
       isSaving.current = true
-      onUpdateTask(task.id, updateData)
+      onUpdateTask(task.id, updateData, { skipReload: true })
 
       // Reset flag after data reload completes (2 second timeout)
       setTimeout(() => {
@@ -3200,10 +3448,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     // CRITICAL: Prevent cascading reloads if already loading data
     if (isLoadingData.current) {
+      diagLog('⏸️', 'Skipping data reload - already loading data (CASCADE PREVENTED)')
       console.log('⏸️ Skipping data reload - already loading data')
       return
     }
 
+    diagLog('🔄', `Starting Gantt reload - ${validTasks.length} tasks`)
     console.log('🐛 DHtmlxGanttView: Starting to load', validTasks.length, 'tasks into DHTMLX Gantt')
 
     // Declare variables outside batchUpdate so they're accessible after
@@ -3212,12 +3462,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     // CRITICAL: Set flag to suppress spurious drag events during data load
     // This prevents onAfterTaskDrag from firing 20+ times during gantt.parse()
-    // CRITICAL: Clear any pending timeout from previous load to prevent overlapping timeouts
-    if (loadingDataTimeout.current) {
-      clearTimeout(loadingDataTimeout.current)
-      loadingDataTimeout.current = null
-    }
+    // DO NOT clear pending timeout - let it complete to prevent cascade reloads
     isLoadingData.current = true
+    diagLog('🔒', 'Reload lock ENABLED for 1000ms')
 
     // PERFORMANCE: Use batchUpdate for better performance instead of clearAll + parse
     gantt.batchUpdate(() => {
@@ -3366,10 +3613,17 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         manuallyPositionedTasks.current.add(task.id)
       }
 
-      // If task is no longer manually positioned and was pending unlock, clear the pending flag
-      if (!task.manually_positioned && pendingUnlocks.current.has(task.id)) {
-        pendingUnlocks.current.delete(task.id)
-        console.log('✅ Cleared pending unlock for task', task.id, '- backend update confirmed')
+      // If task is no longer manually positioned, remove from tracking set
+      if (!task.manually_positioned) {
+        if (manuallyPositionedTasks.current.has(task.id)) {
+          manuallyPositionedTasks.current.delete(task.id)
+          console.log('🔓 Removed task', task.id, 'from manually positioned set (backend update)')
+        }
+        // Also clear pending unlock flag if present
+        if (pendingUnlocks.current.has(task.id)) {
+          pendingUnlocks.current.delete(task.id)
+          console.log('✅ Cleared pending unlock for task', task.id, '- backend update confirmed')
+        }
       }
 
       return {
@@ -3440,11 +3694,15 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     // CRITICAL: Reset flag to allow real drag events again
     // Use longer timeout to ensure all queued state updates and renders have settled
     // This prevents cascading re-renders from triggering spurious drag events
-    loadingDataTimeout.current = setTimeout(() => {
-      isLoadingData.current = false
-      loadingDataTimeout.current = null
-      console.log('✅ Data loading complete - drag events re-enabled')
-    }, 500)
+    // ONLY set timeout if one doesn't already exist (prevents cascade reloads)
+    if (!loadingDataTimeout.current) {
+      loadingDataTimeout.current = setTimeout(() => {
+        isLoadingData.current = false
+        loadingDataTimeout.current = null
+        diagLog('🔓', 'Reload lock RELEASED')
+        console.log('✅ Data loading complete - drag events re-enabled')
+      }, 1000) // Increased from 500ms to 1000ms to absorb cascades
+    }
 
     // Scroll to show yesterday's date (after gantt fully renders)
     setTimeout(() => {
@@ -3710,8 +3968,30 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white shadow-xl w-full h-full flex flex-col">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-hidden"
+      style={{
+        transform: 'translateZ(0)',
+        willChange: 'transform',
+        backfaceVisibility: 'hidden',
+        animation: 'fadeIn 0.15s ease-out'
+      }}
+    >
+      <div
+        className="bg-white shadow-xl w-full h-full flex flex-col"
+        style={{
+          transform: 'translateZ(0)',
+          willChange: 'transform',
+          backfaceVisibility: 'hidden',
+          animation: 'fadeIn 0.15s ease-out'
+        }}
+      >
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+        `}</style>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
@@ -3934,7 +4214,14 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             <div
               ref={ganttContainer}
               className="w-full h-full dhtmlx-gantt-container"
-              style={{ width: '100%', height: '100%' }}
+              style={{
+                width: '100%',
+                height: '100%',
+                transform: 'translateZ(0)',
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
+                contain: 'layout style paint'
+              }}
             />
           )}
         </div>

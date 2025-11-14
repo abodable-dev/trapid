@@ -1,6 +1,6 @@
 # Gantt & Schedule Master - The Bible (Development Rules)
-**Version:** 1.0.4
-**Last Updated:** November 14, 2025 at 12:55 PM (Final render loop fix - never reset isLoadingData in normal completion)
+**Version:** 1.1.0
+**Last Updated:** November 14, 2025 at 4:30 PM (Backend cascade service + bug-hunter automated testing)
 **Status:** Production-ready with DHtmlx trial
 **Authority Level:** ABSOLUTE - This is The Bible for all Gantt development
 **File Locations:**
@@ -262,6 +262,69 @@ gantt.attachEvent('onAfterTaskDrag', (id, mode, event) => {
 - Add early returns without resetting `isDragging` first
 - "Simplify" by consolidating these resets (defense in depth is intentional)
 
+### Protected Pattern 1c: Anti-Flicker During Drag
+**Location:** DHtmlxGanttView.jsx (lines 216-233, 1893-1900)
+**Added:** November 14, 2025 at 1:45 PM
+
+**The Problem:**
+During active drag operations, render calls cause visual flickering and stuttering. The screen updates continuously as the task is being dragged, creating a poor user experience.
+
+**The Solution:**
+```javascript
+// In debouncedRender function (lines 216-233):
+const debouncedRender = (delay = 0) => {
+  if (renderTimeout.current) {
+    clearTimeout(renderTimeout.current)
+  }
+  renderTimeout.current = setTimeout(() => {
+    // PERFORMANCE: Skip render during active drag to prevent flickering
+    if (isDragging.current) {
+      console.log('⏸️ Skipping render - drag in progress (reduces flicker)')
+      renderTimeout.current = null
+      return
+    }
+
+    if (ganttReady) {
+      gantt.render()
+    }
+    renderTimeout.current = null
+  }, delay)
+}
+
+// In onAfterTaskDrag handler (lines 1893-1900):
+isDragging.current = false
+if (wasRealDrag) {
+  console.log('✅ Real drag completed - isDragging cleared')
+
+  // PERFORMANCE: Add 500ms delay before refreshing display to reduce flickering
+  // This allows the drag animation to complete smoothly before we update dependencies
+  setTimeout(() => {
+    if (ganttReady && gantt && typeof gantt.render === 'function') {
+      console.log('🎨 Delayed render after drag - reducing flicker')
+      gantt.render()
+    }
+  }, 500)
+}
+```
+
+**WHY:**
+- During drag, `isDragging.current = true` blocks all render calls from debouncedRender
+- This prevents visual updates while the user is actively dragging
+- After drag completes, we wait 500ms before refreshing the display
+- This allows DHtmlx's internal drag animation to finish smoothly
+- The delay also lets all state updates settle before visual refresh
+
+**CONSEQUENCES:**
+- Removing isDragging check: Flickering returns during drag operations
+- Reducing 500ms delay: Visual stuttering may occur as state updates conflict with render
+- Removing delayed render: Dependency arrows may not update after drag completes
+
+**DO NOT:**
+- Remove the isDragging check from debouncedRender
+- Remove the 500ms delayed render after drag completes
+- Reduce the 500ms timeout (tested value for smooth animation)
+- Add immediate render calls during active drag operations
+
 ### Protected Pattern 2: Debounced localStorage Writes
 **Location:** All components with user preferences
 
@@ -316,6 +379,482 @@ async delete(endpoint, options = {}) {
 - Always expect JSON response
 - Remove text parsing fallback
 - "Simplify" error handling
+
+---
+
+### Protected Pattern 4: Backend Cascade Service
+**Location:** backend/app/services/schedule_cascade_service.rb, backend/app/models/schedule_template_row.rb:24, backend/app/controllers/api/v1/schedule_template_rows_controller.rb:46-62
+**Added:** November 14, 2025 at 4:30 PM
+
+**The Problem:**
+When dragging a task with dependencies in the Gantt chart, the screen shakes/flickers and multiple reloads occur. This was caused by:
+1. **No backend cascade logic** - Backend didn't recalculate dependent task dates
+2. **Frontend trying to compensate** - DHtmlx auto-scheduling plugin tried to cascade updates itself
+3. **Infinite loop** - Each `gantt.render()` fired `onAfterTaskUpdate` for ALL tasks, causing unnecessary API calls
+4. **Multiple reloads** - Frontend made separate API calls for each cascaded task, causing multiple state updates
+
+**Root Cause Found by Bug-Hunter:**
+- `handleTaskUpdate` was making API calls even when data hadn't changed
+- `gantt.render()` triggered `onAfterTaskUpdate` events for ALL tasks in the chart
+- Each event triggered an API call → state update → reload cycle
+- Result: 8+ Gantt reloads per drag operation = visible screen shake
+
+**The Solution:**
+
+#### 1. Backend Cascade Service (schedule_cascade_service.rb)
+```ruby
+class ScheduleCascadeService
+  def self.cascade_changes(task, changed_attributes = [])
+    new(task, changed_attributes).cascade
+  end
+
+  def cascade
+    return [@task] unless cascade_needed?
+
+    # Add original task to affected list
+    @affected_tasks[@task.id] = @task
+
+    # Recursively cascade to dependents
+    cascade_to_dependents(@task)
+
+    # Return all affected tasks
+    @affected_tasks.values
+  end
+
+  private
+
+  def cascade_to_dependents(predecessor_task)
+    dependent_tasks = find_dependent_tasks(predecessor_task)
+
+    dependent_tasks.each do |dependent_task|
+      next if @affected_tasks.key?(dependent_task.id)
+      next if dependent_task.manually_positioned?
+
+      # Calculate new start date based on predecessor
+      new_start_date = calculate_start_date(dependent_task, predecessor_task)
+
+      if new_start_date && dependent_task.start_date != new_start_date
+        dependent_task.update_column(:start_date, new_start_date)
+        dependent_task.reload
+
+        @affected_tasks[dependent_task.id] = dependent_task
+
+        # Recursively cascade to this task's dependents
+        cascade_to_dependents(dependent_task)
+      end
+    end
+  end
+
+  def find_dependent_tasks(predecessor_task)
+    # NOTE: predecessor_ids are 1-based (1, 2, 3...)
+    # while sequence_order is 0-based (0, 1, 2...)
+    predecessor_id = predecessor_task.sequence_order + 1
+
+    @template.schedule_template_rows.select do |row|
+      next false if row.predecessor_ids.blank?
+      row.predecessor_ids.any? { |pred| pred['id'].to_i == predecessor_id }
+    end
+  end
+
+  def calculate_start_date(dependent_task, predecessor_task)
+    # Supports FS, SS, FF, SF dependency types with lag values
+    # Returns calculated start date based on predecessor end date
+  end
+end
+```
+
+#### 2. Model Callback (schedule_template_row.rb:190-203)
+```ruby
+after_update :cascade_to_dependents
+
+def cascade_to_dependents
+  # Only cascade if start_date or duration changed
+  # NOTE: We cascade FROM any task (even manually positioned ones)
+  # The cascade service will skip cascading TO manually positioned tasks
+  return unless saved_change_to_start_date? || saved_change_to_duration?
+
+  changed_attrs = []
+  changed_attrs << :start_date if saved_change_to_start_date?
+  changed_attrs << :duration if saved_change_to_duration?
+
+  ScheduleCascadeService.cascade_changes(self, changed_attrs)
+end
+```
+
+#### 3. Controller Returns All Affected Tasks (schedule_template_rows_controller.rb:46-62)
+```ruby
+# Track which attributes are changing for cascade detection
+changed_attrs = []
+[:start_date, :duration].each do |attr|
+  changed_attrs << attr if row_params.key?(attr) && row_params[attr] != @row.send(attr)
+end
+
+if @row.update(row_params)
+  @row.reload
+
+  # Cascade changes to dependent tasks if start_date or duration changed
+  affected_tasks = if changed_attrs.any?
+    ScheduleCascadeService.cascade_changes(@row, changed_attrs)
+  else
+    [@row]
+  end
+
+  # Return all affected tasks (original + cascaded)
+  response_json = if affected_tasks.length > 1
+    {
+      task: row_json(@row),
+      cascaded_tasks: affected_tasks.reject { |t| t.id == @row.id }.map { |t| row_json(t) }
+    }
+  else
+    row_json(@row)
+  end
+
+  render json: response_json
+end
+```
+
+#### 4. Frontend Handles Bulk Update (ScheduleTemplateEditor.jsx:758-782)
+```javascript
+const response = await api.patch(
+  `/api/v1/schedule_templates/${selectedTemplate.id}/rows/${rowId}`,
+  { schedule_template_row: updates }
+)
+
+// Check if backend returned cascaded tasks (new format)
+const hasCascadedTasks = response.cascaded_tasks && response.cascaded_tasks.length > 0
+const mainTask = response.task || response
+
+if (hasCascadedTasks) {
+  // Backend handled cascading - apply ALL tasks in one batch
+  console.log(`🔄 Backend cascaded to ${response.cascaded_tasks.length} dependent tasks`)
+
+  const allAffectedTasks = [mainTask, ...response.cascaded_tasks]
+
+  // Update all affected tasks in a single state update (no flicker!)
+  setRows(prevRows => {
+    const updatedRows = [...prevRows]
+    allAffectedTasks.forEach(task => {
+      const index = updatedRows.findIndex(r => r && r.id === task.id)
+      if (index !== -1) {
+        updatedRows[index] = task
+      }
+    })
+    return updatedRows
+  })
+
+  console.log('✅ Applied batch update for', allAffectedTasks.length, 'tasks')
+
+  return mainTask
+}
+```
+
+#### 5. Data Change Detection (DHtmlxGanttView.jsx:3312-3329)
+```javascript
+// CRITICAL: Check if data actually changed before making API call
+// Prevents infinite loop from gantt.render() firing onAfterTaskUpdate for all tasks
+const startDateStr = startDate ? startDate.toISOString().split('T')[0] : null
+const originalStartDateStr = originalTask.start_date ?
+  (typeof originalTask.start_date === 'string' ? originalTask.start_date :
+   new Date(originalTask.start_date).toISOString().split('T')[0]) :
+  null
+
+const dataChanged =
+  originalTask.duration !== duration ||
+  originalStartDateStr !== startDateStr ||
+  originalTask.supplier !== supplier ||
+  JSON.stringify(originalTask.predecessor_ids || []) !== JSON.stringify(task.predecessor_ids || [])
+
+if (!dataChanged) {
+  console.log('⏸️ Skipping update - no data changed for task', task.id)
+  return
+}
+
+console.log('✏️ Data changed for task', task.id, '- saving to backend')
+```
+
+**HOW IT WORKS:**
+```
+USER DRAGS TASK 1 (day 4 → day 9)
+    ↓
+BACKEND CASCADE SERVICE:
+  ✅ Task 1 updated: day 4 → 9
+  ✅ Task 2 cascaded: day 6 → 11 (depends on Task 1, FS+0)
+  ✅ Task 3 cascaded: day 6 → 11 (depends on Task 1, FS+0)
+    ↓
+API RETURNS: {task: Task1, cascaded_tasks: [Task2, Task3]}
+    ↓
+FRONTEND: Single state update → Single Gantt reload → NO FLICKER!
+```
+
+**WHY:**
+- **Backend responsibility**: Backend knows the business logic for cascading, not frontend
+- **Single API call**: One drag = one API call, not one per affected task
+- **Single state update**: All affected tasks updated in one batch
+- **Single reload**: One state change = one Gantt reload
+- **Data change detection**: Prevents unnecessary API calls from `gantt.render()` events
+- **Prevents infinite loops**: Frontend only makes API calls when data actually changes
+
+**CRITICAL IMPLEMENTATION NOTES:**
+1. **Predecessor IDs are 1-based** (1, 2, 3...) while **sequence_order is 0-based** (0, 1, 2...)
+   - Always convert: `predecessor_id = task.sequence_order + 1`
+2. **Cascade FROM any task** (even manually positioned ones)
+   - Skip cascading TO manually positioned tasks only
+3. **Support all dependency types**: FS (Finish-to-Start), SS (Start-to-Start), FF (Finish-to-Finish), SF (Start-to-Finish)
+4. **Handle lag values**: Can be positive (delay) or negative (lead time)
+5. **Avoid infinite loops**: Track processed tasks in `@affected_tasks` hash
+
+**CONSEQUENCES:**
+- **Removing backend cascade**: Screen shake returns, infinite loops occur, multiple API calls per drag
+- **Removing data change detection**: Infinite loop from `gantt.render()` events
+- **Not returning cascaded_tasks**: Frontend makes separate API calls for each task
+- **Multiple state updates**: Each update triggers Gantt reload = visible flicker
+
+**DO NOT:**
+- Move cascade logic back to frontend
+- Remove data change detection from `handleTaskUpdate`
+- Split cascaded tasks into separate API responses
+- Remove `after_update :cascade_to_dependents` callback
+- Change predecessor ID calculation (1-based vs 0-based)
+- Skip manually positioned check (would override user-set dates)
+
+**TEST VERIFICATION:**
+Backend test must pass:
+```bash
+cd backend && rails runner test/gantt_drag_test.rb
+```
+
+Expected output:
+```
+✅ Task 2 cascaded correctly (11)
+✅ Task 3 cascaded correctly (11)
+✅ TEST PASSED: Cascade logic works correctly
+```
+
+---
+
+### Protected Pattern 5: Bug-Hunter Automated Testing
+**Location:** test/bug_hunter_test.sh, frontend/tests/e2e/gantt-cascade.spec.js, frontend/playwright.config.js
+**Added:** November 14, 2025 at 4:30 PM
+
+**The Problem:**
+Testing Gantt cascade manually is time-consuming, error-prone, and requires screenshot sharing and console log analysis. Need automated verification that:
+1. Backend cascade logic works correctly
+2. Frontend integration has no flicker
+3. No infinite loops occur
+4. Single batch updates work as expected
+
+**The Solution:**
+
+#### 1. Bug-Hunter Test Runner (test/bug_hunter_test.sh)
+```bash
+#!/bin/bash
+# Main entry point for bug-hunter automated verification
+
+./test/run_gantt_tests.sh
+exit_code=$?
+
+if [ $exit_code -eq 0 ]; then
+  echo "✅ BUG-HUNTER VERIFICATION: ALL TESTS PASSED"
+  echo "🎉 FIX CONFIRMED!"
+else
+  echo "❌ BUG-HUNTER VERIFICATION: TESTS FAILED"
+fi
+
+exit $exit_code
+```
+
+#### 2. Comprehensive Test Suite (test/run_gantt_tests.sh)
+```bash
+# Test 1: Backend Cascade Logic
+cd backend && rails runner test/gantt_drag_test.rb
+
+# Test 2: Frontend E2E Test (Playwright)
+if frontend_server_running; then
+  cd frontend && npm run test:gantt
+fi
+```
+
+#### 3. Playwright E2E Test with Diagnostics (frontend/tests/e2e/gantt-cascade.spec.js)
+
+**Diagnostic Monitoring Features:**
+- ✅ **Injects monitoring script** into browser before test runs
+- ✅ **Tracks API calls per task** - Detects duplicate calls (infinite loop indicator)
+- ✅ **Monitors state update batches** - Should be 1 batch, not 8+
+- ✅ **Counts Gantt reloads** - Should be 1 or 0, not multiple
+- ✅ **Timing analysis** - Measures drag duration and total test time
+- ✅ **Console log analysis** - Captures cascade and batch update messages
+
+**Monitoring Script Injection (lines 97-185):**
+```javascript
+await page.evaluate(() => {
+  window.ganttTestMonitor = {
+    startTime: performance.now(),
+    apiCalls: [],
+    stateUpdates: [],
+    ganttReloads: [],
+    dragStartTime: null,
+    dragEndTime: null
+  };
+
+  // Monitor fetch/API calls
+  const originalFetch = window.fetch;
+  window.fetch = function(...args) {
+    const url = args[0];
+    if (url.includes('/api/v1/schedule_templates') && url.includes('/rows/')) {
+      window.ganttTestMonitor.apiCalls.push({
+        timestamp: performance.now() - window.ganttTestMonitor.startTime,
+        method: args[1]?.method || 'GET',
+        taskId: url.match(/\/rows\/(\d+)/)?.[1] || 'unknown'
+      });
+    }
+    return originalFetch.apply(window, args);
+  };
+
+  // Monitor console logs for cascade patterns
+  // ... (tracks drag start/end, state updates, reloads)
+});
+```
+
+**Diagnostic Report Generation (lines 212-278):**
+```javascript
+const monitorData = await page.evaluate(() => {
+  const monitor = window.ganttTestMonitor;
+
+  // Group API calls by task
+  const callsByTask = {};
+  monitor.apiCalls.forEach(call => {
+    if (!callsByTask[call.taskId]) {
+      callsByTask[call.taskId] = [];
+    }
+    callsByTask[call.taskId].push(call);
+  });
+
+  // Check for duplicates (infinite loop indicator)
+  const hasDuplicates = Object.values(callsByTask).some(calls => calls.length > 1);
+
+  return {
+    totalDuration: (performance.now() - monitor.startTime).toFixed(2),
+    dragDuration: monitor.dragEndTime && monitor.dragStartTime
+      ? (monitor.dragEndTime - monitor.dragStartTime).toFixed(2)
+      : 'N/A',
+    apiCalls: monitor.apiCalls,
+    callsByTask: callsByTask,
+    stateUpdates: monitor.stateUpdates,
+    ganttReloads: monitor.ganttReloads,
+    hasDuplicates: hasDuplicates
+  };
+});
+
+// Print detailed diagnostic report
+console.log('🔬 DETAILED DIAGNOSTIC REPORT');
+console.log(`Drag duration: ${monitorData.dragDuration}ms`);
+console.log(`API Calls: ${monitorData.apiCalls.length} total`);
+console.log(`State Updates: ${monitorData.stateUpdates.length}`);
+console.log(`Gantt Reloads: ${monitorData.ganttReloads.length}`);
+```
+
+**Expected Diagnostic Output (PASS):**
+```
+🔬 DETAILED DIAGNOSTIC REPORT
+======================================================================
+
+⏱️  Timing:
+   Drag duration: 1234.56ms
+   Total test time: 5678.90ms
+
+🌐 API Calls: 1 total
+   Task 299: 1 call
+
+📦 State Updates (Batches): 1
+   #1 at 1234.56ms
+
+🔄 Gantt Reloads: 1
+   #1 at 1234.56ms
+
+======================================================================
+✅ TEST PASSED: No infinite loop, backend cascade working!
+```
+
+**Failed Test Output (FAIL):**
+```
+🔬 DETAILED DIAGNOSTIC REPORT
+======================================================================
+
+🌐 API Calls: 15 total
+   Task 299: 8 calls  ⚠️ DUPLICATE CALLS DETECTED!
+   Task 300: 4 calls  ⚠️ DUPLICATE CALLS DETECTED!
+   Task 301: 3 calls  ⚠️ DUPLICATE CALLS DETECTED!
+
+📦 State Updates (Batches): 8
+🔄 Gantt Reloads: 8
+
+======================================================================
+❌ TEST FAILED: Infinite loop detected
+   ❌ Duplicate API calls found
+   ❌ Multiple Gantt reloads (8)
+```
+
+**WHY:**
+- **Automated verification**: Bug-hunter can verify fixes without manual testing
+- **Detailed diagnostics**: Pinpoints exact issues (duplicate calls, multiple reloads)
+- **Timing analysis**: Shows when things happen and how long they take
+- **Permanent feature**: Always available for regression testing
+- **Exit codes**: Allows CI/CD integration (0 = pass, 1 = fail)
+
+**HOW BUG-HUNTER USES IT:**
+```bash
+# Single command - full verification
+./test/bug_hunter_test.sh
+
+# Backend only
+cd backend && rails runner test/gantt_drag_test.rb
+
+# Frontend only (requires dev server running)
+cd frontend && npm run test:gantt
+```
+
+**NPM Scripts Added:**
+```json
+{
+  "test:gantt": "playwright test gantt-cascade",
+  "test:e2e": "playwright test",
+  "test:e2e:headed": "playwright test --headed",
+  "test:e2e:debug": "playwright test --debug"
+}
+```
+
+**CONSEQUENCES:**
+- **Removing monitoring script**: Lose detailed diagnostics, harder to debug issues
+- **Skipping automated tests**: Manual testing required, slower iteration
+- **Not checking for duplicates**: Infinite loops may go undetected
+- **Removing timing analysis**: Can't measure performance improvements
+
+**DO NOT:**
+- Remove the monitoring script injection (lines 97-185)
+- Remove the diagnostic report generation (lines 212-278)
+- Skip running tests before declaring fixes complete
+- Remove exit code handling (breaks CI/CD integration)
+- Simplify the test to just check pass/fail (lose valuable diagnostics)
+
+**TEST COMMANDS:**
+```bash
+# Run all tests (backend + frontend)
+./test/bug_hunter_test.sh
+
+# Backend test only
+cd backend && rails runner test/gantt_drag_test.rb
+
+# Frontend test with visible browser (for debugging)
+cd frontend && npm run test:e2e:headed
+
+# Frontend test in debug mode (pauses at each step)
+cd frontend && npm run test:e2e:debug
+```
+
+**DOCUMENTATION:**
+- Comprehensive guide: `test/README.md`
+- Setup instructions: `AUTOMATED_TESTING_SETUP.md`
+- Test configuration: `frontend/playwright.config.js`
 
 ---
 
@@ -2475,6 +3014,17 @@ When working on Gantt/Schedule features, always:
 ---
 
 ## Document History
+
+**Version 1.0.5 - November 14, 2025 at 1:45 PM:**
+- **ANTI-FLICKER ENHANCEMENT:** Eliminated visual flickering during task drag operations
+- Added Protected Pattern 1c: Anti-Flicker During Drag
+- **Problem:** Screen flickered continuously while dragging tasks due to render calls
+- **Solution 1:** Modified `debouncedRender()` to skip all render calls while `isDragging.current = true`
+- **Solution 2:** Added 500ms delayed render after drag completes to let animation finish smoothly
+- **Result:** Smooth drag experience with no visual stuttering or flickering
+- User reported issue: "when im in a gant the screen is very flockery"
+- Implemented user's suggestion: delay display update by half a second after drag
+- **Location:** DHtmlxGanttView.jsx lines 216-233 (debouncedRender), 1893-1900 (delayed render)
 
 **Version 1.0.4 - November 14, 2025 at 12:55 PM:**
 - **FINAL FIX - PRODUCTION READY:** Render loop issue completely resolved

@@ -32,13 +32,36 @@ module Api
         Rails.logger.info "🔵 UPDATE ROW #{@row.id} - Received params: #{row_params.inspect}"
         Rails.logger.info "🔵 BEFORE UPDATE - manually_positioned: #{@row.manually_positioned}, supplier_confirm: #{@row.supplier_confirm}"
 
+        # Track which attributes are changing for cascade detection
+        changed_attrs = []
+        [:start_date, :duration].each do |attr|
+          changed_attrs << attr if row_params.key?(attr) && row_params[attr] != @row.send(attr)
+        end
+
         if @row.update(row_params)
           # Reload to get fresh data from database
           @row.reload
           Rails.logger.info "✅ AFTER UPDATE - manually_positioned: #{@row.manually_positioned}, supplier_confirm: #{@row.supplier_confirm}"
 
-          response_json = row_json(@row)
-          Rails.logger.info "📤 SENDING RESPONSE - manually_positioned: #{response_json[:manually_positioned]}, supplier_confirm: #{response_json[:supplier_confirm]}"
+          # Cascade changes to dependent tasks if start_date or duration changed
+          affected_tasks = if changed_attrs.any?
+            ScheduleCascadeService.cascade_changes(@row, changed_attrs)
+          else
+            [@row]
+          end
+
+          # Return all affected tasks (original + cascaded)
+          response_json = if affected_tasks.length > 1
+            Rails.logger.info "🔄 CASCADE: Returning #{affected_tasks.length} affected tasks"
+            {
+              task: row_json(@row),
+              cascaded_tasks: affected_tasks.reject { |t| t.id == @row.id }.map { |t| row_json(t) }
+            }
+          else
+            row_json(@row)
+          end
+
+          Rails.logger.info "📤 SENDING RESPONSE - manually_positioned: #{response_json[:manually_positioned] rescue 'N/A'}, supplier_confirm: #{response_json[:supplier_confirm] rescue 'N/A'}"
 
           render json: response_json
         else
