@@ -1,387 +1,57 @@
-# Gantt Drag Flickering - Knowledge Base
+# Gantt Chart - Architecture & Best Practices Guide
 
 **Last Updated:** 2025-11-14 13:02 AEDT
 **Component:** DHtmlx Gantt Chart (Schedule Master)
-**Status:** ✅ RESOLVED
+**Purpose:** High-level guide for Claude to read before working on Gantt code
 
 ---
 
 ## Overview
 
-This document chronicles the investigation and resolution of screen flickering/shaking issues that occurred when dragging tasks in the DHtmlx Gantt chart. The issue manifested as visible screen shake during and after drag operations, particularly when dragging tasks with dependent/successor tasks.
+This document provides architectural guidance and best practices for working with the DHtmlx Gantt chart implementation in the Schedule Master feature. Read this before making changes to ensure you understand the critical patterns and safeguards in place.
 
-**Primary Files Affected:**
-- `frontend/src/components/schedule-master/DHtmlxGanttView.jsx`
-- `frontend/src/pages/MasterSchedulePage.jsx`
-- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx`
-
----
-
-## Root Cause Summary
-
-The flickering was caused by **multiple cascading Gantt reloads** triggered by DHtmlx Gantt's `auto_scheduling` plugin. When dragging a task with dependencies:
-
-1. DHtmlx auto_scheduling plugin recalculated all dependent tasks (Tasks 300, 301, 302, 304)
-2. Each recalculated task fired `onAfterTaskUpdate` event
-3. Each event triggered API call → state update → full Gantt reload
-4. **Result:** 8 separate Gantt reloads within ~1 second = visible screen shake
-
-**Key Insight:** The `isLoadingData` lock was being set TOO LATE (in the useEffect after state updates had already queued), allowing all cascade updates to bypass the lock.
+**Primary Files:**
+- `frontend/src/components/schedule-master/DHtmlxGanttView.jsx` - Main Gantt component
+- `frontend/src/pages/MasterSchedulePage.jsx` - Parent container
+- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx` - Table view with cascade logic
 
 ---
 
-## Timeline of Fixes
+## Critical Concepts
 
-### Fix #1: Skip Reload Option
-**Problem:** Parent component (`MasterSchedulePage`) was triggering full data reload after every task update, even during drag operations.
+### Lock State Flags
 
-**Solution:** Added `skipReload` option to `handleTaskUpdate` function to prevent reload during drag.
+The Gantt implementation uses ref-based locks to prevent race conditions and infinite loops. **ALWAYS check these locks before making API calls or triggering state updates.**
 
-**Location:** `frontend/src/pages/MasterSchedulePage.jsx:45-95`
+| Flag | Purpose | Set When | Cleared When | Location |
+|------|---------|----------|--------------|----------|
+| `isDragging.current` | Prevents API calls during active drag | onBeforeTaskDrag | onAfterTaskDrag (deferred) | DHtmlxGanttView.jsx:125 |
+| `isLoadingData.current` | Prevents cascade API calls after drag | onAfterTaskDrag (IMMEDIATELY) | After 1000ms timeout | DHtmlxGanttView.jsx:126 |
+| `suppressRender.current` | Prevents visual flicker during drag end | onAfterTaskDrag | After drag processing | DHtmlxGanttView.jsx:127 |
+| `isSaving.current` | Prevents infinite loops from data reloads | Before API call | After 2000ms cooldown | DHtmlxGanttView.jsx:128 |
 
+**Lock Check Pattern (CRITICAL):**
 ```javascript
-const handleTaskUpdate = async (taskId, fieldOrUpdates, valueOrOptions, maybeOptions) => {
-  let updates, options = {}
-
-  if (typeof fieldOrUpdates === 'object') {
-    updates = fieldOrUpdates
-    options = valueOrOptions || {}
-  } else {
-    updates = { [fieldOrUpdates]: valueOrOptions }
-    options = maybeOptions || {}
-  }
-
-  // CRITICAL: Skip optimistic update when skipReload is true
-  // Gantt handles the UI update internally during drag
-  if (!options.skipReload) {
-    const updatedTasks = scheduleData.tasks.map(task => {
-      if (task.id === taskId) {
-        return { ...task, ...mappedUpdates }
-      }
-      return task
-    })
-    setScheduleData({ ...scheduleData, tasks: updatedTasks })
-  }
-
-  try {
-    // Only set saving state for non-drag operations
-    if (!options.skipReload) {
-      setSaving(true)
-    }
-
-    const response = await api.patch(`/api/v1/projects/${project.id}/tasks/${taskId}`, {
-      project_task: updates
-    })
-
-    if (response.success) {
-      if (!options.skipReload) {
-        setToast({ type: 'success', message: 'Task updated successfully' })
-        const scheduleResponse = await api.get(`/api/v1/projects/${project.id}/gantt`)
-        setScheduleData(scheduleResponse)
-      }
-    }
-  } finally {
-    if (!options.skipReload) {
-      setSaving(false)
-    }
-  }
+// ALWAYS check locks before API calls
+if (isDragging.current || isLoadingData.current || isSaving.current) {
+  console.log('⏸️ Operation blocked by lock')
+  return
 }
 ```
 
-**Result:** Reduced flickering but didn't eliminate it completely.
+### Auto-Scheduling Plugin
 
----
+DHtmlx's `auto_scheduling` plugin provides real-time visual feedback when dragging tasks with dependencies:
+- Dependent tasks move visually during drag (better UX)
+- Each visual update fires `onAfterTaskUpdate` event
+- **Lock flags prevent these events from triggering API calls**
+- Result: Smooth visuals without API spam
 
-### Fix #2: Batch Multi-Field Updates
-**Problem:** Separate API calls for `start_date` and `duration` were triggering multiple reloads.
-
-**Solution:** Combined all field updates into single API call with batched data.
-
-**Location:** `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:1927-1930`
-
+**Configuration:**
 ```javascript
-// Batch all updates into single API call
-const updateData = {
-  start_date: newStartDate,
-  duration: task.duration,
-  predecessor_ids: task.predecessor_ids || []
-}
-
-// Delay API call until after visual transition completes
-setTimeout(() => {
-  onUpdateTask(task.id, updateData, { skipReload: true })
-}, 200)
-```
-
-**Result:** Reduced API calls but shake persisted.
-
----
-
-### Fix #3: Body Scroll Lock Enhancement
-**Problem:** Background page (including header) was shaking when Gantt modal opened and during drag operations.
-
-**Solution:** Added comprehensive body scroll lock with `position: fixed` and scrollbar compensation.
-
-**Location:** `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:167-204`
-
-```javascript
-useEffect(() => {
-  if (isOpen) {
-    const originalOverflow = document.body.style.overflow
-    const originalPaddingRight = document.body.style.paddingRight
-    const originalPosition = document.body.style.position
-    const originalTop = document.body.style.top
-    const originalWidth = document.body.style.width
-    const scrollY = window.scrollY
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
-
-    requestAnimationFrame(() => {
-      document.body.style.overflow = 'hidden'
-      document.body.style.position = 'fixed'
-      document.body.style.top = `-${scrollY}px`
-      document.body.style.width = '100%'
-      if (scrollbarWidth > 0) {
-        document.body.style.paddingRight = `${scrollbarWidth}px`
-      }
-    })
-
-    return () => {
-      document.body.style.overflow = originalOverflow
-      document.body.style.position = originalPosition
-      document.body.style.top = originalTop
-      document.body.style.width = originalWidth
-      document.body.style.paddingRight = originalPaddingRight
-      window.scrollTo(0, scrollY)
-    }
-  }
-}, [isOpen])
-```
-
-**Result:** Fixed background shake on modal open, but drag shake remained.
-
----
-
-### Fix #4: GPU Acceleration
-**Problem:** Browser rendering performance during drag operations was suboptimal.
-
-**Solution:** Added CSS transforms and containment properties to force GPU acceleration.
-
-**Location:** `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:3822-3867`
-
-```javascript
-// Modal backdrop
-<div
-  className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-hidden"
-  style={{
-    transform: 'translateZ(0)',
-    willChange: 'transform',
-    backfaceVisibility: 'hidden',
-    animation: 'fadeIn 0.15s ease-out'
-  }}
->
-  {/* Modal content with GPU acceleration */}
-  <div
-    className="bg-white shadow-xl w-full h-full flex flex-col"
-    style={{
-      transform: 'translateZ(0)',
-      willChange: 'transform',
-      backfaceVisibility: 'hidden',
-      animation: 'fadeIn 0.15s ease-out'
-    }}
-  >
-
-// Gantt container with containment
-<div
-  ref={ganttContainer}
-  className="w-full h-full dhtmlx-gantt-container"
-  style={{
-    width: '100%',
-    height: '100%',
-    transform: 'translateZ(0)',
-    willChange: 'transform',
-    backfaceVisibility: 'hidden',
-    contain: 'layout style paint'
-  }}
-/>
-```
-
-**Result:** Improved rendering performance but didn't fix core issue.
-
----
-
-### Fix #5: Render Suppression
-**Problem:** React re-renders during drag completion were causing visual flicker.
-
-**Solution:** Added render suppression flag to prevent renders during drag operations.
-
-**Location:** `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:253-275`
-
-```javascript
-const debouncedRender = (delay = 0) => {
-  if (renderTimeout.current) {
-    clearTimeout(renderTimeout.current)
-  }
-  renderTimeout.current = setTimeout(() => {
-    if (isDragging.current) {
-      console.log('⏸️ Skipping render - drag in progress')
-      return
-    }
-    if (suppressRender.current) {
-      console.log('⏸️ Skipping render - render suppression active')
-      return
-    }
-    if (ganttReady) {
-      gantt.render()
-    }
-  }, delay)
-}
-```
-
-**Result:** Reduced some flickering but shake persisted.
-
----
-
-### Fix #6: isDragging Flag Deferred Reset
-**Problem:** `isDragging` flag was being reset synchronously, causing immediate re-renders.
-
-**Solution:** Deferred flag reset using `requestAnimationFrame` to batch with browser paint cycle.
-
-**Location:** `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:1376-1390`
-
-```javascript
-// Defer to prevent render flicker
-requestAnimationFrame(() => {
-  isDragging.current = false
-  if (wasRealDrag) {
-    isLoadingData.current = false
-  }
-})
-```
-
-**Result:** Smoother transitions but still had cascade reload issue.
-
----
-
-### Fix #7: Loading Data Lock Enhancement
-**Problem:** Multiple cascade reloads were still happening because `isLoadingData` timeout was being reset on each reload attempt.
-
-**Solution:** Modified timeout logic to only set timeout if one doesn't already exist.
-
-**Location:** `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:3587-3594`
-
-```javascript
-// ONLY set timeout if one doesn't already exist (prevents cascade reloads)
-if (!loadingDataTimeout.current) {
-  loadingDataTimeout.current = setTimeout(() => {
-    isLoadingData.current = false
-    loadingDataTimeout.current = null
-    diagLog('🔓', 'Reload lock RELEASED')
-    console.log('✅ Data loading complete - drag events re-enabled')
-  }, 1000) // Increased from 500ms to 1000ms to absorb cascades
-}
-```
-
-**Result:** Slowed down reloads but didn't prevent them (8 reloads still happening).
-
----
-
-### ✅ Fix #8: FINAL SOLUTION - Early Lock + Cascade API Block
-
-**Problem:** Diagnostic logs revealed 8 Gantt reloads happening after single drag. Root cause:
-1. DHtmlx `auto_scheduling` plugin enabled (line 574)
-2. When Task 299 dragged, plugin recalculated Tasks 300, 301, 302, 304
-3. Each fired `onAfterTaskUpdate` → `handleTaskUpdate` → API call → state update → reload
-4. `isLoadingData` lock was set TOO LATE (in useEffect after state updates queued)
-5. All cascade updates bypassed lock → 8 separate reloads → screen shake
-
-**Solution (Two-Part Fix):**
-
-#### Part A: Set Lock Immediately in onAfterTaskDrag
-**Location:** `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:1343-1361`
-
-```javascript
-gantt.attachEvent('onAfterTaskDrag', (id, mode, event) => {
-  const dragDuration = (performance.now() - dragStartTime.current).toFixed(2)
-  diagLog('🔴', `DRAG END - Task ${id}, Duration: ${dragDuration}ms`)
-  console.log('🎯 onAfterTaskDrag fired:', { id, mode })
-
-  // CRITICAL: Set drag lock IMMEDIATELY to prevent cascade API calls from auto-scheduling
-  // Auto-scheduling plugin will recalculate dependent tasks and fire onAfterTaskUpdate
-  // for each one. This lock prevents handleTaskUpdate from making API calls for those.
-  isLoadingData.current = true
-  diagLog('🔒', 'Drag lock ENABLED (prevents cascade API calls)')
-
-  // Clear any existing timeout first
-  if (loadingDataTimeout.current) {
-    clearTimeout(loadingDataTimeout.current)
-    loadingDataTimeout.current = null
-  }
-
-  // Set timeout to release lock after 1000ms
-  loadingDataTimeout.current = setTimeout(() => {
-    isLoadingData.current = false
-    loadingDataTimeout.current = null
-    diagLog('🔓', 'Drag lock RELEASED')
-    console.log('✅ Drag lock released - drag events re-enabled')
-  }, 1000)
-
-  // ANTI-FLICKER: Suppress ALL renders during drag completion to prevent shake
-  suppressRender.current = true
-  diagLog('🛡️', 'Render suppression ENABLED')
-
-  // ... rest of onAfterTaskDrag handler
-```
-
-**Key Points:**
-- Lock is set BEFORE auto-scheduling fires cascade updates
-- Timeout is cleared and reset to ensure single 1000ms window
-- Lock prevents API calls but allows visual feedback
-
-#### Part B: Block Cascade API Calls in handleTaskUpdate
-**Location:** `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:3247-3253`
-
-```javascript
-const handleTaskUpdate = (task) => {
-  const duration = task.duration
-  const startDate = task.start_date
-  const supplier = task.supplier
-
-  // Skip if we're currently saving (prevents infinite loops from data reloads)
-  if (isSaving.current) {
-    return
-  }
-
-  // Skip saving during drag - onAfterTaskDrag will handle it
-  if (isDragging.current) {
-    return
-  }
-
-  // Skip saving during drag lock period (prevents cascade API calls from auto-scheduling)
-  // This prevents 8+ API calls when dragging a task with dependents
-  if (isLoadingData.current) {
-    diagLog('⏸️', `Skipping cascade update for task ${task.id} - drag lock active`)
-    console.log('⏸️ Skipping cascade update - drag lock active (prevents API spam)')
-    return
-  }
-
-  // ... rest of handleTaskUpdate
-}
-```
-
-**Key Points:**
-- Added check BEFORE any API calls are made
-- Cascade updates from auto-scheduling are blocked during lock period
-- Only the dragged task's API call goes through
-
-#### Auto-Scheduling Plugin Configuration
-**Location:** `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:570-579`
-
-```javascript
-// Enable undo/redo (PRO feature)
-// auto_scheduling enabled for smooth visual feedback during drag
-// Cascade API calls are prevented via isLoadingData lock in handleTaskUpdate
+// Plugin enabled for visual feedback
 gantt.plugins({
-  auto_scheduling: true,  // Keep enabled for visual feedback
+  auto_scheduling: true,  // Keep enabled
   critical_path: true,
   drag_timeline: true,
   tooltip: true,
@@ -389,198 +59,261 @@ gantt.plugins({
 })
 ```
 
-**Why Keep Auto-Scheduling Enabled:**
-- Provides real-time visual feedback when dragging tasks with dependencies
-- Dependent tasks visually move during drag (better UX)
-- Lock prevents the visual updates from triggering API calls/reloads
-- Best of both worlds: smooth visuals + no API spam
+---
 
-**Result:** ✅ **COMPLETE FIX** - Zero cascade reloads, smooth drag, no screen shake
+## Event Flow
+
+### Successful Drag Operation (With Dependencies)
+
+```
+User drags task
+    ↓
+onBeforeTaskDrag fires
+    ↓
+isDragging.current = true
+    ↓
+Visual drag (DHtmlx handles, auto-scheduling shows cascade)
+    ↓
+User releases
+    ↓
+onAfterTaskDrag fires
+    ↓
+isLoadingData.current = true (IMMEDIATE - prevents cascade API calls)
+    ↓
+Auto-scheduling finalizes dependent positions
+    ↓
+Each dependent fires onAfterTaskUpdate
+    ↓
+handleTaskUpdate checks isLoadingData → SKIP (cascade blocked)
+    ↓
+Single API call for dragged task only (200ms delay)
+    ↓
+Backend response received
+    ↓
+1000ms timeout expires
+    ↓
+isLoadingData.current = false
+    ↓
+Next full reload gets all changes
+```
+
+### Cascade Update Flow (Backend-Triggered)
+
+```
+Task A moved via API
+    ↓
+Backend calculates cascade (dependency service)
+    ↓
+Backend returns: { task: A, cascaded_tasks: [B, C, D] }
+    ↓
+Frontend receives cascade data
+    ↓
+ScheduleTemplateEditor.handleUpdateRow processes cascade
+    ↓
+Pending tracker prevents duplicate API calls
+    ↓
+Batch state update applied
+    ↓
+Single Gantt reload with all changes
+```
 
 ---
 
-## How It Works (Final Implementation)
+## Architecture Patterns
 
-### Drag Flow (With Dependencies):
+### Ref vs State
 
-1. **User Starts Drag**
-   - `onBeforeTaskDrag` fires
-   - Sets `isDragging.current = true`
-   - Stores original position in `task.$originalStart`
+**Use `useRef` for:**
+- Lock flags that shouldn't trigger re-renders
+- Timeouts that need to persist across renders
+- Performance-critical values checked in event handlers
 
-2. **During Drag**
-   - Auto-scheduling calculates dependent task positions in real-time
-   - Visual feedback shows cascade effect (UX benefit)
-   - No API calls made (blocked by `isDragging` flag)
+**Use `useState` for:**
+- UI state that should trigger re-renders
+- Data displayed to users
+- Modal visibility, loading states
 
-3. **User Releases Drag**
-   - `onAfterTaskDrag` fires
-   - **IMMEDIATELY sets `isLoadingData.current = true`** (THE KEY FIX)
-   - Starts 1000ms timeout for lock release
-   - Auto-scheduling finalizes dependent task positions
-   - Each dependent task fires `onAfterTaskUpdate`
-   - `handleTaskUpdate` checks `isLoadingData.current` → **skips all API calls**
+### Deduplication Strategy
 
-4. **API Call (Single)**
-   - Only the originally dragged task's API call goes through
-   - Called with 200ms delay after visual transition
-   - Uses `{ skipReload: true }` option
+**Pending Tracker Pattern:**
+```javascript
+// Track in-flight updates to prevent duplicates
+const pendingUpdatesRef = useRef(new Map())
 
-5. **Backend Processing**
-   - Backend receives single task update
-   - Backend handles cascade updates to dependent tasks
-   - (Optional) Backend can send cascade updates back
+// Check before API call
+const pendingKey = `${taskId}:${field}`
+if (pendingUpdatesRef.current.has(pendingKey)) {
+  const pendingValue = pendingUpdatesRef.current.get(pendingKey)
+  if (pendingValue === newValue) {
+    console.log('⏭️ Skipping - same value already pending')
+    return
+  }
+}
 
-6. **Cleanup**
-   - After 1000ms, lock releases
-   - Next full reload gets all changes from backend
-   - Screen remains stable - no shake
+// Set immediately (atomic check-and-set)
+pendingUpdatesRef.current.set(pendingKey, newValue)
 
-### Key State Flags:
+// Clear after delay (allows state updates to complete)
+setTimeout(() => {
+  pendingUpdatesRef.current.delete(pendingKey)
+}, 2000)
+```
 
-| Flag | Purpose | Set When | Cleared When |
-|------|---------|----------|--------------|
-| `isDragging.current` | Prevents API calls during active drag | `onBeforeTaskDrag` | `onAfterTaskDrag` (deferred via RAF) |
-| `isLoadingData.current` | Prevents cascade API calls after drag | `onAfterTaskDrag` (IMMEDIATELY) | After 1000ms timeout |
-| `suppressRender.current` | Prevents visual flicker during drag end | `onAfterTaskDrag` | After drag processing complete |
-| `isSaving.current` | Prevents infinite loops from data reloads | Before API call | After 2000ms cooldown |
+### Skip Reload Option
+
+When making API calls during drag operations, use `{ skipReload: true }`:
+```javascript
+// During drag - no reload
+onUpdateTask(taskId, updates, { skipReload: true })
+
+// After drag completes - full reload
+onUpdateTask(taskId, updates, { skipReload: false })
+```
 
 ---
 
-## Diagnostic Tools
+## Best Practices
 
-### Diagnostic Mode
-**Location:** `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:24-31`
+### 1. Always Check Locks First
 
 ```javascript
-const DIAGNOSTIC_MODE = true
-const diagLog = (emoji, msg) => {
-  if (DIAGNOSTIC_MODE) {
-    const timestamp = performance.now().toFixed(2)
-    console.log(`${emoji} [${timestamp}ms] ${msg}`)
+// ✅ GOOD
+const handleTaskUpdate = (task) => {
+  if (isDragging.current || isLoadingData.current || isSaving.current) {
+    return
   }
+  // ... proceed with update
+}
+
+// ❌ BAD
+const handleTaskUpdate = (task) => {
+  await api.patch(url, data)  // No lock checks!
 }
 ```
 
-**Usage:** Set `DIAGNOSTIC_MODE = true` to enable timestamped logging for troubleshooting.
+### 2. Set Locks BEFORE Events Fire
 
-**Key Events Logged:**
-- 🟢 Drag START
-- 🔴 Drag END
-- 🔒 Lock ENABLED
-- 🔓 Lock RELEASED
-- ⏸️ CASCADE PREVENTED
-- 🔄 Gantt RELOAD
-
-### External Diagnostic Script
-**Location:** `frontend/DRAG_DIAGNOSTICS.js`
-
-Browser console script that monitors:
-- DOM mutations
-- React state changes
-- RequestAnimationFrame calls
-- setTimeout scheduling
-- Scroll/resize events
-- Paint/repaint events
-
-**Note:** This script was created but not used due to browser console paste restrictions. Instead, diagnostic logging was integrated directly into the component.
-
----
-
-## Testing Checklist
-
-When verifying the fix or testing after future changes:
-
-- [ ] Drag a task with NO dependencies → should be smooth, no shake
-- [ ] Drag a task WITH 1-2 dependencies → should be smooth, dependents move visually
-- [ ] Drag a task WITH 5+ dependencies → should be smooth, no screen shake, no multiple reloads
-- [ ] Check console logs → should see SINGLE "🔄 Gantt reload" after 1000ms lock expires
-- [ ] Check network tab → should see SINGLE API call for dragged task (not 8+)
-- [ ] Drag and release quickly → no shake on release
-- [ ] Open Gantt modal on fresh page load → no shake on modal entrance
-- [ ] Background page should not shake during any drag operation
-
----
-
-## Future Troubleshooting Guide
-
-If drag flickering returns, check these areas in order:
-
-### 1. Check Lock Timing
-**Symptom:** Multiple reloads visible in console logs
-**Location:** `DHtmlxGanttView.jsx:1346` (`onAfterTaskDrag`)
-**Verify:** `isLoadingData.current = true` is set FIRST, before any other logic
-
-### 2. Check Cascade API Block
-**Symptom:** Multiple API calls in Network tab
-**Location:** `DHtmlxGanttView.jsx:3249` (`handleTaskUpdate`)
-**Verify:** `isLoadingData.current` check exists and returns early
-
-### 3. Check Auto-Scheduling Plugin
-**Symptom:** Dependent tasks don't move during drag
-**Location:** `DHtmlxGanttView.jsx:574`
-**Verify:** `auto_scheduling: true` is enabled
-
-### 4. Check Skip Reload Option
-**Symptom:** Parent component triggering reloads
-**Location:** `MasterSchedulePage.jsx:45-95`
-**Verify:** `options.skipReload` is being checked before state updates
-
-### 5. Check Timeout Logic
-**Symptom:** Lock never releases or releases too early
-**Location:** `DHtmlxGanttView.jsx:3587-3594` (useEffect) and `1356-1361` (onAfterTaskDrag)
-**Verify:** Timeout is only set if `loadingDataTimeout.current` is null
-
-### 6. Enable Diagnostic Logging
-**Location:** `DHtmlxGanttView.jsx:24`
-**Action:** Set `DIAGNOSTIC_MODE = true` and watch console for timing issues
-
----
-
-## Related Files Reference
-
-### Primary Component Files
-
-#### `DHtmlxGanttView.jsx`
-**Purpose:** Main Gantt chart component
-**Key Functions:**
-- `onBeforeTaskDrag` (line 1302) - Drag initialization
-- `onAfterTaskDrag` (line 1338) - Drag completion, conflict checking
-- `handleTaskUpdate` (line 3230) - Task update logic, API calls
-- `useEffect (tasks)` (line 3324) - Task data reload trigger
-
-**Key State/Refs:**
-- `isDragging` (line 125) - Tracks active drag operation
-- `isLoadingData` (line 126) - Prevents cascade reloads
-- `suppressRender` (line 127) - Prevents visual flicker
-- `isSaving` (line 128) - Prevents infinite loops
-
-#### `MasterSchedulePage.jsx`
-**Purpose:** Parent container for schedule views
-**Key Functions:**
-- `handleTaskUpdate` (line 45) - Receives task updates from Gantt
-
-#### `ScheduleTemplateEditor.jsx`
-**Purpose:** Template editor and table view
-**Key Functions:**
-- `handleUpdateRow` (line 691) - Processes backend responses
-- Logic at line 740 recognizes cascade updates (start_date-only changes)
-
-### Configuration Files
-
-#### `gantt.config` Settings (DHtmlxGanttView.jsx:559-577)
 ```javascript
-gantt.config.auto_scheduling = false  // Global config disabled
+// ✅ GOOD - Lock set immediately
+gantt.attachEvent('onAfterTaskDrag', (id) => {
+  isLoadingData.current = true  // Set FIRST
+  // ... rest of handler
+})
+
+// ❌ BAD - Lock set too late
+gantt.attachEvent('onAfterTaskDrag', (id) => {
+  await processTask(id)
+  isLoadingData.current = true  // Too late!
+})
+```
+
+### 3. Use Timeouts for Lock Release
+
+```javascript
+// ✅ GOOD - Clear existing timeout first
+if (loadingDataTimeout.current) {
+  clearTimeout(loadingDataTimeout.current)
+}
+loadingDataTimeout.current = setTimeout(() => {
+  isLoadingData.current = false
+  loadingDataTimeout.current = null
+}, 1000)
+
+// ❌ BAD - Multiple timeouts can overlap
+setTimeout(() => {
+  isLoadingData.current = false
+}, 1000)
+```
+
+### 4. Defer State Changes During Drag
+
+```javascript
+// ✅ GOOD - Deferred with RAF
+requestAnimationFrame(() => {
+  isDragging.current = false
+})
+
+// ❌ BAD - Synchronous reset
+isDragging.current = false  // Can cause immediate re-renders
+```
+
+### 5. Batch API Calls
+
+```javascript
+// ✅ GOOD - Single API call with all fields
+const updates = {
+  start_date: newDate,
+  duration: newDuration,
+  predecessor_ids: predecessors
+}
+await api.patch(url, updates)
+
+// ❌ BAD - Multiple API calls
+await api.patch(url, { start_date: newDate })
+await api.patch(url, { duration: newDuration })
+await api.patch(url, { predecessor_ids: predecessors })
+```
+
+---
+
+## Key Functions Reference
+
+### DHtmlxGanttView.jsx
+
+**onBeforeTaskDrag (line ~1302)**
+- Initializes drag operation
+- Sets `isDragging.current = true`
+- Stores original position
+
+**onAfterTaskDrag (line ~1338)**
+- **CRITICAL: Sets `isLoadingData.current = true` FIRST**
+- Handles conflict checking
+- Makes single API call with 200ms delay
+- Sets timeout to release lock after 1000ms
+
+**handleTaskUpdate (line ~3230)**
+- Checks all lock flags before proceeding
+- Skips if `isDragging`, `isLoadingData`, or `isSaving` is true
+- Makes API call if all checks pass
+- Sets `isSaving` lock with 2000ms cooldown
+
+**useEffect (tasks dependency) (line ~3324)**
+- Reloads Gantt when tasks data changes
+- Respects lock flags to prevent reload during drag
+
+### ScheduleTemplateEditor.jsx
+
+**handleUpdateRow (line ~691)**
+- Processes backend responses (including cascaded tasks)
+- Uses pending tracker to prevent duplicates
+- Recognizes cascade updates (start_date-only changes)
+- Applies batch state updates
+
+### MasterSchedulePage.jsx
+
+**handleTaskUpdate (line ~45)**
+- Parent handler for task updates
+- Supports `skipReload` option
+- Skips optimistic updates during drag
+- Only fetches fresh data when needed
+
+---
+
+## Configuration Reference
+
+### DHtmlx Gantt Config
+
+```javascript
+// Global config (DHtmlxGanttView.jsx:559-577)
+gantt.config.auto_scheduling = false  // Global disabled
 gantt.config.drag_move = true
 gantt.config.drag_resize = true
 gantt.config.drag_progress = false
 gantt.config.drag_links = true
-```
 
-#### `gantt.plugins` Settings (DHtmlxGanttView.jsx:573-579)
-```javascript
+// Plugins (DHtmlxGanttView.jsx:573-579)
 gantt.plugins({
-  auto_scheduling: true,   // Plugin enabled for visual feedback
+  auto_scheduling: true,   // Plugin enabled (for visual feedback)
   critical_path: true,
   drag_timeline: true,
   tooltip: true,
@@ -590,300 +323,82 @@ gantt.plugins({
 
 ---
 
-## Performance Metrics
+## Debugging Guide
 
-### Before All Fixes:
-- Drag completion time: ~150-300ms
-- Number of reloads after drag: 8-12
-- API calls per drag: 8-12
-- Visible shake: YES (severe)
-- User experience: Poor
+### When Things Go Wrong
 
-### After Final Fix:
-- Drag completion time: ~150-200ms
-- Number of reloads after drag: 1 (after 1000ms lock)
-- API calls per drag: 1
-- Visible shake: NO
-- User experience: Smooth, professional
+1. **Check Lock States**
+   - Enable diagnostic mode: Set `DIAGNOSTIC_MODE = true` (DHtmlxGanttView.jsx:24)
+   - Watch console for lock timing: 🔒 ENABLED / 🔓 RELEASED
 
----
+2. **Check API Calls**
+   - Open Network tab
+   - Drag a task with dependencies
+   - Should see ONLY 1 API call (not 8+)
 
-## Code Dependencies
+3. **Check Gantt Reloads**
+   - Watch console for "🔄 Gantt reload" messages
+   - Should see ONLY 1 reload after 1000ms lock expires
 
-### External Libraries:
-- **DHtmlx Gantt** (trial version with PRO features)
-  - Version: Embedded in project
-  - Features used: auto_scheduling, drag_move, undo, tooltip
-  - Documentation: https://docs.dhtmlx.com/gantt/
+4. **Use Bug Hunter**
+   - Browser console: `window.printBugHunterReport()`
+   - Look for duplicate API calls, excessive reloads, slow drags
+   - See [GANTT_BUGS_AND_FIXES.md](../../docs/GANTT_BUGS_AND_FIXES.md) for full diagnostic tools
 
-### React Patterns:
-- `useRef` for flags that shouldn't trigger re-renders
-- `useState` for UI state that should trigger re-renders
-- `useEffect` with dependency array for data synchronization
-- `requestAnimationFrame` for batching updates with browser paint
+### Common Issues
 
-### Browser APIs:
-- `performance.now()` for high-precision timing
-- `requestAnimationFrame` for render batching
-- `setTimeout` for lock release timing
+**Multiple API Calls**
+- Missing lock check → Add `if (isLoadingData.current) return`
+- Lock set too late → Move to beginning of event handler
 
----
+**Screen Flickering**
+- State update during drag → Use `skipReload: true`
+- Missing render suppression → Set `suppressRender.current = true`
 
-## Version History
-
-| Date | Version | Changes |
-|------|---------|---------|
-| 2025-11-14 | 1.8 | **FINAL FIX** - Early lock + cascade API block |
-| 2025-11-14 | 1.7 | Enhanced loading data lock timeout logic |
-| 2025-11-14 | 1.6 | Added isDragging deferred reset |
-| 2025-11-14 | 1.5 | Added render suppression flag |
-| 2025-11-14 | 1.4 | Added GPU acceleration styles |
-| 2025-11-14 | 1.3 | Enhanced body scroll lock with position:fixed |
-| 2025-11-14 | 1.2 | Added batch updates and 200ms delay |
-| 2025-11-14 | 1.1 | Added skipReload option |
-| 2025-11-14 | 1.0 | Initial investigation |
+**Infinite Loops**
+- Missing `isSaving` check → Add to handleTaskUpdate
+- Pending tracker cleared too early → Increase delay to 2000ms
 
 ---
 
-## Key Learnings
+## Performance Targets
 
-1. **Timing is Everything:** Setting locks AFTER state updates have queued doesn't work. Locks must be set BEFORE events that trigger state updates.
-
-2. **Auto-Scheduling is Powerful:** DHtmlx's auto-scheduling plugin provides great UX (visual feedback) but triggers many internal events. Understanding event order is critical.
-
-3. **Diagnostic Logging is Essential:** Without timestamped diagnostic logs, it would have been impossible to identify the 8 cascade reloads and their timing.
-
-4. **State vs Refs:** Using `useRef` for control flags (`isDragging`, `isLoadingData`) prevents unnecessary re-renders while still providing synchronization.
-
-5. **React State Queue:** Multiple `setState` calls can queue up before the first one executes. Checks in useEffect may run too late to prevent cascades.
-
-6. **Visual Feedback ≠ API Calls:** You can have smooth visual updates during drag without making API calls. Separate the visual layer from the data layer.
+| Metric | Target | Threshold |
+|--------|--------|-----------|
+| API calls per drag | 1 | ≤ 2 |
+| Gantt reloads per drag | 1 | ≤ 1 |
+| Drag operation duration | < 200ms | < 5000ms |
+| Cascade calculation time | < 100ms | < 500ms |
 
 ---
 
-## Advanced Debugging Tools
+## Related Documentation
 
-**New as of 2025-11-14:** We've added comprehensive debugging and bug hunting tools to help diagnose future issues.
-
-### Gantt Debugger
-
-**Location:** `frontend/src/utils/ganttDebugger.js`
-
-The Gantt Debugger provides category-based debug logging with timestamps and performance tracking.
-
-**Features:**
-- Category-based filtering (drag, api, cascade, lock, render, etc.)
-- Performance metrics with `performance.mark()` API
-- Debug history tracking and export
-- Automatic timestamping
-- Browser console integration
-
-**Usage:**
-```javascript
-// In browser console
-window.enableGanttDebug(['drag', 'api', 'cascade'])
-
-// Perform operations, watch console for detailed logs
-
-// Generate summary
-window.printGanttDebugSummary()
-
-// Export to JSON for bug reports
-window.exportGanttDebugHistory()
-```
-
-**Available Categories:**
-- `drag` - Drag operations
-- `cascade` - Cascade updates
-- `api` - API calls and responses
-- `render` - Render operations
-- `lock` - Lock state changes
-- `conflict` - Conflict detection
-- `data` - Data loading
-- `event` - Event handlers
-- `performance` - Performance metrics
-- `state` - State changes
-- `validation` - Validation checks
-- `error` - Error messages
-- `all` - Everything
-
-### Bug Hunter
-
-**Location:** Same file as Gantt Debugger
-
-The Bug Hunter automatically detects common issues and generates diagnostic reports.
-
-**Features:**
-- **Automatic detection** of:
-  - Duplicate API calls (potential infinite loops)
-  - Excessive Gantt reloads
-  - Slow drag operations
-  - API call patterns
-- **Comprehensive reports** with health status
-- **Threshold-based warnings** (customizable)
-- **Export to JSON** for bug reports
-
-**Usage:**
-```javascript
-// Bug Hunter runs automatically in the background
-
-// Generate diagnostic report
-window.printBugHunterReport()
-
-// Export report
-window.exportBugHunterReport()
-
-// Reset for new test session
-window.resetBugHunter()
-
-// Customize thresholds
-window.ganttBugHunter.thresholds.maxApiCallsPerTask = 3
-```
-
-**Report Sections:**
-- **Health Status:** ✅ Healthy | ⚠️ Warning | 🚨 Critical | ❌ Error
-- **Summary:** Counts of all operations
-- **Warnings:** Detected issues with severity levels
-- **API Calls by Task:** Grouped by task ID, flags duplicates
-- **Gantt Reloads:** Timeline of all reloads
-- **Cascade Events:** Track cascade propagation
-- **Recommendations:** Actionable advice for issues found
-
-**Example Report:**
-```
-🔬 BUG HUNTER DIAGNOSTIC REPORT
-======================================================================
-
-✅ Status: HEALTHY
-
-📊 Summary:
-   Total Duration: 5234.56ms
-   API Calls: 3
-   State Updates: 2
-   Gantt Reloads: 1
-   Drag Operations: 2
-   Cascade Events: 1
-   Errors: 0
-   Warnings: 0 (0 critical, 0 high)
-
-🌐 API Calls by Task:
-   ✅ Task 299: 1 call
-   ✅ Task 300: 1 call
-   ✅ Task 301: 1 call
-
-🔄 Gantt Reloads:
-   #1 at 4567.89ms (data update)
-
-🌊 Cascade Events:
-   #1 at 1234.56ms: Triggered by task 299, affected 3 tasks
-```
-
-### Integration Guide
-
-**Location:** `frontend/src/components/schedule-master/INTEGRATION_GUIDE.md`
-
-Complete guide for integrating the debugger into new components or features.
-
-**Topics covered:**
-- Import statements
-- Adding debug calls to functions
-- Tracking API calls, drag operations, locks
-- Performance instrumentation
-- Error tracking
-- Testing your integration
-
-### Knowledge Base
-
-**Location:** `docs/GANTT_BUGS_AND_FIXES.md`
-
-Centralized knowledge base of all Gantt bugs, fixes, and lessons learned.
-
-**Sections:**
-- Active Issues (by severity)
-- Resolved Issues (with full details)
-- Common Issues & Quick Fixes
-- Debugging Checklist
-- Lock State Reference
-- Event Flow Diagrams
-- Testing Procedures
-- Performance Benchmarks
-- Best Practices
-
-### Bug Report Template
-
-**Location:** `docs/BUG_REPORT_TEMPLATE.md`
-
-Structured template for documenting new bugs with all necessary information.
-
-**Sections:**
-- Bug Summary & Symptoms
-- Reproduction Steps
-- Environment Details
-- Diagnostic Data (logs, reports, metrics)
-- Investigation Notes & Hypotheses
-- Fix Attempts (track iterations)
-- Root Cause Analysis
-- Final Solution
-- Testing & Verification
-- Prevention Measures
-- Lessons Learned
-
-### E2E Test with Bug Hunter
-
-**Location:** `frontend/tests/e2e/gantt-cascade.spec.js`
-
-The E2E test includes permanent bug hunter diagnostics that run during automated testing.
-
-**Features:**
-- Monitors API calls (detects duplicates/infinite loops)
-- Tracks state update batches
-- Counts Gantt reloads
-- Generates diagnostic report after test
-- Detects timing issues
-- Provides detailed test output
-
-**Run the test:**
-```bash
-cd frontend
-npm run test:e2e
-```
+- **Bug Knowledge Base:** [GANTT_BUGS_AND_FIXES.md](../../docs/GANTT_BUGS_AND_FIXES.md) - Detailed bug history and fixes
+- **Business Rules:** [GANTT_SCHEDULE_RULES.md](../../GANTT_SCHEDULE_RULES.md) - Scheduling logic
+- **Bug Hunter Tool:** Available in browser console after loading Gantt view
+- **Integration Guide:** [INTEGRATION_GUIDE.md](./src/components/schedule-master/INTEGRATION_GUIDE.md)
 
 ---
 
-## Related Issues
+## Quick Checklist
 
-### BUG-002: Infinite Cascade Loop (2025-11-14)
+Before making changes to Gantt code:
 
-After fixing the drag flickering, a new issue emerged: cascaded tasks triggered infinite API loops after drag operations. **Full details and solution documented in:**
-
-**📋 [GANTT_BUGS_AND_FIXES.md - BUG-002](../../docs/GANTT_BUGS_AND_FIXES.md#-bug-002-infinite-cascade-loop-after-drag-in-progress)**
-
-**Quick Summary:**
-- **Problem:** Pending tracker cleared before Gantt reload completed → duplicate API calls
-- **Solution:** Delayed pending cleanup (2 seconds) + atomic check-and-set
-- **Files:** ScheduleTemplateEditor.jsx lines 727-786, 914-923
-- **Status:** Fix implemented - testing in progress
-
----
-
-## Contact & Support
-
-**Issue Type:** Frontend Performance / React State Management / DHtmlx Gantt Integration
-**Severity:** High (UX-breaking)
-**Resolution Time:** ~6 hours of investigation + iteration
-**Final Status:** ✅ Fully Resolved
-
-**Related Documentation:**
-- **Debugging Tools:** [ganttDebugger.js](../src/utils/ganttDebugger.js)
-- **Integration Guide:** [INTEGRATION_GUIDE.md](../src/components/schedule-master/INTEGRATION_GUIDE.md)
-- **Knowledge Base:** [GANTT_BUGS_AND_FIXES.md](../../docs/GANTT_BUGS_AND_FIXES.md) ⭐ **See BUG-002 for infinite loop fix**
-- **Bug Template:** [BUG_REPORT_TEMPLATE.md](../../docs/BUG_REPORT_TEMPLATE.md)
-
-For questions about this fix or related issues, refer to git commit history around 2025-11-14.
+- [ ] Understand the lock flag system
+- [ ] Know the event flow (drag → lock → API → unlock)
+- [ ] Check all locks before API calls
+- [ ] Set locks BEFORE events that trigger cascades
+- [ ] Use `skipReload: true` during drag operations
+- [ ] Clear timeouts before setting new ones
+- [ ] Test with tasks that have dependencies
+- [ ] Check console for diagnostic messages
+- [ ] Run Bug Hunter report after testing
+- [ ] Verify only 1 API call per drag operation
 
 ---
 
-**Document Version:** 2.0
+**Document Version:** 3.0
+**Focus:** Architecture & Best Practices (bug history moved to Bug Hunter)
 **Last Verified Working:** 2025-11-14
-**Last Updated:** 2025-11-14 (Added debugging tools section)
-**Next Review Date:** When upgrading DHtmlx Gantt or React version
+**Next Review:** When upgrading DHtmlx Gantt or React version
