@@ -1,35 +1,59 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Variable, Search } from 'lucide-react'
 import { api } from '../api'
 
 export default function UnrealVariablesPage() {
   const [variables, setVariables] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 100,
-    total_count: 0
+    total_count: 0,
+    total_pages: 1
   })
+  const [hasMore, setHasMore] = useState(true)
 
   const searchTimeoutRef = useRef(null)
+  const observerTarget = useRef(null)
 
   // Load variables
-  const loadVariables = async () => {
+  const loadVariables = async (page = 1, append = false) => {
     try {
-      setLoading(true)
-      const params = { page: 1, limit: 100 }
+      if (append) {
+        setLoadingMore(true)
+      } else {
+        setLoading(true)
+      }
+
+      const params = { page, limit: 100 }
       if (searchQuery) params.search = searchQuery
 
       const response = await api.get('/api/v1/unreal_variables', { params })
-      setVariables(response.variables || [])
-      setPagination(response.pagination || { page: 1, limit: 100, total_count: 0 })
+
+      if (append) {
+        setVariables(prev => [...prev, ...(response.variables || [])])
+      } else {
+        setVariables(response.variables || [])
+      }
+
+      setPagination(response.pagination || { page: 1, limit: 100, total_count: 0, total_pages: 1 })
+      setHasMore(response.pagination?.page < response.pagination?.total_pages)
     } catch (error) {
       console.error('Failed to load Unreal Variables:', error)
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
   }
+
+  // Load more when reaching the bottom
+  const loadMore = useCallback(() => {
+    if (!loadingMore && hasMore && !loading) {
+      loadVariables(pagination.page + 1, true)
+    }
+  }, [loadingMore, hasMore, loading, pagination.page, searchQuery])
 
   // Debounced search
   useEffect(() => {
@@ -38,7 +62,7 @@ export default function UnrealVariablesPage() {
     }
 
     searchTimeoutRef.current = setTimeout(() => {
-      loadVariables()
+      loadVariables(1, false)
     }, 300)
 
     return () => {
@@ -47,6 +71,29 @@ export default function UnrealVariablesPage() {
       }
     }
   }, [searchQuery])
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting) {
+          loadMore()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    const currentTarget = observerTarget.current
+    if (currentTarget) {
+      observer.observe(currentTarget)
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget)
+      }
+    }
+  }, [loadMore])
 
   return (
     <div className="h-full flex flex-col">
@@ -118,22 +165,35 @@ export default function UnrealVariablesPage() {
                   </td>
                 </tr>
               ) : (
-                variables.map((variable) => (
-                  <tr
-                    key={variable.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                  >
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                      {variable.variable_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono font-medium text-gray-900 dark:text-white">
-                      {variable.claude_value !== null && variable.claude_value !== undefined ? variable.claude_value : '-'}
-                    </td>
-                  </tr>
-                ))
+                <>
+                  {variables.map((variable) => (
+                    <tr
+                      key={variable.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                    >
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                        {variable.variable_name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono font-medium text-gray-900 dark:text-white">
+                        {variable.claude_value !== null && variable.claude_value !== undefined ? variable.claude_value : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                  {loadingMore && (
+                    <tr>
+                      <td colSpan="2" className="px-6 py-4 text-center">
+                        <div className="flex justify-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
               )}
             </tbody>
           </table>
+          {/* Intersection observer target */}
+          <div ref={observerTarget} className="h-4" />
         </div>
       </div>
     </div>
