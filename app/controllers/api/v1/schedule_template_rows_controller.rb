@@ -43,12 +43,10 @@ module Api
           @row.reload
           Rails.logger.info "✅ AFTER UPDATE - manually_positioned: #{@row.manually_positioned}, supplier_confirm: #{@row.supplier_confirm}"
 
-          # Cascade changes to dependent tasks if start_date or duration changed
-          affected_tasks = if changed_attrs.any?
-            ScheduleCascadeService.cascade_changes(@row, changed_attrs)
-          else
-            [@row]
-          end
+          # ANTI-LOOP FIX: Don't manually cascade here - the after_update callback handles it!
+          # Get affected tasks from thread-local (set by cascade callback)
+          affected_tasks = Thread.current[:cascade_affected_tasks] || [@row]
+          Thread.current[:cascade_affected_tasks] = nil # Clear it
 
           # Return all affected tasks (original + cascaded)
           response_json = if affected_tasks.length > 1

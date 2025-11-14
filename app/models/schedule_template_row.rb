@@ -199,6 +199,9 @@ class ScheduleTemplateRow < ApplicationRecord
     changed_attrs << :duration if saved_change_to_duration?
 
     Rails.logger.info "🔄 CASCADE CALLBACK: Task #{id} changed (#{changed_attrs.join(', ')})"
-    ScheduleCascadeService.cascade_changes(self, changed_attrs)
+    affected_tasks = ScheduleCascadeService.cascade_changes(self, changed_attrs)
+
+    # Store affected tasks in thread-local so controller can access them
+    Thread.current[:cascade_affected_tasks] = affected_tasks
   end
 end
