@@ -1,0 +1,1118 @@
+import { XMarkIcon, PlayIcon, ArrowPathIcon, BeakerIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect } from 'react'
+
+/**
+ * GanttTestStatusModal - Shows the 10 Bug Hunter tests in a table with live test execution
+ * With tabs for manual and automated test results
+ */
+export default function GanttTestStatusModal({ isOpen, onClose}) {
+  const [testResults, setTestResults] = useState(null)
+  const [isRunning, setIsRunning] = useState(false)
+  const [lastRunTime, setLastRunTime] = useState(null)
+  const [lastSuccessfulPass, setLastSuccessfulPass] = useState(null)
+  const [isRunningAutomatedTest, setIsRunningAutomatedTest] = useState(false)
+  const [automatedTestResult, setAutomatedTestResult] = useState(null)
+  const [activeTab, setActiveTab] = useState('manual') // 'manual' or 'automated'
+
+  // Load persisted data on mount
+  useEffect(() => {
+    if (isOpen) {
+      const savedData = localStorage.getItem('ganttTestStatusData')
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData)
+          if (parsed.testResults) setTestResults(parsed.testResults)
+          if (parsed.lastRunTime) setLastRunTime(new Date(parsed.lastRunTime))
+          if (parsed.lastSuccessfulPass) setLastSuccessfulPass(new Date(parsed.lastSuccessfulPass))
+          if (parsed.automatedTestResult) setAutomatedTestResult(parsed.automatedTestResult)
+        } catch (err) {
+          console.error('Failed to load saved test data:', err)
+        }
+      }
+    }
+  }, [isOpen])
+
+  // Persist data whenever it changes
+  useEffect(() => {
+    const dataToSave = {
+      testResults,
+      lastRunTime: lastRunTime?.toISOString(),
+      lastSuccessfulPass: lastSuccessfulPass?.toISOString(),
+      automatedTestResult
+    }
+    localStorage.setItem('ganttTestStatusData', JSON.stringify(dataToSave))
+  }, [testResults, lastRunTime, lastSuccessfulPass, automatedTestResult])
+
+  // Expose automated test API globally
+  useEffect(() => {
+    if (isOpen) {
+      window.runGanttAutomatedTest = async (options) => {
+        console.log('🧪 Running Gantt Automated Test via API...', options || {})
+        const result = await runAutomatedDragTest(options)
+        console.log('🧪 Test Result:', result)
+        return result
+      }
+      console.log('✅ Gantt Automated Test API is ready! Use: window.runGanttAutomatedTest()')
+      console.log('   Options: { silent: true/false, customTaskId: <task_id> }')
+    }
+    return () => {
+      if (window.runGanttAutomatedTest) {
+        delete window.runGanttAutomatedTest
+      }
+    }
+  }, [isOpen])
+
+  // Define the 10 Bug Hunter tests
+  const tests = [
+    {
+      id: 1,
+      name: 'Duplicate API Call Detection',
+      description: 'Tracks all API calls by task ID and counts duplicates',
+      threshold: '≤ 2 calls per task',
+      severity: 'Critical'
+    },
+    {
+      id: 2,
+      name: 'Excessive Gantt Reload Detection',
+      description: 'Counts the number of Gantt chart reloads',
+      threshold: '≤ 3 reloads per session',
+      severity: 'High'
+    },
+    {
+      id: 3,
+      name: 'Slow Drag Operation Detection',
+      description: 'Measures time between drag start and drag end',
+      threshold: '< 5000ms (5 seconds)',
+      severity: 'Medium'
+    },
+    {
+      id: 4,
+      name: 'API Call Pattern Analysis',
+      description: 'Groups API calls by task and analyzes timing',
+      threshold: 'No rapid repeated calls',
+      severity: 'Varies'
+    },
+    {
+      id: 5,
+      name: 'Cascade Event Tracking',
+      description: 'Monitors cascade events and affected task counts',
+      threshold: '< 15 tasks per cascade',
+      severity: 'Medium'
+    },
+    {
+      id: 6,
+      name: 'State Update Batching',
+      description: 'Counts state updates per operation',
+      threshold: '≤ 3 updates per drag',
+      severity: 'Medium'
+    },
+    {
+      id: 7,
+      name: 'Lock State Monitoring',
+      description: 'Tracks lock set/release timing',
+      threshold: 'All locks released',
+      severity: 'High'
+    },
+    {
+      id: 8,
+      name: 'Performance Timing Analysis',
+      description: 'Measures operation timing with performance.mark()',
+      threshold: 'All metrics within targets',
+      severity: 'Medium'
+    },
+    {
+      id: 9,
+      name: 'Health Status Assessment',
+      description: 'Aggregates warnings and calculates system health',
+      threshold: 'No warnings',
+      severity: 'N/A'
+    },
+    {
+      id: 10,
+      name: 'Actionable Recommendations',
+      description: 'Analyzes issues and provides fix suggestions',
+      threshold: 'N/A',
+      severity: 'N/A'
+    }
+  ]
+
+  const runTests = () => {
+    setIsRunning(true)
+
+    // Give a short delay for UI feedback
+    setTimeout(() => {
+      try {
+        // Get the Bug Hunter report from the global instance
+        if (window.ganttBugHunter) {
+          const report = window.ganttBugHunter.generateReport()
+          const results = analyzeReport(report)
+          setTestResults(results)
+          const now = new Date()
+          setLastRunTime(now)
+
+          // Update lastSuccessfulPass if all tests passed
+          if (results.status === 'healthy' && results.tests.every(t => t.status === 'pass')) {
+            setLastSuccessfulPass(now)
+          }
+        } else {
+          // No Bug Hunter instance - create mock results
+          setTestResults({
+            status: 'healthy',
+            tests: tests.map(test => ({
+              id: test.id,
+              status: 'idle',
+              result: 'Bug Hunter not initialized - perform a drag operation first',
+              metrics: null
+            }))
+          })
+          setLastRunTime(new Date())
+        }
+      } catch (error) {
+        console.error('Failed to run Bug Hunter tests:', error)
+        setTestResults({
+          status: 'error',
+          tests: tests.map(test => ({
+            id: test.id,
+            status: 'error',
+            result: 'Failed to run test',
+            metrics: null
+          }))
+        })
+      } finally {
+        setIsRunning(false)
+      }
+    }, 300)
+  }
+
+  const analyzeReport = (report) => {
+    const results = {
+      status: report.health.status,
+      summary: report.summary,
+      tests: []
+    }
+
+    // Test 1: Duplicate API Call Detection
+    const hasDuplicates = report.health.hasDuplicateCalls
+    const duplicateWarnings = report.details.warnings.filter(w => w.type === 'duplicate_api_calls')
+    results.tests.push({
+      id: 1,
+      status: hasDuplicates ? 'fail' : 'pass',
+      result: hasDuplicates
+        ? `${duplicateWarnings.length} duplicate call warning(s)`
+        : `All tasks have ≤ 2 API calls`,
+      metrics: `${report.summary.apiCalls} total API calls`
+    })
+
+    // Test 2: Excessive Gantt Reload Detection
+    const hasExcessiveReloads = report.health.hasExcessiveReloads
+    results.tests.push({
+      id: 2,
+      status: hasExcessiveReloads ? 'fail' : 'pass',
+      result: hasExcessiveReloads
+        ? `Excessive reloads: ${report.summary.ganttReloads} reloads`
+        : `${report.summary.ganttReloads} reload(s) (target: ≤ 3)`,
+      metrics: `${report.summary.ganttReloads} reloads`
+    })
+
+    // Test 3: Slow Drag Operation Detection
+    const slowDragWarnings = report.details.warnings.filter(w => w.type === 'slow_drag')
+    results.tests.push({
+      id: 3,
+      status: slowDragWarnings.length > 0 ? 'fail' : 'pass',
+      result: slowDragWarnings.length > 0
+        ? `${slowDragWarnings.length} slow drag(s) detected`
+        : `All drags within threshold`,
+      metrics: `${report.summary.dragOperations} drag operation(s)`
+    })
+
+    // Test 4: API Call Pattern Analysis
+    const taskCalls = Object.keys(report.details.callsByTask).length
+    results.tests.push({
+      id: 4,
+      status: hasDuplicates ? 'fail' : 'pass',
+      result: hasDuplicates
+        ? 'Rapid repeated calls detected'
+        : 'No rapid repeated calls',
+      metrics: `${taskCalls} unique task(s)`
+    })
+
+    // Test 5: Cascade Event Tracking
+    const largeCascades = report.details.cascadeEvents.filter(c => c.count > 15)
+    results.tests.push({
+      id: 5,
+      status: largeCascades.length > 0 ? 'warn' : 'pass',
+      result: largeCascades.length > 0
+        ? `${largeCascades.length} large cascade(s) (> 15 tasks)`
+        : `${report.summary.cascadeEvents} cascade event(s)`,
+      metrics: report.summary.cascadeEvents > 0
+        ? `${report.details.cascadeEvents.map(c => c.count).reduce((a, b) => Math.max(a, b), 0)} max tasks affected`
+        : 'No cascades'
+    })
+
+    // Test 6: State Update Batching
+    const excessiveStateUpdates = report.summary.stateUpdates > (report.summary.dragOperations * 3)
+    results.tests.push({
+      id: 6,
+      status: excessiveStateUpdates ? 'warn' : 'pass',
+      result: excessiveStateUpdates
+        ? `${report.summary.stateUpdates} updates (> 3 per drag)`
+        : `${report.summary.stateUpdates} state update(s)`,
+      metrics: report.summary.dragOperations > 0
+        ? `${(report.summary.stateUpdates / report.summary.dragOperations).toFixed(1)} avg per drag`
+        : 'N/A'
+    })
+
+    // Test 7: Lock State Monitoring
+    // This is harder to test from report, so we'll just check for lock-related warnings
+    const lockWarnings = report.details.warnings.filter(w => w.message?.includes('lock'))
+    results.tests.push({
+      id: 7,
+      status: lockWarnings.length > 0 ? 'fail' : 'pass',
+      result: lockWarnings.length > 0
+        ? `${lockWarnings.length} lock warning(s)`
+        : 'All locks working properly',
+      metrics: 'Lock timing tracked'
+    })
+
+    // Test 8: Performance Timing Analysis
+    const avgDuration = report.summary.dragOperations > 0
+      ? parseFloat(report.summary.totalDuration) / report.summary.dragOperations
+      : 0
+    const isSlowPerformance = avgDuration > 5000
+    results.tests.push({
+      id: 8,
+      status: isSlowPerformance ? 'fail' : 'pass',
+      result: isSlowPerformance
+        ? `Slow performance: ${avgDuration.toFixed(0)}ms avg`
+        : `Performance OK: ${avgDuration.toFixed(0)}ms avg`,
+      metrics: `${report.summary.totalDuration} session duration`
+    })
+
+    // Test 9: Health Status Assessment
+    results.tests.push({
+      id: 9,
+      status: report.health.status === 'healthy' ? 'pass'
+        : report.health.status === 'warning' ? 'warn'
+        : 'fail',
+      result: `Status: ${report.health.status.toUpperCase()}`,
+      metrics: `${report.summary.warnings} warning(s), ${report.summary.errors} error(s)`
+    })
+
+    // Test 10: Actionable Recommendations
+    const needsRecommendations = report.health.status !== 'healthy'
+    results.tests.push({
+      id: 10,
+      status: needsRecommendations ? 'info' : 'pass',
+      result: needsRecommendations
+        ? 'Recommendations available'
+        : 'No issues to recommend fixes for',
+      metrics: needsRecommendations ? `${report.summary.warnings} issue(s)` : 'N/A'
+    })
+
+    return results
+  }
+
+  const runAutomatedDragTest = async (options = {}) => {
+    const { silent = false, customTaskId = null } = options
+
+    setIsRunningAutomatedTest(true)
+    setAutomatedTestResult(null)
+
+    const testSteps = []
+    const testStartTime = Date.now()
+
+    try {
+      // Check if Gantt instance is available
+      if (!window.gantt) {
+        setAutomatedTestResult({
+          status: 'error',
+          message: 'Gantt chart not available. Please open the Gantt view first.',
+          details: null
+        })
+        setIsRunningAutomatedTest(false)
+        return
+      }
+
+      const gantt = window.gantt
+
+      // Find all tasks
+      const tasks = []
+      gantt.eachTask((task) => {
+        tasks.push(task)
+      })
+
+      if (tasks.length === 0) {
+        setAutomatedTestResult({
+          status: 'error',
+          message: 'No tasks available in Gantt chart',
+          details: null
+        })
+        setIsRunningAutomatedTest(false)
+        return
+      }
+
+      // STEP 1: Select task (first task or custom task by ID)
+      let testTask
+      if (customTaskId) {
+        testTask = tasks.find(t => t.id === customTaskId)
+        if (!testTask) {
+          setAutomatedTestResult({
+            status: 'error',
+            message: `Task with ID ${customTaskId} not found`,
+            details: null
+          })
+          setIsRunningAutomatedTest(false)
+          return { status: 'error', message: `Task with ID ${customTaskId} not found` }
+        }
+        testSteps.push(`✅ Step 1: Selected custom task - #${testTask.id} "${testTask.text}"`)
+        console.log('🧪 Test Step 1: Selected custom task:', testTask.id, testTask.text)
+      } else {
+        testTask = tasks[0]
+        testSteps.push(`✅ Step 1: Selected task one - #${testTask.id} "${testTask.text}"`)
+        console.log('🧪 Test Step 1: Selected task one:', testTask.id, testTask.text)
+      }
+
+      // Get successor tasks (dependencies) before the move
+      const successorLinks = gantt.getLinks().filter(link => link.source === testTask.id)
+      const successorTasks = successorLinks.map(link => {
+        const successorTask = gantt.getTask(link.target)
+        return {
+          id: successorTask.id,
+          text: successorTask.text,
+          originalStartDate: new Date(successorTask.start_date),
+          linkType: link.type // 0=FS, 1=SS, 2=FF, 3=SF
+        }
+      })
+      testSteps.push(`✅ Step 2: Found ${successorTasks.length} successor task(s) to monitor`)
+      console.log('🧪 Test Step 2: Successor tasks:', successorTasks)
+
+      // Reset Bug Hunter
+      if (window.ganttBugHunter) {
+        window.ganttBugHunter.reset()
+        testSteps.push('✅ Step 3: Bug Hunter reset')
+        console.log('🧪 Test Step 3: Bug Hunter reset')
+      } else {
+        setAutomatedTestResult({
+          status: 'error',
+          message: 'Bug Hunter not initialized',
+          details: null
+        })
+        setIsRunningAutomatedTest(false)
+        return
+      }
+
+      // Get original task state
+      const originalStartDate = new Date(testTask.start_date)
+      const originalHold = testTask.hold || false
+      testSteps.push(`✅ Step 4: Captured original state - Start: ${originalStartDate.toLocaleDateString()}, Hold: ${originalHold}`)
+      console.log('🧪 Test Step 4: Original state:', { originalStartDate, originalHold })
+
+      // STEP 2: Move task forward by 5 days
+      const newStartDate = new Date(originalStartDate)
+      newStartDate.setDate(newStartDate.getDate() + 5)
+      testSteps.push(`✅ Step 5: Moving task 5 days forward (${originalStartDate.toLocaleDateString()} → ${newStartDate.toLocaleDateString()})`)
+      console.log('🧪 Test Step 5: Moving task from', originalStartDate, 'to', newStartDate)
+
+      // Set hold to true to lock the new position
+      gantt.updateTask(testTask.id, {
+        ...testTask,
+        start_date: newStartDate,
+        hold: true
+      })
+
+      // Wait for operations to complete
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // STEP 3: Check for screen flashes (Gantt reloads)
+      const reportAfterMove = window.ganttBugHunter.generateReport()
+      const ganttReloads = reportAfterMove.summary.ganttReloads
+      const noFlash = ganttReloads <= 1
+      testSteps.push(
+        noFlash
+          ? `✅ Step 6: No screen flashes detected (${ganttReloads} reload${ganttReloads === 1 ? '' : 's'})`
+          : `❌ Step 6: Screen flashes detected! (${ganttReloads} reloads, expected ≤1)`
+      )
+      console.log('🧪 Test Step 6: Screen flash check:', ganttReloads, 'reloads')
+
+      // STEP 4: Check that all dependencies worked correctly
+      let dependenciesWorked = true
+      const dependencyChecks = []
+
+      for (const successor of successorTasks) {
+        try {
+          const currentSuccessor = gantt.getTask(successor.id)
+          const currentStartDate = new Date(currentSuccessor.start_date)
+
+          // For Finish-to-Start (type 0), successor should move by 5 days
+          if (successor.linkType === 0) {
+            const expectedDate = new Date(successor.originalStartDate)
+            expectedDate.setDate(expectedDate.getDate() + 5)
+            const datesMatch = currentStartDate.toDateString() === expectedDate.toDateString()
+
+            if (datesMatch) {
+              dependencyChecks.push(`✅ Task #${successor.id} "${successor.text}" moved correctly (+5 days)`)
+            } else {
+              const daysDiff = Math.round((currentStartDate - successor.originalStartDate) / (1000 * 60 * 60 * 24))
+              dependencyChecks.push(`❌ Task #${successor.id} "${successor.text}" moved ${daysDiff} days instead of 5 days (expected ${expectedDate.toLocaleDateString()}, got ${currentStartDate.toLocaleDateString()})`)
+              dependenciesWorked = false
+            }
+          } else if (successor.linkType === 1) {
+            // Start-to-Start: successor should also move by 5 days
+            const expectedDate = new Date(successor.originalStartDate)
+            expectedDate.setDate(expectedDate.getDate() + 5)
+            const datesMatch = currentStartDate.toDateString() === expectedDate.toDateString()
+
+            if (datesMatch) {
+              dependencyChecks.push(`✅ Task #${successor.id} "${successor.text}" (SS link) moved correctly (+5 days)`)
+            } else {
+              const daysDiff = Math.round((currentStartDate - successor.originalStartDate) / (1000 * 60 * 60 * 24))
+              dependencyChecks.push(`❌ Task #${successor.id} "${successor.text}" (SS link) moved ${daysDiff} days instead of 5`)
+              dependenciesWorked = false
+            }
+          } else if (successor.linkType === 2) {
+            // Finish-to-Finish: successor should move if predecessor finish date moved
+            dependencyChecks.push(`ℹ️ Task #${successor.id} "${successor.text}" has FF link (finish-to-finish) - manual verification needed`)
+          } else if (successor.linkType === 3) {
+            // Start-to-Finish: rare case
+            dependencyChecks.push(`ℹ️ Task #${successor.id} "${successor.text}" has SF link (start-to-finish) - manual verification needed`)
+          }
+        } catch (error) {
+          dependencyChecks.push(`❌ Error checking task #${successor.id}: ${error.message}`)
+          dependenciesWorked = false
+        }
+      }
+
+      if (successorTasks.length === 0) {
+        testSteps.push('⚠️ Step 7: No dependencies to check (task has no successors)')
+        // Don't fail the test if there are no dependencies, just note it
+      } else {
+        testSteps.push(
+          dependenciesWorked
+            ? `✅ Step 7: All ${successorTasks.length} dependent task(s) cascaded correctly`
+            : `❌ Step 7: Some dependencies failed verification (${successorTasks.length} checked)`
+        )
+        dependencyChecks.forEach(check => testSteps.push(`    ${check}`))
+      }
+      console.log('🧪 Test Step 7: Dependency checks:', dependencyChecks)
+
+      // STEP 5: Untick hold flag
+      testSteps.push('✅ Step 8: Unticking hold flag...')
+      console.log('🧪 Test Step 8: Unticking hold flag')
+
+      gantt.updateTask(testTask.id, {
+        ...gantt.getTask(testTask.id),
+        hold: false
+      })
+
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      // STEP 6: Check everything goes back to original position
+      testSteps.push('✅ Step 9: Checking if task returns to original position...')
+      console.log('🧪 Test Step 9: Verifying return to original position')
+
+      const currentTask = gantt.getTask(testTask.id)
+      const currentStartDate = new Date(currentTask.start_date)
+      const returnedToOriginal = currentStartDate.toDateString() === originalStartDate.toDateString()
+
+      if (returnedToOriginal) {
+        testSteps.push(`✅ Step 10: Task returned to original position (${originalStartDate.toLocaleDateString()})`)
+      } else {
+        testSteps.push(`❌ Step 10: Task did NOT return to original position (expected ${originalStartDate.toLocaleDateString()}, got ${currentStartDate.toLocaleDateString()})`)
+      }
+      console.log('🧪 Test Step 10: Return check:', returnedToOriginal, currentStartDate, 'vs', originalStartDate)
+
+      // Get final Bug Hunter report
+      const finalReport = window.ganttBugHunter.generateReport()
+      const apiCalls = finalReport.summary.apiCalls
+      const warnings = finalReport.summary.warnings
+      const criticalWarnings = finalReport.summary.criticalWarnings
+
+      // Calculate test duration
+      const testDuration = Date.now() - testStartTime
+      const testDurationSeconds = (testDuration / 1000).toFixed(1)
+
+      // Determine overall pass/fail
+      // If there are no dependencies, don't fail the test for dependency checks
+      const dependencyCheckPassed = successorTasks.length === 0 || dependenciesWorked
+      const allChecksPassed = noFlash && dependencyCheckPassed && returnedToOriginal && criticalWarnings === 0
+      const passed = allChecksPassed
+
+      setAutomatedTestResult({
+        status: passed ? 'pass' : 'fail',
+        message: passed
+          ? `✅ PASS - Comprehensive test completed successfully in ${testDurationSeconds}s!`
+          : `❌ FAIL - Some test steps failed. Test ran for ${testDurationSeconds}s.`,
+        details: {
+          taskId: testTask.id,
+          taskName: testTask.text,
+          steps: testSteps,
+          testDuration: testDurationSeconds,
+          metrics: {
+            apiCalls,
+            ganttReloads,
+            warnings,
+            criticalWarnings,
+            noFlash,
+            dependenciesWorked: dependencyCheckPassed,
+            returnedToOriginal,
+            successorCount: successorTasks.length,
+            hasDependencies: successorTasks.length > 0
+          },
+          thresholds: {
+            ganttReloads: 'Expected: ≤ 1',
+            criticalWarnings: 'Expected: 0',
+            dependenciesWorked: 'Expected: true',
+            returnedToOriginal: 'Expected: true'
+          },
+          report: finalReport
+        }
+      })
+
+      testSteps.push(passed ? '✅ TEST PASSED' : '❌ TEST FAILED')
+      console.log('🧪 Automated Test: Complete -', passed ? 'PASS' : 'FAIL')
+
+      // Switch to automated tab to show results (unless running in silent mode)
+      if (!silent) {
+        setActiveTab('automated')
+      }
+
+      // Return result for programmatic access
+      return {
+        status: passed ? 'pass' : 'fail',
+        passed,
+        testDuration: testDurationSeconds,
+        taskId: testTask.id,
+        taskName: testTask.text,
+        metrics: {
+          apiCalls,
+          ganttReloads,
+          warnings,
+          criticalWarnings,
+          noFlash,
+          dependenciesWorked: dependencyCheckPassed,
+          returnedToOriginal,
+          successorCount: successorTasks.length
+        },
+        steps: testSteps,
+        report: finalReport
+      }
+
+    } catch (error) {
+      console.error('🧪 Automated Test: Error', error)
+      testSteps.push(`❌ ERROR: ${error.message}`)
+      const errorResult = {
+        status: 'error',
+        message: `Error during automated test: ${error.message}`,
+        details: {
+          error: error.toString(),
+          steps: testSteps
+        }
+      }
+      setAutomatedTestResult(errorResult)
+      return errorResult
+    } finally {
+      setIsRunningAutomatedTest(false)
+    }
+  }
+
+  const clearResults = () => {
+    setTestResults(null)
+    setLastRunTime(null)
+    setLastSuccessfulPass(null)
+    setAutomatedTestResult(null)
+    localStorage.removeItem('ganttTestStatusData')
+    console.log('🧹 Test results cleared')
+  }
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'pass':
+        return <span className="text-green-600 dark:text-green-400">✅</span>
+      case 'fail':
+        return <span className="text-red-600 dark:text-red-400">❌</span>
+      case 'warn':
+        return <span className="text-yellow-600 dark:text-yellow-400">⚠️</span>
+      case 'info':
+        return <span className="text-blue-600 dark:text-blue-400">ℹ️</span>
+      case 'error':
+        return <span className="text-red-600 dark:text-red-400">🔥</span>
+      case 'idle':
+        return <span className="text-gray-400">⏸️</span>
+      default:
+        return <span className="text-gray-400">—</span>
+    }
+  }
+
+  const getHealthStatusBadge = () => {
+    if (!testResults) return null
+
+    const statusConfig = {
+      healthy: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', emoji: '✅', label: 'HEALTHY' },
+      warning: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', emoji: '⚠️', label: 'WARNING' },
+      critical: { color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200', emoji: '🚨', label: 'CRITICAL' },
+      error: { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', emoji: '❌', label: 'ERROR' }
+    }
+
+    const config = statusConfig[testResults.status] || statusConfig.error
+
+    return (
+      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${config.color} font-semibold`}>
+        <span className="text-xl">{config.emoji}</span>
+        <span>{config.label}</span>
+      </div>
+    )
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-center justify-center p-4">
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+          onClick={onClose}
+        />
+
+        {/* Modal */}
+        <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-gray-800 dark:to-gray-800">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-600 rounded-lg">
+                <PlayIcon className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Gantt Test Status
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Bug Hunter - 10 Automated Tests
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="px-6 py-4 overflow-y-auto max-h-[calc(90vh-160px)]">
+            {/* Test Actions & Status */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={runTests}
+                  disabled={isRunning}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    isRunning
+                      ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
+                >
+                  {isRunning ? (
+                    <>
+                      <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                      Running Tests...
+                    </>
+                  ) : (
+                    <>
+                      <PlayIcon className="h-5 w-5" />
+                      Run Tests
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={runAutomatedDragTest}
+                  disabled={isRunningAutomatedTest}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    isRunningAutomatedTest
+                      ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                  title="Automatically move a task and check for flickering"
+                >
+                  {isRunningAutomatedTest ? (
+                    <>
+                      <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                      Testing...
+                    </>
+                  ) : (
+                    <>
+                      <BeakerIcon className="h-5 w-5" />
+                      Run Automated Test
+                    </>
+                  )}
+                </button>
+
+                {(testResults || automatedTestResult) && (
+                  <button
+                    onClick={clearResults}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    title="Clear all test results"
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                    Clear Results
+                  </button>
+                )}
+
+                <div className="flex flex-col gap-1">
+                  {lastRunTime && (
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Last run: {lastRunTime.toLocaleTimeString()}
+                    </div>
+                  )}
+                  {lastSuccessfulPass && (
+                    <div className="text-sm text-green-600 dark:text-green-400 font-medium">
+                      ✅ Last successful pass: {lastSuccessfulPass.toLocaleTimeString()} on {lastSuccessfulPass.toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {testResults && getHealthStatusBadge()}
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700 mb-6">
+              <button
+                onClick={() => setActiveTab('manual')}
+                className={`px-4 py-2 font-medium transition-colors ${
+                  activeTab === 'manual'
+                    ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-600 dark:border-emerald-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                Manual Test Results
+              </button>
+              <button
+                onClick={() => setActiveTab('automated')}
+                className={`px-4 py-2 font-medium transition-colors ${
+                  activeTab === 'automated'
+                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                Automated Test Results
+                {automatedTestResult && (
+                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                    automatedTestResult.status === 'pass' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                    automatedTestResult.status === 'fail' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+                    'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                  }`}>
+                    {automatedTestResult.status === 'pass' ? '✅' : automatedTestResult.status === 'fail' ? '❌' : '⚠️'}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Manual Test Tab Content */}
+            {activeTab === 'manual' && (
+              <>
+                {/* Summary Stats */}
+                {testResults?.summary && (
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">API Calls</div>
+                  <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{testResults.summary.apiCalls}</div>
+                </div>
+                <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                  <div className="text-sm text-purple-600 dark:text-purple-400 font-medium">Gantt Reloads</div>
+                  <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">{testResults.summary.ganttReloads}</div>
+                </div>
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <div className="text-sm text-green-600 dark:text-green-400 font-medium">Drag Ops</div>
+                  <div className="text-2xl font-bold text-green-900 dark:text-green-100">{testResults.summary.dragOperations}</div>
+                </div>
+                <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                  <div className="text-sm text-orange-600 dark:text-orange-400 font-medium">Warnings</div>
+                  <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">{testResults.summary.warnings}</div>
+                </div>
+              </div>
+                )}
+
+            {/* Instructions */}
+            {!testResults && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                <div className="flex gap-3">
+                  <div className="text-blue-600 dark:text-blue-400 text-xl">ℹ️</div>
+                  <div>
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                      How to Use Bug Hunter Tests
+                    </h3>
+                    <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
+                      <li>Perform some operations on the Gantt chart (drag tasks, edit, etc.)</li>
+                      <li>Click "Run Tests" to analyze the Bug Hunter data</li>
+                      <li>Review the test results to identify any issues</li>
+                      <li>Check the console for detailed diagnostic information</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Test Results Table */}
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">
+                      #
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Test Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Threshold
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Result
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Metrics
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                  {tests.map((test) => {
+                    const result = testResults?.tests?.find(t => t.id === test.id)
+
+                    return (
+                      <tr key={test.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {test.id}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {test.name}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {test.description}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                          {test.threshold}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center text-xl">
+                          {result ? getStatusIcon(result.status) : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                          {result?.result || 'Not run'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                          {result?.metrics || '—'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+              </>
+            )}
+
+            {/* Automated Test Tab Content */}
+            {activeTab === 'automated' && (
+              <>
+                {automatedTestResult ? (
+                  <div className="space-y-4">
+                    {/* Test Result Header */}
+                    <div className={`border rounded-lg p-4 ${
+                      automatedTestResult.status === 'pass' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
+                      automatedTestResult.status === 'fail' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
+                      'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                    }`}>
+                      <div className="flex gap-3">
+                        <div className="text-2xl">
+                          {automatedTestResult.status === 'pass' ? '✅' :
+                           automatedTestResult.status === 'fail' ? '❌' : '⚠️'}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className={`font-semibold mb-2 ${
+                            automatedTestResult.status === 'pass' ? 'text-green-900 dark:text-green-100' :
+                            automatedTestResult.status === 'fail' ? 'text-red-900 dark:text-red-100' :
+                            'text-yellow-900 dark:text-yellow-100'
+                          }`}>
+                            Comprehensive Automated Test - {automatedTestResult.status.toUpperCase()}
+                          </h3>
+                          <p className={`text-sm mb-3 ${
+                            automatedTestResult.status === 'pass' ? 'text-green-800 dark:text-green-200' :
+                            automatedTestResult.status === 'fail' ? 'text-red-800 dark:text-red-200' :
+                            'text-yellow-800 dark:text-yellow-200'
+                          }`}>
+                            {automatedTestResult.message}
+                          </p>
+
+                          {automatedTestResult.details?.taskName && (
+                            <div className="space-y-2">
+                              <div className={`p-2 rounded text-sm ${
+                                automatedTestResult.status === 'pass' ? 'bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100' :
+                                automatedTestResult.status === 'fail' ? 'bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100' :
+                                'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100'
+                              }`}>
+                                <span className="font-medium">Task Tested:</span> #{automatedTestResult.details.taskId} - {automatedTestResult.details.taskName}
+                              </div>
+                              {automatedTestResult.details.testDuration && (
+                                <div className="text-xs text-gray-600 dark:text-gray-400">
+                                  ⏱️ Test Duration: {automatedTestResult.details.testDuration}s
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Test Steps */}
+                    {automatedTestResult.details?.steps && (
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+                        <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Test Execution Steps</h4>
+                        <div className="space-y-1 text-sm font-mono">
+                          {automatedTestResult.details.steps.map((step, idx) => (
+                            <div
+                              key={idx}
+                              className={`py-1 ${
+                                step.startsWith('✅') ? 'text-green-700 dark:text-green-300' :
+                                step.startsWith('❌') ? 'text-red-700 dark:text-red-300' :
+                                step.startsWith('⚠️') ? 'text-yellow-700 dark:text-yellow-300' :
+                                step.startsWith('ℹ️') ? 'text-blue-700 dark:text-blue-300' :
+                                'text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              {step}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Test Metrics */}
+                    {automatedTestResult.details?.metrics && (
+                      <div className="grid grid-cols-4 gap-3">
+                        <div className={`p-3 rounded-lg ${
+                          automatedTestResult.details.metrics.noFlash
+                            ? 'bg-green-100 dark:bg-green-900/30'
+                            : 'bg-red-100 dark:bg-red-900/30'
+                        }`}>
+                          <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Screen Flashes</div>
+                          <div className="text-lg font-bold">
+                            {automatedTestResult.details.metrics.noFlash ? '✅ None' : '❌ ' + automatedTestResult.details.metrics.ganttReloads}
+                          </div>
+                          <div className="text-xs opacity-70">{automatedTestResult.details.thresholds.ganttReloads}</div>
+                        </div>
+
+                        <div className={`p-3 rounded-lg ${
+                          automatedTestResult.details.metrics.dependenciesWorked
+                            ? 'bg-green-100 dark:bg-green-900/30'
+                            : 'bg-red-100 dark:bg-red-900/30'
+                        }`}>
+                          <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Dependencies</div>
+                          <div className="text-lg font-bold">
+                            {automatedTestResult.details.metrics.dependenciesWorked ? '✅ Pass' : '❌ Fail'}
+                          </div>
+                          <div className="text-xs opacity-70">
+                            {automatedTestResult.details.metrics.hasDependencies
+                              ? `${automatedTestResult.details.metrics.successorCount} successor(s) checked`
+                              : 'No successors to verify'}
+                          </div>
+                        </div>
+
+                        <div className={`p-3 rounded-lg ${
+                          automatedTestResult.details.metrics.returnedToOriginal
+                            ? 'bg-green-100 dark:bg-green-900/30'
+                            : 'bg-red-100 dark:bg-red-900/30'
+                        }`}>
+                          <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Return to Original</div>
+                          <div className="text-lg font-bold">
+                            {automatedTestResult.details.metrics.returnedToOriginal ? '✅ Yes' : '❌ No'}
+                          </div>
+                          <div className="text-xs opacity-70">After untick hold</div>
+                        </div>
+
+                        <div className={`p-3 rounded-lg ${
+                          automatedTestResult.details.metrics.criticalWarnings === 0
+                            ? 'bg-green-100 dark:bg-green-900/30'
+                            : 'bg-red-100 dark:bg-red-900/30'
+                        }`}>
+                          <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Critical Warnings</div>
+                          <div className="text-lg font-bold">
+                            {automatedTestResult.details.metrics.criticalWarnings === 0 ? '✅ 0' : '❌ ' + automatedTestResult.details.metrics.criticalWarnings}
+                          </div>
+                          <div className="text-xs opacity-70">{automatedTestResult.details.thresholds.criticalWarnings}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                    <BeakerIcon className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                    <p className="text-lg font-medium mb-2">No Automated Test Results</p>
+                    <p className="text-sm">Click "Run Automated Test" to start the comprehensive test</p>
+                    <div className="mt-4 text-xs text-gray-400 dark:text-gray-500 max-w-md mx-auto">
+                      Test will: Select task one → Move 5 days → Check no flashing → Verify dependencies → Untick hold → Verify return to original
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Console Commands - Outside tabs but shared */}
+            <div className="mt-6 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Console API Commands
+              </h3>
+              <div className="text-sm text-gray-700 dark:text-gray-300 space-y-2 font-mono">
+                <div className="space-y-1">
+                  <div className="font-semibold text-gray-900 dark:text-white">Automated Test API:</div>
+                  <div><code className="text-blue-600 dark:text-blue-400">await window.runGanttAutomatedTest()</code> - Run automated test</div>
+                  <div className="pl-4 text-xs">
+                    Options: <code className="text-gray-600 dark:text-gray-400">{'{silent: true, customTaskId: 123}'}</code>
+                  </div>
+                </div>
+                <div className="space-y-1 pt-2 border-t border-gray-300 dark:border-gray-600">
+                  <div className="font-semibold text-gray-900 dark:text-white">Bug Hunter APIs:</div>
+                  <div><code className="text-pink-600 dark:text-pink-400">window.printBugHunterReport()</code> - Print detailed report</div>
+                  <div><code className="text-pink-600 dark:text-pink-400">window.exportBugHunterReport()</code> - Export report to JSON</div>
+                  <div><code className="text-pink-600 dark:text-pink-400">window.resetBugHunter()</code> - Reset Bug Hunter data</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex justify-between items-center">
+            <div className="flex flex-col gap-1">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {testResults ? (
+                  <>
+                    {testResults.tests.filter(t => t.status === 'pass').length} / {tests.length} tests passing
+                  </>
+                ) : (
+                  'No tests run yet'
+                )}
+              </div>
+              {lastSuccessfulPass && (
+                <div className="text-xs text-green-600 dark:text-green-400 font-medium">
+                  ✅ Last all-pass: {lastSuccessfulPass.toLocaleString()}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

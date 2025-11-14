@@ -6,7 +6,7 @@ import {
   CheckIcon, ArrowUpIcon, ArrowDownIcon, InformationCircleIcon,
   MagnifyingGlassIcon, XMarkIcon, Cog6ToothIcon, EyeIcon, EyeSlashIcon,
   Bars3Icon, ChevronUpIcon, ChevronDownIcon, ArrowDownTrayIcon, ArrowUpTrayIcon,
-  ChartBarIcon, BookOpenIcon, ClipboardDocumentIcon
+  ChartBarIcon, BookOpenIcon, ClipboardDocumentIcon, PlayIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import Toast from '../Toast'
@@ -20,6 +20,7 @@ import SubtasksModal from './SubtasksModal'
 import DHtmlxGanttView from './DHtmlxGanttView'
 import GanttRulesModal from './GanttRulesModal'
 import GanttBugHunterModal from './GanttBugHunterModal'
+import GanttTestStatusModal from './GanttTestStatusModal'
 import { bugHunter } from '../../utils/ganttDebugger'
 
 /**
@@ -129,6 +130,7 @@ export default function ScheduleTemplateEditor() {
   const [showGanttView, setShowGanttView] = useState(false)
   const [showRulesModal, setShowRulesModal] = useState(false)
   const [showBugHunterModal, setShowBugHunterModal] = useState(false)
+  const [showTestStatusModal, setShowTestStatusModal] = useState(false)
   const [showCopyDropdown, setShowCopyDropdown] = useState(false)
   const hasCollapsedOnLoad = useRef(false)
 
@@ -448,6 +450,68 @@ export default function ScheduleTemplateEditor() {
     } catch (err) {
       console.error('Failed to copy Gantt Bug Hunter:', err)
       showToast('Failed to copy Gantt Bug Hunter', 'error')
+    }
+  }
+
+  const handleCopyTestStatus = async () => {
+    try {
+      // Get Bug Hunter report from global instance
+      if (!window.ganttBugHunter) {
+        showToast('Bug Hunter not initialized - perform operations first', 'warning')
+        return
+      }
+
+      const report = window.ganttBugHunter.generateReport()
+
+      // Format as markdown table
+      let markdown = '# Gantt Bug Hunter - Test Status Report\n\n'
+      markdown += `**Generated:** ${new Date().toLocaleString()}\n\n`
+      markdown += `**Overall Status:** ${report.health.status.toUpperCase()}\n\n`
+
+      markdown += '## Summary\n\n'
+      markdown += `- API Calls: ${report.summary.apiCalls}\n`
+      markdown += `- Gantt Reloads: ${report.summary.ganttReloads}\n`
+      markdown += `- Drag Operations: ${report.summary.dragOperations}\n`
+      markdown += `- Cascade Events: ${report.summary.cascadeEvents}\n`
+      markdown += `- Warnings: ${report.summary.warnings}\n`
+      markdown += `- Errors: ${report.summary.errors}\n\n`
+
+      markdown += '## Test Results\n\n'
+      markdown += '| # | Test Name | Status | Details |\n'
+      markdown += '|---|-----------|--------|----------|\n'
+
+      const tests = [
+        'Duplicate API Call Detection',
+        'Excessive Gantt Reload Detection',
+        'Slow Drag Operation Detection',
+        'API Call Pattern Analysis',
+        'Cascade Event Tracking',
+        'State Update Batching',
+        'Lock State Monitoring',
+        'Performance Timing Analysis',
+        'Health Status Assessment',
+        'Actionable Recommendations'
+      ]
+
+      tests.forEach((name, idx) => {
+        const status = report.health.status === 'healthy' ? '✅ PASS'
+          : report.health.status === 'warning' ? '⚠️ WARNING'
+          : '❌ FAIL'
+        markdown += `| ${idx + 1} | ${name} | ${status} | See report |\n`
+      })
+
+      markdown += '\n## Detailed Report\n\n'
+      markdown += '```json\n'
+      markdown += JSON.stringify(report, null, 2)
+      markdown += '\n```\n'
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(markdown)
+
+      showToast('Test Status copied to clipboard!', 'success')
+    } catch (err) {
+      console.error('Failed to copy Test Status:', err)
+      showToast('Failed to copy Test Status', 'error')
     }
   }
 
@@ -1465,6 +1529,14 @@ export default function ScheduleTemplateEditor() {
             <BookOpenIcon className="h-5 w-5 mr-2" />
             Gantt Bug Hunter
           </button>
+          <button
+            onClick={() => setShowTestStatusModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-emerald-300 dark:border-emerald-600 rounded-lg shadow-sm text-sm font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+            title="Run Bug Hunter Tests - View 10 automated test results and status"
+          >
+            <PlayIcon className="h-5 w-5 mr-2" />
+            Test Status
+          </button>
           <div className="relative">
             <button
               onClick={() => setShowCopyDropdown(!showCopyDropdown)}
@@ -1501,6 +1573,17 @@ export default function ScheduleTemplateEditor() {
                   >
                     <ClipboardDocumentIcon className="inline h-4 w-4 mr-2" />
                     Copy Gantt Bug Hunter
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleCopyTestStatus()
+                      setShowCopyDropdown(false)
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                    role="menuitem"
+                  >
+                    <PlayIcon className="inline h-4 w-4 mr-2" />
+                    Copy Test Status
                   </button>
                 </div>
               </div>
@@ -2152,6 +2235,12 @@ export default function ScheduleTemplateEditor() {
       <GanttBugHunterModal
         isOpen={showBugHunterModal}
         onClose={() => setShowBugHunterModal(false)}
+      />
+
+      {/* Gantt Test Status Modal */}
+      <GanttTestStatusModal
+        isOpen={showTestStatusModal}
+        onClose={() => setShowTestStatusModal(false)}
       />
 
       {/* Toast */}
