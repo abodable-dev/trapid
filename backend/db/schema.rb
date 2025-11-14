@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_13_201843) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_14_030048) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -256,6 +256,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_13_201843) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "contact_types", default: [], comment: "Array of contact types: customer, supplier, sales, land_agent. Empty array = shared/universal role", array: true
+    t.index ["contact_types"], name: "index_contact_roles_on_contact_types", using: :gin
     t.index ["name"], name: "index_contact_roles_on_name", unique: true
   end
 
