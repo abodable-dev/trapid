@@ -2,28 +2,28 @@ import { XMarkIcon, BookOpenIcon } from '@heroicons/react/24/outline'
 import { useEffect, useState } from 'react'
 
 /**
- * GanttRulesModal - Displays the Gantt Bible (GANTT_DRAG_FLICKER_FIXES.md)
+ * GanttBugHunterModal - Displays the Gantt Bug Hunter (GANTT_BUGS_AND_FIXES.md) - Bug Tracking & Knowledge Base
  */
-export default function GanttRulesModal({ isOpen, onClose }) {
+export default function GanttBugHunterModal({ isOpen, onClose }) {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (isOpen) {
-      fetchRules()
+      fetchBugHunter()
     }
   }, [isOpen])
 
-  const fetchRules = async () => {
+  const fetchBugHunter = async () => {
     try {
       setLoading(true)
-      // Fetch the Gantt Bible (complete drag/cascade documentation)
-      const response = await fetch('/GANTT_DRAG_FLICKER_FIXES.md')
+      // Fetch the Gantt Bug Hunter (bug tracking & knowledge base)
+      const response = await fetch('/GANTT_BUGS_AND_FIXES.md')
       const text = await response.text()
       setContent(text)
     } catch (err) {
-      console.error('Failed to load Gantt Bible:', err)
-      setContent('# Error\n\nFailed to load Gantt Bible.')
+      console.error('Failed to load Gantt Bug Hunter:', err)
+      setContent('# Error\n\nFailed to load Gantt Bug Hunter.')
     } finally {
       setLoading(false)
     }
@@ -73,10 +73,16 @@ export default function GanttRulesModal({ isOpen, onClose }) {
       .replace(/✅/g, '<span class="text-green-600">✅</span>')
       .replace(/❌/g, '<span class="text-red-600">❌</span>')
       .replace(/⚠️/g, '<span class="text-yellow-600">⚠️</span>')
+      .replace(/🔴/g, '<span class="text-red-600">🔴</span>')
+      .replace(/🟡/g, '<span class="text-yellow-500">🟡</span>')
+      .replace(/🟢/g, '<span class="text-green-600">🟢</span>')
+      .replace(/🔧/g, '<span>🔧</span>')
       .replace(/🎯/g, '<span>🎯</span>')
       .replace(/📋/g, '<span>📋</span>')
       .replace(/📚/g, '<span>📚</span>')
       .replace(/🚀/g, '<span>🚀</span>')
+      .replace(/🔍/g, '<span>🔍</span>')
+      .replace(/🐛/g, '<span>🐛</span>')
   }
 
   if (!isOpen) return null
@@ -95,9 +101,9 @@ export default function GanttRulesModal({ isOpen, onClose }) {
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <div className="flex items-center gap-3">
-              <BookOpenIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+              <BookOpenIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Gantt Bible - Complete Drag & Cascade Documentation
+                Gantt Bug Hunter - Bug Tracking & Knowledge Base
               </h2>
             </div>
             <button
@@ -112,8 +118,8 @@ export default function GanttRulesModal({ isOpen, onClose }) {
           <div className="px-6 py-4 overflow-y-auto max-h-[calc(90vh-80px)]">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                <span className="ml-3 text-gray-600 dark:text-gray-400">Loading documentation...</span>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+                <span className="ml-3 text-gray-600 dark:text-gray-400">Loading Gantt Bug Hunter...</span>
               </div>
             ) : (
               <div
@@ -127,7 +133,7 @@ export default function GanttRulesModal({ isOpen, onClose }) {
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
             >
               Close
             </button>

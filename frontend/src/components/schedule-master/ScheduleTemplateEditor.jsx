@@ -19,6 +19,7 @@ import AutoCompleteTasksModal from './AutoCompleteTasksModal'
 import SubtasksModal from './SubtasksModal'
 import DHtmlxGanttView from './DHtmlxGanttView'
 import GanttRulesModal from './GanttRulesModal'
+import GanttBugHunterModal from './GanttBugHunterModal'
 import { bugHunter } from '../../utils/ganttDebugger'
 
 /**
@@ -127,6 +128,8 @@ export default function ScheduleTemplateEditor() {
   const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false)
   const [showGanttView, setShowGanttView] = useState(false)
   const [showRulesModal, setShowRulesModal] = useState(false)
+  const [showBugHunterModal, setShowBugHunterModal] = useState(false)
+  const [showCopyDropdown, setShowCopyDropdown] = useState(false)
   const hasCollapsedOnLoad = useRef(false)
 
   // Cascade update batching (prevents multiple reloads from backend cascade updates)
@@ -405,6 +408,46 @@ export default function ScheduleTemplateEditor() {
     } catch (err) {
       console.error('Failed to delete template:', err)
       showToast(err.message || 'Failed to delete template', 'error')
+    }
+  }
+
+  const handleCopyGanttBible = async () => {
+    try {
+      // Fetch the Gantt Bible (drag flicker fixes) from frontend folder
+      const response = await fetch('/GANTT_DRAG_FLICKER_FIXES.md')
+      if (!response.ok) {
+        throw new Error('Failed to load Gantt Bible')
+      }
+
+      const bibleText = await response.text()
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(bibleText)
+
+      showToast('Gantt Bible copied to clipboard!', 'success')
+    } catch (err) {
+      console.error('Failed to copy Gantt Bible:', err)
+      showToast('Failed to copy Gantt Bible', 'error')
+    }
+  }
+
+  const handleCopyGanttBugHunter = async () => {
+    try {
+      // Fetch the Gantt Bug Hunter (bugs and fixes) from docs folder
+      const response = await fetch('/GANTT_BUGS_AND_FIXES.md')
+      if (!response.ok) {
+        throw new Error('Failed to load Gantt Bug Hunter')
+      }
+
+      const bugHunterText = await response.text()
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(bugHunterText)
+
+      showToast('Gantt Bug Hunter copied to clipboard!', 'success')
+    } catch (err) {
+      console.error('Failed to copy Gantt Bug Hunter:', err)
+      showToast('Failed to copy Gantt Bug Hunter', 'error')
     }
   }
 
@@ -1409,19 +1452,60 @@ export default function ScheduleTemplateEditor() {
           <button
             onClick={() => setShowRulesModal(true)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-            title="View Development Rules & Documentation"
+            title="View Gantt Bible - High-level guide Claude reads before starting work on Gantt code"
           >
             <BookOpenIcon className="h-5 w-5 mr-2" />
-            Gantt Rules
+            Gantt Bible
           </button>
           <button
-            onClick={handleCopyGanttRules}
+            onClick={() => setShowBugHunterModal(true)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-            title="Copy Gantt Rules to Clipboard"
+            title="View Gantt Bug Hunter - Knowledge base of all previous bugs, fixes, and solutions"
           >
-            <ClipboardDocumentIcon className="h-5 w-5 mr-2" />
-            Copy Gantt Rules
+            <BookOpenIcon className="h-5 w-5 mr-2" />
+            Gantt Bug Hunter
           </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowCopyDropdown(!showCopyDropdown)}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+              title="Copy Documentation to Clipboard"
+            >
+              <ClipboardDocumentIcon className="h-5 w-5 mr-2" />
+              Copy Docs
+              <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showCopyDropdown && (
+              <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50">
+                <div className="py-1" role="menu">
+                  <button
+                    onClick={() => {
+                      handleCopyGanttBible()
+                      setShowCopyDropdown(false)
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    role="menuitem"
+                  >
+                    <ClipboardDocumentIcon className="inline h-4 w-4 mr-2" />
+                    Copy Gantt Bible
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleCopyGanttBugHunter()
+                      setShowCopyDropdown(false)
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    role="menuitem"
+                  >
+                    <ClipboardDocumentIcon className="inline h-4 w-4 mr-2" />
+                    Copy Gantt Bug Hunter
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setShowTemplateModal(true)}
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
@@ -2058,10 +2142,16 @@ export default function ScheduleTemplateEditor() {
         />
       )}
 
-      {/* Gantt Rules Modal */}
+      {/* Gantt Bible Modal */}
       <GanttRulesModal
         isOpen={showRulesModal}
         onClose={() => setShowRulesModal(false)}
+      />
+
+      {/* Gantt Bug Hunter Modal */}
+      <GanttBugHunterModal
+        isOpen={showBugHunterModal}
+        onClose={() => setShowBugHunterModal(false)}
       />
 
       {/* Toast */}
