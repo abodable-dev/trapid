@@ -327,6 +327,17 @@ Rails.application.routes.draw do
         end
       end
 
+      # Bug Hunter Tests
+      resources :bug_hunter_tests, only: [:index] do
+        collection do
+          get :history
+          delete :cleanup
+        end
+        member do
+          post :run
+        end
+      end
+
       # Xero integration
       resources :xero, only: [] do
         collection do
