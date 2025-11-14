@@ -2,12 +2,19 @@ import { useState } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-const PortalUserSection = ({ contact, contactPersons = [], onUpdate }) => {
-  const [isEditing, setIsEditing] = useState(false);
+const PortalUserSection = ({ contact, contactPersons = [], onUpdate, isEditMode = false }) => {
+  // Use parent's edit mode if provided, otherwise manage internally
+  const [internalEditMode, setInternalEditMode] = useState(false);
+  const isEditing = isEditMode || internalEditMode;
   const [selectedPersonId, setSelectedPersonId] = useState('');
   const [email, setEmail] = useState(contact.portal_user?.email || contact.email || '');
   const [password, setPassword] = useState('');
-  const [portalType, setPortalType] = useState(contact.portal_user?.portal_type || 'supplier');
+  const [hasSupplierAccess, setHasSupplierAccess] = useState(
+    contact.portal_user?.portal_type === 'supplier' || contact.portal_user?.portal_type === 'both'
+  );
+  const [hasCustomerAccess, setHasCustomerAccess] = useState(
+    contact.portal_user?.portal_type === 'customer' || contact.portal_user?.portal_type === 'both'
+  );
   const [active, setActive] = useState(contact.portal_user?.active !== false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -30,8 +37,23 @@ const PortalUserSection = ({ contact, contactPersons = [], onUpdate }) => {
       return;
     }
 
+    if (!hasSupplierAccess && !hasCustomerAccess) {
+      setError('Please select at least one portal type');
+      return;
+    }
+
     setLoading(true);
     setError(null);
+
+    // Determine portal_type based on checkboxes
+    let portalType;
+    if (hasSupplierAccess && hasCustomerAccess) {
+      portalType = 'both';
+    } else if (hasSupplierAccess) {
+      portalType = 'supplier';
+    } else {
+      portalType = 'customer';
+    }
 
     try {
       const token = localStorage.getItem('token');
@@ -53,7 +75,7 @@ const PortalUserSection = ({ contact, contactPersons = [], onUpdate }) => {
       if (data.success) {
         setSavedPassword(password);
         setPassword('');
-        setIsEditing(false);
+        setInternalEditMode(false);
         alert('Portal user created successfully!');
         if (onUpdate) onUpdate();
       } else {
@@ -67,8 +89,23 @@ const PortalUserSection = ({ contact, contactPersons = [], onUpdate }) => {
   };
 
   const handleUpdate = async () => {
+    if (!hasSupplierAccess && !hasCustomerAccess) {
+      setError('Please select at least one portal type');
+      return;
+    }
+
     setLoading(true);
     setError(null);
+
+    // Determine portal_type based on checkboxes
+    let portalType;
+    if (hasSupplierAccess && hasCustomerAccess) {
+      portalType = 'both';
+    } else if (hasSupplierAccess) {
+      portalType = 'supplier';
+    } else {
+      portalType = 'customer';
+    }
 
     try {
       const token = localStorage.getItem('token');
@@ -99,7 +136,7 @@ const PortalUserSection = ({ contact, contactPersons = [], onUpdate }) => {
           setSavedPassword(password);
         }
         setPassword('');
-        setIsEditing(false);
+        setInternalEditMode(false);
         alert('Portal user updated successfully!');
         if (onUpdate) onUpdate();
       } else {
@@ -146,11 +183,32 @@ const PortalUserSection = ({ contact, contactPersons = [], onUpdate }) => {
   };
 
   const generatePassword = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    // Generate password that meets validation requirements:
+    // - At least one lowercase letter
+    // - At least one uppercase letter
+    // - At least one digit
+    // - At least one special character
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const digits = '0123456789';
+    const special = '!@#$%^&*';
+
+    // Ensure at least one of each required type
     let newPassword = '';
-    for (let i = 0; i < 16; i++) {
-      newPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+    newPassword += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+    newPassword += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+    newPassword += digits.charAt(Math.floor(Math.random() * digits.length));
+    newPassword += special.charAt(Math.floor(Math.random() * special.length));
+
+    // Fill the rest with random characters from all types (12 more chars for 16 total)
+    const allChars = lowercase + uppercase + digits + special;
+    for (let i = 0; i < 12; i++) {
+      newPassword += allChars.charAt(Math.floor(Math.random() * allChars.length));
     }
+
+    // Shuffle the password to avoid predictable pattern
+    newPassword = newPassword.split('').sort(() => Math.random() - 0.5).join('');
+
     setPassword(newPassword);
   };
 
@@ -158,14 +216,6 @@ const PortalUserSection = ({ contact, contactPersons = [], onUpdate }) => {
     <div className="border-t border-gray-200 pt-4 mt-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold text-gray-900">Portal Access</h3>
-        {hasPortalUser && !isEditing && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="text-sm text-blue-600 hover:text-blue-800"
-          >
-            Edit
-          </button>
-        )}
       </div>
 
       {error && (
@@ -175,147 +225,168 @@ const PortalUserSection = ({ contact, contactPersons = [], onUpdate }) => {
       )}
 
       {!hasPortalUser || isEditing ? (
-        <div className="space-y-3">
-          {/* Contact Person Selector */}
-          {!hasPortalUser && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select Contact Person (Optional)
-              </label>
-              {contactPersons.length > 0 ? (
-                <>
-                  <select
-                    value={selectedPersonId}
-                    onChange={(e) => handlePersonSelect(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">-- Select from contact persons or enter manually --</option>
-                    {contactPersons.map((person) => (
-                      <option key={person.id} value={person.id}>
-                        {person.first_name} {person.last_name}
-                        {person.email && ` (${person.email})`}
-                        {person.is_primary && ' - Primary'}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Select a contact person to auto-fill their email, or enter the email manually below
-                  </p>
-                </>
+        <div className="relative">
+          {/* Action Buttons - only show when NOT using parent edit mode */}
+          {!isEditMode && (
+            <div className="absolute top-0 right-0 flex gap-2">
+              {!hasPortalUser ? (
+                <button
+                  onClick={handleCreate}
+                  disabled={loading}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 text-sm"
+                >
+                  {loading ? 'Creating...' : 'Create'}
+                </button>
               ) : (
-                <div className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm text-gray-500">
-                  No contact persons found. Add contact persons in the "Related Contacts" tab first, or enter email manually below.
-                </div>
+                <>
+                  <button
+                    onClick={handleUpdate}
+                    disabled={loading}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 text-sm"
+                  >
+                    {loading ? 'Updating...' : 'Update'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setInternalEditMode(false);
+                      setEmail(contact.portal_user?.email || contact.email || '');
+                      setPassword('');
+                      setHasSupplierAccess(
+                        contact.portal_user?.portal_type === 'supplier' || contact.portal_user?.portal_type === 'both'
+                      );
+                      setHasCustomerAccess(
+                        contact.portal_user?.portal_type === 'customer' || contact.portal_user?.portal_type === 'both'
+                      );
+                      setActive(contact.portal_user?.active !== false);
+                      setError(null);
+                    }}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 text-sm"
+                  >
+                    {loading ? 'Deleting...' : 'Delete'}
+                  </button>
+                </>
               )}
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="user@example.com"
-            />
-          </div>
+          {/* Form content with right padding to prevent overlap with buttons (only when buttons are shown) */}
+          <div className={`space-y-3 ${!isEditMode ? 'pr-80' : ''}`}>
+            {/* Contact Person Selector */}
+            {!hasPortalUser && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select Contact Person (Optional)
+                </label>
+                {contactPersons.length > 0 ? (
+                  <>
+                    <select
+                      value={selectedPersonId}
+                      onChange={(e) => handlePersonSelect(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">-- Select from contact persons or enter manually --</option>
+                      {contactPersons.map((person) => (
+                        <option key={person.id} value={person.id}>
+                          {person.first_name} {person.last_name}
+                          {person.email && ` (${person.email})`}
+                          {person.is_primary && ' - Primary'}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Select a contact person to auto-fill their email, or enter the email manually below
+                    </p>
+                  </>
+                ) : (
+                  <div className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm text-gray-500">
+                    No contact persons found. Add contact persons in the "Related Contacts" tab first, or enter email manually below.
+                  </div>
+                )}
+              </div>
+            )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password {!hasPortalUser && <span className="text-red-500">*</span>}
-              {hasPortalUser && <span className="text-gray-500 text-xs ml-1">(leave blank to keep current)</span>}
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder={hasPortalUser ? "(unchanged)" : "Enter password"}
-              />
-              <button
-                type="button"
-                onClick={generatePassword}
-                className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
-              >
-                Generate
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Portal Type
-            </label>
-            <select
-              value={portalType}
-              onChange={(e) => setPortalType(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="supplier">Supplier</option>
-              <option value="customer">Customer</option>
-            </select>
-          </div>
-
-          {hasPortalUser && (
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="active"
-                checked={active}
-                onChange={(e) => setActive(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="active" className="ml-2 block text-sm text-gray-700">
-                Active
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
               </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="user@example.com"
+              />
             </div>
-          )}
 
-          <div className="flex gap-2">
-            {!hasPortalUser ? (
-              <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password {!hasPortalUser && <span className="text-red-500">*</span>}
+                {hasPortalUser && <span className="text-gray-500 text-xs ml-1">(leave blank to keep current)</span>}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={hasPortalUser ? "(unchanged)" : "Enter password"}
+                />
                 <button
-                  onClick={handleCreate}
-                  disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                  type="button"
+                  onClick={generatePassword}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
                 >
-                  {loading ? 'Creating...' : 'Create Portal User'}
+                  Generate
                 </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={handleUpdate}
-                  disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-                >
-                  {loading ? 'Updating...' : 'Update'}
-                </button>
-                <button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEmail(contact.portal_user?.email || contact.email || '');
-                    setPassword('');
-                    setPortalType(contact.portal_user?.portal_type || 'supplier');
-                    setActive(contact.portal_user?.active !== false);
-                    setError(null);
-                  }}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={loading}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 ml-auto"
-                >
-                  {loading ? 'Deleting...' : 'Delete Portal User'}
-                </button>
-              </>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Portal Access Type
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={hasSupplierAccess}
+                    onChange={(e) => setHasSupplierAccess(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="text-sm text-gray-700">Supplier Portal</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={hasCustomerAccess}
+                    onChange={(e) => setHasCustomerAccess(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="text-sm text-gray-700">Customer Portal</span>
+                </label>
+              </div>
+            </div>
+
+            {hasPortalUser && (
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="active"
+                  checked={active}
+                  onChange={(e) => setActive(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="active" className="ml-2 block text-sm text-gray-700">
+                  Active
+                </label>
+              </div>
             )}
           </div>
         </div>
@@ -332,8 +403,14 @@ const PortalUserSection = ({ contact, contactPersons = [], onUpdate }) => {
             </div>
           )}
           <div className="flex justify-between">
-            <span className="text-sm font-medium text-gray-600">Type:</span>
-            <span className="text-sm text-gray-900 capitalize">{contact.portal_user.portal_type}</span>
+            <span className="text-sm font-medium text-gray-600">Access:</span>
+            <span className="text-sm text-gray-900">
+              {contact.portal_user.portal_type === 'both'
+                ? 'Supplier + Customer'
+                : contact.portal_user.portal_type === 'supplier'
+                ? 'Supplier Portal'
+                : 'Customer Portal'}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-sm font-medium text-gray-600">Status:</span>
