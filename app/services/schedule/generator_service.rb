@@ -226,7 +226,8 @@ module Schedule
 
       if predecessor_deps.empty?
         # No predecessors - can start at project start date
-        task.planned_start_date = @project.start_date || Date.current
+        # RULE #9.3: Use company timezone, not server timezone
+        task.planned_start_date = @project.start_date || CompanySetting.today
       else
         # Calculate based on predecessors
         earliest_start = predecessor_deps.map do |dep|
@@ -253,7 +254,8 @@ module Schedule
           end
         end.compact.max
 
-        task.planned_start_date = earliest_start || @project.start_date || Date.current
+        # RULE #9.3: Use company timezone, not server timezone
+        task.planned_start_date = earliest_start || @project.start_date || CompanySetting.today
       end
 
       # Calculate end date based on duration
