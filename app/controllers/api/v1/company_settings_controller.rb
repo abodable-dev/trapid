@@ -50,7 +50,8 @@ module Api
           :twilio_account_sid,
           :twilio_auth_token,
           :twilio_phone_number,
-          :twilio_enabled
+          :twilio_enabled,
+          :timezone
         )
       end
     end
