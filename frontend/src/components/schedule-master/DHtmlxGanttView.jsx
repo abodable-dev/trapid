@@ -2878,7 +2878,11 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
         // Call backend API to update task and trigger cascade
         if (templateId) {
           try {
-            const response = await fetch(`/api/v1/schedule_templates/${templateId}/rows/${testTask.id}`, {
+            const apiUrl = `/api/v1/schedule_templates/${templateId}/rows/${testTask.id}`
+            console.log('🧪 Calling backend API:', apiUrl)
+            await updateProgress(`🔄 Calling backend API for task #${testTask.id}...`)
+
+            const response = await fetch(apiUrl, {
               method: 'PATCH',
               headers: {
                 'Content-Type': 'application/json'
@@ -2893,7 +2897,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
             })
 
             if (!response.ok) {
-              throw new Error(`Backend API error: ${response.statusText}`)
+              const errorText = await response.text()
+              console.error('🧪 Backend API error:', response.status, errorText)
+              throw new Error(`Backend API error (${response.status}): ${errorText || response.statusText}`)
             }
 
             const data = await response.json()
