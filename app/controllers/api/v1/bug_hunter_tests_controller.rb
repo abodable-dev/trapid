@@ -101,7 +101,8 @@ class Api::V1::BugHunterTestsController < ApplicationController
     test_id = params[:id]
 
     # Check if client provided test results (from visual tests)
-    if params[:passed].present?
+    # Use key? instead of present? because passed can be false (which is falsy but valid)
+    if params.key?(:passed)
       result = {
         passed: params[:passed],
         message: params[:message] || "Test #{test_id} completed",
