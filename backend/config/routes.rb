@@ -296,6 +296,13 @@ Rails.application.routes.draw do
       get 'documentation/search', to: 'documentation#search'
       get 'documentation/:id', to: 'documentation#show'
 
+      # Documented Bugs (Lexicon)
+      resources :documented_bugs do
+        collection do
+          get :stats
+        end
+      end
+
       # Supervisor Checklist Templates (Global)
       resources :supervisor_checklist_templates do
         collection do

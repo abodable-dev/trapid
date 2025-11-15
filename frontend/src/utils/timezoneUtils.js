@@ -47,11 +47,22 @@ export function getCompanyTimezone() {
 export function getTodayInCompanyTimezone() {
   const now = new Date()
 
-  // Get the current date/time in the company timezone
-  const dateInTZ = new Date(now.toLocaleString('en-US', { timeZone: companyTimezone }))
+  // RULE #9.3: Use company timezone, not browser timezone
+  // Get year/month/day in company timezone using Intl.DateTimeFormat
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: companyTimezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
 
-  // Reset to midnight
-  dateInTZ.setHours(0, 0, 0, 0)
+  const parts = formatter.formatToParts(now)
+  const year = parts.find(p => p.type === 'year').value
+  const month = parts.find(p => p.type === 'month').value
+  const day = parts.find(p => p.type === 'day').value
+
+  // Create date from YYYY-MM-DD string to ensure correct interpretation
+  const dateInTZ = new Date(`${year}-${month}-${day}T00:00:00`)
 
   return dateInTZ
 }
@@ -62,7 +73,29 @@ export function getTodayInCompanyTimezone() {
  */
 export function getNowInCompanyTimezone() {
   const now = new Date()
-  return new Date(now.toLocaleString('en-US', { timeZone: companyTimezone }))
+
+  // RULE #9.3: Use company timezone, not browser timezone
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: companyTimezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
+
+  const parts = formatter.formatToParts(now)
+  const year = parts.find(p => p.type === 'year').value
+  const month = parts.find(p => p.type === 'month').value
+  const day = parts.find(p => p.type === 'day').value
+  const hour = parts.find(p => p.type === 'hour').value
+  const minute = parts.find(p => p.type === 'minute').value
+  const second = parts.find(p => p.type === 'second').value
+
+  // Create date from ISO string to ensure correct interpretation
+  return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`)
 }
 
 /**

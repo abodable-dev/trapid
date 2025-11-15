@@ -3862,8 +3862,14 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
       }
 
       if (!task.predecessor_ids || task.predecessor_ids.length === 0) {
-        taskStartDates.set(task.id, projectStartDate)
-        return projectStartDate
+        // RULE #9.3: Tasks with no predecessors start on next working day from project start
+        let startDate = new Date(projectStartDate)
+        while (!isWorkingDay(startDate)) {
+          startDate.setDate(startDate.getDate() + 1)
+        }
+        taskStartDates.set(task.id, startDate)
+        console.log('📌 Task', task.id, 'has no predecessors, starts on next working day:', startDate.toString())
+        return startDate
       }
 
       // Mark this task as currently being calculated
