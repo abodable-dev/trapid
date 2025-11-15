@@ -3717,11 +3717,23 @@ end
 ```ruby
 # ❌ WRONG - uses server timezone
 reference_date = Date.today  # Could be Saturday in UTC, Sunday in AU
+reference_date = Date.current  # Still uses server timezone!
 
 # ✅ CORRECT - uses company timezone
+reference_date = CompanySetting.today  # Preferred method
+# OR
 timezone = CompanySetting.instance.timezone || 'UTC'
 reference_date = Time.now.in_time_zone(timezone).to_date
 ```
+
+**Known Violations (Need Fixing):**
+- ❌ `backend/app/services/schedule/template_instantiator.rb:154` - uses `Date.current`
+- ❌ `backend/app/services/schedule/generator_service.rb:229` - uses `Date.current`
+- ❌ `backend/app/services/schedule/generator_service.rb:256` - uses `Date.current`
+
+**Compliant Code:**
+- ✅ `backend/app/services/schedule_cascade_service.rb:25` - uses `CompanySetting.today`
+- ✅ `backend/app/controllers/api/v1/bug_hunter_tests_controller.rb:219` - uses `Time.now.in_time_zone(timezone).to_date`
 
 ---
 
