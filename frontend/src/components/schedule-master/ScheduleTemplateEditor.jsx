@@ -20,7 +20,6 @@ import SubtasksModal from './SubtasksModal'
 import DHtmlxGanttView from './DHtmlxGanttView'
 import GanttRulesModal from './GanttRulesModal'
 import GanttBugHunterModal from './GanttBugHunterModal'
-import GanttTestStatusModal from './GanttTestStatusModal'
 import { bugHunter } from '../../utils/ganttDebugger'
 
 /**
@@ -130,7 +129,6 @@ export default function ScheduleTemplateEditor() {
   const [showGanttView, setShowGanttView] = useState(false)
   const [showRulesModal, setShowRulesModal] = useState(false)
   const [showBugHunterModal, setShowBugHunterModal] = useState(false)
-  const [showTestStatusModal, setShowTestStatusModal] = useState(false)
   const [showCopyDropdown, setShowCopyDropdown] = useState(false)
   const hasCollapsedOnLoad = useRef(false)
 
@@ -1545,14 +1543,6 @@ export default function ScheduleTemplateEditor() {
             <BookOpenIcon className="h-5 w-5 mr-2" />
             Gantt Bug Hunter
           </button>
-          <button
-            onClick={() => setShowTestStatusModal(true)}
-            className="inline-flex items-center px-4 py-2 border border-emerald-300 dark:border-emerald-600 rounded-lg shadow-sm text-sm font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
-            title="Run Bug Hunter Tests - View 10 automated test results and status"
-          >
-            <PlayIcon className="h-5 w-5 mr-2" />
-            Test Status
-          </button>
           <div className="relative">
             <button
               onClick={() => setShowCopyDropdown(!showCopyDropdown)}
@@ -2251,14 +2241,6 @@ export default function ScheduleTemplateEditor() {
       <GanttBugHunterModal
         isOpen={showBugHunterModal}
         onClose={() => setShowBugHunterModal(false)}
-      />
-
-      {/* Gantt Test Status Modal */}
-      <GanttTestStatusModal
-        isOpen={showTestStatusModal}
-        onClose={() => setShowTestStatusModal(false)}
-        onOpenGantt={() => setShowGanttView(true)}
-        templateId={selectedTemplate?.id}
       />
 
       {/* Toast */}

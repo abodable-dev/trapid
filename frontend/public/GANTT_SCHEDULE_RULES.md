@@ -1,6 +1,6 @@
 # Gantt & Schedule Master - The Bible (Development Rules)
-**Version:** 2.1.0
-**Last Updated:** November 15, 2025 at 4:30 PM AEST (Added RULE #12: CC_UPDATE Table documentation requirement)
+**Version:** 2.2.1
+**Last Updated:** November 15, 2025 at 5:22 PM AEST (Added reminder to ask if user forgets Bible reading)
 **Status:** Production-ready with DHtmlx trial
 **Authority Level:** ABSOLUTE - This is The Bible for all Gantt development
 **File Locations:**
@@ -27,6 +27,8 @@ This file is the **absolute authority** for all Gantt and Schedule Master develo
 **Rules for Claude Code (CC):**
 - ✅ You MUST follow every rule in this document without exception
 - ✅ You MUST read this file at the start of every session
+- ✅ **After reading this file, respond with 👍 and WAIT for user confirmation before proceeding**
+- ✅ **If user starts Gantt work without you reading the Bible first, politely ask: "Should I read the Gantt Bible first?"**
 - ✅ You MUST update this file when discovering new rules
 - ✅ You MUST add bug knowledge to Lexicon (GANTT_BUGS_AND_FIXES.md), NOT here
 - ❌ You CANNOT change implementation approaches between sessions
@@ -229,6 +231,42 @@ Is it a bug report or fix?
   YES → 📕 Lexicon
   NO  → Re-read the question, one of the above must apply
 ```
+
+---
+
+## 📖 Glossary: Terminology & Slang
+
+**CRITICAL: Use this exact terminology when discussing Schedule Master**
+
+✅ **MUST use these terms consistently:**
+
+| Term | Full Name | Definition |
+|------|-----------|------------|
+| **SM** | Schedule Master | The entire scheduling system (table + gantt + settings) |
+| **SMT** | Schedule Master Table | The 24-column table view on the left |
+| **Gantt** | Gantt Chart | The timeline chart view on the right |
+| **Task** | Task | A single row in SMT + its corresponding bar in Gantt |
+| **Deps** | Dependencies | The arrows connecting tasks (predecessor relationships) |
+| **Pred** | Predecessor | A task that must complete before another can start |
+| **FS** | Finish-to-Start | Dependency: Task B starts when Task A finishes (most common) |
+| **SS** | Start-to-Start | Dependency: Task B starts when Task A starts |
+| **FF** | Finish-to-Finish | Dependency: Task B finishes when Task A finishes |
+| **SF** | Start-to-Finish | Dependency: Task B finishes when Task A starts (rare) |
+| **Lag** | Lag Days | Days of delay added to a dependency (+3 = wait 3 days) |
+| **Cascade** | Cascade | Backend process that updates dependent tasks when predecessor changes |
+| **Lock** | Lock | Prevents a task from being auto-cascaded (5 types: supplier_confirm, confirm, start, complete, manually_positioned) |
+| **CC** | Claude Code | AI assistant (you!) |
+
+❌ **NEVER use ambiguous terms:**
+- Don't say "grid" (use SMT or Gantt specifically)
+- Don't say "dependency type" (use FS/SS/FF/SF)
+- Don't say "link" (use dependency or dep)
+- Don't say "arrow" alone (use "dependency arrow" or "dep")
+
+**Why this matters:**
+- Consistent terminology prevents confusion between SMT (table) and Gantt (timeline)
+- Using slang matches what user sees in UI
+- Makes communication faster and clearer
 
 ---
 
@@ -725,6 +763,6 @@ Before committing Gantt code changes, verify:
 
 ---
 
-**Last Updated:** November 15, 2025 at 4:30 PM AEST
+**Last Updated:** November 15, 2025 at 5:22 PM AEST
 **Maintained By:** Development Team
 **Authority Level:** ABSOLUTE
