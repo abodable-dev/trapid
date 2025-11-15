@@ -2887,6 +2887,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
               headers: {
                 'Content-Type': 'application/json'
               },
+              credentials: 'include', // Include session cookies for authentication
               body: JSON.stringify({
                 schedule_template_row: {
                   start_date: dayOffset,
@@ -2993,6 +2994,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
               headers: {
                 'Content-Type': 'application/json'
               },
+              credentials: 'include', // Include session cookies for authentication
               body: JSON.stringify({
                 schedule_template_row: {
                   manually_positioned: false
