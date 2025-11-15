@@ -196,6 +196,140 @@ git diff db/schema.rb
 
 **For agent architecture, see:** Lexicon Chapter 0
 
+## RULE #5: Documentation Authority Hierarchy
+
+### ⚖️ Authority Order (Highest to Lowest)
+
+When documentation conflicts arise, follow this hierarchy:
+
+#### For Claude Code / AI Agents:
+
+**1. TRAPID_BIBLE.md** - ABSOLUTE AUTHORITY
+- **Scope:** Protected features covered by Bible chapters
+- **Content:** RULES (MUST/NEVER/ALWAYS)
+- **When it wins:** ALWAYS for covered features
+- **Example:** "Chapter 9 says NEVER use sequence_order directly" → This rule CANNOT be broken
+
+**2. CLAUDE.md** - META INSTRUCTIONS
+- **Scope:** General AI behavior, workflow, deployment
+- **Content:** How to work, when to use agents, commit style
+- **When it wins:** For general behavior NOT covered by Bible
+- **Defers to:** Bible for feature-specific rules
+- **Example:** "Read Bible first before Gantt work" → Must follow
+
+**3. TRAPID_LEXICON.md** - KNOWLEDGE REFERENCE
+- **Scope:** Bug history, architecture explanations
+- **Content:** How things work, why we chose X
+- **When it wins:** NEVER (reference only, doesn't override)
+- **Purpose:** Supplements Bible with context
+- **Example:** "BUG-001 explains drag flicker history" → Helpful context, not a rule
+
+#### Decision Tree for AI:
+
+```
+Question: Should I do X?
+
+1. Is there a Bible chapter for this feature?
+   YES → Read Bible chapter → Follow ALL rules
+   NO  → Continue to #2
+
+2. Does CLAUDE.md have instructions for this?
+   YES → Follow CLAUDE.md
+   NO  → Use best judgment
+
+3. Is there relevant Lexicon knowledge?
+   ALWAYS check for context, but don't let it override rules
+```
+
+#### For Human Developers:
+
+**1. TRAPID_BIBLE.md** - TECHNICAL RULES
+- **Scope:** Protected code patterns, critical business rules
+- **When to consult:** Before modifying any feature with a Bible chapter
+- **Binding:** YES - these rules prevent bugs
+- **Example:** "Gantt cascade rules in Ch 9" → Must follow
+
+**2. CONTRIBUTING.md** - DEVELOPMENT WORKFLOW
+- **Scope:** Git workflow, PR process, commit style, branch strategy
+- **When to consult:** When contributing code, creating PRs
+- **Binding:** YES - for workflow consistency
+- **Example:** "Create PR from `rob` branch" → Must follow
+
+**3. TRAPID_LEXICON.md** - BUG HISTORY
+- **Scope:** Known issues, past fixes, lessons learned
+- **When to consult:** When encountering bugs or investigating issues
+- **Binding:** NO (reference only)
+- **Example:** "BUG-001 drag flicker history" → Learn from past
+
+#### Decision Tree for Developers:
+
+```
+Question: How should I implement X?
+
+1. Does X have a Bible chapter?
+   YES → Read Bible chapter → Follow all rules → Check Lexicon for gotchas
+   NO  → Continue to #2
+
+2. Is this a Git/PR workflow question?
+   YES → Follow CONTRIBUTING.md
+   NO  → Use best judgment + code review
+
+3. Check Lexicon for related bugs
+   ALWAYS check to avoid repeating past mistakes
+```
+
+### Conflict Resolution
+
+✅ **MUST follow these rules when documents conflict:**
+
+1. **Bible vs Lexicon:** Bible wins (Lexicon provides context only)
+2. **Bible vs CLAUDE.md:** Bible wins for features, CLAUDE.md for workflow
+3. **Bible vs CONTRIBUTING.md:** Both apply (different domains)
+4. **Old docs vs Trinity docs:** Trinity (TRAPID_BIBLE/LEXICON/USER_MANUAL) wins
+
+❌ **NEVER:**
+- Ignore a Bible rule because Lexicon suggests otherwise
+- Follow old GANTT_BIBLE.md instead of TRAPID_BIBLE.md Chapter 9
+- Override Bible rules without team discussion
+
+### Authority Matrix
+
+| Document | AI Agents | Developers | Users | Scope |
+|----------|-----------|------------|-------|-------|
+| **TRAPID_BIBLE.md** | ABSOLUTE | ABSOLUTE | N/A | Feature rules |
+| **CLAUDE.md** | ABSOLUTE | Advisory | N/A | AI meta-instructions |
+| **TRAPID_LEXICON.md** | Reference | Reference | N/A | Bug history |
+| **TRAPID_USER_MANUAL.md** | N/A | N/A | ABSOLUTE | User guides |
+| **CONTRIBUTING.md** | Advisory | ABSOLUTE | N/A | Dev workflow |
+
+### What if Bible Doesn't Cover My Feature?
+
+✅ **MUST:**
+1. Check Lexicon for related knowledge
+2. Check CONTRIBUTING.md for general patterns
+3. Use best judgment
+4. Create a Bible chapter if you discover critical rules
+5. Document your decisions
+
+### What if I Find a Conflict?
+
+✅ **MUST:**
+1. Note the conflict in team chat
+2. File an issue to resolve it
+3. Follow the higher-authority document (per hierarchy above)
+4. Update the lower-authority document once conflict is resolved
+
+### What if Bible Rule Seems Wrong?
+
+❌ **NEVER ignore the rule**
+
+✅ **MUST:**
+1. Discuss with team
+2. If rule needs changing, update Bible + version number
+3. Document why rule changed in Lexicon
+
+**For full authority documentation, see:** [00_INDEX/DOCUMENTATION_AUTHORITY.md](00_INDEX/DOCUMENTATION_AUTHORITY.md)
+
 ---
 
 # Chapter 1: Authentication & Users
