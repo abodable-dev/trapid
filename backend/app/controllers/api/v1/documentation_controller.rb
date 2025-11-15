@@ -3,7 +3,7 @@
 module Api
   module V1
     class DocumentationController < ApplicationController
-      skip_before_action :authenticate_user!, only: [:index, :show, :search]
+      skip_before_action :authorize_request, only: [:index, :show, :search]
 
       # GET /api/v1/documentation
       # Returns list of available documentation files
