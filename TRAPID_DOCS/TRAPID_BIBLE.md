@@ -672,7 +672,318 @@ predecessor_id = predecessor_task.sequence_order + 1
 │ 📘 USER MANUAL (HOW): Chapter 15               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+## Overview
+
+Xero integration enables two-way sync between Trapid and Xero accounting software. This includes contact synchronization, invoice matching, payment tracking, and financial data exchange.
+
+**Key Files:**
+- Controller: `backend/app/controllers/api/v1/xero_controller.rb`
+- API Client: `backend/app/services/xero_api_client.rb`
+- Sync Service: `backend/app/services/xero_contact_sync_service.rb`
+- Payment Sync: `backend/app/services/xero_payment_sync_service.rb`
+- Background Job: `backend/app/jobs/xero_contact_sync_job.rb`
+- Models: `backend/app/models/xero_credential.rb`, `xero_tax_rate.rb`, `xero_account.rb`
+
+---
+
+## RULE #15.1: OAuth Token Management
+
+**ALWAYS use OAuth 2.0 with refresh tokens for Xero authentication.**
+
+❌ **NEVER store API keys in plaintext**
+✅ **ALWAYS encrypt tokens using ActiveRecord Encryption**
+
+**Code location:** `XeroCredential` model
+
+**Required implementation:**
+```ruby
+class XeroCredential < ApplicationRecord
+  encrypts :access_token
+  encrypts :refresh_token
+
+  def self.current
+    order(created_at: :desc).first
+  end
+end
+```
+
+**Token refresh logic:**
+- Tokens expire after 30 minutes
+- Refresh tokens are valid for 60 days
+- ALWAYS check expiry before API calls
+- ALWAYS refresh automatically when expired
+
+---
+
+## RULE #15.2: Two-Way Contact Sync
+
+**Contact sync is BIDIRECTIONAL: Trapid ↔ Xero**
+
+❌ **NEVER assume single-direction sync**
+✅ **ALWAYS check `sync_with_xero` flag before syncing**
+✅ **ALWAYS update `last_synced_at` timestamp**
+
+**Code location:** `XeroContactSyncService`
+
+**Sync Rules:**
+1. **Trapid → Xero**: Only if `sync_with_xero = true`
+2. **Xero → Trapid**: Match by `xero_id` OR fuzzy match by name/ABN
+3. **Conflict resolution**: Xero data wins (newer timestamp)
+4. **Error handling**: Store error in `xero_sync_error` field, continue sync
+
+**Required fields for Contact model:**
+```ruby
+add_column :contacts, :xero_id, :string
+add_column :contacts, :xero_contact_id, :string  # UUID
+add_column :contacts, :sync_with_xero, :boolean, default: true
+add_column :contacts, :last_synced_at, :datetime
+add_column :contacts, :xero_sync_error, :text
+```
+
+---
+
+## RULE #15.3: Invoice Matching
+
+**Invoices MUST be matched to Purchase Orders before payment sync.**
+
+❌ **NEVER sync payments without invoice match**
+✅ **ALWAYS validate invoice total vs PO total**
+✅ **ALWAYS store `xero_invoice_id` on PurchaseOrder**
+
+**Code location:** `InvoiceMatchingService`
+
+**Matching Logic:**
+1. Search Xero by supplier contact + date range
+2. Match by invoice number OR amount
+3. Create Payment record linked to PO
+4. Update PO status based on payment percentage
+
+**Invoice discrepancy threshold:** ±5% tolerance
+
+---
+
+## RULE #15.4: Webhook Signature Verification
+
+**ALWAYS verify Xero webhook signatures using HMAC-SHA256.**
+
+❌ **NEVER process webhooks without signature verification**
+✅ **ALWAYS use `XERO_WEBHOOK_KEY` from environment**
+
+**Code location:** `xero_controller.rb:689-720`
+
+**Required implementation:**
+```ruby
+def verify_xero_webhook_signature
+  signature = request.headers['X-Xero-Signature']
+  body = request.body.read
+
+  expected = Base64.strict_encode64(
+    OpenSSL::HMAC.digest('SHA256', ENV['XERO_WEBHOOK_KEY'], body)
+  )
+
+  ActiveSupport::SecurityUtils.secure_compare(signature, expected)
+end
+```
+
+---
+
+## RULE #15.5: Rate Limiting & Error Handling
+
+**Xero API has rate limits: 60 calls/minute, 5000 calls/day.**
+
+❌ **NEVER retry immediately on 429 errors**
+✅ **ALWAYS implement exponential backoff**
+✅ **ALWAYS log failed requests for debugging**
+
+**Code location:** `XeroApiClient`
+
+**Error Classes:**
+- `XeroApiClient::AuthenticationError` - Token expired/invalid
+- `XeroApiClient::RateLimitError` - Hit rate limit
+- `XeroApiClient::ApiError` - General API error
+
+**Retry Strategy:**
+- 429 (Rate Limit): Wait 60 seconds, retry once
+- 401 (Unauthorized): Refresh token, retry once
+- 500 (Server Error): Wait 5 seconds, retry twice
+- Other errors: Log and fail
+
+---
+
+## RULE #15.6: Tax Rates & Chart of Accounts
+
+**ALWAYS sync tax rates and accounts BEFORE creating invoices.**
+
+❌ **NEVER hardcode tax codes**
+✅ **ALWAYS fetch from Xero and cache locally**
+
+**Code location:** `GET /api/v1/xero/tax_rates`, `GET /api/v1/xero/accounts`
+
+**Sync Frequency:**
+- Tax rates: Daily (or on-demand)
+- Accounts: Daily (or on-demand)
+- Store in `xero_tax_rates` and `xero_accounts` tables
+
+**Required for Purchase Orders:**
+- Tax rate (e.g., "INPUT2" for 10% GST)
+- Account code (e.g., "400" for Cost of Sales)
+
+---
+
+## RULE #15.7: Background Job Processing
+
+**Contact sync MUST run as background job (long-running operation).**
+
+❌ **NEVER sync contacts in HTTP request**
+✅ **ALWAYS use `XeroContactSyncJob` via Solid Queue**
+✅ **ALWAYS provide job progress tracking**
+
+**Code location:** `XeroContactSyncJob`
+
+**Job Metadata (stored in Rails.cache):**
+```ruby
+{
+  job_id: "unique_job_id",
+  status: "queued" | "processing" | "completed" | "failed",
+  queued_at: Time,
+  started_at: Time,
+  completed_at: Time,
+  total: Integer,
+  processed: Integer,
+  errors: Array
+}
+```
+
+**Status Endpoints:**
+- `POST /api/v1/xero/sync_contacts` - Queue job
+- `GET /api/v1/xero/sync_status` - Current sync stats
+- `GET /api/v1/xero/sync_history` - Recent sync activity
+
+---
+
+## RULE #15.8: Payment Sync Workflow
+
+**Payments sync in this order: PO → Invoice → Payment → Xero.**
+
+❌ **NEVER create Xero payment before local Payment record**
+✅ **ALWAYS link Payment to PurchaseOrder**
+
+**Code location:** `XeroPaymentSyncService`
+
+**Workflow:**
+1. User creates Payment in Trapid (linked to PO)
+2. Payment record includes `xero_invoice_id` from matched invoice
+3. Click "Sync to Xero" button
+4. `XeroPaymentSyncService` creates payment in Xero
+5. Store `xero_payment_id` on Payment record
+
+**Required fields for Payment model:**
+```ruby
+add_column :payments, :xero_payment_id, :string
+add_column :payments, :synced_to_xero_at, :datetime
+```
+
+---
+
+## Protected Code Patterns
+
+### Pattern #1: Secure Token Refresh
+**Location:** `XeroApiClient#make_request`
+
+**DO NOT MODIFY:**
+```ruby
+def make_request(method, endpoint, data = {})
+  credential = ensure_valid_token  # MUST refresh if expired
+
+  # Try request with current token
+  response = execute_request(method, endpoint, data, credential)
+
+  # If 401, refresh token and retry ONCE
+  if response.code == 401
+    credential = refresh_access_token
+    response = execute_request(method, endpoint, data, credential)
+  end
+
+  response
+end
+```
+
+**Why:** Prevents infinite retry loops, ensures token freshness.
+
+### Pattern #2: OData Query Sanitization
+**Location:** `xero_controller.rb:600-606`
+
+**DO NOT MODIFY:**
+```ruby
+sanitized_query = query.gsub('\\', '\\\\\\\\').gsub('"', '\\"')
+where_clause = "Name.Contains(\"#{sanitized_query}\")"
+```
+
+**Why:** Prevents OData injection attacks. Escaping is critical.
+
+### Pattern #3: Webhook Signature Timing-Safe Comparison
+**Location:** `xero_controller.rb:716`
+
+**DO NOT MODIFY:**
+```ruby
+ActiveSupport::SecurityUtils.secure_compare(signature, expected_signature)
+```
+
+**Why:** Prevents timing attacks. Standard string comparison is vulnerable.
+
+---
+
+## Glossary
+
+**Terms:**
+- **Tenant**: Xero organization (company account)
+- **OAuth 2.0**: Authentication protocol used by Xero
+- **Refresh Token**: Long-lived token to get new access tokens
+- **Access Token**: Short-lived token (30min) for API requests
+- **OData**: Query language used by Xero API
+- **HMAC-SHA256**: Cryptographic signature for webhooks
+- **Chart of Accounts**: List of financial accounts in Xero
+- **Tax Rate**: GST/VAT rates configured in Xero
+
+---
+
+## Environment Variables
+
+**Required:**
+```bash
+XERO_CLIENT_ID=your_oauth_client_id
+XERO_CLIENT_SECRET=your_oauth_client_secret
+XERO_REDIRECT_URI=https://yourdomain.com/api/v1/xero/callback
+XERO_WEBHOOK_KEY=your_webhook_signing_key
+```
+
+---
+
+## API Endpoints
+
+**Authentication:**
+- `GET /api/v1/xero/auth_url` - Get OAuth URL
+- `POST /api/v1/xero/callback` - Handle OAuth callback
+- `GET /api/v1/xero/status` - Connection status
+- `DELETE /api/v1/xero/disconnect` - Disconnect
+
+**Data Sync:**
+- `POST /api/v1/xero/sync_contacts` - Queue contact sync job
+- `GET /api/v1/xero/sync_status` - Sync statistics
+- `GET /api/v1/xero/sync_history` - Recent sync activity
+
+**Invoices & Payments:**
+- `GET /api/v1/xero/invoices` - Fetch invoices
+- `POST /api/v1/xero/match_invoice` - Match to PO
+- `POST /api/v1/payments/:id/sync_to_xero` - Sync payment
+
+**Reference Data:**
+- `GET /api/v1/xero/tax_rates` - Fetch tax rates
+- `GET /api/v1/xero/accounts` - Fetch chart of accounts
+- `GET /api/v1/xero/search_contacts?query=...` - Search contacts
+
+**Webhooks:**
+- `POST /api/v1/xero/webhook` - Receive Xero events
 
 ---
 

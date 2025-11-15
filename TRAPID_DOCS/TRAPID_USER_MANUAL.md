@@ -429,7 +429,319 @@ The template creates tasks for you automatically:
 │ 📕 LEXICON (BUGS):     Chapter 15 (Developers) │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+## What is Xero Integration?
+
+Xero is an accounting software that manages your company's finances: invoices, payments, bills, and tax reporting. Trapid connects to Xero to automatically sync contacts and track purchase order payments.
+
+**Benefits:**
+- **No duplicate data entry** - Contacts sync both ways
+- **Invoice matching** - Link Xero invoices to purchase orders
+- **Payment tracking** - Track what's been paid to suppliers
+- **Tax compliance** - Xero handles GST/tax calculations
+
+---
+
+## Getting Started
+
+### Step 1: Connect to Xero
+
+1. Go to **Settings** → **Integrations**
+2. Find "Xero Accounting" card
+3. Click **"Connect to Xero"**
+4. You'll be taken to Xero's login page
+5. Sign in with your Xero account
+6. Click **"Allow Access"** to authorize Trapid
+7. You'll be redirected back to Trapid
+
+**Success!** You should see "Connected to Xero" with your company name.
+
+---
+
+### Step 2: Sync Your Contacts
+
+After connecting, sync your contacts between Trapid and Xero:
+
+1. Go to **Settings** → **Integrations** → **Xero**
+2. Click **"Sync Contacts"** button
+3. You'll see a progress bar showing sync status
+4. Wait for it to complete (can take 1-2 minutes for 100 contacts)
+
+**What happens during sync:**
+- Trapid contacts → Xero (creates new contacts in Xero)
+- Xero contacts → Trapid (imports contacts from Xero)
+- Matching contacts (updates both sides if changes found)
+
+**Tip:** Sync runs in the background. You can continue working while it runs!
+
+---
+
+## Managing Contacts
+
+### Enable/Disable Sync for a Contact
+
+By default, ALL contacts sync with Xero. To stop a contact from syncing:
+
+1. Go to **Contacts** page
+2. Click on the contact
+3. Scroll to "Xero Settings" section
+4. Toggle **"Sync with Xero"** OFF
+
+**When to disable sync:**
+- Internal contacts (staff, not suppliers/clients)
+- Test/dummy contacts
+- Contacts you don't want in Xero
+
+### View Sync Status
+
+Each contact shows its Xero sync status:
+
+- **Synced** ✅ - Contact is in both Trapid and Xero
+- **Not Synced** - Contact only in Trapid
+- **Error** ❌ - Sync failed (click for details)
+
+**Check sync time:**
+- "Last synced: 2 hours ago" shows when it last updated
+
+---
+
+## Invoice Matching
+
+Match Xero invoices to your purchase orders to track payments.
+
+### Step 1: Find the Invoice in Xero
+
+1. Go to **Purchase Orders** page
+2. Click on a purchase order
+3. Click **"Match Xero Invoice"** button
+4. Search for the invoice by:
+   - Supplier name
+   - Invoice number
+   - Amount
+   - Date range
+
+### Step 2: Confirm the Match
+
+1. Select the invoice from search results
+2. Review the details:
+   - **Invoice total** should match **PO total** (±5% tolerance)
+   - **Supplier** should match
+   - **Date** should be around PO creation date
+3. Click **"Match Invoice"** to confirm
+
+**After matching:**
+- PO shows "Xero Invoice: INV-12345"
+- Payment status updates automatically from Xero
+- Can now create payment in Trapid
+
+---
+
+## Recording Payments
+
+After matching an invoice, record a payment:
+
+### Create a Payment
+
+1. Go to the matched **Purchase Order**
+2. Click **"Record Payment"** button
+3. Fill in payment details:
+   - **Amount:** How much you paid (can be partial)
+   - **Date:** When payment was made
+   - **Reference:** Bank transaction reference (optional)
+4. Click **"Save Payment"**
+
+### Sync Payment to Xero
+
+After saving the payment in Trapid:
+
+1. Click **"Sync to Xero"** button on the payment
+2. Payment is created in Xero
+3. Invoice status updates in Xero (Partial Paid or Paid)
+
+**Payment status:**
+- **0%** - Not paid
+- **50%** - Partially paid (e.g., paid $5,000 of $10,000)
+- **100%** - Fully paid
+
+---
+
+## Common Scenarios
+
+### Scenario 1: New Supplier Added
+
+**You add a new supplier in Trapid:**
+
+1. Create contact in Trapid (Contacts → New Contact)
+2. Fill in supplier details (ABN, email, phone)
+3. Save contact
+4. Wait 5-10 minutes (auto-sync runs periodically)
+5. OR: Manually click "Sync Contacts" in Settings → Xero
+
+**Result:** Supplier appears in Xero automatically!
+
+---
+
+### Scenario 2: Invoice Already Paid in Xero
+
+**You paid an invoice directly in Xero:**
+
+1. Go to Purchase Order in Trapid
+2. Click "Match Xero Invoice"
+3. Select the invoice
+4. Trapid detects it's already paid in Xero
+5. Payment status shows 100%
+
+**No action needed** - Trapid recognizes it's paid!
+
+---
+
+### Scenario 3: Partial Payment
+
+**You paid $5,000 of a $10,000 invoice:**
+
+1. Create payment in Trapid for $5,000
+2. Sync to Xero
+3. PO shows "50% paid"
+4. Later, create another payment for $5,000
+5. Sync again
+6. PO shows "100% paid"
+
+---
+
+## Troubleshooting
+
+### "Not authenticated with Xero"
+
+**Problem:** Lost connection to Xero
+
+**Solution:**
+1. Go to Settings → Integrations → Xero
+2. Click "Disconnect"
+3. Click "Connect to Xero" again
+4. Re-authorize Trapid
+
+---
+
+### "Sync job stuck at 'queued'"
+
+**Problem:** Contact sync not starting
+
+**Solution:**
+1. Refresh the page
+2. Wait 1-2 minutes
+3. If still stuck, contact support
+
+---
+
+### "Duplicate contacts in Xero"
+
+**Problem:** Same contact appears twice in Xero
+
+**Solution:**
+1. In Xero, merge the duplicate contacts
+2. In Trapid, go to Settings → Xero
+3. Click "Sync Contacts" again
+4. Trapid will detect the merge
+
+---
+
+### "Invoice total doesn't match PO"
+
+**Problem:** Invoice is $10,500 but PO is $10,000
+
+**Solution:**
+- **Allowed:** ±5% difference (e.g., $9,500 - $10,500 is OK)
+- **Not allowed:** >5% difference
+
+**If difference is too large:**
+1. Check if PO total is correct
+2. Update PO line items if needed
+3. OR: Match invoice manually (override check)
+
+---
+
+## Tips & Best Practices
+
+### Tip #1: Sync Contacts Regularly
+
+Run "Sync Contacts" weekly to keep both systems up-to-date.
+
+**Why?**
+- New suppliers added in Xero appear in Trapid
+- Updated emails/phones sync both ways
+
+---
+
+### Tip #2: Match Invoices Before Paying
+
+Always match the Xero invoice BEFORE recording payment in Trapid.
+
+**Why?**
+- Ensures payment syncs to correct invoice
+- Prevents orphaned payments in Xero
+
+---
+
+### Tip #3: Use Reference Numbers
+
+When recording payments, use the bank transaction reference.
+
+**Example:** "NAB-TRANSFER-12345"
+
+**Why?**
+- Easier to reconcile in Xero
+- Helps find payment in bank statement
+
+---
+
+### Tip #4: Check Sync Errors
+
+If a contact shows "Sync Error":
+1. Click on the contact
+2. Scroll to "Xero Settings"
+3. Read the error message
+4. Fix the issue (usually missing email or ABN)
+5. Click "Retry Sync"
+
+---
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Open Xero settings | (none yet) |
+| Match invoice | (none yet) |
+| Record payment | (none yet) |
+
+---
+
+## FAQ
+
+**Q: Do I need a Xero account?**
+A: Yes, you need a Xero subscription. Trapid connects to your existing Xero account.
+
+**Q: Can I disconnect from Xero?**
+A: Yes, go to Settings → Integrations → Xero → "Disconnect". This won't delete any data in Xero.
+
+**Q: What if I change something in Xero?**
+A: Run "Sync Contacts" in Trapid to pull the changes from Xero.
+
+**Q: Can I sync invoices?**
+A: Not automatically. You must manually match Xero invoices to purchase orders.
+
+**Q: Does Trapid create invoices in Xero?**
+A: No, Trapid only matches existing invoices. You create invoices in Xero.
+
+**Q: What happens if I delete a contact in Trapid?**
+A: It won't delete from Xero. Xero contacts are never deleted automatically.
+
+---
+
+## Next Steps
+
+After setting up Xero integration:
+1. **Chapter 16:** Learn how to track payments in detail
+2. **Chapter 8:** Set up purchase orders for better invoice matching
+3. **Chapter 5:** Add suppliers as contacts for Xero sync
 
 ---
 
