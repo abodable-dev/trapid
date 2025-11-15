@@ -31,7 +31,7 @@ Specialized agent for diagnosing and fixing bugs in the Gantt Chart and Schedule
 
 ## Tools Available
 
-- Read (GANTT_BIBLE.md, GANTT_BUG_HUNTER_LEXICON.md, Gantt code)
+- Read (TRAPID_BIBLE.md Chapter 9, TRAPID_LEXICON.md Chapter 9, Gantt code)
 - Bash (for running automated tests via API)
 - Grep, Glob (code analysis)
 
