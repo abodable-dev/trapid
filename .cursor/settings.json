@@ -1,0 +1,12 @@
+{
+  "cursor.chat.alwaysIncludeContext": true,
+  "cursor.chat.contextFiles": [
+    ".claude/instructions.md"
+  ],
+  "cursor.chat.conditionalContextFiles": {
+    "gantt": [
+      "GANTT_SCHEDULE_RULES.md",
+      "GANTT_BUGS_AND_FIXES.md"
+    ]
+  }
+}

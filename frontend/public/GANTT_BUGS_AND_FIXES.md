@@ -1,17 +1,16 @@
 # Gantt Chart - Bug Tracking & Knowledge Base
 
-**Last Updated:** 2025-11-14 13:02 AEDT
-**Purpose:** Centralized knowledge base of all Gantt-related bugs, their fixes, and Bug Hunter tool updates
+**Last Updated:** 2025-11-15 at 4:00 PM AEST
+**Purpose:** Bug Hunter Lexicon - Knowledge base of all bugs, fixes, investigations, and how the Gantt system works
 
 ---
 
 ## Quick Links
 
-- **Gantt Bible (Architecture):** [GANTT_DRAG_FLICKER_FIXES.md](../frontend/GANTT_DRAG_FLICKER_FIXES.md)
-- **Business Rules:** [GANTT_SCHEDULE_RULES.md](../GANTT_SCHEDULE_RULES.md)
-- **Bug Report Template:** [BUG_REPORT_TEMPLATE.md](BUG_REPORT_TEMPLATE.md)
-- **Debugger Tool:** [ganttDebugger.js](../frontend/src/utils/ganttDebugger.js)
-- **E2E Tests:** [gantt-cascade.spec.js](../frontend/tests/e2e/gantt-cascade.spec.js)
+- **📖 Gantt Bible (Rules):** [GANTT_SCHEDULE_RULES.md](GANTT_SCHEDULE_RULES.md)
+- **📕 Bug Hunter Lexicon (Knowledge):** This document
+- **Debugger Tool:** [ganttDebugger.js](../src/utils/ganttDebugger.js)
+- **E2E Tests:** [gantt-cascade.spec.js](../tests/e2e/gantt-cascade.spec.js)
 
 ---
 

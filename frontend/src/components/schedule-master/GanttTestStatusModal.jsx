@@ -314,7 +314,7 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
   }
 
   const runAutomatedDragTest = async (options = {}) => {
-    const { silent = false, customTaskId = null } = options
+    const { silent = false, visual = false, customTaskId = null } = options
 
     setIsRunningAutomatedTest(true)
     setAutomatedTestResult(null)
@@ -322,21 +322,30 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
     const testSteps = []
     const testStartTime = Date.now()
 
+    // Helper to update visual progress in real-time
+    const updateProgress = async (step, delayMs = visual ? 800 : 0) => {
+      testSteps.push(step)
+      if (visual) {
+        setAutomatedTestResult({
+          status: 'info',
+          message: 'Running visual test...',
+          details: {
+            steps: [...testSteps]
+          }
+        })
+        if (delayMs > 0) {
+          await new Promise(resolve => setTimeout(resolve, delayMs))
+        }
+      }
+    }
+
     try {
       // Check if Gantt instance is available
       if (!window.gantt) {
         // If Gantt is not loaded and we have the onOpenGantt callback, open it automatically
         if (onOpenGantt) {
           console.log('🧪 Gantt not loaded - opening Gantt view automatically...')
-          testSteps.push('📍 Opening Gantt view (Gantt not currently loaded)...')
-
-          setAutomatedTestResult({
-            status: 'info',
-            message: 'Opening Gantt view automatically...',
-            details: {
-              steps: ['📍 Opening Gantt view - please wait...']
-            }
-          })
+          await updateProgress('📍 Opening Gantt view (Gantt not currently loaded)...')
 
           // Open the Gantt view
           onOpenGantt()
@@ -355,17 +364,17 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
               status: 'error',
               message: 'Gantt chart failed to load after 10 seconds',
               details: {
-                steps: [
+                steps: testSteps.concat([
                   '📍 Opened Gantt view',
                   '❌ Gantt failed to load within 10 seconds'
-                ]
+                ])
               }
             })
             setIsRunningAutomatedTest(false)
             return
           }
 
-          testSteps.push('✅ Gantt view opened successfully')
+          await updateProgress('✅ Gantt view opened successfully')
 
           // Wait for tasks to actually load in Gantt
           let tasksLoaded = false
@@ -390,7 +399,7 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
             const taskCount = window.gantt.getTaskByTime ? window.gantt.getTaskByTime().length : 0
             if (taskCount > 0) {
               tasksLoaded = true
-              testSteps.push(`✅ Tasks loaded successfully (${taskCount} tasks found)`)
+              await updateProgress(`✅ Tasks loaded successfully (${taskCount} tasks found)`)
             }
             waitAttempts++
           }
@@ -434,26 +443,18 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
       // If no tasks found and we have the callback, open the Gantt view
       if (initialTasks.length === 0 && onOpenGantt) {
         console.log('🧪 Gantt instance exists but no tasks loaded - opening Gantt view...')
-        testSteps.push('📍 Gantt instance exists but no tasks found - opening Gantt view...')
-
-        setAutomatedTestResult({
-          status: 'info',
-          message: 'Opening Gantt view to load tasks...',
-          details: {
-            steps: testSteps.concat(['📍 Opening Gantt view to load tasks...'])
-          }
-        })
+        await updateProgress('📍 Gantt instance exists but no tasks found - opening Gantt view...')
 
         // Open the Gantt view
         onOpenGantt()
 
         // Wait a bit for the modal to open
         await new Promise(resolve => setTimeout(resolve, 1000))
-        testSteps.push('✅ Gantt view opened - waiting for tasks...')
+        await updateProgress('✅ Gantt view opened - waiting for tasks...')
       } else if (initialTasks.length > 0) {
-        testSteps.push(`✅ Gantt instance found with ${initialTasks.length} tasks loaded`)
+        await updateProgress(`✅ Gantt instance found with ${initialTasks.length} tasks loaded`)
       } else {
-        testSteps.push('✅ Gantt instance found - checking for tasks...')
+        await updateProgress('✅ Gantt instance found - checking for tasks...')
       }
 
       // Wait for tasks to load
@@ -481,7 +482,7 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
 
         if (tasks.length > 0) {
           tasksLoaded = true
-          testSteps.push(`✅ Tasks loaded successfully (${tasks.length} tasks found)`)
+          await updateProgress(`✅ Tasks loaded successfully (${tasks.length} tasks found)`)
         } else {
           await new Promise(resolve => setTimeout(resolve, 500))
           waitAttempts++
@@ -523,11 +524,11 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
           setIsRunningAutomatedTest(false)
           return { status: 'error', message: `Task with ID ${customTaskId} not found` }
         }
-        testSteps.push(`✅ Step 1: Selected custom task - #${testTask.id} "${testTask.text}"`)
+        await updateProgress(`✅ Step 1: Selected custom task - #${testTask.id} "${testTask.text}"`)
         console.log('🧪 Test Step 1: Selected custom task:', testTask.id, testTask.text)
       } else {
         testTask = tasks[0]
-        testSteps.push(`✅ Step 1: Selected task one - #${testTask.id} "${testTask.text}"`)
+        await updateProgress(`✅ Step 1: Selected task one - #${testTask.id} "${testTask.text}"`)
         console.log('🧪 Test Step 1: Selected task one:', testTask.id, testTask.text)
       }
 
@@ -542,13 +543,13 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
           linkType: link.type // 0=FS, 1=SS, 2=FF, 3=SF
         }
       })
-      testSteps.push(`✅ Step 2: Found ${successorTasks.length} successor task(s) to monitor`)
+      await updateProgress(`✅ Step 2: Found ${successorTasks.length} successor task(s) to monitor`)
       console.log('🧪 Test Step 2: Successor tasks:', successorTasks)
 
       // Reset Bug Hunter
       if (window.ganttBugHunter) {
         window.ganttBugHunter.reset()
-        testSteps.push('✅ Step 3: Bug Hunter reset')
+        await updateProgress('✅ Step 3: Bug Hunter reset')
         console.log('🧪 Test Step 3: Bug Hunter reset')
       } else {
         setAutomatedTestResult({
@@ -563,13 +564,13 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
       // Get original task state
       const originalStartDate = new Date(testTask.start_date)
       const originalHold = testTask.hold || false
-      testSteps.push(`✅ Step 4: Captured original state - Start: ${originalStartDate.toLocaleDateString()}, Hold: ${originalHold}`)
+      await updateProgress(`✅ Step 4: Captured original state - Start: ${originalStartDate.toLocaleDateString()}, Hold: ${originalHold}`)
       console.log('🧪 Test Step 4: Original state:', { originalStartDate, originalHold })
 
       // STEP 2: Move task forward by 5 days and trigger backend cascade
       const newStartDate = new Date(originalStartDate)
       newStartDate.setDate(newStartDate.getDate() + 5)
-      testSteps.push(`✅ Step 5: Moving task 5 days forward (${originalStartDate.toLocaleDateString()} → ${newStartDate.toLocaleDateString()})`)
+      await updateProgress(`✅ Step 5: Moving task 5 days forward (${originalStartDate.toLocaleDateString()} → ${newStartDate.toLocaleDateString()})`)
       console.log('🧪 Test Step 5: Moving task from', originalStartDate, 'to', newStartDate)
 
       // Calculate day offset from project start (today)
@@ -619,7 +620,7 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
           }
         })
 
-        testSteps.push(`✅ Backend cascade triggered - updated ${tasksToUpdate.length} task(s)`)
+        await updateProgress(`✅ Backend cascade triggered - updated ${tasksToUpdate.length} task(s)`)
         console.log('🧪 Applied', tasksToUpdate.length, 'task updates from backend')
 
       } catch (error) {
@@ -642,7 +643,7 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
       const reportAfterMove = window.ganttBugHunter.generateReport()
       const ganttReloads = reportAfterMove.summary.ganttReloads
       const noFlash = ganttReloads <= 1
-      testSteps.push(
+      await updateProgress(
         noFlash
           ? `✅ Step 6: No screen flashes detected (${ganttReloads} reload${ganttReloads === 1 ? '' : 's'})`
           : `❌ Step 6: Screen flashes detected! (${ganttReloads} reloads, expected ≤1)`
@@ -698,15 +699,17 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
       }
 
       if (successorTasks.length === 0) {
-        testSteps.push('⚠️ Step 7: No dependencies to check (task has no successors)')
+        await updateProgress('⚠️ Step 7: No dependencies to check (task has no successors)')
         // Don't fail the test if there are no dependencies, just note it
       } else {
-        testSteps.push(
+        await updateProgress(
           dependenciesWorked
             ? `✅ Step 7: All ${successorTasks.length} dependent task(s) cascaded correctly`
             : `❌ Step 7: Some dependencies failed verification (${successorTasks.length} checked)`
         )
-        dependencyChecks.forEach(check => testSteps.push(`    ${check}`))
+        for (const check of dependencyChecks) {
+          await updateProgress(`    ${check}`, visual ? 400 : 0)
+        }
       }
       console.log('🧪 Test Step 7: Dependency checks:', dependencyChecks)
 
@@ -716,7 +719,7 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
       let returnedToOriginal = true // Default to true (meaning "not applicable" for tasks without predecessors)
 
       if (hasPredecessors) {
-        testSteps.push('✅ Step 8: Unticking manual position to allow cascade recalculation...')
+        await updateProgress('✅ Step 8: Unticking manual position to allow cascade recalculation...')
         console.log('🧪 Test Step 8: Unticking manual position')
 
         // Call backend API to unset manually_positioned
@@ -735,18 +738,18 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
           returnedToOriginal = currentStartDate.toDateString() === originalStartDate.toDateString()
 
           if (returnedToOriginal) {
-            testSteps.push(`✅ Step 9: Task returned to original position (${originalStartDate.toLocaleDateString()})`)
+            await updateProgress(`✅ Step 9: Task returned to original position (${originalStartDate.toLocaleDateString()})`)
           } else {
-            testSteps.push(`ℹ️ Step 9: Task position recalculated to ${currentStartDate.toLocaleDateString()} (original: ${originalStartDate.toLocaleDateString()})`)
+            await updateProgress(`ℹ️ Step 9: Task position recalculated to ${currentStartDate.toLocaleDateString()} (original: ${originalStartDate.toLocaleDateString()})`)
           }
           console.log('🧪 Test Step 9: Return check:', returnedToOriginal, currentStartDate, 'vs', originalStartDate)
         } catch (error) {
-          testSteps.push(`❌ Step 8: Failed to unset manual position: ${error.message}`)
+          await updateProgress(`❌ Step 8: Failed to unset manual position: ${error.message}`)
           console.error('🧪 Failed to unset manual position:', error)
           returnedToOriginal = false
         }
       } else {
-        testSteps.push('ℹ️ Step 8: Skipping "return to original" test - task has no predecessors')
+        await updateProgress('ℹ️ Step 8: Skipping "return to original" test - task has no predecessors')
         console.log('🧪 Test Step 8: Task has no predecessors, cannot test return to original')
       }
 
@@ -797,7 +800,7 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
         }
       })
 
-      testSteps.push(passed ? '✅ TEST PASSED' : '❌ TEST FAILED')
+      await updateProgress(passed ? '✅ TEST PASSED' : '❌ TEST FAILED', visual ? 1000 : 0)
       console.log('🧪 Automated Test: Complete -', passed ? 'PASS' : 'FAIL')
 
       // Switch to automated tab to show results (unless running in silent mode)
@@ -828,7 +831,7 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
 
     } catch (error) {
       console.error('🧪 Automated Test: Error', error)
-      testSteps.push(`❌ ERROR: ${error.message}`)
+      await updateProgress(`❌ ERROR: ${error.message}`)
       const errorResult = {
         status: 'error',
         message: `Error during automated test: ${error.message}`,

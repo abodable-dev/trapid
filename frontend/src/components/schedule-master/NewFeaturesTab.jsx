@@ -17,472 +17,494 @@ export default function NewFeaturesTab() {
   const [ccUpdates, setCcUpdates] = useState(() => loadFromLocalStorage('scheduleMaster_ccUpdates', {
     select: `**Status:** Fully functional ✅
 
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2406-2416
+- Rendering: Checkbox input in first column (order: -1), 40px width, center-aligned
+- Event handlers:
+  - Row checkbox: \`onSelectRow(row.id)\` toggles individual row selection
+  - Header checkbox: \`handleSelectAll()\` toggles all filtered rows (lines 1115-1121)
+  - State managed in \`selectedRows\` Set
+
+**Backend:**
+- Field: N/A (frontend-only state management)
+- Type: Client-side Set of row IDs
+
 **How It Works:**
-The select checkbox allows users to select one or more rows in the Schedule Master table for bulk operations like deletion or batch updates.
+The select column enables multi-row selection for bulk operations. When rows are selected, a bulk operations toolbar appears (lines 1950-1991) offering options like "Set PO Required", "Enable Auto PO", and "Delete Selected". The select-all checkbox in the header selects/deselects all currently filtered rows.
 
-**Implementation Details:**
-
-*Frontend (UI):*
-- Located in: frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx
-- Column number: -1 (first column, before sequence)
-- Renders as checkbox input in table header and each row
-- Width: 40px, center-aligned
-- Managed by React state for selected row tracking
-
-*User Workflow:*
-1. Click checkbox in header to select/deselect all rows
-2. Click individual row checkboxes to select specific rows
-3. Selected rows can be deleted via bulk delete button
-4. Selected rows can have bulk operations applied (e.g., Enable/Disable Auto PO)
-
-**Current Functionality:**
-- Individual row selection ✅
-- Select all/deselect all ✅
-- Visual indication of selected rows ✅
-- Bulk delete operation ✅
-- Bulk field updates ✅`,
+**Current Limitations:**
+- Selection state is lost when filters change
+- No "select range" (shift-click) functionality
+- Selection state not persisted across page reloads`,
     sequence: `**Status:** Fully functional ✅
 
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2418-2423
+- Rendering: Read-only text display showing \`index + 1\`, 40px width, center-aligned
+- Event handlers: None (read-only display)
+
+**Backend:**
+- Field: schedule_template_rows.sequence_order
+- Type: integer (NOT NULL, >= 0)
+- Validation: Presence required, numericality validated (model line 15)
+
 **How It Works:**
-The sequence number is an auto-generated, read-only field that represents the task's position in the schedule template. It serves as both a visual reference and a critical internal identifier for dependency tracking.
+Auto-generated task sequence number representing position in the template. Stored as 0-based index in database (\`sequence_order\`) but displayed as 1-based number to users. Critical for predecessor dependencies which reference tasks by their sequence number. Updated automatically when rows are reordered via drag-drop or move up/down actions (lines 1046-1081).
 
-**Implementation Details:**
-
-*Frontend (UI):*
-- Located in: frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx:786
-- Rendered as read-only text in first data column (column #0)
-- Display format: Simple numeric index (1, 2, 3, ...)
-- Width: 40px, center-aligned
-- Not directly editable by users (changes through drag/drop or insert/delete operations)
-
-*Backend (Model):*
-- Table: schedule_template_rows
-- Column: sequence_order (integer, required, >= 0)
-- Validation: backend/app/models/schedule_template_row.rb:15
-  - Presence: true
-  - Numericality: only_integer: true, greater_than_or_equal_to: 0
-- Scope for ordering: \`.in_sequence\` -> order(sequence_order: :asc) (line 27)
-
-*How It's Generated:*
-When a new task is added:
-1. Frontend: Sets sequence_order to current rows.length (ScheduleTemplateEditor.jsx:786)
-2. This creates a 0-based index (0, 1, 2, 3, ...)
-3. Display adds +1 to show users 1-based numbers (1, 2, 3, 4, ...)
-
-*Dependency System Integration:*
-**CRITICAL**: The sequence number is used for task dependencies, but there's an important conversion:
+**CRITICAL - Dependency System Integration:**
+The sequence number is used for task dependencies with an important conversion:
 - **Storage**: sequence_order is 0-based (0, 1, 2, 3, ...)
 - **Dependencies**: predecessor_ids reference 1-based IDs (1, 2, 3, 4, ...)
+- **Conversion** happens in ScheduleCascadeService.rb:96 and ScheduleTemplateRow.rb:99-116
 
-Example from ScheduleCascadeService.rb:96:
-\`\`\`ruby
-# Convert 0-based sequence_order to 1-based predecessor ID
-predecessor_id = predecessor_task.sequence_order + 1
-\`\`\`
-
-This conversion happens in multiple places:
-- Finding dependents: ScheduleCascadeService.rb:96-101
-- Calculating start dates: ScheduleCascadeService.rb:108-111
-- Formatting predecessors: ScheduleTemplateRow.rb:99-116
-
-*When Sequence Changes:*
-Sequence numbers automatically update when:
-1. **Drag and Drop**: User drags task to new position in table
-2. **Insert Row**: New task inserted, all subsequent tasks renumber
-3. **Delete Row**: Task deleted, all subsequent tasks renumber
-4. **Bulk Operations**: Multiple tasks deleted, remaining tasks renumber
-5. **Import from Excel**: Tasks imported with sequential numbering
-
-*Cascade Impact:*
-When sequence_order changes, the cascade service:
-- Does NOT automatically trigger (sequence changes don't cascade)
-- DOES affect dependency lookups (references change)
-- Users must manually verify dependencies remain correct after reordering
-
-**Database Schema:**
-\`\`\`ruby
-t.integer "sequence_order", null: false
-\`\`\`
-
-**User Workflow:**
-1. User creates tasks in Schedule Master
-2. System auto-assigns sequence_order = 0, 1, 2, ... based on insertion order
-3. UI displays as #1, #2, #3, ... for user-friendly viewing
-4. User can reorder tasks via drag-drop (sequence_order updates automatically)
-5. When setting up dependencies, user references tasks by their displayed number (#2, #5, etc.)
-6. Backend converts displayed number (1-based) to sequence_order (0-based) for lookups
-
-**Dependencies:**
-- Used by: Predecessor dependency system (schedule_template_rows.predecessor_ids)
-- Used by: ScheduleCascadeService for finding dependent tasks
-- Used by: Template instantiation service (TemplateInstantiator.rb)
-- Referenced in: Task sorting and display throughout the application
+**When Sequence Changes:**
+- **Drag and Drop**: User drags task to new position
+- **Insert/Delete Row**: All subsequent tasks renumber
+- **Cascade Impact**: Does NOT auto-trigger, but affects dependency lookups
 
 **Current Limitations:**
+- Reordering tasks requires manual verification that dependencies remain valid
+- No automatic dependency renumbering when tasks are moved
 - No built-in "resequence" utility if order gets corrupted
-- Changing task order may break existing dependency references
-- No validation that predecessor IDs point to valid sequence numbers
-- Excel import doesn't validate sequence continuity
-
-**Enhancement Opportunities:**
-1. Add validation: Ensure all predecessor_ids reference valid sequence numbers
-2. Auto-fix dependencies when tasks are reordered
-3. Add "Resequence All Tasks" utility to reset to 0, 1, 2, 3, ... based on current order
-4. Implement dependency visualization showing sequence flow
-5. Add warning when reordering tasks with dependencies: "This task has X dependents. Reordering may affect schedule."
-6. Consider using database IDs instead of sequence_order for dependencies (more stable)
-
-**Technical Notes:**
-- The 0-based vs 1-based conversion is a common source of off-by-one errors
-- Always verify which format (0-based or 1-based) is expected when working with sequences
-- The model uses \`sequence_order\` while dependencies use logical sequence numbers (order + 1)`,
+- Frontend displays index+1, backend uses sequence_order field (potential confusion)`,
     taskName: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.name (string, NOT NULL)
-**Frontend:** Text input field in ScheduleTemplateEditor
-**Validation:** Presence required
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2425-2436
+- Rendering: Text input field, 200px width, debounced updates (500ms delay)
+- Event handlers: \`handleTextChange('name', value)\` for input changes (lines 2352-2375), auto-select on focus
 
-User enters task name that will appear in schedule. This is the primary identifier for each task.`,
+**Backend:**
+- Field: schedule_template_rows.name
+- Type: string (NOT NULL)
+- Validation: Presence required (model line 14)
+
+**How It Works:**
+Primary identifier for each task. User types task name which appears in schedule displays and Gantt charts. Implements debounced updates to avoid excessive API calls while typing. Local state (\`localName\`) tracks user input, syncs to server after delay.
+
+**Current Limitations:**
+- No duplicate name detection or warning
+- No character limit enforced in UI
+- No autocomplete or task name suggestions
+- Special characters not validated`,
     supplierGroup: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.supplier_id (foreign key) + assigned_user_id
-**Frontend:** Conditional dropdown - shows suppliers if PO required, or role selection (Admin/Sales/Site/Supervisor/Builder/Estimator) for internal work
-**Model:** belongs_to :supplier (optional)
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2438-2465
+- Rendering: Conditional dropdown - suppliers (if PO required) OR user roles (Admin/Sales/Site/Supervisor/Builder/Estimator)
+- Event handlers: handleSupplierChange (lines 2377-2394), auto-clears if PO Required unchecked
 
-Used for task assignment and smart PO generation.`,
+**Backend:**
+- Field: schedule_template_rows.supplier_id (foreign key) OR assigned_user_id
+- Type: integer (nullable)
+- Validation: Optional belongs_to :supplier
+
+**How It Works:**
+Assignment toggle based on task type - external suppliers for PO tasks, internal roles for company work. Enables smart PO generation and task routing.
+
+**Current Limitations:**
+- Cannot assign both supplier AND internal role simultaneously
+- No supplier capabilities/trade filtering
+- Role selection limited to predefined list`,
     predecessors: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.predecessor_ids (JSONB array)
-**Frontend:** Modal editor (PredecessorEditor) with FS/SS/FF/SF dependency types and lag days
-**Model:** Helper methods for display formatting
-**Format:** [{id: 2, type: "FS", lag: 3}, ...]
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2467-2478
+- Rendering: Button showing count, opens PredecessorEditor modal
+- Event handlers: Modal for adding/editing dependencies with type (FS/SS/FF/SF) and lag days
 
-Core dependency management for schedule cascade calculations. Supports all four dependency types: Finish-to-Start, Start-to-Start, Finish-to-Finish, Start-to-Finish.`,
+**Backend:**
+- Field: schedule_template_rows.predecessor_ids
+- Type: jsonb array
+- Validation: Format [{id: 2, type: "FS", lag: 3}, ...]
+
+**How It Works:**
+Defines task dependencies using 4 relationship types - Finish-to-Start (most common), Start-to-Start, Finish-to-Finish, Start-to-Finish. Drives ScheduleCascadeService calculations for automated date updates.
+
+**Current Limitations:**
+- No circular dependency detection/warning
+- No visual dependency graph in editor
+- Cannot bulk-edit dependencies across multiple tasks`,
     duration: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.duration (integer, default 0)
-**Frontend:** Numeric input field
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2481-2502
+- Rendering: Number input field, debounced updates (500ms delay)
+- Event handlers: handleNumberChange('duration', value) with validation (lines 2395-2413)
 
-Specifies number of days task will take to complete. Used in schedule cascade calculations to determine task end dates.`,
+**Backend:**
+- Field: schedule_template_rows.duration
+- Type: integer (default 0)
+- Validation: Numericality >= 0
+
+**How It Works:**
+Task duration in working days. Used by ScheduleCascadeService to calculate end dates and dependent task start dates. Combined with start_date determines task completion timeline.
+
+**Current Limitations:**
+- No duration estimation based on historical data
+- Cannot set duration in hours/weeks (days only)
+- No resource-based duration adjustments`,
     startDate: `**Status:** Fully functional ✅
 
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2504-2511
+- Rendering: Read-only text field showing day offset (integer)
+- Event handlers: None (calculated field, not user-editable)
+
+**Backend:**
+- Field: schedule_template_rows.start_date
+- Type: integer (day offset from project start, nullable)
+- Validation: None (automatically calculated by ScheduleCascadeService)
+
 **How It Works:**
-The start date is a calculated, read-only field that shows when a task is scheduled to begin. It's automatically computed based on the task's predecessor dependencies, their durations, lag times, and working day rules.
-
-**Implementation Details:**
-
-*Frontend (UI):*
-- Located in: frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx:93
-- Column configuration: \`startDate: { visible: true, width: 110, label: 'Start Date', order: 5 }\`
-- Display format: Shows as integer representing days offset from project start
-- Read-only: Cannot be manually edited in the template view
-- Updates automatically when dependencies change
-
-*Backend (Model):*
-- Table: schedule_template_rows
-- Column: start_date (integer, represents day offset)
-- Migration: backend/db/migrate/20251112013012_add_start_date_to_schedule_template_rows.rb
-- No validations (can be null for templates without dependencies)
-
-*Calculation Logic:*
-The start_date is calculated by the **ScheduleCascadeService** whenever:
-1. A task's own start_date changes
-2. A task's duration changes
-3. A predecessor task's start_date or duration changes
-
-Cascade Service: backend/app/services/schedule_cascade_service.rb
-
-Key calculation method: \`calculate_start_date\` (lines 105-151)
-
-**Dependency Type Calculations:**
-Different dependency types calculate start dates differently:
-
-1. **FS (Finish-to-Start)** - Most common:
-   - Task starts when predecessor finishes
-   - Formula: \`predecessor_end + lag\`
-   - Example: If "Foundation" ends day 5, "Framing" starts day 5 (or day 8 if lag = +3)
-
-2. **SS (Start-to-Start)**:
-   - Task starts when predecessor starts
-   - Formula: \`predecessor_start + lag\`
-   - Example: "Plumbing rough-in" starts same day as "Electrical rough-in"
-
-3. **FF (Finish-to-Finish)**:
-   - Task finishes when predecessor finishes
-   - Formula: \`predecessor_end + lag - task_duration\`
-   - Example: "Cleanup" finishes when "Final inspection" finishes
-
-4. **SF (Start-to-Finish)** - Rare:
-   - Task finishes when predecessor starts
-   - Formula: \`predecessor_start + lag - task_duration\`
-
-Code reference (ScheduleCascadeService.rb:126-142):
-\`\`\`ruby
-calculated_start = case dep_type
-when 'FS'
-  predecessor_end + lag
-when 'SS'
-  predecessor_start + lag
-when 'FF'
-  dependent_end = predecessor_end + lag
-  dependent_end - (dependent_task.duration || 1)
-when 'SF'
-  dependent_end = predecessor_start + lag
-  dependent_end - (dependent_task.duration || 1)
-else
-  predecessor_end + lag  # Default to FS
-end
-\`\`\`
-
-**Working Day Rules:**
-After calculating the raw start date, the system applies working day rules:
-- **Configurable via Company Settings** (working_days hash)
-- Method: \`skip_to_next_working_day\` (lines 162-173) and \`working_day?\` (lines 175-192)
-- Default: Monday-Friday + Sunday (Saturday excluded)
-- Exception: Tasks with lock status (confirmed, started, completed) keep their dates
-
-Lock hierarchy (highest to lowest priority):
-1. supplier_confirm
-2. confirm
-3. start
-4. complete
-5. manually_positioned
-
-**Cascade Behavior:**
-When a task's start_date changes, the system:
-1. Finds all dependent tasks (tasks with this task as a predecessor)
-2. Recalculates their start dates
-3. Recursively cascades to their dependents
-4. Skips manually positioned tasks (user override)
-5. Returns list of all affected tasks
-
-Callback trigger (ScheduleTemplateRow.rb:190-206):
-\`\`\`ruby
-after_update :cascade_to_dependents
-
-def cascade_to_dependents
-  return unless saved_change_to_start_date? || saved_change_to_duration?
-
-  affected_tasks = ScheduleCascadeService.cascade_changes(self, changed_attrs)
-  Thread.current[:cascade_affected_tasks] = affected_tasks
-end
-\`\`\`
-
-**Day Offset System:**
-- Templates use day offsets (0, 1, 2, 3, ...) not actual dates
-- Day 0 = Project start date
-- Day 5 = 5 days after project start
-- When template is instantiated for a job:
-  - Project start date is set (e.g., 2025-01-15)
-  - Day 0 becomes 2025-01-15
-  - Day 5 becomes 2025-01-20
-  - Service: backend/app/services/schedule/template_instantiator.rb:152-167
-
-**Database Schema:**
-\`\`\`ruby
-t.integer "start_date"  # Day offset from project start
-\`\`\`
-
-**User Workflow:**
-1. User creates task in Schedule Master
-2. User sets predecessors and durations for dependencies
-3. System automatically calculates start_date via cascade service
-4. User sees updated start date in table (read-only)
-5. If user changes a predecessor's start or duration, cascade triggers
-6. All dependent tasks update automatically
-7. User reviews the calculated schedule timeline
-
-**Dependencies:**
-- Requires: Predecessor tasks with valid start_dates
-- Requires: Task duration values
-- Uses: ScheduleCascadeService for all calculations
-- Uses: CompanySetting for timezone and working day rules
-- Uses: PublicHoliday table for holiday exclusions
+Automatically calculated based on predecessors, durations, lag times, and working day rules. ScheduleCascadeService recalculates when dependencies change, supporting FS/SS/FF/SF relationship types with customizable lag.
 
 **Current Limitations:**
-- No manual override of start_date in template (always calculated)
-- No visualization of critical path or schedule conflicts
-- Large templates with many dependencies can have slow cascade performance
-- No "freeze schedule" option to prevent cascade updates
-
-**Enhancement Opportunities:**
-1. Add manual positioning flag to override cascade for specific tasks
-2. Implement critical path calculation and visualization
-3. Add schedule conflict detection (overlapping tasks for same resource)
-4. Optimize cascade performance with smarter dependency graph traversal
-5. Add "what-if" scenario planning (test schedule changes without saving)
-6. Implement resource leveling (automatic task shifting to balance workload)
-7. Add Gantt chart visualization directly in Schedule Master`,
+- No manual override capability in templates
+- No critical path visualization
+- Large dependency chains can slow cascade performance`,
     poRequired: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.po_required (boolean, default false)
-**Frontend:** Checkbox
-**Model:** Triggers validation that supplier_id must be present if create_po_on_job_start is true
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2513-2523
+- Rendering: Checkbox input
+- Event handlers: handleCheckboxChange('po_required', checked), affects supplier dropdown and Auto PO availability
 
-Tracks whether a purchase order is needed for this task. Enables Auto PO checkbox when checked.`,
-    autoPo: `**Status:** Fully functional ✅
+**Backend:**
+- Field: schedule_template_rows.po_required
+- Type: boolean (default false)
+- Validation: Triggers validation requiring supplier_id if create_po_on_job_start is true
 
 **How It Works:**
-When this checkbox is enabled, the system automatically creates a Purchase Order (PO) when a job is instantiated from the schedule template.
-
-**Implementation Details:**
-
-*Frontend (UI):*
-- Located in: frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx:2528-2535
-- Rendered as a checkbox input (create_po_on_job_start field)
-- Disabled unless BOTH "PO Required" is checked AND a supplier is selected
-- Validation: Shows alert if user tries to enable without selecting a supplier first
-- Auto-unchecks when "PO Required" is unchecked (lines 2382-2383)
-- Bulk operations available: Enable/Disable Auto PO for multiple selected rows (lines 1970-1979)
-
-*Backend (Processing):*
-- Service: backend/app/services/schedule/template_instantiator.rb
-- Method: create_auto_purchase_orders (lines 200-211)
-- Triggers during job instantiation (line 31 in call method)
-- Selection criteria: row.create_po_on_job_start AND row.po_required AND row.supplier.present?
-- Creates PO with:
-  - Status: 'draft'
-  - Required on site date: Set to task's planned_start_date
-  - Critical flag: Inherited from row.critical_po
-  - Notes: "Auto-generated for task: [task name]"
-  - Line items: Auto-populated from linked price book items (if any)
-  - Links PO back to the task
-
-*Database:*
-- Table: schedule_template_rows
-- Column: create_po_on_job_start (boolean)
-- Default: false
-
-**User Workflow:**
-1. User creates a task in Schedule Template Editor
-2. User checks "PO Required" checkbox
-3. User selects a Supplier from dropdown
-4. User checks "Auto PO" checkbox
-5. (Optional) User links Price Book items which will become PO line items
-6. When a new job is created from this template, PO is automatically generated in draft status
-7. PO appears in Purchase Orders list, ready for review and sending to supplier
-
-**Dependencies:**
-- Requires: PO Required checkbox enabled
-- Requires: Supplier selected (from Contacts with type=Supplier)
-- Optional: Price Book items linked (become PO line items automatically)
-- Optional: Critical PO flag (affects PO display with red badge)
+Flags tasks requiring purchase orders. When enabled, switches supplier dropdown to show suppliers (vs internal roles). Gates the Auto PO checkbox which cannot be enabled without this flag.
 
 **Current Limitations:**
-- POs are created in 'draft' status, not automatically sent
-- Quantity for price book items defaults to 1
-- No automated ordering based on orderRequired/callUpRequired lead times
-- No validation of supplier capabilities or pricing before PO creation
+- No PO requirement based on task type/category
+- No workflow for non-PO procurement tasks
+- Cannot track PO requirement separately from auto-generation`,
+    autoPo: `**Status:** Fully functional ✅
 
-**Enhancement Opportunities:**
-1. Add option to auto-send PO to supplier email when job starts
-2. Calculate quantities based on job specifications or estimate data
-3. Implement lead time alerts (orderRequired/callUpRequired fields are tracked but not used)
-4. Add PO approval workflow for critical or high-value POs
-5. Integration with supplier quoting system for best pricing`,
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2525-2537
+- Rendering: Checkbox, disabled unless PO Required checked AND supplier selected
+- Event handlers: handleCheckboxChange('create_po_on_job_start', checked), validates supplier presence, auto-unchecks if PO Required disabled
+
+**Backend:**
+- Field: schedule_template_rows.create_po_on_job_start
+- Type: boolean (default false)
+- Validation: Requires supplier_id present if enabled
+
+**How It Works:**
+Auto-creates draft PO when job instantiated from template. TemplateInstantiator service processes during job creation, populating PO with supplier, critical flag, price book items, and task linkage. POs created in draft status for review.
+
+**Current Limitations:**
+- POs not automatically sent to supplier (draft only)
+- No quantity calculation from job specs
+- Lead time fields (orderRequired/callUpRequired) tracked but unused`,
     priceItems: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.price_book_item_ids (JSONB array)
-**Frontend:** Modal (PriceBookItemsModal) showing count
-**Model:** Helper method price_book_items() fetches PricebookItem records
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2539-2557
+- Rendering: Button showing count "(X items)", opens PriceBookItemsModal
+- Event handlers: Modal for selecting/managing price book items
 
-Links price book items to task. These items automatically become line items in auto-generated POs.`,
+**Backend:**
+- Field: schedule_template_rows.price_book_item_ids
+- Type: jsonb array of integers
+- Validation: Helper method price_book_items() fetches PricebookItem records
+
+**How It Works:**
+Links price book catalog items to tasks. When Auto PO enabled, these items automatically populate PO line items with pricing, descriptions, and supplier details. Enables standardized pricing across templates.
+
+**Current Limitations:**
+- No quantity specification per item (defaults to 1)
+- No automatic price updates if catalog changes
+- Cannot link items from multiple suppliers per task`,
     critical: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.critical_po (boolean, default false)
-**Frontend:** Checkbox
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2563-2573
+- Rendering: Checkbox input
+- Event handlers: handleCheckboxChange('critical_po', checked)
 
-Marks PO as critical priority. Critical POs are highlighted with red badge and require immediate attention.`,
+**Backend:**
+- Field: schedule_template_rows.critical_po
+- Type: boolean (default false)
+- Validation: None
+
+**How It Works:**
+Marks task's PO as critical priority. When Auto PO creates purchase order, critical flag transfers to PO record. Critical POs display with red badge for visual priority indication.
+
+**Current Limitations:**
+- No automatic escalation workflow for critical POs
+- No due date enforcement based on critical status
+- Cannot set criticality threshold rules (e.g., value-based)`,
     tags: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.tags (JSONB array)
-**Frontend:** Text input with comma-separated parsing
-**Model:** Helper method tag_list() returns array
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2575-2586
+- Rendering: Text input field, comma-separated values
+- Event handlers: handleTextChange('tags', value) parses CSV to array
 
-Categorize and filter tasks by trade (e.g., 'electrical', 'foundation', 'inspection').`,
+**Backend:**
+- Field: schedule_template_rows.tags
+- Type: jsonb array
+- Validation: Helper method tag_list() returns array of strings
+
+**How It Works:**
+User enters comma-separated tags for categorization (e.g., 'electrical, foundation, inspection'). Enables filtering and grouping tasks by trade, phase, or category in schedule views.
+
+**Current Limitations:**
+- No tag autocomplete or suggestions
+- No tag standardization or validation
+- Cannot create tag taxonomies or hierarchies`,
     photo: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.require_photo (boolean, default false)
-**Frontend:** Checkbox
-**Model:** Callback sync_photos_category manages documentation categories
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2588-2598
+- Rendering: Checkbox input
+- Event handlers: handleCheckboxChange('require_photo', checked)
 
-Automatically spawns photo task when this task is completed. Used for tasks requiring photo documentation.`,
+**Backend:**
+- Field: schedule_template_rows.require_photo
+- Type: boolean (default false)
+- Validation: Callback sync_photos_category manages documentation categories
+
+**How It Works:**
+Triggers automatic photo task creation when parent task completed. Used for quality control, compliance documentation, and progress tracking. Photo task inherits context from parent task.
+
+**Current Limitations:**
+- No photo count specification (how many required)
+- No photo type/angle requirements
+- Cannot customize photo task template per task type`,
     cert: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.require_certificate (boolean, default false)
-**Frontend:** Checkbox
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2600-2610
+- Rendering: Checkbox input
+- Event handlers: handleCheckboxChange('require_certificate', checked), enables certLag field
 
-Automatically spawns certificate task when this task is completed. Used for regulatory certifications and compliance documents.`,
+**Backend:**
+- Field: schedule_template_rows.require_certificate
+- Type: boolean (default false)
+- Validation: None
+
+**How It Works:**
+Spawns certificate task automatically when parent task completes. Used for regulatory compliance, inspections, and certifications. Due date calculated using cert_lag_days offset (default 10 days).
+
+**Current Limitations:**
+- No certificate type specification
+- No issuing authority tracking
+- Cannot link to specific regulatory requirements`,
     certLag: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.cert_lag_days (integer, default 10, range 0-999)
-**Frontend:** Numeric input (disabled if require_certificate is false)
-**Validation:** Numericality validated
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2612-2623
+- Rendering: Number input, disabled unless require_certificate enabled
+- Event handlers: handleNumberChange('cert_lag_days', value) with range validation
 
-Days after task completion when certificate is due.`,
+**Backend:**
+- Field: schedule_template_rows.cert_lag_days
+- Type: integer (default 10, range 0-999)
+- Validation: Numericality >= 0, <= 999
+
+**How It Works:**
+Specifies days after task completion when certificate task becomes due. Allows flexibility for different certification timelines (immediate inspection vs extended review periods).
+
+**Current Limitations:**
+- Fixed to days only (no hours/weeks)
+- No automatic reminders as deadline approaches
+- Cannot vary lag by certificate type`,
     supCheck: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.require_supervisor_check (boolean) + supervisor_checklist_template_ids (JSONB array)
-**Frontend:** Checkbox with modal (SupervisorChecklistModal) for checklist items
-**Model:** Scope supervisor_checks
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2625-2646
+- Rendering: Checkbox + button "(X checklists)" opens SupervisorChecklistModal
+- Event handlers: handleCheckboxChange('require_supervisor_check', checked), modal manages checklist template selection
 
-Requires supervisor site visit to verify quality. Links to supervisor checklist templates.`,
+**Backend:**
+- Field: schedule_template_rows.require_supervisor_check (boolean) + supervisor_checklist_template_ids (jsonb array)
+- Type: boolean + array of integers
+- Validation: Scope supervisor_checks for filtering
+
+**How It Works:**
+Requires supervisor site visit with standardized checklist before task completion. Links specific checklist templates defining inspection points. Ensures quality control at critical construction phases.
+
+**Current Limitations:**
+- No supervisor assignment/scheduling
+- Cannot require multiple supervisor types
+- No automatic notification to supervisors`,
     autoComplete: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.auto_complete_predecessors (boolean) + auto_complete_task_ids (JSONB array)
-**Frontend:** Modal (AutoCompleteTasksModal) showing count of tasks
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2648-2659
+- Rendering: Button "(X tasks)" opens AutoCompleteTasksModal
+- Event handlers: Modal manages task selection for auto-completion
 
-Select specific tasks to auto-mark complete when this task completes. Useful for milestone tasks.`,
+**Backend:**
+- Field: schedule_template_rows.auto_complete_task_ids
+- Type: jsonb array of integers
+- Validation: None
+
+**How It Works:**
+When this task completes, automatically marks specified tasks as complete. Useful for milestone tasks that signal completion of preparatory work or grouped activities (e.g., "Foundation Complete" auto-completes all foundation subtasks).
+
+**Current Limitations:**
+- No conditional auto-completion logic
+- Cannot auto-complete based on percentage/partial completion
+- No cascade notification to affected task assignees`,
     subtasks: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.has_subtasks (boolean) + subtask_count (integer) + subtask_names (JSONB array) + subtask_template_ids (JSONB array)
-**Frontend:** Modal (SubtasksModal) showing count
-**Validation:** subtask_names count must match subtask_count
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2661-2672
+- Rendering: Button "(X subtasks)" opens SubtasksModal
+- Event handlers: Modal manages subtask names/templates with count validation
 
-Automatically creates subtasks when this task starts. Breaks complex tasks into smaller steps.`,
+**Backend:**
+- Field: schedule_template_rows.has_subtasks (boolean) + subtask_count (integer) + subtask_names (jsonb array) + subtask_template_ids (jsonb array)
+- Type: boolean + integer + arrays
+- Validation: subtask_names.count must equal subtask_count
+
+**How It Works:**
+Auto-creates child tasks when parent task starts. Breaks complex activities into manageable steps with individual tracking. Subtask completion can be tracked independently while rolling up to parent progress.
+
+**Current Limitations:**
+- No percentage-based parent completion from subtasks
+- Cannot dynamically add/remove subtasks after instantiation
+- No subtask dependency management`,
     linkedTasks: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.linked_task_ids (text/JSON, serialized)
-**Frontend:** Modal (LinkedTasksModal) showing count
-**Model:** serialize :linked_task_ids, coder: JSON
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2674-2685
+- Rendering: Button "(X linked)" opens LinkedTasksModal
+- Event handlers: Modal manages task linkage selection
 
-Links task to other tasks for grouping and cross-template dependencies.`,
+**Backend:**
+- Field: schedule_template_rows.linked_task_ids
+- Type: text (JSON serialized)
+- Validation: serialize :linked_task_ids, coder: JSON
+
+**How It Works:**
+Creates relationships between tasks for grouping or cross-template dependencies. Enables task coordination across different schedule templates or job phases without formal predecessor relationships.
+
+**Current Limitations:**
+- No visualization of linked task relationships
+- Cannot specify link type/purpose
+- No automatic notifications when linked tasks update`,
     manualTask: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.manual_task (boolean, default false)
-**Frontend:** Checkbox
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2687-2697
+- Rendering: Checkbox input
+- Event handlers: handleCheckboxChange('manual_task', checked)
 
-Manual task - never automatically loaded or activated in schedule. Must be manually created.`,
+**Backend:**
+- Field: schedule_template_rows.manual_task
+- Type: boolean (default false)
+- Validation: None
+
+**How It Works:**
+Excludes task from automatic schedule instantiation. Template defines task structure but user must manually create/activate when needed. Useful for optional or conditional work items.
+
+**Current Limitations:**
+- No conditional activation rules (e.g., "add if budget > X")
+- Cannot suggest manual task creation based on job attributes
+- No tracking of manual task usage frequency`,
     multipleItems: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.allow_multiple_instances (boolean, default false)
-**Frontend:** Checkbox
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2699-2709
+- Rendering: Checkbox input
+- Event handlers: handleCheckboxChange('allow_multiple_instances', checked)
 
-When completed, prompts user if they need another instance (e.g., 'Frame Inspection', 'Frame Inspection 2').`,
+**Backend:**
+- Field: schedule_template_rows.allow_multiple_instances
+- Type: boolean (default false)
+- Validation: None
+
+**How It Works:**
+Upon task completion, prompts user to create additional instances with auto-incrementing names (e.g., "Frame Inspection", "Frame Inspection 2"). Handles recurring work items without manual template duplication.
+
+**Current Limitations:**
+- No automatic instance creation based on quantity
+- Cannot pre-define instance count
+- No bulk instance management`,
     orderRequired: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.order_required (boolean, default false)
-**Frontend:** Checkbox
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2711-2721
+- Rendering: Checkbox input
+- Event handlers: handleCheckboxChange('order_required', checked)
 
-Order time required from pricebook items. Tracks order placement timeline requirements.`,
+**Backend:**
+- Field: schedule_template_rows.order_required
+- Type: boolean (default false)
+- Validation: None
+
+**How It Works:**
+Flags tasks with material order lead time requirements. Tracked for planning but not currently enforced in scheduling logic. Intended for future lead time automation.
+
+**Current Limitations:**
+- No automatic schedule adjustment for lead times
+- Lead time duration not specified (boolean only)
+- No integration with Auto PO timing`,
     callUpRequired: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.call_up_required (boolean, default false)
-**Frontend:** Checkbox
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2723-2733
+- Rendering: Checkbox input
+- Event handlers: handleCheckboxChange('call_up_required', checked)
 
-Call up time required from pricebook items. Tracks call-up/booking timeline requirements.`,
+**Backend:**
+- Field: schedule_template_rows.call_up_required
+- Type: boolean (default false)
+- Validation: None
+
+**How It Works:**
+Flags tasks requiring supplier call-up/booking advance notice. Tracked for planning but not currently enforced. Intended for future supplier coordination automation.
+
+**Current Limitations:**
+- No automatic supplier notification
+- Call-up duration not specified (boolean only)
+- No integration with schedule cascade`,
     planType: `**Status:** Fully functional ✅
 
-**Database:** schedule_template_rows.plan_required (boolean, default false)
-**Frontend:** Checkbox
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2735-2745
+- Rendering: Checkbox input
+- Event handlers: handleCheckboxChange('plan_required', checked)
 
-Task for documents activated only if plan tab is selected (PERSPECTIVE, SITE PLAN, ELEVATIONS, etc.).`,
+**Backend:**
+- Field: schedule_template_rows.plan_required
+- Type: boolean (default false)
+- Validation: None
+
+**How It Works:**
+Conditionally activates documentation tasks based on job plan type selection (PERSPECTIVE, SITE PLAN, ELEVATIONS, etc.). Task only instantiated if corresponding plan tab selected during job setup.
+
+**Current Limitations:**
+- No plan type specification (which plan types trigger)
+- Boolean only (no multi-plan-type support)
+- No plan availability validation`,
     actions: `**Status:** Fully functional ✅
 
-**Frontend:** Delete, Move Up, Move Down buttons
-**Operations:** Row management actions
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2747-2766
+- Rendering: Three buttons - Move Up (↑), Move Down (↓), Delete (trash icon)
+- Event handlers: handleMoveRow(direction), handleDeleteRow(rowId) with confirmation
 
-Provides inline action buttons for deleting, duplicating, and reordering template rows.`
+**Backend:**
+- Field: N/A (frontend operations trigger row updates)
+- Type: UI controls only
+- Validation: Move operations update sequence_order, delete operations cascade
+
+**How It Works:**
+Move Up/Down reorders tasks by swapping sequence_order values and updating display. Delete removes row with confirmation dialog. All operations trigger immediate save and rerender.
+
+**Current Limitations:**
+- No drag-and-drop reordering
+- Cannot move multiple selected rows simultaneously
+- No undo/redo for delete operations`
   }))
   const [columnComplete, setColumnComplete] = useState(() => loadFromLocalStorage('scheduleMaster_columnComplete', {}))
   const [mdInstructions, setMdInstructions] = useState(() => loadFromLocalStorage('scheduleMaster_mdInstructions', {}))

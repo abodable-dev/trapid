@@ -17,8 +17,8 @@ export default function GanttRulesModal({ isOpen, onClose }) {
   const fetchRules = async () => {
     try {
       setLoading(true)
-      // Fetch the Gantt Bible (complete drag/cascade documentation)
-      const response = await fetch('/GANTT_DRAG_FLICKER_FIXES.md')
+      // Fetch the Gantt Bible (The Bible - Rules Only)
+      const response = await fetch('/GANTT_SCHEDULE_RULES.md')
       const text = await response.text()
       setContent(text)
     } catch (err) {

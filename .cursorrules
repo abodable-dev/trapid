@@ -1,0 +1,56 @@
+# Cursor AI Rules for Trapid Project
+
+## Auto-Load Documentation
+
+When starting any new chat in this project, automatically read these files:
+
+### Always Read
+1. `.claude/instructions.md` - Project-level instructions
+
+### Read When Working on Gantt/Schedule Code
+If the user mentions ANY of these keywords, immediately read the Gantt Bible:
+- gantt, schedule, cascade, predecessor, dependency
+- drag, task, working days, lock hierarchy
+- DHtmlxGanttView, schedule_cascade_service
+
+**Files to read:**
+- `GANTT_SCHEDULE_RULES.md` - The Bible (RULES ONLY)
+- Location: `/Users/rob/Projects/trapid/GANTT_SCHEDULE_RULES.md`
+
+### Gantt Development Rules
+
+**CRITICAL:** Before touching ANY Gantt/Schedule Master code:
+1. ✅ Read GANTT_SCHEDULE_RULES.md (The Bible)
+2. ✅ Follow ALL 12 rules without exception
+3. ✅ Never modify Protected Code Patterns
+4. ✅ Update Bible when discovering new rules
+5. ✅ Update GANTT_BUGS_AND_FIXES.md when fixing bugs
+6. ✅ Sync both files to frontend/public/ after editing
+
+**Two-Document System:**
+- 📖 GANTT_SCHEDULE_RULES.md = RULES (MUST/NEVER/ALWAYS)
+- 📕 GANTT_BUGS_AND_FIXES.md = KNOWLEDGE (how it works, bug history)
+
+**Protected Files (DO NOT modify without reading Bible first):**
+- `frontend/src/components/schedule-master/DHtmlxGanttView.jsx`
+- `backend/app/services/schedule_cascade_service.rb`
+- Any file with useRef flags: isDragging, isLoadingData, isSaving
+
+## Project Context
+
+**Tech Stack:**
+- Frontend: React, DHtmlx Gantt
+- Backend: Ruby on Rails
+- Database: PostgreSQL
+
+**Key Features:**
+- Schedule Master with cascade dependencies
+- Gantt chart visualization
+- Company Settings integration
+
+## General Guidelines
+
+- Follow existing code patterns
+- Test changes before committing
+- Update documentation when changing behavior
+- Don't remove code without understanding why it exists

@@ -415,8 +415,8 @@ export default function ScheduleTemplateEditor() {
 
   const handleCopyGanttBible = async () => {
     try {
-      // Fetch the Gantt Bible (drag flicker fixes) from frontend folder
-      const response = await fetch('/GANTT_DRAG_FLICKER_FIXES.md')
+      // Fetch the Gantt Bible (The Bible - Rules Only)
+      const response = await fetch('/GANTT_SCHEDULE_RULES.md')
       if (!response.ok) {
         throw new Error('Failed to load Gantt Bible')
       }
