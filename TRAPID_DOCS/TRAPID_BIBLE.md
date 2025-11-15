@@ -140,14 +140,61 @@ This file is the **absolute authority** for all Trapid development where chapter
 - Modify existing migrations after they've been deployed
 - Delete migrations that have run in production
 - Use `change` when `up`/`down` is safer
+- Add columns manually without creating migrations
 
 ✅ **ALWAYS:**
 - Create new migration to fix issues
 - Test migrations with `db:rollback`
 - Add indexes for foreign keys
 - Use `add_column` with default values carefully
+- Create migrations for ALL schema changes (even if applied manually)
 
 **For system-wide patterns, see:** Lexicon Chapter 0
+
+## RULE #4: Agent Maintenance & Learning
+
+### When an Agent Fails to Catch a Bug
+
+✅ **MUST update agent when:**
+1. Agent should have caught the issue based on its responsibilities
+2. Clear pattern emerges that agent could prevent in future
+3. Pre-check or validation could have detected the problem
+
+### Agent Update Process
+
+When a bug reveals an agent gap:
+
+1. **Update Agent Definition** (`.claude/agents/[agent-name].md`):
+   - Add specific check/validation to protocol
+   - Include examples of what to look for
+   - Add to pre-flight checklist
+
+2. **Document in Lexicon** (TRAPID_LEXICON.md Chapter 0):
+   - Record the bug that was missed
+   - Explain why agent should have caught it
+   - Reference the agent update
+
+3. **Update Bible** (this file) if needed:
+   - Only if bug reveals a new RULE
+   - Add to relevant chapter
+
+### Example: Migration Check
+
+**Bug:** `working_days` column added manually without migration
+**Agent:** deploy-manager
+**Update:** Added pre-deployment check for unmigrated schema changes
+**Location:** `.claude/agents/deploy-manager.md` - Pre-Deployment Checks
+
+```bash
+# Check for unmigrated local schema changes
+git diff db/schema.rb
+```
+
+✅ **ALWAYS ask:** "Could an agent have prevented this?"
+✅ **ALWAYS update** agent definitions when the answer is yes
+❌ **NEVER** let the same class of bug happen twice
+
+**For agent architecture, see:** Lexicon Chapter 0
 
 ---
 
