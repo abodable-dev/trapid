@@ -110,10 +110,15 @@ class ScheduleCascadeService
 
     # Calculate based on dependency type
     predecessor_start = predecessor_task.start_date
-    predecessor_end = predecessor_start + (predecessor_task.duration || 1)
+    duration = (predecessor_task.duration || 1)
+    # Duration is inclusive: duration 1 = task runs for 1 day
+    # End date is start + (duration - 1) since start day counts as day 1
+    predecessor_end = predecessor_start + (duration - 1)
 
     case dep_type
     when 'FS' # Finish-to-Start (most common)
+      # Task finishes at end of predecessor_end day
+      # Next task starts on predecessor_end (not +1, tasks can start same day one ends)
       predecessor_end + lag
     when 'SS' # Start-to-Start
       predecessor_start + lag
