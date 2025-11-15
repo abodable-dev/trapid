@@ -291,6 +291,11 @@ Rails.application.routes.draw do
         end
       end
 
+      # TRAPID_DOCS Documentation Viewer
+      get 'documentation', to: 'documentation#index'
+      get 'documentation/search', to: 'documentation#search'
+      get 'documentation/:id', to: 'documentation#show'
+
       # Supervisor Checklist Templates (Global)
       resources :supervisor_checklist_templates do
         collection do
