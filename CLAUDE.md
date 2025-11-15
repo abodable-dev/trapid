@@ -113,6 +113,36 @@ All Trapid documentation now lives in `/TRAPID_DOCS/` with three core documents:
 - Consult with the backend-developer agent to develop solutions quickly
 - Prioritize fast resolution while maintaining code quality
 
+## Testing Protocol - CRITICAL RULE
+
+**RULE: When running any Bug Hunter test, MUST auto-debug failures**
+
+When executing any test via Bug Hunter Tests system:
+
+1. **Run the test** via API or UI
+2. **Immediately check console output** if test fails
+3. **Analyze the failure** - read console_output field from test history
+4. **Fix the issue** - make necessary code changes
+5. **Re-run the test** - verify the fix works
+6. **Iterate** - repeat until test passes
+
+**NEVER** just run a test and report failure - ALWAYS debug and fix immediately.
+
+**Example workflow:**
+```bash
+# 1. Run test
+curl -X POST .../bug_hunter_tests/working-days-enforcement/run
+
+# 2. Check result - if failed, get console output
+curl .../bug_hunter_tests/history | grep console_output
+
+# 3. Analyze violations, fix code
+# 4. Re-run test
+# 5. Confirm pass
+```
+
+This ensures tests are not just diagnostic tools, but also drive immediate fixes.
+
 ## Design & Frontend Changes
 - **Always use the frontend-developer agent for design or UI/UX changes**
 - Design consistency is critical - follow existing patterns in the codebase

@@ -46,15 +46,6 @@ module Api
             chapters: nil
           },
           {
-            id: 'authority',
-            name: 'Documentation Authority',
-            description: 'Which doc overrides which',
-            icon: '⚖️',
-            audience: 'Developers',
-            path: '00_INDEX/DOCUMENTATION_AUTHORITY.md',
-            chapters: nil
-          },
-          {
             id: 'continuation',
             name: 'Continuation Instructions',
             description: 'Progress tracker and workflow for completing Trinity documentation',
@@ -83,8 +74,6 @@ module Api
                       Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_USER_MANUAL.md')
                     when 'chapter-guide'
                       Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'CHAPTER_GUIDE.md')
-                    when 'authority'
-                      Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'DOCUMENTATION_AUTHORITY.md')
                     when 'continuation'
                       Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'CONTINUATION_INSTRUCTIONS.md')
                     when 'readme'
