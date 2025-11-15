@@ -396,7 +396,120 @@ The template creates tasks for you automatically:
 │ 📕 LEXICON (BUGS):     Chapter 12 (Developers) │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+## What is OneDrive Integration?
+
+OneDrive stores all your job documents in the cloud: plans, quotes, photos, and contracts. Every job automatically gets its own folder with subfolders organized by document type.
+
+**Benefits:**
+- **Auto folder creation** - New job = instant OneDrive folder
+- **Organized structure** - Plans, Quotes, Photos all separated
+- **Team access** - Everyone sees same files
+- **Version history** - OneDrive tracks all changes
+
+---
+
+## Getting Started
+
+### Step 1: Connect to OneDrive
+
+1. Go to **Settings** → **Integrations**
+2. Find "OneDrive" card
+3. Click **"Connect to OneDrive"**
+4. Sign in with your Microsoft account
+5. Click **"Accept"** to grant permissions
+
+**Success!** OneDrive is now connected.
+
+---
+
+### Step 2: Create Folders for a Job
+
+When you create a new job, Trapid can auto-create folders:
+
+**Option A: During Job Creation**
+1. Fill out "New Job" form
+2. Check **"Create OneDrive folders"** checkbox
+3. Click "Create Job"
+4. Folders created automatically!
+
+**Option B: After Job Created**
+1. Go to job detail page
+2. Click **"Create OneDrive Folders"** button
+3. Folders created in seconds
+
+**What gets created:**
+```
+Trapid Jobs/
+  └── [Job Number] - [Job Name]/
+      ├── Plans/
+      ├── Quotes/
+      ├── Contracts/
+      ├── Photos/
+      ├── Invoices/
+      └── Correspondence/
+```
+
+---
+
+## Uploading Files
+
+### Upload to a Job
+
+1. Go to **Job Detail** page
+2. Click **"Documents"** tab
+3. Choose document type (e.g., "Plans")
+4. Click **"Upload File"** button
+5. Select file from your computer
+6. File uploads to correct OneDrive folder
+
+---
+
+## Opening Files in OneDrive
+
+### View Files in Browser
+
+1. Go to job detail page
+2. Click **"Open in OneDrive"** button
+3. OneDrive opens in new tab showing your job folder
+
+**Tip:** Bookmark the OneDrive link for quick access!
+
+---
+
+## Common Scenarios
+
+### Scenario 1: Upload Site Photos
+
+**You took photos at the job site:**
+
+1. Go to job → Documents tab
+2. Select "Photos" folder
+3. Upload photos (supports multiple files)
+4. Photos appear in OneDrive immediately
+
+---
+
+### Scenario 2: Share Files with Client
+
+**Client needs to see quote:**
+
+1. Click "Open in OneDrive"
+2. Navigate to Quotes folder
+3. Right-click file → Share
+4. Copy link and email to client
+
+---
+
+## Tips & Best Practices
+
+### Tip #1: Use Descriptive File Names
+
+Good: `Quote-Bathroom-Reno-Rev2.pdf`
+Bad: `Document1.pdf`
+
+### Tip #2: Create Folders Early
+
+Create OneDrive folders when you create the job, not later. This ensures all documents go to the right place from day one.
 
 ---
 

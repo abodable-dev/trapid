@@ -639,7 +639,119 @@ predecessor_id = predecessor_task.sequence_order + 1
 │ 📘 USER MANUAL (HOW): Chapter 12               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+## Overview
+
+OneDrive integration enables automatic folder creation for each construction job and document management. Supports uploading plans, quotes, contracts, and syncing product images for the price book.
+
+**Key Files:**
+- Controller: `backend/app/controllers/api/v1/organization_onedrive_controller.rb`
+- Microsoft Graph Client: `backend/app/services/microsoft_graph_client.rb`
+- Model: `backend/app/models/organization_one_drive_credential.rb`
+
+---
+
+## RULE #12.1: Organization-Wide Authentication
+
+**ALWAYS use organization-wide OAuth (not per-user).**
+
+❌ **NEVER require each user to authenticate separately**
+✅ **ALWAYS store single credential for entire organization**
+
+**Code location:** `OrganizationOneDriveCredential` model
+
+**Token Management:**
+- Access tokens expire after 1 hour
+- Refresh tokens valid for 90 days
+- Automatic refresh when token expires
+- Encrypted storage using ActiveRecord Encryption
+
+---
+
+## RULE #12.2: Folder Template System
+
+**ALWAYS use Folder Templates to create job folders.**
+
+❌ **NEVER hardcode folder names**
+✅ **ALWAYS respect template customizations**
+
+**Code location:** `FolderTemplate` model
+
+**Default Template Structure:**
+```
+Trapid Jobs/
+  └── [Job Number] - [Job Name]/
+      ├── Plans/
+      ├── Quotes/
+      ├── Contracts/
+      ├── Photos/
+      ├── Invoices/
+      └── Correspondence/
+```
+
+---
+
+## RULE #12.3: Root Folder Management
+
+**ALWAYS store all job folders under configurable root folder.**
+
+❌ **NEVER create folders at OneDrive root level**
+✅ **ALWAYS use `root_folder_id` from credential**
+
+**Code location:** `MicrosoftGraphClient#create_jobs_root_folder`
+
+**Default:** "Trapid Jobs" folder created at root
+**Changeable:** Admin can browse and select different root folder
+
+---
+
+## RULE #12.4: Pricebook Image Sync
+
+**Product images MUST be stored in OneDrive AND Cloudinary.**
+
+❌ **NEVER rely solely on OneDrive for image display**
+✅ **ALWAYS upload to Cloudinary after OneDrive upload**
+
+**Workflow:**
+1. User uploads image to OneDrive
+2. Backend downloads from OneDrive
+3. Backend uploads to Cloudinary
+4. Store both `one_drive_file_id` and `image_url`
+
+---
+
+## RULE #12.5: File Upload Chunking
+
+**Large files (>4MB) MUST use chunked upload.**
+
+❌ **NEVER use simple upload for files >4MB**
+✅ **ALWAYS use resumable upload session**
+
+**Thresholds:**
+- <4MB: Simple upload
+- ≥4MB: Chunked upload (10MB chunks)
+- Max: 250GB (OneDrive limit)
+
+---
+
+## API Endpoints
+
+**Authentication:**
+- `GET /api/v1/organization_onedrive/status`
+- `GET /api/v1/organization_onedrive/authorize`
+- `GET /api/v1/organization_onedrive/callback`
+- `DELETE /api/v1/organization_onedrive/disconnect`
+
+**Folder Management:**
+- `POST /api/v1/organization_onedrive/create_job_folders`
+- `GET /api/v1/organization_onedrive/browse_folders`
+- `PATCH /api/v1/organization_onedrive/change_root_folder`
+
+**File Operations:**
+- `POST /api/v1/organization_onedrive/upload`
+- `GET /api/v1/organization_onedrive/download`
+
+**Pricebook:**
+- `POST /api/v1/organization_onedrive/sync_pricebook_images`
 
 ---
 

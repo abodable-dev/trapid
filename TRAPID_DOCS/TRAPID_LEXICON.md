@@ -575,7 +575,46 @@ Locked tasks are NOT cascaded.
 │ 📘 USER MANUAL (HOW): Chapter 12               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+## Bug Hunter - OneDrive Integration
+
+**Status:** Active monitoring
+**Total Bugs Resolved:** 1
+**Open Issues:** 0
+
+---
+
+## Resolved Bugs
+
+### ✅ BUG-OD-001: Token Expiry During Long Uploads (RESOLVED)
+
+**Status:** ✅ RESOLVED
+**Severity:** High (feature-breaking)
+**Resolution Time:** ~2 hours
+
+#### Symptoms
+- Large file uploads (>50MB) failing mid-upload
+- Error: "401 Unauthorized" after 1 hour
+- Upload resumes not working
+
+#### Root Cause
+**Access token expired during chunked upload.** OneDrive tokens expire after 1 hour, but large file uploads can take longer. The upload session continues, but API requests fail.
+
+#### Solution
+
+**Refresh token BEFORE each chunk:**
+```ruby
+def upload_chunk(upload_url, chunk, offset, total_size)
+  ensure_valid_token  # Refresh if expired
+
+  headers = {
+    'Content-Range' => "bytes #{offset}-#{offset + chunk.size - 1}/#{total_size}"
+  }
+
+  response = HTTParty.put(upload_url, body: chunk, headers: headers)
+end
+```
+
+**References:** Bible Rule #12.1, Bible Rule #12.5
 
 ---
 
