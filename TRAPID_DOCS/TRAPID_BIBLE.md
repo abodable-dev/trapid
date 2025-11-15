@@ -892,20 +892,451 @@ working_days = @company_settings.working_days
 │ 📘 USER MANUAL (HOW): Chapter 3                │
 └─────────────────────────────────────────────────┘
 
-**User Context:** Managing customers, suppliers
-**Technical Rules:** Contact model, relationships, type handling
+**Last Updated:** 2025-11-16
 
-## RULE #3.1: Contact Type Handling
+## Overview
 
-✅ **Contact types:** `:customer`, `:supplier`, or `:both`
-❌ **NEVER use string values** (use symbols)
+Contacts & Relationships manages the unified contact system for customers, suppliers, sales reps, and land agents. The system supports Xero bidirectional sync, bidirectional contact relationships, portal access, supplier ratings, and comprehensive activity tracking.
 
-## RULE #3.2: Relationship Validation
+**Key Components:**
+- **Contact:** Unified model supporting multiple contact types (customer, supplier, sales, land_agent)
+- **ContactRelationship:** Bidirectional relationships between contacts (parent company, referral, etc.)
+- **ContactPerson/ContactAddress:** Xero-synced persons and addresses per contact
+- **XeroContactSyncService:** Bidirectional sync with priority-based fuzzy matching
+- **PortalUser:** Customer/supplier portal access with secure authentication
+- **ContactActivity:** Complete audit trail of all contact interactions
 
-✅ **MUST validate relationship types** before creating
-❌ **NEVER create circular relationships**
+**Key Files:**
+- Models: `app/models/contact.rb`, `app/models/contact_relationship.rb`, `app/models/contact_person.rb`, `app/models/contact_address.rb`, `app/models/portal_user.rb`
+- Controllers: `app/controllers/api/v1/contacts_controller.rb` (1143 lines), `app/controllers/api/v1/contact_relationships_controller.rb`
+- Services: `app/services/xero_contact_sync_service.rb` (424 lines)
 
-**Content TBD** - To be populated when working on Contacts feature
+---
+
+## RULE #3.1: Contact Types are Multi-Select Arrays
+
+**Contacts MUST support multiple types simultaneously via contact_types array.**
+
+✅ **MUST:**
+- Use `contact_types` as PostgreSQL array column
+- Allow multiple types: `['customer', 'supplier']` for hybrid contacts
+- Set `primary_contact_type` automatically if blank (first type in array)
+- Validate types against `CONTACT_TYPES = ['customer', 'supplier', 'sales', 'land_agent']`
+- Use array operations for querying: `where("'supplier' = ANY(contact_types)")`
+
+❌ **NEVER:**
+- Use single contact_type field (legacy pattern)
+- Store types as comma-separated strings
+- Assume a contact has only one type
+- Query with `contact_type =` (use array containment instead)
+
+**Implementation:**
+
+```ruby
+# app/models/contact.rb
+CONTACT_TYPES = ['customer', 'supplier', 'sales', 'land_agent'].freeze
+
+validates :primary_contact_type, inclusion: { in: CONTACT_TYPES }, allow_nil: true
+validate :contact_types_must_be_valid
+
+before_save :set_primary_contact_type_if_blank
+
+def is_supplier?
+  contact_types&.include?('supplier')
+end
+
+private
+
+def contact_types_must_be_valid
+  return if contact_types.blank?
+  invalid_types = contact_types - CONTACT_TYPES
+  if invalid_types.any?
+    errors.add(:contact_types, "contains invalid types: #{invalid_types.join(', ')}")
+  end
+end
+```
+
+**Query Examples:**
+
+```ruby
+# Find all suppliers
+Contact.where("'supplier' = ANY(contact_types)")
+
+# Find contacts that are BOTH customer AND supplier
+Contact.where("contact_types @> ARRAY['customer', 'supplier']::varchar[]")
+
+# Filter by type in controller
+case params[:type]
+when 'customers'
+  @contacts = @contacts.where("'customer' = ANY(contact_types)")
+when 'suppliers'
+  @contacts = @contacts.where("'supplier' = ANY(contact_types)")
+when 'both'
+  @contacts = @contacts.where("contact_types @> ARRAY['customer', 'supplier']::varchar[]")
+end
+```
+
+**Files:**
+- `app/models/contact.rb`
+- `app/controllers/api/v1/contacts_controller.rb` (index filtering)
+- Migration: `db/migrate/20251106030000_change_contact_type_to_array.rb`
+
+---
+
+## RULE #3.2: Bidirectional Relationships Require Reverse Sync
+
+**ContactRelationship MUST automatically create and sync reverse relationships.**
+
+✅ **MUST:**
+- Create reverse relationship after creating forward relationship
+- Update reverse relationship when forward is updated
+- Delete reverse relationship when forward is deleted
+- Use Thread-local flags to prevent infinite recursion: `Thread.current[:creating_reverse_relationship]`
+- Validate unique relationship pairs: `[source_contact_id, related_contact_id]`
+- Prevent self-relationships: `source_contact_id != related_contact_id`
+
+❌ **NEVER:**
+- Create one-way relationships without reverse
+- Allow circular reference loops during cascade updates
+- Delete reverse relationship without checking Thread flag
+- Allow duplicate relationships (same source + related pair)
+
+**Implementation:**
+
+```ruby
+# app/models/contact_relationship.rb
+RELATIONSHIP_TYPES = [
+  'previous_client', 'parent_company', 'subsidiary', 'partner',
+  'referral', 'supplier_alternate', 'related_project', 'family_member', 'other'
+].freeze
+
+validates :relationship_type, inclusion: { in: RELATIONSHIP_TYPES }
+validate :cannot_relate_to_self
+validate :unique_relationship_pair
+
+after_create :create_reverse_relationship
+after_update :update_reverse_relationship
+after_destroy :destroy_reverse_relationship
+
+private
+
+def create_reverse_relationship
+  return if Thread.current[:creating_reverse_relationship]
+
+  Thread.current[:creating_reverse_relationship] = true
+
+  ContactRelationship.create!(
+    source_contact_id: related_contact_id,
+    related_contact_id: source_contact_id,
+    relationship_type: relationship_type,
+    notes: notes
+  )
+ensure
+  Thread.current[:creating_reverse_relationship] = false
+end
+
+def cannot_relate_to_self
+  if source_contact_id == related_contact_id
+    errors.add(:base, "Cannot create relationship to same contact")
+  end
+end
+
+def unique_relationship_pair
+  existing = ContactRelationship.where(
+    source_contact_id: source_contact_id,
+    related_contact_id: related_contact_id
+  ).where.not(id: id)
+
+  if existing.exists?
+    errors.add(:base, "Relationship already exists")
+  end
+end
+```
+
+**Files:**
+- `app/models/contact_relationship.rb`
+- `app/controllers/api/v1/contact_relationships_controller.rb`
+- Migration: `db/migrate/20251112205154_create_contact_relationships.rb`
+
+---
+
+## RULE #3.3: Xero Sync Uses Priority-Based Fuzzy Matching
+
+**XeroContactSyncService MUST match contacts using 4-tier priority matching.**
+
+✅ **MUST:**
+- **Priority 1:** Match by `xero_id` (exact match)
+- **Priority 2:** Match by `tax_number` (normalized ABN/ACN, 11 digits)
+- **Priority 3:** Match by `email` (case-insensitive exact match)
+- **Priority 4:** Fuzzy match by `full_name` using FuzzyMatch gem (>85% similarity threshold)
+- Rate limit: 1.2 second delay between Xero API calls (60 req/min limit)
+- Log all sync activities with metadata to `ContactActivity`
+- Set `last_synced_at` timestamp on successful sync
+- Clear `xero_sync_error` on success, set on failure
+- Respect `sync_with_xero` flag (skip if false)
+
+❌ **NEVER:**
+- Match only by name (too unreliable without fuzzy matching)
+- Sync without rate limiting (will hit Xero API limits)
+- Override manual `xero_id` links without confirmation
+- Sync contacts with `sync_with_xero = false`
+- Delete local contacts that don't exist in Xero
+
+**Implementation:**
+
+```ruby
+# app/services/xero_contact_sync_service.rb
+def match_contact(xero_contact)
+  # Priority 1: Exact xero_id match
+  if xero_contact.contact_id.present?
+    match = Contact.find_by(xero_id: xero_contact.contact_id)
+    return { contact: match, match_type: 'xero_id' } if match
+  end
+
+  # Priority 2: Tax number match (ABN/ACN)
+  if xero_contact.tax_number.present?
+    normalized_tax = xero_contact.tax_number.gsub(/\D/, '')
+    if normalized_tax.length == 11
+      match = Contact.where("regexp_replace(tax_number, '[^0-9]', '', 'g') = ?", normalized_tax).first
+      return { contact: match, match_type: 'tax_number' } if match
+    end
+  end
+
+  # Priority 3: Email match
+  if xero_contact.email_address.present?
+    match = Contact.find_by('LOWER(email) = ?', xero_contact.email_address.downcase)
+    return { contact: match, match_type: 'email' } if match
+  end
+
+  # Priority 4: Fuzzy name match (>85% similarity)
+  if xero_contact.name.present?
+    contact_names = Contact.pluck(:full_name, :id).to_h
+    fuzzy_matcher = FuzzyMatch.new(contact_names.keys)
+    matched_name = fuzzy_matcher.find(xero_contact.name, threshold: 0.85)
+
+    if matched_name
+      match = Contact.find(contact_names[matched_name])
+      return { contact: match, match_type: 'fuzzy_name' }
+    end
+  end
+
+  { contact: nil, match_type: 'no_match' }
+end
+```
+
+**Files:**
+- `app/services/xero_contact_sync_service.rb`
+- `app/models/contact.rb` (xero fields)
+- Migration: `db/migrate/20251110091545_add_xero_fields_to_contacts.rb`
+
+---
+
+## RULE #3.4: Contact Deletion MUST Check Purchase Order Dependencies
+
+**Contacts with suppliers that have purchase orders CANNOT be deleted.**
+
+✅ **MUST:**
+- Check for linked suppliers via `contact.suppliers` association
+- Check if suppliers have purchase orders: `suppliers.joins(:purchase_orders).distinct`
+- Block deletion if ANY purchase orders exist
+- Block deletion if ANY purchase orders have been paid or invoiced
+- Return detailed error message listing suppliers and PO counts
+- Allow deletion of contacts without supplier dependencies
+
+❌ **NEVER:**
+- Delete contacts with active supplier relationships that have POs
+- Cascade delete purchase orders when deleting contact
+- Allow deletion without checking payment/invoice status
+- Delete last contact from a construction/job
+
+**Implementation:**
+
+```ruby
+# app/controllers/api/v1/contacts_controller.rb
+def destroy
+  # Check for linked suppliers with purchase orders
+  if @contact.suppliers.any?
+    suppliers_with_pos = @contact.suppliers.joins(:purchase_orders).distinct
+
+    if suppliers_with_pos.any?
+      # Check for paid/invoiced POs
+      paid_pos = PurchaseOrder
+        .where(supplier_id: suppliers_with_pos.pluck(:id))
+        .where("status IN (?) OR amount_paid > 0 OR amount_invoiced > 0",
+               ['paid', 'partially_paid', 'invoiced'])
+
+      if paid_pos.exists?
+        return render json: {
+          success: false,
+          error: "Cannot delete contact with suppliers that have paid or invoiced purchase orders"
+        }, status: :unprocessable_entity
+      end
+    end
+  end
+
+  @contact.destroy
+end
+```
+
+**Files:**
+- `app/controllers/api/v1/contacts_controller.rb` (destroy action)
+- `app/models/contact.rb` (has_many :purchase_orders, dependent: :restrict_with_error)
+
+---
+
+## RULE #3.5: Contact Merge MUST Consolidate All Related Records
+
+**Contact merge feature MUST update all foreign keys and combine data intelligently.**
+
+✅ **MUST:**
+- Merge `contact_types` arrays (union, no duplicates)
+- Fill missing info from source to target (email, phone, address, etc.)
+- Keep best `rating` if both are suppliers (higher wins)
+- Combine `notes` with merge trail: `"[Merged from Contact #123] original notes"`
+- Update foreign keys for: `PricebookItem`, `PurchaseOrder`, `PriceHistory`
+- Delete source contacts after successful merge
+- Log activity with "contact_merged" type and metadata
+- Return updated target contact
+
+❌ **NEVER:**
+- Overwrite target data with blank source data
+- Merge without updating related records
+- Delete source without logging activity
+- Allow merge if validation fails on target
+
+**Files:**
+- `app/controllers/api/v1/contacts_controller.rb` (merge action)
+- `app/models/contact_activity.rb`
+
+---
+
+## RULE #3.6: Portal Users MUST Have Secure Password Requirements
+
+**PortalUser accounts MUST enforce strong password policies and account lockout.**
+
+✅ **MUST:**
+- Minimum 12 characters
+- At least one uppercase, lowercase, digit, and special character
+- Lock account after 5 failed login attempts
+- Lockout duration: 30 minutes
+- Reset failed attempts counter on successful login
+- Use `has_secure_password` with bcrypt
+- Validate email uniqueness and `contact_id` uniqueness scoped to `portal_type`
+
+❌ **NEVER:**
+- Allow weak passwords (<12 chars or missing character types)
+- Store passwords in plain text
+- Allow unlimited login attempts
+- Share portal accounts across contacts
+
+**Implementation:**
+
+```ruby
+# app/models/portal_user.rb
+PASSWORD_REGEX = /\A
+  (?=.*[a-z])           # At least one lowercase
+  (?=.*[A-Z])           # At least one uppercase
+  (?=.*\d)              # At least one digit
+  (?=.*[!@#$%^&*()_+\-=\[\]{}|;:,.<>?])  # At least one special char
+  .{12,}                # At least 12 characters
+\z/x
+
+validates :password, length: { minimum: 12 }, format: PASSWORD_REGEX, on: :create
+```
+
+**Files:**
+- `app/models/portal_user.rb`
+- Migration: `db/migrate/20251113201841_add_portal_fields_to_contacts.rb`
+
+---
+
+## RULE #3.7: Primary Contact/Address/Person MUST Be Unique Per Contact
+
+**Only ONE primary record allowed per contact for ContactPerson, ContactAddress, and ConstructionContact.**
+
+✅ **MUST:**
+- Validate `is_primary` uniqueness scoped to `contact_id` in before_save callback
+- Automatically unmark other primaries when setting new primary
+- Use database index on `[contact_id, is_primary]` for performance
+- Ensure at least one contact remains on construction (cannot delete last)
+
+❌ **NEVER:**
+- Allow multiple primary persons/addresses per contact
+- Delete the only remaining contact from a construction
+- Set `is_primary = true` without unmarking others
+
+**Files:**
+- `app/models/contact_person.rb`
+- `app/models/contact_address.rb`
+- `app/models/construction_contact.rb`
+
+---
+
+## RULE #3.8: Contact Activity Logging MUST Track All Significant Changes
+
+**All contact modifications, syncs, and relationships MUST be logged to ContactActivity.**
+
+✅ **MUST:**
+- Log activity types: `created`, `updated`, `synced_from_xero`, `synced_to_xero`, `purchase_order_created`, `supplier_linked`, `contact_merged`
+- Include `occurred_at` timestamp (required)
+- Store structured metadata in JSONB column
+- Use `ContactActivity.log_xero_sync` class method for Xero sync activities
+- Combine with SMS messages in activity timeline endpoint
+
+❌ **NEVER:**
+- Skip logging for "minor" updates (all changes matter)
+- Log without `occurred_at` timestamp
+- Store sensitive data in metadata (passwords, tokens, etc.)
+- Delete activity records (archive only for compliance)
+
+**Files:**
+- `app/models/contact_activity.rb`
+- `app/services/xero_contact_sync_service.rb`
+- Migration: `db/migrate/20251110092329_create_contact_activities.rb`
+
+---
+
+## API Endpoints Reference
+
+### Contacts (CRUD)
+- `GET /api/v1/contacts` - List contacts with filtering (search, type, xero_sync, with_email, with_phone)
+- `GET /api/v1/contacts/:id` - Show single contact with nested data
+- `POST /api/v1/contacts` - Create new contact
+- `PATCH /api/v1/contacts/:id` - Update contact
+- `DELETE /api/v1/contacts/:id` - Delete contact (with PO dependency checks)
+
+### Contact Management
+- `PATCH /api/v1/contacts/bulk_update` - Update contact_types for multiple contacts
+- `POST /api/v1/contacts/merge` - Merge contacts into one
+- `POST /api/v1/contacts/match_supplier` - Link contact to existing supplier
+
+### Supplier/Pricing
+- `GET /api/v1/contacts/:id/categories` - Get pricebook categories for supplier
+- `POST /api/v1/contacts/:id/copy_price_history` - Copy prices from another supplier
+- `POST /api/v1/contacts/:id/bulk_update_prices` - Update multiple prices
+
+### Activity & Tracking
+- `GET /api/v1/contacts/:id/activities` - Get activity timeline (includes SMS)
+- `POST /api/v1/contacts/:id/link_xero_contact` - Manually link to Xero contact
+
+### Portal Access
+- `POST /api/v1/contacts/:id/portal_user` - Create portal user
+- `PATCH /api/v1/contacts/:id/portal_user` - Update portal user
+- `DELETE /api/v1/contacts/:id/portal_user` - Delete portal user
+
+### Relationships
+- `GET /api/v1/contacts/:contact_id/relationships` - List relationships
+- `POST /api/v1/contacts/:contact_id/relationships` - Create relationship
+- `PATCH /api/v1/contacts/:contact_id/relationships/:id` - Update relationship
+- `DELETE /api/v1/contacts/:contact_id/relationships/:id` - Delete relationship
+
+### Contact Roles
+- `GET /api/v1/contact_roles` - List all roles
+- `POST /api/v1/contact_roles` - Create role
+
+### Construction Contacts
+- `GET /api/v1/constructions/:construction_id/construction_contacts` - List job contacts
+- `POST /api/v1/constructions/:construction_id/construction_contacts` - Add contact to job
 
 ---
 
@@ -3726,12 +4157,35 @@ timezone = CompanySetting.instance.timezone || 'UTC'
 reference_date = Time.now.in_time_zone(timezone).to_date
 ```
 
-**Compliant Code:**
+**Compliant Code (Backend):**
 - ✅ `backend/app/services/schedule_cascade_service.rb:25` - uses `CompanySetting.today`
 - ✅ `backend/app/controllers/api/v1/bug_hunter_tests_controller.rb:219` - uses `Time.now.in_time_zone(timezone).to_date`
 - ✅ `backend/app/services/schedule/template_instantiator.rb:155` - uses `CompanySetting.today` (fixed 2025-11-16)
 - ✅ `backend/app/services/schedule/generator_service.rb:230` - uses `CompanySetting.today` (fixed 2025-11-16)
 - ✅ `backend/app/services/schedule/generator_service.rb:258` - uses `CompanySetting.today` (fixed 2025-11-16)
+
+**Compliant Code (Frontend):**
+- ✅ `frontend/src/utils/timezoneUtils.js:47-68` - `getTodayInCompanyTimezone()` uses `Intl.DateTimeFormat` (fixed 2025-11-16)
+- ✅ `frontend/src/utils/timezoneUtils.js:74-99` - `getNowInCompanyTimezone()` uses `Intl.DateTimeFormat` (fixed 2025-11-16)
+
+**Frontend Timezone Rule:**
+```javascript
+// ❌ WRONG - toLocaleString creates wrong Date object in browser timezone
+const dateInTZ = new Date(now.toLocaleString('en-US', { timeZone: companyTimezone }))
+
+// ✅ CORRECT - Use Intl.DateTimeFormat and parse parts
+const formatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: companyTimezone,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit'
+})
+const parts = formatter.formatToParts(now)
+const year = parts.find(p => p.type === 'year').value
+const month = parts.find(p => p.type === 'month').value
+const day = parts.find(p => p.type === 'day').value
+const dateInTZ = new Date(`${year}-${month}-${day}T00:00:00`)
+```
 
 ---
 

@@ -652,7 +652,280 @@ After 24 hours of inactivity:
 │ 📕 LEXICON (BUGS):     Chapter 3 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Content TBD** - To be populated with contact management guide
+**Last Updated:** 2025-11-16
+
+## What are Contacts?
+
+Contacts are the people and businesses you work with - customers, suppliers, sales reps, and land agents. Trapid's contact system is flexible, allowing each contact to have multiple roles (for example, a business can be both a customer and a supplier).
+
+**Key Features:**
+- **Multi-role Contacts:** Mark contacts as customers, suppliers, or both
+- **Xero Integration:** Automatic two-way sync with Xero accounting
+- **Contact Relationships:** Link related businesses (parent companies, referrals, partners)
+- **Portal Access:** Give suppliers and customers secure access to their information
+- **Activity History:** Complete timeline of all interactions and changes
+
+---
+
+## Quick Start
+
+### Adding a New Contact
+
+1. Navigate to **Contacts** from the main menu
+2. Click **+ New Contact**
+3. Enter basic information:
+   - Full name or company name
+   - Email address
+   - Phone number
+   - Contact type (customer, supplier, or both)
+4. Click **Save**
+
+**Tip:** Add the ABN (Australian Business Number) if available - this helps prevent duplicates when syncing with Xero.
+
+---
+
+### Contact Types Explained
+
+**Customer:**
+- Businesses or people who hire you for construction projects
+- Linked to jobs and estimates
+- Can access customer portal to view project progress
+
+**Supplier:**
+- Vendors who provide materials or services
+- Linked to purchase orders and pricebook items
+- Can access supplier portal to view and manage POs
+
+**Both (Customer + Supplier):**
+- Common in construction (e.g., a plumber who both hires you and provides specialized services)
+- Has access to all features for both roles
+
+**Sales:**
+- External sales representatives or agents
+- Linked to customer relationships
+
+**Land Agent:**
+- Real estate agents or land developers
+- Linked to property information
+
+---
+
+## Key Features
+
+### Contact Relationships
+
+Link related contacts to track business connections:
+
+**How to Add a Relationship:**
+1. Open a contact
+2. Go to **Relationships** tab
+3. Click **+ Add Relationship**
+4. Select the related contact and relationship type:
+   - Previous Client
+   - Parent Company / Subsidiary
+   - Partner
+   - Referral
+   - Other
+5. Add optional notes
+6. Click **Save**
+
+Relationships are automatically bidirectional - adding "Company A → Parent of Company B" also creates "Company B → Subsidiary of Company A".
+
+---
+
+### Xero Sync
+
+Trapid automatically syncs contacts with Xero accounting software:
+
+**What Syncs:**
+- Contact names and company details
+- Email addresses and phone numbers
+- Banking details and payment terms
+- Tax numbers (ABN/ACN)
+- Contact groups from Xero
+
+**How It Works:**
+- **Automatic Matching:** Trapid matches contacts by ABN, email, or name
+- **Two-way Sync:** Changes in either system update the other
+- **Manual Linking:** You can manually link contacts if auto-match doesn't work
+
+**To Manually Link a Contact to Xero:**
+1. Open the contact
+2. Click **Link to Xero**
+3. Search for the Xero contact
+4. Click **Link**
+
+---
+
+### Portal Access (for Suppliers and Customers)
+
+Give contacts secure access to view their information:
+
+**How to Enable Portal Access:**
+1. Open a contact (must be customer or supplier type)
+2. Click **Enable Portal Access**
+3. Enter the portal email address
+4. Set a temporary password (user will be prompted to change it)
+5. Click **Create Portal User**
+
+**What Portal Users Can Do:**
+- **Customers:** View job progress, estimates, and invoices
+- **Suppliers:** View and respond to purchase orders, update delivery status
+
+**Security:**
+- Strong password requirements (12+ characters)
+- Account lockout after 5 failed login attempts
+- Password reset via email
+
+---
+
+### Contact Merge
+
+Combine duplicate contacts into a single record:
+
+**When to Use:**
+- After Xero sync creates duplicates
+- When same business entered multiple times with slight name variations
+- When consolidating old records
+
+**How to Merge:**
+1. Select the contacts to merge (use checkboxes)
+2. Click **Merge Contacts**
+3. Choose which contact to keep (the "target")
+4. Review the merge preview
+5. Click **Confirm Merge**
+
+**What Happens:**
+- Contact types combined (customer + supplier = both)
+- Missing information filled in from duplicate
+- All purchase orders, pricebook items, and jobs transferred
+- Duplicate contact deleted
+- Merge logged in activity history
+
+---
+
+## Common Tasks
+
+### Finding Contacts
+
+**Search:**
+- Use the search bar to find by name, email, or phone
+- Results update as you type
+
+**Filter by Type:**
+- Click **Customers**, **Suppliers**, or **Both** tabs
+- Or use the type dropdown for more options
+
+**Filter by Xero Status:**
+- Show only synced contacts
+- Show only non-synced contacts
+
+---
+
+### Adding Contact Persons
+
+For businesses with multiple contact people:
+
+1. Open the contact
+2. Go to **Contact Persons** tab
+3. Click **+ Add Person**
+4. Enter:
+   - Name
+   - Email
+   - Role (e.g., "Accounts", "Ordering", "Sales")
+5. Mark as **Primary Contact** if needed
+6. Click **Save**
+
+**Note:** Only one person can be marked as primary per contact.
+
+---
+
+### Managing Supplier Information
+
+For supplier contacts, you can track additional details:
+
+1. Open a supplier contact
+2. Go to **Supplier Details** tab
+3. Add:
+   - **Rating:** 1-5 stars for quality/reliability
+   - **Supplier Code:** Your internal reference code
+   - **Address:** Physical location
+   - **Notes:** Special instructions or terms
+4. Click **Save**
+
+---
+
+### Viewing Contact Activity
+
+See complete history of all interactions:
+
+1. Open a contact
+2. Go to **Activity** tab
+3. View timeline showing:
+   - When contact was created/updated
+   - Xero sync events
+   - Purchase orders created
+   - SMS messages sent/received
+   - Contact merges
+
+---
+
+## Troubleshooting
+
+### "Xero sync created duplicate contacts"
+
+**Problem:** Same business appears twice after Xero sync
+
+**Solution:**
+1. Use the **Merge Contacts** feature to combine duplicates
+2. In future, add ABN to contacts before syncing (prevents duplicates)
+3. Or manually link the contact to Xero before running auto-sync
+
+---
+
+### "Can't delete a contact"
+
+**Problem:** Delete button greyed out or error message appears
+
+**Cause:** Contact has linked purchase orders or financial records
+
+**Solution:**
+- Review what's linked to the contact (check POs, jobs)
+- If safe to remove, delete those records first
+- If not safe, use **Merge** instead to consolidate with another contact
+- Or mark contact as inactive instead of deleting
+
+---
+
+### "Portal login not working for supplier"
+
+**Problem:** Supplier can't access portal after receiving login credentials
+
+**Possible Solutions:**
+1. **Check account lockout:** Wait 30 minutes or reset password
+2. **Verify portal type:** Ensure they're using the supplier portal URL
+3. **Check email address:** Confirm email matches exactly (case-sensitive)
+4. **Reset password:** Use "Forgot Password" link to send new reset email
+
+---
+
+### "Contact relationship not showing"
+
+**Problem:** Added a relationship but it's not visible on the related contact
+
+**Solution:**
+- Refresh the page - relationships are bidirectional and may need refresh
+- Check you saved the relationship (look for confirmation message)
+- Verify you're looking at the correct contact
+
+---
+
+## Related Topics
+
+- **Chapter 4:** Price Books & Suppliers - Managing supplier pricing and materials
+- **Chapter 5:** Jobs & Construction Management - Linking contacts to jobs
+- **Chapter 8:** Purchase Orders - Creating POs for supplier contacts
+- **Chapter 15:** Xero Integration - Detailed Xero sync settings
 
 ---
 

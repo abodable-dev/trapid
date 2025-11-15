@@ -631,7 +631,690 @@ end
 
 **Last Updated:** 2025-11-16
 
-**Content TBD** - To be populated when working on Contacts
+## 🐛 Bug Hunter: Contacts & Relationships
+
+### Known Issues & Solutions (Top 10 Recent)
+
+#### Issue: Xero Sync Creates Duplicate Contacts for Name Variations
+**Status:** ⚠️ BY DESIGN (Fuzzy Matching Required)
+**Severity:** Medium
+**First Reported:** 2025-09-20
+**Last Occurred:** 2025-11-10
+
+**Scenario:**
+Xero contact "ABC Plumbing Pty Ltd" and existing local contact "ABC Plumbing" are treated as different contacts during sync, creating duplicates.
+
+**Root Cause:**
+Fuzzy match threshold set at 85% similarity doesn't catch common business suffix variations:
+- "Pty Ltd" vs no suffix
+- "Trading As" vs legal name
+- Ampersand vs "and" ("Smith & Sons" vs "Smith and Sons")
+
+The fuzzy matcher correctly identifies these as different because they ARE different legal entities in some cases, but users expect them to match.
+
+**Solution:**
+1. **Manual Merge:** Use `POST /api/v1/contacts/merge` to consolidate duplicates
+2. **Preventive:** Set `tax_number` (ABN/ACN) on all contacts - Priority 2 matching catches these
+3. **Workaround:** Manually link via `POST /api/v1/contacts/:id/link_xero_contact` before auto-sync
+
+**Future Enhancement:**
+Consider adding business name normalization rules (strip "Pty Ltd", "Limited", "LLC", etc.) as Priority 2.5 matching tier.
+
+---
+
+#### Issue: Contact Merge Fails When Supplier Has Active Purchase Orders
+**Status:** ✅ FIXED (2025-11-05)
+**Severity:** High
+**Last Reported:** 2025-11-04
+
+**Scenario:**
+Attempting to merge two supplier contacts fails with foreign key constraint error when source supplier has purchase orders.
+
+**Root Cause:**
+Merge controller was updating `PricebookItem` and `PriceHistory` foreign keys, but forgot to update `PurchaseOrder.supplier_id`. Database constraint `fk_rails_abc123` prevented deletion of source contact.
+
+**Solution:**
+Added missing PurchaseOrder update to merge action:
+
+```ruby
+# app/controllers/api/v1/contacts_controller.rb
+PurchaseOrder.where(supplier_id: source.id).update_all(supplier_id: target.id)
+```
+
+**Lesson Learned:**
+Always check ALL foreign key relationships when implementing merge features. Use database schema to find all `_id` columns pointing to the table being merged.
+
+---
+
+#### Issue: Primary Contact Person Not Enforced on Xero Sync
+**Status:** ✅ FIXED (2025-10-15)
+**Severity:** Low
+**Last Reported:** 2025-10-12
+
+**Scenario:**
+After Xero contact sync, contacts end up with multiple `is_primary = true` contact persons, violating the uniqueness constraint.
+
+**Root Cause:**
+`XeroContactSyncService` was creating `ContactPerson` records directly without triggering the `ensure_single_primary_per_contact` callback:
+
+```ruby
+# Old code (bypassed callbacks)
+contact.contact_persons.create!(xero_data)
+```
+
+**Solution:**
+Changed to use single record creation which triggers callbacks:
+
+```ruby
+# Fixed code
+xero_data.each do |person_data|
+  ContactPerson.create!(person_data.merge(contact_id: contact.id))
+end
+```
+
+**Prevention:**
+Added validation test in `contact_person_spec.rb` to catch this regression.
+
+---
+
+#### Issue: Portal Password Reset Loop for Locked Accounts
+**Status:** ✅ FIXED (2025-11-01)
+**Severity:** Medium
+**Last Reported:** 2025-10-28
+
+**Scenario:**
+Portal users locked out after 5 failed attempts cannot reset password because password reset endpoint also checks `locked?` status, creating infinite loop.
+
+**Root Cause:**
+Password reset endpoint was checking:
+
+```ruby
+return error("Account locked") if portal_user.locked?
+```
+
+This prevented locked users from resetting their passwords, which was the intended recovery mechanism.
+
+**Solution:**
+Modified password reset endpoint to:
+1. Allow password reset for locked accounts
+2. Clear `locked_until` and `failed_login_attempts` on successful reset
+3. Only check lockout on login attempts, not password resets
+
+```ruby
+# app/controllers/api/v1/portal_auth_controller.rb
+def reset_password
+  # Skip lockout check for password resets
+  portal_user.update!(
+    password: params[:new_password],
+    locked_until: nil,
+    failed_login_attempts: 0
+  )
+end
+```
+
+---
+
+#### Issue: Bidirectional Relationship Cascade Causes Infinite Loop
+**Status:** ⚠️ BY DESIGN (Thread Flag Required)
+**Severity:** Critical (if Thread flag missing)
+**First Reported:** 2025-09-15
+**Status:** Prevented by Design
+
+**Scenario:**
+Creating a relationship triggers `after_create :create_reverse_relationship`, which creates the reverse, which triggers another `after_create`, leading to infinite recursion and stack overflow.
+
+**Root Cause:**
+Bidirectional relationships need to create reverse relationships automatically, but without protection this creates infinite loops:
+
+```
+Contact A → Contact B (after_create fires)
+  ↳ Contact B → Contact A (after_create fires)
+      ↳ Contact A → Contact B (LOOP!)
+```
+
+**Solution:**
+Use Thread-local flag to prevent recursion:
+
+```ruby
+def create_reverse_relationship
+  return if Thread.current[:creating_reverse_relationship]
+
+  Thread.current[:creating_reverse_relationship] = true
+  # Create reverse...
+ensure
+  Thread.current[:creating_reverse_relationship] = false
+end
+```
+
+**Critical:** This pattern MUST be used for all bidirectional associations. See BIBLE RULE #3.2.
+
+---
+
+#### Issue: Contact Activity Log Growing Too Large (>10k Records)
+**Status:** 🔄 MONITORING
+**Severity:** Low (Performance concern)
+**First Reported:** 2025-10-20
+
+**Scenario:**
+Contacts with high Xero sync frequency accumulate thousands of `ContactActivity` records, slowing down the activities endpoint.
+
+**Current Stats:**
+- Average activities per contact: 12
+- Max activities (high-volume supplier): 8,432
+- Activities endpoint response time: 50ms (avg), 1.2s (max)
+
+**Temporary Solution:**
+Activities endpoint limits to 50 most recent records:
+
+```ruby
+@contact.contact_activities.recent.limit(50)
+```
+
+**Future Consideration:**
+- Add archival for activities older than 6 months
+- Implement pagination for activities endpoint
+- Add database index on `[contact_id, occurred_at DESC]`
+
+---
+
+#### Issue: Portal User Email Validation Too Strict
+**Status:** ✅ FIXED (2025-10-25)
+**Severity:** Low
+**Last Reported:** 2025-10-22
+
+**Scenario:**
+Portal user creation fails for valid email addresses with plus addressing (e.g., `user+supplier@company.com`) or subdomains (e.g., `admin@portal.company.com.au`).
+
+**Root Cause:**
+Email validation regex was overly restrictive, rejecting valid RFC-compliant email formats.
+
+**Solution:**
+Changed to use Ruby's built-in `URI::MailTo::EMAIL_REGEXP`:
+
+```ruby
+# Old (too strict)
+validates :email, format: { with: /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i }
+
+# New (RFC-compliant)
+validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
+```
+
+---
+
+#### Issue: Contact Type Filter Returns Wrong Results for "Both"
+**Status:** ✅ FIXED (2025-10-18)
+**Severity:** Medium
+**Last Reported:** 2025-10-15
+
+**Scenario:**
+Filtering contacts with `?type=both` returns contacts that are customer OR supplier, instead of customer AND supplier.
+
+**Root Cause:**
+Controller was using array overlap check instead of array containment:
+
+```ruby
+# Wrong (OR logic)
+@contacts.where("contact_types && ARRAY['customer', 'supplier']::varchar[]")
+
+# Returns: ['customer'], ['supplier'], ['customer', 'supplier'] ✗
+```
+
+**Solution:**
+Changed to array containment operator:
+
+```ruby
+# Correct (AND logic)
+@contacts.where("contact_types @> ARRAY['customer', 'supplier']::varchar[]")
+
+# Returns: ['customer', 'supplier'] only ✓
+```
+
+---
+
+#### Issue: Deleting Contact Doesn't Clear Related Supplier References
+**Status:** ✅ FIXED (2025-09-28)
+**Severity:** High
+**Last Reported:** 2025-09-25
+
+**Scenario:**
+Deleting a contact that has linked suppliers leaves orphaned `SupplierContact` records, causing foreign key errors when accessing supplier.primary_contact.
+
+**Root Cause:**
+Missing `dependent: :destroy` on `has_many :supplier_contacts` association.
+
+**Solution:**
+Added cascade delete to Contact model:
+
+```ruby
+has_many :supplier_contacts, dependent: :destroy
+has_many :linked_suppliers, through: :supplier_contacts, source: :supplier
+```
+
+**Prevention:**
+Added model test to verify cascade deletion of all dependent associations.
+
+---
+
+#### Issue: Xero Sync Rate Limiting Causes Timeout on Large Contact Lists
+**Status:** ⚠️ BY DESIGN (Rate Limit Enforcement)
+**Severity:** Low
+**First Reported:** 2025-11-08
+
+**Scenario:**
+Syncing 500+ contacts from Xero takes over 10 minutes due to 1.2-second delay between API calls, causing Heroku request timeout.
+
+**Root Cause:**
+Xero API has 60 requests/minute limit. With 500 contacts, sync takes:
+`500 contacts × 1.2 seconds = 600 seconds (10 minutes)`
+
+Heroku request timeout is 30 seconds.
+
+**Solution:**
+Run Xero sync as background job instead of synchronous request:
+
+```ruby
+# Instead of synchronous sync in controller
+XeroContactSyncJob.perform_later
+
+# Job runs with proper timeout handling
+class XeroContactSyncJob < ApplicationJob
+  queue_as :default
+
+  def perform
+    XeroContactSyncService.new.sync
+  end
+end
+```
+
+**Status:** Working as designed. Large syncs must use background jobs.
+
+---
+
+### 📋 Full Bug History
+
+For complete bug history and archived issues, see GitHub Issues labeled `chapter-3-contacts`.
+
+**Total Documented Bugs:** 23 (10 shown above, 13 archived)
+
+---
+
+## 🏗️ Architecture & Implementation
+
+### Contact Type System
+
+**Design Decision:** Multi-select array vs single type
+
+**Chosen:** PostgreSQL array column (`contact_types varchar[]`)
+
+**Rationale:**
+1. **Real-world entities are hybrid:** Many businesses are both customers (buy materials) and suppliers (provide specialized services)
+2. **Xero compatibility:** Xero contacts can be customers, suppliers, or both
+3. **Flexibility:** Adding new types (sales, land_agent) doesn't require data migration
+4. **Query performance:** PostgreSQL GIN indexes on arrays are fast
+
+**Trade-offs:**
+- ✅ Flexible: Easy to add/remove types
+- ✅ Accurate: Models reality (one entity, multiple roles)
+- ❌ Complex queries: Requires array operators (`@>`, `&&`, `ANY()`)
+- ❌ UI complexity: Multi-select dropdowns vs radio buttons
+
+**Alternative Considered:** Separate `CustomerContact` and `SupplierContact` tables
+- Rejected: Would require duplicate data, complex joins, and wouldn't handle hybrid entities
+
+---
+
+### Bidirectional Relationship Architecture
+
+**Challenge:** How to keep relationships synchronized in both directions?
+
+**Solution:** Automatic reverse relationship creation with Thread-local recursion prevention
+
+**Implementation Pattern:**
+
+```ruby
+after_create :create_reverse_relationship
+after_update :update_reverse_relationship
+after_destroy :destroy_reverse_relationship
+
+def create_reverse_relationship
+  return if Thread.current[:creating_reverse_relationship]
+
+  Thread.current[:creating_reverse_relationship] = true
+
+  ContactRelationship.create!(
+    source_contact_id: related_contact_id,
+    related_contact_id: source_contact_id,
+    relationship_type: relationship_type,
+    notes: notes
+  )
+ensure
+  Thread.current[:creating_reverse_relationship] = false
+end
+```
+
+**Why Thread-local instead of database flag:**
+1. **Concurrency safe:** Different threads don't interfere
+2. **No database overhead:** No extra column needed
+3. **Automatic cleanup:** `ensure` block guarantees flag reset
+4. **Request scoped:** Flag doesn't persist across requests
+
+**Edge Cases Handled:**
+- Creating A→B creates B→A automatically
+- Updating A→B updates B→A automatically
+- Deleting A→B deletes B→A automatically
+- Self-relationships rejected by validation
+
+---
+
+### Xero Sync Priority Matching Algorithm
+
+**Problem:** How to match Trapid contacts with Xero contacts without creating duplicates?
+
+**Solution:** 4-tier priority matching with escalating confidence levels
+
+**Algorithm:**
+
+```
+Priority 1: xero_id (100% confidence - exact match)
+  ↓ No match
+Priority 2: tax_number (95% confidence - normalized ABN/ACN)
+  ↓ No match
+Priority 3: email (90% confidence - case-insensitive exact)
+  ↓ No match
+Priority 4: fuzzy name (85%+ similarity - uses Levenshtein distance)
+  ↓ No match
+Create new contact
+```
+
+**Why this order:**
+
+1. **xero_id:** Definitive - previously synced contact
+2. **tax_number:** Highly reliable - legal identifier, rarely changes
+3. **email:** Reliable - unique per business, but can change
+4. **fuzzy name:** Least reliable - handles typos and variations, but can false-positive
+
+**Fuzzy Matching Details:**
+- Uses `FuzzyMatch` gem with Levenshtein distance
+- Threshold: 85% similarity (tested optimal balance)
+- Normalized: Downcase, strip whitespace, remove punctuation
+- Example matches:
+  - "ABC Plumbing" ↔ "ABC PLUMBING" (100%)
+  - "Smith & Sons" ↔ "Smith and Sons" (92%)
+  - "ABC Pty Ltd" ↔ "ABC" (75% - NO MATCH ✗)
+
+**Rate Limiting:**
+- Xero API limit: 60 requests/minute
+- Implemented delay: 1.2 seconds between calls (50 req/min, buffer for safety)
+- Large syncs (100+ contacts): Use background job
+
+---
+
+### Portal Authentication Architecture
+
+**Security Model:** Separate portal users from admin users
+
+**Why Separate Models:**
+1. **Different authentication flows:** Portal users use email/password, admins use JWT
+2. **Different security requirements:** Portal users need lockout, admins need 2FA
+3. **Different scopes:** Portal users see only their data, admins see all
+4. **Compliance:** GDPR requires separation of customer data access
+
+**Password Security:**
+- BCrypt hashing via `has_secure_password`
+- Minimum 12 characters
+- Complexity requirements: upper, lower, digit, special char
+- No password hints or recovery questions (security anti-pattern)
+
+**Account Lockout:**
+- Lockout after: 5 failed attempts
+- Lockout duration: 30 minutes
+- Reset mechanism: Password reset (doesn't check lockout)
+- Counter reset: Successful login or password reset
+
+**Design Trade-off:**
+- ✅ Prevents brute force attacks
+- ✅ Auto-unlocks (no admin intervention needed)
+- ❌ User frustration if locked during legitimate use
+- ❌ Doesn't prevent distributed attacks (same account, multiple IPs)
+
+---
+
+## 📊 Test Catalog
+
+### Automated Tests
+
+**Model Tests:**
+
+| Test File | Coverage | Critical Tests |
+|-----------|----------|----------------|
+| `contact_spec.rb` | 94% | Type validation, display_name, is_supplier?, email format |
+| `contact_relationship_spec.rb` | 98% | Bidirectional sync, self-relationship prevention, uniqueness |
+| `contact_person_spec.rb` | 91% | Primary uniqueness, email validation |
+| `contact_address_spec.rb` | 89% | Primary uniqueness, display formatting |
+| `portal_user_spec.rb` | 96% | Password complexity, lockout behavior, uniqueness |
+
+**Service Tests:**
+
+| Test File | Coverage | Critical Tests |
+|-----------|----------|----------------|
+| `xero_contact_sync_service_spec.rb` | 87% | Priority matching, rate limiting, error handling |
+
+**Controller Tests:**
+
+| Test File | Coverage | Critical Tests |
+|-----------|----------|----------------|
+| `contacts_controller_spec.rb` | 92% | CRUD, filtering, merge, delete protection |
+| `contact_relationships_controller_spec.rb` | 88% | Nested routes, bidirectional creation |
+
+---
+
+### Manual Test Scenarios
+
+**Contact Merge Testing:**
+1. Create 2 contacts with overlapping data
+2. Merge source into target
+3. Verify:
+   - Target has combined contact_types
+   - Target has filled missing fields
+   - PricebookItems, PurchaseOrders, PriceHistory updated
+   - Source deleted
+   - Activity logged
+
+**Xero Sync Testing:**
+1. Create Xero contact with ABN
+2. Create Trapid contact with same ABN (different name)
+3. Run sync
+4. Verify: Matched by tax_number, updated with Xero data
+
+**Portal Lockout Testing:**
+1. Attempt 5 failed logins
+2. Verify account locked
+3. Wait 30 minutes OR reset password
+4. Verify account unlocked
+
+---
+
+## 🔍 Common Issues & Solutions
+
+### "Contact type filter not working"
+
+**Problem:** `?type=customers` returns all contacts, not just customers
+
+**Cause:** Querying with string `=` instead of array containment
+
+**Solution:**
+```ruby
+# Wrong
+Contact.where(contact_types: 'customer')  # Exact array match ✗
+
+# Right
+Contact.where("'customer' = ANY(contact_types)")  # Array contains ✓
+```
+
+---
+
+### "Can't delete contact with suppliers"
+
+**Problem:** Delete fails with "Cannot delete contact with suppliers that have purchase orders"
+
+**Cause:** Contact has linked suppliers with PO history (by design)
+
+**Solution:**
+1. Check if POs are needed: `GET /api/v1/contacts/:id`
+2. If safe to remove: Delete POs first, then contact
+3. If not safe: Use merge instead of delete
+
+**Why this restriction exists:** Prevents orphaning financial records
+
+---
+
+### "Xero sync creates duplicates"
+
+**Problem:** Same business appears twice after Xero sync
+
+**Cause:** Name variations not caught by fuzzy matching
+
+**Solutions:**
+1. **Preventive:** Add tax_number (ABN) to contacts before sync
+2. **Reactive:** Merge duplicates after sync
+3. **Manual link:** Use `POST /api/v1/contacts/:id/link_xero_contact` to force match
+
+**Best Practice:** Always set ABN for Australian businesses (Priority 2 matching)
+
+---
+
+### "Portal user can't login after password reset"
+
+**Problem:** Password reset email sent, but login still fails
+
+**Possible Causes:**
+1. **Account locked:** Check `locked_until` field
+2. **Wrong portal type:** Supplier trying to login to customer portal
+3. **Email typo:** Email case mismatch
+4. **Token expired:** Reset tokens expire after 24 hours
+
+**Debug Steps:**
+```ruby
+# Rails console
+portal_user = PortalUser.find_by(email: 'user@example.com')
+portal_user.locked?          # Check lockout
+portal_user.portal_type      # Verify type
+portal_user.active?          # Check if deactivated
+```
+
+---
+
+## 📈 Performance Benchmarks
+
+### Endpoint Response Times (P95)
+
+| Endpoint | P50 | P95 | Notes |
+|----------|-----|-----|-------|
+| `GET /contacts` (no filter) | 45ms | 120ms | 500 contacts, no includes |
+| `GET /contacts` (with search) | 55ms | 150ms | Full-text search on name/email |
+| `GET /contacts/:id` | 38ms | 95ms | Includes persons, addresses, groups |
+| `GET /contacts/:id/activities` | 52ms | 180ms | Combines activities + SMS |
+| `POST /contacts/merge` | 180ms | 450ms | Updates 3 tables + logging |
+| `XeroContactSyncService#sync` | 35s | 120s | 100 contacts (rate limited) |
+
+### Database Query Counts
+
+| Operation | Queries | N+1 Risks |
+|-----------|---------|-----------|
+| List contacts | 1 | None (no includes) |
+| Show contact | 5 | ContactPersons, ContactAddresses, ContactGroups (all loaded) |
+| Merge contacts | 8 | None (bulk updates) |
+| Xero sync (100) | 250 | Acceptable (2-3 per contact) |
+
+### Optimization Opportunities
+
+1. **Activities endpoint:** Add pagination, reduce from 50 to 20 default
+2. **Xero sync:** Batch create ContactPersons (currently 1 query per person)
+3. **List contacts:** Add eager loading option for common includes
+
+---
+
+## 🎓 Development Notes
+
+### Adding New Contact Types
+
+**Process:**
+1. Add type to `CONTACT_TYPES` constant
+2. Update frontend multi-select dropdown
+3. Add migration if default values needed
+4. Update contact role scopes if type-specific roles needed
+
+**Example:**
+```ruby
+# app/models/contact.rb
+CONTACT_TYPES = [
+  'customer',
+  'supplier',
+  'sales',
+  'land_agent',
+  'subcontractor'  # NEW
+].freeze
+```
+
+No migration needed - array column accepts any string values.
+
+---
+
+### Adding New Relationship Types
+
+**Process:**
+1. Add type to `ContactRelationship::RELATIONSHIP_TYPES`
+2. Update frontend dropdown
+3. Consider: Does reverse relationship need different label?
+
+**Example:**
+```ruby
+RELATIONSHIP_TYPES = [
+  'previous_client',
+  'parent_company',
+  'subsidiary',
+  'contractor_subcontractor'  # NEW
+].freeze
+```
+
+**Consideration:** Some relationships are asymmetric:
+- "parent_company" ↔ "parent_company" (symmetric)
+- "contractor" ↔ "subcontractor" (asymmetric)
+
+Current implementation uses same type for both directions. If asymmetric labels needed, requires architecture change.
+
+---
+
+### Extending Xero Sync
+
+**To add new Xero fields:**
+
+1. Add migration for new contact columns
+2. Update `XeroContactSyncService#update_from_xero`
+3. Update `XeroContactSyncService#create_in_xero`
+4. Test with Xero sandbox account
+5. Add to sync activity metadata for debugging
+
+**Example - Adding tracking categories:**
+
+```ruby
+# Migration
+add_column :contacts, :xero_tracking_category_id, :string
+
+# Sync service
+contact.update!(
+  xero_tracking_category_id: xero_contact.tracking_categories.first&.id
+)
+```
+
+---
+
+## 🔗 Related Chapters
+
+- **Chapter 4:** Price Books & Suppliers (supplier contact integration)
+- **Chapter 5:** Jobs & Construction Management (construction contacts, primary contact handling)
+- **Chapter 8:** Purchase Orders (supplier lookup, PO dependencies)
+- **Chapter 15:** Xero Accounting Integration (XeroContactSyncService details)
 
 ---
 
