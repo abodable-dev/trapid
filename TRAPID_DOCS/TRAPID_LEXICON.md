@@ -3561,6 +3561,53 @@ const updateData = {
 
 ---
 
+### ✅ BUG-004: Timezone Violations in Schedule Services (RESOLVED)
+
+**Status:** ✅ RESOLVED
+**Date Discovered:** 2025-11-16
+**Date Resolved:** 2025-11-16
+**Severity:** Medium (Data correctness)
+
+#### Summary
+Schedule generation services were using server timezone (UTC) instead of company timezone, causing tasks to be scheduled on wrong days (especially weekends).
+
+#### Root Cause
+Three services were using `Date.current` which uses the server's timezone, not the company's timezone:
+1. `template_instantiator.rb` - When creating schedule from template
+2. `generator_service.rb` (2 places) - When calculating task dates
+
+**Example Problem:**
+- Server in UTC: Saturday November 15, 2025
+- Company in AU: Sunday November 16, 2025
+- Tasks scheduled for "today" would land on Saturday in UTC, but company expects Sunday
+
+#### Solution
+Changed all instances from `Date.current` to `CompanySetting.today`:
+
+```ruby
+# ❌ WRONG - uses server timezone
+project_start = project.start_date || Date.current
+
+# ✅ CORRECT - uses company timezone
+project_start = project.start_date || CompanySetting.today
+```
+
+**Files Changed:**
+- `backend/app/services/schedule/template_instantiator.rb:155`
+- `backend/app/services/schedule/generator_service.rb:230`
+- `backend/app/services/schedule/generator_service.rb:258`
+- `backend/app/controllers/api/v1/bug_hunter_tests_controller.rb:219` (also fixed)
+
+#### Impact
+- Schedule templates now instantiate using company timezone
+- Task generation respects company working days correctly
+- Prevents tasks from landing on weekends due to timezone mismatch
+- Bug Hunter working-days-enforcement test now passes
+
+**Related Rule:** Bible Chapter 9, RULE #9.3 (Company Settings - Working Days & Timezone)
+
+---
+
 ### ✅ BUG-001: Drag Flickering / Screen Shake (RESOLVED)
 
 **Status:** ✅ RESOLVED
