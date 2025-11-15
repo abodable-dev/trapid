@@ -102,10 +102,10 @@ export default function BugHunterTests() {
   // Set default templates when both tests and templates are loaded
   useEffect(() => {
     if (tests.length > 0 && scheduleTemplates.length > 0 && Object.keys(selectedTemplates).length === 0) {
-      const defaultTemplate = scheduleTemplates.find(t => t.id === 4) || scheduleTemplates[0]
+      const defaultTemplate = scheduleTemplates.find(t => t.is_default) || scheduleTemplates[0]
       if (defaultTemplate) {
         const defaults = {}
-        tests.filter(t => t.can_run_visual).forEach(test => {
+        tests.filter(t => t.can_run_visual || t.needs_template).forEach(test => {
           defaults[test.id] = defaultTemplate.id.toString()
         })
         setSelectedTemplates(defaults)
@@ -403,7 +403,7 @@ export default function BugHunterTests() {
                       {test.rules}
                     </td>
                     <td className="px-3 py-4 text-sm">
-                      {test.can_run_visual ? (
+                      {(test.can_run_visual || test.needs_template) ? (
                         <select
                           value={selectedTemplates[test.id] || ''}
                           onChange={(e) => handleTemplateChange(test.id, e.target.value)}
@@ -413,7 +413,7 @@ export default function BugHunterTests() {
                           <option value="">Select template...</option>
                           {scheduleTemplates.map(template => (
                             <option key={template.id} value={template.id.toString()}>
-                              {template.name}
+                              {template.name} {template.is_default ? '(Default)' : ''}
                             </option>
                           ))}
                         </select>
