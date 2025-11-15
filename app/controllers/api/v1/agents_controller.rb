@@ -19,7 +19,8 @@ module Api
               'frontend-developer': default_agent_stats,
               'production-bug-hunter': default_agent_stats,
               'deploy-manager': default_agent_stats,
-              'planning-collaborator': default_agent_stats
+              'planning-collaborator': default_agent_stats,
+              'gantt-bug-hunter': default_agent_stats
             },
             metadata: {
               created: Time.current.iso8601,
