@@ -1,9 +1,17 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const getAuthHeaders = () => {
-  return {
+  const headers = {
     'Content-Type': 'application/json',
   };
+
+  // Add JWT token if available
+  const token = localStorage.getItem('token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return headers;
 };
 
 export const api = {
