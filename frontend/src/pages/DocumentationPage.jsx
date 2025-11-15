@@ -36,8 +36,8 @@ export default function DocumentationPage() {
   const loadDocs = async () => {
     try {
       const response = await api.get('/api/v1/documentation')
-      if (response.data.success) {
-        setDocs(response.data.data)
+      if (response.success) {
+        setDocs(response.data)
       }
     } catch (error) {
       console.error('Failed to load docs:', error)
@@ -52,8 +52,8 @@ export default function DocumentationPage() {
         : `/api/v1/documentation/${docId}`
 
       const response = await api.get(url)
-      if (response.data.success) {
-        setContent(response.data.data.content)
+      if (response.success) {
+        setContent(response.data.content)
         setSelectedDoc(docs.find(d => d.id === docId) || { id: docId })
       }
     } catch (error) {
@@ -76,8 +76,8 @@ export default function DocumentationPage() {
 
     try {
       const response = await api.get(`/api/v1/documentation/search?q=${encodeURIComponent(searchQuery)}`)
-      if (response.data.success) {
-        setSearchResults(response.data.data.results)
+      if (response.success) {
+        setSearchResults(response.data.results)
       }
     } catch (error) {
       console.error('Search failed:', error)
