@@ -34,7 +34,7 @@ export default function CompanySettingsTab() {
       thursday: true,
       friday: true,
       saturday: false,
-      sunday: true
+      sunday: false
     }
   })
   const [loading, setLoading] = useState(true)
