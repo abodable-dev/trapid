@@ -62,7 +62,26 @@ Check for violations:
 - Verify cascade order: end_date → start_date → duration
 - Confirm `refreshData()` is called after all updates
 
-### 3. Run Automated Test Suite
+### 3. Check Test Recency (Smart Decision)
+
+**Before running automated tests, check last run:**
+
+```bash
+# Check agent run history
+cat /Users/rob/Projects/trapid/.claude/agents/run-history.json
+```
+
+**Decision logic:**
+- **Last run <60 minutes ago AND successful:** Skip automated tests, proceed to static analysis only
+- **Last run >60 minutes ago OR last run failed:** Run full automated test suite
+- **Never run before:** Run full automated test suite
+
+This ensures:
+- Fast iteration when making multiple Gantt changes
+- Full test coverage when enough time has passed
+- Always re-test after failures
+
+### 4. Run Automated Test Suite (if needed)
 
 Execute all 12 visual tests via API:
 
@@ -90,9 +109,7 @@ done
 11. Date constraints with cascade
 12. Visual rendering accuracy
 
-### 4. Check Estimated Runtime
-
-**Before running tests:**
+**Runtime check:**
 - Estimate total runtime (typically 30-60 seconds)
 - If estimated time > 3 minutes: **ASK USER FIRST**
 - If < 3 minutes: Proceed automatically
@@ -104,6 +121,11 @@ Structure report as:
 ```
 ## Gantt Bug Hunter Diagnostic Report
 
+### Test Strategy
+- Last successful run: [timestamp or "Never"]
+- Decision: [FULL TEST SUITE / STATIC ANALYSIS ONLY]
+- Reason: [why this decision was made]
+
 ### Static Analysis Results
 - ✅ RULE #1: [compliant/violation found]
 - ✅ RULE #2: [compliant/violation found]
@@ -112,9 +134,14 @@ Structure report as:
 ...
 
 ### Automated Test Results
+**[If tests were run:]**
 - Test #1 (Basic cascade down): ✅ PASS / ❌ FAIL
 - Test #2 (Basic cascade up): ✅ PASS / ❌ FAIL
 ...
+
+**[If tests were skipped:]**
+- ⏭️ Tests skipped (last successful run was [X] minutes ago)
+- Using cached results from [timestamp]
 
 ### Issues Found
 1. [Description of issue]
