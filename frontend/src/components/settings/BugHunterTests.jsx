@@ -182,6 +182,7 @@ export default function BugHunterTests() {
       })
       result = response.data || response
 
+      // Update local test results
       setTestResults(prev => ({
         ...prev,
         [testId]: {
@@ -192,17 +193,40 @@ export default function BugHunterTests() {
         }
       }))
 
+      // Reload test history to show in table
       await loadTestHistory()
 
+      // Show toast notification with result
+      const testName = tests.find(t => t.id === testId)?.name || testId
+      if (result.passed) {
+        toast.success(`✓ ${testName}: ${result.message}`, {
+          duration: 4000
+        })
+      } else {
+        toast.error(`✗ ${testName}: ${result.message}`, {
+          duration: 6000
+        })
+      }
+
     } catch (error) {
+      const testName = tests.find(t => t.id === testId)?.name || testId
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error'
+
       setTestResults(prev => ({
         ...prev,
         [testId]: {
-          status: 'fail',
-          message: error.message,
+          status: 'error',
+          message: errorMessage,
           timestamp: new Date().toISOString()
         }
       }))
+
+      // Still reload history even on error
+      await loadTestHistory()
+
+      toast.error(`Error running ${testName}: ${errorMessage}`, {
+        duration: 6000
+      })
     } finally {
       setRunningTests(prev => {
         const newSet = new Set(prev)
