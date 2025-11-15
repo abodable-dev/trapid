@@ -782,10 +782,865 @@ working_days = @company_settings.working_days
 │ 📘 USER MANUAL (HOW): Chapter 4                │
 └─────────────────────────────────────────────────┘
 
-**User Context:** Setting up pricing, supplier info
-**Technical Rules:** Price book model, supplier ratings
+**Last Updated:** 2025-11-16
 
-**Content TBD** - To be populated when working on Price Books feature
+## Overview
+
+Price Books & Suppliers manages the complete product catalog, pricing history, supplier relationships, and intelligent sourcing for purchase orders. The system tracks price volatility, calculates risk scores, and provides smart supplier/price lookup for automated PO generation.
+
+**Key Components:**
+- **PricebookItem:** Product catalog with pricing, supplier links, and media attachments
+- **PriceHistory:** Complete price change tracking with supplier-specific pricing
+- **Supplier:** Vendor management with ratings, response metrics, and trade categories
+- **SmartPoLookupService:** 6-strategy intelligent supplier and price matching
+- **Risk Scoring:** Multi-factor analysis (freshness, volatility, reliability, missing data)
+- **OneDrive Sync:** Automatic product image, spec, and QR code matching
+
+**Key Files:**
+- Models: `app/models/pricebook_item.rb`, `app/models/price_history.rb`, `app/models/supplier.rb`, `app/models/supplier_rating.rb`
+- Controllers: `app/controllers/api/v1/pricebook_items_controller.rb`, `app/controllers/api/v1/suppliers_controller.rb`
+- Services: `app/services/smart_po_lookup_service.rb`, `app/services/supplier_matcher.rb`, `app/services/pricebook_import_service.rb`, `app/services/onedrive_pricebook_sync_service.rb`
+
+---
+
+## RULE #4.1: Price Changes MUST Create Price History Automatically
+
+**Every price update MUST automatically create a PriceHistory record tracking old and new values.**
+
+✅ **MUST:**
+- Use `after_update` callback to detect price changes
+- Create PriceHistory with `old_price`, `new_price`, `change_reason`
+- Set `price_last_updated_at` to current timestamp
+- Track `changed_by_user_id` for audit trail
+- Allow skipping via `skip_price_history_callback` flag when needed
+
+❌ **NEVER:**
+- Update `current_price` without creating history
+- Skip price history for "small" price changes
+- Delete price history records (archive only)
+- Allow price updates without tracking who made the change
+
+**Implementation:**
+
+```ruby
+# app/models/pricebook_item.rb
+class PricebookItem < ApplicationRecord
+  attr_accessor :skip_price_history_callback
+
+  before_save :update_price_timestamp, if: :current_price_changed?
+  after_update :track_price_change, if: :saved_change_to_current_price?
+
+  private
+
+  def update_price_timestamp
+    self.price_last_updated_at = Time.current
+  end
+
+  def track_price_change
+    return if skip_price_history_callback
+
+    old_price = saved_changes['current_price'][0]
+    new_price = saved_changes['current_price'][1]
+
+    price_histories.create!(
+      old_price: old_price,
+      new_price: new_price,
+      change_reason: 'manual_edit',
+      supplier_id: default_supplier_id,
+      changed_by_user_id: Current.user&.id,
+      user_name: Current.user&.full_name,
+      date_effective: Date.current
+    )
+  end
+end
+```
+
+**Skipping History (Rare Cases):**
+```ruby
+# Only when bulk importing historical data
+item.skip_price_history_callback = true
+item.update!(current_price: 450.00)
+```
+
+**Why:** Complete price history enables volatility detection, trend analysis, and audit compliance. Never lose pricing data.
+
+**Files:**
+- `app/models/pricebook_item.rb`
+- `app/models/price_history.rb`
+
+---
+
+## RULE #4.2: Prevent Duplicate Price History - Unique Constraint + Time Window
+
+**Price history MUST prevent duplicate entries using both database constraint and time-window validation.**
+
+✅ **MUST:**
+- Use unique index: `(pricebook_item_id, supplier_id, new_price, created_at)`
+- Add custom validation preventing entries within 5 seconds
+- Handle race conditions gracefully (return existing record)
+- Log duplicate attempts for monitoring
+
+❌ **NEVER:**
+- Rely only on application-level validation
+- Allow duplicate price history from concurrent requests
+- Fail hard on duplicate attempts (graceful degradation)
+
+**Implementation:**
+
+```ruby
+# Migration
+add_index :price_histories,
+  [:pricebook_item_id, :supplier_id, :new_price, :created_at],
+  unique: true,
+  name: 'index_price_histories_on_unique_combination'
+
+# Model validation
+class PriceHistory < ApplicationRecord
+  validate :prevent_duplicate_price_history
+
+  private
+
+  def prevent_duplicate_price_history
+    # Check for recent identical entry (< 5 seconds ago)
+    recent = PriceHistory.where(
+      pricebook_item_id: pricebook_item_id,
+      supplier_id: supplier_id,
+      new_price: new_price
+    ).where('created_at > ?', 5.seconds.ago).exists?
+
+    if recent
+      errors.add(:base, 'Duplicate price history entry within 5 seconds')
+    end
+  end
+end
+```
+
+**Controller Handling:**
+```ruby
+def add_price
+  @item = PricebookItem.find(params[:id])
+
+  history = @item.price_histories.create(price_params)
+
+  if history.persisted?
+    render json: { success: true, history: history }
+  elsif history.errors[:base].include?('Duplicate price history')
+    # Graceful: return existing entry
+    existing = @item.price_histories
+      .where(new_price: params[:price])
+      .order(created_at: :desc)
+      .first
+    render json: { success: true, history: existing, duplicate: true }
+  else
+    render json: { success: false, errors: history.errors.full_messages }, status: :unprocessable_entity
+  end
+end
+```
+
+**Why:** Concurrent PO generation can trigger simultaneous price history creation. Unique constraint prevents database corruption, time-window validation catches application-level duplicates.
+
+**Files:**
+- `app/models/price_history.rb`
+- `app/controllers/api/v1/pricebook_items_controller.rb`
+- Database migration
+
+---
+
+## RULE #4.3: SmartPoLookupService - 6-Strategy Cascading Fallback
+
+**Smart PO lookup MUST use a 6-strategy cascade for item matching, stopping at first successful match.**
+
+✅ **MUST:**
+- Execute strategies in priority order (most specific → most general)
+- Stop immediately on first match (don't continue searching)
+- Track which strategy succeeded for analytics
+- Collect warnings for all failed strategies
+
+❌ **NEVER:**
+- Skip intermediate strategies
+- Continue searching after finding a match
+- Return multiple matches (return best only)
+- Fail if early strategies miss (cascade to less specific)
+
+**Strategy Priority Order:**
+
+1. **Exact match with supplier in category**
+2. **Fuzzy (LIKE) match with supplier in category**
+3. **Full-text search with supplier in category**
+4. **Exact match without supplier requirement in category**
+5. **Fuzzy match without supplier in category**
+6. **Full-text search without supplier in category**
+
+**Implementation:**
+
+```ruby
+# app/services/smart_po_lookup_service.rb
+class SmartPoLookupService
+  STRATEGIES = [
+    :exact_match_with_supplier,
+    :fuzzy_match_with_supplier,
+    :fulltext_with_supplier,
+    :exact_match_without_supplier,
+    :fuzzy_match_without_supplier,
+    :fulltext_without_supplier
+  ].freeze
+
+  def lookup(task_description:, category:, quantity: 1, supplier_preference: nil)
+    @task_description = task_description
+    @category = category.to_s.downcase
+    @quantity = quantity
+    @warnings = []
+
+    # Find supplier first
+    @supplier = find_supplier(supplier_preference)
+
+    # Cascade through strategies
+    @price_book_item = find_pricebook_item
+
+    unless @price_book_item
+      @warnings << "No pricebook entry found for '#{task_description}'"
+    end
+
+    build_result
+  end
+
+  private
+
+  def find_pricebook_item
+    STRATEGIES.each do |strategy|
+      result = send(strategy)
+      if result
+        Rails.logger.info("SmartPoLookup: #{strategy} matched item #{result.id}")
+        return result
+      end
+    end
+    nil
+  end
+
+  def exact_match_with_supplier
+    return nil unless @supplier
+
+    PricebookItem.active
+      .where(category: @category)
+      .where(supplier_id: @supplier.id)
+      .where('LOWER(item_name) = ?', @task_description.downcase)
+      .first
+  end
+
+  def fuzzy_match_with_supplier
+    return nil unless @supplier
+
+    PricebookItem.active
+      .where(category: @category)
+      .where(supplier_id: @supplier.id)
+      .where('LOWER(item_name) LIKE ?', "%#{@task_description.downcase}%")
+      .first
+  end
+
+  def fulltext_with_supplier
+    return nil unless @supplier
+
+    PricebookItem.active
+      .where(category: @category)
+      .where(supplier_id: @supplier.id)
+      .where("searchable_text @@ plainto_tsquery('english', ?)", @task_description)
+      .first
+  end
+
+  def exact_match_without_supplier
+    PricebookItem.active
+      .where(category: @category)
+      .where('LOWER(item_name) = ?', @task_description.downcase)
+      .first
+  end
+
+  def fuzzy_match_without_supplier
+    PricebookItem.active
+      .where(category: @category)
+      .where('LOWER(item_name) LIKE ?', "%#{@task_description.downcase}%")
+      .first
+  end
+
+  def fulltext_without_supplier
+    PricebookItem.active
+      .where(category: @category)
+      .where("searchable_text @@ plainto_tsquery('english', ?)", @task_description)
+      .first
+  end
+end
+```
+
+**Why:** Cascading strategies balance precision (exact match) with recall (fuzzy/fulltext). Stopping at first match prevents ambiguity and improves performance.
+
+**Files:**
+- `app/services/smart_po_lookup_service.rb`
+
+---
+
+## RULE #4.4: Supplier Matching - Normalized Name Comparison with Business Suffix Removal
+
+**Supplier matching MUST normalize names by removing common business suffixes before comparison.**
+
+✅ **MUST:**
+- Remove business entity types: "Pty Ltd", "Limited", "Inc", "Corporation", "Co"
+- Remove location identifiers: "Australia", "Australian", "Qld", "Queensland"
+- Remove organizational terms: "Group", "Services", "& Associates"
+- Lowercase and remove special characters
+- Use Levenshtein distance for similarity scoring
+
+❌ **NEVER:**
+- Match on raw supplier names without normalization
+- Include business suffixes in similarity calculation
+- Skip normalization for "exact" match detection
+- Use case-sensitive comparison
+
+**Normalization Algorithm:**
+
+```ruby
+# app/services/supplier_matcher.rb
+class SupplierMatcher
+  BUSINESS_SUFFIXES = [
+    'pty ltd', 'pty. ltd.', 'limited', 'ltd', 'ltd.',
+    'incorporated', 'inc', 'inc.',
+    'corporation', 'corp', 'corp.',
+    'company', 'co', 'co.',
+    'services', 'service',
+    'group',
+    'australia', 'australian',
+    'queensland', 'qld',
+    '& associates', '& sons'
+  ].freeze
+
+  def normalize_name(name)
+    normalized = name.to_s.downcase.strip
+
+    # Remove business suffixes
+    BUSINESS_SUFFIXES.each do |suffix|
+      normalized = normalized.gsub(/\b#{Regexp.escape(suffix)}\b/, '')
+    end
+
+    # Remove special characters and collapse spaces
+    normalized.gsub(/[^a-z0-9\s]/, ' ').squeeze(' ').strip
+  end
+
+  def find_match(supplier_name)
+    normalized_search = normalize_name(supplier_name)
+
+    contacts = Contact.where(contact_types: ['supplier']).active
+
+    best_match = nil
+    best_score = 0.0
+
+    contacts.each do |contact|
+      normalized_contact = normalize_name(contact.full_name)
+      score = similarity_score(normalized_search, normalized_contact)
+
+      if score > best_score
+        best_score = score
+        best_match = contact
+      end
+    end
+
+    {
+      contact: best_match,
+      score: best_score,
+      match_type: categorize_match(best_score)
+    }
+  end
+
+  private
+
+  def similarity_score(str1, str2)
+    return 1.0 if str1 == str2
+    return 0.0 if str1.empty? || str2.empty?
+
+    distance = levenshtein_distance(str1, str2)
+    max_length = [str1.length, str2.length].max
+
+    1.0 - (distance.to_f / max_length)
+  end
+
+  def categorize_match(score)
+    case score
+    when 1.0        then :exact
+    when 0.9..0.99  then :high
+    when 0.7..0.89  then :fuzzy
+    else                 :unmatched
+    end
+  end
+
+  def levenshtein_distance(s1, s2)
+    # Dynamic programming algorithm
+    matrix = Array.new(s1.length + 1) { Array.new(s2.length + 1) }
+
+    (0..s1.length).each { |i| matrix[i][0] = i }
+    (0..s2.length).each { |j| matrix[0][j] = j }
+
+    (1..s1.length).each do |i|
+      (1..s2.length).each do |j|
+        cost = s1[i - 1] == s2[j - 1] ? 0 : 1
+        matrix[i][j] = [
+          matrix[i - 1][j] + 1,      # deletion
+          matrix[i][j - 1] + 1,      # insertion
+          matrix[i - 1][j - 1] + cost # substitution
+        ].min
+      end
+    end
+
+    matrix[s1.length][s2.length]
+  end
+end
+```
+
+**Example Normalizations:**
+```
+"Water Supplies Pty Ltd" → "water supplies"
+"ABC Electrical Services Queensland" → "abc electrical"
+"Smith & Associates Inc." → "smith"
+```
+
+**Why:** Business suffixes add noise to name matching. "ABC Company" and "ABC Co Pty Ltd" are the same supplier - normalization ensures correct matching.
+
+**Files:**
+- `app/services/supplier_matcher.rb`
+
+---
+
+## RULE #4.5: Price Volatility Detection - Coefficient of Variation on 6-Month Window
+
+**Price volatility MUST be calculated using Coefficient of Variation (CV) on the last 6 months of price history.**
+
+✅ **MUST:**
+- Use rolling 6-month window of prices
+- Calculate CV = (Standard Deviation / Mean) × 100
+- Classify: stable (<5%), moderate (5-15%), volatile (>15%)
+- Require minimum 3 data points for valid calculation
+- Return 'unknown' for insufficient data
+
+❌ **NEVER:**
+- Use fixed time windows (calendar months/quarters)
+- Calculate volatility on fewer than 3 price points
+- Include prices older than 6 months
+- Use absolute price change instead of percentage
+
+**Implementation:**
+
+```ruby
+# app/models/pricebook_item.rb
+class PricebookItem < ApplicationRecord
+  def price_volatility
+    # Get last 6 months of price history
+    recent_prices = price_histories
+      .where('created_at >= ?', 6.months.ago)
+      .order(created_at: :desc)
+      .pluck(:new_price)
+      .compact
+
+    return { status: 'unknown', cv: nil, risk_score: 10 } if recent_prices.length < 3
+
+    # Calculate mean
+    mean = recent_prices.sum / recent_prices.length.to_f
+
+    # Calculate standard deviation
+    variance = recent_prices.map { |p| (p - mean) ** 2 }.sum / recent_prices.length.to_f
+    std_dev = Math.sqrt(variance)
+
+    # Coefficient of Variation
+    cv = (std_dev / mean) * 100
+
+    # Classify volatility
+    status = case cv
+      when 0..4.99    then 'stable'
+      when 5..14.99   then 'moderate'
+      else                 'volatile'
+    end
+
+    # Risk score (0-50)
+    risk_score = case status
+      when 'stable'   then 0
+      when 'moderate' then 25
+      when 'volatile' then 50
+      else                 10  # unknown
+    end
+
+    { status: status, cv: cv.round(2), risk_score: risk_score }
+  end
+end
+```
+
+**Example Calculations:**
+```ruby
+# Stable pricing
+prices = [100, 103, 102, 105, 104]
+mean = 102.8, std_dev = 1.92, CV = 1.87% → "stable"
+
+# Volatile pricing
+prices = [100, 150, 80, 160, 90]
+mean = 116, std_dev = 35.8, CV = 30.9% → "volatile"
+```
+
+**Why:** CV provides scale-independent volatility measure - 5% variance matters differently for $10 vs $1000 items. Rolling 6-month window balances recency with statistical validity.
+
+**Files:**
+- `app/models/pricebook_item.rb`
+
+---
+
+## RULE #4.6: Risk Scoring - Multi-Factor Weighted Calculation (0-100 Scale)
+
+**Risk score MUST combine 4 weighted factors: price freshness (40%), supplier reliability (20%), volatility (20%), missing data (20%).**
+
+✅ **MUST:**
+- Calculate all 4 components independently
+- Apply fixed weights (freshness=40%, reliability=20%, volatility=20%, missing=20%)
+- Return score 0-100 with level: low/medium/high/critical
+- Use database-level scoping for efficient filtering
+- Cache calculation results for 1 hour
+
+❌ **NEVER:**
+- Change weights without updating all documentation
+- Skip any of the 4 components
+- Return risk score without risk level
+- Calculate risk client-side (compute server-side)
+
+**Risk Components:**
+
+```ruby
+# app/models/pricebook_item.rb
+class PricebookItem < ApplicationRecord
+  def risk_score
+    Rails.cache.fetch("pricebook_item:#{id}:risk_score", expires_in: 1.hour) do
+      calculate_risk_score
+    end
+  end
+
+  private
+
+  def calculate_risk_score
+    # Component 1: Price Freshness (0-40 points)
+    freshness_score = case price_freshness_status
+      when 'fresh'               then 0
+      when 'needs_confirmation'  then 20
+      when 'outdated', 'unknown' then 40
+      when 'missing'             then 40
+      else                            20
+    end
+
+    # Component 2: Supplier Reliability (0-20 points - inverse)
+    reliability_score = if supplier
+      # Higher supplier metrics = lower risk
+      supplier_score = (supplier.rating.to_f * 8) +           # 0-40
+                       (supplier.response_rate.to_f * 0.3) +  # 0-30
+                       ([30, 30 - (supplier.avg_response_time.to_f / 2)].min) # 0-30
+
+      # Convert 0-100 to 0-20 (inverse: high score = low risk)
+      20 - (supplier_score / 5.0)
+    else
+      20  # No supplier = max risk
+    end
+
+    # Component 3: Price Volatility (0-20 points)
+    volatility_data = price_volatility
+    volatility_score = volatility_data[:risk_score] * 0.4  # Scale 0-50 to 0-20
+
+    # Component 4: Missing Information (0-20 points)
+    missing_score = 0
+    missing_score += 10 if supplier_id.nil?
+    missing_score += 7  if brand.blank?
+    missing_score += 3  if category.blank?
+
+    # Total (0-100)
+    total = freshness_score +
+            reliability_score.clamp(0, 20) +
+            volatility_score +
+            missing_score
+
+    # Determine level
+    level = case total
+      when 0..24   then 'low'
+      when 25..49  then 'medium'
+      when 50..74  then 'high'
+      else              'critical'
+    end
+
+    {
+      score: total.round,
+      level: level,
+      components: {
+        freshness: freshness_score,
+        reliability: reliability_score.round,
+        volatility: volatility_score.round,
+        missing: missing_score
+      }
+    }
+  end
+end
+```
+
+**Database Filtering (Efficient):**
+
+```ruby
+# app/models/pricebook_item.rb
+scope :by_risk_level, ->(level) {
+  case level
+  when 'critical'
+    # No price OR price >6 months old
+    where('current_price IS NULL OR current_price = 0 OR price_last_updated_at < ?', 6.months.ago)
+  when 'high'
+    # 3-6 months old
+    where('price_last_updated_at >= ? AND price_last_updated_at < ?', 6.months.ago, 3.months.ago)
+  when 'medium'
+    # <3 months BUT missing supplier/brand/category
+    where('price_last_updated_at >= ?', 3.months.ago)
+      .where('supplier_id IS NULL OR brand IS NULL OR category IS NULL')
+  when 'low'
+    # Recent price AND has supplier
+    where('price_last_updated_at >= ? AND supplier_id IS NOT NULL', 3.months.ago)
+  end
+}
+```
+
+**Why:** Multi-factor risk assessment provides actionable insights. Weighted components reflect business priorities (stale pricing is highest risk).
+
+**Files:**
+- `app/models/pricebook_item.rb`
+
+---
+
+## RULE #4.7: Bulk Updates - Transaction Wrapper with Price History Batch Creation
+
+**Bulk pricebook updates MUST be wrapped in database transaction with efficient price history batch creation.**
+
+✅ **MUST:**
+- Wrap all updates in `ActiveRecord::Base.transaction`
+- Batch create price histories in single insert
+- Rollback entirely on any validation error
+- Return detailed success/failure report per item
+- Use `skip_price_history_callback` to prevent duplicate history
+
+❌ **NEVER:**
+- Update items one-by-one without transaction
+- Create price history one record at a time (N+1 performance issue)
+- Continue processing after first error
+- Commit partial updates
+
+**Implementation:**
+
+```ruby
+# app/controllers/api/v1/pricebook_items_controller.rb
+def bulk_update
+  updates = params[:updates] || []
+  results = { success: [], failed: [], price_histories_created: 0 }
+
+  ActiveRecord::Base.transaction do
+    price_histories_batch = []
+
+    updates.each do |update_params|
+      item = PricebookItem.find_by(id: update_params[:id])
+
+      unless item
+        results[:failed] << { id: update_params[:id], error: 'Item not found' }
+        next
+      end
+
+      # Track price change for history
+      old_price = item.current_price
+      new_price = update_params[:current_price]
+
+      # Skip auto price history creation
+      item.skip_price_history_callback = true
+
+      # Update item
+      if item.update(update_params.except(:id, :create_or_update_price, :new_price))
+        results[:success] << { id: item.id, item_code: item.item_code }
+
+        # Prepare price history for batch insert
+        if new_price && new_price != old_price
+          price_histories_batch << {
+            pricebook_item_id: item.id,
+            old_price: old_price,
+            new_price: new_price,
+            change_reason: 'bulk_update',
+            supplier_id: item.default_supplier_id,
+            changed_by_user_id: current_user.id,
+            user_name: current_user.full_name,
+            date_effective: Date.current,
+            created_at: Time.current,
+            updated_at: Time.current
+          }
+        end
+      else
+        results[:failed] << {
+          id: item.id,
+          item_code: item.item_code,
+          errors: item.errors.full_messages
+        }
+        raise ActiveRecord::Rollback
+      end
+    end
+
+    # Batch insert price histories
+    if price_histories_batch.any?
+      PriceHistory.insert_all!(price_histories_batch)
+      results[:price_histories_created] = price_histories_batch.length
+    end
+
+    # Commit transaction (implicit)
+  end
+
+  render json: {
+    success: true,
+    updated_count: results[:success].length,
+    failed_count: results[:failed].length,
+    price_histories_created: results[:price_histories_created],
+    results: results
+  }
+rescue ActiveRecord::Rollback
+  render json: {
+    success: false,
+    error: 'Bulk update failed - all changes rolled back',
+    results: results
+  }, status: :unprocessable_entity
+end
+```
+
+**Performance Comparison:**
+```
+Individual Updates (100 items):
+- 100 UPDATE queries
+- 100 INSERT queries (price history)
+= 200 queries, ~5 seconds
+
+Bulk Update with Transaction:
+- 100 UPDATE queries
+- 1 INSERT query (batch)
+= 101 queries, ~1 second
+```
+
+**Why:** Transactions ensure all-or-nothing semantics. Batch inserts reduce database round-trips from N to 1, improving performance 5x for large updates.
+
+**Files:**
+- `app/controllers/api/v1/pricebook_items_controller.rb`
+
+---
+
+## RULE #4.8: OneDrive Image Proxy - Cache Control with 1-Hour Expiry
+
+**OneDrive file proxying MUST set Cache-Control header to prevent repeated downloads.**
+
+✅ **MUST:**
+- Set `Cache-Control: public, max-age=3600` (1 hour)
+- Store OneDrive `file_id` permanently (not URL)
+- Refresh URL on each request via Microsoft Graph API
+- Handle expired credentials gracefully (503 Service Unavailable)
+- Return appropriate Content-Type from OneDrive metadata
+
+❌ **NEVER:**
+- Store OneDrive direct URLs (expire after 1 hour)
+- Cache beyond 1 hour (OneDrive credential lifespan)
+- Proxy without Cache-Control header
+- Return errors for missing images (return 404 gracefully)
+
+**Implementation:**
+
+```ruby
+# app/controllers/api/v1/pricebook_items_controller.rb
+def proxy_image
+  @item = PricebookItem.find(params[:id])
+  file_type = params[:file_type] # 'image', 'spec', or 'qr_code'
+
+  file_id = case file_type
+    when 'image'    then @item.image_file_id
+    when 'spec'     then @item.spec_file_id
+    when 'qr_code'  then @item.qr_code_file_id
+  end
+
+  unless file_id
+    render json: { error: 'File not found' }, status: :not_found
+    return
+  end
+
+  # Get OneDrive credential
+  credential = OrganizationOneDriveCredential.active.first
+  unless credential
+    render json: { error: 'OneDrive not configured' }, status: :service_unavailable
+    return
+  end
+
+  # Fetch file content from OneDrive
+  graph_client = MicrosoftGraphClient.new(credential)
+
+  begin
+    file_content = graph_client.download_file(file_id)
+    file_metadata = graph_client.get_file_metadata(file_id)
+
+    # Determine Content-Type
+    content_type = file_metadata['file']['mimeType'] || 'application/octet-stream'
+
+    # Send file with caching
+    send_data file_content,
+      type: content_type,
+      disposition: 'inline',
+      cache_control: 'public, max-age=3600'  # 1 hour cache
+
+  rescue MicrosoftGraphClient::FileNotFoundError
+    render json: { error: 'File not found in OneDrive' }, status: :not_found
+  rescue MicrosoftGraphClient::AuthenticationError
+    render json: { error: 'OneDrive credential expired' }, status: :service_unavailable
+  end
+end
+```
+
+**Route:**
+```ruby
+get 'pricebook/:id/proxy_image/:file_type', to: 'pricebook_items#proxy_image'
+```
+
+**Why:** OneDrive URLs expire after 1 hour, breaking client-side caching. Proxying with stable URLs + Cache-Control provides reliable image access while respecting credential lifespan.
+
+**Files:**
+- `app/controllers/api/v1/pricebook_items_controller.rb`
+- Routes
+
+---
+
+## API Endpoints Reference
+
+### Pricebook Items
+```
+GET    /api/v1/pricebook?search=&category=&supplier_id=&risk_level=&page=1&limit=100
+GET    /api/v1/pricebook/:id
+POST   /api/v1/pricebook
+PATCH  /api/v1/pricebook/:id
+DELETE /api/v1/pricebook/:id (soft delete)
+
+PATCH  /api/v1/pricebook/bulk_update
+POST   /api/v1/pricebook/:id/add_price
+POST   /api/v1/pricebook/:id/set_default_supplier
+GET    /api/v1/pricebook/:id/proxy_image/:file_type
+
+POST   /api/v1/pricebook/import
+POST   /api/v1/pricebook/preview
+POST   /api/v1/pricebook/import_price_history
+GET    /api/v1/pricebook/price_health_check
+```
+
+### Suppliers
+```
+GET    /api/v1/suppliers?active=true&match_status=matched
+GET    /api/v1/suppliers/:id
+POST   /api/v1/suppliers
+PATCH  /api/v1/suppliers/:id
+DELETE /api/v1/suppliers/:id (soft delete)
+
+POST   /api/v1/suppliers/:id/link_contact
+POST   /api/v1/suppliers/:id/unlink_contact
+POST   /api/v1/suppliers/:id/verify_match
+POST   /api/v1/suppliers/auto_match
+
+GET    /api/v1/suppliers/:id/pricebook/export
+POST   /api/v1/suppliers/:id/pricebook/import
+```
 
 ---
 

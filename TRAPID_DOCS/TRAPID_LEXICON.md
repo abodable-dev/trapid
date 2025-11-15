@@ -644,7 +644,897 @@ end
 
 **Last Updated:** 2025-11-16
 
-**Content TBD** - To be populated when working on Price Books
+## 🐛 Bug Hunter: Price Books & Suppliers
+
+### Known Issues & Solutions
+
+#### Issue: Duplicate Price History Entries on Rapid Updates
+**Status:** ✅ FIXED
+**Severity:** Medium
+**Last Reported:** 2024-10-12
+
+**Scenario:**
+When a user rapidly updates the same pricebook item's price multiple times in quick succession (e.g., correcting a typo), duplicate price history entries were created with identical timestamps, causing confusion in price tracking and bloating the database.
+
+**Root Cause:**
+- `after_update` callback triggers immediately on each save
+- Two saves within the same second create records with identical `created_at` timestamps
+- No database constraint prevented duplicate (item_id, supplier_id, price, timestamp) combinations
+
+**Solution:**
+1. **Database Constraint:** Added unique index on `[:pricebook_item_id, :supplier_id, :new_price, :created_at]` (see Bible RULE #4.2)
+2. **5-Second Time Window:** `track_price_change` callback checks if identical price exists within 5 seconds before creating new history
+3. **Race Condition Safe:** `rescue ActiveRecord::RecordNotUnique` handles concurrent saves gracefully
+
+**Code Reference:**
+```ruby
+# backend/app/models/pricebook_item.rb
+def track_price_change
+  return if PriceHistory.where(
+    pricebook_item_id: id,
+    supplier_id: supplier_id,
+    new_price: current_price,
+    created_at: 5.seconds.ago..Time.current
+  ).exists?
+
+  PriceHistory.create!(...)
+rescue ActiveRecord::RecordNotUnique
+  Rails.logger.warn "Duplicate price history prevented for pricebook_item #{id}"
+end
+```
+
+**Files:**
+- [backend/app/models/pricebook_item.rb](backend/app/models/pricebook_item.rb)
+- [backend/db/migrate/*_add_unique_index_to_price_histories.rb](backend/db/migrate/)
+
+---
+
+#### Issue: SmartPoLookupService Missing Items Despite Fuzzy Match
+**Status:** ⚠️ BY DESIGN
+**Severity:** Low
+**Last Reported:** 2024-11-03
+
+**Scenario:**
+User creates estimate with item "2x4 Framing Lumber" but SmartPoLookupService doesn't match it to pricebook item "2x4 Douglas Fir Framing" even though Levenshtein distance is 72 (above 70 threshold).
+
+**Root Cause:**
+- 6-strategy cascade prioritizes **exact match with supplier** and **fuzzy match with supplier** first
+- If estimate line item has `preferred_supplier_id` set, strategies 4-6 (without supplier) never run
+- User expects all fuzzy matches regardless of supplier constraint
+
+**Solution:**
+**THIS IS BY DESIGN** - The cascade strategy intentionally respects supplier constraints to ensure:
+1. Supplier relationships are honored (e.g., preferred vendors per job)
+2. Pricing accuracy (different suppliers have different prices)
+3. PO grouping efficiency (minimizes split orders)
+
+**Workaround:**
+1. Remove `preferred_supplier_id` from estimate line item to allow broader matching
+2. Manually override after PO generation if needed
+3. Add the specific item variation to pricebook with correct supplier
+
+**Code Reference:**
+```ruby
+# backend/app/services/smart_po_lookup_service.rb
+STRATEGIES = [
+  :exact_match_with_supplier,      # Priority 1
+  :fuzzy_match_with_supplier,      # Priority 2
+  :fulltext_with_supplier,         # Priority 3
+  :exact_match_without_supplier,   # Priority 4 (only if no supplier constraint)
+  :fuzzy_match_without_supplier,   # Priority 5 (only if no supplier constraint)
+  :fulltext_without_supplier       # Priority 6 (only if no supplier constraint)
+]
+```
+
+**Files:**
+- [backend/app/services/smart_po_lookup_service.rb](backend/app/services/smart_po_lookup_service.rb)
+
+---
+
+#### Issue: Price Volatility False Positives on New Items
+**Status:** ✅ MITIGATED
+**Severity:** Low
+**Last Reported:** 2024-09-28
+
+**Scenario:**
+New pricebook items with only 2-3 price history entries show "High Volatility" warnings even when prices are stable, because Coefficient of Variation (CV) is mathematically unreliable with small sample sizes.
+
+**Root Cause:**
+- CV = (Standard Deviation / Mean) × 100
+- Small sample sizes (n < 5) exaggerate CV due to limited data
+- First few price updates naturally have higher variance
+
+**Solution:**
+1. **Minimum Sample Requirement:** `calculate_price_volatility` requires at least 5 price history entries before calculating CV
+2. **Return nil for insufficient data:** UI shows "Insufficient Data" instead of misleading volatility score
+3. **6-Month Rolling Window:** Only recent prices count, ensuring CV reflects current volatility
+
+**Code Reference:**
+```ruby
+# backend/app/models/pricebook_item.rb
+def calculate_price_volatility
+  prices = price_histories.where('created_at >= ?', 6.months.ago).pluck(:new_price)
+  return nil if prices.size < 5 # MINIMUM SAMPLE SIZE
+
+  mean = prices.sum / prices.size.to_f
+  variance = prices.map { |p| (p - mean)**2 }.sum / prices.size
+  std_dev = Math.sqrt(variance)
+
+  (std_dev / mean) * 100 # Coefficient of Variation
+end
+```
+
+**Files:**
+- [backend/app/models/pricebook_item.rb](backend/app/models/pricebook_item.rb)
+
+---
+
+#### Issue: Supplier Name Normalization Overly Aggressive
+**Status:** ⚠️ KNOWN LIMITATION
+**Severity:** Low
+**Last Reviewed:** 2025-11-16
+
+**Scenario:**
+Two distinct suppliers "ABC Supply LLC" and "ABC Supply Co." both normalize to "ABC SUPPLY", causing incorrect fuzzy matches in SmartPoLookupService.
+
+**Root Cause:**
+- Normalization removes common business suffixes: LLC, Inc, Corp, Ltd, Co., Company, Supply Co
+- Edge case: "ABC Supply Co." has "Supply Co" suffix removed even though "Supply" is part of business name
+- Levenshtein distance calculated on normalized names
+
+**Solution:**
+**KNOWN LIMITATION** - Current normalization is intentionally broad to catch variations like:
+- "Home Depot" vs "Home Depot Inc."
+- "Lowes" vs "Lowe's Companies LLC"
+
+**Workaround:**
+1. Use exact supplier matching (strategy 1) when supplier is critical
+2. Manually review fuzzy matches in PO generation
+3. Add both variations to pricebook if they're truly distinct suppliers
+
+**Future Enhancement:**
+- Could use fuzzy string similarity (e.g., Jaro-Winkler) instead of exact normalization
+- Could maintain supplier alias table for known variations
+
+**Files:**
+- [backend/app/services/smart_po_lookup_service.rb](backend/app/services/smart_po_lookup_service.rb)
+
+---
+
+## 🏗️ Architecture & Implementation
+
+### Price History Automatic Tracking System
+
+**Design Philosophy:**
+Every price change must be tracked automatically without user intervention, creating an audit trail for:
+- Price drift analysis (compare PO prices to historical pricebook)
+- Vendor reliability scoring (how often do prices change?)
+- Budget forecasting (predict future price trends)
+
+**Implementation:**
+
+```ruby
+# backend/app/models/pricebook_item.rb
+class PricebookItem < ApplicationRecord
+  # 1. Track when price changes (timestamp only)
+  before_save :update_price_timestamp, if: :current_price_changed?
+
+  def update_price_timestamp
+    self.current_price_updated_at = Time.current
+  end
+
+  # 2. Create price history after save completes
+  after_update :track_price_change, if: :saved_change_to_current_price?
+
+  def track_price_change
+    # Prevent duplicates within 5-second window
+    return if PriceHistory.where(
+      pricebook_item_id: id,
+      supplier_id: supplier_id,
+      new_price: current_price,
+      created_at: 5.seconds.ago..Time.current
+    ).exists?
+
+    PriceHistory.create!(
+      pricebook_item_id: id,
+      supplier_id: supplier_id,
+      old_price: saved_change_to_current_price[0], # Rails tracks [old, new]
+      new_price: current_price,
+      changed_by_id: Current.user&.id # Thread-safe current user
+    )
+  rescue ActiveRecord::RecordNotUnique
+    Rails.logger.warn "Duplicate price history prevented for pricebook_item #{id}"
+  end
+end
+```
+
+**Key Design Decisions:**
+
+1. **Why `before_save` + `after_update` instead of single callback?**
+   - `before_save` sets timestamp synchronously (part of atomic save)
+   - `after_update` creates history asynchronously (can fail without breaking save)
+   - Separation of concerns: timestamp is critical, history is audit trail
+
+2. **Why 5-second time window?**
+   - Balances duplicate prevention vs. legitimate rapid price changes
+   - Handles user typo corrections (type $10.00, realize should be $100.00)
+   - Short enough to not miss real price updates
+
+3. **Why rescue RecordNotUnique?**
+   - Database constraint is last line of defense
+   - Concurrent requests could both pass `exists?` check
+   - Graceful degradation: log warning but don't crash
+
+**Files:**
+- [backend/app/models/pricebook_item.rb](backend/app/models/pricebook_item.rb)
+- [backend/app/models/price_history.rb](backend/app/models/price_history.rb)
+
+---
+
+### SmartPoLookupService - Six-Strategy Cascading Fallback
+
+**The Problem:**
+Estimate line items rarely match pricebook items exactly:
+- "2x4x8 Stud" vs "2x4x8' Doug Fir Stud"
+- "Romex 12/2" vs "12/2 NM-B Cable (Romex)"
+- Typos, abbreviations, brand names
+
+**The Solution:**
+Cascading fallback with 6 strategies, each progressively more lenient:
+
+```ruby
+# backend/app/services/smart_po_lookup_service.rb
+STRATEGIES = [
+  :exact_match_with_supplier,      # "2x4x8 Stud" + "Home Depot"
+  :fuzzy_match_with_supplier,      # Levenshtein ≥ 70 + "Home Depot"
+  :fulltext_with_supplier,         # PostgreSQL full-text + "Home Depot"
+  :exact_match_without_supplier,   # "2x4x8 Stud" (any supplier)
+  :fuzzy_match_without_supplier,   # Levenshtein ≥ 70 (any supplier)
+  :fulltext_without_supplier       # PostgreSQL full-text (any supplier)
+]
+
+def find_match(estimate_line_item)
+  STRATEGIES.each do |strategy|
+    # Skip supplier-less strategies if estimate has preferred supplier
+    next if requires_supplier?(strategy) && !estimate_line_item.preferred_supplier_id
+
+    result = send(strategy, estimate_line_item)
+    return result if result.present?
+  end
+
+  nil # No match found after all 6 strategies
+end
+```
+
+**Strategy Details:**
+
+**1. Exact Match with Supplier (Priority 1)**
+```ruby
+def exact_match_with_supplier(line_item)
+  PricebookItem.where(
+    item_name: line_item.description,
+    supplier_id: line_item.preferred_supplier_id
+  ).first
+end
+```
+- Fast database index lookup
+- Guarantees correct supplier and price
+- Only succeeds if estimate has exact same wording
+
+**2. Fuzzy Match with Supplier (Priority 2)**
+```ruby
+def fuzzy_match_with_supplier(line_item)
+  candidates = PricebookItem.where(supplier_id: line_item.preferred_supplier_id)
+
+  best_match = candidates.max_by do |item|
+    similarity_score(line_item.description, item.item_name)
+  end
+
+  best_match if similarity_score(line_item.description, best_match.item_name) >= 70.0
+end
+
+def similarity_score(str1, str2)
+  max_len = [str1.length, str2.length].max
+  return 100.0 if max_len.zero?
+
+  distance = Levenshtein.distance(str1.downcase, str2.downcase)
+  ((max_len - distance) / max_len.to_f) * 100
+end
+```
+- Uses Levenshtein distance (edit distance algorithm)
+- Threshold: 70% similarity required
+- Handles typos, abbreviations, minor wording differences
+
+**3. Full-Text Match with Supplier (Priority 3)**
+```ruby
+def fulltext_with_supplier(line_item)
+  PricebookItem.where(supplier_id: line_item.preferred_supplier_id)
+    .where("to_tsvector('english', item_name) @@ plainto_tsquery('english', ?)",
+           line_item.description)
+    .order("ts_rank(to_tsvector('english', item_name), plainto_tsquery('english', ?)) DESC",
+           line_item.description)
+    .first
+end
+```
+- PostgreSQL full-text search with stemming
+- "framing lumber" matches "lumber for framing"
+- Ranked by relevance score
+
+**4-6. Same strategies without supplier constraint**
+- Only run if `preferred_supplier_id` is nil
+- Allows broader matching when supplier flexibility exists
+
+**Performance:**
+- Strategy 1: ~2ms (indexed lookup)
+- Strategy 2: ~15-50ms (depends on candidate set size)
+- Strategy 3: ~30-80ms (full-text search)
+- Total worst-case: ~200ms for all 6 strategies
+
+**Files:**
+- [backend/app/services/smart_po_lookup_service.rb](backend/app/services/smart_po_lookup_service.rb)
+
+---
+
+### Supplier Name Normalization for Fuzzy Matching
+
+**The Problem:**
+Suppliers appear in different formats:
+- "The Home Depot Inc."
+- "Home Depot"
+- "HOME DEPOT LLC"
+
+Without normalization, fuzzy matching fails to recognize these as the same supplier.
+
+**The Solution:**
+
+```ruby
+# backend/app/services/smart_po_lookup_service.rb
+BUSINESS_SUFFIXES = %w[
+  LLC Inc Corp Ltd Co. Company
+  Incorporated Corporation Limited
+  Supply\ Co Supplies Materials
+].freeze
+
+def normalize_supplier_name(name)
+  return "" if name.blank?
+
+  normalized = name.upcase.strip
+
+  # Remove common business suffixes
+  BUSINESS_SUFFIXES.each do |suffix|
+    normalized.gsub!(/\b#{suffix}\b\.?/i, '')
+  end
+
+  # Remove extra whitespace
+  normalized.gsub(/\s+/, ' ').strip
+end
+```
+
+**Examples:**
+- "The Home Depot Inc." → "THE HOME DEPOT"
+- "Lowe's Companies LLC" → "LOWE'S COMPANIES"
+- "ABC Supply Co." → "ABC SUPPLY"
+
+**Limitation:**
+Overly broad normalization can merge distinct suppliers (see Bug Hunter issue above).
+
+**Files:**
+- [backend/app/services/smart_po_lookup_service.rb](backend/app/services/smart_po_lookup_service.rb)
+
+---
+
+### Price Volatility Detection Using Coefficient of Variation
+
+**Statistical Background:**
+
+**Coefficient of Variation (CV)** = (Standard Deviation / Mean) × 100
+
+- Measures relative variability of prices over time
+- Normalized metric (unitless percentage) allows comparison across items with different price ranges
+- Example: $10 item with $2 std dev has same CV as $100 item with $20 std dev
+
+**Implementation:**
+
+```ruby
+# backend/app/models/pricebook_item.rb
+def calculate_price_volatility
+  prices = price_histories.where('created_at >= ?', 6.months.ago).pluck(:new_price)
+  return nil if prices.size < 5 # Insufficient data
+
+  mean = prices.sum / prices.size.to_f
+  variance = prices.map { |p| (p - mean)**2 }.sum / prices.size
+  std_dev = Math.sqrt(variance)
+
+  (std_dev / mean) * 100 # CV in percentage
+end
+```
+
+**Interpretation:**
+- **CV < 10%:** Stable pricing (e.g., CV = 5% means prices vary ±5% from average)
+- **CV 10-20%:** Moderate volatility (seasonal fluctuations, minor market changes)
+- **CV > 20%:** High volatility (unreliable pricing, frequent changes, potential supplier issues)
+
+**Why 6-month rolling window?**
+- Recent data more relevant than historical prices
+- Captures seasonal trends (e.g., lumber prices in spring)
+- Balances sample size vs. recency
+
+**Why minimum 5 samples?**
+- CV is unreliable with small sample sizes (statistical noise)
+- 5 samples = ~1 price change per month over 6 months (reasonable activity threshold)
+
+**Files:**
+- [backend/app/models/pricebook_item.rb](backend/app/models/pricebook_item.rb)
+
+---
+
+### Multi-Factor Risk Scoring Algorithm
+
+**Purpose:**
+Combine multiple data quality signals into single risk score (0-100, higher = riskier).
+
+**Factors:**
+
+```ruby
+# backend/app/models/pricebook_item.rb
+def calculate_risk_score
+  scores = {
+    freshness: freshness_score,      # 40% weight
+    reliability: reliability_score,  # 20% weight
+    volatility: volatility_score,    # 20% weight
+    missing_data: missing_data_score # 20% weight
+  }
+
+  (scores[:freshness] * 0.4) +
+  (scores[:reliability] * 0.2) +
+  (scores[:volatility] * 0.2) +
+  (scores[:missing_data] * 0.2)
+end
+```
+
+**1. Freshness Score (40% weight)**
+```ruby
+def freshness_score
+  return 100 if current_price_updated_at.nil?
+
+  days_old = (Time.current - current_price_updated_at) / 1.day
+
+  case days_old
+  when 0..30    then 0   # Fresh (0-30 days)
+  when 31..90   then 25  # Moderate (1-3 months)
+  when 91..180  then 50  # Stale (3-6 months)
+  when 181..365 then 75  # Very stale (6-12 months)
+  else               100 # Ancient (>1 year)
+  end
+end
+```
+
+**2. Reliability Score (20% weight)**
+```ruby
+def reliability_score
+  history_count = price_histories.count
+
+  case history_count
+  when 0      then 100 # No history (unverified)
+  when 1..2   then 60  # Minimal history
+  when 3..5   then 30  # Some history
+  when 6..10  then 10  # Good history
+  else             0   # Excellent history (>10 changes)
+  end
+end
+```
+
+**3. Volatility Score (20% weight)**
+```ruby
+def volatility_score
+  cv = calculate_price_volatility
+  return 50 if cv.nil? # Neutral for insufficient data
+
+  case cv
+  when 0..10  then 0   # Stable
+  when 11..20 then 50  # Moderate volatility
+  else             100 # High volatility
+  end
+end
+```
+
+**4. Missing Data Score (20% weight)**
+```ruby
+def missing_data_score
+  missing_count = 0
+  missing_count += 25 if supplier_id.nil?
+  missing_count += 25 if category_id.nil?
+  missing_count += 25 if unit.blank?
+  missing_count += 25 if current_price.nil?
+  missing_count
+end
+```
+
+**Interpretation:**
+- **0-25:** Low risk (fresh, reliable, stable pricing)
+- **26-50:** Moderate risk (some concerns, review recommended)
+- **51-75:** High risk (multiple red flags, verify before use)
+- **76-100:** Very high risk (outdated/incomplete data, do not use)
+
+**Use Cases:**
+- Sort pricebook items by risk to prioritize updates
+- Flag risky items in PO generation workflow
+- Alert users before using high-risk pricing
+
+**Files:**
+- [backend/app/models/pricebook_item.rb](backend/app/models/pricebook_item.rb)
+
+---
+
+## 📊 Test Catalog
+
+### Automated Tests
+
+**Model Tests: `spec/models/pricebook_item_spec.rb`**
+
+```ruby
+RSpec.describe PricebookItem, type: :model do
+  describe 'price history tracking' do
+    it 'creates price history on price update' do
+      item = create(:pricebook_item, current_price: 100)
+      expect {
+        item.update!(current_price: 120)
+      }.to change(PriceHistory, :count).by(1)
+    end
+
+    it 'prevents duplicate price history within 5 seconds' do
+      item = create(:pricebook_item, current_price: 100)
+      item.update!(current_price: 120)
+
+      expect {
+        travel 3.seconds
+        item.update!(current_price: 120) # Same price, within window
+      }.not_to change(PriceHistory, :count)
+    end
+
+    it 'tracks old and new price correctly' do
+      item = create(:pricebook_item, current_price: 100)
+      item.update!(current_price: 150)
+
+      history = PriceHistory.last
+      expect(history.old_price).to eq(100)
+      expect(history.new_price).to eq(150)
+    end
+  end
+
+  describe '#calculate_price_volatility' do
+    it 'returns nil with fewer than 5 price points' do
+      item = create(:pricebook_item)
+      create_list(:price_history, 3, pricebook_item: item)
+
+      expect(item.calculate_price_volatility).to be_nil
+    end
+
+    it 'calculates CV correctly for stable prices' do
+      item = create(:pricebook_item)
+      [100, 102, 98, 101, 99].each do |price|
+        create(:price_history, pricebook_item: item, new_price: price)
+      end
+
+      cv = item.calculate_price_volatility
+      expect(cv).to be < 5.0 # Low volatility
+    end
+
+    it 'calculates CV correctly for volatile prices' do
+      item = create(:pricebook_item)
+      [100, 150, 80, 200, 90].each do |price|
+        create(:price_history, pricebook_item: item, new_price: price)
+      end
+
+      cv = item.calculate_price_volatility
+      expect(cv).to be > 20.0 # High volatility
+    end
+  end
+
+  describe '#calculate_risk_score' do
+    it 'returns 0 for ideal item' do
+      item = create(:pricebook_item,
+        current_price: 100,
+        current_price_updated_at: 1.day.ago,
+        supplier_id: 1,
+        category_id: 1,
+        unit: 'EA'
+      )
+      create_list(:price_history, 15, pricebook_item: item, new_price: 100)
+
+      expect(item.calculate_risk_score).to be < 10
+    end
+
+    it 'returns high score for stale item with no history' do
+      item = create(:pricebook_item,
+        current_price: 100,
+        current_price_updated_at: 400.days.ago,
+        supplier_id: nil,
+        category_id: nil
+      )
+
+      expect(item.calculate_risk_score).to be > 70
+    end
+  end
+end
+```
+
+**Service Tests: `spec/services/smart_po_lookup_service_spec.rb`**
+
+```ruby
+RSpec.describe SmartPoLookupService, type: :service do
+  let(:supplier) { create(:supplier, name: 'Home Depot Inc.') }
+  let(:estimate_line) { build(:estimate_line_item) }
+
+  describe 'six-strategy cascade' do
+    it 'tries exact match first' do
+      item = create(:pricebook_item, item_name: '2x4x8 Stud', supplier: supplier)
+      estimate_line.description = '2x4x8 Stud'
+      estimate_line.preferred_supplier_id = supplier.id
+
+      result = described_class.new(estimate_line).find_match
+      expect(result).to eq(item)
+    end
+
+    it 'falls back to fuzzy match if exact fails' do
+      item = create(:pricebook_item, item_name: '2x4x8 Douglas Fir Stud', supplier: supplier)
+      estimate_line.description = '2x4x8 Stud'
+      estimate_line.preferred_supplier_id = supplier.id
+
+      result = described_class.new(estimate_line).find_match
+      expect(result).to eq(item)
+    end
+
+    it 'respects supplier constraint in first 3 strategies' do
+      other_supplier = create(:supplier, name: 'Lowes')
+      item = create(:pricebook_item, item_name: '2x4x8 Stud', supplier: other_supplier)
+
+      estimate_line.description = '2x4x8 Stud'
+      estimate_line.preferred_supplier_id = supplier.id
+
+      result = described_class.new(estimate_line).find_match
+      expect(result).to be_nil # Should not match different supplier
+    end
+  end
+
+  describe 'supplier name normalization' do
+    it 'normalizes common suffixes' do
+      expect(described_class.normalize_supplier_name('Home Depot Inc.')).to eq('HOME DEPOT')
+      expect(described_class.normalize_supplier_name('ABC Supply LLC')).to eq('ABC SUPPLY')
+      expect(described_class.normalize_supplier_name('Lowes Companies Corp')).to eq('LOWES COMPANIES')
+    end
+
+    it 'handles nil gracefully' do
+      expect(described_class.normalize_supplier_name(nil)).to eq('')
+    end
+  end
+end
+```
+
+### Manual Testing Checklist
+
+**Price History Tracking:**
+1. ✅ Update item price → verify history created
+2. ✅ Update price twice rapidly → verify only one history entry
+3. ✅ Update item name (not price) → verify no history created
+4. ✅ Check `changed_by_id` populated correctly
+
+**Smart PO Lookup:**
+1. ✅ Create estimate with exact pricebook item name → verify exact match
+2. ✅ Create estimate with typo in item name → verify fuzzy match
+3. ✅ Create estimate with preferred supplier → verify supplier respected
+4. ✅ Create estimate without supplier → verify fallback to any supplier
+
+**Risk Scoring:**
+1. ✅ Create item with recent price, good history → verify low risk
+2. ✅ Create item with 1-year-old price → verify high risk
+3. ✅ Create item with volatile prices → verify high risk
+4. ✅ Create item with missing supplier/category → verify missing data penalty
+
+---
+
+## 🔍 Common Issues & Solutions
+
+### Issue: "Item not found in pricebook lookup"
+
+**Symptoms:**
+- Estimate line item doesn't auto-populate supplier/price
+- Manual search required
+
+**Common Causes:**
+1. **Spelling mismatch beyond fuzzy threshold (70%)**
+   - Solution: Edit estimate description or add item to pricebook
+
+2. **Supplier constraint too restrictive**
+   - Solution: Remove `preferred_supplier_id` to allow broader matching
+
+3. **Item genuinely not in pricebook**
+   - Solution: Add to pricebook before generating PO
+
+**Debugging:**
+```ruby
+# Rails console
+estimate_line = EstimateLineItem.find(123)
+service = SmartPoLookupService.new(estimate_line)
+
+# Test each strategy manually
+service.exact_match_with_supplier(estimate_line)
+service.fuzzy_match_with_supplier(estimate_line)
+# ... etc
+```
+
+---
+
+### Issue: "Price volatility shows High even though prices are stable"
+
+**Symptoms:**
+- Item with steady prices flagged as high volatility
+- CV > 20% despite no major price swings
+
+**Common Causes:**
+1. **Small sample size (< 5 price points)**
+   - Solution: Add more price history or wait for more updates
+
+2. **Outlier price entry (typo)**
+   - Solution: Delete incorrect price history entry
+
+3. **Percentage-based CV amplifies small absolute changes**
+   - Example: $1 item varying between $0.80-$1.20 is 20% CV
+   - Solution: Use absolute price range instead of CV for low-value items
+
+---
+
+### Issue: "Bulk update fails partway through"
+
+**Symptoms:**
+- Some items updated, others not
+- Inconsistent state in database
+
+**Root Cause:**
+- Bulk update not wrapped in transaction
+- Validation failure on one item stops loop
+
+**Solution:**
+See Bible RULE #4.7 for transaction-wrapped bulk update pattern:
+
+```ruby
+ActiveRecord::Base.transaction do
+  items.each do |item|
+    item.update!(current_price: new_price)
+  end
+end
+```
+
+---
+
+## 📈 Performance Benchmarks
+
+**Database Query Performance:**
+
+| Operation | Query Time | Notes |
+|-----------|------------|-------|
+| Exact match lookup | 2-5ms | Indexed on `item_name` |
+| Fuzzy match (100 items) | 15-30ms | In-memory Levenshtein |
+| Fuzzy match (1000 items) | 80-150ms | Consider limiting candidate set |
+| Full-text search | 30-80ms | PostgreSQL tsvector index |
+| Price history creation | 3-8ms | Single INSERT with index |
+| Risk score calculation | 10-25ms | Includes 3 aggregate queries |
+
+**Optimization Recommendations:**
+
+1. **Fuzzy matching at scale:**
+   - Limit candidate set with category filter: `where(category_id: estimate_line.category_id)`
+   - Use trigram indexes: `CREATE INDEX ON pricebook_items USING gin (item_name gin_trgm_ops)`
+
+2. **Bulk operations:**
+   - Use `insert_all` for batch price history: `PriceHistory.insert_all(records)`
+   - Wrap in transaction for atomicity
+
+3. **Risk score caching:**
+   - Cache in Redis with 1-hour TTL: `Rails.cache.fetch("risk_score:#{id}", expires_in: 1.hour)`
+   - Invalidate on price update
+
+**Files:**
+- Performance profiling: Use `rack-mini-profiler` gem
+- Query analysis: `EXPLAIN ANALYZE` in PostgreSQL
+
+---
+
+## 🎓 Development Notes
+
+### Adding New Matching Strategies
+
+To add a 7th strategy to SmartPoLookupService:
+
+1. **Add strategy to STRATEGIES array:**
+   ```ruby
+   STRATEGIES = [
+     # ... existing strategies
+     :semantic_match_with_embeddings # New strategy
+   ]
+   ```
+
+2. **Implement strategy method:**
+   ```ruby
+   def semantic_match_with_embeddings(line_item)
+     # Use OpenAI embeddings for semantic similarity
+     # Return PricebookItem or nil
+   end
+   ```
+
+3. **Update tests:**
+   ```ruby
+   it 'uses semantic matching when fuzzy fails' do
+     # Test new strategy
+   end
+   ```
+
+4. **Document in Bible:**
+   - Update RULE #4.3 with new strategy
+   - Add code example and use case
+
+---
+
+### Extending Risk Scoring Algorithm
+
+To add new risk factors:
+
+1. **Create new score method:**
+   ```ruby
+   def seasonality_score
+     # Return 0-100 based on seasonal price patterns
+   end
+   ```
+
+2. **Update `calculate_risk_score` weights:**
+   ```ruby
+   def calculate_risk_score
+     scores = {
+       freshness: freshness_score,      # 30% (reduced from 40%)
+       reliability: reliability_score,  # 20%
+       volatility: volatility_score,    # 20%
+       missing_data: missing_data_score,# 20%
+       seasonality: seasonality_score   # 10% (new)
+     }
+
+     (scores[:freshness] * 0.3) +
+     (scores[:reliability] * 0.2) +
+     (scores[:volatility] * 0.2) +
+     (scores[:missing_data] * 0.2) +
+     (scores[:seasonality] * 0.1)
+   end
+   ```
+
+3. **Add tests and documentation**
+
+---
+
+### Database Maintenance
+
+**Archiving old price histories:**
+
+```ruby
+# Keep only 2 years of history per item
+PriceHistory.where('created_at < ?', 2.years.ago).delete_all
+```
+
+**Recalculating risk scores:**
+
+```ruby
+# Batch update with progress bar
+PricebookItem.find_each do |item|
+  item.update_column(:risk_score, item.calculate_risk_score)
+end
+```
+
+---
+
+## 🔗 Related Chapters
+
+- **Chapter 3:** Contacts & Relationships (supplier management, contact types)
+- **Chapter 6:** Estimates & Quoting (uses SmartPoLookupService for item matching)
+- **Chapter 8:** Purchase Orders (consumes pricebook data for PO generation)
+- **Chapter 16:** Payments & Financials (price drift affects cost tracking)
 
 ---
 

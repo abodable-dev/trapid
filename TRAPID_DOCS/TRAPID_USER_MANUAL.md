@@ -663,7 +663,128 @@ After 24 hours of inactivity:
 │ 📕 LEXICON (BUGS):     Chapter 4 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Content TBD** - To be populated with price book setup guide
+**Last Updated:** 2025-11-16
+
+## What are Price Books?
+
+Price Books are your material cost library - storing item prices, supplier information, and categories for all the materials you commonly purchase. They power intelligent features throughout Trapid:
+
+- **Smart PO Generation:** Automatically match estimate items to pricebook entries, auto-filling suppliers and current pricing
+- **Price Tracking:** Historical price tracking shows you how material costs change over time
+- **Risk Alerts:** Get warnings about outdated or volatile pricing before creating purchase orders
+- **Supplier Management:** Associate materials with preferred suppliers and track supplier reliability
+
+The system automatically tracks every price change you make, creating a complete audit trail for cost analysis and budget forecasting.
+
+---
+
+## Quick Start
+
+1. Navigate to **Settings → Price Books**
+2. Click **"+ Add Item"**
+3. Fill in item details:
+   - Item name (be descriptive: "2x4x8 Douglas Fir Stud" not just "Stud")
+   - Current price
+   - Unit (EA, LF, SF, etc.)
+   - Supplier
+   - Category
+4. Click **"Save"**
+5. Price history begins automatically as you update prices
+
+---
+
+## Key Features
+
+- **Automatic Price History:** Every price change is tracked automatically with timestamps and user attribution
+- **Smart Item Matching:** Fuzzy matching finds items even with typos or slight wording differences (uses Levenshtein distance algorithm)
+- **Supplier Normalization:** "Home Depot Inc." and "Home Depot LLC" are recognized as the same supplier
+- **Price Volatility Detection:** Statistical analysis (Coefficient of Variation) flags items with unstable pricing
+- **Risk Scoring:** Multi-factor scoring (freshness, reliability, volatility, missing data) helps prioritize updates
+- **Bulk Updates:** Import CSV files or update multiple items at once with transaction safety
+
+---
+
+## Common Tasks
+
+### Adding Items from Estimates
+
+When generating POs from estimates, unfound items can be added directly:
+1. Review estimate line items
+2. Click **"Add to Pricebook"** on unmatched items
+3. Fill in supplier and category
+4. Item is immediately available for future POs
+
+### Updating Prices
+
+Price changes are tracked automatically:
+1. Find item in Price Books list
+2. Edit price field
+3. Save changes
+4. System creates price history entry with old/new prices
+
+### Bulk Import
+
+For large catalogs:
+1. Export template CSV
+2. Fill in item details (name, price, supplier, category, unit)
+3. Import CSV
+4. Review mapping and validation
+5. Confirm import
+
+### Checking Price Volatility
+
+Before generating POs:
+1. Open Price Books list
+2. Sort by **Risk Score** (highest first)
+3. Review high-risk items (red flags)
+4. Update stale prices before creating POs
+
+---
+
+## Troubleshooting
+
+### "Item not matching in Smart PO Lookup"
+
+**Problem:** Estimate item doesn't auto-match to pricebook even though it exists
+
+**Solutions:**
+- Check spelling - must be at least 70% similar for fuzzy match
+- Verify supplier matches if estimate has preferred supplier set
+- Add exact item name variation to pricebook
+- Remove supplier constraint from estimate to allow broader matching
+
+---
+
+### "High Volatility warning on stable item"
+
+**Problem:** Item shows volatile pricing despite stable prices
+
+**Solutions:**
+- Requires at least 5 price history entries for accurate calculation
+- Check for outlier entries (typos) and delete them
+- Wait for more price updates to build history
+- Low-value items naturally have higher % volatility
+
+---
+
+### "Bulk update failed partway through"
+
+**Problem:** Some items updated, others failed, inconsistent state
+
+**Solutions:**
+- System uses database transactions - all-or-nothing updates
+- Check validation errors on failed items (missing required fields)
+- Review error messages and fix data issues
+- Re-run bulk update after corrections
+
+---
+
+## Related Topics
+
+- **Chapter 3:** Contacts & Relationships (managing suppliers and vendor contacts)
+- **Chapter 6:** Estimates & Quoting (Smart PO Lookup uses pricebook for matching)
+- **Chapter 8:** Purchase Orders (pricebook data populates PO line items)
+- **Chapter 16:** Payments & Financials (price drift analysis compares PO prices to pricebook)
 
 ---
 
