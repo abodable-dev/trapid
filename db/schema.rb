@@ -10,10 +10,11 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_15_215911) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_15_223838) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
+  enable_extension "pg_trgm"
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -388,6 +389,31 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_215911) do
     t.datetime "updated_at", null: false
     t.string "folder_path"
     t.index ["name"], name: "index_documentation_categories_on_name", unique: true
+  end
+
+  create_table "documented_bugs", force: :cascade do |t|
+    t.integer "chapter_number", null: false
+    t.string "chapter_name", null: false
+    t.string "component"
+    t.string "bug_title", null: false
+    t.string "status", default: "open"
+    t.string "severity", default: "medium"
+    t.date "first_reported"
+    t.date "last_occurred"
+    t.date "fixed_date"
+    t.text "scenario"
+    t.text "root_cause"
+    t.text "solution"
+    t.text "prevention"
+    t.jsonb "metadata", default: {}
+    t.text "search_text"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chapter_number", "status"], name: "index_documented_bugs_on_chapter_number_and_status"
+    t.index ["chapter_number"], name: "index_documented_bugs_on_chapter_number"
+    t.index ["search_text"], name: "index_documented_bugs_on_search_text", opclass: :gin_trgm_ops, using: :gin
+    t.index ["severity"], name: "index_documented_bugs_on_severity"
+    t.index ["status"], name: "index_documented_bugs_on_status"
   end
 
   create_table "emails", force: :cascade do |t|
