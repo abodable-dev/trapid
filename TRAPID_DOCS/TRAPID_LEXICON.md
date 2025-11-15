@@ -83,7 +83,54 @@ All API calls use centralized `api.js` helper with JWT authentication in headers
 ### Error Handling
 Backend returns consistent `{success: boolean, error: string}` format.
 
-**Content TBD** - To be populated as system-wide bugs are discovered
+## 🐛 Bug Hunter: System-Wide Issues
+
+### Agent Failures & Lessons Learned
+
+#### Bug: Unmigrated Schema Changes (working_days column)
+**Date:** 2025-11-16
+**Status:** ✅ RESOLVED
+**Agent:** deploy-manager
+**Severity:** Medium (caused test failures in staging)
+
+**Scenario:**
+The `working_days` column was added manually to `company_settings` table without creating a migration file. When the test tried to use `working_days`, it failed with "undefined method" despite the column existing in the database.
+
+**Root Cause:**
+1. Column was added directly to staging database (via console or manual SQL)
+2. No migration file created to track this schema change
+3. ActiveRecord's schema cache didn't recognize the column
+4. Test failed: `undefined method 'working_days' for an instance of CompanySetting`
+
+**Why It Happened:**
+Manual column addition bypassed Rails migration tracking, causing schema drift between what ActiveRecord knows and what's in the database.
+
+**Why deploy-manager Should Have Caught It:**
+The agent is responsible for pre-deployment checks but didn't verify schema.rb changes against migrations.
+
+**Agent Update:**
+Added pre-deployment check to `.claude/agents/deploy-manager.md`:
+```bash
+# Check for unmigrated local schema changes
+git diff db/schema.rb
+```
+If schema.rb changed but no new migration exists, agent now creates one before deploying.
+
+**Resolution:**
+1. Created proper migration: `20251115212002_add_working_days_to_company_settings.rb`
+2. Deployed to staging (v400)
+3. Migration ran via Heroku release command
+4. Test now passes successfully
+
+**Prevention (RULE #4):**
+- ✅ Never add columns manually without migrations (BIBLE Chapter 0, RULE #3)
+- ✅ Always check `git diff db/schema.rb` before deployment
+- ✅ Agent definitions updated to prevent recurrence
+
+**Related:**
+- TRAPID_BIBLE.md Chapter 0, RULE #3 (Database Migrations)
+- TRAPID_BIBLE.md Chapter 0, RULE #4 (Agent Maintenance & Learning)
+- `.claude/agents/deploy-manager.md` - Pre-Deployment Checks
 
 ---
 
