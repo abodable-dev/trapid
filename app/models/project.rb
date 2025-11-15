@@ -29,7 +29,7 @@ class Project < ApplicationRecord
 
   def days_remaining
     return nil unless planned_end_date
-    (planned_end_date - Date.current).to_i
+    (planned_end_date - CompanySetting.today).to_i
   end
 
   def on_schedule?
@@ -44,7 +44,7 @@ class Project < ApplicationRecord
   end
 
   def overdue_tasks
-    project_tasks.where('planned_end_date < ? AND status != ?', Date.current, 'complete')
+    project_tasks.where('planned_end_date < ? AND status != ?', CompanySetting.today, 'complete')
   end
 
   def upcoming_tasks

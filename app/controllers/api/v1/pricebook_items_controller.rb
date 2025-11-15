@@ -232,7 +232,7 @@ module Api
                   supplier_id: new_supplier_id,
                   old_price: existing_price&.new_price || item.current_price,
                   new_price: item.current_price,
-                  date_effective: Date.today,
+                  date_effective: CompanySetting.today,
                   change_reason: "Updated to match current default price when setting as default supplier"
                 )
                 results[:prices_updated] += 1
@@ -258,7 +258,7 @@ module Api
                   supplier_id: new_supplier_id,
                   old_price: new_price, # For new entries, old and new are the same
                   new_price: new_price,
-                  date_effective: Date.today,
+                  date_effective: CompanySetting.today,
                   change_reason: "Initial price set when assigning as default supplier"
                 )
                 results[:prices_updated] += 1
@@ -269,7 +269,7 @@ module Api
                   supplier_id: new_supplier_id,
                   old_price: existing_price.new_price,
                   new_price: new_price,
-                  date_effective: Date.today,
+                  date_effective: CompanySetting.today,
                   change_reason: "Price updated when setting as default supplier"
                 )
                 results[:prices_updated] += 1
@@ -426,7 +426,7 @@ module Api
             new_price: params[:price],
             supplier_id: params[:supplier_id],
             lga: params[:lga],
-            date_effective: params[:date_effective] || Date.today,
+            date_effective: params[:date_effective] || CompanySetting.today,
             change_reason: 'manual_price_update'
           )
 
@@ -591,7 +591,7 @@ module Api
       # GET /api/v1/pricebook/price_health_check
       def price_health_check
         issues = []
-        today = Date.today
+        today = CompanySetting.today
 
         # Find all items with default suppliers
         items_with_defaults = PricebookItem.includes(:default_supplier, :price_histories)
