@@ -3687,20 +3687,40 @@ gantt.attachEvent('onAfterTaskDrag', (id, mode, event) => {
 
 ---
 
-## RULE #9.3: Company Settings - Working Days
+## RULE #9.3: Company Settings - Working Days & Timezone
 
-❌ **NEVER hardcode working days**
-✅ **ALWAYS read from:** `company_settings.working_days`
+❌ **NEVER hardcode working days or ignore company timezone**
+✅ **ALWAYS read from:** `company_settings.working_days` and `company_settings.timezone`
 
 **Code location:** `backend/app/services/schedule_cascade_service.rb:175-192`
 
 **Required implementation:**
 ```ruby
 def working_day?(date)
+  # CRITICAL: Use company timezone, not server timezone (UTC)
+  timezone = @company_settings.timezone || 'UTC'
+  date_in_company_tz = date.in_time_zone(timezone)
+
   working_days = @company_settings.working_days || default_config
-  day_name = date.strftime('%A').downcase
+  day_name = date_in_company_tz.strftime('%A').downcase
   working_days[day_name] == true
 end
+```
+
+**Why Timezone Matters:**
+- Server runs in UTC (production) or local time (development)
+- Company may be in different timezone (e.g., Australia/Sydney)
+- `Date.today` in UTC could be different day than company's "today"
+- Tasks scheduled for "today" must use **company's today**, not server's today
+
+**Example:**
+```ruby
+# ❌ WRONG - uses server timezone
+reference_date = Date.today  # Could be Saturday in UTC, Sunday in AU
+
+# ✅ CORRECT - uses company timezone
+timezone = CompanySetting.instance.timezone || 'UTC'
+reference_date = Time.now.in_time_zone(timezone).to_date
 ```
 
 ---

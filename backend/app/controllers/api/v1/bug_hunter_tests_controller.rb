@@ -212,8 +212,11 @@ class Api::V1::BugHunterTestsController < ApplicationController
     end
 
     # Test: Verify all unlocked tasks are on working days (based on company settings)
-    reference_date = Date.today
     company_settings = CompanySetting.instance
+
+    # RULE #9.3: Use company timezone, not server timezone
+    timezone = company_settings.timezone || 'UTC'
+    reference_date = Time.now.in_time_zone(timezone).to_date
 
     # Get working days configuration
     working_days = company_settings.working_days || {
