@@ -460,8 +460,8 @@ export default function BugHunterTests() {
                       )}
                     </td>
                     <td className="px-3 py-4 text-sm text-gray-600 dark:text-gray-300">
-                      {result || lastRun ? (
-                        <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center justify-between gap-2">
+                        {result || lastRun ? (
                           <div className="flex items-center gap-2">
                             {status === 'pass' ? (
                               <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
@@ -472,17 +472,17 @@ export default function BugHunterTests() {
                               {formatDate((result || lastRun).timestamp || (result || lastRun).created_at)}
                             </span>
                           </div>
-                          <button
-                            onClick={() => setShowHistory(showHistory === test.id ? null : test.id)}
-                            className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-                            title="View history"
-                          >
-                            <ClockIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 text-xs">Never run</span>
-                      )}
+                        ) : (
+                          <span className="text-gray-400 text-xs">Never run</span>
+                        )}
+                        <button
+                          onClick={() => setShowHistory(showHistory === test.id ? null : test.id)}
+                          className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                          title="View audit history"
+                        >
+                          <ClockIcon className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                     <td className="px-3 py-4 text-right text-sm">
                       <button
