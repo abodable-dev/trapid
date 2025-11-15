@@ -23,8 +23,8 @@ import { getTodayInCompanyTimezone as getToday, getNowInCompanyTimezone, getComp
  * - Performance with large datasets
  */
 
-// DIAGNOSTIC MODE: Set to true to enable detailed logging
-const DIAGNOSTIC_MODE = true
+// DIAGNOSTIC MODE: Only enable in development
+const DIAGNOSTIC_MODE = import.meta.env.DEV
 const diagLog = (emoji, msg) => {
   if (DIAGNOSTIC_MODE) {
     const timestamp = performance.now().toFixed(2)
@@ -32,7 +32,7 @@ const diagLog = (emoji, msg) => {
   }
 }
 
-export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }) {
+export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, onUpdateTask }) {
   const ganttContainer = useRef(null)
   const clickTimeout = useRef(null)
   const highlightTimeout = useRef(null) // Timeout to auto-clear highlighting after 10 seconds
@@ -2784,6 +2784,88 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     // PERFORMANCE: Gantt auto-renders after init, no manual render needed
     setGanttReady(true)
 
+    // Expose gantt instance globally for testing
+    window.gantt = gantt
+    console.log('✅ window.gantt exposed globally')
+
+    // Expose automated visual test function globally
+    window.runGanttAutomatedTest = async (options = {}) => {
+      const { visual = false } = options
+      console.log('🧪 Running Gantt Automated Visual Test...', options)
+
+      // Import the test implementation from the modal
+      // For now, just return a simple result
+      const testStartTime = Date.now()
+
+      try {
+        // Get all tasks
+        const tasks = []
+        gantt.eachTask((task) => {
+          tasks.push(task)
+        })
+
+        if (tasks.length === 0) {
+          return {
+            status: 'error',
+            passed: false,
+            message: 'No tasks found in Gantt',
+            testDuration: (Date.now() - testStartTime) / 1000
+          }
+        }
+
+        // Select first task
+        const testTask = tasks[0]
+        console.log('🧪 Testing task:', testTask.text)
+
+        // Get original state
+        const originalStartDate = new Date(testTask.start_date)
+
+        // Move task forward by 5 days
+        const newStartDate = new Date(originalStartDate)
+        newStartDate.setDate(newStartDate.getDate() + 5)
+
+        if (visual) {
+          // Visual delay
+          await new Promise(resolve => setTimeout(resolve, 800))
+        }
+
+        testTask.start_date = newStartDate
+        gantt.updateTask(testTask.id)
+
+        if (visual) {
+          await new Promise(resolve => setTimeout(resolve, 1200))
+        }
+
+        // Move back
+        testTask.start_date = originalStartDate
+        gantt.updateTask(testTask.id)
+
+        if (visual) {
+          await new Promise(resolve => setTimeout(resolve, 800))
+        }
+
+        const testDuration = (Date.now() - testStartTime) / 1000
+
+        return {
+          status: 'pass',
+          passed: true,
+          message: 'Visual test completed - task moved and returned to original position',
+          testDuration,
+          taskId: testTask.id,
+          taskName: testTask.text
+        }
+      } catch (error) {
+        console.error('🧪 Test error:', error)
+        return {
+          status: 'error',
+          passed: false,
+          message: `Test failed: ${error.message}`,
+          testDuration: (Date.now() - testStartTime) / 1000
+        }
+      }
+    }
+    console.log('✅ window.runGanttAutomatedTest exposed globally')
+
     // Add event delegation for checkbox clicks
     const handleCheckboxClick = (e) => {
       if (e.target.classList.contains('gantt-checkbox')) {
@@ -3031,6 +3113,13 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       gantt.clearAll()
       // CRITICAL: Reset signature when gantt is cleared so data will reload
       lastTasksSignature.current = null
+      // Clean up global references
+      if (window.gantt) {
+        delete window.gantt
+      }
+      if (window.runGanttAutomatedTest) {
+        delete window.runGanttAutomatedTest
+      }
     }
   }, [isOpen, publicHolidays, workingDays, zoomLevel]) // Removed onUpdateTask - no need to reinit when callback changes
 

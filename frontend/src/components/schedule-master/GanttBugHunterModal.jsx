@@ -1,5 +1,6 @@
 import { XMarkIcon, BookOpenIcon } from '@heroicons/react/24/outline'
 import { useEffect, useState } from 'react'
+import DOMPurify from 'isomorphic-dompurify'
 
 /**
  * GanttBugHunterModal - Displays the Gantt Bug Hunter (GANTT_BUGS_AND_FIXES.md) - Bug Tracking & Knowledge Base
@@ -124,7 +125,11 @@ export default function GanttBugHunterModal({ isOpen, onClose }) {
             ) : (
               <div
                 className="prose prose-sm dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: '<p class="mb-4 text-gray-700 dark:text-gray-300">' + formatMarkdown(content) + '</p>' }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(
+                    '<p class="mb-4 text-gray-700 dark:text-gray-300">' + formatMarkdown(content) + '</p>'
+                  )
+                }}
               />
             )}
           </div>

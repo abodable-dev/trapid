@@ -84,8 +84,9 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
           }
 
           if (!window.gantt) {
-            setAutomatedTestResult({
+            const errorResult = {
               status: 'error',
+              passed: false,
               message: 'Gantt chart failed to load after 10 seconds',
               details: {
                 steps: testSteps.concat([
@@ -93,9 +94,10 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
                   '❌ Gantt failed to load within 10 seconds'
                 ])
               }
-            })
+            }
+            setAutomatedTestResult(errorResult)
             setIsRunningAutomatedTest(false)
-            return
+            return errorResult
           }
 
           await updateProgress('✅ Gantt view opened successfully')
@@ -129,8 +131,9 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
           }
 
           if (!tasksLoaded) {
-            setAutomatedTestResult({
+            const errorResult = {
               status: 'error',
+              passed: false,
               message: 'Tasks failed to load in Gantt chart after 10 seconds',
               details: {
                 steps: testSteps.concat([
@@ -138,21 +141,24 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
                   '❌ No tasks loaded after 10 seconds'
                 ])
               }
-            })
+            }
+            setAutomatedTestResult(errorResult)
             setIsRunningAutomatedTest(false)
-            return
+            return errorResult
           }
 
           // Wait a bit more for UI to stabilize
           await new Promise(resolve => setTimeout(resolve, 1000))
         } else {
-          setAutomatedTestResult({
+          const errorResult = {
             status: 'error',
+            passed: false,
             message: 'Gantt chart not available. Please open the Gantt view first.',
             details: null
-          })
+          }
+          setAutomatedTestResult(errorResult)
           setIsRunningAutomatedTest(false)
-          return
+          return errorResult
         }
       }
 
@@ -657,6 +663,40 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
 
                 {automatedTestResult && !isRunningAutomatedTest ? (
                   <div className="space-y-4">
+                    {/* BIG TEST COMPLETE BANNER */}
+                    <div className={`border-4 rounded-xl p-8 text-center relative overflow-hidden ${
+                      automatedTestResult.status === 'pass'
+                        ? 'bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/40 dark:to-green-800/40 border-green-400 dark:border-green-600'
+                        : 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/40 dark:to-red-800/40 border-red-400 dark:border-red-600'
+                    }`}>
+                      {/* Animated background effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+
+                      <div className="relative z-10">
+                        {/* HUGE icon */}
+                        <div className="text-9xl mb-4 animate-bounce">
+                          {automatedTestResult.status === 'pass' ? '✅' : '❌'}
+                        </div>
+
+                        {/* Large status text */}
+                        <h2 className={`text-4xl font-bold mb-3 ${
+                          automatedTestResult.status === 'pass'
+                            ? 'text-green-900 dark:text-green-100'
+                            : 'text-red-900 dark:text-red-100'
+                        }`}>
+                          TEST {automatedTestResult.status === 'pass' ? 'PASSED' : 'FAILED'}!
+                        </h2>
+
+                        <p className={`text-xl font-medium ${
+                          automatedTestResult.status === 'pass'
+                            ? 'text-green-800 dark:text-green-200'
+                            : 'text-red-800 dark:text-red-200'
+                        }`}>
+                          {automatedTestResult.message}
+                        </p>
+                      </div>
+                    </div>
+
                     {/* Test Result Header */}
                     <div className={`border rounded-lg p-4 ${
                       automatedTestResult.status === 'pass' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
@@ -664,26 +704,14 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
                       automatedTestResult.status === 'info' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' :
                       'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
                     }`}>
-                      <div className="flex gap-3">
-                        <div className="text-2xl">
-                          {automatedTestResult.status === 'pass' ? '✅' :
-                           automatedTestResult.status === 'fail' ? '❌' : '⚠️'}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className={`font-semibold mb-2 ${
-                            automatedTestResult.status === 'pass' ? 'text-green-900 dark:text-green-100' :
-                            automatedTestResult.status === 'fail' ? 'text-red-900 dark:text-red-100' :
-                            'text-yellow-900 dark:text-yellow-100'
-                          }`}>
-                            Comprehensive Automated Test - {automatedTestResult.status.toUpperCase()}
-                          </h3>
-                          <p className={`text-sm mb-3 ${
-                            automatedTestResult.status === 'pass' ? 'text-green-800 dark:text-green-200' :
-                            automatedTestResult.status === 'fail' ? 'text-red-800 dark:text-red-200' :
-                            'text-yellow-800 dark:text-yellow-200'
-                          }`}>
-                            {automatedTestResult.message}
-                          </p>
+                      <div className="flex-1">
+                        <h3 className={`font-semibold mb-2 ${
+                          automatedTestResult.status === 'pass' ? 'text-green-900 dark:text-green-100' :
+                          automatedTestResult.status === 'fail' ? 'text-red-900 dark:text-red-100' :
+                          'text-yellow-900 dark:text-yellow-100'
+                        }`}>
+                          Test Summary
+                        </h3>
 
                           {automatedTestResult.details?.taskName && (
                             <div className="space-y-2">
@@ -701,7 +729,6 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
                               )}
                             </div>
                           )}
-                        </div>
                       </div>
                     </div>
 

@@ -1,5 +1,6 @@
 import { XMarkIcon, BookOpenIcon } from '@heroicons/react/24/outline'
 import { useEffect, useState } from 'react'
+import DOMPurify from 'isomorphic-dompurify'
 
 /**
  * GanttRulesModal - Displays the Gantt Bible (GANTT_DRAG_FLICKER_FIXES.md)
@@ -118,7 +119,11 @@ export default function GanttRulesModal({ isOpen, onClose }) {
             ) : (
               <div
                 className="prose prose-sm dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: '<p class="mb-4 text-gray-700 dark:text-gray-300">' + formatMarkdown(content) + '</p>' }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(
+                    '<p class="mb-4 text-gray-700 dark:text-gray-300">' + formatMarkdown(content) + '</p>'
+                  )
+                }}
               />
             )}
           </div>

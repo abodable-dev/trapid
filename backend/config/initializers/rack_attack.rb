@@ -1,6 +1,10 @@
 class Rack::Attack
-  # Redis cache store for tracking requests
-  Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
+  # Use Redis in production for distributed rate limiting, MemoryStore in development
+  Rack::Attack.cache.store = if Rails.env.production? && ENV['REDIS_URL'].present?
+    ActiveSupport::Cache::RedisCacheStore.new(url: ENV['REDIS_URL'])
+  else
+    ActiveSupport::Cache::MemoryStore.new
+  end
 
   # Whitelist localhost for development
   safelist('allow-localhost') do |req|

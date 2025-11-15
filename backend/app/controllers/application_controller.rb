@@ -11,13 +11,15 @@ class ApplicationController < ActionController::API
   private
 
   def authorize_request
-    # Skip auth for now - will implement proper auth later
-    @current_user = User.first || User.create!(
-      name: "Default User",
-      email: "user@example.com",
-      password: "password123",
-      role: "admin"
-    )
+    header = request.headers['Authorization']
+    header = header.split(' ').last if header
+
+    begin
+      decoded = JsonWebToken.decode(header)
+      @current_user = User.find(decoded[:user_id]) if decoded
+    rescue ActiveRecord::RecordNotFound, JWT::DecodeError => e
+      render json: { error: 'Unauthorized' }, status: :unauthorized
+    end
   end
 
   def current_user

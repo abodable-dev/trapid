@@ -259,8 +259,9 @@ export default function ScheduleTemplateEditor() {
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const openGanttParam = params.get('openGantt')
+    const runVisualTestParam = params.get('runVisualTest')
 
-    if (openGanttParam && selectedTemplate && rows.length > 0 && !showGanttView && !autoOpenedRef.current) {
+    if ((openGanttParam || runVisualTestParam) && selectedTemplate && rows.length > 0 && !showGanttView && !autoOpenedRef.current) {
       // Mark that we've auto-opened for this URL
       autoOpenedRef.current = true
 
@@ -268,11 +269,76 @@ export default function ScheduleTemplateEditor() {
       setTimeout(() => {
         setShowGanttView(true)
       }, 300)
-    } else if (!openGanttParam) {
+    } else if (!openGanttParam && !runVisualTestParam) {
       // Reset the flag when URL parameter is removed
       autoOpenedRef.current = false
     }
   }, [location.search, selectedTemplate, rows.length])
+
+  // Auto-run visual test when runVisualTest parameter is present and Gantt is loaded
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const runVisualTestParam = params.get('runVisualTest')
+
+    console.log('🔍 Visual test useEffect running...')
+    console.log('🔍 URL search params:', location.search)
+    console.log('🔍 runVisualTestParam:', runVisualTestParam)
+    console.log('🔍 showGanttView:', showGanttView)
+    console.log('🔍 selectedTemplate:', selectedTemplate?.id)
+
+    if (runVisualTestParam && showGanttView) {
+      console.log('🧪 Visual test mode detected - Gantt view is now open')
+      console.log('🧪 Test ID:', runVisualTestParam)
+      console.log('🧪 Template ID:', selectedTemplate?.id)
+
+      // Wait for Gantt to fully initialize and expose window.runGanttAutomatedTest
+      const runTest = async () => {
+        let attempts = 0
+        const maxAttempts = 40 // 20 seconds max wait
+
+        // Poll for window.runGanttAutomatedTest to be available
+        while (!window.runGanttAutomatedTest && attempts < maxAttempts) {
+          console.log(`🧪 Waiting for Gantt test function... (attempt ${attempts + 1}/${maxAttempts})`)
+          await new Promise(resolve => setTimeout(resolve, 500))
+          attempts++
+        }
+
+        if (!window.runGanttAutomatedTest) {
+          console.error('❌ Gantt test function not available after 20 seconds')
+          alert('Test failed: Gantt did not load properly')
+          return
+        }
+
+        console.log('🧪 Running automated visual test...')
+
+        try {
+          // Run the test with visual mode
+          const result = await window.runGanttAutomatedTest({ visual: true })
+          console.log('🧪 Test completed:', result)
+
+          // Save result to database
+          await api.post(`/api/v1/bug_hunter_tests/${runVisualTestParam}/run`, {
+            template_id: selectedTemplate.id,
+            passed: result.passed,
+            message: result.message,
+            duration: result.testDuration
+          })
+
+          // Show results - navigate back to Bug Hunter Tests with result indicator
+          setTimeout(() => {
+            setShowGanttView(false)
+            // Navigate to Bug Hunter Tests tab
+            window.location.href = `/settings?tab=schedule-master&subtab=bug-hunter&testResult=${result.passed ? 'pass' : 'fail'}&testId=${runVisualTestParam}`
+          }, 2000) // Keep Gantt visible for 2 seconds after test completes
+        } catch (error) {
+          console.error('❌ Test error:', error)
+          alert(`Test failed: ${error.message}`)
+        }
+      }
+
+      runTest()
+    }
+  }, [showGanttView, location.search, selectedTemplate])
 
   useEffect(() => {
     if (selectedTemplate) {
@@ -284,8 +350,26 @@ export default function ScheduleTemplateEditor() {
     try {
       const response = await api.get('/api/v1/schedule_templates')
       setTemplates(response)
+
       if (response.length > 0 && !selectedTemplate) {
-        setSelectedTemplate(response[0])
+        // Check if template ID is specified in URL
+        const params = new URLSearchParams(location.search)
+        const templateIdParam = params.get('template')
+
+        if (templateIdParam) {
+          console.log('🔍 Template ID from URL:', templateIdParam)
+          const matchingTemplate = response.find(t => t.id === parseInt(templateIdParam))
+          if (matchingTemplate) {
+            console.log('✅ Found matching template:', matchingTemplate.name)
+            setSelectedTemplate(matchingTemplate)
+          } else {
+            console.warn('⚠️ Template ID from URL not found, using first template')
+            setSelectedTemplate(response[0])
+          }
+        } else {
+          // No URL parameter, default to first template
+          setSelectedTemplate(response[0])
+        }
       }
     } catch (err) {
       console.error('Failed to load templates:', err)
@@ -2222,6 +2306,7 @@ export default function ScheduleTemplateEditor() {
           isOpen={showGanttView}
           onClose={handleCloseGantt}
           tasks={rows}
+          templateId={selectedTemplate?.id}
           onUpdateTask={async (taskId, updates, options) => {
             // Find the row and update it
             const rowIndex = rows.findIndex(r => r.id === taskId)

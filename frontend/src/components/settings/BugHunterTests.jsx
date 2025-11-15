@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { PlayIcon, EyeIcon, ClockIcon } from '@heroicons/react/24/outline'
+import toast, { Toaster } from 'react-hot-toast'
 import { api } from '../../api'
 import GanttTestStatusModal from '../schedule-master/GanttTestStatusModal'
 
 export default function BugHunterTests() {
+  const location = useLocation()
   const [tests, setTests] = useState([])
   const [selectedTests, setSelectedTests] = useState([])
   const [runningTests, setRunningTests] = useState(new Set())
@@ -19,9 +22,45 @@ export default function BugHunterTests() {
 
   // Load tests and history on mount
   useEffect(() => {
-    loadTests()
-    loadTestHistory()
-    loadScheduleTemplates()
+    const loadAndShowResults = async () => {
+      await loadTests()
+      await loadTestHistory()
+      await loadScheduleTemplates()
+
+      // Check if we're returning from a visual test with results
+      const params = new URLSearchParams(location.search)
+      const testResult = params.get('testResult')
+      const testId = params.get('testId')
+
+      if (testResult && testId) {
+        console.log('🧪 Visual test completed!')
+        console.log('🧪 Result:', testResult, 'Test ID:', testId)
+
+        // Show a success/failure alert
+        const passed = testResult === 'pass'
+        const icon = passed ? '✅' : '❌'
+        const message = passed
+          ? `Visual Test PASSED! Check the test history below for details.`
+          : `Visual Test FAILED. Check the test history below for details.`
+
+        if (passed) {
+          toast.success(message, { duration: 5000, icon: icon })
+        } else {
+          toast.error(message, { duration: 5000, icon: icon })
+        }
+
+        // Reload test history to show the latest result
+        await loadTestHistory()
+
+        // Clean up URL parameters
+        params.delete('testResult')
+        params.delete('testId')
+        const newSearch = params.toString()
+        window.history.replaceState({}, '', `${location.pathname}${newSearch ? '?' + newSearch : ''}`)
+      }
+    }
+
+    loadAndShowResults()
   }, [])
 
   const loadTests = async () => {
@@ -41,9 +80,12 @@ export default function BugHunterTests() {
   const loadTestHistory = async () => {
     try {
       const response = await api.get('/api/v1/bug_hunter_tests/history')
-      setTestHistory(response.data || response || [])
+      const history = response.data || response || []
+      setTestHistory(history)
+      return history
     } catch (error) {
       console.error('Failed to load test history:', error)
+      return []
     }
   }
 
@@ -69,7 +111,7 @@ export default function BugHunterTests() {
         setSelectedTemplates(defaults)
       }
     }
-  }, [tests, scheduleTemplates])
+  }, [tests, scheduleTemplates, selectedTemplates])
 
   const cleanupOldData = async () => {
     try {
@@ -116,13 +158,15 @@ export default function BugHunterTests() {
       // Check if template is selected
       const templateId = selectedTemplates[testId]
       if (!templateId) {
-        alert('Please select a Schedule Template first before running the visual test.')
+        toast.error('Please select a Schedule Template first before running the visual test.', {
+          duration: 4000
+        })
         return
       }
 
-      // Open the modal which will expose window.runGanttAutomatedTest
-      setVisualTestId(testId)
-      setShowTestStatusModal(true)
+      // FIRST: Navigate to Schedule Master to show the Gantt chart
+      console.log('🧪 Opening Schedule Master Gantt view for visual test...')
+      window.location.href = `/settings?tab=schedule-master&subtab=setup&template=${templateId}&runVisualTest=${testId}`
       return
     }
 
@@ -177,75 +221,9 @@ export default function BugHunterTests() {
   const handleTestModalClose = async () => {
     setShowTestStatusModal(false)
     setVisualTestId(null)
+    // Reload test history to show the latest results
+    await loadTestHistory()
   }
-
-  // Effect to run visual test when modal opens
-  useEffect(() => {
-    if (showTestStatusModal && visualTestId) {
-      // Wait for modal to fully render and window.runGanttAutomatedTest to be available
-      const runVisualTest = async () => {
-        console.log('🧪 Visual test starting for test ID:', visualTestId)
-
-        // Wait a bit for the modal to mount and expose the function
-        await new Promise(resolve => setTimeout(resolve, 500))
-
-        if (!window.runGanttAutomatedTest) {
-          console.error('❌ window.runGanttAutomatedTest not available')
-          return
-        }
-
-        setRunningTests(prev => new Set([...prev, visualTestId]))
-
-        try {
-          // Run the visual test
-          console.log('🧪 Calling window.runGanttAutomatedTest...')
-          const result = await window.runGanttAutomatedTest({ silent: false, visual: true })
-          console.log('🧪 Test result:', result)
-
-          // Save the result to database with template ID
-          const templateId = selectedTemplates[visualTestId]
-          console.log('🧪 Saving result to database for template:', templateId)
-
-          await api.post(`/api/v1/bug_hunter_tests/${visualTestId}/run`, {
-            template_id: templateId,
-            passed: result.passed,
-            message: result.message,
-            duration: result.testDuration || result.duration
-          })
-
-          setTestResults(prev => ({
-            ...prev,
-            [visualTestId]: {
-              status: result.passed ? 'pass' : 'fail',
-              message: result.message,
-              timestamp: new Date().toISOString(),
-              duration: result.testDuration || result.duration
-            }
-          }))
-
-          await loadTestHistory()
-        } catch (error) {
-          console.error('❌ Visual test error:', error)
-          setTestResults(prev => ({
-            ...prev,
-            [visualTestId]: {
-              status: 'fail',
-              message: error.message,
-              timestamp: new Date().toISOString()
-            }
-          }))
-        } finally {
-          setRunningTests(prev => {
-            const newSet = new Set(prev)
-            newSet.delete(visualTestId)
-            return newSet
-          })
-        }
-      }
-
-      runVisualTest()
-    }
-  }, [showTestStatusModal, visualTestId])
 
   const handleTemplateChange = (testId, templateId) => {
     setSelectedTemplates(prev => ({
@@ -299,15 +277,36 @@ export default function BugHunterTests() {
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-10">
-      <div className="max-w-full">
-        <div className="sm:flex sm:items-center mb-6">
-          <div className="sm:flex-auto">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Bug Hunter Tests</h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Automated tests for Gantt schedule cascading, dependencies, and performance
-            </p>
-          </div>
+    <>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          className: 'dark:bg-gray-800 dark:text-white',
+          success: {
+            duration: 5000,
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+      <div className="px-4 sm:px-6 lg:px-8 py-10">
+        <div className="max-w-full">
+          <div className="sm:flex sm:items-center mb-6">
+            <div className="sm:flex-auto">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Bug Hunter Tests</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Automated tests for Gantt schedule cascading, dependencies, and performance
+              </p>
+            </div>
           <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
             <button
               onClick={runSelectedTests}
@@ -559,5 +558,6 @@ export default function BugHunterTests() {
         />
       </div>
     </div>
+    </>
   )
 }

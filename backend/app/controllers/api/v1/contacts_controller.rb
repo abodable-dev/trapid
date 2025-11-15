@@ -982,10 +982,13 @@ module Api
         begin
           @contact.enable_portal!(portal_type, email: email, password: password)
 
+          # Note: Password should be displayed to user immediately in the UI
+          # and then securely transmitted separately (e.g., via email)
+          # We no longer return it in the API response for security
           render json: {
             success: true,
             portal_user: @contact.portal_user.as_json(only: [:id, :email, :portal_type, :active, :created_at]),
-            plain_password: password  # Return password so UI can display it
+            message: 'Portal access enabled successfully. Password has been set.'
           }
         rescue => e
           render json: {
@@ -1013,11 +1016,15 @@ module Api
         update_params[:active] = params[:active] unless params[:active].nil?
 
         if portal_user.update(update_params)
-          render json: {
+          response_data = {
             success: true,
-            portal_user: portal_user.as_json(only: [:id, :email, :portal_type, :active, :created_at]),
-            plain_password: params[:password]  # Return password if it was changed
+            portal_user: portal_user.as_json(only: [:id, :email, :portal_type, :active, :created_at])
           }
+          # Add message if password was changed
+          if params[:password].present?
+            response_data[:message] = 'Portal user updated successfully. Password has been changed.'
+          end
+          render json: response_data
         else
           render json: {
             success: false,
