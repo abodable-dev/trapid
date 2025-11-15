@@ -1,7 +1,7 @@
 {
   "name": "trapid-frontend",
   "private": true,
-  "version": "1.99.85",
+  "version": "1.99.88",
   "type": "module",
   "scripts": {
     "dev": "node scripts/increment-version.js && vite",
@@ -34,10 +34,13 @@
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.6.0",
     "react-leaflet": "^5.0.0",
+    "react-markdown": "^10.1.0",
     "react-pdf": "^9.1.1",
     "react-router-dom": "^7.9.4",
     "reactflow": "^11.11.4",
     "recharts": "^3.3.0",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
     "web-vitals": "^5.1.0",
     "xlsx": "^0.18.5"
   },

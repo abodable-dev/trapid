@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { BookOpenIcon, MagnifyingGlassIcon, PlusIcon, FunnelIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import KnowledgeEntryModal from '../components/KnowledgeEntryModal'
+import MarkdownRenderer from '../components/MarkdownRenderer'
 
 export default function DocumentationPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -315,11 +316,7 @@ export default function DocumentationPage() {
                       <div className="text-gray-500 dark:text-gray-400">Loading...</div>
                     </div>
                   ) : content ? (
-                    <div className="prose dark:prose-invert max-w-none">
-                      <pre className="whitespace-pre-wrap font-mono text-sm">
-                        {content}
-                      </pre>
-                    </div>
+                    <MarkdownRenderer content={content} />
                   ) : (
                     <div className="text-center py-12">
                       <BookOpenIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />

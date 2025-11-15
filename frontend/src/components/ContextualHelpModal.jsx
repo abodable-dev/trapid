@@ -4,6 +4,7 @@ import { XMarkIcon, MagnifyingGlassIcon, BookOpenIcon } from '@heroicons/react/2
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { getChapterName } from '../config/helpMapping'
+import MarkdownRenderer from './MarkdownRenderer'
 
 export default function ContextualHelpModal({ isOpen, onClose, chapter, section }) {
   const navigate = useNavigate()
@@ -183,13 +184,7 @@ export default function ContextualHelpModal({ isOpen, onClose, chapter, section 
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                     </div>
                   ) : (
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      {/* Render markdown content */}
-                      <div
-                        className="help-content"
-                        dangerouslySetInnerHTML={{ __html: formatMarkdown(helpContent) }}
-                      />
-                    </div>
+                    <MarkdownRenderer content={helpContent} />
                   )}
                 </div>
 
@@ -216,42 +211,4 @@ export default function ContextualHelpModal({ isOpen, onClose, chapter, section 
       </Dialog>
     </Transition>
   )
-}
-
-/**
- * Simple markdown-to-HTML converter
- * For production, consider using marked or react-markdown
- */
-function formatMarkdown(markdown) {
-  if (!markdown) return ''
-
-  let html = markdown
-    // Headers
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    // Bold
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Italic
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-indigo-600 dark:text-indigo-400 hover:underline">$1</a>')
-    // Code blocks
-    .replace(/```([^`]+)```/g, '<pre class="bg-gray-100 dark:bg-gray-900 p-3 rounded-lg overflow-x-auto"><code>$1</code></pre>')
-    // Inline code
-    .replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-900 px-1.5 py-0.5 rounded text-sm">$1</code>')
-    // Lists
-    .replace(/^\- (.+)$/gim, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/s, '<ul class="list-disc list-inside space-y-1">$1</ul>')
-    // Paragraphs
-    .split('\n\n')
-    .map(para => {
-      if (para.startsWith('<h') || para.startsWith('<ul') || para.startsWith('<pre')) {
-        return para
-      }
-      return `<p>${para}</p>`
-    })
-    .join('\n')
-
-  return html
 }

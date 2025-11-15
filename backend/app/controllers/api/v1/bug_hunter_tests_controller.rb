@@ -330,6 +330,7 @@ class Api::V1::BugHunterTestsController < ApplicationController
 
   def run_playwright_test
     require 'open3'
+    require 'timeout'
 
     frontend_path = Rails.root.join('..', 'frontend')
     start_time = Time.now
@@ -342,13 +343,14 @@ class Api::V1::BugHunterTestsController < ApplicationController
       'GANTT_TEST_TEMPLATE_ID' => template_id.to_s
     }
 
-    # Run the Playwright test
-    stdout, stderr, status = Open3.capture3(
-      env,
-      'npm run test:gantt',
-      chdir: frontend_path,
-      timeout: 120 # 2 minute timeout
-    )
+    # Run the Playwright test with timeout
+    stdout, stderr, status = Timeout.timeout(120) do
+      Open3.capture3(
+        env,
+        'npm run test:gantt',
+        chdir: frontend_path
+      )
+    end
 
     duration = (Time.now - start_time).round(2)
 

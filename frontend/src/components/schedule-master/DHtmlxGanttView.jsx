@@ -2255,7 +2255,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
           }
         })
 
-        gantt.render()
+        debouncedRender(0)
 
         // Auto-clear highlighting after 10 seconds
         highlightTimeout.current = setTimeout(() => {
@@ -2273,7 +2273,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
             link.$colorIndex = undefined
           })
 
-          gantt.render()
+          debouncedRender(0)
         }, 10000) // 10 seconds = 10000ms
       }, 250) // 250ms delay to distinguish from double-click
 
@@ -2542,7 +2542,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
 
             // Force a refresh of the task in the grid
             gantt.updateTask(id)
-            gantt.render()
+            debouncedRender(0)
           }
         }
 
@@ -3231,7 +3231,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
             gantt.updateTask(taskId)
 
             // Force full render to update checkbox and task bar color
-            gantt.render()
+            debouncedRender(0)
 
             // Save to backend (start_date: 0 means auto-calculate from today)
             // CRITICAL: Preserve predecessor_ids
@@ -4350,7 +4350,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
       gantt.updateTask(blockedTask.id)
     })
 
-    gantt.render()
+    debouncedRender(0)
     isDragging.current = false
     delete movedTask.$originalStart
     setCascadeModal(null)
@@ -4365,7 +4365,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
     console.log('↩️ User cancelled cascade - reverting move')
     movedTask.start_date = originalStart
     gantt.updateTask(movedTask.id)
-    gantt.render()
+    debouncedRender(0)
     isDragging.current = false
     delete movedTask.$originalStart
     setCascadeModal(null)
@@ -5624,14 +5624,14 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
 
                     // Update DHTMLX Gantt UI
                     gantt.updateTask(task.id)
-                    gantt.render()
+                    debouncedRender(0)
                     console.log('✅ UI updated with unlocked state')
                   } catch (error) {
                     console.error('❌ Backend save failed:', error)
                     // Revert UI on error
                     task[field] = !checked
                     gantt.updateTask(task.id)
-                    gantt.render()
+                    debouncedRender(0)
                   } finally {
                     // Reset isSaving flag after everything completes
                     isSaving.current = false

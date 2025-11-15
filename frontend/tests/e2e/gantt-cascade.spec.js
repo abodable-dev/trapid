@@ -144,30 +144,26 @@ test.describe('Gantt Cascade Functionality', () => {
     await page.waitForTimeout(2000);
     console.log('✅ Test data reset');
 
-    // Navigate to Settings > Schedule Master tab
-    console.log('📍 Navigating to Settings > Schedule Master...');
-    await page.goto('/settings?tab=schedule-master');
+    // Navigate to Settings > Schedule Master > Bug Hunter Tests tab
+    console.log('📍 Navigating to Settings > Schedule Master > Bug Hunter Tests...');
+    await page.goto('/settings?tab=schedule-master&subtab=bug-hunter');
     await page.waitForTimeout(2000);
 
-    // Wait for template dropdown to load
-    console.log('🔍 Waiting for template dropdown...');
-    await page.waitForSelector('select', { timeout: 10000 });
+    // Find the E2E test row and click the "eye" (visual test) button
+    console.log('🔍 Finding Gantt Cascade E2E Test row...');
+    const e2eTestRow = page.locator('tr').filter({ hasText: 'Gantt Cascade E2E Test' });
+    await e2eTestRow.waitFor({ timeout: 10000 });
+    console.log('✅ Found E2E test row');
 
-    // Select template
-    console.log(`📋 Selecting ${TEST_TEMPLATE_NAME} (template ID: ${TEST_TEMPLATE_ID})...`);
-    await page.selectOption('select', TEST_TEMPLATE_ID);
-    await page.waitForTimeout(2000);
-    console.log(`✅ ${TEST_TEMPLATE_NAME} selected`);
-
-    // Click the Gantt button to open Gantt view
-    console.log('📊 Opening Gantt view...');
-    // Look for button with Gantt icon or text
-    const ganttButton = page.locator('button').filter({ hasText: /gantt/i }).first();
-    await ganttButton.click();
-    await page.waitForTimeout(2000);
+    // Click the eye button (visual test button) in that row
+    console.log('📊 Clicking visual test button (eye icon)...');
+    const visualButton = e2eTestRow.locator('button').filter({ hasText: '' }).first(); // Eye icon SVG
+    await visualButton.click();
+    await page.waitForTimeout(3000);
 
     // Wait for Gantt to load
-    await page.waitForSelector('.gantt_task_line', { timeout: 10000 });
+    console.log('🔍 Waiting for Gantt chart to load...');
+    await page.waitForSelector('.gantt_task_line', { timeout: 15000 });
     console.log('✅ Gantt loaded');
 
     // Wait extra time for DHtmlx Gantt to fully initialize

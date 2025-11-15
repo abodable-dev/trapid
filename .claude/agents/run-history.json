@@ -72,12 +72,12 @@
       "runs": []
     },
     "gantt-bug-hunter": {
-      "total_runs": 1,
-      "successful_runs": 1,
+      "total_runs": 2,
+      "successful_runs": 2,
       "failed_runs": 0,
-      "last_run": "2025-11-16T00:00:00Z",
+      "last_run": "2025-11-15T23:04:09Z",
       "last_status": "success",
-      "last_message": "Comprehensive diagnostic complete - 10/12 tests passed, 2 minor issues",
+      "last_message": "Full diagnostic complete - 11/12 RULES compliant, 10/11 tests passed, 1 E2E config issue, 8 render violations (non-critical)",
       "runs": [
         {
           "timestamp": "2025-11-16T00:00:00Z",
@@ -91,13 +91,43 @@
             "protected_patterns": "VERIFIED",
             "issues_found": ["gantt-cascade-e2e: timeout config", "working-days-enforcement: Template 4 missing"]
           }
+        },
+        {
+          "timestamp": "2025-11-15T23:04:09Z",
+          "status": "success",
+          "message": "Full diagnostic complete - 11/12 RULES compliant, 10/11 tests passed, 1 E2E config issue, 8 render violations (non-critical)",
+          "duration_seconds": 67,
+          "details": {
+            "static_analysis": "11/12 RULES PASS - RULE #9.11 has 8 non-critical violations",
+            "automated_tests_passed": 10,
+            "automated_tests_failed": 1,
+            "protected_patterns": "VERIFIED",
+            "issues_found": [
+              "RULE #9.11: 8 direct gantt.render() calls (non-critical - in event handlers)",
+              "E2E Test gantt-cascade-e2e: timeout config error"
+            ],
+            "tests_run": [
+              "working-days-enforcement: PASS",
+              "health-status: PASS",
+              "actionable-recommendations: PASS",
+              "cascade-event-tracking: PASS",
+              "lock-state-monitoring: PASS",
+              "api-call-patterns: PASS",
+              "duplicate-api-calls: PASS",
+              "excessive-reloads: PASS",
+              "slow-drag-operations: PASS",
+              "state-update-batching: PASS",
+              "performance-timing: PASS",
+              "gantt-cascade-e2e: FAIL (config error)"
+            ]
+          }
         }
       ]
     }
   },
   "metadata": {
     "created": "2025-11-16T00:00:00Z",
-    "last_updated": "2025-11-16T00:00:00Z",
+    "last_updated": "2025-11-15T23:04:09Z",
     "version": "1.0"
   }
 }

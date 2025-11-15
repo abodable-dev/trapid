@@ -85,7 +85,7 @@ All Trapid documentation now lives in `/TRAPID_DOCS/` with three core documents:
 4. **Proceed with work:**
    - Rules from Bible are ABSOLUTE
    - Update Bible if new rules discovered
-   - Update Lexicon if bugs fixed
+   - **Update Lexicon when fixing bugs** (see workflow below)
 
 ### Example: Gantt Work
 
@@ -108,10 +108,54 @@ All Trapid documentation now lives in `/TRAPID_DOCS/` with three core documents:
 
 **Never proceed with feature work without reading the Bible chapter first.**
 
+### Session Continuation Protocol
+
+**🔴 CRITICAL: When chat is compacted/summarized:**
+
+If the conversation runs out of context and needs to be summarized, include in the summary:
+1. **Active Chapter Reference** - Which Bible/Lexicon chapters were being worked on
+2. **Active Rules** - List of RULE #s that were referenced
+3. **Bug Numbers** - Any BUG-XXX entries that were created or modified
+4. **Next Session Instructions** - "Before resuming work, re-read Bible Chapter X"
+
+**Example summary note:**
+```
+Working on: Gantt timezone fixes (Chapter 9)
+Rules Applied: RULE #9.3 (Company Settings - Timezone)
+Bugs Fixed: BUG-004 (Timezone Violations)
+Next Session: Re-read TRAPID_BIBLE.md Chapter 9 and TRAPID_LEXICON.md Chapter 9
+```
+
+This ensures continuity across sessions and prevents rule violations after context loss.
+
 ## Error Handling
 - If errors are flagged, use the bug-hunter agent to find and diagnose issues
 - Consult with the backend-developer agent to develop solutions quickly
 - Prioritize fast resolution while maintaining code quality
+
+## Bug Fix Workflow - CRITICAL RULE
+
+**🔴 RULE: Every bug fix MUST be documented in Lexicon**
+
+When fixing ANY bug in the codebase:
+
+1. **Fix the bug** - Write the code fix
+2. **Update Lexicon** - Document in `/TRAPID_DOCS/TRAPID_LEXICON.md` under correct chapter
+3. **Update Bible (if needed)** - Add new RULE if bug revealed a coding pattern violation
+4. **Test the fix** - Verify bug is resolved (run Bug Hunter tests if applicable)
+5. **Commit** - Include Lexicon update in same commit as fix
+
+**Where to document:**
+- Find the correct chapter in Lexicon (same chapter as the feature)
+- Add bug entry following format in Bible RULE #0
+- Example: Gantt bugs → Lexicon Chapter 9
+
+**Format reference:**
+See `/TRAPID_DOCS/TRAPID_BIBLE.md` RULE #0 "Bug Fix Documentation Workflow" for complete format
+
+**Example:**
+- Fixed timezone bug in Gantt? → Document in Lexicon Chapter 9 as BUG-004
+- Fixed authentication issue? → Document in Lexicon Chapter 1
 
 ## Testing Protocol - CRITICAL RULE
 
