@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { BookOpenIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
-import api from '../utils/api'
+import { api } from '../api'
 
 export default function DocumentationPage() {
   const [searchParams, setSearchParams] = useSearchParams()
