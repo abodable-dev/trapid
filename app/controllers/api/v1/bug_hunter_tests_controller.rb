@@ -335,8 +335,8 @@ class Api::V1::BugHunterTestsController < ApplicationController
     frontend_path = Rails.root.join('..', 'frontend')
     start_time = Time.now
 
-    # Get template ID from params, default to 5 (Schedule Master)
-    template_id = params[:template_id] || '5'
+    # Get template ID from params, default to 4 (Bug Hunter Schedule Master)
+    template_id = params[:template_id] || '4'
 
     # Set environment variable for the Playwright test
     env = {
