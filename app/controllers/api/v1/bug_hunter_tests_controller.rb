@@ -81,7 +81,8 @@ class Api::V1::BugHunterTestsController < ApplicationController
         name: 'Gantt Cascade E2E Test',
         type: 'E2E',
         rules: 'Full Playwright E2E test: Tests cascade without flicker, detects infinite loops, monitors API calls and Gantt reloads',
-        can_run_visual: true
+        can_run_visual: true,
+        needs_template: true
       },
       {
         id: 'working-days-enforcement',
@@ -89,6 +90,7 @@ class Api::V1::BugHunterTestsController < ApplicationController
         type: 'Backend',
         rules: gantt_rules[:working_days] || 'Verifies unlocked tasks are only on working days configured in Company Settings. Locked tasks can be on any day',
         can_run_visual: false,
+        needs_template: true,
         source: 'Company Settings (working_days)'
       }
     ]
