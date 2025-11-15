@@ -20,36 +20,93 @@
 3. Pass the agent's instructions as the prompt
 4. Update `.claude/agents/run-history.json` with run results
 
-## Gantt & Schedule Master Development
+## Documentation Structure - TRAPID_DOCS
+
+**NEW: Unified documentation system with Trinity structure**
+
+All Trapid documentation now lives in `/TRAPID_DOCS/` with three core documents:
+
+### The Trinity - Mirrored Chapters
+
+1. **📖 TRAPID_BIBLE.md** (RULES - for Claude Code + Developers)
+   - MUST/NEVER/ALWAYS directives
+   - Protected code patterns
+   - Authority: ABSOLUTE
+
+2. **📕 TRAPID_LEXICON.md** (KNOWLEDGE - for Claude Code + Developers)
+   - Bug history and fixes
+   - Architecture explanations
+   - Authority: Reference (supplements Bible)
+
+3. **📘 TRAPID_USER_MANUAL.md** (HOW-TO - for End Users)
+   - Step-by-step guides
+   - User-friendly tutorials
+   - Authority: User-facing only
+
+**Key Concept:** All three share **mirrored chapter numbers**:
+- Chapter 9 = Gantt & Schedule Master (in all three docs)
+- Chapter 15 = Xero Accounting (in all three docs)
+- etc.
+
+### Quick Reference
+
+**📋 Chapter Guide:** `/TRAPID_DOCS/00_INDEX/CHAPTER_GUIDE.md`
+- Quick lookup: feature → chapter number
+- Example: "Need Gantt rules? → Bible Chapter 9"
+
+**⚖️ Documentation Authority:** `/TRAPID_DOCS/00_INDEX/DOCUMENTATION_AUTHORITY.md`
+- Defines which doc overrides which
+- Conflict resolution rules
+
+**📍 Progress Tracker:** `/TRAPID_DOCS/00_INDEX/PROGRESS_TRACKER.md`
+- Resume-safe checkpoints
+- Current build status
+
+---
+
+## Feature-Specific Work (NEW WORKFLOW)
+
+**Before working on ANY feature:**
+
+1. **Check if feature has a Bible chapter:**
+   - See Chapter Guide: `/TRAPID_DOCS/00_INDEX/CHAPTER_GUIDE.md`
+   - Example: Gantt = Chapter 9, Xero = Chapter 15
+
+2. **Read the relevant Bible chapter:**
+   - Follow ALL rules without exception
+   - Check protected code patterns
+   - Example: `/TRAPID_DOCS/TRAPID_BIBLE.md#chapter-9-gantt--schedule-master`
+
+3. **Consult Lexicon for known issues:**
+   - Check bug history
+   - Learn from past mistakes
+   - Example: `/TRAPID_DOCS/TRAPID_LEXICON.md#chapter-9-gantt--schedule-master`
+
+4. **Proceed with work:**
+   - Rules from Bible are ABSOLUTE
+   - Update Bible if new rules discovered
+   - Update Lexicon if bugs fixed
+
+### Example: Gantt Work
 
 **CRITICAL: Before ANY Gantt/Schedule Master work:**
 
-1. **Read the Gantt Bible:**
+1. **Read Bible Chapter 9:**
    ```
-   /Users/rob/Projects/trapid/GANTT_BIBLE.md
+   /TRAPID_DOCS/TRAPID_BIBLE.md (Chapter 9)
    ```
 
-2. **Give thumbs up and wait for user confirmation:**
-   - After reading the Bible, respond with 👍
-   - Wait for user to respond before proceeding
-   - This ensures you have the latest rules in context
+2. **Read Lexicon Chapter 9:**
+   ```
+   /TRAPID_DOCS/TRAPID_LEXICON.md (Chapter 9)
+   ```
 
-3. **The Bible is ABSOLUTE AUTHORITY:**
-   - All 13 RULES must be followed without exception
+3. **Follow ALL rules** - Bible Chapter 9 is ABSOLUTE AUTHORITY
+   - 12 RULES must be followed without exception
    - Protected code patterns cannot be modified
-   - CC_UPDATE table must be updated for column changes (RULE #12)
+   - CC_UPDATE table must be updated for column changes
 
-4. **Two-document system:**
-   - 📖 **GANTT_BIBLE.md** - RULES only (directives, MUST/NEVER/ALWAYS)
-   - 📕 **GANTT_BUG_HUNTER_LEXICON.md** - KNOWLEDGE only (bug history, explanations)
-
-**When to read the Bible:**
-- At the start of every session involving Gantt work
-- Before making ANY changes to Schedule Master
-- Before investigating Gantt-related bugs
-- When user asks about Gantt functionality
-
-**Never proceed with Gantt work without reading the Bible first.**
+**Never proceed with feature work without reading the Bible chapter first.**
 
 ## Error Handling
 - If errors are flagged, use the bug-hunter agent to find and diagnose issues
