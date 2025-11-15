@@ -39,19 +39,47 @@ Handles git operations, commits, pushes, and deployments to staging environment.
 
 ## Deployment Protocol
 
+### Pre-Deployment Checks
+
+**CRITICAL: Run these checks BEFORE every deployment**
+
+1. **Check for pending migrations:**
+   ```bash
+   cd backend && bin/rails db:migrate:status
+   ```
+   - If any migrations show "down", they will run on staging
+   - Verify migrations won't break existing data
+
+2. **Check for unmigrated local schema changes:**
+   ```bash
+   # Check if schema.rb has changes not in migrations
+   git diff db/schema.rb
+   ```
+   - If schema.rb changed but no new migration exists, create one
+   - Common issue: Manual column additions without migrations
+
+3. **Verify migration reversibility:**
+   - Read any new migration files
+   - Ensure they have proper `change` or `up`/`down` methods
+   - Check for data loss risks (dropping columns, etc.)
+
 ### Staging Deployment (rob branch)
 
-1. Check current branch: `git branch --show-current`
-2. Commit and push changes to `rob` branch
-3. Deploy backend using git subtree:
+1. **Run pre-deployment checks** (see above)
+2. Check current branch: `git branch --show-current`
+3. Commit and push changes to `rob` branch
+4. Deploy backend using git subtree:
    ```bash
    export GIT_HTTP_USER_AGENT="git/2.51.2"
    /opt/homebrew/bin/git subtree split --prefix=backend -b backend-deploy-rob
    /opt/homebrew/bin/git push heroku backend-deploy-rob:main --force
    git branch -D backend-deploy-rob
    ```
-4. Frontend deploys automatically via Vercel (rob branch)
-5. Verify deployment and check for migration errors
+5. Frontend deploys automatically via Vercel (rob branch)
+6. **Verify deployment:**
+   - Check Heroku logs for migration success
+   - Test critical endpoints (health check, API status)
+   - Confirm no 500 errors
 
 ### Production Deployment
 
