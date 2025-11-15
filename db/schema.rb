@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_15_223838) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_15_224533) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -409,8 +409,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_223838) do
     t.text "search_text"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "knowledge_type", default: "bug", null: false
+    t.text "description"
+    t.text "details"
+    t.text "examples"
+    t.text "recommendations"
+    t.index ["chapter_number", "knowledge_type"], name: "index_documented_bugs_on_chapter_number_and_knowledge_type"
     t.index ["chapter_number", "status"], name: "index_documented_bugs_on_chapter_number_and_status"
     t.index ["chapter_number"], name: "index_documented_bugs_on_chapter_number"
+    t.index ["knowledge_type"], name: "index_documented_bugs_on_knowledge_type"
     t.index ["search_text"], name: "index_documented_bugs_on_search_text", opclass: :gin_trgm_ops, using: :gin
     t.index ["severity"], name: "index_documented_bugs_on_severity"
     t.index ["status"], name: "index_documented_bugs_on_status"

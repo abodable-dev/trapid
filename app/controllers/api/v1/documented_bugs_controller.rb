@@ -8,13 +8,15 @@ module Api
       # GET /api/v1/documented_bugs
       # Query params:
       #   ?chapter=3
-      #   ?status=open
-      #   ?severity=critical
+      #   ?type=bug|architecture|test|performance|dev_note|common_issue
+      #   ?status=open (only for bugs)
+      #   ?severity=critical (only for bugs)
       #   ?search=xero sync
       def index
         @bugs = DocumentedBug.all
 
         @bugs = @bugs.by_chapter(params[:chapter]) if params[:chapter].present?
+        @bugs = @bugs.by_type(params[:type]) if params[:type].present?
         @bugs = @bugs.by_status(params[:status]) if params[:status].present?
         @bugs = @bugs.by_severity(params[:severity]) if params[:severity].present?
         @bugs = @bugs.search(params[:search]) if params[:search].present?
@@ -120,6 +122,8 @@ module Api
           :chapter_name,
           :component,
           :bug_title,
+          :knowledge_type,
+          # Bug-specific fields
           :status,
           :severity,
           :first_reported,
@@ -129,6 +133,11 @@ module Api
           :root_cause,
           :solution,
           :prevention,
+          # Universal fields
+          :description,
+          :details,
+          :examples,
+          :recommendations,
           metadata: {}
         )
       end
@@ -140,6 +149,9 @@ module Api
           chapter_name: bug.chapter_name,
           component: bug.component,
           bug_title: bug.bug_title,
+          knowledge_type: bug.knowledge_type,
+          type_display: bug.type_display,
+          # Bug-specific fields (nil for other types)
           status: bug.status,
           status_display: bug.status_display,
           severity: bug.severity,
@@ -151,10 +163,16 @@ module Api
 
         if detailed
           base.merge({
+            # Old bug fields
             scenario: bug.scenario,
             root_cause: bug.root_cause,
             solution: bug.solution,
             prevention: bug.prevention,
+            # New universal fields
+            description: bug.description,
+            details: bug.details,
+            examples: bug.examples,
+            recommendations: bug.recommendations,
             metadata: bug.metadata,
             created_at: bug.created_at,
             updated_at: bug.updated_at
