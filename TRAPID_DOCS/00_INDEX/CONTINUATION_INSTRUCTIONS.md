@@ -10,7 +10,7 @@
 
 **Session 5 Progress:**
 - ✅ Built complete contextual help system
-- ✅ FloatingHelpButton component on every page
+- ✅ FloatingHelpButton component on every page (bottom-right corner)
 - ✅ ContextualHelpModal with User Manual integration
 - ✅ Page-to-chapter mapping for 40+ routes
 - ✅ Search functionality across help docs
@@ -24,6 +24,24 @@
   - External link indicators
   - Full dark mode support
   - Updated DocumentationPage and ContextualHelpModal to use MarkdownRenderer
+
+**How the Contextual Help System Works:**
+1. **Floating Button**: A question mark icon appears in the bottom-right corner of every page
+2. **Auto-Detection**: Uses React Router's `useLocation()` to detect current page
+3. **Smart Mapping**: Automatically shows relevant User Manual chapter based on route
+   - Example: `/gantt` → Chapter 9 (Gantt & Schedule Master)
+   - Example: `/contacts` → Chapter 3 (Contacts & Relationships)
+   - Example: `/xero` → Chapter 15 (Xero Accounting)
+4. **Modal Features**:
+   - Displays chapter-specific help content in modern markdown
+   - Search bar to find help across all documentation
+   - "Open Full Help Center" button to view complete docs
+5. **Implementation**:
+   - `frontend/src/config/helpMapping.js` - Route to chapter mappings (40+ routes)
+   - `frontend/src/components/FloatingHelpButton.jsx` - Floating button component
+   - `frontend/src/components/ContextualHelpModal.jsx` - Help modal with search
+   - `frontend/src/components/MarkdownRenderer.jsx` - Professional markdown display
+   - Added to `AppLayout.jsx` - Available on all pages automatically
 
 **System Status:**
 - Backend: Database + API fully functional (port 3000)
