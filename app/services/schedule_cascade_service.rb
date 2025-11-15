@@ -20,6 +20,14 @@ class ScheduleCascadeService
     @changed_attributes = changed_attributes
     @affected_tasks = {}  # task_id => task (to avoid duplicates)
     @template = task.schedule_template
+    # Use today as reference date for day offset calculations
+    # In real implementation, this would come from the actual project start date
+    @reference_date = Date.today
+
+    # Load company settings and holidays for working day calculations
+    @company_settings = CompanySetting.instance
+    @region = timezone_to_region(@company_settings.timezone)
+    @holidays = load_holidays
   end
 
   def cascade
@@ -115,7 +123,7 @@ class ScheduleCascadeService
     # End date is start + (duration - 1) since start day counts as day 1
     predecessor_end = predecessor_start + (duration - 1)
 
-    case dep_type
+    calculated_start = case dep_type
     when 'FS' # Finish-to-Start (most common)
       # Task finishes at end of predecessor_end day
       # Next task starts on predecessor_end (not +1, tasks can start same day one ends)
@@ -132,5 +140,82 @@ class ScheduleCascadeService
       # Default to FS if unknown type
       predecessor_end + lag
     end
+
+    # IMPORTANT: Tasks can only start on working days (skip weekends/holidays)
+    # But respect lock hierarchy - locked tasks can stay on weekends
+    if task_is_locked?(dependent_task)
+      calculated_start  # Don't adjust locked tasks
+    else
+      skip_to_next_working_day(calculated_start)
+    end
+  end
+
+  def task_is_locked?(task)
+    # Check lock hierarchy (highest to lowest priority)
+    task.supplier_confirm? ||
+      task.confirm? ||
+      task.start? ||
+      task.complete? ||
+      task.manually_positioned?
+  end
+
+  def skip_to_next_working_day(day_offset)
+    # Convert day offset to actual date
+    actual_date = @reference_date + day_offset.days
+
+    # Skip weekends and holidays
+    while !working_day?(actual_date)
+      actual_date += 1.day
+    end
+
+    # Convert back to day offset
+    (actual_date - @reference_date).to_i
+  end
+
+  def working_day?(date)
+    # Check company settings for working days configuration
+    working_days = @company_settings.working_days || {
+      'monday' => true,
+      'tuesday' => true,
+      'wednesday' => true,
+      'thursday' => true,
+      'friday' => true,
+      'saturday' => false,
+      'sunday' => true
+    }
+
+    # Get day name in lowercase (e.g., "monday", "tuesday")
+    day_name = date.strftime('%A').downcase
+
+    # Return whether this day is configured as a working day
+    working_days[day_name] == true
+  end
+
+  # Map timezone to region code for public holidays
+  def timezone_to_region(timezone)
+    case timezone
+    when 'Australia/Brisbane' then 'QLD'
+    when 'Australia/Sydney', 'Australia/Melbourne' then 'NSW'
+    when 'Australia/Adelaide' then 'SA'
+    when 'Australia/Perth' then 'WA'
+    when 'Australia/Hobart' then 'TAS'
+    when 'Australia/Darwin' then 'NT'
+    when 'Pacific/Auckland' then 'NZ'
+    else 'QLD' # Default to QLD
+    end
+  end
+
+  # Load public holidays for the region
+  # Cache them as a Set for O(1) lookup
+  def load_holidays
+    # Load holidays for current year and next 2 years to cover project schedules
+    year_range = (Date.today.year..Date.today.year + 2)
+
+    holiday_dates = PublicHoliday
+      .for_region(@region)
+      .where('EXTRACT(YEAR FROM date) IN (?)', year_range.to_a)
+      .pluck(:date)
+
+    Set.new(holiday_dates)
   end
 end

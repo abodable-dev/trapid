@@ -51,7 +51,16 @@ module Api
           :twilio_auth_token,
           :twilio_phone_number,
           :twilio_enabled,
-          :timezone
+          :timezone,
+          working_days: [
+            :monday,
+            :tuesday,
+            :wednesday,
+            :thursday,
+            :friday,
+            :saturday,
+            :sunday
+          ]
         )
       end
     end

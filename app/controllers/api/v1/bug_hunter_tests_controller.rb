@@ -2,7 +2,9 @@ class Api::V1::BugHunterTestsController < ApplicationController
   # GET /api/v1/bug_hunter_tests
   def index
     # Return available Gantt Bug Hunter tests
-    # These match the tests in the Gantt Test Status report
+    # Rules are sourced from GANTT_BIBLE_COLUMNS.md to prevent going out of sync
+    gantt_rules = load_gantt_rules
+
     tests = [
       {
         id: 'duplicate-api-calls',
@@ -80,6 +82,14 @@ class Api::V1::BugHunterTestsController < ApplicationController
         type: 'E2E',
         rules: 'Full Playwright E2E test: Tests cascade without flicker, detects infinite loops, monitors API calls and Gantt reloads',
         can_run_visual: true
+      },
+      {
+        id: 'working-days-enforcement',
+        name: 'Working Days Enforcement',
+        type: 'Backend',
+        rules: gantt_rules[:working_days] || 'Verifies unlocked tasks are only on working days configured in Company Settings. Locked tasks can be on any day',
+        can_run_visual: false,
+        source: 'Company Settings (working_days)'
       }
     ]
 
@@ -100,6 +110,9 @@ class Api::V1::BugHunterTestsController < ApplicationController
     elsif test_id == 'gantt-cascade-e2e'
       # Special handling for Playwright E2E test
       result = run_playwright_test
+    elsif test_id == 'working-days-enforcement'
+      # Run working days enforcement backend test
+      result = run_working_days_test(params[:template_id])
     else
       # Placeholder - actual test logic would go here or be run client-side
       # For now, just record that a test was attempted
@@ -147,6 +160,127 @@ class Api::V1::BugHunterTestsController < ApplicationController
   end
 
   private
+
+  def load_gantt_rules
+    bible_path = Rails.root.join('..', 'GANTT_BIBLE_COLUMNS.md')
+    return {} unless File.exist?(bible_path)
+
+    content = File.read(bible_path)
+    rules = {}
+
+    # Extract "Task Dates - Working Days Only Rule" section
+    if content =~ /### Task Dates - Working Days Only Rule\s+(.*?)(?=\n###|\n##|\z)/m
+      working_days_section = $1.strip
+      # Extract the core rule text
+      if working_days_section =~ /\*\*Core Rule:\*\*\s+(.+?)(?=\n\n|\*\*)/m
+        rules[:working_days] = $1.strip.gsub(/\s+/, ' ')
+      end
+    end
+
+    # Extract lock hierarchy
+    if content =~ /\*\*Lock Hierarchy Check:\*\*.*?\n(.*?)(?=\n###|\n##|\z)/m
+      lock_section = $1
+      # Get the full hierarchy list
+      hierarchy_items = lock_section.scan(/\d+\.\s+`(\w+)`/).flatten
+      rules[:lock_hierarchy] = hierarchy_items.join(' → ') if hierarchy_items.any?
+    end
+
+    rules
+  rescue => e
+    Rails.logger.error "Failed to load Gantt Bible rules: #{e.message}"
+    {}
+  end
+
+  def run_working_days_test(template_id)
+    start_time = Time.now
+
+    # Get the template, or use Bug Hunter Schedule Master (ID 4) as default
+    template_id = template_id || 4
+    template = ScheduleTemplate.find_by(id: template_id)
+
+    unless template
+      return {
+        passed: false,
+        message: "Template #{template_id} not found",
+        duration: 0
+      }
+    end
+
+    # Test: Verify all unlocked tasks are on working days (based on company settings)
+    reference_date = Date.today
+    company_settings = CompanySetting.instance
+
+    # Get working days configuration
+    working_days = company_settings.working_days || {
+      'monday' => true,
+      'tuesday' => true,
+      'wednesday' => true,
+      'thursday' => true,
+      'friday' => true,
+      'saturday' => false,
+      'sunday' => true
+    }
+
+    # Build list of non-working days for reporting
+    non_working_days = working_days.select { |_day, is_working| !is_working }.keys
+
+    violations = []
+    locked_on_non_working = []
+    total_unlocked_tasks = 0
+    total_locked_tasks = 0
+
+    template.schedule_template_rows.each do |task|
+      actual_date = reference_date + task.start_date.days
+      day_name = actual_date.strftime('%A').downcase
+      is_working_day = working_days[day_name] == true
+      is_locked = task.supplier_confirm? || task.confirm? || task.start? || task.complete? || task.manually_positioned?
+
+      if is_locked
+        total_locked_tasks += 1
+        locked_on_non_working << task.name unless is_working_day
+      else
+        total_unlocked_tasks += 1
+        unless is_working_day
+          violations << "#{task.name} (Seq #{task.sequence_order + 1}): Day #{task.start_date} = #{actual_date.strftime('%Y-%m-%d')} (#{day_name.capitalize})"
+        end
+      end
+    end
+
+    duration = (Time.now - start_time).round(2)
+
+    if violations.empty?
+      {
+        passed: true,
+        message: "✓ All #{total_unlocked_tasks} unlocked tasks on working days. #{locked_on_non_working.length} locked tasks allowed on non-working days.",
+        duration: duration,
+        details: {
+          total_unlocked_tasks: total_unlocked_tasks,
+          total_locked_tasks: total_locked_tasks,
+          locked_on_non_working: locked_on_non_working.length,
+          violations: 0,
+          non_working_days: non_working_days
+        }
+      }
+    else
+      {
+        passed: false,
+        message: "✗ Found #{violations.length} unlocked task(s) on non-working days: #{violations.first(3).join('; ')}",
+        duration: duration,
+        details: {
+          total_unlocked_tasks: total_unlocked_tasks,
+          violations: violations.length,
+          violations_list: violations,
+          non_working_days: non_working_days
+        }
+      }
+    end
+  rescue => e
+    {
+      passed: false,
+      message: "Test error: #{e.message}",
+      duration: (Time.now - start_time).round(2)
+    }
+  end
 
   def run_playwright_test
     require 'open3'
