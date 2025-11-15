@@ -259,10 +259,48 @@ When user changes duration or moves tasks in Gantt, cascade service recalculates
 - Large dependency chains can slow cascade performance
 - No "what-if" analysis for date changes
 - Cannot set absolute date in template (offset only)`,
+    lock: `**Status:** Fully functional ✅
+
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2582-2593
+- Rendering: Checkbox input, 70px width, center-aligned, order: 5.5 (between Start Date and PO Required)
+- Event handlers:
+  - onChange: handleFieldChange('manually_positioned', checked) (line 2588)
+  - Immediate update (no debounce)
+- Tooltip: Dynamic - "Locked - prevents cascade updates" / "Unlocked - allows cascade updates"
+- Styling: h-4 w-4 checkbox
+
+**Backend:**
+- Field: schedule_template_rows.manually_positioned
+- Type: boolean (default: false)
+- Validation: None (simple boolean flag)
+- Service: ScheduleCascadeService respects this flag when cascading changes
+
+**How It Works:**
+Prevents automatic cascade updates when predecessor tasks change. When locked (manually_positioned=true), the task's start_date will NOT be recalculated by ScheduleCascadeService even if predecessor tasks move. Used for tasks that have been manually positioned and should stay fixed regardless of dependency changes. Unlocking allows the cascade service to recalculate the task's position based on predecessors.
+
+**CRITICAL - Cascade Integration:**
+- When manually_positioned=true: Task position is LOCKED, cascade skips this task
+- When manually_positioned=false: Task position is UNLOCKED, cascade recalculates start_date
+- Cascade still flows FROM locked tasks to their successors
+- Only prevents cascading TO the locked task
+
+**Interdependencies:**
+- Integrated with ScheduleCascadeService (backend/app/services/schedule_cascade_service.rb)
+- Matches Gantt view lock functionality (DHtmlxGanttView.jsx:604)
+- Works with drag-and-drop in Gantt (auto-locks when manually moved)
+- Sorting by lock status available in table view
+
+**Current Limitations:**
+- No bulk lock/unlock operations
+- No visual indicator in table view beyond checkbox (no lock icon)
+- Cannot set conditional locks (e.g., lock after certain date)
+- No lock inheritance to dependent tasks
+- No lock expiration or auto-unlock based on triggers`,
     poRequired: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2495-2505
+- Location: ScheduleTemplateEditor.jsx:2595-2605
 - Rendering: Checkbox input, 80px width, center-aligned, order: 6
 - Event handlers:
   - onChange: handleFieldChange('po_required', checked) (line 2501)

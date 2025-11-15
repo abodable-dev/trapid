@@ -91,6 +91,7 @@ const defaultColumnConfig = {
   predecessors: { visible: true, width: 100, label: 'Predecessors', order: 3 },
   duration: { visible: true, width: 80, label: 'Duration', order: 4 },
   startDate: { visible: true, width: 110, label: 'Start Date', order: 5 },
+  lock: { visible: true, width: 70, label: 'Lock', order: 5.5 },
   poRequired: { visible: true, width: 80, label: 'PO Req', order: 6 },
   autoPo: { visible: true, width: 80, label: 'Auto PO', order: 7 },
   priceItems: { visible: true, width: 120, label: 'Price Items', order: 8 },
@@ -243,7 +244,7 @@ export default function ScheduleTemplateEditor() {
       setIsLeftPanelCollapsed(true)
       hasCollapsedOnLoad.current = true
     }
-  }, [])
+  }, [location.search]) // Re-run when URL parameters change
 
   // Also collapse when navigating to this tab (location change)
   useEffect(() => {
@@ -1517,9 +1518,11 @@ export default function ScheduleTemplateEditor() {
           case 'cert':
           case 'supCheck':
           case 'autoComplete':
+          case 'lock':
             // Boolean columns
             aVal = a[sortBy === 'autoPo' ? 'create_po_on_job_start' :
                      sortBy === 'poRequired' ? 'po_required' :
+                     sortBy === 'lock' ? 'manually_positioned' :
                      sortBy === 'critical' ? 'critical_po' :
                      sortBy === 'photo' ? 'require_photo' :
                      sortBy === 'cert' ? 'require_certificate' :
@@ -1527,6 +1530,7 @@ export default function ScheduleTemplateEditor() {
                      'auto_complete_predecessors'] ? 1 : 0
             bVal = b[sortBy === 'autoPo' ? 'create_po_on_job_start' :
                      sortBy === 'poRequired' ? 'po_required' :
+                     sortBy === 'lock' ? 'manually_positioned' :
                      sortBy === 'critical' ? 'critical_po' :
                      sortBy === 'photo' ? 'require_photo' :
                      sortBy === 'cert' ? 'require_certificate' :
@@ -1544,6 +1548,10 @@ export default function ScheduleTemplateEditor() {
           case 'startDate':
             aVal = a.start_date || 0
             bVal = b.start_date || 0
+            break
+          case 'lock':
+            aVal = a.manually_positioned ? 1 : 0
+            bVal = b.manually_positioned ? 1 : 0
             break
           case 'priceItems':
             aVal = a.price_book_item_ids?.length || 0
@@ -2575,6 +2583,19 @@ function ScheduleTemplateRow({
             <div className="w-full px-2 py-1 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
               {calculatedStartDate}
             </div>
+          </td>
+        )
+
+      case 'lock':
+        return (
+          <td key={key} style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-center">
+            <input
+              type="checkbox"
+              checked={row.manually_positioned || false}
+              onChange={(e) => handleFieldChange('manually_positioned', e.target.checked)}
+              className="h-4 w-4"
+              title={row.manually_positioned ? 'Locked - prevents cascade updates' : 'Unlocked - allows cascade updates'}
+            />
           </td>
         )
 
