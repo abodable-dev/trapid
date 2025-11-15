@@ -333,7 +333,17 @@ export default function BugHunterTests() {
                 Automated tests for Gantt schedule cascading, dependencies, and performance
               </p>
             </div>
-          <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+          <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none flex gap-2">
+            <button
+              onClick={async () => {
+                await loadTestHistory()
+                toast.success('Test history refreshed', { duration: 2000 })
+              }}
+              className="inline-flex items-center gap-2 rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500"
+            >
+              <ClockIcon className="h-4 w-4" />
+              Refresh
+            </button>
             <button
               onClick={runSelectedTests}
               disabled={selectedTests.length === 0 || runningTests.size > 0}
@@ -480,6 +490,7 @@ export default function BugHunterTests() {
                         <button
                           onClick={() => {
                             console.log('Clock clicked for test:', test.id, 'Current showHistory:', showHistory)
+                            // Toggle history display
                             setShowHistory(showHistory === test.id ? null : test.id)
                           }}
                           className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-pointer"
