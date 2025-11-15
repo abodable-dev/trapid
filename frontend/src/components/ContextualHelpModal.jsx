@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon, MagnifyingGlassIcon, BookOpenIcon } from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
-import api from '../services/api'
+import { api } from '../api'
 import { getChapterName } from '../config/helpMapping'
 
 export default function ContextualHelpModal({ isOpen, onClose, chapter, section }) {
