@@ -2075,7 +2075,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
                 duration: task.duration,
                 start_date: dayOffset,
                 manually_positioned: false,  // ✅ Let backend cascade to successors!
-                predecessor_ids: []
+                predecessor_ids: task.predecessor_ids || []  // ✅ RULE #9: ALWAYS preserve predecessor_ids
               }
               console.log('💾 DRAG HANDLER: Saving task to trigger cascade:', updateData)
 
@@ -2093,7 +2093,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
                 duration: task.duration,
                 start_date: dayOffset,
                 manually_positioned: true,
-                predecessor_ids: []
+                predecessor_ids: task.predecessor_ids || []  // ✅ RULE #9: ALWAYS preserve predecessor_ids
               }
               console.log('💾 Saving manually positioned task (no deps):', updateData)
 

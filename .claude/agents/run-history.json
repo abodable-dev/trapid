@@ -1,0 +1,54 @@
+{
+  "agents": {
+    "backend-developer": {
+      "total_runs": 0,
+      "successful_runs": 0,
+      "failed_runs": 0,
+      "last_run": null,
+      "last_status": null,
+      "last_message": null,
+      "runs": []
+    },
+    "frontend-developer": {
+      "total_runs": 0,
+      "successful_runs": 0,
+      "failed_runs": 0,
+      "last_run": null,
+      "last_status": null,
+      "last_message": null,
+      "runs": []
+    },
+    "production-bug-hunter": {
+      "total_runs": 0,
+      "successful_runs": 0,
+      "failed_runs": 0,
+      "last_run": null,
+      "last_status": null,
+      "last_message": null,
+      "runs": []
+    },
+    "deploy-manager": {
+      "total_runs": 0,
+      "successful_runs": 0,
+      "failed_runs": 0,
+      "last_run": null,
+      "last_status": null,
+      "last_message": null,
+      "runs": []
+    },
+    "planning-collaborator": {
+      "total_runs": 0,
+      "successful_runs": 0,
+      "failed_runs": 0,
+      "last_run": null,
+      "last_status": null,
+      "last_message": null,
+      "runs": []
+    }
+  },
+  "metadata": {
+    "created": "2025-11-16T00:00:00Z",
+    "last_updated": "2025-11-16T00:00:00Z",
+    "version": "1.0"
+  }
+}

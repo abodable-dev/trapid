@@ -34,12 +34,7 @@ observer.observe(document.body, {
   attributeFilter: ['style', 'class']
 });
 
-// Monitor state changes
-const originalSetState = React.Component.prototype.setState;
-React.Component.prototype.setState = function(...args) {
-  log('⚛️', 'React setState called');
-  return originalSetState.apply(this, args);
-};
+// Note: React state monitoring removed - not compatible with modern React hooks
 
 // Monitor RAF calls
 const originalRAF = window.requestAnimationFrame;
@@ -97,7 +92,7 @@ if (window.PerformanceObserver) {
 
   try {
     perfObserver.observe({ entryTypes: ['paint', 'layout-shift'] });
-  } catch (e) {
+  } catch (_error) {
     console.log('Layout shift observation not supported');
   }
 }

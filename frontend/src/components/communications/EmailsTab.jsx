@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { getNowInCompanyTimezone, getTodayAsString, getRelativeTime } from '../../utils/timezoneUtils'
 import {
   EnvelopeIcon,
   PaperAirplaneIcon,

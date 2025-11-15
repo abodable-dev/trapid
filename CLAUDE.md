@@ -1,5 +1,25 @@
 # Claude Code Instructions for Trapid Project
 
+## Agent Recognition & Invocation
+
+**When user types agent shortcuts, immediately invoke the corresponding agent:**
+
+| User Input | Agent to Launch | Action |
+|------------|----------------|--------|
+| `backend dev` or `run backend-developer` | backend-developer | Read `.claude/agents/backend-developer.md` and launch Task with those instructions |
+| `frontend dev` or `run frontend-developer` | frontend-developer | Read `.claude/agents/frontend-developer.md` and launch Task with those instructions |
+| `production bug hunter` or `run production-bug-hunter` | production-bug-hunter | Read `.claude/agents/production-bug-hunter.md` and launch Task with those instructions |
+| `deploy` or `run deploy-manager` | deploy-manager | Read `.claude/agents/deploy-manager.md` and launch Task with those instructions |
+| `plan` or `run planning-collaborator` | planning-collaborator | Read `.claude/agents/planning-collaborator.md` and launch Task with those instructions |
+| `gantt` or `run gantt bug hunter` | (special workflow) | Follow GANTT_BIBLE.md RULE #0.9.1 workflow |
+| `run all agents` | All 5 agents | Launch all agents in parallel with health check tasks |
+
+**How to invoke an agent:**
+1. Read the agent's `.md` file from `.claude/agents/`
+2. Use Task tool with `subagent_type: "general-purpose"`
+3. Pass the agent's instructions as the prompt
+4. Update `.claude/agents/run-history.json` with run results
+
 ## Gantt & Schedule Master Development
 
 **CRITICAL: Before ANY Gantt/Schedule Master work:**
@@ -127,38 +147,84 @@ If UI/UX doesn't match guidelines:
 - Document changes in PR review comments
 - Ensure consistency with existing components
 
-## Agent Usage Guidelines
+## Agent System
 
-**backend-developer agent:**
+Trapid uses **5 specialized agents** defined in `.claude/agents/`. Each agent has specific capabilities and tracks its run history.
+
+### Available Agents
+
+**1. backend-developer** (`/.claude/agents/backend-developer.md`)
 - API endpoints, controllers, services
 - Database migrations and models
 - Background jobs (Solid Queue)
 - Rails-specific features
 
-**frontend-developer agent:**
+**2. frontend-developer** (`/.claude/agents/frontend-developer.md`)
 - React components and pages
 - Tailwind CSS styling
 - UI/UX implementation
 - API integration on frontend
 
-**bug-hunter agent:**
-- Production bug diagnosis
+**3. production-bug-hunter** (`/.claude/agents/production-bug-hunter.md`)
+- General production bug diagnosis (backend, frontend, database, etc.)
 - Heroku log analysis
 - Error reproduction and fixing
 - Works with other agents for fixes
+- **Note:** For Gantt bugs, use "Gantt Bug Hunter" workflow (separate)
 
-**deploy-manager agent:**
+**4. deploy-manager** (`/.claude/agents/deploy-manager.md`)
 - Commit and push changes to appropriate branch
 - **HAS AUTHORITY to deploy to staging from `rob` branch**
 - Does NOT have authority to deploy to production from `main` branch
 - Deploys backend to Heroku staging using git subtree
 - Frontend deploys automatically via Vercel
 
-**planning-collaborator agent:**
+**5. planning-collaborator** (`/.claude/agents/planning-collaborator.md`)
 - Feature brainstorming
 - Architecture planning
 - Documentation creation
 - Strategic decisions
+
+### Quick Commands
+
+**Run individual agents:**
+```
+run backend-developer
+run frontend-developer
+run production-bug-hunter
+run deploy-manager
+run planning-collaborator
+```
+
+**Shorter versions:**
+```
+backend dev
+frontend dev
+production bug hunter
+deploy
+plan
+```
+
+**Gantt Bug Hunter (separate workflow):**
+```
+run gantt bug hunter
+gantt
+```
+This runs the Gantt-specific diagnostics from GANTT_BIBLE.md RULE #0.9.1
+
+**Run all agents:**
+```
+run all agents
+```
+
+### Agent Run History
+
+Run history is tracked in `.claude/agents/run-history.json`:
+- Total runs, successful runs, failed runs
+- Last run timestamp and status
+- Detailed run logs
+
+View agent status: See `.claude/agents/README.md`
 
 ## Environment Variables
 

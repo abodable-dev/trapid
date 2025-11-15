@@ -214,6 +214,43 @@ When a new bug is discovered:
 
 **Step 4:** Update timestamps and sync both files
 
+### RULE #0.9.1: Bug-Hunter Agent Workflow
+
+**When user requests "run gantt bug hunter" or similar:**
+
+✅ **ALWAYS run in this exact order:**
+
+1. **Read the Bible** (this file) - Required by RULE #0
+2. **Run static code analysis:**
+   - Verify all 13 RULES compliance
+   - Check 3 Protected Code Patterns
+   - Search for anti-patterns (grep-based)
+   - Verify BUG-001, BUG-002, BUG-003 fixes intact
+3. **Run automated test suite:**
+   - Execute all 12 automated tests via API
+   - URL: `http://localhost:5173/settings?tab=schedule-master&subtab=bug-hunter`
+   - Use Bug Hunter Schedule Master (Template ID 4) as default
+4. **Check estimated runtime:**
+   - If total estimated time > 3 minutes:
+     - Ask user: "Automated tests may take >3 minutes. Run them separately? (y/n)"
+     - If YES → Skip automated tests, provide URL for manual run
+     - If NO → Proceed with all tests
+   - If total estimated time ≤ 3 minutes:
+     - Run all tests automatically without asking
+5. **Generate diagnostic report:**
+   - Static analysis results
+   - Automated test results (if run)
+   - Violations found (if any)
+   - Recommendations (if applicable)
+
+**Why this workflow?**
+- Static analysis catches rule violations instantly
+- Automated tests verify runtime behavior
+- 3-minute threshold prevents blocking user unnecessarily
+- Combined approach = comprehensive diagnostics
+
+**For test catalog, see:** Lexicon → "Complete Test Catalog"
+
 ### RULE #0.10: Quick Reference Decision Tree
 
 ```
@@ -305,9 +342,9 @@ const taskNumber = task.sequence_order + 1  // Show as #1, #2, #3
 ## RULE #2: isLoadingData Lock Timing
 
 ❌ **NEVER reset isLoadingData in drag handler**
-✅ **ALWAYS reset in useEffect with 500ms timeout**
+✅ **ALWAYS reset in useEffect with 1000ms timeout**
 
-**Code location:** `DHtmlxGanttView.jsx:1414-1438`
+**Code location:** `DHtmlxGanttView.jsx:1414-1438` (drag handler), `DHtmlxGanttView.jsx:4041-4046` (useEffect)
 
 **Required implementation:**
 ```javascript
@@ -318,8 +355,14 @@ gantt.attachEvent('onAfterTaskDrag', (id, mode, event) => {
 
   // ... handle drag ...
 
+  // Set timeout to release lock after 5000ms (extended to absorb cascade updates)
+  loadingDataTimeout.current = setTimeout(() => {
+    isLoadingData.current = false
+    loadingDataTimeout.current = null
+  }, 5000)  // 5 seconds for drag operations with cascades
+
   isDragging.current = false
-  // DO NOT reset isLoadingData here!
+  // DO NOT reset isLoadingData synchronously!
 })
 
 // In useEffect:
@@ -332,9 +375,11 @@ useEffect(() => {
 
   setTimeout(() => {
     isLoadingData.current = false
-  }, 500)  // MUST be 500ms minimum
+  }, 1000)  // MUST be 1000ms (increased from 500ms to absorb cascades)
 }, [tasks, ...])
 ```
+
+**Why 1000ms?** Originally 500ms, but increased to 1000ms to absorb cascade events from backend. The 5000ms timeout in drag handler handles drag-specific cascades.
 
 **For bug history, see:** Lexicon → "BUG-001: Drag Flickering"
 

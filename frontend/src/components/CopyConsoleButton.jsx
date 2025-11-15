@@ -103,13 +103,11 @@ export default function CopyConsoleButton() {
       // PHASE 1: Remove bulk content (80% of token savings)
       // Replace massive dropdown option lists with summary
       .replace(/<option[^>]*>.*?<\/option>/gi, (match, offset, string) => {
-        // Keep first option, count total, replace rest
+        // Keep first option, replace rest
         const selectStart = string.lastIndexOf('<select', offset)
         const selectEnd = string.indexOf('</select>', offset)
         if (selectStart !== -1 && selectEnd !== -1) {
-          const selectHTML = string.substring(selectStart, selectEnd)
-          const optionCount = (selectHTML.match(/<option/gi) || []).length
-          // Only show selected value or first option + count
+          // Only show selected value or first option
           if (match.includes('selected') || offset === string.indexOf('<option', selectStart)) {
             return match
           }

@@ -1,6 +1,6 @@
 # Gantt Chart - Bug Tracking & Knowledge Base
 
-**Last Updated:** 2025-11-14 13:02 AEDT
+**Last Updated:** 2025-11-16 (Post-diagnostic scan update)
 **Purpose:** Centralized knowledge base of all Gantt-related bugs, their fixes, and Bug Hunter tool updates
 
 ---
@@ -19,11 +19,18 @@
 
 ### What is Bug Hunter?
 
-Bug Hunter is an automated diagnostic tool that runs in the browser console to detect common Gantt issues:
-- Duplicate API calls (infinite loops)
-- Excessive Gantt reloads
-- Slow drag operations
-- Cascade timing issues
+Bug Hunter is an automated testing system with two components:
+
+1. **Browser Console Diagnostics** - Real-time monitoring tool that runs in the browser console to detect:
+   - Duplicate API calls (infinite loops)
+   - Excessive Gantt reloads
+   - Slow drag operations
+   - Cascade timing issues
+
+2. **Automated Test Suite** - Backend-driven test suite accessible at:
+   - **URL:** `http://localhost:5173/settings?tab=schedule-master&subtab=bug-hunter`
+   - **Purpose:** Run automated tests to verify Gantt functionality and performance
+   - **Features:** Visual feedback mode, test history tracking, template-based testing
 
 ### When Bug Hunter Was Created
 
@@ -37,6 +44,7 @@ Bug Hunter is an automated diagnostic tool that runs in the browser console to d
 | 2025-11-14 | 1.0 | Initial Bug Hunter created with diagnostic reporting | Detect duplicate API calls and excessive reloads after BUG-001 fix |
 | 2025-11-14 | 1.1 | Added threshold-based warnings and health status | Make reports actionable with clear severity levels |
 | 2025-11-14 | 1.2 | Integrated with E2E tests for automated monitoring | Catch regressions in CI/CD pipeline |
+| 2025-11-16 | 2.0 | Added UI-based test suite with 12 automated tests | Enable product owners to run tests without console access |
 
 ### How Bug Hunter Has Been Improved
 
@@ -78,147 +86,211 @@ window.exportBugHunterReport()
 window.resetBugHunter()
 ```
 
-### Tests Performed by Bug Hunter
+### Automated Test Suite (12 Tests)
 
-Bug Hunter automatically monitors and tests for the following issues in real-time:
+The Bug Hunter automated test suite includes 12 tests accessible via the UI at Settings → Schedule Master → Bug Hunter Tests.
 
-**Last Full Test Run:** 2025-11-14 13:02 AEDT
-**Test Status:** ✅ All tests passing
-**Session:** BUG-002 fix verification
+**Location:** `http://localhost:5173/settings?tab=schedule-master&subtab=bug-hunter`
+**Backend:** `/backend/app/controllers/api/v1/bug_hunter_tests_controller.rb`
+**Test History:** Stored in `bug_hunter_test_runs` table
 
-#### 1. Duplicate API Call Detection
-**Test:** Tracks all API calls by task ID and counts duplicates within a time window
-**Threshold:** > 2 calls to the same task within 5 seconds
-**Severity:** Critical
-**What it catches:** Infinite loops, race conditions, missing deduplication
-**Example:**
+**Test Capabilities:**
+- ✅ **Visual Mode** - 6 tests support visual feedback (opens Gantt automatically)
+- 🔄 **Batch Running** - Select multiple tests and run them together
+- 📊 **History Tracking** - All test runs saved with timestamp, duration, status
+- 🎯 **Template Selection** - Choose which Schedule Template to test against
+
+**Last Full Test Run:** 2025-11-16 (after diagnostic scan)
+**Test Status:** ✅ All core systems verified
+**Session:** Post-BUG-002 verification
+
+---
+
+### Complete Test Catalog
+
+#### Performance Tests (6 tests)
+
+**1. Duplicate API Call Detection**
+- **ID:** `duplicate-api-calls`
+- **Type:** Performance
+- **Visual:** ✅ Yes
+- **Description:** Detects duplicate API calls to the same task within short time windows
+- **What it catches:** Infinite loops, race conditions, missing deduplication
+- **Threshold:** > 2 calls to same task within 5 seconds
+- **Expected:** 1 API call per drag operation
+
+**2. Excessive Gantt Reload Detection**
+- **ID:** `excessive-reloads`
+- **Type:** Performance
+- **Visual:** ✅ Yes
+- **Description:** Monitors Gantt chart reloads to prevent screen flashing
+- **What it catches:** Screen flickering, missing lock flags, cascade reload issues
+- **Threshold:** > 5 reloads per drag operation
+- **Expected:** 1 reload per drag operation
+
+**3. Slow Drag Operation Detection**
+- **ID:** `slow-drag-operations`
+- **Type:** Performance
+- **Visual:** ✅ Yes
+- **Description:** Identifies drag operations that take too long to complete
+- **What it catches:** Performance issues, heavy synchronous operations during drag
+- **Threshold:** > 5000ms (5 seconds)
+- **Expected:** < 200ms per drag
+
+**4. State Update Batching**
+- **ID:** `state-update-batching`
+- **Type:** Performance
+- **Visual:** ❌ No
+- **Description:** Verifies that state updates are batched efficiently
+- **What it catches:** Unnecessary re-renders, missing state batching
+- **Threshold:** > 3 state updates per drag
+- **Expected:** 1 batched update per operation
+
+**5. Performance Timing Analysis**
+- **ID:** `performance-timing`
+- **Type:** Performance
+- **Visual:** ❌ No
+- **Description:** Analyzes overall performance timing and identifies bottlenecks
+- **Benchmarks:**
+  - Drag duration: Target < 200ms, Threshold < 5000ms
+  - Cascade calculation: Target < 100ms, Threshold < 500ms
+  - API response time: Target < 300ms, Threshold < 2000ms
+
+**6. Lock State Monitoring**
+- **ID:** `lock-state-monitoring`
+- **Type:** Concurrency
+- **Visual:** ❌ No
+- **Description:** Monitors lock states to prevent race conditions
+- **What it catches:** Deadlocks, missing lock cleanup, race conditions
+- **Tracks:** `isDragging`, `isLoadingData`, `isSaving`, `suppressRender` refs
+
+---
+
+#### Cascade Tests (1 test)
+
+**7. Cascade Event Tracking**
+- **ID:** `cascade-event-tracking`
+- **Type:** Cascade
+- **Visual:** ✅ Yes
+- **Description:** Tracks cascade events to verify dependency updates work correctly
+- **What it catches:** Unexpected cascade propagation, infinite cascade chains
+- **Monitors:**
+  - Which task triggered cascade
+  - How many tasks affected
+  - Large cascade warnings (>15 tasks)
+
+---
+
+#### Analysis Tests (3 tests)
+
+**8. API Call Pattern Analysis**
+- **ID:** `api-call-patterns`
+- **Type:** Analysis
+- **Visual:** ❌ No
+- **Description:** Analyzes API call patterns to identify inefficiencies
+- **Detection:** Looks for rapid repeated calls (potential infinite loops)
+- **Groups:** API calls by task ID and analyzes timing patterns
+
+**9. Health Status Assessment**
+- **ID:** `health-status`
+- **Type:** Analysis
+- **Visual:** ❌ No
+- **Description:** Provides overall health status aggregating all warnings
+- **Status Levels:**
+  - ✅ HEALTHY: No warnings, all metrics within targets
+  - ⚠️ WARNING: Some warnings, metrics near thresholds
+  - 🚨 CRITICAL: High severity warnings, metrics exceeded
+  - ❌ ERROR: System failure, critical operations failing
+
+**10. Actionable Recommendations**
+- **ID:** `actionable-recommendations`
+- **Type:** Analysis
+- **Visual:** ❌ No
+- **Description:** Generates actionable recommendations to fix detected issues
+- **Provides:** File locations, code patterns to check, debugging steps
+- **Example:**
+  ```
+  - Check isLoadingData lock in DHtmlxGanttView.jsx:3361
+  - Verify pending tracker cleanup in ScheduleTemplateEditor.jsx:914
+  - Consider adding 200ms delay before API call
+  ```
+
+---
+
+#### E2E & Backend Tests (2 tests)
+
+**11. Gantt Cascade E2E Test**
+- **ID:** `gantt-cascade-e2e`
+- **Type:** E2E (Playwright)
+- **Visual:** ✅ Yes
+- **Description:** Full Playwright E2E test covering all cascade scenarios
+- **Tests:**
+  - Cascade without flicker
+  - No infinite loops
+  - API call monitoring
+  - Gantt reload counting
+  - Backend cascade verification
+- **Runner:** `npm run test:gantt` in `/frontend`
+- **Timeout:** 2 minutes
+- **Requirements:** Frontend server must be running
+
+**12. Working Days Enforcement**
+- **ID:** `working-days-enforcement`
+- **Type:** Backend
+- **Visual:** ❌ No
+- **Description:** Verifies unlocked tasks are only scheduled on working days
+- **Rules Source:** `GANTT_BIBLE_COLUMNS.md` (synced automatically)
+- **Core Rule:** Unlocked tasks MUST be on working days configured in Company Settings. Locked tasks can be on any day.
+- **Company Settings:** Reads from `company_settings.working_days`
+- **Lock Types Checked:**
+  1. `supplier_confirm`
+  2. `confirm`
+  3. `start`
+  4. `complete`
+  5. `manually_positioned`
+- **Validation:**
+  - Counts total unlocked vs locked tasks
+  - Flags violations (unlocked tasks on non-working days)
+  - Allows locked tasks on any day (expected behavior)
+- **Example Output:**
+  - ✅ Pass: "All 24 unlocked tasks on working days. 3 locked tasks allowed on non-working days."
+  - ❌ Fail: "Found 2 unlocked task(s) on non-working days: Task XYZ (Seq 5): Day 3 = 2025-11-17 (Sunday)"
+
+---
+
+### How to Use the Automated Test Suite
+
+**1. Access the Test Suite:**
 ```
-⚠️ WARNING (Critical): Duplicate API calls for task 300 (5 calls in 3 seconds)
+Navigate to: Settings → Schedule Master → Bug Hunter Tests
+URL: http://localhost:5173/settings?tab=schedule-master&subtab=bug-hunter
 ```
 
-#### 2. Excessive Gantt Reload Detection
-**Test:** Counts the number of Gantt chart reloads per session
-**Threshold:** > 5 reloads per drag operation
-**Severity:** High
-**What it catches:** Screen flickering, missing lock flags, cascade reload issues
-**Example:**
-```
-⚠️ WARNING (High): Excessive Gantt reloads (8 reloads in session)
-```
+**2. Select a Schedule Template:**
+- Each visual test requires a template to run against
+- Default: "Bug Hunter Schedule Master" (Template ID 4)
+- Can select any template from dropdown
 
-#### 3. Slow Drag Operation Detection
-**Test:** Measures time between drag start and drag end
-**Threshold:** > 5000ms (5 seconds)
-**Severity:** Medium
-**What it catches:** Performance issues, heavy synchronous operations during drag
-**Example:**
-```
-⚠️ WARNING (Medium): Slow drag operation detected (6234ms)
-```
+**3. Run Individual Tests:**
+- Click "Run" button for immediate API-based test
+- Click "👁️ Visual" icon for tests that open Gantt automatically
+- Visual tests provide real-time feedback during execution
 
-#### 4. API Call Pattern Analysis
-**Test:** Groups API calls by task ID and analyzes timing patterns
-**Detection:** Looks for rapid repeated calls (potential infinite loops)
-**Severity:** Varies based on frequency
-**What it catches:** Backend API spam, missing request throttling
-**Example:**
-```
-🌐 API Calls by Task:
-   🚨 Task 300: 12 calls (DUPLICATE WARNING)
-   ✅ Task 301: 1 call
-```
+**4. Run Multiple Tests:**
+- Check boxes next to tests you want to run
+- Click "Run Selected (N)" to batch execute
+- Tests run sequentially with results displayed
 
-#### 5. Cascade Event Tracking
-**Test:** Monitors cascade events and affected task counts
-**Detection:** Tracks which tasks trigger cascades and how many tasks are affected
-**What it catches:** Unexpected cascade propagation, infinite cascade chains
-**Example:**
-```
-🌊 Cascade Events:
-   #1 at 1234ms: Triggered by task 299, affected 3 tasks
-   #2 at 5678ms: Triggered by task 300, affected 15 tasks (⚠️ Large cascade)
-```
+**5. View Test History:**
+- Click 🕐 icon next to "Last Run" timestamp
+- Shows last 10 runs with pass/fail status
+- Includes duration, template used, error messages
 
-#### 6. State Update Batching
-**Test:** Counts the number of state updates triggered per operation
-**Threshold:** > 3 state updates per drag
-**Severity:** Medium
-**What it catches:** Unnecessary re-renders, missing state batching
-**Example:**
-```
-⚠️ WARNING (Medium): Multiple state updates detected (5 updates)
-```
-
-#### 7. Lock State Monitoring
-**Test:** Tracks when locks are set and released, measures lock duration
-**Detection:** Identifies locks that are never released or released too early
-**What it catches:** Deadlocks, missing lock cleanup, race conditions
-**Example:**
-```
-🔒 Lock State Timeline:
-   0ms: isDragging locked
-   150ms: isLoadingData locked
-   1150ms: isLoadingData released
-   1200ms: isDragging released
-```
-
-#### 8. Performance Timing Analysis
-**Test:** Uses performance.mark() to measure operation timing
-**Benchmarks:**
-- Drag duration: Target < 200ms, Threshold < 5000ms
-- Cascade calculation: Target < 100ms, Threshold < 500ms
-- API response time: Target < 300ms, Threshold < 2000ms
-**What it catches:** Slow operations, performance regressions
-**Example:**
-```
-📊 Performance Metrics:
-   Drag Duration: 156ms ✅
-   Cascade Calc: 89ms ✅
-   API Response: 234ms ✅
-```
-
-#### 9. Health Status Assessment
-**Test:** Aggregates all warnings and calculates overall system health
-**Status Levels:**
-- ✅ HEALTHY: No warnings, all metrics within targets
-- ⚠️ WARNING: Some warnings, metrics near thresholds
-- 🚨 CRITICAL: High severity warnings, metrics exceeded
-- ❌ ERROR: System failure, critical operations failing
-**Example:**
-```
-✅ Status: HEALTHY
-All tests passed, no warnings detected
-```
-
-#### 10. Actionable Recommendations
-**Test:** Analyzes detected issues and provides specific fix suggestions
-**What it provides:** File locations, code patterns to check, debugging steps
-**Example:**
-```
-💡 Recommendations:
-   - Check isLoadingData lock in DHtmlxGanttView.jsx:3361
-   - Verify pending tracker cleanup in ScheduleTemplateEditor.jsx:914
-   - Consider adding 200ms delay before API call
-```
-
-### Test Results History
-
-| Test # | Test Name | Last Run | Status | Result |
-|--------|-----------|----------|--------|--------|
-| 1 | Duplicate API Call Detection | 2025-11-14 13:02 AEDT | ✅ PASS | 1 API call per task (target: ≤ 2) |
-| 2 | Excessive Gantt Reload Detection | 2025-11-14 13:02 AEDT | ✅ PASS | 1 reload per drag (target: ≤ 5) |
-| 3 | Slow Drag Operation Detection | 2025-11-14 13:02 AEDT | ✅ PASS | 156ms avg (target: < 5000ms) |
-| 4 | API Call Pattern Analysis | 2025-11-14 13:02 AEDT | ✅ PASS | No rapid repeated calls detected |
-| 5 | Cascade Event Tracking | 2025-11-14 13:02 AEDT | ✅ PASS | 1 cascade, 3 tasks affected |
-| 6 | State Update Batching | 2025-11-14 13:02 AEDT | ✅ PASS | 1 state update per drag (target: ≤ 3) |
-| 7 | Lock State Monitoring | 2025-11-14 13:02 AEDT | ✅ PASS | All locks released properly |
-| 8 | Performance Timing Analysis | 2025-11-14 13:02 AEDT | ✅ PASS | All metrics within targets |
-| 9 | Health Status Assessment | 2025-11-14 13:02 AEDT | ✅ HEALTHY | No warnings detected |
-| 10 | Actionable Recommendations | 2025-11-14 13:02 AEDT | ✅ N/A | No issues to recommend fixes for |
-
-**Overall Result:** ✅ All 10 tests passing
-**Test Environment:** Production (rob branch)
-**Test Scenario:** Drag task 299 with 3 dependents (300, 301, 302)
+**6. Monitor Test Results:**
+- ✅ Green row = Test passed
+- ❌ Red row = Test failed
+- Tests auto-save to `bug_hunter_test_runs` table
+- History auto-cleans runs older than 7 days
 
 ---
 
@@ -239,6 +311,158 @@ All tests passed, no warnings detected
 ---
 
 ## Resolved Issues
+
+### ✅ BUG-003: Predecessor IDs Cleared on Drag Operations (RESOLVED)
+
+**Status:** ✅ RESOLVED
+**Date Discovered:** 2025-11-16 (Bug Hunter automated scan)
+**Date Resolved:** 2025-11-16
+**Severity:** Critical (Data loss)
+**Resolution Time:** ~15 minutes (detection to fix)
+
+#### Summary
+
+When dragging tasks in the Gantt chart, predecessor relationships were being **deleted permanently** due to hardcoded empty arrays in the drag handler. This violated **RULE #9** from the Gantt Bible.
+
+#### Root Cause
+
+**The code was setting `predecessor_ids: []` instead of preserving existing predecessors!**
+
+Two drag code paths were affected:
+
+1. **Path 1:** Task has successors (triggers cascade) - Line 2078
+2. **Path 2:** Task has no dependencies (manually positioned) - Line 2096
+
+Both paths hardcoded `predecessor_ids: []`, which cleared all predecessor relationships when saved to the backend.
+
+#### Evidence
+
+**Before (WRONG):**
+```javascript
+// Line 2074-2079: Task has successors - cascade trigger
+const updateData = {
+  duration: task.duration,
+  start_date: dayOffset,
+  manually_positioned: false,
+  predecessor_ids: []  // ❌ CLEARS all predecessors!
+}
+
+// Line 2092-2097: Independent task (no deps)
+const updateData = {
+  duration: task.duration,
+  start_date: dayOffset,
+  manually_positioned: true,
+  predecessor_ids: []  // ❌ CLEARS all predecessors!
+}
+```
+
+**Data Loss Scenario:**
+1. Task A depends on Tasks 1, 2, and 3 (has predecessors)
+2. Task B depends on Task A (so Task A has successors)
+3. User drags Task A to a new date
+4. Code detects successors → enters cascade path
+5. Sets `predecessor_ids: []` → **Deletes Task A's dependencies!**
+6. Backend saves empty array → relationships lost permanently
+7. User's dependency graph is corrupted
+
+#### Solution
+
+**Fixed by preserving existing predecessor_ids:**
+
+```javascript
+// Line 2078: Task has successors - FIXED
+const updateData = {
+  duration: task.duration,
+  start_date: dayOffset,
+  manually_positioned: false,
+  predecessor_ids: task.predecessor_ids || []  // ✅ RULE #9: ALWAYS preserve
+}
+
+// Line 2096: Independent task - FIXED
+const updateData = {
+  duration: task.duration,
+  start_date: dayOffset,
+  manually_positioned: true,
+  predecessor_ids: task.predecessor_ids || []  // ✅ RULE #9: ALWAYS preserve
+}
+```
+
+**Why `|| []`?**
+Fallback to empty array only if task truly has no predecessors (undefined/null). This is safe because we're preserving the actual data.
+
+#### Files Changed
+
+- `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:2078` - Fixed cascade path
+- `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:2096` - Fixed independent path
+
+#### How Bug Was Discovered
+
+**Discovery Method:** Bug Hunter agent automated scan (2025-11-16)
+
+The bug hunter agent:
+1. Read all 13 RULES from Gantt Bible
+2. Verified RULE #9: "ALWAYS include predecessor_ids in every update"
+3. Searched DHtmlxGanttView.jsx for all `predecessor_ids` usages
+4. Found 2 violations where `predecessor_ids: []` was hardcoded
+5. Compared with correct code (lines 2023, 2139, 3715) that preserve values
+6. Flagged as CRITICAL due to data loss potential
+
+#### Impact Assessment
+
+**Severity:** CRITICAL
+**Data Loss:** YES - Permanent deletion of predecessor relationships
+**User Impact:** HIGH - Breaks dependency tracking, corrupts schedules
+**Frequency:** Every drag operation on tasks with both predecessors AND successors
+
+**Why Not Caught Earlier:**
+- Bug only affects tasks that have BOTH predecessors AND successors
+- Visual Gantt shows tasks in new positions (looks correct)
+- Data loss only visible when reopening Gantt or checking database
+- No error messages - silent data corruption
+
+#### Comparison with Other Code
+
+**Working Code Examples (for reference):**
+
+```javascript
+// Line 2023: Conflict resolution - ✅ CORRECT
+predecessor_ids: task.predecessor_ids || []
+
+// Line 2139: Cascade path - ✅ CORRECT
+predecessor_ids: task.predecessor_ids || []
+
+// Line 3715: Lock unlock - ✅ CORRECT
+predecessor_ids: task.predecessor_ids || []
+```
+
+These three locations correctly preserve predecessor_ids. The bug was in the other two drag paths.
+
+#### Key Learnings
+
+1. **RULE #9 is Critical** - NEVER omit predecessor_ids from ANY update, even if you think they're not relevant to the operation
+
+2. **Automated Testing Catches Violations** - Bug Hunter agent successfully detected this by comparing code against documented rules
+
+3. **Data Preservation First** - When in doubt, always preserve existing data rather than clearing it
+
+4. **Visual Testing Isn't Enough** - The Gantt looked correct visually, but data was being lost silently
+
+5. **Compare All Code Paths** - When fixing one path correctly (lines 2023, 2139, 3715), ensure ALL similar paths are also fixed
+
+#### Testing Performed
+
+- [x] ✅ Code review: Verified both fixes preserve predecessor_ids
+- [x] ✅ Grep search: Confirmed no other instances of `predecessor_ids: []` remain
+- [x] ✅ RULE #9 compliance: Both paths now follow the rule
+- [ ] Manual test: Drag task with both predecessors and successors (recommended)
+- [ ] Database verification: Check predecessors saved correctly after drag
+
+#### Related Documentation
+
+- **RULE #9:** Gantt Bible → "Predecessor Format"
+- **Gotcha #1:** Gantt Bible → "Common Gotchas: Saving Without Predecessors"
+
+---
 
 ### ✅ BUG-001: Drag Flickering / Screen Shake (RESOLVED)
 

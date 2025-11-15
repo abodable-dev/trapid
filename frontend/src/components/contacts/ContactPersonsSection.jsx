@@ -103,7 +103,7 @@ export default function ContactPersonsSection({ contact, contactPersons = [], on
       const isNew = person._isNew
 
       // Remove the temporary fields before saving
-      const { _isNew, id, ...personData } = person
+      const { _isNew, ...personData } = person
 
       const updatedPersons = isNew
         ? [...contactPersons, personData]  // New person without id

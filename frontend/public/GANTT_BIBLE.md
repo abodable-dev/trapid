@@ -305,9 +305,9 @@ const taskNumber = task.sequence_order + 1  // Show as #1, #2, #3
 ## RULE #2: isLoadingData Lock Timing
 
 ❌ **NEVER reset isLoadingData in drag handler**
-✅ **ALWAYS reset in useEffect with 500ms timeout**
+✅ **ALWAYS reset in useEffect with 1000ms timeout**
 
-**Code location:** `DHtmlxGanttView.jsx:1414-1438`
+**Code location:** `DHtmlxGanttView.jsx:1414-1438` (drag handler), `DHtmlxGanttView.jsx:4041-4046` (useEffect)
 
 **Required implementation:**
 ```javascript
@@ -318,8 +318,14 @@ gantt.attachEvent('onAfterTaskDrag', (id, mode, event) => {
 
   // ... handle drag ...
 
+  // Set timeout to release lock after 5000ms (extended to absorb cascade updates)
+  loadingDataTimeout.current = setTimeout(() => {
+    isLoadingData.current = false
+    loadingDataTimeout.current = null
+  }, 5000)  // 5 seconds for drag operations with cascades
+
   isDragging.current = false
-  // DO NOT reset isLoadingData here!
+  // DO NOT reset isLoadingData synchronously!
 })
 
 // In useEffect:
@@ -332,9 +338,11 @@ useEffect(() => {
 
   setTimeout(() => {
     isLoadingData.current = false
-  }, 500)  // MUST be 500ms minimum
+  }, 1000)  // MUST be 1000ms (increased from 500ms to absorb cascades)
 }, [tasks, ...])
 ```
+
+**Why 1000ms?** Originally 500ms, but increased to 1000ms to absorb cascade events from backend. The 5000ms timeout in drag handler handles drag-specific cascades.
 
 **For bug history, see:** Lexicon → "BUG-001: Drag Flickering"
 

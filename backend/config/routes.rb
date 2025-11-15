@@ -338,6 +338,13 @@ Rails.application.routes.draw do
         end
       end
 
+      # Agent Status
+      resources :agents, only: [] do
+        collection do
+          get :status
+        end
+      end
+
       # Xero integration
       resources :xero, only: [] do
         collection do
