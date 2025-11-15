@@ -72,18 +72,32 @@
       "runs": []
     },
     "gantt-bug-hunter": {
-      "total_runs": 0,
-      "successful_runs": 0,
+      "total_runs": 1,
+      "successful_runs": 1,
       "failed_runs": 0,
-      "last_run": null,
-      "last_status": null,
-      "last_message": null,
-      "runs": []
+      "last_run": "2025-11-16T00:00:00Z",
+      "last_status": "success",
+      "last_message": "Comprehensive diagnostic complete - 10/12 tests passed, 2 minor issues",
+      "runs": [
+        {
+          "timestamp": "2025-11-16T00:00:00Z",
+          "status": "success",
+          "message": "Comprehensive diagnostic complete - 10/12 tests passed, 2 minor issues",
+          "duration_seconds": 25,
+          "details": {
+            "static_analysis": "PASSED - All 13 RULES verified",
+            "automated_tests_passed": 10,
+            "automated_tests_failed": 2,
+            "protected_patterns": "VERIFIED",
+            "issues_found": ["gantt-cascade-e2e: timeout config", "working-days-enforcement: Template 4 missing"]
+          }
+        }
+      ]
     }
   },
   "metadata": {
     "created": "2025-11-16T00:00:00Z",
-    "last_updated": "2025-11-15T20:48:19Z",
+    "last_updated": "2025-11-16T00:00:00Z",
     "version": "1.0"
   }
 }

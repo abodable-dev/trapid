@@ -591,6 +591,25 @@ export default function BugHunterTests() {
                         </div>
                       )}
                     </div>
+                    {run.console_output && (
+                      <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Console Output</span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(run.console_output)
+                              toast.success('Console output copied to clipboard', { duration: 2000 })
+                            }}
+                            className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                        <pre className="text-xs bg-gray-900 dark:bg-black text-green-400 p-3 rounded overflow-x-auto max-h-64 overflow-y-auto font-mono">
+{run.console_output}
+                        </pre>
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (
