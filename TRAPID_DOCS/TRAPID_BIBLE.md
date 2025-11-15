@@ -796,10 +796,736 @@ working_days = @company_settings.working_days
 │ 📘 USER MANUAL (HOW): Chapter 5                │
 └─────────────────────────────────────────────────┘
 
-**User Context:** Creating jobs
-**Technical Rules:** Job model, construction tracking
+**Last Updated:** 2025-11-16
 
-**Content TBD** - To be populated when working on Jobs feature
+## Overview
+
+Jobs & Construction Management is the central feature of Trapid, managing construction projects from creation through completion. The system uses a dual model: **Construction** (physical job/project) and **Project** (scheduling/task management), with **ProjectTask** handling all task execution.
+
+**Key Components:**
+- **Construction:** Job master (contract value, contacts, site info, profit tracking)
+- **Project:** Scheduling container (project manager, timeline, status)
+- **ProjectTask:** Individual tasks with dependencies, status, assignments, materials
+- **TaskDependency:** Task relationships (FS/SS/FF/SF with lag)
+- **Schedule Templates:** Reusable job templates with auto-instantiation
+
+**Key Files:**
+- Models: `app/models/construction.rb`, `app/models/project.rb`, `app/models/project_task.rb`, `app/models/task_dependency.rb`
+- Controllers: `app/controllers/api/v1/constructions_controller.rb`, `app/controllers/api/v1/projects_controller.rb`, `app/controllers/api/v1/project_tasks_controller.rb`
+- Services: `app/services/schedule/template_instantiator.rb`, `app/services/schedule/task_spawner.rb`, `app/services/schedule_cascade_service.rb`
+- Background Jobs: `app/jobs/create_job_folders_job.rb`
+
+---
+
+## RULE #5.1: Construction MUST Have At Least One Contact
+
+**Construction records MUST have at least one associated contact.**
+
+✅ **MUST:**
+- Validate `must_have_at_least_one_contact` on update
+- Allow creation without contacts (initial save)
+- Require at least one contact before job can be used
+- Show validation error if all contacts removed
+
+❌ **NEVER:**
+- Allow Construction to exist without contacts after initial creation
+- Skip contact validation on updates
+- Delete all contacts without replacement
+
+**Implementation:**
+
+```ruby
+# app/models/construction.rb
+class Construction < ApplicationRecord
+  has_many :construction_contacts, dependent: :destroy
+  has_many :contacts, through: :construction_contacts
+
+  validates :title, presence: true
+  validates :status, presence: true
+  validates :site_supervisor_name, presence: true
+  validate :must_have_at_least_one_contact, on: :update
+
+  private
+
+  def must_have_at_least_one_contact
+    if construction_contacts.empty?
+      errors.add(:base, 'Construction must have at least one contact')
+    end
+  end
+end
+```
+
+**Why:** Every construction job needs contact information for communication, PO delivery, and project coordination.
+
+**Files:**
+- `app/models/construction.rb`
+- `app/models/construction_contact.rb`
+
+---
+
+## RULE #5.2: Live Profit Calculation - Dynamic Not Cached
+
+**Live profit MUST be calculated dynamically, NEVER cached in database.**
+
+✅ **MUST:**
+- Calculate `live_profit = contract_value - sum(all_purchase_orders.total)`
+- Recalculate `profit_percentage = (live_profit / contract_value) * 100`
+- Use `calculate_live_profit` and `calculate_profit_percentage` methods
+- Return calculated values in API responses
+
+❌ **NEVER:**
+- Store live_profit or profit_percentage in database
+- Cache profit values (they change with every PO update)
+- Use stale profit calculations
+
+**Implementation:**
+
+```ruby
+# app/models/construction.rb
+class Construction < ApplicationRecord
+  has_many :purchase_orders
+
+  def calculate_live_profit
+    return 0 if contract_value.nil?
+
+    total_po_cost = purchase_orders.sum(:total) || 0
+    contract_value - total_po_cost
+  end
+
+  def calculate_profit_percentage
+    return 0 if contract_value.nil? || contract_value.zero?
+
+    (calculate_live_profit / contract_value) * 100
+  end
+end
+```
+
+**API Response:**
+```ruby
+# app/controllers/api/v1/constructions_controller.rb
+def show
+  @construction = Construction.find(params[:id])
+  render json: @construction.as_json.merge(
+    live_profit: @construction.calculate_live_profit,
+    profit_percentage: @construction.calculate_profit_percentage
+  )
+end
+```
+
+**Why:** Profit changes with every PO created/updated/deleted. Dynamic calculation ensures accuracy.
+
+**Files:**
+- `app/models/construction.rb`
+- `app/controllers/api/v1/constructions_controller.rb`
+
+---
+
+## RULE #5.3: Task Dependencies - No Circular References
+
+**Task dependencies MUST NOT create circular references.**
+
+✅ **MUST:**
+- Validate `no_circular_dependencies` before saving TaskDependency
+- Use graph traversal (BFS) to detect cycles
+- Check entire predecessor chain for successor_task
+- Reject dependency if circular reference detected
+
+❌ **NEVER:**
+- Allow Task A → B → C → A chains
+- Skip circular dependency validation
+- Allow self-dependencies (task depending on itself)
+
+**Implementation:**
+
+```ruby
+# app/models/task_dependency.rb
+class TaskDependency < ApplicationRecord
+  belongs_to :successor_task, class_name: 'ProjectTask'
+  belongs_to :predecessor_task, class_name: 'ProjectTask'
+
+  validate :no_circular_dependencies
+  validate :no_self_dependency
+  validate :same_project_tasks
+
+  private
+
+  def no_circular_dependencies
+    return if creates_circular_dependency? == false
+
+    errors.add(:base, 'Cannot create circular dependency')
+  end
+
+  def no_self_dependency
+    if successor_task_id == predecessor_task_id
+      errors.add(:base, 'Task cannot depend on itself')
+    end
+  end
+
+  def same_project_tasks
+    if successor_task && predecessor_task &&
+       successor_task.project_id != predecessor_task.project_id
+      errors.add(:base, 'Both tasks must belong to the same project')
+    end
+  end
+
+  def creates_circular_dependency?
+    # BFS to find all predecessors of predecessor_task
+    visited = Set.new
+    queue = [predecessor_task_id]
+
+    while queue.any?
+      current_id = queue.shift
+      next if visited.include?(current_id)
+
+      visited.add(current_id)
+
+      # If we find successor_task in the chain, it's circular
+      return true if current_id == successor_task_id
+
+      # Add all predecessors of current task to queue
+      TaskDependency.where(successor_task_id: current_id).pluck(:predecessor_task_id).each do |pred_id|
+        queue << pred_id unless visited.include?(pred_id)
+      end
+    end
+
+    false
+  end
+end
+```
+
+**Why:** Circular dependencies break cascade calculations and make schedule impossible to resolve.
+
+**Files:**
+- `app/models/task_dependency.rb`
+
+---
+
+## RULE #5.4: Task Status Transitions - Automatic Date Setting
+
+**Task status transitions MUST automatically update actual dates.**
+
+✅ **MUST:**
+- Set `actual_start_date = Date.current` when status → `in_progress` (if nil)
+- Set `actual_end_date = Date.current` when status → `complete`
+- Set `progress_percentage = 100` when status → `complete`
+- Use `before_save :update_actual_dates` callback
+
+❌ **NEVER:**
+- Allow `complete` status without actual_end_date
+- Allow `in_progress` without actual_start_date
+- Manually set these dates in controller
+
+**Implementation:**
+
+```ruby
+# app/models/project_task.rb
+class ProjectTask < ApplicationRecord
+  before_save :update_actual_dates
+
+  private
+
+  def update_actual_dates
+    if status_changed?
+      case status
+      when 'in_progress'
+        self.actual_start_date ||= Date.current
+      when 'complete'
+        self.actual_end_date = Date.current
+        self.progress_percentage = 100
+      end
+    end
+  end
+end
+```
+
+**Why:** Automatic date tracking ensures accurate timeline tracking without manual input.
+
+**Files:**
+- `app/models/project_task.rb`
+
+---
+
+## RULE #5.5: Task Spawning - Status-Based Child Task Creation
+
+**Child tasks (photos, certificates, subtasks) MUST be spawned automatically based on parent task status.**
+
+✅ **MUST:**
+- Spawn **subtasks** when parent status → `in_progress`
+- Spawn **photo task** when parent status → `complete`
+- Spawn **certificate task** when parent status → `complete` (with cert_lag_days)
+- Use `Schedule::TaskSpawner` service
+- Set `spawned_type` field to identify task type
+- Link via `parent_task_id`
+
+❌ **NEVER:**
+- Create photo/cert tasks manually
+- Spawn tasks without checking schedule_template_row configuration
+- Skip TaskSpawner service
+
+**Implementation:**
+
+```ruby
+# app/models/project_task.rb
+class ProjectTask < ApplicationRecord
+  after_save :spawn_child_tasks_on_status_change
+
+  private
+
+  def spawn_child_tasks_on_status_change
+    return unless saved_change_to_status?
+    return unless schedule_template_row.present?
+
+    spawner = Schedule::TaskSpawner.new(self)
+
+    case status
+    when 'in_progress'
+      spawner.spawn_subtasks if schedule_template_row.has_subtasks?
+    when 'complete'
+      spawner.spawn_photo_task if schedule_template_row.require_photo?
+      spawner.spawn_certificate_task if schedule_template_row.require_certificate?
+    end
+  end
+end
+```
+
+**TaskSpawner Service:**
+```ruby
+# app/services/schedule/task_spawner.rb
+class Schedule::TaskSpawner
+  def initialize(parent_task)
+    @parent_task = parent_task
+  end
+
+  def spawn_photo_task
+    ProjectTask.create!(
+      project: @parent_task.project,
+      name: "Photo - #{@parent_task.name}",
+      spawned_type: 'photo',
+      parent_task: @parent_task,
+      category: 'photo',
+      task_type: 'documentation',
+      status: 'not_started',
+      duration_days: 0,
+      planned_start_date: @parent_task.actual_end_date,
+      planned_end_date: @parent_task.actual_end_date
+    )
+  end
+
+  def spawn_certificate_task
+    lag_days = @parent_task.schedule_template_row&.cert_lag_days || 10
+
+    ProjectTask.create!(
+      project: @parent_task.project,
+      name: "Certificate - #{@parent_task.name}",
+      spawned_type: 'certificate',
+      parent_task: @parent_task,
+      category: 'certificate',
+      task_type: 'documentation',
+      status: 'not_started',
+      duration_days: 0,
+      planned_start_date: @parent_task.actual_end_date + lag_days.days,
+      planned_end_date: @parent_task.actual_end_date + lag_days.days
+    )
+  end
+
+  def spawn_subtasks
+    subtask_list = @parent_task.schedule_template_row.subtask_list || []
+
+    subtask_list.each_with_index do |subtask_name, index|
+      ProjectTask.create!(
+        project: @parent_task.project,
+        name: subtask_name,
+        spawned_type: 'subtask',
+        parent_task: @parent_task,
+        category: @parent_task.category,
+        task_type: @parent_task.task_type,
+        supplier_name: @parent_task.supplier_name,
+        status: 'not_started',
+        duration_days: 1,
+        sequence_order: (@parent_task.sequence_order || 0) + index + 1,
+        planned_start_date: @parent_task.planned_start_date,
+        planned_end_date: @parent_task.planned_start_date + 1.day
+      )
+    end
+  end
+end
+```
+
+**Why:** Automatic task spawning ensures required documentation and subtasks are tracked without manual creation.
+
+**Files:**
+- `app/models/project_task.rb`
+- `app/services/schedule/task_spawner.rb`
+
+---
+
+## RULE #5.6: Schedule Cascade - Dependency-Based Date Propagation
+
+**When a task's dates or duration change, dependent task dates MUST cascade automatically.**
+
+✅ **MUST:**
+- Use `ScheduleCascadeService` to recalculate dependent task dates
+- Respect dependency types (FS/SS/FF/SF)
+- Apply lag_days to calculations
+- Skip manually_positioned tasks (user-set dates)
+- Recursively cascade to downstream tasks
+- Use company timezone and working days
+
+❌ **NEVER:**
+- Skip cascade when task dates change
+- Ignore dependency types
+- Override manually_positioned tasks
+- Cascade to different projects
+
+**Implementation:**
+
+```ruby
+# app/services/schedule_cascade_service.rb
+class ScheduleCascadeService
+  def initialize(changed_task)
+    @changed_task = changed_task
+    @project = changed_task.project
+    @timezone = CompanySetting.timezone || 'UTC'
+  end
+
+  def cascade!
+    # Find all tasks that depend on this task
+    dependent_tasks = TaskDependency
+      .where(predecessor_task_id: @changed_task.id)
+      .includes(:successor_task)
+      .map(&:successor_task)
+
+    dependent_tasks.each do |task|
+      next if task.manually_positioned? # Skip user-set dates
+
+      recalculate_task_dates(task)
+      task.save!
+
+      # Recursively cascade to downstream tasks
+      ScheduleCascadeService.new(task).cascade!
+    end
+  end
+
+  private
+
+  def recalculate_task_dates(task)
+    # Find all dependencies for this task
+    dependencies = TaskDependency.where(successor_task_id: task.id).includes(:predecessor_task)
+
+    # Calculate start date based on all predecessors
+    earliest_start = dependencies.map do |dep|
+      calculate_start_based_on_dependency(dep)
+    end.compact.max || @project.start_date
+
+    task.planned_start_date = earliest_start
+    task.planned_end_date = earliest_start + task.duration_days.days
+  end
+
+  def calculate_start_based_on_dependency(dependency)
+    pred_task = dependency.predecessor_task
+    lag = dependency.lag_days || 0
+
+    case dependency.dependency_type
+    when 'finish_to_start'
+      pred_task.planned_end_date + lag.days
+    when 'start_to_start'
+      pred_task.planned_start_date + lag.days
+    when 'finish_to_finish'
+      pred_task.planned_end_date - dependency.successor_task.duration_days.days + lag.days
+    when 'start_to_finish'
+      pred_task.planned_start_date + lag.days
+    end
+  end
+end
+```
+
+**Trigger:**
+```ruby
+# app/models/project_task.rb
+class ProjectTask < ApplicationRecord
+  after_save :cascade_date_changes, if: :should_cascade?
+
+  private
+
+  def should_cascade?
+    saved_change_to_planned_start_date? ||
+    saved_change_to_planned_end_date? ||
+    saved_change_to_duration_days?
+  end
+
+  def cascade_date_changes
+    ScheduleCascadeService.new(self).cascade!
+  end
+end
+```
+
+**Why:** Cascading ensures schedule stays coherent when tasks are delayed or accelerated.
+
+**Files:**
+- `app/services/schedule_cascade_service.rb`
+- `app/models/project_task.rb`
+
+---
+
+## RULE #5.7: OneDrive Folder Creation - Async with Status Tracking
+
+**OneDrive folder creation MUST be asynchronous with proper status tracking.**
+
+✅ **MUST:**
+- Use `CreateJobFoldersJob` background job
+- Track status: `not_requested` → `pending` → `processing` → `completed` / `failed`
+- Use `onedrive_folder_creation_status` enum field
+- Set `onedrive_folders_created_at` timestamp on completion
+- Make idempotent (check if folders already exist)
+- Use exponential backoff for retries
+
+❌ **NEVER:**
+- Create folders synchronously in controller
+- Skip status tracking
+- Create duplicate folders
+- Fail silently without updating status
+
+**Implementation:**
+
+```ruby
+# app/controllers/api/v1/constructions_controller.rb
+class Api::V1::ConstructionsController < ApplicationController
+  def create
+    @construction = Construction.new(construction_params)
+
+    if @construction.save
+      folder_creation_enqueued = false
+
+      if params[:create_onedrive_folders] && params[:template_id]
+        @construction.update(onedrive_folder_creation_status: :pending)
+        CreateJobFoldersJob.perform_later(@construction.id, params[:template_id])
+        folder_creation_enqueued = true
+      end
+
+      render json: @construction.as_json.merge(
+        folder_creation_enqueued: folder_creation_enqueued
+      ), status: :created
+    else
+      render json: { errors: @construction.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+end
+```
+
+**Background Job:**
+```ruby
+# app/jobs/create_job_folders_job.rb
+class CreateJobFoldersJob < ApplicationJob
+  queue_as :default
+
+  retry_on MicrosoftGraphClient::APIError, wait: :exponentially_longer, attempts: 3
+  retry_on MicrosoftGraphClient::AuthenticationError, wait: 5.seconds, attempts: 2
+
+  def perform(construction_id, template_id)
+    construction = Construction.find(construction_id)
+
+    # Update status to processing
+    construction.update!(onedrive_folder_creation_status: :processing)
+
+    # Get credential and template
+    credential = OrganizationOneDriveCredential.active.first
+    template = FolderTemplate.find(template_id)
+
+    # Check if folders already exist (idempotent)
+    graph_client = MicrosoftGraphClient.new(credential)
+    existing_folder = graph_client.find_folder_by_name(construction.title)
+
+    if existing_folder
+      construction.update!(
+        onedrive_folder_creation_status: :completed,
+        onedrive_folders_created_at: Time.current
+      )
+      return
+    end
+
+    # Create folder structure
+    root_folder = graph_client.create_folder(construction.title)
+    template.folder_structure.each do |subfolder|
+      graph_client.create_folder(subfolder['name'], parent_id: root_folder['id'])
+    end
+
+    # Mark as completed
+    construction.update!(
+      onedrive_folder_creation_status: :completed,
+      onedrive_folders_created_at: Time.current
+    )
+  rescue StandardError => e
+    construction.update!(onedrive_folder_creation_status: :failed)
+    raise e
+  end
+end
+```
+
+**Status Enum:**
+```ruby
+# app/models/construction.rb
+class Construction < ApplicationRecord
+  enum onedrive_folder_creation_status: {
+    not_requested: 0,
+    pending: 1,
+    processing: 2,
+    completed: 3,
+    failed: 4
+  }
+end
+```
+
+**Why:** Folder creation can take 5-10 seconds. Async processing prevents blocking API requests and provides better UX.
+
+**Files:**
+- `app/jobs/create_job_folders_job.rb`
+- `app/controllers/api/v1/constructions_controller.rb`
+- `app/models/construction.rb`
+
+---
+
+## RULE #5.8: Schedule Template Instantiation - All-or-Nothing Transaction
+
+**Schedule template instantiation MUST be wrapped in a transaction.**
+
+✅ **MUST:**
+- Use `ActiveRecord::Base.transaction` for all template instantiation
+- Rollback entire operation if any task fails to create
+- Rollback if dependency creation fails
+- Rollback if date calculation fails
+- Return `{ success: true/false, errors: [] }` response
+
+❌ **NEVER:**
+- Create partial schedules (some tasks without others)
+- Leave orphaned tasks if dependencies fail
+- Continue after validation errors
+
+**Implementation:**
+
+```ruby
+# app/services/schedule/template_instantiator.rb
+class Schedule::TemplateInstantiator
+  def initialize(project:, template:)
+    @project = project
+    @template = template
+    @task_map = {} # Maps template_row_id → created ProjectTask
+  end
+
+  def call
+    ActiveRecord::Base.transaction do
+      create_tasks_from_template
+      create_dependencies
+      calculate_dates_forward_pass
+      create_auto_purchase_orders
+      update_project_dates
+
+      { success: true, tasks: @task_map.values }
+    end
+  rescue StandardError => e
+    { success: false, errors: [e.message] }
+  end
+
+  private
+
+  def create_tasks_from_template
+    @template.schedule_template_rows.order(:sequence_order).each do |row|
+      task = ProjectTask.create!(
+        project: @project,
+        name: row.task_name,
+        task_type: row.task_type,
+        category: row.category,
+        duration_days: row.duration_days,
+        sequence_order: row.sequence_order,
+        schedule_template_row: row,
+        status: 'not_started',
+        is_milestone: row.is_milestone,
+        is_critical_path: row.is_critical_path
+      )
+
+      @task_map[row.id] = task
+    end
+  end
+
+  def create_dependencies
+    @template.schedule_template_rows.each do |row|
+      next if row.predecessors.blank?
+
+      row.predecessors.each do |pred_config|
+        predecessor_task = @task_map[pred_config['template_row_id']]
+        successor_task = @task_map[row.id]
+
+        TaskDependency.create!(
+          predecessor_task: predecessor_task,
+          successor_task: successor_task,
+          dependency_type: pred_config['type'] || 'finish_to_start',
+          lag_days: pred_config['lag_days'] || 0
+        )
+      end
+    end
+  end
+
+  def calculate_dates_forward_pass
+    # Forward pass algorithm to calculate all task dates
+    # ... (implementation details)
+  end
+
+  def create_auto_purchase_orders
+    # Create POs for tasks marked with creates_schedule_tasks
+    # ... (implementation details)
+  end
+
+  def update_project_dates
+    earliest_start = @task_map.values.map(&:planned_start_date).compact.min
+    latest_end = @task_map.values.map(&:planned_end_date).compact.max
+
+    @project.update!(
+      start_date: earliest_start,
+      planned_end_date: latest_end
+    )
+  end
+end
+```
+
+**Why:** Template instantiation creates dozens of interrelated records. Transaction ensures schedule is complete or doesn't exist.
+
+**Files:**
+- `app/services/schedule/template_instantiator.rb`
+
+---
+
+## API Endpoints Reference
+
+### Constructions
+```
+GET    /api/v1/constructions
+POST   /api/v1/constructions
+GET    /api/v1/constructions/:id
+PATCH  /api/v1/constructions/:id
+DELETE /api/v1/constructions/:id
+GET    /api/v1/constructions/:id/saved_messages
+GET    /api/v1/constructions/:id/emails
+GET    /api/v1/constructions/:id/documentation_tabs
+```
+
+### Projects
+```
+GET    /api/v1/projects
+POST   /api/v1/projects
+GET    /api/v1/projects/:id
+PATCH  /api/v1/projects/:id
+DELETE /api/v1/projects/:id
+GET    /api/v1/projects/:id/gantt
+```
+
+### Project Tasks
+```
+GET    /api/v1/projects/:project_id/tasks
+POST   /api/v1/projects/:project_id/tasks
+GET    /api/v1/projects/:project_id/tasks/:id
+PATCH  /api/v1/projects/:project_id/tasks/:id
+DELETE /api/v1/projects/:project_id/tasks/:id
+POST   /api/v1/projects/:project_id/tasks/:id/auto_complete_subtasks
+```
 
 ---
 
@@ -810,10 +1536,842 @@ working_days = @company_settings.working_days
 │ 📘 USER MANUAL (HOW): Chapter 6                │
 └─────────────────────────────────────────────────┘
 
-**User Context:** Importing estimates
-**Technical Rules:** Estimate import, Unreal Engine integration
+**Last Updated:** 2025-11-16
 
-**Content TBD** - To be populated when working on Estimates feature
+## Overview
+
+Estimates & Quoting handles import of material estimates from external systems (primarily Unreal Engine), fuzzy matching to Construction records, and automatic PO generation. The system uses intelligent job matching with confidence scoring and AI-powered plan review.
+
+**Key Components:**
+- **Estimate:** Imported material list from external source (Unreal Engine)
+- **EstimateLineItem:** Individual materials with category, description, quantity
+- **JobMatcherService:** Fuzzy matching using Levenshtein distance
+- **EstimateToPurchaseOrderService:** Converts estimates to draft POs
+- **PlanReviewService:** AI analysis comparing estimates to actual plans
+- **External API:** Unreal Engine integration with API key authentication
+
+**Key Files:**
+- Models: `app/models/estimate.rb`, `app/models/estimate_line_item.rb`, `app/models/estimate_review.rb`
+- Controllers: `app/controllers/api/v1/estimates_controller.rb`, `app/controllers/api/v1/external/unreal_estimates_controller.rb`
+- Services: `app/services/job_matcher_service.rb`, `app/services/estimate_to_purchase_order_service.rb`, `app/services/plan_review_service.rb`
+- Jobs: `app/jobs/ai_review_job.rb`
+
+---
+
+## RULE #6.1: Fuzzy Job Matching - Three-Tier Confidence Thresholds
+
+**Job matching MUST use three distinct confidence thresholds with specific actions.**
+
+✅ **MUST:**
+- Use Levenshtein distance + word matching + substring bonuses
+- Auto-match at **≥70% confidence** (high certainty)
+- Suggest candidates at **50-70% confidence** (ambiguous)
+- Return no match at **<50% confidence** (low similarity)
+- Set `matched_automatically: true` for auto-matches
+- Store `match_confidence_score` for all matches
+
+❌ **NEVER:**
+- Auto-match below 70% confidence
+- Skip confidence scoring
+- Match without normalizing strings (lowercase, trim, remove special chars)
+- Allow duplicate auto-matches
+
+**Implementation:**
+
+```ruby
+# app/services/job_matcher_service.rb
+class JobMatcherService
+  AUTO_MATCH_THRESHOLD = 70.0
+  SUGGEST_THRESHOLD = 50.0
+
+  def initialize(job_name_from_estimate)
+    @job_name = job_name_from_estimate
+    @normalized_search = normalize_string(job_name)
+  end
+
+  def call
+    matches = Construction.all.map do |construction|
+      {
+        construction: construction,
+        score: calculate_similarity_score(construction.title)
+      }
+    end.sort_by { |m| -m[:score] }
+
+    best_match = matches.first
+
+    if best_match[:score] >= AUTO_MATCH_THRESHOLD
+      {
+        success: true,
+        status: :auto_matched,
+        matched_job: {
+          id: best_match[:construction].id,
+          title: best_match[:construction].title,
+          confidence_score: best_match[:score]
+        }
+      }
+    elsif best_match[:score] >= SUGGEST_THRESHOLD
+      {
+        success: true,
+        status: :suggest_candidates,
+        candidate_jobs: matches.first(5).select { |m| m[:score] >= SUGGEST_THRESHOLD }
+      }
+    else
+      {
+        success: true,
+        status: :no_match,
+        job_name_searched: @job_name
+      }
+    end
+  end
+
+  private
+
+  def calculate_similarity_score(construction_title)
+    normalized_title = normalize_string(construction_title)
+
+    # Base: Levenshtein distance
+    distance = levenshtein_distance(@normalized_search, normalized_title)
+    max_length = [@normalized_search.length, normalized_title.length].max
+    base_score = (1.0 - (distance.to_f / max_length)) * 100
+
+    # Bonus: Substring match
+    if normalized_title.include?(@normalized_search) || @normalized_search.include?(normalized_title)
+      base_score += 20
+    end
+
+    # Bonus: Word matching
+    search_words = @normalized_search.split
+    title_words = normalized_title.split
+    matching_words = (search_words & title_words).length
+    base_score += (matching_words * 15)
+
+    # Cap at 99% (never 100% unless exact)
+    [base_score, 99.0].min.round(1)
+  end
+
+  def normalize_string(str)
+    str.downcase.strip.gsub(/[^a-z0-9\s]/, '').squeeze(' ')
+  end
+
+  def levenshtein_distance(s1, s2)
+    # Dynamic programming algorithm
+    matrix = Array.new(s1.length + 1) { Array.new(s2.length + 1) }
+
+    (0..s1.length).each { |i| matrix[i][0] = i }
+    (0..s2.length).each { |j| matrix[0][j] = j }
+
+    (1..s1.length).each do |i|
+      (1..s2.length).each do |j|
+        cost = s1[i - 1] == s2[j - 1] ? 0 : 1
+        matrix[i][j] = [
+          matrix[i - 1][j] + 1,      # deletion
+          matrix[i][j - 1] + 1,      # insertion
+          matrix[i - 1][j - 1] + cost # substitution
+        ].min
+      end
+    end
+
+    matrix[s1.length][s2.length]
+  end
+end
+```
+
+**Example Matches:**
+- "Malbon Residence" vs "The Malbon Residence - 123 Main St" → **85%** (auto-match)
+- "Smith Project" vs "Smith Custom Build" → **62%** (suggest)
+- "Jones House" vs "Acme Commercial Building" → **15%** (no match)
+
+**Why:** Three-tier system balances automation with safety - auto-match only when confident, suggest when ambiguous, defer to user when uncertain.
+
+**Files:**
+- `app/services/job_matcher_service.rb`
+- `app/controllers/api/v1/external/unreal_estimates_controller.rb`
+
+---
+
+## RULE #6.2: External API Key Security - SHA256 Hashing Only
+
+**API keys MUST NEVER be stored in plaintext. Use SHA256 hashing.**
+
+✅ **MUST:**
+- Hash API keys with SHA256 before storage
+- Validate incoming keys by hashing and comparing digests
+- Store keys in `external_integrations` table
+- Track usage with `last_used_at` timestamp
+- Support key deactivation without deletion
+
+❌ **NEVER:**
+- Store plaintext API keys in database
+- Log API keys in server logs
+- Return API keys in API responses
+- Use reversible encryption (one-way hash only)
+
+**Implementation:**
+
+```ruby
+# app/models/external_integration.rb
+class ExternalIntegration < ApplicationRecord
+  validates :name, presence: true
+  validates :api_key_digest, presence: true
+
+  def self.authenticate(api_key)
+    digest = Digest::SHA256.hexdigest(api_key)
+    integration = find_by(api_key_digest: digest, active: true)
+
+    if integration
+      integration.touch(:last_used_at)  # Track usage
+      integration
+    else
+      nil
+    end
+  end
+
+  def generate_api_key
+    # Generate secure random key
+    new_key = SecureRandom.hex(32)
+
+    # Store digest only
+    self.api_key_digest = Digest::SHA256.hexdigest(new_key)
+    save!
+
+    # Return plaintext ONCE for user to save
+    new_key
+  end
+end
+```
+
+**Controller Authentication:**
+```ruby
+# app/controllers/api/v1/external/unreal_estimates_controller.rb
+class Api::V1::External::UnrealEstimatesController < ApplicationController
+  skip_before_action :verify_authenticity_token
+  before_action :authenticate_api_key
+
+  private
+
+  def authenticate_api_key
+    api_key = request.headers['X-API-Key']
+
+    unless api_key
+      render json: { error: 'Missing X-API-Key header' }, status: :unauthorized
+      return
+    end
+
+    @integration = ExternalIntegration.authenticate(api_key)
+
+    unless @integration
+      render json: { error: 'Invalid or inactive API key' }, status: :unauthorized
+      return
+    end
+  end
+end
+```
+
+**Database Schema:**
+```ruby
+create_table :external_integrations do |t|
+  t.string :name, null: false
+  t.string :api_key_digest, null: false  # SHA256 hash
+  t.boolean :active, default: true
+  t.datetime :last_used_at
+  t.timestamps
+end
+```
+
+**Key Generation Workflow:**
+1. Admin generates key via console or UI
+2. System shows plaintext key ONCE
+3. Admin copies key to Unreal Engine config
+4. System stores SHA256 digest only
+5. Future requests hash incoming key and compare digests
+
+**Why:** One-way hashing prevents key exposure even if database is compromised. SHA256 is fast for validation but computationally infeasible to reverse.
+
+**Files:**
+- `app/models/external_integration.rb`
+- `app/controllers/api/v1/external/unreal_estimates_controller.rb`
+
+---
+
+## RULE #6.3: Estimate Import - Validate Before Auto-Matching
+
+**Estimate import MUST validate data before attempting job matching.**
+
+✅ **MUST:**
+- Validate `job_name` is present and non-empty
+- Validate `materials` array has at least 1 item
+- Validate each material has: `category`, `item`, `quantity`
+- Return 422 Unprocessable Entity for invalid data
+- Log validation errors with request details
+
+❌ **NEVER:**
+- Attempt to match with missing job_name
+- Create estimate with zero line items
+- Skip validation on external API endpoint
+- Create estimate with nil or zero quantities
+
+**Implementation:**
+
+```ruby
+# app/controllers/api/v1/external/unreal_estimates_controller.rb
+class Api::V1::External::UnrealEstimatesController < ApplicationController
+  def create
+    # Validate request parameters
+    unless params[:job_name].present?
+      render json: {
+        success: false,
+        error: 'Missing required field: job_name'
+      }, status: :unprocessable_entity
+      return
+    end
+
+    unless params[:materials].is_a?(Array) && params[:materials].any?
+      render json: {
+        success: false,
+        error: 'Missing or empty materials array'
+      }, status: :unprocessable_entity
+      return
+    end
+
+    # Validate each material
+    params[:materials].each_with_index do |material, index|
+      unless material[:item].present?
+        render json: {
+          success: false,
+          error: "Material at index #{index} missing 'item' field"
+        }, status: :unprocessable_entity
+        return
+      end
+
+      unless material[:quantity].present? && material[:quantity].to_f > 0
+        render json: {
+          success: false,
+          error: "Material at index #{index} has invalid quantity"
+        }, status: :unprocessable_entity
+        return
+      end
+    end
+
+    # Create estimate
+    @estimate = Estimate.new(
+      source: 'unreal_engine',
+      job_name_from_source: params[:job_name],
+      estimator_name: params[:estimator],
+      status: 'pending',
+      total_items: params[:materials].length
+    )
+
+    if @estimate.save
+      # Create line items
+      params[:materials].each do |material|
+        @estimate.estimate_line_items.create!(
+          category: material[:category],
+          item_description: material[:item],
+          quantity: material[:quantity],
+          unit: material[:unit] || 'ea',
+          notes: material[:notes]
+        )
+      end
+
+      # Attempt job matching
+      matcher = JobMatcherService.new(@estimate.job_name_from_source)
+      match_result = matcher.call
+
+      # ... handle match result
+    else
+      render json: {
+        success: false,
+        errors: @estimate.errors.full_messages
+      }, status: :unprocessable_entity
+    end
+  end
+end
+```
+
+**Validation Errors Return:**
+```json
+{
+  "success": false,
+  "error": "Material at index 0 missing 'item' field"
+}
+```
+
+**Why:** Validating before matching prevents orphaned data and ensures estimates can be processed. External integrations are prone to malformed data.
+
+**Files:**
+- `app/controllers/api/v1/external/unreal_estimates_controller.rb`
+- `app/models/estimate.rb`
+- `app/models/estimate_line_item.rb`
+
+---
+
+## RULE #6.4: PO Generation from Estimate - Transaction Safety
+
+**Converting estimates to POs MUST use database transactions (all-or-nothing).**
+
+✅ **MUST:**
+- Wrap entire conversion in `ActiveRecord::Base.transaction`
+- Rollback if any PO creation fails
+- Rollback if any line item creation fails
+- Rollback if supplier lookup fails critically
+- Mark estimate as `imported` only on successful commit
+
+❌ **NEVER:**
+- Create partial POs (some categories succeed, others fail)
+- Leave estimate in `matched` status if POs were created
+- Continue after critical errors
+- Create POs without line items
+
+**Implementation:**
+
+```ruby
+# app/services/estimate_to_purchase_order_service.rb
+class EstimateToPurchaseOrderService
+  def initialize(estimate)
+    @estimate = estimate
+    @construction = estimate.construction
+    @created_pos = []
+    @warnings = []
+  end
+
+  def execute
+    # Validation
+    unless @estimate.status == 'matched'
+      return { success: false, error: 'Estimate must be matched to a job first' }
+    end
+
+    unless @estimate.estimate_line_items.any?
+      return { success: false, error: 'Estimate has no line items' }
+    end
+
+    # Transaction-wrapped conversion
+    ActiveRecord::Base.transaction do
+      # Group line items by category
+      @estimate.estimate_line_items.group_by(&:category).each do |category, items|
+        create_purchase_order_for_category(category, items)
+      end
+
+      # Mark estimate as imported
+      @estimate.update!(status: 'imported', imported_at: Time.current)
+
+      # Commit transaction (implicit)
+    end
+
+    # Success response
+    {
+      success: true,
+      estimate_id: @estimate.id,
+      purchase_orders_created: @created_pos.length,
+      purchase_orders: @created_pos.map(&:summary_hash),
+      warnings: @warnings
+    }
+
+  rescue ActiveRecord::RecordInvalid => e
+    # Transaction rolled back automatically
+    { success: false, error: "Database validation failed: #{e.message}" }
+  rescue StandardError => e
+    # Transaction rolled back automatically
+    Rails.logger.error("Estimate to PO conversion failed: #{e.message}")
+    { success: false, error: 'Internal error during conversion' }
+  end
+
+  private
+
+  def create_purchase_order_for_category(category, items)
+    # Smart supplier lookup
+    lookup_result = SmartPoLookupService.new.lookup(
+      task_description: items.first.item_description,
+      category: category&.downcase
+    )
+
+    supplier = lookup_result[:supplier]
+
+    # Create PO
+    po = PurchaseOrder.create!(
+      construction: @construction,
+      estimate: @estimate,
+      supplier: supplier,
+      description: "Auto-generated from #{@estimate.source} estimate",
+      status: 'draft',
+      required_date: 14.days.from_now.to_date,
+      delivery_address: @construction.title,
+      special_instructions: build_special_instructions(category, supplier)
+    )
+
+    # Create line items
+    items.each_with_index do |item, index|
+      item_lookup = SmartPoLookupService.new.lookup(
+        task_description: item.item_description,
+        category: category&.downcase,
+        quantity: item.quantity
+      )
+
+      PurchaseOrderLineItem.create!(
+        purchase_order: po,
+        line_number: index + 1,
+        description: item.item_description,
+        quantity: item.quantity,
+        unit_price: item_lookup[:unit_price] || 0,
+        pricebook_item_id: item_lookup[:price_book_item]&.id,
+        notes: item.notes
+      )
+
+      # Track warnings
+      if item_lookup[:warnings].any?
+        @warnings.concat(item_lookup[:warnings])
+      end
+    end
+
+    # Calculate PO totals
+    po.calculate_totals
+    po.save!
+
+    @created_pos << po
+  end
+end
+```
+
+**Transaction Behavior:**
+- **Success:** All POs created, estimate marked imported
+- **Failure:** No POs created, estimate remains `matched`, error returned
+
+**Why:** Transaction ensures data integrity - either entire estimate converts successfully or nothing happens. Prevents orphaned POs or inconsistent state.
+
+**Files:**
+- `app/services/estimate_to_purchase_order_service.rb`
+
+---
+
+## RULE #6.5: AI Plan Review - Async Processing Required
+
+**AI plan review MUST run asynchronously via background job, NEVER synchronously in request.**
+
+✅ **MUST:**
+- Enqueue `AiReviewJob` for all plan reviews
+- Create `EstimateReview` record with `status: 'pending'` immediately
+- Return review_id to client for polling
+- Update status to `processing` → `completed` / `failed`
+- Set timeout of 5 minutes for Claude API call
+
+❌ **NEVER:**
+- Run plan review in synchronous HTTP request
+- Block API response waiting for Claude
+- Skip background job for "small" reviews
+- Leave review in `processing` status indefinitely
+
+**Implementation:**
+
+```ruby
+# app/controllers/api/v1/estimate_reviews_controller.rb
+class Api::V1::EstimateReviewsController < ApplicationController
+  def create
+    @estimate = Estimate.find(params[:estimate_id])
+
+    # Validate estimate is matched
+    unless @estimate.construction
+      render json: { error: 'Estimate must be matched to a construction first' }, status: :unprocessable_entity
+      return
+    end
+
+    # Create review record
+    @review = @estimate.estimate_reviews.create!(
+      status: 'pending'
+    )
+
+    # Enqueue background job
+    AiReviewJob.perform_later(@estimate.id)
+
+    # Immediate response
+    render json: {
+      success: true,
+      review_id: @review.id,
+      status: 'processing',
+      message: 'AI review started. Poll /api/v1/estimate_reviews/:id for results.'
+    }, status: :accepted  # 202 Accepted
+  end
+
+  def show
+    @review = EstimateReview.find(params[:id])
+
+    render json: {
+      success: true,
+      review_id: @review.id,
+      status: @review.status,
+      reviewed_at: @review.reviewed_at,
+      confidence_score: @review.confidence_score,
+      summary: {
+        items_matched: @review.items_matched,
+        items_mismatched: @review.items_mismatched,
+        items_missing: @review.items_missing,
+        items_extra: @review.items_extra
+      },
+      discrepancies: @review.discrepancies,
+      ai_findings: @review.ai_findings
+    }
+  end
+end
+```
+
+**Background Job:**
+```ruby
+# app/jobs/ai_review_job.rb
+class AiReviewJob < ApplicationJob
+  queue_as :default
+
+  def perform(estimate_id)
+    estimate = Estimate.find(estimate_id)
+    review = estimate.estimate_reviews.pending.last
+
+    # Update status to processing
+    review.update!(status: 'processing')
+
+    # Execute AI review
+    service = PlanReviewService.new(estimate)
+    result = service.execute
+
+    if result[:success]
+      review.update!(
+        status: 'completed',
+        ai_findings: result[:ai_findings],
+        discrepancies: result[:discrepancies],
+        items_matched: result[:items_matched],
+        items_mismatched: result[:items_mismatched],
+        items_missing: result[:items_missing],
+        items_extra: result[:items_extra],
+        confidence_score: result[:confidence_score],
+        reviewed_at: Time.current
+      )
+    else
+      review.update!(status: 'failed')
+    end
+  rescue StandardError => e
+    review.update!(status: 'failed')
+    Rails.logger.error("AI Review Job failed: #{e.message}")
+    raise e  # Re-raise for Solid Queue retry logic
+  end
+end
+```
+
+**Frontend Polling:**
+```javascript
+// Poll every 2 seconds until status changes from 'processing'
+const pollReviewStatus = async (reviewId) => {
+  const response = await fetch(`/api/v1/estimate_reviews/${reviewId}`);
+  const data = await response.json();
+
+  if (data.status === 'processing') {
+    setTimeout(() => pollReviewStatus(reviewId), 2000);
+  } else {
+    // Display results
+    showReviewResults(data);
+  }
+};
+```
+
+**Why:** AI reviews can take 30-120 seconds depending on PDF size and Claude API latency. Async processing prevents request timeouts and improves UX.
+
+**Files:**
+- `app/controllers/api/v1/estimate_reviews_controller.rb`
+- `app/jobs/ai_review_job.rb`
+- `app/services/plan_review_service.rb`
+
+---
+
+## RULE #6.6: Line Item Categorization - Normalized Category Matching
+
+**Categories MUST be normalized for PO grouping and supplier matching.**
+
+✅ **MUST:**
+- Normalize categories to lowercase before grouping
+- Map common variations: "plumbing" = "plumber" = "plumb"
+- Use category normalization service
+- Handle nil/blank categories with "Uncategorized" group
+- Store original category in line item, use normalized for matching
+
+❌ **NEVER:**
+- Group POs by case-sensitive categories ("Plumbing" ≠ "plumbing")
+- Skip category normalization in SmartPoLookupService
+- Create separate POs for "Electrical" and "electrical"
+- Fail import if category is missing
+
+**Implementation:**
+
+```ruby
+# app/services/estimate_to_purchase_order_service.rb
+def normalized_category(category)
+  return 'uncategorized' if category.blank?
+
+  normalized = category.downcase.strip
+
+  # Common variations mapping
+  CATEGORY_MAPPINGS = {
+    'plumber' => 'plumbing',
+    'plumb' => 'plumbing',
+    'electrician' => 'electrical',
+    'elect' => 'electrical',
+    'carpenter' => 'carpentry',
+    'carp' => 'carpentry',
+    'paint' => 'painting',
+    'concrete' => 'concreting',
+    'concret' => 'concreting'
+  }.freeze
+
+  CATEGORY_MAPPINGS[normalized] || normalized
+end
+
+# Group line items with normalized categories
+grouped_items = @estimate.estimate_line_items.group_by do |item|
+  normalized_category(item.category)
+end
+```
+
+**SmartPoLookupService Integration:**
+```ruby
+# app/services/smart_po_lookup_service.rb
+def lookup(task_description:, category:, quantity: 1)
+  normalized_cat = CategoryNormalizationService.normalize(category)
+
+  # Find supplier by normalized category
+  supplier = find_supplier_for_category(normalized_cat)
+
+  # ... rest of lookup logic
+end
+```
+
+**Why:** Category normalization prevents duplicate POs for functionally identical categories and ensures consistent supplier matching.
+
+**Files:**
+- `app/services/estimate_to_purchase_order_service.rb`
+- `app/services/smart_po_lookup_service.rb`
+
+---
+
+## RULE #6.7: Estimate Status State Machine - Strict Transitions
+
+**Estimate status MUST follow this state machine flow ONLY.**
+
+✅ **MUST:**
+- Start at `pending` status on creation
+- Transition to `matched` when linked to construction
+- Transition to `imported` when POs generated
+- Allow `rejected` from any state
+- Prevent reverse transitions (no imported → matched)
+
+❌ **NEVER:**
+- Skip `matched` status and go directly to `imported`
+- Mark as `imported` before POs are created
+- Change status back from `imported` to `pending`
+- Allow PO generation from `pending` status
+
+**State Diagram:**
+```
+pending ─┬─> matched ──> imported
+         │
+         └─> rejected (terminal)
+```
+
+**Implementation:**
+
+```ruby
+# app/models/estimate.rb
+class Estimate < ApplicationRecord
+  STATUSES = %w[pending matched imported rejected].freeze
+
+  validates :status, inclusion: { in: STATUSES }
+  validate :valid_status_transition, on: :update
+
+  def match_to_construction!(construction, confidence_score)
+    raise "Cannot match from status: #{status}" unless status == 'pending'
+
+    update!(
+      construction: construction,
+      match_confidence_score: confidence_score,
+      status: 'matched'
+    )
+  end
+
+  def mark_imported!
+    raise "Cannot import from status: #{status}" unless status == 'matched'
+
+    update!(
+      status: 'imported',
+      imported_at: Time.current
+    )
+  end
+
+  def reject!
+    update!(status: 'rejected')
+  end
+
+  private
+
+  def valid_status_transition
+    return unless status_changed?
+
+    old_status = status_was
+    new_status = status
+
+    invalid_transitions = {
+      'matched' => ['pending'],
+      'imported' => ['pending', 'matched'],
+      'rejected' => []  # Can transition to rejected from anywhere
+    }
+
+    if invalid_transitions[new_status]&.include?(old_status)
+      errors.add(:status, "cannot transition from #{old_status} to #{new_status}")
+    end
+  end
+end
+```
+
+**Controller Usage:**
+```ruby
+# app/controllers/api/v1/estimates_controller.rb
+def match
+  @estimate = Estimate.find(params[:id])
+  construction = Construction.find(params[:construction_id])
+
+  begin
+    @estimate.match_to_construction!(construction, 100.0)  # Manual match = 100%
+    render json: { success: true, estimate: @estimate }
+  rescue => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+end
+```
+
+**Why:** Strict state machine prevents invalid workflows like generating POs from unmatched estimates or re-processing already-imported estimates.
+
+**Files:**
+- `app/models/estimate.rb`
+- `app/controllers/api/v1/estimates_controller.rb`
+
+---
+
+## API Endpoints Reference
+
+### Estimates (Internal)
+```
+GET    /api/v1/estimates?status=pending
+GET    /api/v1/estimates/:id
+PATCH  /api/v1/estimates/:id/match
+POST   /api/v1/estimates/:id/generate_purchase_orders
+DELETE /api/v1/estimates/:id
+```
+
+### Unreal Engine (External)
+```
+POST   /api/v1/external/unreal_estimates
+Headers: X-API-Key: YOUR_KEY
+```
+
+### Estimate Reviews
+```
+POST   /api/v1/estimates/:estimate_id/ai_review
+GET    /api/v1/estimate_reviews/:id
+GET    /api/v1/estimates/:estimate_id/reviews
+DELETE /api/v1/estimate_reviews/:id
+```
 
 ---
 

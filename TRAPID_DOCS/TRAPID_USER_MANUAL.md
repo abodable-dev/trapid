@@ -667,14 +667,105 @@ After 24 hours of inactivity:
 
 ---
 
-# Chapter 5: Creating a New Job
+# Chapter 5: Jobs & Construction Management
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):      Chapter 5 (Developers)  │
 │ 📕 LEXICON (BUGS):     Chapter 5 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Content TBD** - To be populated with job creation workflow
+**Last Updated:** 2025-11-16
+
+## What is Jobs & Construction Management?
+
+Jobs (called "Constructions" in the system) are the central hub for managing construction projects from start to finish. Each job includes:
+- **Basic Info:** Job name, site address, contract value, supervisor details
+- **Contacts:** Clients, architects, subcontractors linked to this job
+- **Financial Tracking:** Live profit calculations based on contract value minus purchase orders
+- **Scheduling:** Optional project schedule with tasks, dependencies, and Gantt charts
+- **Documentation:** OneDrive folder creation, document tabs, communication history
+
+The system separates the physical job (Construction) from the schedule (Project) - allowing you to create jobs without scheduling, perfect for quotes or small jobs.
+
+---
+
+## Quick Start
+
+1. Navigate to **Jobs** section
+2. Click **"+ New Job"**
+3. Fill in basic details:
+   - Job name/address
+   - Contract value
+   - Site supervisor info
+   - Select contacts
+4. Optionally: Choose schedule template to auto-create project timeline
+5. Optionally: Enable OneDrive folder creation
+6. Click **"Create Job"**
+
+---
+
+## Key Features
+
+- **Dual Structure:** Construction (job master) + Project (scheduling) kept separate
+- **Live Profit:** Automatically calculates profit as contract value minus all PO costs
+- **Schedule Templates:** Pre-built project templates with tasks and dependencies
+- **Task Management:** Tasks with status, progress tracking, assignments, and materials
+- **Auto-Documentation:** Photo and certificate tasks spawn automatically when work completes
+- **OneDrive Integration:** Auto-create folder structure when job is created
+- **Contact Linking:** Associate multiple contacts (client, architect, trades) with roles
+
+---
+
+## Common Tasks
+
+### Creating a Job with Schedule
+
+1. Create new job with basic info
+2. Select a schedule template from dropdown
+3. System creates project and all tasks automatically
+4. Tasks include dependencies (Finish-to-Start, etc.)
+5. View schedule in Gantt chart
+
+### Managing Tasks
+
+1. Open job → click "Schedule" tab
+2. View tasks in list or Gantt view
+3. Update task status: Not Started → In Progress → Complete
+4. System auto-sets start/end dates when status changes
+5. Dependent tasks automatically recalculate dates
+
+### Tracking Job Profit
+
+1. Open job detail page
+2. View "Live Profit" section
+3. See contract value minus all PO costs
+4. Profit updates automatically as POs are created/modified
+
+---
+
+## Troubleshooting
+
+### "Cannot create job without contacts"
+**Problem:** Validation error when trying to save job
+**Solution:** Add at least one contact before saving job
+
+### "OneDrive folders stuck in 'Processing'"
+**Problem:** Folder creation status never completes
+**Solution:** Check your OneDrive credentials in Settings → Integrations. May need to reconnect.
+
+### "Task won't start - predecessors incomplete"
+**Problem:** Can't mark task as In Progress
+**Solution:** Complete all predecessor tasks first. Check task dependencies in Gantt view.
+
+---
+
+## Related Topics
+
+- **Chapter 3:** Contacts & Relationships (linking contacts to jobs)
+- **Chapter 4:** Price Books & Suppliers (materials for tasks)
+- **Chapter 8:** Purchase Orders (creating POs from estimates)
+- **Chapter 9:** Gantt & Schedule Master (visualizing project schedule)
+- **Chapter 12:** OneDrive Integration (automatic folder creation)
 
 ---
 
@@ -685,7 +776,112 @@ After 24 hours of inactivity:
 │ 📕 LEXICON (BUGS):     Chapter 6 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Content TBD** - To be populated with estimate import guide
+**Last Updated:** 2025-11-16
+
+## What are Estimates?
+
+Estimates are material lists imported from external estimating software (primarily Unreal Engine). Trapid automatically:
+- **Matches** estimates to existing jobs using smart fuzzy matching
+- **Converts** estimates into draft purchase orders grouped by trade
+- **Reviews** estimates against actual construction plans using AI
+- **Tracks** where estimates came from and their approval status
+
+Think of estimates as the bridge between your estimating software and Trapid's job management system.
+
+---
+
+## Quick Start
+
+1. **External System Exports Estimate**
+   - Unreal Engine sends estimate to Trapid automatically
+   - System attempts to match to existing job
+
+2. **Review Match**
+   - Check if auto-matched correctly (70%+ confidence)
+   - Manually select job if needed
+
+3. **Generate Purchase Orders**
+   - Click "Generate POs" button
+   - System creates draft POs grouped by trade category
+   - Review and approve POs
+
+4. **(Optional) AI Plan Review**
+   - Upload construction plans to OneDrive
+   - Click "AI Review" to compare estimate to plans
+   - Review discrepancies and adjust POs
+
+---
+
+## Key Features
+
+- **Smart Job Matching:** Fuzzy matching finds the right job even with typos or variations
+- **Confidence Scoring:** Shows match confidence (70%+ auto-matches, 50-70% suggests candidates)
+- **Auto-PO Generation:** Converts estimates to purchase orders automatically by trade
+- **AI Plan Review:** Claude AI compares estimate quantities to actual construction plans
+- **Status Tracking:** Pending → Matched → Imported workflow
+
+---
+
+## Common Tasks
+
+### Reviewing Auto-Matched Estimate
+
+1. Navigate to **Estimates** tab
+2. Check "Auto-Matched" badge and confidence score
+3. Verify matched job is correct
+4. If incorrect, click "Change Job" and select correct one
+
+### Generating Purchase Orders from Estimate
+
+1. Open estimate detail
+2. Verify all line items look correct
+3. Click **"Generate Purchase Orders"**
+4. System creates draft POs grouped by:
+   - Plumbing (all plumbing items)
+   - Electrical (all electrical items)
+   - Carpentry (all carpentry items)
+5. Review draft POs and approve when ready
+
+### Running AI Plan Review
+
+1. Ensure job has plans uploaded to OneDrive ("01 - Plans" folder)
+2. Open estimate
+3. Click **"AI Review"** button
+4. Wait 30-60 seconds for analysis
+5. Review discrepancy list:
+   - **High severity:** >20% quantity difference
+   - **Medium severity:** 10-20% difference
+   - **Low severity:** <10% difference
+6. Adjust PO quantities based on findings
+
+---
+
+## Troubleshooting
+
+### "Estimate not auto-matched - manual selection needed"
+**Problem:** Confidence score below 70%
+**Solution:** Click "Select Job" and choose correct job from list. System will show candidates with 50%+ match confidence.
+
+### "Wrong job auto-matched"
+**Problem:** Estimate matched to incorrect job despite 72% confidence
+**Solution:** Click "Reject Match" → Select correct job from list → Confirm. Future: This feedback helps improve matching algorithm.
+
+### "AI Review shows 'Processing' for 5+ minutes"
+**Problem:** Large PDF files causing timeout
+**Solution:** Check that plan PDFs are <20MB and <30 pages. If larger, split into multiple files before uploading to OneDrive.
+
+### "Generate POs creates duplicate categories"
+**Problem:** "Electrical" and "electrical" create separate POs
+**Solution:** Contact support - category normalization should handle this automatically. Temporary fix: Edit one PO to include all items.
+
+---
+
+## Related Topics
+
+- **Chapter 4:** Price Books & Suppliers (pricing for PO line items)
+- **Chapter 5:** Jobs & Construction Management (job matching)
+- **Chapter 8:** Purchase Orders (reviewing and approving generated POs)
+- **Chapter 12:** OneDrive Integration (uploading plans for AI review)
 
 ---
 
