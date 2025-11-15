@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { api } from '../../api'
+import PublicHolidaysPage from '../../pages/PublicHolidaysPage'
 
 const TIMEZONES = [
   { value: 'Australia/Brisbane', label: 'Brisbane (AEST/AEDT)' },
@@ -23,7 +25,16 @@ export default function CompanySettingsTab() {
     email: '',
     phone: '',
     address: '',
-    timezone: 'Australia/Brisbane'
+    timezone: 'Australia/Brisbane',
+    working_days: {
+      monday: true,
+      tuesday: true,
+      wednesday: true,
+      thursday: true,
+      friday: true,
+      saturday: false,
+      sunday: true
+    }
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -80,10 +91,41 @@ export default function CompanySettingsTab() {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-10">
-      <div className="max-w-3xl">
+      <div className="max-w-4xl">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Company Settings</h2>
 
-        {message && (
+        <TabGroup>
+          <TabList className="flex space-x-1 rounded-xl bg-indigo-900/20 p-1 mb-6">
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Company Info
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
+              Holidays
+            </Tab>
+          </TabList>
+
+          <TabPanels>
+            {/* Company Info Tab */}
+            <TabPanel>
+              {message && (
           <div
             className={`mb-6 rounded-md p-4 ${
               message.type === 'success'
@@ -154,6 +196,33 @@ export default function CompanySettingsTab() {
             </select>
           </div>
 
+          {/* Working Days */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 dark:text-white">
+              Working Days
+            </label>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Select which days are considered working days. Tasks will be scheduled only on selected days (unless locked).
+              Holidays are managed in the Holidays tab above.
+            </p>
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                <label key={day} className="relative flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={settings.working_days?.[day] ?? true}
+                    onChange={(e) => {
+                      const newWorkingDays = { ...settings.working_days, [day]: e.target.checked }
+                      handleChange('working_days', newWorkingDays)
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 dark:border-gray-600 dark:bg-gray-700"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{day}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           {/* Email */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-900 dark:text-white">
@@ -207,6 +276,14 @@ export default function CompanySettingsTab() {
             </button>
           </div>
         </form>
+            </TabPanel>
+
+            {/* Holidays Tab */}
+            <TabPanel>
+              <PublicHolidaysPage />
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
       </div>
     </div>
   )

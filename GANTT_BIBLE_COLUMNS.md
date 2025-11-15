@@ -5,6 +5,308 @@
 
 ---
 
+## 📖 Terminology
+
+**Critical terms used consistently throughout this documentation:**
+
+### Core Concepts
+
+- **Schedule Master (SM)** - The entire feature
+  - Settings → Schedule Master tab
+  - Includes: Schedule Master Table + Gantt + settings
+  - Database: `schedule_templates` table (container)
+
+- **Schedule Master Table (SMT)** - The spreadsheet view with 24 columns
+  - Top section of the UI
+  - Editable table with Task Name, Duration, Predecessors, etc.
+  - Each row = one task
+
+- **Gantt View** (or **Gantt**) - The visual timeline chart (bottom section)
+  - Shows tasks as horizontal bars on a calendar
+  - Includes dependencies (arrows between tasks)
+  - Supports drag-and-drop scheduling
+  - Component: `DHtmlxGanttView.jsx`
+
+- **Task** - A thing with a duration
+  - Database: `schedule_template_rows` table
+  - UI: One row in SMT + one bar in Gantt view
+  - Has: name, duration, start date, predecessors (deps)
+  - Example: "Foundation" (3 days), "Framing" (5 days)
+  - Code: `task`, `row`, `schedule_template_row`
+
+- **Template** - A reusable schedule pattern (e.g., "Standard House Build")
+  - Database: `schedule_templates` table
+  - Contains multiple tasks in sequence
+  - Can be applied to multiple jobs
+
+### Date & Time Concepts
+- **Day Offset** - Integer representing days from project start (e.g., 0, 1, 2, 3...)
+  - Day 0 = Project start date
+  - Stored in database as `start_date` column (integer, NOT timestamp)
+
+- **Working Day** - Monday through Friday, excluding public holidays
+  - Weekends: Saturday, Sunday (always excluded)
+  - Public holidays: Region-specific (loaded from `public_holidays` table)
+
+- **Reference Date** - The date from which day offsets are calculated
+  - Currently: `Date.today` (will be project start date in real implementation)
+
+### Dependency Concepts
+
+- **Dependencies (deps)** - Arrows connecting tasks in the Gantt view
+  - Show which tasks must happen before others
+  - Stored as: `predecessor_ids` JSONB array
+  - Visual: Arrows from predecessor → successor
+
+- **Predecessor** - A task that must happen before another task
+  - Example: Foundation is a predecessor of Framing
+  - Notation: "1FS" = Task 1 is predecessor with Finish-to-Start type
+
+- **Dependency Type (dep type)** - How tasks relate:
+  - **FS** (Finish-to-Start) - Most common: Task B starts when Task A finishes
+  - **SS** (Start-to-Start) - Task B starts when Task A starts
+  - **FF** (Finish-to-Finish) - Task B finishes when Task A finishes
+  - **SF** (Start-to-Finish) - Rare: Task B finishes when Task A starts
+
+- **Lag** - Delay between dependent tasks (in days)
+  - Positive lag: Wait N days after predecessor
+  - Negative lag: Start N days before predecessor finishes (overlap)
+  - Example: "1FS+3" = Start 3 days after Task 1 finishes
+
+### Lock Concepts
+- **Lock** or **Locked Task** - Task that cannot be auto-rescheduled
+  - Locked tasks ignore working day rules
+  - Locked tasks are NOT cascaded TO (but can cascade FROM)
+
+- **Lock Hierarchy** (highest to lowest priority):
+  1. `supplier_confirm` - Supplier confirmed the date
+  2. `confirm` - Internally confirmed
+  3. `start` - Task has started
+  4. `complete` - Task is complete
+  5. `manually_positioned` - User manually set the date
+
+### Cascade Concepts
+- **Cascade** - Auto-updating dependent tasks when a predecessor changes
+  - Triggered by: Changing task `start_date` or `duration`
+  - Process: Recursively updates all downstream tasks
+  - Respects: Lock hierarchy (doesn't cascade TO locked tasks)
+
+---
+
+## 📚 Documentation Maintenance Guide
+
+### What Goes in the Gantt Bible vs Knowledge Source
+
+**Gantt Bible (this file) - THE RULES:**
+- ✅ **How we code** - The rules and standards for Schedule Master
+- ✅ **Column definitions** - Every column in Schedule Master table and Gantt modal
+- ✅ **Working day rules** - How weekends/holidays MUST be handled
+- ✅ **Lock hierarchy** - How locks MUST prevent cascading
+- ✅ **Business rules** - WHAT the system does and WHY
+- ✅ **Code standards** - Where logic belongs (frontend vs backend)
+- ✅ **Test coverage requirements** - Which features MUST have Bug Hunter tests
+
+**CLAUDE.md (Knowledge Source) - KNOWN PROBLEMS & SOLUTIONS:**
+- ✅ **Problems we've solved** - List of issues encountered and how we fixed them
+- ✅ **Workarounds** - Edge cases and how to handle them
+- ✅ **Deployment issues** - Problems during deploy and solutions
+- ✅ **Agent usage patterns** - When specific agents worked best
+- ✅ **Environment quirks** - Heroku, database, API issues and fixes
+- ✅ **Common mistakes** - Things that broke and how to avoid them
+- ✅ **Workflows that work** - Proven patterns for common tasks
+- ❌ **Detailed specs** - Those are rules, belong in Bible
+
+### When to Update the Gantt Bible
+
+**ALWAYS update when you:**
+1. Add/remove/modify a column
+2. Change how dates are calculated
+3. Modify lock behavior or hierarchy
+4. Add new working day rules
+5. Update cascade logic
+6. Add/modify Bug Hunter tests
+7. Change database schema for schedule_template_rows
+
+**How to Update:**
+1. Find the relevant section (use Ctrl+F)
+2. Update the **Implementation** column with new code location
+3. Update **Code Location** with exact line numbers
+4. Add code snippets if logic changed significantly
+5. Update **Last Updated** date at top of file
+6. Add examples if behavior changed
+
+### Version Control for Documentation
+
+Every significant change should be logged in the Version History section at the bottom of this file.
+
+**Example entry:**
+```markdown
+| 2025-11-15 | 1.2 | Added "Working Days Only Rule" - tasks skip to next working day after cascade | Claude Code |
+```
+
+### Red Flags - Signs Documentation is Out of Date
+
+🚩 **Code location points to wrong line numbers**
+🚩 **Column exists in code but not in Bible**
+🚩 **Bible says "TBD" or "TODO" for implemented features**
+🚩 **Bug Hunter test mentioned but doesn't exist**
+🚩 **Lock behavior doesn't match actual code**
+
+### Rule of Thumb
+
+**If you're confused about how something works, the documentation is wrong or incomplete.**
+
+Fix it immediately so the next person (or future you) doesn't waste time.
+
+---
+
+## 🌍 Company Settings & Working Days
+
+The Schedule Master uses **Company Settings** to determine working days and regional holidays:
+
+### Timezone Configuration
+- **Location:** Settings → Company tab → Timezone dropdown
+- **Stored In:** `company_settings.timezone` (e.g., "Australia/Brisbane")
+- **Used For:** Determining which regional public holidays to load
+
+### Timezone → Region Mapping
+When the Gantt loads, it maps the company timezone to an Australian state/region:
+
+| Timezone | Region Code | Public Holidays |
+|----------|-------------|-----------------|
+| Australia/Brisbane | QLD | Queensland holidays |
+| Australia/Sydney | NSW | New South Wales holidays |
+| Australia/Melbourne | VIC | Victoria holidays |
+| Australia/Perth | WA | Western Australia holidays |
+| Australia/Adelaide | SA | South Australia holidays |
+| Australia/Darwin | NT | Northern Territory holidays |
+| Australia/Hobart | TAS | Tasmania holidays |
+| **Default** | QLD | Used if timezone not found |
+
+### Holiday Loading Process
+1. Gantt loads company settings via `/api/v1/company_settings`
+2. Maps timezone → region code using `getRegionFromTimezone()`
+3. Fetches holidays via `/api/v1/public_holidays/dates?region={REGION}&year_start={CURRENT_YEAR}&year_end={CURRENT_YEAR+2}`
+4. Applies holidays to working day calculations
+
+**Code Location:** `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:229-277`
+
+### Working Day Calculation
+The schedule uses three sources to determine working days:
+1. **Weekends:** Saturday (day 6) and Sunday (day 0) are always non-working
+2. **Public Holidays:** From the regional holiday calendar
+3. **Custom Holidays:** Can be added in Settings → Public Holidays tab
+
+**Functions:**
+- `isWeekend(date)` - Checks if date is Sat/Sun
+- `isPublicHoliday(dateStr)` - Checks if date is in holiday list
+- `isWorkingDay(date)` - Combines both checks (returns true if NOT weekend AND NOT holiday)
+- `getNextWorkingDay(date)` - Skips to next working day
+
+### Initial View Positioning (Smart Scroll)
+The Gantt timeline automatically scrolls to show relevant dates based on:
+
+**Scroll Position = `max(today - 1 day, earliest_non_completed_task - 1 day)`**
+
+This ensures:
+- **Near-term tasks**: If tasks start soon, shows yesterday for context
+- **Future tasks**: If tasks start in 3+ weeks, jumps forward to bring them into view
+- **Completed tasks**: Ignored when calculating earliest task
+- **Weekends/holidays**: If calculated date is non-working, skips to next working day
+
+**Examples:**
+- Today = Nov 15, Earliest task = Nov 14 → Show `max(Nov 14, Nov 13)` = **Nov 14**
+- Today = Nov 15, Earliest task = Dec 5 → Show `max(Nov 14, Dec 4)` = **Dec 4** (brings future task into view!)
+- Calculated date = Saturday → Skip to **Monday**
+
+**Exception - During Drag:**
+When user is actively dragging a task, auto-scroll is disabled to keep the dragged task visible on screen.
+
+**Code Location:** `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:3777-3821`
+
+### Task Dates - Working Days Rule
+
+**Core Rule:** Task start dates can be any day Monday-Sunday, including public holidays. Only Saturdays are excluded for unlocked tasks.
+
+**When Applied:**
+1. **After cascade** - When dependencies push a task to a Saturday
+2. **After drag** - When user drags a task and drops it on a Saturday
+3. **Respects lock hierarchy** - Only applies to unlocked tasks
+4. **Sundays and holidays allowed** - Tasks CAN be scheduled on Sundays and public holidays
+
+**Lock Hierarchy Check:**
+Before adjusting a task to the next working day, the system checks if the task is locked:
+1. `supplier_confirm` = true → SKIP (highest priority lock)
+2. `confirm` = true → SKIP
+3. `start` = true → SKIP
+4. `complete` = true → SKIP
+5. `manually_positioned` = true → SKIP (lowest priority lock)
+
+**Adjustment Logic:**
+```javascript
+// After calculating new start date
+// Only skip Saturdays for unlocked tasks
+if (isSaturday(task.start_date) && !isTaskLocked(task)) {
+  task.start_date = getNextWorkingDay(task.start_date) // Move to Sunday or Monday
+}
+```
+
+**Bug Hunter Test:**
+Test ID: `working-days-enforcement`
+- **Type:** Backend automated test
+- **What it tests:** Scans all tasks in a schedule template and verifies unlocked tasks are NOT on Saturdays
+- **How to run:** Settings → Schedule Master → Bug Hunter Tests → "Working Days Enforcement" → Run Test
+- **Rules sourced from:** This section (GANTT_BIBLE_COLUMNS.md) - automatically synced
+- **Pass criteria:** All unlocked tasks must NOT be on Saturday (Sundays and holidays are allowed)
+- **Expected violations:** Locked tasks CAN be on any day including Saturday (this is allowed)
+- **Code Location:** `backend/app/controllers/api/v1/bug_hunter_tests_controller.rb:181-275`
+
+**Examples:**
+- Task calculated to start on Saturday → Moved to Sunday
+- Task calculated to start on Sunday → STAYS on Sunday (allowed)
+- Task calculated to start on Christmas Day → STAYS on Christmas Day (holidays allowed)
+- Task with supplier_confirm=true on Saturday → STAYS on Saturday (lock overrides working day rule)
+
+**Implementation Location:** Backend cascade service (ScheduleCascadeService)
+**Reason:** Centralized logic ensures all date calculations respect working days, regardless of how tasks are created/updated
+
+**Code Location:** `backend/app/services/schedule_cascade_service.rb:139-177`
+
+**Implementation Details:**
+```ruby
+# In calculate_start_date method:
+calculated_start = # ... calculate based on dependency type ...
+
+# Skip to next working day (respects lock hierarchy)
+if task_is_locked?(dependent_task)
+  calculated_start  # Locked tasks can stay on weekends
+else
+  skip_to_next_working_day(calculated_start)
+end
+
+# Helper methods:
+def task_is_locked?(task)
+  task.supplier_confirm? || task.confirm? || task.start? ||
+    task.complete? || task.manually_positioned?
+end
+
+def skip_to_next_working_day(day_offset)
+  actual_date = @reference_date + day_offset.days
+  while !working_day?(actual_date)
+    actual_date += 1.day
+  end
+  (actual_date - @reference_date).to_i
+end
+
+def working_day?(date)
+  return false if date.saturday? || date.sunday?
+  # TODO: Add holiday check
+  true
+end
+```
+
+---
+
 ## Documentation Rules
 
 When updating this table, follow these rules:

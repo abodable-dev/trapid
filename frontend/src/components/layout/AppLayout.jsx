@@ -72,7 +72,7 @@ export default function AppLayout({ children }) {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
-    location.pathname === '/active-jobs' || location.pathname.startsWith('/jobs/')
+    location.pathname === '/active-jobs' || location.pathname.startsWith('/jobs/') || location.pathname === '/settings'
   )
   const [backendVersion, setBackendVersion] = useState('loading...')
   const [unreadCount, setUnreadCount] = useState(0)
@@ -110,9 +110,9 @@ export default function AppLayout({ children }) {
     return () => clearInterval(interval)
   }, [])
 
-  // Auto-collapse sidebar when navigating to Active Jobs or Job Detail pages
+  // Auto-collapse sidebar when navigating to Active Jobs, Job Detail pages, or Settings
   useEffect(() => {
-    if (location.pathname === '/active-jobs' || location.pathname.startsWith('/jobs/')) {
+    if (location.pathname === '/active-jobs' || location.pathname.startsWith('/jobs/') || location.pathname === '/settings') {
       setSidebarCollapsed(true)
     }
   }, [location.pathname])

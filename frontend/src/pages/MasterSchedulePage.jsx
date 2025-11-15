@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ChartBarIcon, TableCellsIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import DHtmlxGanttView from '../components/schedule-master/DHtmlxGanttView'
-import TaskTable from '../components/gantt/TaskTable'
+import ScheduleTaskList from '../components/schedule-master/ScheduleTaskList'
 import Toast from '../components/Toast'
 
 export default function MasterSchedulePage() {
@@ -253,7 +253,7 @@ export default function MasterSchedulePage() {
             {/* Table View */}
             <div className="mt-4">
               {scheduleData && scheduleData.tasks && viewMode === 'table' && (
-                <TaskTable
+                <ScheduleTaskList
                   tasks={scheduleData.tasks}
                   onTaskUpdate={handleTaskUpdate}
                   saving={saving}

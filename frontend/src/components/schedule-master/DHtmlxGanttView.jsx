@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import gantt from 'dhtmlx-gantt'
 import 'dhtmlx-gantt/codebase/dhtmlxgantt.css'
-import { XMarkIcon, PencilSquareIcon, AdjustmentsHorizontalIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, PencilSquareIcon, AdjustmentsHorizontalIcon, TrashIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 import TaskDependencyEditor from './TaskDependencyEditor'
 import CascadeDependenciesModal from './CascadeDependenciesModal'
@@ -54,6 +54,16 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     onUpdateTaskRef.current = onUpdateTask
   }, [onUpdateTask])
   const [publicHolidays, setPublicHolidays] = useState([])
+  const [workingDays, setWorkingDays] = useState({
+    monday: true,
+    tuesday: true,
+    wednesday: true,
+    thursday: true,
+    friday: true,
+    saturday: false,
+    sunday: true
+  })
+  const [companyTimezone, setCompanyTimezone] = useState('Australia/Brisbane') // Default timezone
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTask, setSelectedTask] = useState(null)
   const [showEditor, setShowEditor] = useState(false)
@@ -226,13 +236,50 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   // Task name search filter
   const [taskNameSearch, setTaskNameSearch] = useState('')
 
-  // Fetch public holidays from API
+  // Map timezone to Australian state/region for public holidays
+  const getRegionFromTimezone = (timezone) => {
+    const timezoneMap = {
+      'Australia/Brisbane': 'QLD',
+      'Australia/Sydney': 'NSW',
+      'Australia/Melbourne': 'VIC',
+      'Australia/Perth': 'WA',
+      'Australia/Adelaide': 'SA',
+      'Australia/Darwin': 'NT',
+      'Australia/Hobart': 'TAS'
+    }
+    return timezoneMap[timezone] || 'QLD' // Default to QLD if timezone not found
+  }
+
+  // Fetch company settings and public holidays from API
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
         setIsLoading(true)
+
+        // First, get company settings to determine region and working days
+        let region = 'QLD' // Default
+        try {
+          const companyResponse = await api.get('/api/v1/company_settings')
+          const companySettings = companyResponse.data || companyResponse
+          const timezone = companySettings.timezone || 'Australia/Brisbane'
+          region = getRegionFromTimezone(timezone)
+
+          // Store timezone for date calculations
+          setCompanyTimezone(timezone)
+          console.log(`DHTMLX Gantt - Using timezone ${timezone} from company settings`)
+
+          // Store working days configuration
+          if (companySettings.working_days) {
+            setWorkingDays(companySettings.working_days)
+            console.log('DHTMLX Gantt - Using working days from company settings:', companySettings.working_days)
+          }
+        } catch (error) {
+          console.warn('Failed to load company settings, using default region QLD:', error)
+        }
+
+        // Now fetch holidays for that region
         const currentYear = new Date().getFullYear()
-        const response = await api.get(`/api/v1/public_holidays/dates?region=QLD&year_start=${currentYear}&year_end=${currentYear + 2}`)
+        const response = await api.get(`/api/v1/public_holidays/dates?region=${region}&year_start=${currentYear}&year_end=${currentYear + 2}`)
         const holidays = response.dates || []
         console.log('DHTMLX Gantt - Fetched public holidays:', holidays)
         console.log('DHTMLX Gantt - November 2025 holidays:', holidays.filter(h => h.startsWith('2025-11')))
@@ -249,6 +296,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   }, [])
 
   // Check if a date is a weekend
+  const isSaturday = (date) => {
+    const day = date.getDay()
+    return day === 6 // Saturday only
+  }
+
+  // Keep weekend detection for styling purposes (even though Sunday is now allowed)
   const isWeekend = (date) => {
     const day = date.getDay()
     return day === 0 || day === 6 // Sunday or Saturday
@@ -268,9 +321,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
   }
 
   // Check if a date is a working day
+  // Uses company settings to determine which days are working days
   const isWorkingDay = (date) => {
-    const dateStr = formatDateLocal(date) // Use LOCAL timezone, not UTC
-    return !isWeekend(date) && !isPublicHoliday(dateStr)
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+    const dayName = dayNames[date.getDay()]
+    // Default to true if day not configured (safer default)
+    return workingDays[dayName] !== false
   }
 
   // PERFORMANCE: Debounced render to batch multiple render requests and reduce flashing
@@ -554,14 +610,21 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       }
     ]
 
-    // Configure work time - weekends are non-working
+    // Configure work time based on company settings
     gantt.config.work_time = true
     gantt.config.duration_unit = 'day' // Set duration unit to days
 
     // Set working time rules (24 hours - full day)
     gantt.setWorkTime({ hours: [0, 24] })
-    gantt.setWorkTime({ day: 0, hours: false }) // Sunday
-    gantt.setWorkTime({ day: 6, hours: false }) // Saturday
+
+    // Configure working days based on company settings
+    const dayIndexMap = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 }
+    Object.entries(workingDays).forEach(([dayName, isWorking]) => {
+      const dayIndex = dayIndexMap[dayName]
+      if (!isWorking) {
+        gantt.setWorkTime({ day: dayIndex, hours: false })
+      }
+    })
 
     // Mark public holidays as non-working days
     publicHolidays.forEach(holiday => {
@@ -2968,7 +3031,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       // CRITICAL: Reset signature when gantt is cleared so data will reload
       lastTasksSignature.current = null
     }
-  }, [isOpen, publicHolidays, zoomLevel]) // Removed onUpdateTask - no need to reinit when callback changes
+  }, [isOpen, publicHolidays, workingDays, zoomLevel]) // Removed onUpdateTask - no need to reinit when callback changes
 
   // Handle column visibility changes separately (without reinitializing)
   useEffect(() => {
@@ -3502,7 +3565,31 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       // Calculate start dates for all tasks (same logic as SVAR implementation)
     const taskStartDates = new Map()
     const calculating = new Set() // Track tasks currently being calculated to detect circular dependencies
-    const projectStartDate = new Date()
+
+    // Get today's date in the company timezone (Australia/Brisbane)
+    // This ensures consistent date calculations regardless of user's local timezone
+    const getTodayInCompanyTimezone = () => {
+      // Get the current date/time in the company timezone
+      const nowInTz = new Date().toLocaleString('en-US', {
+        timeZone: companyTimezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+
+      // Parse the date parts (MM/DD/YYYY format from en-US)
+      const [month, day, year] = nowInTz.split('/').map(Number)
+
+      // Create a Date object in LOCAL timezone (not UTC)
+      // DHTMLX Gantt expects local dates, so we create a local date that represents
+      // midnight in the company timezone's calendar date
+      const dateInTz = new Date(year, month - 1, day, 0, 0, 0, 0)
+
+      return dateInTz
+    }
+
+    const projectStartDate = getTodayInCompanyTimezone()
+    console.log(`📅 Project start date (${companyTimezone}):`, projectStartDate.toISOString(), 'Local:', projectStartDate.toString())
 
     // Helper function to calculate finish date
     const calculateFinishDate = (startDate, days) => {
@@ -3631,9 +3718,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             : task.predecessor_ids.map(formatPredecessor).join(', ')) // Use numbers (IDs)
         : ''
 
-      // Set start date to midnight (00:00)
+      // Date is already in UTC at midnight, use it directly
+      // Don't call setHours() as it would convert to local timezone
       const cleanStartDate = new Date(startDate)
-      cleanStartDate.setHours(0, 0, 0, 0)
 
       // If task is manually positioned from backend, add to our tracking set
       // BUT: Skip if task is pending unlock (prevents race condition during data reload)
@@ -3746,14 +3833,59 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         }
       })
 
-      // Scroll to 1 day before the earliest non-completed task (or yesterday if no tasks)
-      const scrollToDate = earliestDate ? new Date(earliestDate) : new Date()
-      scrollToDate.setDate(scrollToDate.getDate() - 1)
-      scrollToDate.setHours(0, 0, 0, 0)
+      // EXCEPTION: Don't auto-scroll if user is dragging a task
+      // (Let them see where they're dragging to)
+      if (isDragging.current) {
+        console.log('⏸️ Skipping auto-scroll - user is dragging a task')
+        return
+      }
 
-      console.log('📅 Scrolling Gantt to 1 day before earliest non-completed task:', formatDateLocal(scrollToDate))
+      // Initial scroll position: Show whichever is LATER:
+      // 1. TODAY - 1 day (for screen context)
+      // 2. Earliest NON-COMPLETED task - 1 day (to bring future tasks into view)
+      // But if that date is a weekend/holiday, skip to next working day
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      // Calculate option 1: Today - 1 day
+      let todayMinus1 = new Date(today)
+      todayMinus1.setDate(todayMinus1.getDate() - 1)
+      todayMinus1.setHours(0, 0, 0, 0)
+
+      let scrollToDate
+
+      if (earliestDate) {
+        // Calculate option 2: Earliest task - 1 day
+        let taskMinus1 = new Date(earliestDate)
+        taskMinus1.setDate(taskMinus1.getDate() - 1)
+        taskMinus1.setHours(0, 0, 0, 0)
+
+        // Use whichever is LATER (brings future tasks into view)
+        scrollToDate = taskMinus1 > todayMinus1 ? taskMinus1 : todayMinus1
+        console.log(`📅 Scroll candidates: today-1=${formatDateLocal(todayMinus1)}, task-1=${formatDateLocal(taskMinus1)}, using=${formatDateLocal(scrollToDate)}`)
+      } else {
+        // No tasks: just use today - 1
+        scrollToDate = todayMinus1
+      }
+
+      // If the calculated date is a weekend/holiday, skip to next working day
+      if (!isWorkingDay(scrollToDate)) {
+        console.log(`📅 Calculated date (${formatDateLocal(scrollToDate)}) is a weekend/holiday, showing next working day`)
+        scrollToDate = getNextWorkingDay(scrollToDate)
+      }
+
+      console.log('📅 Scrolling Gantt to:', formatDateLocal(scrollToDate))
+      console.log('📅 Scroll date object:', scrollToDate)
+      console.log('📅 Scroll date ISO:', scrollToDate.toISOString())
+      console.log('📅 Today is:', formatDateLocal(today), '(', today.toDateString(), ')')
+      console.log('📅 Is today a weekend?', today.getDay() === 0 || today.getDay() === 6)
+
+      // Use showDate to position the timeline
       gantt.showDate(scrollToDate)
+
       console.log('✅ Scroll command executed')
+      console.log('📅 After scroll - first visible date:', gantt.getState().min_date)
+      console.log('📅 After scroll - last visible date:', gantt.getState().max_date)
     }, 300) // Longer delay to ensure gantt is fully rendered and sized
 
     // Cleanup function: Clear the timeout if component unmounts or dependencies change
@@ -4267,13 +4399,34 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           )}
         </div>
 
-        {/* Footer with feature highlights */}
+        {/* Footer with feature highlights and terminology */}
         <div className="px-6 py-3 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <div>
+          <div className="flex items-center justify-between gap-6">
+            {/* Left: Trial Features */}
+            <div className="text-sm text-gray-600">
               <span className="font-medium">Trial Features:</span> Auto-scheduling • Critical Path • Undo/Redo • Drag Links • Resource Management
             </div>
-            <div className="text-xs text-gray-500">
+
+            {/* Center: Terminology Legend */}
+            <div className="flex-1 max-w-2xl">
+              <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 text-xs">
+                  <InformationCircleIcon className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+                  <span className="font-semibold text-blue-900">Terminology:</span>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-blue-800">
+                    <span><strong>SM</strong> = Schedule Master</span>
+                    <span><strong>SMT</strong> = Table (24 cols)</span>
+                    <span><strong>Gantt</strong> = Timeline chart</span>
+                    <span><strong>Task</strong> = Row + bar</span>
+                    <span><strong>Deps</strong> = Arrows</span>
+                    <span><strong>FS/SS/FF</strong> = Dep types</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Hint */}
+            <div className="text-xs text-gray-500 flex-shrink-0">
               Double-click task to edit dependencies
             </div>
           </div>

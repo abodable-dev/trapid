@@ -134,6 +134,40 @@ export default function ScheduleMasterTemplatesTab() {
         <p className="mt-1 text-sm/6 text-gray-500 dark:text-gray-400">
           Create reusable task templates that can be copied to any job's schedule master.
         </p>
+
+        {/* Terminology Legend */}
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <h3 className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-2 flex items-center gap-1.5">
+            <InformationCircleIcon className="h-4 w-4" />
+            Terminology Quick Reference
+          </h3>
+          <dl className="text-xs space-y-1 text-blue-800 dark:text-blue-200">
+            <div className="flex gap-2">
+              <dt className="font-semibold min-w-[60px]">SM:</dt>
+              <dd>Schedule Master (entire feature)</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="font-semibold min-w-[60px]">SMT:</dt>
+              <dd>Schedule Master Table (24 columns)</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="font-semibold min-w-[60px]">Gantt:</dt>
+              <dd>Visual timeline chart (bottom section)</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="font-semibold min-w-[60px]">Task:</dt>
+              <dd>Thing with duration (row + bar)</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="font-semibold min-w-[60px]">Deps:</dt>
+              <dd>Dependencies (arrows between tasks)</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="font-semibold min-w-[60px]">FS/SS/FF:</dt>
+              <dd>Finish-Start / Start-Start / Finish-Finish</dd>
+            </div>
+          </dl>
+        </div>
       </div>
 
       <div className="md:col-span-2 space-y-6">

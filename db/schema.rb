@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_14_233758) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_15_015942) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -118,6 +118,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_233758) do
     t.string "twilio_phone_number"
     t.boolean "twilio_enabled", default: false
     t.string "timezone", default: "Australia/Brisbane"
+    t.jsonb "working_days"
   end
 
   create_table "construction_contacts", force: :cascade do |t|

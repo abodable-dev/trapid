@@ -1511,6 +1511,22 @@ export default function ScheduleTemplateEditor() {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Create reusable schedule templates with full task dependencies and automation
           </p>
+
+          {/* Terminology Legend */}
+          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg max-w-3xl">
+            <div className="flex items-center gap-2 text-xs">
+              <InformationCircleIcon className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              <span className="font-semibold text-blue-900 dark:text-blue-300">Terminology:</span>
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-blue-800 dark:text-blue-200">
+                <span><strong>SM</strong> = Schedule Master</span>
+                <span><strong>SMT</strong> = Table (24 cols)</span>
+                <span><strong>Gantt</strong> = Timeline chart</span>
+                <span><strong>Task</strong> = Row + bar</span>
+                <span><strong>Deps</strong> = Arrows</span>
+                <span><strong>FS/SS/FF</strong> = Dep types</span>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button

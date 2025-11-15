@@ -32,15 +32,19 @@ module Api
         Rails.logger.info "🔵 UPDATE ROW #{@row.id} - Received params: #{row_params.inspect}"
         Rails.logger.info "🔵 BEFORE UPDATE - manually_positioned: #{@row.manually_positioned}, supplier_confirm: #{@row.supplier_confirm}"
 
-        # VALIDATION: Reject corrupted start_date values
-        # Valid dates should be > 10000 (Jan 1, 1997+)
-        if row_params[:start_date].present? && row_params[:start_date].to_i < 10000
-          Rails.logger.error "❌ REJECTED CORRUPTED DATE: start_date=#{row_params[:start_date]} for row #{@row.id}"
-          render json: {
-            error: "Invalid start_date: #{row_params[:start_date]} (corrupted data rejected)",
-            current_value: @row.start_date
-          }, status: :unprocessable_entity
-          return
+        # VALIDATION: start_date is stored as "days from project start" (not a timestamp)
+        # Valid range: 0 to 9999 days (0 = project start, ~27 years max)
+        # Note: This is NOT a Unix timestamp - it's a relative day offset
+        if row_params[:start_date].present?
+          start_date_int = row_params[:start_date].to_i
+          if start_date_int < 0 || start_date_int > 9999
+            Rails.logger.error "❌ REJECTED INVALID start_date: #{row_params[:start_date]} for row #{@row.id} (must be 0-9999 days from project start)"
+            render json: {
+              error: "Invalid start_date: #{row_params[:start_date]} (must be between 0 and 9999 days from project start)",
+              current_value: @row.start_date
+            }, status: :unprocessable_entity
+            return
+          end
         end
 
         # Track which attributes are changing for cascade detection
