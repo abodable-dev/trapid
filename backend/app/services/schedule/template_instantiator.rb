@@ -151,7 +151,8 @@ module Schedule
 
     def calculate_task_dates
       # Use project start date or today if not set
-      project_start = project.start_date || Date.current
+      # RULE #9.3: Use company timezone, not server timezone
+      project_start = project.start_date || CompanySetting.today
 
       # Forward pass: calculate earliest start/end dates
       @created_tasks.values.sort_by(&:sequence_order).each do |task|
