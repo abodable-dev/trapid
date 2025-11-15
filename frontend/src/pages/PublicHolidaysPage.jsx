@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { getTodayInCompanyTimezone } from '../utils/timezoneUtils'
 import { api } from '../api'
 import {
   PlusIcon,
@@ -11,7 +12,7 @@ export default function PublicHolidaysPage() {
   const [holidays, setHolidays] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedYear, setSelectedYear] = useState(getTodayInCompanyTimezone().getFullYear())
   const [selectedRegion, setSelectedRegion] = useState('QLD')
   const [showAddModal, setShowAddModal] = useState(false)
   const [toast, setToast] = useState(null)
@@ -24,7 +25,7 @@ export default function PublicHolidaysPage() {
   })
 
   const regions = ['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']
-  const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i - 2)
+  const years = Array.from({ length: 10 }, (_, i) => getTodayInCompanyTimezone().getFullYear() + i - 2)
 
   useEffect(() => {
     loadHolidays()

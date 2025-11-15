@@ -1,4 +1,5 @@
 import { Fragment, useState, useEffect } from 'react'
+import { getTodayAsString } from '../../utils/timezoneUtils'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
@@ -20,7 +21,7 @@ export default function AddPriceModal({ isOpen, onClose, itemId, onSuccess }) {
     supplier_id: '',
     price: '',
     lga: '',
-    date_effective: new Date().toISOString().split('T')[0]
+    date_effective: getTodayAsString()
   })
   const [errors, setErrors] = useState({})
 
@@ -32,7 +33,7 @@ export default function AddPriceModal({ isOpen, onClose, itemId, onSuccess }) {
         supplier_id: '',
         price: '',
         lga: '',
-        date_effective: new Date().toISOString().split('T')[0]
+        date_effective: getTodayAsString()
       })
       setErrors({})
     }

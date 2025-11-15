@@ -17,13 +17,13 @@ export default function GanttBugHunterModal({ isOpen, onClose }) {
   const fetchBugHunter = async () => {
     try {
       setLoading(true)
-      // Fetch the Gantt Bug Hunter (bug tracking & knowledge base)
-      const response = await fetch('/GANTT_BUGS_AND_FIXES.md')
+      // Fetch the Gantt Bug Hunter Lexicon (bug tracking & knowledge base)
+      const response = await fetch('/GANTT_BUG_HUNTER_LEXICON.md')
       const text = await response.text()
       setContent(text)
     } catch (err) {
-      console.error('Failed to load Gantt Bug Hunter:', err)
-      setContent('# Error\n\nFailed to load Gantt Bug Hunter.')
+      console.error('Failed to load Gantt Bug Hunter Lexicon:', err)
+      setContent('# Error\n\nFailed to load Gantt Bug Hunter Lexicon.')
     } finally {
       setLoading(false)
     }

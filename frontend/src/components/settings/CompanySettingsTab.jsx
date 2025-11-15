@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { api } from '../../api'
 import PublicHolidaysPage from '../../pages/PublicHolidaysPage'
+import { setCompanySettings } from '../../utils/timezoneUtils'
 
 const TIMEZONES = [
   { value: 'Australia/Brisbane', label: 'Brisbane (AEST/AEDT)' },
@@ -47,7 +48,10 @@ export default function CompanySettingsTab() {
   const loadSettings = async () => {
     try {
       const response = await api.get('/api/v1/company_settings')
-      setSettings(response.data || response)
+      const loadedSettings = response.data || response
+      setSettings(loadedSettings)
+      // Initialize timezone utilities with company settings
+      setCompanySettings(loadedSettings)
     } catch (error) {
       console.error('Failed to load company settings:', error)
       setMessage({ type: 'error', text: 'Failed to load settings' })
@@ -65,6 +69,8 @@ export default function CompanySettingsTab() {
       await api.put('/api/v1/company_settings', {
         company_setting: settings
       })
+      // Update timezone utilities with new settings
+      setCompanySettings(settings)
       setMessage({ type: 'success', text: 'Settings saved successfully!' })
     } catch (error) {
       console.error('Failed to save settings:', error)

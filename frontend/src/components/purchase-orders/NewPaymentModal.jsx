@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react'
+import { getTodayAsString } from '../../utils/timezoneUtils'
 import { Dialog, Transition, Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react'
 import { XMarkIcon, CheckIcon, ChevronUpDownIcon } from '@heroicons/react/24/outline'
 
@@ -14,7 +15,7 @@ const paymentMethods = [
 export default function NewPaymentModal({ open, onClose, onSubmit, purchaseOrder, loading }) {
   const [formData, setFormData] = useState({
     amount: '',
-    payment_date: new Date().toISOString().split('T')[0],
+    payment_date: getTodayAsString(),
     payment_method: paymentMethods[0],
     reference_number: '',
     notes: ''
@@ -36,7 +37,7 @@ export default function NewPaymentModal({ open, onClose, onSubmit, purchaseOrder
     // Reset form
     setFormData({
       amount: '',
-      payment_date: new Date().toISOString().split('T')[0],
+      payment_date: getTodayAsString(),
       payment_method: paymentMethods[0],
       reference_number: '',
       notes: ''
@@ -46,7 +47,7 @@ export default function NewPaymentModal({ open, onClose, onSubmit, purchaseOrder
   const handleClose = () => {
     setFormData({
       amount: '',
-      payment_date: new Date().toISOString().split('T')[0],
+      payment_date: getTodayAsString(),
       payment_method: paymentMethods[0],
       reference_number: '',
       notes: ''

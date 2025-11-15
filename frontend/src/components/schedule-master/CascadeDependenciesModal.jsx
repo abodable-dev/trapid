@@ -309,7 +309,7 @@ export default function CascadeDependenciesModal({
                               : 'Completed'
 
                             // Format the task's scheduled start date
-                            const projectStartDate = new Date()
+                            const projectStartDate = getTodayInCompanyTimezone()
                             projectStartDate.setHours(0, 0, 0, 0)
                             const taskDate = new Date(projectStartDate)
                             taskDate.setDate(taskDate.getDate() + (lockedTask.start_date || 0))

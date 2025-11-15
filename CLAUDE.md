@@ -6,7 +6,7 @@
 
 1. **Read the Gantt Bible:**
    ```
-   /Users/rob/Projects/trapid/GANTT_SCHEDULE_RULES.md
+   /Users/rob/Projects/trapid/GANTT_BIBLE.md
    ```
 
 2. **Give thumbs up and wait for user confirmation:**
@@ -20,8 +20,8 @@
    - CC_UPDATE table must be updated for column changes (RULE #12)
 
 4. **Two-document system:**
-   - 📖 **GANTT_SCHEDULE_RULES.md** - RULES only (directives, MUST/NEVER/ALWAYS)
-   - 📕 **GANTT_BUGS_AND_FIXES.md** - KNOWLEDGE only (bug history, explanations)
+   - 📖 **GANTT_BIBLE.md** - RULES only (directives, MUST/NEVER/ALWAYS)
+   - 📕 **GANTT_BUG_HUNTER_LEXICON.md** - KNOWLEDGE only (bug history, explanations)
 
 **When to read the Bible:**
 - At the start of every session involving Gantt work

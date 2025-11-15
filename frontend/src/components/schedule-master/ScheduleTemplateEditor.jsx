@@ -9,6 +9,7 @@ import {
   ChartBarIcon, BookOpenIcon, ClipboardDocumentIcon, PlayIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
+import { getTodayAsString, getNowInCompanyTimezone } from '../../utils/timezoneUtils'
 import Toast from '../Toast'
 import * as XLSX from 'xlsx'
 import PredecessorEditor from './PredecessorEditor'
@@ -414,7 +415,7 @@ export default function ScheduleTemplateEditor() {
   const handleCopyGanttBible = async () => {
     try {
       // Fetch the Gantt Bible (The Bible - Rules Only)
-      const response = await fetch('/GANTT_SCHEDULE_RULES.md')
+      const response = await fetch('/GANTT_BIBLE.md')
       if (!response.ok) {
         throw new Error('Failed to load Gantt Bible')
       }
@@ -433,10 +434,10 @@ export default function ScheduleTemplateEditor() {
 
   const handleCopyGanttBugHunter = async () => {
     try {
-      // Fetch the Gantt Bug Hunter (bugs and fixes) from docs folder
-      const response = await fetch('/GANTT_BUGS_AND_FIXES.md')
+      // Fetch the Gantt Bug Hunter Lexicon (bugs and fixes)
+      const response = await fetch('/GANTT_BUG_HUNTER_LEXICON.md')
       if (!response.ok) {
-        throw new Error('Failed to load Gantt Bug Hunter')
+        throw new Error('Failed to load Gantt Bug Hunter Lexicon')
       }
 
       const bugHunterText = await response.text()
@@ -444,9 +445,9 @@ export default function ScheduleTemplateEditor() {
       // Copy to clipboard
       await navigator.clipboard.writeText(bugHunterText)
 
-      showToast('Gantt Bug Hunter copied to clipboard!', 'success')
+      showToast('Gantt Bug Hunter Lexicon copied to clipboard!', 'success')
     } catch (err) {
-      console.error('Failed to copy Gantt Bug Hunter:', err)
+      console.error('Failed to copy Gantt Bug Hunter Lexicon:', err)
       showToast('Failed to copy Gantt Bug Hunter', 'error')
     }
   }
@@ -463,7 +464,7 @@ export default function ScheduleTemplateEditor() {
 
       // Format as markdown table
       let markdown = '# Gantt Bug Hunter - Test Status Report\n\n'
-      markdown += `**Generated:** ${new Date().toLocaleString()}\n\n`
+      markdown += `**Generated:** ${getNowInCompanyTimezone().toLocaleString()}\n\n`
       markdown += `**Overall Status:** ${report.health.status.toUpperCase()}\n\n`
 
       markdown += '## Summary\n\n'
@@ -630,7 +631,7 @@ export default function ScheduleTemplateEditor() {
     XLSX.utils.book_append_sheet(wb, ws, 'Tasks')
 
     // Generate filename with template name and date
-    const date = new Date().toISOString().split('T')[0]
+    const date = getTodayAsString()
     const filename = `${selectedTemplate.name.replace(/[^a-z0-9]/gi, '_')}_${date}.xlsx`
 
     // Write file

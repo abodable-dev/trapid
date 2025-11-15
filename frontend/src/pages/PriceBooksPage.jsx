@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { getTodayAsString } from '../utils/timezoneUtils'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import {
   MagnifyingGlassIcon,
@@ -879,7 +880,7 @@ export default function PriceBooksPage() {
       a.href = downloadUrl
 
       // Create filename with date and filters or selection
-      const date = new Date().toISOString().split('T')[0]
+      const date = getTodayAsString()
       let filename = `price_history_${date}`
       if (selectedItems.size > 0) {
         filename += `_selected_${selectedItems.size}_items`

@@ -55,7 +55,7 @@ class PurchaseOrder < ApplicationRecord
   scope :by_status, ->(status) { where(status: status) if status.present? }
   scope :by_construction, ->(construction_id) { where(construction_id: construction_id) if construction_id.present? }
   scope :recent, -> { order(created_at: :desc) }
-  scope :overdue, -> { where('required_date < ? AND status NOT IN (?)', Date.today, ['received', 'cancelled']) }
+  scope :overdue, -> { where('required_date < ? AND status NOT IN (?)', CompanySetting.today, ['received', 'cancelled']) }
   scope :pending_approval, -> { where(status: 'pending') }
   scope :for_schedule, -> { where(creates_schedule_tasks: true) }
   scope :visible_to_suppliers, -> { where(visible_to_supplier: true) }
@@ -103,11 +103,11 @@ class PurchaseOrder < ApplicationRecord
   end
 
   def send_to_supplier!
-    update(status: 'sent', ordered_date: Date.today)
+    update(status: 'sent', ordered_date: CompanySetting.today)
   end
 
   def mark_received!
-    update(status: 'received', received_date: Date.today)
+    update(status: 'received', received_date: CompanySetting.today)
   end
 
   def can_edit?

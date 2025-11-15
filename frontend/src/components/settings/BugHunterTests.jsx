@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { PlayIcon, EyeIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
+import GanttTestStatusModal from '../schedule-master/GanttTestStatusModal'
 
 export default function BugHunterTests() {
   const [tests, setTests] = useState([])
@@ -13,6 +14,8 @@ export default function BugHunterTests() {
   const [scheduleTemplates, setScheduleTemplates] = useState([])
   const [selectedTemplates, setSelectedTemplates] = useState({}) // testId -> templateId mapping
   const [searchQuery, setSearchQuery] = useState('')
+  const [showTestStatusModal, setShowTestStatusModal] = useState(false)
+  const [visualTestId, setVisualTestId] = useState(null)
 
   // Load tests and history on mount
   useEffect(() => {
@@ -109,31 +112,24 @@ export default function BugHunterTests() {
   const runTest = async (testId, visual = false) => {
     await checkAndCleanup()
 
+    if (visual) {
+      // Open the modal which will expose window.runGanttAutomatedTest
+      setVisualTestId(testId)
+      setShowTestStatusModal(true)
+      return
+    }
+
     setRunningTests(prev => new Set([...prev, testId]))
 
     try {
       let result
 
-      if (visual && window.runGanttAutomatedTest) {
-        // Run visual test
-        result = await window.runGanttAutomatedTest({ silent: false })
-
-        // Save the result to database with template ID
-        const templateId = selectedTemplates[testId]
-        await api.post(`/api/v1/bug_hunter_tests/${testId}/run`, {
-          template_id: templateId,
-          passed: result.passed,
-          message: result.message,
-          duration: result.testDuration || result.duration
-        })
-      } else {
-        // Run test via API, passing template ID
-        const templateId = selectedTemplates[testId]
-        const response = await api.post(`/api/v1/bug_hunter_tests/${testId}/run`, {
-          template_id: templateId
-        })
-        result = response.data || response
-      }
+      // Run test via API, passing template ID
+      const templateId = selectedTemplates[testId]
+      const response = await api.post(`/api/v1/bug_hunter_tests/${testId}/run`, {
+        template_id: templateId
+      })
+      result = response.data || response
 
       setTestResults(prev => ({
         ...prev,
@@ -170,6 +166,69 @@ export default function BugHunterTests() {
       await runTest(testId, false)
     }
   }
+
+  const handleTestModalClose = async () => {
+    setShowTestStatusModal(false)
+    setVisualTestId(null)
+  }
+
+  // Effect to run visual test when modal opens
+  useEffect(() => {
+    if (showTestStatusModal && visualTestId) {
+      // Wait for modal to fully render and window.runGanttAutomatedTest to be available
+      const runVisualTest = async () => {
+        // Wait a bit for the modal to mount and expose the function
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        if (window.runGanttAutomatedTest) {
+          setRunningTests(prev => new Set([...prev, visualTestId]))
+
+          try {
+            // Run the visual test
+            const result = await window.runGanttAutomatedTest({ silent: false, visual: true })
+
+            // Save the result to database with template ID
+            const templateId = selectedTemplates[visualTestId]
+            await api.post(`/api/v1/bug_hunter_tests/${visualTestId}/run`, {
+              template_id: templateId,
+              passed: result.passed,
+              message: result.message,
+              duration: result.testDuration || result.duration
+            })
+
+            setTestResults(prev => ({
+              ...prev,
+              [visualTestId]: {
+                status: result.passed ? 'pass' : 'fail',
+                message: result.message,
+                timestamp: new Date().toISOString(),
+                duration: result.testDuration || result.duration
+              }
+            }))
+
+            await loadTestHistory()
+          } catch (error) {
+            setTestResults(prev => ({
+              ...prev,
+              [visualTestId]: {
+                status: 'fail',
+                message: error.message,
+                timestamp: new Date().toISOString()
+              }
+            }))
+          } finally {
+            setRunningTests(prev => {
+              const newSet = new Set(prev)
+              newSet.delete(visualTestId)
+              return newSet
+            })
+          }
+        }
+      }
+
+      runVisualTest()
+    }
+  }, [showTestStatusModal, visualTestId])
 
   const handleTemplateChange = (testId, templateId) => {
     setSelectedTemplates(prev => ({
@@ -467,6 +526,20 @@ export default function BugHunterTests() {
             </div>
           </div>
         )}
+
+        {/* Gantt Test Status Modal */}
+        <GanttTestStatusModal
+          isOpen={showTestStatusModal}
+          onClose={handleTestModalClose}
+          onOpenGantt={() => {
+            // Navigate to Schedule Master tab with the selected template
+            const templateId = visualTestId ? selectedTemplates[visualTestId] : null
+            if (templateId) {
+              window.location.href = `/settings?tab=schedule-master&subtab=setup&template=${templateId}`
+            }
+          }}
+          templateId={visualTestId ? selectedTemplates[visualTestId] : null}
+        />
       </div>
     </div>
   )

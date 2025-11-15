@@ -1,11 +1,11 @@
 # Gantt & Schedule Master - The Bible (Development Rules)
-**Version:** 2.2.1
-**Last Updated:** November 15, 2025 at 5:22 PM AEST (Added reminder to ask if user forgets Bible reading)
+**Version:** 3.0.0
+**Last Updated:** November 15, 2025 at 5:30 PM AEST (BREAKING: Renamed files for consistency - GANTT_BIBLE.md & GANTT_BUG_HUNTER_LEXICON.md)
 **Status:** Production-ready with DHtmlx trial
 **Authority Level:** ABSOLUTE - This is The Bible for all Gantt development
 **File Locations:**
-- Source: `/Users/rob/Projects/trapid/GANTT_SCHEDULE_RULES.md`
-- Public: `/Users/rob/Projects/trapid/frontend/public/GANTT_SCHEDULE_RULES.md`
+- Source: `/Users/rob/Projects/trapid/GANTT_BIBLE.md`
+- Public: `/Users/rob/Projects/trapid/frontend/public/GANTT_BIBLE.md`
 
 ---
 
@@ -22,7 +22,7 @@ This file is the **absolute authority** for all Gantt and Schedule Master develo
 - Protected code patterns
 
 **For KNOWLEDGE (how things work, bug history, why we chose X):**
-- 📕 See GANTT_BUGS_AND_FIXES.md (Bug Hunter Lexicon)
+- 📕 See GANTT_BUG_HUNTER_LEXICON.md (Bug Hunter Lexicon)
 
 **Rules for Claude Code (CC):**
 - ✅ You MUST follow every rule in this document without exception
@@ -30,7 +30,7 @@ This file is the **absolute authority** for all Gantt and Schedule Master develo
 - ✅ **After reading this file, respond with 👍 and WAIT for user confirmation before proceeding**
 - ✅ **If user starts Gantt work without you reading the Bible first, politely ask: "Should I read the Gantt Bible first?"**
 - ✅ You MUST update this file when discovering new rules
-- ✅ You MUST add bug knowledge to Lexicon (GANTT_BUGS_AND_FIXES.md), NOT here
+- ✅ You MUST add bug knowledge to Lexicon (GANTT_BUG_HUNTER_LEXICON.md), NOT here
 - ❌ You CANNOT change implementation approaches between sessions
 - ❌ You CANNOT "optimize" or "simplify" code without explicit approval
 - ❌ You CANNOT add explanations/knowledge to Bible (goes in Lexicon)
@@ -43,8 +43,8 @@ This file is the **absolute authority** for all Gantt and Schedule Master develo
 
 This project uses exactly TWO documentation files:
 
-1. **📖 GANTT_SCHEDULE_RULES.md** - "The Bible" (RULES ONLY)
-2. **📕 GANTT_BUGS_AND_FIXES.md** - "Bug Hunter Lexicon" (KNOWLEDGE ONLY)
+1. **📖 GANTT_BIBLE.md** - "The Bible" (RULES ONLY)
+2. **📕 GANTT_BUG_HUNTER_LEXICON.md** - "Bug Hunter Lexicon" (KNOWLEDGE ONLY)
 
 ### RULE #0.1: Sorting Information - Bible vs Lexicon
 
@@ -103,11 +103,11 @@ When you update either Bible or Lexicon, you MUST sync to frontend/public/:
 
 ```bash
 # After updating source files, ALWAYS run:
-cp /Users/rob/Projects/trapid/GANTT_SCHEDULE_RULES.md \
-   /Users/rob/Projects/trapid/frontend/public/GANTT_SCHEDULE_RULES.md
+cp /Users/rob/Projects/trapid/GANTT_BIBLE.md \
+   /Users/rob/Projects/trapid/frontend/public/GANTT_BIBLE.md
 
-cp /Users/rob/Projects/trapid/GANTT_BUGS_AND_FIXES.md \
-   /Users/rob/Projects/trapid/frontend/public/GANTT_BUGS_AND_FIXES.md
+cp /Users/rob/Projects/trapid/GANTT_BUG_HUNTER_LEXICON.md \
+   /Users/rob/Projects/trapid/frontend/public/GANTT_BUG_HUNTER_LEXICON.md
 ```
 
 ✅ **MUST sync after EVERY edit**
@@ -141,23 +141,23 @@ The Schedule Master tab MUST have exactly 2 buttons:
 
 **Button #1: Gantt Bible**
 - **Label:** "📖 Gantt Bible"
-- **Loads:** `/GANTT_SCHEDULE_RULES.md`
+- **Loads:** `/GANTT_BIBLE.md`
 - **Component:** `GanttRulesModal.jsx`
 - **Code location:** `frontend/src/components/schedule-master/GanttRulesModal.jsx:21`
 
 ```javascript
 // MUST use this exact path:
-const response = await fetch('/GANTT_SCHEDULE_RULES.md')
+const response = await fetch('/GANTT_BIBLE.md')
 ```
 
 **Button #2: Bug Hunter**
 - **Label:** "📕 Bug Hunter"
-- **Loads:** `/GANTT_BUGS_AND_FIXES.md`
+- **Loads:** `/GANTT_BUG_HUNTER_LEXICON.md`
 - **Component:** `GanttBugHunterModal.jsx`
 
 ```javascript
 // MUST use this exact path:
-const response = await fetch('/GANTT_BUGS_AND_FIXES.md')
+const response = await fetch('/GANTT_BUG_HUNTER_LEXICON.md')
 ```
 
 ❌ **NEVER point these buttons to any other files**
@@ -169,14 +169,14 @@ The "Copy Docs" dropdown MUST have exactly 2 options:
 
 **Option #1: Copy Gantt Bible**
 ```javascript
-const response = await fetch('/GANTT_SCHEDULE_RULES.md')
+const response = await fetch('/GANTT_BIBLE.md')
 const text = await response.text()
 await navigator.clipboard.writeText(text)
 ```
 
 **Option #2: Copy Bug Hunter**
 ```javascript
-const response = await fetch('/GANTT_BUGS_AND_FIXES.md')
+const response = await fetch('/GANTT_BUG_HUNTER_LEXICON.md')
 const text = await response.text()
 await navigator.clipboard.writeText(text)
 ```
@@ -190,8 +190,8 @@ After updating either document, MUST verify:
 ls -lh /Users/rob/Projects/trapid/frontend/public/GANTT*.md
 
 # 2. Check timestamps match
-head -3 /Users/rob/Projects/trapid/GANTT_SCHEDULE_RULES.md
-head -3 /Users/rob/Projects/trapid/frontend/public/GANTT_SCHEDULE_RULES.md
+head -3 /Users/rob/Projects/trapid/GANTT_BIBLE.md
+head -3 /Users/rob/Projects/trapid/frontend/public/GANTT_BIBLE.md
 
 # 3. Test UI buttons in browser
 # - Navigate to Settings → Schedule Master
@@ -263,10 +263,16 @@ Is it a bug report or fix?
 - Don't say "link" (use dependency or dep)
 - Don't say "arrow" alone (use "dependency arrow" or "dep")
 
+✅ **If user uses unclear terminology:**
+- If user says "grid" or "table" → Ask: "Do you mean SMT (the table) or the Gantt chart?"
+- If user seems unfamiliar with slang → Ask: "Are you familiar with the SM terminology? (SM/SMT/Deps/etc)"
+- If new developer uses non-standard terms → Politely clarify using the glossary above
+
 **Why this matters:**
 - Consistent terminology prevents confusion between SMT (table) and Gantt (timeline)
 - Using slang matches what user sees in UI
 - Makes communication faster and clearer
+- Asking for clarity prevents misunderstandings
 
 ---
 
@@ -763,6 +769,6 @@ Before committing Gantt code changes, verify:
 
 ---
 
-**Last Updated:** November 15, 2025 at 5:22 PM AEST
+**Last Updated:** November 15, 2025 at 5:30 PM AEST
 **Maintained By:** Development Team
 **Authority Level:** ABSOLUTE

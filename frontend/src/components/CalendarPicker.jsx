@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { getTodayInCompanyTimezone } from '../utils/timezoneUtils'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid'
 
 export default function CalendarPicker({ value, onChange, label }) {
@@ -7,7 +8,7 @@ export default function CalendarPicker({ value, onChange, label }) {
       const date = new Date(value)
       return new Date(date.getFullYear(), date.getMonth(), 1)
     }
-    return new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    const today = getTodayInCompanyTimezone(); return new Date(today.getFullYear(), today.getMonth(), 1)
   })
 
   const selectedDate = value ? new Date(value) : null

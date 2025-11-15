@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { getTodayAsString } from '../utils/timezoneUtils'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { api } from '../api'
 import {
@@ -79,18 +80,18 @@ export default function ContactDetailPage() {
   const [supplierSearchTerm, setSupplierSearchTerm] = useState('')
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false)
   const [setAsDefaultSupplier, setSetAsDefaultSupplier] = useState(true)
-  const [effectiveDate, setEffectiveDate] = useState(new Date().toISOString().split('T')[0])
+  const [effectiveDate, setEffectiveDate] = useState(getTodayAsString())
   const [copyMode, setCopyMode] = useState('active') // 'active', 'latest', or 'oldest'
   const [priceBookSearchTerm, setPriceBookSearchTerm] = useState('')
   const [editingPriceHistory, setEditingPriceHistory] = useState(null) // { itemId, historyId, price, date }
   const [deletingPriceHistory, setDeletingPriceHistory] = useState(null) // { itemId, historyId }
   const [showImportModal, setShowImportModal] = useState(false)
   const [importFile, setImportFile] = useState(null)
-  const [importDate, setImportDate] = useState(new Date().toISOString().split('T')[0])
+  const [importDate, setImportDate] = useState(getTodayAsString())
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState(null)
   const [priceBookTab, setPriceBookTab] = useState('items') // items, activity, bulk-update
-  const [bulkUpdateDate, setBulkUpdateDate] = useState(new Date().toISOString().split('T')[0])
+  const [bulkUpdateDate, setBulkUpdateDate] = useState(getTodayAsString())
   const [bulkUpdating, setBulkUpdating] = useState(false)
   const [abnValidation, setAbnValidation] = useState(null) // { valid, entity_name, etc. }
   const [validatingAbn, setValidatingAbn] = useState(false)
@@ -603,7 +604,7 @@ export default function ContactDetailPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${contact.full_name || 'supplier'}_price_history_${new Date().toISOString().split('T')[0]}.xlsx`
+      a.download = `${contact.full_name || 'supplier'}_price_history_${getTodayAsString()}.xlsx`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)

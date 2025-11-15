@@ -18,61 +18,72 @@ export default function NewFeaturesTab() {
     select: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2406-2416
-- Rendering: Checkbox input in first column (order: -1), 40px width, center-aligned
+- Location: ScheduleTemplateEditor.jsx:2388-2398
+- Rendering: Checkbox input, 40px width, center-aligned, order: -1 (first column)
 - Event handlers:
-  - Row checkbox: \`onSelectRow(row.id)\` toggles individual row selection
-  - Header checkbox: \`handleSelectAll()\` toggles all filtered rows (lines 1115-1121)
-  - State managed in \`selectedRows\` Set
+  - onChange: \`onSelectRow(row.id)\` toggles individual row selection
+  - State: Managed via \`isSelected\` prop passed from parent
+  - Styling: h-4 w-4, indigo-600 color, rounded, cursor-pointer
 
 **Backend:**
 - Field: N/A (frontend-only state management)
-- Type: Client-side Set of row IDs
+- Type: Client-side selection tracking (Set of row IDs in parent component)
 
 **How It Works:**
-The select column enables multi-row selection for bulk operations. When rows are selected, a bulk operations toolbar appears (lines 1950-1991) offering options like "Set PO Required", "Enable Auto PO", and "Delete Selected". The select-all checkbox in the header selects/deselects all currently filtered rows.
+Enables multi-row selection for bulk operations. Users click checkboxes to select multiple rows, triggering bulk actions toolbar. Parent component manages selection state via Set data structure for O(1) lookup performance. Header checkbox (not in this cell) enables select-all/deselect-all functionality.
+
+**Interdependencies:**
+- Bulk operations toolbar visibility depends on selection count > 0
+- Bulk update actions: Set PO Required, Enable Auto PO, Disable Auto PO, Delete Selected
 
 **Current Limitations:**
-- Selection state is lost when filters change
-- No "select range" (shift-click) functionality
-- Selection state not persisted across page reloads`,
+- Selection state lost when filters/sorts applied
+- No shift-click range selection
+- No ctrl-click multi-select
+- Selection not persisted across page reloads`,
     sequence: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2418-2423
-- Rendering: Read-only text display showing \`index + 1\`, 40px width, center-aligned
-- Event handlers: None (read-only display)
+- Location: ScheduleTemplateEditor.jsx:2400-2405
+- Rendering: Read-only text display, 40px width, center-aligned, order: 0
+- Display: \`{index + 1}\` - converts 0-based index to 1-based display
+- Styling: text-gray-500 dark:text-gray-400, no input (display only)
 
 **Backend:**
 - Field: schedule_template_rows.sequence_order
 - Type: integer (NOT NULL, >= 0)
-- Validation: Presence required, numericality validated (model line 15)
+- Validation: Presence required (model line 14), numericality >= 0 (model line 15)
+- Scope: in_sequence orders by sequence_order asc (model line 28)
 
 **How It Works:**
-Auto-generated task sequence number representing position in the template. Stored as 0-based index in database (\`sequence_order\`) but displayed as 1-based number to users. Critical for predecessor dependencies which reference tasks by their sequence number. Updated automatically when rows are reordered via drag-drop or move up/down actions (lines 1046-1081).
+Auto-generated task sequence number representing row position in template. Database stores 0-based (0, 1, 2...), frontend displays 1-based (#1, #2, #3...). Critical for predecessor dependency system which references tasks by sequence number. Updated automatically when rows reordered via move up/down buttons (lines 2734-2741).
 
 **CRITICAL - Dependency System Integration:**
-The sequence number is used for task dependencies with an important conversion:
-- **Storage**: sequence_order is 0-based (0, 1, 2, 3, ...)
-- **Dependencies**: predecessor_ids reference 1-based IDs (1, 2, 3, 4, ...)
-- **Conversion** happens in ScheduleCascadeService.rb:96 and ScheduleTemplateRow.rb:99-116
+- **Storage**: sequence_order is 0-based in DB (0, 1, 2, 3, ...)
+- **Display**: Frontend shows 1-based (#1, #2, #3, #4, ...)
+- **Dependencies**: predecessor_ids use 1-based references (task #1 = sequence_order 0)
+- **Conversion**: See Bible RULE #1 for mandatory conversion logic
 
-**When Sequence Changes:**
-- **Drag and Drop**: User drags task to new position
-- **Insert/Delete Row**: All subsequent tasks renumber
-- **Cascade Impact**: Does NOT auto-trigger, but affects dependency lookups
+**Interdependencies:**
+- Predecessor Editor modal references tasks by displayed sequence number
+- Move up/down actions recalculate all sequence_order values
+- Sorting by sequence maintains template task order
 
 **Current Limitations:**
-- Reordering tasks requires manual verification that dependencies remain valid
-- No automatic dependency renumbering when tasks are moved
-- No built-in "resequence" utility if order gets corrupted
-- Frontend displays index+1, backend uses sequence_order field (potential confusion)`,
+- No automatic dependency update when tasks reordered
+- Manual verification needed after reordering to ensure deps still valid
+- No visual warning if dependencies broken by reordering
+- 0-based/1-based conversion can cause confusion for developers`,
     taskName: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2425-2436
-- Rendering: Text input field, 200px width, debounced updates (500ms delay)
-- Event handlers: \`handleTextChange('name', value)\` for input changes (lines 2352-2375), auto-select on focus
+- Location: ScheduleTemplateEditor.jsx:2407-2418
+- Rendering: Text input field, 200px width, left-aligned, order: 1
+- Event handlers:
+  - onChange: handleTextChange('name', value) with 500ms debounce (line 2334)
+  - onFocus: e.target.select() - auto-selects text on focus
+  - Local state: localName tracks user input before save
+- Styling: Full width, px-2 py-1, border, dark mode support
 
 **Backend:**
 - Field: schedule_template_rows.name
@@ -80,411 +91,773 @@ The sequence number is used for task dependencies with an important conversion:
 - Validation: Presence required (model line 14)
 
 **How It Works:**
-Primary identifier for each task. User types task name which appears in schedule displays and Gantt charts. Implements debounced updates to avoid excessive API calls while typing. Local state (\`localName\`) tracks user input, syncs to server after delay.
+Primary identifier for each task row. User types task name which appears in schedule displays, Gantt charts, and job views. Implements debounced updates - local state tracks input immediately, API call fires 500ms after user stops typing to reduce server load. Auto-selects text on focus for quick editing.
+
+**Interdependencies:**
+- Used in predecessor display: "Task Name (FS+3)"
+- Displayed in Gantt chart timeline
+- Referenced in audit logs and change tracking
+- Export/import uses this as primary identifier
 
 **Current Limitations:**
 - No duplicate name detection or warning
-- No character limit enforced in UI
-- No autocomplete or task name suggestions
-- Special characters not validated`,
+- No character limit enforced in UI (DB may have limit)
+- No autocomplete or task name suggestions from previous templates
+- Special characters not validated
+- No rich text or formatting support`,
     supplierGroup: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2438-2465
-- Rendering: Conditional dropdown - suppliers (if PO required) OR user roles (Admin/Sales/Site/Supervisor/Builder/Estimator)
-- Event handlers: handleSupplierChange (lines 2377-2394), auto-clears if PO Required unchecked
+- Location: ScheduleTemplateEditor.jsx:2420-2447
+- Rendering: Conditional dropdown - suppliers (if PO required) OR internal roles, 150px width, order: 2
+- Event handlers:
+  - Supplier mode: handleFieldChange('supplier_id', parseInt(value)) (line 2426)
+  - Role mode: handleFieldChange('assigned_role', value) (line 2437)
+  - Immediate update (no debounce)
+- Conditional logic:
+  - If row.po_required = true → show suppliers dropdown
+  - If row.po_required = false → show assignable roles dropdown
+- Roles: admin, sales, site, supervisor, builder, estimator (ASSIGNABLE_ROLES constant)
 
 **Backend:**
-- Field: schedule_template_rows.supplier_id (foreign key) OR assigned_user_id
-- Type: integer (nullable)
-- Validation: Optional belongs_to :supplier
+- Fields: schedule_template_rows.supplier_id (FK) OR schedule_template_rows.assigned_role (string)
+- Type: integer (supplier_id, nullable) OR string (assigned_role, nullable)
+- Validation: Optional belongs_to :supplier, assigned_role must be in ASSIGNABLE_ROLES
+- Constant: ASSIGNABLE_ROLES defined in model line 11
 
 **How It Works:**
-Assignment toggle based on task type - external suppliers for PO tasks, internal roles for company work. Enables smart PO generation and task routing.
+Smart assignment field that toggles between external suppliers (for PO tasks) and internal team roles (for company work). When PO Required enabled, dropdown shows supplier companies for procurement tasks. When PO Required disabled, dropdown shows internal roles for task assignment and routing. Enables smart PO generation and task delegation.
+
+**Interdependencies:**
+- Auto-cleared when po_required unchecked (line 2365)
+- Required for create_po_on_job_start enablement
+- Used in Auto PO generation service (Schedule::TemplateInstantiator)
+- Filters available in bulk operations
 
 **Current Limitations:**
-- Cannot assign both supplier AND internal role simultaneously
-- No supplier capabilities/trade filtering
-- Role selection limited to predefined list`,
+- Cannot assign BOTH supplier AND internal role simultaneously
+- No supplier capabilities/trade filtering (shows all suppliers)
+- Role selection limited to 6 predefined roles
+- No custom role creation
+- Supplier list not filtered by active/inactive status`,
     predecessors: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2467-2478
-- Rendering: Button showing count, opens PredecessorEditor modal
-- Event handlers: Modal for adding/editing dependencies with type (FS/SS/FF/SF) and lag days
+- Location: ScheduleTemplateEditor.jsx:2449-2461
+- Rendering: Button showing formatted predecessor display, 100px width, order: 3
+- Event handlers:
+  - onClick: setShowPredecessorEditor(true) opens modal (line 2454)
+  - Display: row.predecessor_display (e.g., "2FS+3, 5SS") or "None"
+- Modal: PredecessorEditor component handles dependency editing
+- Styling: Full width button, gray background, hover effect, cursor-pointer
 
 **Backend:**
 - Field: schedule_template_rows.predecessor_ids
 - Type: jsonb array
-- Validation: Format [{id: 2, type: "FS", lag: 3}, ...]
+- Format: [{id: 2, type: "FS", lag: 3}, {id: 5, type: "SS", lag: 0}]
+- Helper: predecessor_display method formats as "2FS+3, 5SS" (model lines 59-62)
+- Types: FS (Finish-to-Start), SS (Start-to-Start), FF (Finish-to-Finish), SF (Start-to-Finish)
 
 **How It Works:**
-Defines task dependencies using 4 relationship types - Finish-to-Start (most common), Start-to-Start, Finish-to-Finish, Start-to-Finish. Drives ScheduleCascadeService calculations for automated date updates.
+Defines task dependencies using 4 relationship types plus lag days. Click button to open PredecessorEditor modal where user selects predecessor tasks, relationship type, and lag offset. Backend ScheduleCascadeService uses this to calculate start_date automatically. When predecessor moves, all dependent tasks cascade forward/backward based on relationship type.
+
+**CRITICAL - See Bible RULE #1:**
+- Predecessor IDs are 1-based (1, 2, 3, 4...)
+- sequence_order is 0-based (0, 1, 2, 3...)
+- MUST convert: predecessor_id = sequence_order + 1
+
+**Interdependencies:**
+- Drives ScheduleCascadeService date calculations
+- Affects start_date computation (auto-calculated field)
+- Lock system prevents cascade to locked tasks (5 lock types)
+- See Bible RULE #4 for lock hierarchy
 
 **Current Limitations:**
-- No circular dependency detection/warning
-- No visual dependency graph in editor
-- Cannot bulk-edit dependencies across multiple tasks`,
+- No circular dependency detection/warning in UI
+- No visual dependency graph in template editor (only in Gantt)
+- Cannot bulk-edit dependencies across multiple tasks
+- No dependency validation on import
+- Deleting a task doesn't update dependents (orphaned refs possible)`,
     duration: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2481-2502
-- Rendering: Number input field, debounced updates (500ms delay)
-- Event handlers: handleNumberChange('duration', value) with validation (lines 2395-2413)
+- Location: ScheduleTemplateEditor.jsx:2463-2484
+- Rendering: Number input field, 80px width, center-aligned, order: 4
+- Event handlers:
+  - onChange: handleTextChange('duration', value) with 500ms debounce (line 2469)
+  - onBlur: Immediate save, clears debounce timeout (lines 2470-2477)
+  - onFocus: e.target.select() - auto-selects number
+  - Local state: localDuration tracks input before save
+- Validation: min="0", parseInt with || 0 fallback
+- Styling: Full width, px-2 py-1, placeholder "0"
 
 **Backend:**
 - Field: schedule_template_rows.duration
-- Type: integer (default 0)
-- Validation: Numericality >= 0
+- Type: integer (default: 0)
+- Validation: Numericality >= 0 (implied, no explicit validation in model)
+- Unit: Working days (excludes weekends and public holidays)
 
 **How It Works:**
-Task duration in working days. Used by ScheduleCascadeService to calculate end dates and dependent task start dates. Combined with start_date determines task completion timeline.
+Task duration in working days. User types number, debounced save after 500ms OR immediate save on blur. Combined with start_date, determines task end date. Backend ScheduleCascadeService uses duration to calculate dependent task start dates. Working day calendar excludes Saturday/Sunday plus public holidays defined in company settings.
+
+**CRITICAL - See Bible RULE #3:**
+- Duration ALWAYS calculated in working days
+- Company Settings → Working Days defines Mon-Sun status
+- Cascade service respects working day configuration
+
+**Interdependencies:**
+- Changes trigger ScheduleCascadeService cascade (Bible RULE #10)
+- Affects Gantt bar length in timeline view
+- Used in end_date calculation: start_date + duration (working days)
+- Export/import preserves duration values
 
 **Current Limitations:**
 - No duration estimation based on historical data
 - Cannot set duration in hours/weeks (days only)
-- No resource-based duration adjustments`,
-    startDate: `**Status:** Fully functional ✅
+- No resource-based duration adjustments
+- No warning if duration seems unrealistic (e.g., 999 days)
+- No fractional days support (integer only)`,
+    startDate: `**Status:** Fully functional ✅ (Auto-calculated field)
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2504-2511
-- Rendering: Read-only text field showing day offset (integer)
-- Event handlers: None (calculated field, not user-editable)
+- Location: ScheduleTemplateEditor.jsx:2486-2493
+- Rendering: Read-only div display, 110px width, center-aligned, order: 5
+- Display: calculatedStartDate variable (formatted day offset like "Day 5")
+- Styling: Gray background, text-gray-700 dark:text-gray-300, border, rounded
+- No input: This field is NOT user-editable (calculated by backend)
 
 **Backend:**
 - Field: schedule_template_rows.start_date
 - Type: integer (day offset from project start, nullable)
-- Validation: None (automatically calculated by ScheduleCascadeService)
+- Calculation: ScheduleCascadeService.calculate_start_dates (service method)
+- Logic: Based on predecessors completion + lag + working days
+- Default: Tasks with no predecessors start on Day 0 (project start)
 
 **How It Works:**
-Automatically calculated based on predecessors, durations, lag times, and working day rules. ScheduleCascadeService recalculates when dependencies change, supporting FS/SS/FF/SF relationship types with customizable lag.
+Automatically calculated by backend ScheduleCascadeService based on:
+1. Predecessor task end dates
+2. Relationship type (FS/SS/FF/SF)
+3. Lag days (can be positive or negative)
+4. Working day calendar (excludes weekends/holidays)
+
+When user changes duration or moves tasks in Gantt, cascade service recalculates all dependent task start dates. Tasks with no predecessors default to Day 0 (project start date).
+
+**CRITICAL - Cascade Triggers (Bible RULE #10):**
+- Changes to start_date trigger cascade
+- Changes to duration trigger cascade
+- All other fields DO NOT trigger cascade
+
+**Interdependencies:**
+- Drives Gantt bar X position in timeline
+- Updated by ScheduleCascadeService after drag operations
+- Respected by lock system (5 lock types prevent cascade)
+- Used in Schedule::TemplateInstantiator for job creation
 
 **Current Limitations:**
-- No manual override capability in templates
-- No critical path visualization
-- Large dependency chains can slow cascade performance`,
+- No manual override in templates (auto-calculated only)
+- No critical path visualization in table view
+- Large dependency chains can slow cascade performance
+- No "what-if" analysis for date changes
+- Cannot set absolute date in template (offset only)`,
     poRequired: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2513-2523
-- Rendering: Checkbox input
-- Event handlers: handleCheckboxChange('po_required', checked), affects supplier dropdown and Auto PO availability
+- Location: ScheduleTemplateEditor.jsx:2495-2505
+- Rendering: Checkbox input, 80px width, center-aligned, order: 6
+- Event handlers:
+  - onChange: handleFieldChange('po_required', checked) (line 2501)
+  - Immediate update (no debounce)
+  - Triggers interdependent field updates (lines 2362-2369)
+- Styling: h-4 w-4 checkbox
 
 **Backend:**
 - Field: schedule_template_rows.po_required
-- Type: boolean (default false)
-- Validation: Triggers validation requiring supplier_id if create_po_on_job_start is true
+- Type: boolean (default: false)
+- Scope: requiring_po scope for filtering (model line 29)
+- Validation: None (boolean flag only)
 
 **How It Works:**
-Flags tasks requiring purchase orders. When enabled, switches supplier dropdown to show suppliers (vs internal roles). Gates the Auto PO checkbox which cannot be enabled without this flag.
+Boolean flag indicating this task requires a purchase order. Controls whether supplier dropdown (vs role dropdown) appears in supplierGroup column. Tracks PO requirement for planning but does NOT automatically create POs - use create_po_on_job_start (autoPo) for auto-generation.
+
+**Interdependencies:**
+- When checked: supplierGroup switches to supplier dropdown, clears assigned_role (line 2368)
+- When unchecked: Clears create_po_on_job_start AND supplier_id (line 2365)
+- Gates create_po_on_job_start checkbox (must be checked to enable autoPo)
+- Gates price_book_items button (line 2522)
+- Available in bulk operations toolbar
 
 **Current Limitations:**
-- No PO requirement based on task type/category
-- No workflow for non-PO procurement tasks
-- Cannot track PO requirement separately from auto-generation`,
+- No automatic PO requirement detection based on task type/category
+- No workflow enforcement (can skip PO creation)
+- No PO vs quote distinction
+- Cannot track PO requirement separately from auto-generation intent`,
     autoPo: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2525-2537
-- Rendering: Checkbox, disabled unless PO Required checked AND supplier selected
-- Event handlers: handleCheckboxChange('create_po_on_job_start', checked), validates supplier presence, auto-unchecks if PO Required disabled
+- Location: ScheduleTemplateEditor.jsx:2507-2519
+- Rendering: Checkbox input, 80px width, center-aligned, order: 7
+- Event handlers:
+  - onChange: handleFieldChange('create_po_on_job_start', checked) (line 2513)
+  - Validation: Alert if no supplier selected (lines 2371-2375)
+  - Immediate update (no debounce)
+- Disabled states: Requires BOTH po_required=true AND supplier_id present (line 2514)
+- Tooltip: Dynamic based on disabled reason (line 2516)
+- Styling: h-4 w-4, disabled:opacity-30
 
 **Backend:**
 - Field: schedule_template_rows.create_po_on_job_start
-- Type: boolean (default false)
-- Validation: Requires supplier_id present if enabled
+- Type: boolean (default: false)
+- Validation: Model validation requires supplier_id if enabled (model lines 84-87)
+- Scope: auto_create_po scope for filtering (model line 30)
+- Service: Schedule::TemplateInstantiator.create_auto_purchase_orders (line 203)
 
 **How It Works:**
-Auto-creates draft PO when job instantiated from template. TemplateInstantiator service processes during job creation, populating PO with supplier, critical flag, price book items, and task linkage. POs created in draft status for review.
+Automatically creates draft purchase orders when job instantiated from template. Requires three conditions: (1) po_required=true, (2) supplier_id present, (3) create_po_on_job_start=true. When all met, TemplateInstantiator service generates PO with supplier details, price book items, and critical flag. POs created in draft status for review before sending to supplier.
+
+**Interdependencies:**
+- Auto-unchecked when po_required unchecked (line 2365)
+- Supplier cleared when po_required unchecked (line 2365)
+- Price Items button requires this enabled (line 2522)
+- Bulk operations: Enable Auto PO, Disable Auto PO (lines 1960, 1966)
+- Import defaults to false for safety (line 714)
 
 **Current Limitations:**
-- POs not automatically sent to supplier (draft only)
-- No quantity calculation from job specs
-- Lead time fields (orderRequired/callUpRequired) tracked but unused`,
+- POs not automatically sent to supplier (draft only, manual send required)
+- No quantity calculation from job specifications
+- No automatic price updates if price book changes after PO creation
+- No PO template customization per supplier
+- No lead time integration with schedule dates`,
     priceItems: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2539-2557
-- Rendering: Button showing count "(X items)", opens PriceBookItemsModal
-- Event handlers: Modal for selecting/managing price book items
+- Location: ScheduleTemplateEditor.jsx:2521-2539
+- Rendering: Button showing item count, 120px width, center-aligned, order: 8
+- Event handlers:
+  - onClick: setShowPriceItemsModal(true) opens modal (line 2526)
+  - Conditional enable: canSelectItems = create_po_on_job_start && po_required && supplier_id (line 2522)
+- Display: "{count} items" (e.g., "3 items")
+- Disabled states: Multi-condition tooltip (lines 2529-2534)
+- Styling: Indigo link when enabled, gray when disabled
 
 **Backend:**
 - Field: schedule_template_rows.price_book_item_ids
 - Type: jsonb array of integers
-- Validation: Helper method price_book_items() fetches PricebookItem records
+- Helper: price_book_items method fetches PricebookItem records (model lines 45-48)
+- Service: Used in Auto PO generation to populate line items
 
 **How It Works:**
-Links price book catalog items to tasks. When Auto PO enabled, these items automatically populate PO line items with pricing, descriptions, and supplier details. Enables standardized pricing across templates.
+Links price book catalog items to task. Click button to open PriceBookItemsModal for multi-select with search. When Auto PO enabled, these items automatically populate PO line items with pricing, descriptions, supplier details. Enables standardized pricing across templates and jobs.
+
+**Interdependencies:**
+- Requires create_po_on_job_start=true to enable button (line 2522)
+- Requires po_required=true to enable button
+- Requires supplier_id present to enable button
+- Used by Schedule::TemplateInstantiator for PO line item generation
+- Price book items must belong to selected supplier (filter in modal)
 
 **Current Limitations:**
-- No quantity specification per item (defaults to 1)
-- No automatic price updates if catalog changes
-- Cannot link items from multiple suppliers per task`,
+- No quantity specification per item (defaults to 1 in PO generation)
+- No automatic price updates if catalog changes after template creation
+- Cannot link items from multiple suppliers per task
+- No unit of measure selection
+- No item substitution rules`,
     critical: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2563-2573
-- Rendering: Checkbox input
-- Event handlers: handleCheckboxChange('critical_po', checked)
+- Location: ScheduleTemplateEditor.jsx:2545-2555
+- Rendering: Checkbox input, 80px width, center-aligned, order: 9
+- Event handlers:
+  - onChange: handleFieldChange('critical_po', checked) (line 2551)
+  - Immediate update (no debounce)
+- Styling: h-4 w-4 checkbox
 
 **Backend:**
 - Field: schedule_template_rows.critical_po
-- Type: boolean (default false)
-- Validation: None
+- Type: boolean (default: false)
+- Validation: None (simple boolean flag)
+- Service: Copied to ProjectTask.critical_po on instantiation
 
 **How It Works:**
-Marks task's PO as critical priority. When Auto PO creates purchase order, critical flag transfers to PO record. Critical POs display with red badge for visual priority indication.
+Marks task/PO as critical priority requiring immediate attention. When Auto PO creates purchase order, critical flag transfers to PO record. Critical POs display with red badge/urgent styling in supplier and manager views. Used to flag time-sensitive work that could delay entire project if not prioritized.
+
+**Interdependencies:**
+- Flag copied to generated POs (Schedule::TemplateInstantiator)
+- Copied to ProjectTask on job instantiation
+- Export/import preserves critical status
+- Available in bulk operations (though not currently implemented)
 
 **Current Limitations:**
 - No automatic escalation workflow for critical POs
 - No due date enforcement based on critical status
-- Cannot set criticality threshold rules (e.g., value-based)`,
+- Cannot set criticality threshold rules (e.g., value-based auto-flagging)
+- No notification system for critical task approaching
+- No reporting/dashboard for all critical items`,
     tags: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2575-2586
-- Rendering: Text input field, comma-separated values
-- Event handlers: handleTextChange('tags', value) parses CSV to array
+- Location: ScheduleTemplateEditor.jsx:2557-2568
+- Rendering: Text input field, 100px width, left-aligned, order: 10
+- Event handlers:
+  - onChange: handleFieldChange('tags', value.split(',').map(trim).filter(Boolean)) (line 2563)
+  - Immediate update (no debounce)
+  - Parsing: Comma-separated string → array
+- Placeholder: "tag1, tag2"
+- Display: row.tags?.join(', ') - array → comma-separated string
 
 **Backend:**
 - Field: schedule_template_rows.tags
-- Type: jsonb array
-- Validation: Helper method tag_list() returns array of strings
+- Type: jsonb array of strings
+- Helper: tag_list method returns array (model lines 49-51)
+- Examples: ['electrical', 'foundation', 'inspection', 'milestone']
 
 **How It Works:**
-User enters comma-separated tags for categorization (e.g., 'electrical, foundation, inspection'). Enables filtering and grouping tasks by trade, phase, or category in schedule views.
+User enters comma-separated tags for task categorization (e.g., 'electrical, foundation, inspection'). Frontend parses CSV to array, stores as JSON. Enables filtering and grouping tasks by trade, phase, or category in schedule views. Used for generating trade-specific reports and filtering job schedules.
+
+**Interdependencies:**
+- Filter dropdown uses tags for quick filtering
+- Export includes tags column
+- Import parses Tags column as CSV
+- Sorting by tags (alphabetical)
 
 **Current Limitations:**
-- No tag autocomplete or suggestions
-- No tag standardization or validation
-- Cannot create tag taxonomies or hierarchies`,
+- No tag autocomplete or suggestions from existing tags
+- No tag standardization or validation (typos create duplicate concepts)
+- Cannot create tag taxonomies or hierarchies
+- No tag color coding or icons
+- No character limit on individual tags`,
     photo: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2588-2598
-- Rendering: Checkbox input
-- Event handlers: handleCheckboxChange('require_photo', checked)
+- Location: ScheduleTemplateEditor.jsx:2570-2580
+- Rendering: Checkbox input, 80px width, center-aligned, order: 11
+- Event handlers:
+  - onChange: handleFieldChange('require_photo', checked) (line 2576)
+  - Immediate update (no debounce)
+- Styling: h-4 w-4 checkbox
 
 **Backend:**
 - Field: schedule_template_rows.require_photo
-- Type: boolean (default false)
-- Validation: Callback sync_photos_category manages documentation categories
+- Type: boolean (default: false)
+- Scope: with_photos scope for filtering (model line 31)
+- Service: Schedule::TaskSpawner.spawn_photo_task (spawning service)
+- Callback: sync_photos_category manages documentation categories (model line 23)
 
 **How It Works:**
-Triggers automatic photo task creation when parent task completed. Used for quality control, compliance documentation, and progress tracking. Photo task inherits context from parent task.
+When parent task marked complete in job schedule, automatically spawns child photo documentation task. Photo task appears in job timeline with spawned_type='photo' and due date = parent completion date. Used for required photo documentation (council submissions, quality checks, client updates, before/after shots).
+
+**Interdependencies:**
+- Triggers TaskSpawner service on parent task completion
+- Documentation categories auto-managed via callback
+- Photo task inherits context from parent task
+- Export/import preserves require_photo flag
 
 **Current Limitations:**
-- No photo count specification (how many required)
-- No photo type/angle requirements
-- Cannot customize photo task template per task type`,
+- No photo count specification (how many photos required)
+- No photo type/angle requirements (overhead, closeup, etc.)
+- Cannot customize photo task name template per task type
+- No automatic photo upload integration
+- Photo task due date always equals parent completion (no offset like certLag)`,
     cert: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2600-2610
-- Rendering: Checkbox input
-- Event handlers: handleCheckboxChange('require_certificate', checked), enables certLag field
+- Location: ScheduleTemplateEditor.jsx:2582-2592
+- Rendering: Checkbox input, 80px width, center-aligned, order: 12
+- Event handlers:
+  - onChange: handleFieldChange('require_certificate', checked) (line 2588)
+  - Immediate update (no debounce)
+  - Enables certLag field when checked
+- Styling: h-4 w-4 checkbox
 
 **Backend:**
 - Field: schedule_template_rows.require_certificate
-- Type: boolean (default false)
-- Validation: None
+- Type: boolean (default: false)
+- Scope: with_certificates scope for filtering (model line 32)
+- Service: Schedule::TaskSpawner.spawn_certificate_task (spawning service)
 
 **How It Works:**
-Spawns certificate task automatically when parent task completes. Used for regulatory compliance, inspections, and certifications. Due date calculated using cert_lag_days offset (default 10 days).
+When parent task completed, automatically spawns certificate task due X days later (see certLag). Used for regulatory certifications, compliance documents, inspections with submission deadlines after work completion (e.g., Frame task completes Jan 1 → Frame Certificate due Jan 11 with 10-day lag).
+
+**Interdependencies:**
+- Enables certLag number input (disabled if unchecked)
+- Triggers TaskSpawner service on parent completion
+- Certificate due date = parent completion + cert_lag_days
+- Default lag: 10 days (if cert_lag_days not specified)
 
 **Current Limitations:**
-- No certificate type specification
+- No certificate type specification (generic "certificate" only)
 - No issuing authority tracking
-- Cannot link to specific regulatory requirements`,
+- Cannot link to specific regulatory requirements
+- No template for certificate task name
+- No reminder system as deadline approaches`,
     certLag: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2612-2623
-- Rendering: Number input, disabled unless require_certificate enabled
-- Event handlers: handleNumberChange('cert_lag_days', value) with range validation
+- Location: ScheduleTemplateEditor.jsx:2594-2605
+- Rendering: Number input field, 80px width, center-aligned, order: 13
+- Event handlers:
+  - onChange: handleFieldChange('cert_lag_days', parseInt(value)) (line 2600)
+  - Immediate update (no debounce)
+- Disabled: When require_certificate=false (line 2601)
+- Styling: Full width, disabled:opacity-50
 
 **Backend:**
 - Field: schedule_template_rows.cert_lag_days
-- Type: integer (default 10, range 0-999)
-- Validation: Numericality >= 0, <= 999
+- Type: integer (default: 10, range 0-999)
+- Validation: Numericality >= 0, <= 999 (model line 16)
+- Service: Used in TaskSpawner.spawn_certificate_task for due date calc
 
 **How It Works:**
-Specifies days after task completion when certificate task becomes due. Allows flexibility for different certification timelines (immediate inspection vs extended review periods).
+Specifies working days after task completion when certificate task becomes due. Allows flexibility for different certification timelines (immediate inspection vs extended review periods). Calculation: cert_due_date = parent_completion_date + cert_lag_days (working days).
+
+**Interdependencies:**
+- Only enabled when require_certificate=true
+- Used by TaskSpawner service for due date calculation
+- Respects working day calendar (excludes weekends/holidays)
+- Default value: 10 days if not specified
 
 **Current Limitations:**
-- Fixed to days only (no hours/weeks)
+- Fixed to days only (no hours/weeks option)
 - No automatic reminders as deadline approaches
-- Cannot vary lag by certificate type`,
+- Cannot vary lag by certificate type
+- No calendar date picker (offset only)
+- Maximum 999 days enforced but no business logic validation`,
     supCheck: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2625-2646
-- Rendering: Checkbox + button "(X checklists)" opens SupervisorChecklistModal
-- Event handlers: handleCheckboxChange('require_supervisor_check', checked), modal manages checklist template selection
+- Location: ScheduleTemplateEditor.jsx:2607-2628
+- Rendering: Checkbox + conditional button, 120px width, left-aligned, order: 14
+- Event handlers:
+  - Checkbox onChange: handleFieldChange('require_supervisor_check', checked) (line 2614)
+  - Button onClick: handleOpenChecklistModal (line 2619)
+  - Conditional display: Button only shown if require_supervisor_check=true (line 2617)
+- Display: "{count} items" showing supervisor_checklist_template_ids.length
+- Styling: Flex layout, gap-2, checkbox + link button
 
 **Backend:**
-- Field: schedule_template_rows.require_supervisor_check (boolean) + supervisor_checklist_template_ids (jsonb array)
-- Type: boolean + array of integers
-- Validation: Scope supervisor_checks for filtering
+- Fields:
+  - schedule_template_rows.require_supervisor_check (boolean)
+  - schedule_template_rows.supervisor_checklist_template_ids (jsonb array)
+- Scope: supervisor_checks scope (model line 33)
+- Service: TemplateInstantiator.create_checklist_items_for_task
+- Target: Copied to ProjectTask.requires_supervisor_check
 
 **How It Works:**
-Requires supervisor site visit with standardized checklist before task completion. Links specific checklist templates defining inspection points. Ensures quality control at critical construction phases.
+Requires supervisor to physically visit site and verify quality/completion using standardized checklists. Click checkbox to enable, then click items button to assign specific checklist templates. On job instantiation, checklist items created from templates. Supervisor gets notification to perform check before task can be marked complete. Ensures quality control at critical construction phases.
+
+**Interdependencies:**
+- Button only appears when checkbox enabled
+- Checklist templates selected via SupervisorChecklistModal
+- ChecklistTemplate records referenced by IDs
+- Copied to ProjectTask on job creation
 
 **Current Limitations:**
 - No supervisor assignment/scheduling
-- Cannot require multiple supervisor types
-- No automatic notification to supervisors`,
+- Cannot require multiple supervisor types (e.g., electrical + structural)
+- No automatic notification to supervisors
+- No check-in GPS/photo requirements
+- Cannot vary checklist by job type`,
     autoComplete: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2648-2659
-- Rendering: Button "(X tasks)" opens AutoCompleteTasksModal
-- Event handlers: Modal manages task selection for auto-completion
+- Location: ScheduleTemplateEditor.jsx:2630-2641
+- Rendering: Button showing task count, 120px width, center-aligned, order: 15
+- Event handlers:
+  - onClick: setShowAutoCompleteModal(true) (line 2634)
+  - Opens AutoCompleteTasksModal for task selection
+- Display: "{count} tasks" (e.g., "3 tasks")
+- Styling: Text-xs, indigo link color, hover underline, cursor-pointer
 
 **Backend:**
-- Field: schedule_template_rows.auto_complete_task_ids
-- Type: jsonb array of integers
-- Validation: None
+- Fields:
+  - schedule_template_rows.auto_complete_task_ids (jsonb array of task IDs)
+  - schedule_template_rows.auto_complete_predecessors (boolean)
+- Validation: None (optional feature)
+- Service: Task completion logic checks this field
 
 **How It Works:**
-When this task completes, automatically marks specified tasks as complete. Useful for milestone tasks that signal completion of preparatory work or grouped activities (e.g., "Foundation Complete" auto-completes all foundation subtasks).
+When THIS task completes, automatically marks specified tasks as complete. Useful for milestone tasks that signal completion of multiple other tasks. Example: "Final Inspection Passed" auto-completes "Frame Complete", "Electrical Complete", "Plumbing Complete". Click button to open modal, select which tasks should auto-complete.
+
+**Interdependencies:**
+- Modal displays all tasks in template for selection
+- Task completion service checks auto_complete_task_ids
+- Can create circular dependencies if misconfigured
+- auto_complete_predecessors flag auto-completes all predecessor tasks
 
 **Current Limitations:**
-- No conditional auto-completion logic
+- No circular dependency detection/warning
 - Cannot auto-complete based on percentage/partial completion
-- No cascade notification to affected task assignees`,
+- No cascade notification to affected task assignees
+- No audit trail showing which task triggered auto-completion
+- Cannot conditionally auto-complete (always/never, no "if X then Y")`,
     subtasks: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2661-2672
-- Rendering: Button "(X subtasks)" opens SubtasksModal
-- Event handlers: Modal manages subtask names/templates with count validation
+- Location: ScheduleTemplateEditor.jsx:2643-2654
+- Rendering: Button showing subtask count, 120px width, center-aligned, order: 16
+- Event handlers:
+  - onClick: setShowSubtasksModal(true) (line 2647)
+  - Opens SubtasksModal for subtask management
+- Display: "{count} subtasks" (e.g., "3 subtasks")
+- Styling: Text-xs, indigo link color, hover underline, cursor-pointer
 
 **Backend:**
-- Field: schedule_template_rows.has_subtasks (boolean) + subtask_count (integer) + subtask_names (jsonb array) + subtask_template_ids (jsonb array)
-- Type: boolean + integer + arrays
-- Validation: subtask_names.count must equal subtask_count
+- Fields:
+  - schedule_template_rows.has_subtasks (boolean)
+  - schedule_template_rows.subtask_count (integer)
+  - schedule_template_rows.subtask_names (jsonb array of strings)
+  - schedule_template_rows.subtask_template_ids (jsonb array of integers)
+- Validation: subtask_count must match subtask_names.length (model lines 88-95)
+- Scope: with_subtasks scope (model line 34)
+- Service: TaskSpawner.spawn_subtasks on parent task start
 
 **How It Works:**
-Auto-creates child tasks when parent task starts. Breaks complex activities into manageable steps with individual tracking. Subtask completion can be tracked independently while rolling up to parent progress.
+Auto-creates child tasks when parent task starts in job schedule. Breaks complex activities into manageable steps with individual tracking. Example: "Frame House" → ["Frame Walls", "Frame Roof", "Frame Internal"]. Each subtask can be tracked and completed independently while rolling up to parent progress. Subtasks defined by names OR template IDs.
+
+**Interdependencies:**
+- Triggers TaskSpawner service when parent task starts
+- subtask_names and subtask_count must stay synchronized (validation)
+- subtask_template_ids references ScheduleTemplate records
+- Modal manages both name list and template selection
 
 **Current Limitations:**
 - No percentage-based parent completion from subtasks
 - Cannot dynamically add/remove subtasks after instantiation
-- No subtask dependency management`,
-    linkedTasks: `**Status:** Fully functional ✅
+- No subtask dependency management (all independent)
+- No parent-child progress rollup visualization
+- Cannot nest subtasks (one level only)`,
+    linkedTasks: `**Status:** Partially implemented ⚠️
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2674-2685
-- Rendering: Button "(X linked)" opens LinkedTasksModal
-- Event handlers: Modal manages task linkage selection
+- Location: ScheduleTemplateEditor.jsx:2656-2667
+- Rendering: Button showing linked task count, 120px width, center-aligned, order: 17
+- Event handlers:
+  - onClick: setShowLinkedTasksModal(true) (line 2660)
+  - Opens LinkedTasksModal (may not be fully implemented)
+- Display: "{count} tasks" (e.g., "2 tasks")
+- Styling: Text-xs, indigo link color, hover underline, cursor-pointer
 
 **Backend:**
-- Field: schedule_template_rows.linked_task_ids
-- Type: text (JSON serialized)
-- Validation: serialize :linked_task_ids, coder: JSON
+- Fields:
+  - schedule_template_rows.linked_task_ids (text, JSON serialized, model line 7)
+  - schedule_template_rows.linked_template_id (integer FK, optional)
+- Validation: None
+- Status: Database fields exist, linking/synchronization logic incomplete
 
 **How It Works:**
-Creates relationships between tasks for grouping or cross-template dependencies. Enables task coordination across different schedule templates or job phases without formal predecessor relationships.
+INTENDED: Create relationships between tasks for grouping or cross-template dependencies. Enable task coordination across different schedule templates or job phases without formal predecessor relationships.
+
+CURRENT STATUS: UI exists, database fields exist, but full linking logic not implemented. Modal may not function correctly. Linking behavior undefined.
+
+**Known Issues:**
+- Linking logic incomplete - unclear what happens when tasks linked
+- No synchronization between linked tasks
+- linked_template_id purpose unclear
+- No validation of linked_task_ids references
 
 **Current Limitations:**
 - No visualization of linked task relationships
 - Cannot specify link type/purpose
-- No automatic notifications when linked tasks update`,
-    manualTask: `**Status:** Fully functional ✅
+- No automatic notifications when linked tasks update
+- Cross-template linking not functional
+- May be deprecated - verify with product owner`,
+    manualTask: `**Status:** Not implemented ❌
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2687-2697
-- Rendering: Checkbox input
-- Event handlers: handleCheckboxChange('manual_task', checked)
+- Location: ScheduleTemplateEditor.jsx:2669-2679
+- Rendering: Checkbox input, 80px width, center-aligned, order: 18
+- Event handlers:
+  - onChange: onUpdate({ manual_task: checked }) (line 2675)
+  - Immediate update, direct to onUpdate (not handleFieldChange)
+- Styling: h-4 w-4, indigo-600, rounded, cursor-pointer
 
 **Backend:**
 - Field: schedule_template_rows.manual_task
-- Type: boolean (default false)
-- Validation: None
+- Type: boolean (default: false)
+- Status: Field exists, NO filtering logic implemented
+- Service: NOT USED - tasks with this flag still auto-load on job creation
 
 **How It Works:**
-Excludes task from automatic schedule instantiation. Template defines task structure but user must manually create/activate when needed. Useful for optional or conditional work items.
+INTENDED: Manual tasks should never get automatically loaded into job schedules. Must be manually created by user. Useful for optional or conditional work items.
+
+CURRENT STATUS: Checkbox works, value saves to database, but NO filtering in Schedule::TemplateInstantiator. Tasks with manual_task=true still auto-instantiate when job created.
+
+**Known Issues:**
+- Checkbox saves to DB but has no effect
+- TemplateInstantiator doesn't check manual_task flag
+- Feature appears functional but is non-functional
+
+**Implementation Required:**
+- Add filter to TemplateInstantiator: skip if manual_task=true
+- Add scope: manual_tasks for filtering
+- Add UI to manually create manual tasks in job schedule
 
 **Current Limitations:**
-- No conditional activation rules (e.g., "add if budget > X")
+- Feature completely non-functional (UI only)
+- No conditional activation rules
 - Cannot suggest manual task creation based on job attributes
 - No tracking of manual task usage frequency`,
-    multipleItems: `**Status:** Fully functional ✅
+    multipleItems: `**Status:** Not implemented ❌
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2699-2709
-- Rendering: Checkbox input
-- Event handlers: handleCheckboxChange('allow_multiple_instances', checked)
+- Location: ScheduleTemplateEditor.jsx:2681-2691
+- Rendering: Checkbox input, 80px width, center-aligned, order: 19
+- Event handlers:
+  - onChange: onUpdate({ allow_multiple_instances: checked }) (line 2687)
+  - Immediate update, direct to onUpdate
+- Styling: h-4 w-4, indigo-600, rounded, cursor-pointer
 
 **Backend:**
 - Field: schedule_template_rows.allow_multiple_instances
-- Type: boolean (default false)
-- Validation: None
+- Type: boolean (default: false)
+- Status: Field exists, NO prompt/duplication logic implemented
+- Service: NOT USED - no multi-instance creation logic
 
 **How It Works:**
-Upon task completion, prompts user to create additional instances with auto-incrementing names (e.g., "Frame Inspection", "Frame Inspection 2"). Handles recurring work items without manual template duplication.
+INTENDED: Upon task completion, prompt user to create additional instances with auto-incrementing names (e.g., "Frame Inspection", "Frame Inspection 2", "Frame Inspection 3"). Handles recurring work items without manual template duplication.
+
+CURRENT STATUS: Checkbox works, value saves to database, but NO prompting or instance creation logic in ProjectTask completion handlers.
+
+**Known Issues:**
+- Checkbox saves to DB but has no effect
+- No prompt triggered on task completion
+- No instance numbering logic
+- Feature appears functional but is non-functional
+
+**Implementation Required:**
+- Add completion hook to ProjectTask model
+- Prompt user: "Create another instance of this task?"
+- Auto-increment naming: append " 2", " 3", etc.
+- Copy all attributes to new instance
 
 **Current Limitations:**
+- Feature completely non-functional (UI only)
 - No automatic instance creation based on quantity
 - Cannot pre-define instance count
 - No bulk instance management`,
-    orderRequired: `**Status:** Fully functional ✅
+    orderRequired: `**Status:** Not implemented ❌
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2711-2721
-- Rendering: Checkbox input
-- Event handlers: handleCheckboxChange('order_required', checked)
+- Location: ScheduleTemplateEditor.jsx:2693-2703
+- Rendering: Checkbox input, 100px width, center-aligned, order: 20
+- Event handlers:
+  - onChange: onUpdate({ order_required: checked }) (line 2699)
+  - Immediate update, direct to onUpdate
+- Styling: h-4 w-4, indigo-600, rounded, cursor-pointer
+- Label: "Order Time" (column config line 107)
 
 **Backend:**
 - Field: schedule_template_rows.order_required
-- Type: boolean (default false)
-- Validation: None
+- Type: boolean (default: false)
+- Status: Field exists, NO tracking or notification logic
+- Service: NOT USED - no schedule adjustment logic
 
 **How It Works:**
-Flags tasks with material order lead time requirements. Tracked for planning but not currently enforced in scheduling logic. Intended for future lead time automation.
+INTENDED: Flag tasks with material order lead time requirements. Tracked for planning and should automatically adjust schedule dates to account for order processing time.
+
+CURRENT STATUS: Checkbox works, value saves to database, but NO integration with cascade service, no lead time calculations, no notifications.
+
+**Known Issues:**
+- Checkbox saves to DB but has no effect
+- No schedule date adjustment for lead times
+- Lead time duration not specified (boolean only, no days value)
+- No integration with Auto PO timing
+- Feature appears functional but is non-functional
+
+**Implementation Required:**
+- Add order_lead_time_days field (integer)
+- Integrate with ScheduleCascadeService
+- Adjust task start date back by lead time
+- Trigger notification when order due date approaches
 
 **Current Limitations:**
-- No automatic schedule adjustment for lead times
-- Lead time duration not specified (boolean only)
-- No integration with Auto PO timing`,
-    callUpRequired: `**Status:** Fully functional ✅
+- Feature completely non-functional (UI only)
+- No automatic schedule adjustment
+- Lead time duration not configurable
+- No integration with Auto PO
+- No vendor lead time database`,
+    callUpRequired: `**Status:** Not implemented ❌
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2723-2733
-- Rendering: Checkbox input
-- Event handlers: handleCheckboxChange('call_up_required', checked)
+- Location: ScheduleTemplateEditor.jsx:2705-2715
+- Rendering: Checkbox input, 100px width, center-aligned, order: 21
+- Event handlers:
+  - onChange: onUpdate({ call_up_required: checked }) (line 2711)
+  - Immediate update, direct to onUpdate
+- Styling: h-4 w-4, indigo-600, rounded, cursor-pointer
+- Label: "Call Up" (column config line 108)
 
 **Backend:**
 - Field: schedule_template_rows.call_up_required
-- Type: boolean (default false)
-- Validation: None
+- Type: boolean (default: false)
+- Status: Field exists, NO notification or coordination logic
+- Service: NOT USED - no supplier notification system
 
 **How It Works:**
-Flags tasks requiring supplier call-up/booking advance notice. Tracked for planning but not currently enforced. Intended for future supplier coordination automation.
+INTENDED: Flags tasks requiring supplier call-up/booking advance notice. Should trigger automatic supplier notification X days before task start to schedule delivery/service.
+
+CURRENT STATUS: Checkbox works, value saves to database, but NO supplier notification system, no call-up timing logic, no schedule integration.
+
+**Known Issues:**
+- Checkbox saves to DB but has no effect
+- No automatic supplier notification
+- Call-up duration not specified (boolean only, no days value)
+- No integration with schedule cascade
+- Feature appears functional but is non-functional
+
+**Implementation Required:**
+- Add call_up_lead_time_days field (integer)
+- Build supplier notification system
+- Calculate notification date: task_start - call_up_lead_time
+- Integrate with supplier contact system
+- Add booking confirmation workflow
 
 **Current Limitations:**
+- Feature completely non-functional (UI only)
 - No automatic supplier notification
-- Call-up duration not specified (boolean only)
-- No integration with schedule cascade`,
-    planType: `**Status:** Fully functional ✅
+- Call-up duration not configurable
+- No supplier booking confirmation
+- No integration with schedule dates`,
+    planType: `**Status:** Partially implemented ⚠️
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2735-2745
-- Rendering: Checkbox input
-- Event handlers: handleCheckboxChange('plan_required', checked)
+- Location: ScheduleTemplateEditor.jsx:2717-2727
+- Rendering: Checkbox input, 80px width, center-aligned, order: 22
+- Event handlers:
+  - onChange: onUpdate({ plan_required: checked }) (line 2723)
+  - Immediate update, direct to onUpdate
+- Styling: h-4 w-4, indigo-600, rounded, cursor-pointer
+- Label: "Plan" (column config line 109)
 
 **Backend:**
 - Field: schedule_template_rows.plan_required
-- Type: boolean (default false)
-- Validation: None
+- Type: boolean (default: false)
+- Status: Field exists, conditional activation logic INCOMPLETE
+- Plan types: PERSPECTIVE, SITE PLAN, SLAB PLAN, etc. (17 cert drawing types)
 
 **How It Works:**
-Conditionally activates documentation tasks based on job plan type selection (PERSPECTIVE, SITE PLAN, ELEVATIONS, etc.). Task only instantiated if corresponding plan tab selected during job setup.
+INTENDED: Task only activates in job schedule if the selected plan tab is required for the job. Conditionally activates documentation tasks based on job plan type selection during job setup.
+
+CURRENT STATUS: UI checkbox works, value saves to database, but conditional activation logic in TemplateInstantiator incomplete. Tasks appear in job schedules regardless of job's plan requirements. Plan type selection unclear (checkbox vs dropdown mismatch).
+
+**Known Issues:**
+- UI shows checkbox but should be dropdown for plan type selection
+- No plan type specification (which plan types trigger this task?)
+- Boolean field but should store plan type enum/array
+- Activation logic not implemented in TemplateInstantiator
+- Tasks instantiate regardless of plan_required value
+
+**Implementation Required:**
+- Change to dropdown: select plan type (PERSPECTIVE, SITE PLAN, etc.)
+- Change field to plan_types array (multiple selection)
+- Add job.required_plan_types field
+- Filter in TemplateInstantiator: skip if plan types don't match
+- Add plan availability validation
 
 **Current Limitations:**
-- No plan type specification (which plan types trigger)
+- Incorrect UI (checkbox vs dropdown)
+- No plan type specification
 - Boolean only (no multi-plan-type support)
+- Activation filtering not implemented
 - No plan availability validation`,
     actions: `**Status:** Fully functional ✅
 

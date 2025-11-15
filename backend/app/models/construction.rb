@@ -40,7 +40,7 @@ class Construction < ApplicationRecord
       project_code: "PROJ-#{id}",
       project_manager: project_manager,
       status: 'planning',
-      start_date: Date.current
+      start_date: CompanySetting.today
     )
   end
 

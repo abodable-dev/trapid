@@ -18,7 +18,7 @@ export default function GanttRulesModal({ isOpen, onClose }) {
     try {
       setLoading(true)
       // Fetch the Gantt Bible (The Bible - Rules Only)
-      const response = await fetch('/GANTT_SCHEDULE_RULES.md')
+      const response = await fetch('/GANTT_BIBLE.md')
       const text = await response.text()
       setContent(text)
     } catch (err) {

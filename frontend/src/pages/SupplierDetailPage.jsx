@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { getNowInCompanyTimezone, getTodayAsString, getRelativeTime } from '../utils/timezoneUtils'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { api } from '../api'
 import {
@@ -131,7 +132,7 @@ export default function SupplierDetailPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${supplier.name.replace(/[^a-z0-9]/gi, '_')}_pricebook_${new Date().toISOString().split('T')[0]}.xlsx`
+      a.download = `${supplier.name.replace(/[^a-z0-9]/gi, '_')}_pricebook_${getTodayAsString()}.xlsx`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)

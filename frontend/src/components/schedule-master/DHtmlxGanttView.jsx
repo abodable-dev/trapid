@@ -8,6 +8,7 @@ import CascadeDependenciesModal from './CascadeDependenciesModal'
 import { Menu } from '@headlessui/react'
 import { createDebouncedStorageSetter } from '../../utils/debounce'
 import { ganttDebug, bugHunter } from '../../utils/ganttDebugger'
+import { getTodayInCompanyTimezone as getToday, getNowInCompanyTimezone, getCompanyTimezone } from '../../utils/timezoneUtils'
 
 /**
  * DHtmlxGanttView - DHTMLX Gantt implementation for comparison with SVAR Gantt
@@ -277,8 +278,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
           console.warn('Failed to load company settings, using default region QLD:', error)
         }
 
-        // Now fetch holidays for that region
-        const currentYear = new Date().getFullYear()
+        // Now fetch holidays for that region (use company timezone for current year)
+        const currentYear = getToday().getFullYear()
         const response = await api.get(`/api/v1/public_holidays/dates?region=${region}&year_start=${currentYear}&year_end=${currentYear + 2}`)
         const holidays = response.dates || []
         console.log('DHTMLX Gantt - Fetched public holidays:', holidays)
@@ -431,12 +432,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
 
     // Extend timeline range to show past and future dates
     // Set start date to 6 months BEFORE today (to see historical data)
-    const timelineStart = new Date()
+    const timelineStart = getToday()
     timelineStart.setMonth(timelineStart.getMonth() - 6)
     timelineStart.setHours(0, 0, 0, 0)
 
     // Set end date to 2 years from today to give plenty of room for dragging
-    const timelineEnd = new Date()
+    const timelineEnd = getToday()
     timelineEnd.setFullYear(timelineEnd.getFullYear() + 2)
     timelineEnd.setHours(23, 59, 59, 999)
 
@@ -1194,7 +1195,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       const dateStr = formatDateLocal(date) // Use LOCAL timezone
 
       // Get today's date dynamically
-      const today = new Date()
+      const today = getToday()
       today.setHours(0, 0, 0, 0)
       const todayStr = formatDateLocal(today) // Use LOCAL timezone
 
@@ -1216,7 +1217,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       const dateStr = formatDateLocal(date) // Use LOCAL timezone
 
       // Get today's date dynamically
-      const today = new Date()
+      const today = getToday()
       today.setHours(0, 0, 0, 0)
       const todayStr = formatDateLocal(today) // Use LOCAL timezone
 
@@ -1234,7 +1235,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     }
 
     // Log today's date for debugging
-    const debugToday = new Date()
+    const debugToday = getToday()
     console.log('DHTMLX Gantt - Today\'s date (LOCAL):', formatDateLocal(debugToday))
     console.log('DHTMLX Gantt - Public holidays:', publicHolidays)
 
@@ -1957,7 +1958,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                 manuallyPositionedTasks.current.add(task.id)
 
                 // Calculate day offset
-                const projectStartDate = new Date()
+                const projectStartDate = getToday()
                 projectStartDate.setHours(0, 0, 0, 0)
                 const taskStartDate = new Date(task.start_date)
                 taskStartDate.setHours(0, 0, 0, 0)
@@ -2007,7 +2008,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               task.$manuallyPositioned = true
               manuallyPositionedTasks.current.add(task.id)
 
-              const projectStartDate = new Date()
+              const projectStartDate = getToday()
               projectStartDate.setHours(0, 0, 0, 0)
               const taskStartDate = new Date(task.start_date)
               taskStartDate.setHours(0, 0, 0, 0)
@@ -2058,7 +2059,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
               }
             })
 
-            const projectStartDate = new Date()
+            const projectStartDate = getToday()
             projectStartDate.setHours(0, 0, 0, 0)
             const taskStartDate = new Date(task.start_date)
             taskStartDate.setHours(0, 0, 0, 0)
@@ -2124,7 +2125,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
         console.log('📏 Task resized - new duration:', task.duration)
 
         // Calculate day offset from today (project start)
-        const projectStartDate = new Date()
+        const projectStartDate = getToday()
         projectStartDate.setHours(0, 0, 0, 0)
         const taskStartDate = new Date(task.start_date)
         taskStartDate.setHours(0, 0, 0, 0)
@@ -2819,7 +2820,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             // Calculate day offset for saving
             let dayOffset = task.start_date_offset
             if (dayOffset === undefined && task.start_date) {
-              const projectStartDate = new Date()
+              const projectStartDate = getToday()
               projectStartDate.setHours(0, 0, 0, 0)
               const taskStartDate = new Date(task.start_date)
               taskStartDate.setHours(0, 0, 0, 0)
@@ -2889,7 +2890,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             manuallyPositionedTasks.current.add(taskId)
 
             // Calculate day offset for saving
-            const projectStartDate = new Date()
+            const projectStartDate = getToday()
             projectStartDate.setHours(0, 0, 0, 0)
             const taskStartDate = new Date(task.start_date)
             taskStartDate.setHours(0, 0, 0, 0)
@@ -2923,7 +2924,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
             pendingUnlocks.current.add(taskId) // Prevent re-locking during data reload
 
             // Immediately recalculate task position based on predecessors
-            const projectStartDate = new Date()
+            const projectStartDate = getToday()
             projectStartDate.setHours(0, 0, 0, 0)
 
             // Find the original task data
@@ -3566,29 +3567,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     const taskStartDates = new Map()
     const calculating = new Set() // Track tasks currently being calculated to detect circular dependencies
 
-    // Get today's date in the company timezone (Australia/Brisbane)
+    // Use centralized timezone utility function (imported at top of file)
     // This ensures consistent date calculations regardless of user's local timezone
-    const getTodayInCompanyTimezone = () => {
-      // Get the current date/time in the company timezone
-      const nowInTz = new Date().toLocaleString('en-US', {
-        timeZone: companyTimezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      })
-
-      // Parse the date parts (MM/DD/YYYY format from en-US)
-      const [month, day, year] = nowInTz.split('/').map(Number)
-
-      // Create a Date object in LOCAL timezone (not UTC)
-      // DHTMLX Gantt expects local dates, so we create a local date that represents
-      // midnight in the company timezone's calendar date
-      const dateInTz = new Date(year, month - 1, day, 0, 0, 0, 0)
-
-      return dateInTz
-    }
-
-    const projectStartDate = getTodayInCompanyTimezone()
+    const projectStartDate = getToday()
     console.log(`📅 Project start date (${companyTimezone}):`, projectStartDate.toISOString(), 'Local:', projectStartDate.toString())
 
     // Helper function to calculate finish date
@@ -3844,7 +3825,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
       // 1. TODAY - 1 day (for screen context)
       // 2. Earliest NON-COMPLETED task - 1 day (to bring future tasks into view)
       // But if that date is a weekend/holiday, skip to next working day
-      const today = new Date()
+      const today = getToday()
       today.setHours(0, 0, 0, 0)
 
       // Calculate option 1: Today - 1 day
@@ -3927,7 +3908,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
     // FIRST: Save the moved task's new position
     const movedTaskStart = new Date(movedTask.start_date)
     movedTaskStart.setHours(0, 0, 0, 0)
-    const projectStartDate = new Date()
+    const projectStartDate = getToday()
     projectStartDate.setHours(0, 0, 0, 0)
     const movedTaskDayOffset = Math.floor((movedTaskStart - projectStartDate) / (1000 * 60 * 60 * 24))
 
@@ -5317,7 +5298,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, onUpdateTask }
                   // Calculate day offset for saving
                   let dayOffset = task.start_date_offset
                   if (dayOffset === undefined && task.start_date) {
-                    const projectStartDate = new Date()
+                    const projectStartDate = getToday()
                     projectStartDate.setHours(0, 0, 0, 0)
                     const taskStartDate = new Date(task.start_date)
                     taskStartDate.setHours(0, 0, 0, 0)
