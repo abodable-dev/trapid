@@ -229,6 +229,22 @@ class Api::V1::BugHunterTestsController < ApplicationController
       'sunday' => true
     }
 
+    # Helper: Check if a date is a working day
+    def is_working_day?(date, working_days)
+      day_name = date.strftime('%A').downcase
+      working_days[day_name] == true
+    end
+
+    # RULE #9.3: If reference_date (today) is not a working day, advance to next working day
+    # This matches frontend logic where tasks with no predecessors start on next working day
+    project_start_date = reference_date.dup
+    unless is_working_day?(project_start_date, working_days)
+      loop do
+        project_start_date += 1.day
+        break if is_working_day?(project_start_date, working_days)
+      end
+    end
+
     # Build list of non-working days for reporting
     non_working_days = working_days.select { |_day, is_working| !is_working }.keys
 
@@ -238,7 +254,18 @@ class Api::V1::BugHunterTestsController < ApplicationController
     total_locked_tasks = 0
 
     template.schedule_template_rows.each do |task|
-      actual_date = reference_date + task.start_date.days
+      # Calculate actual date: If task has no dependencies, it starts from project_start_date (first working day)
+      # Otherwise, use the raw offset from reference_date
+      has_dependencies = task.predecessor_ids.present? && task.predecessor_ids.any?
+
+      actual_date = if has_dependencies
+        # Tasks with dependencies use raw offset (dependencies will push it to working days)
+        reference_date + task.start_date.days
+      else
+        # Tasks without dependencies start from first working day, then add offset
+        project_start_date + task.start_date.days
+      end
+
       day_name = actual_date.strftime('%A').downcase
       is_working_day = working_days[day_name] == true
       is_locked = task.supplier_confirm? || task.confirm? || task.start? || task.complete? || task.manually_positioned?
