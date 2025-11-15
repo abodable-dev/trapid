@@ -17,6 +17,13 @@ export default function DocumentationPage() {
     loadDocs()
   }, [])
 
+  // Auto-load Bible if no doc is selected
+  useEffect(() => {
+    if (docs.length > 0 && !searchParams.get('doc')) {
+      setSearchParams({ doc: 'bible' })
+    }
+  }, [docs, searchParams, setSearchParams])
+
   // Load specific doc from URL param
   useEffect(() => {
     const docId = searchParams.get('doc')
