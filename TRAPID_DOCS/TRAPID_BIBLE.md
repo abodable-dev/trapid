@@ -1,7 +1,7 @@
 # TRAPID BIBLE - Development Rules
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 **Authority Level:** ABSOLUTE
 **Audience:** Claude Code + Human Developers
 
@@ -78,7 +78,7 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 **Audience:** Claude Code + Human Developers
 **Authority:** ABSOLUTE
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## RULE #0: Documentation Maintenance
 
@@ -100,6 +100,59 @@ This file is the **absolute authority** for all Trapid development where chapter
 2. Resolving an existing bug
 3. Adding architecture/background knowledge
 4. Explaining WHY a rule exists
+
+### Bug Fix Documentation Workflow
+
+**🔴 CRITICAL: Every bug fix MUST be documented in Lexicon**
+
+When fixing a bug, follow this workflow:
+
+1. **Fix the bug** - Write the code fix
+2. **Update Lexicon** - Document in `TRAPID_LEXICON.md` under correct chapter
+3. **Update Bible** - Add new RULE if bug revealed a coding pattern violation
+4. **Test the fix** - Verify bug is resolved
+5. **Commit** - Include Lexicon update in same commit as fix
+
+**Lexicon Bug Entry Format:**
+```markdown
+### ✅ BUG-XXX: [Bug Title] (RESOLVED)
+
+**Status:** ✅ RESOLVED
+**Date Discovered:** YYYY-MM-DD
+**Date Resolved:** YYYY-MM-DD
+**Severity:** Low/Medium/High/Critical
+
+#### Summary
+Brief description of the bug and its impact.
+
+#### Root Cause
+**Backend/Frontend/Both:** Detailed explanation of what caused the bug.
+
+**Example Problem:**
+- Concrete example showing the bug in action
+
+#### Solution
+**Backend Fix:**
+```language
+// ❌ WRONG - description
+code example
+
+// ✅ CORRECT - description
+code example
+```
+
+**Files Changed:**
+- `path/to/file.ext:line` - description
+
+#### Impact
+- ✅ What was fixed
+- ✅ What improved
+- ✅ Related tests that now pass
+
+**Related Rule:** Bible Chapter X, RULE #Y.Z (if applicable)
+```
+
+**Example Reference:** See `BUG-004: Timezone Violations` in Lexicon Chapter 9
 
 ## RULE #1: Code Quality Standards
 
@@ -319,6 +372,40 @@ Question: How should I implement X?
 3. Follow the higher-authority document (per hierarchy above)
 4. Update the lower-authority document once conflict is resolved
 
+### Documentation Timestamp Requirements
+
+✅ **MUST include date AND time when updating any Trinity documentation:**
+
+**Required Format:**
+```
+**Last Updated:** YYYY-MM-DD HH:MM TIMEZONE
+```
+
+**Examples:**
+- `**Last Updated:** 2025-11-16 09:01 AEST`
+- `**Last Updated:** 2025-11-16 14:30 PST`
+- `**Last Updated:** 2025-11-16 22:15 UTC`
+
+**Applies to:**
+- TRAPID_BIBLE.md (this document)
+- TRAPID_LEXICON.md
+- TRAPID_USER_MANUAL.md
+- All chapter headers within these documents
+- CONTINUATION_INSTRUCTIONS.md
+
+❌ **NEVER:**
+- Use date-only format (e.g., `2025-11-16`)
+- Omit timezone
+- Use relative time (e.g., "yesterday")
+
+**Why:**
+- Tracks when information was last verified
+- Helps identify stale content
+- Critical for compliance and audit trails
+- Enables users to trust documentation currency
+
+---
+
 ### What if Bible Rule Seems Wrong?
 
 ❌ **NEVER ignore the rule**
@@ -339,7 +426,7 @@ Question: How should I implement X?
 │ 📘 USER MANUAL (HOW): Chapter 1                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## Overview
 
@@ -892,7 +979,7 @@ working_days = @company_settings.working_days
 │ 📘 USER MANUAL (HOW): Chapter 3                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## Overview
 
@@ -1347,7 +1434,7 @@ validates :password, length: { minimum: 12 }, format: PASSWORD_REGEX, on: :creat
 │ 📘 USER MANUAL (HOW): Chapter 4                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## Overview
 
@@ -2216,7 +2303,7 @@ POST   /api/v1/suppliers/:id/pricebook/import
 │ 📘 USER MANUAL (HOW): Chapter 5                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## Overview
 
@@ -2956,7 +3043,7 @@ POST   /api/v1/projects/:project_id/tasks/:id/auto_complete_subtasks
 │ 📘 USER MANUAL (HOW): Chapter 6                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## Overview
 
@@ -4925,6 +5012,6 @@ XERO_WEBHOOK_KEY=your_webhook_signing_key
 
 ---
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 **Maintained By:** Development Team
 **Authority Level:** ABSOLUTE

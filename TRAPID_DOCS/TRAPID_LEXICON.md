@@ -1,6 +1,6 @@
 # TRAPID LEXICON - Bug History & Knowledge Base
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 **Purpose:** Centralized knowledge of bugs, fixes, and lessons learned
 **Audience:** Claude Code + Human Developers
 
@@ -59,7 +59,7 @@ This document contains **KNOWLEDGE**, not rules:
 │ 📘 USER MANUAL (HOW): Chapter 0                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## Architecture: Rails + React Stack
 
@@ -141,7 +141,7 @@ If schema.rb changed but no new migration exists, agent now creates one before d
 │ 📘 USER MANUAL (HOW): Chapter 1                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## 🐛 Bug Hunter: Authentication & Users
 
@@ -616,7 +616,7 @@ end
 │ 📘 USER MANUAL (HOW): Chapter 2                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 **Content TBD** - To be populated when working on Admin features
 
@@ -629,7 +629,7 @@ end
 │ 📘 USER MANUAL (HOW): Chapter 3                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## 🐛 Bug Hunter: Contacts & Relationships
 
@@ -1325,7 +1325,7 @@ contact.update!(
 │ 📘 USER MANUAL (HOW): Chapter 4                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## 🐛 Bug Hunter: Price Books & Suppliers
 
@@ -2228,7 +2228,7 @@ end
 │ 📘 USER MANUAL (HOW): Chapter 5                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## 🐛 Bug Hunter: Jobs & Construction Management
 
@@ -2904,7 +2904,7 @@ To add new spawned task types (beyond photo/cert/subtask):
 │ 📘 USER MANUAL (HOW): Chapter 6                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## 🐛 Bug Hunter: Estimates & Quoting
 
@@ -3636,7 +3636,7 @@ end
 │ 📘 USER MANUAL (HOW): Chapter 7                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 **Content TBD** - To be populated when working on AI features
 
@@ -3649,7 +3649,7 @@ end
 │ 📘 USER MANUAL (HOW): Chapter 8                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## 🐛 Bug Hunter: Purchase Orders
 
@@ -4252,19 +4252,32 @@ const updateData = {
 **Severity:** Medium (Data correctness)
 
 #### Summary
-Schedule generation services were using server timezone (UTC) instead of company timezone, causing tasks to be scheduled on wrong days (especially weekends).
+Both backend and frontend had timezone violations causing tasks to be scheduled on wrong days.
+
+**Backend:** Services using server timezone (UTC) instead of company timezone
+**Frontend:** Using buggy `toLocaleString()` + `new Date()` pattern that creates Date in browser timezone
 
 #### Root Cause
+
+**Backend (3 violations):**
 Three services were using `Date.current` which uses the server's timezone, not the company's timezone:
 1. `template_instantiator.rb` - When creating schedule from template
 2. `generator_service.rb` (2 places) - When calculating task dates
 
+**Frontend (2 violations):**
+Two functions in `timezoneUtils.js` were using buggy pattern:
+1. `getTodayInCompanyTimezone()` - Getting today's date
+2. `getNowInCompanyTimezone()` - Getting current date-time
+
 **Example Problem:**
 - Server in UTC: Saturday November 15, 2025
+- Browser in PST: Saturday November 15, 2025
 - Company in AU: Sunday November 16, 2025
-- Tasks scheduled for "today" would land on Saturday in UTC, but company expects Sunday
+- **Result:** Tasks scheduled for Sunday appeared on Saturday for both server and browser users!
 
 #### Solution
+
+**Backend Fix:**
 Changed all instances from `Date.current` to `CompanySetting.today`:
 
 ```ruby
@@ -4275,17 +4288,43 @@ project_start = project.start_date || Date.current
 project_start = project.start_date || CompanySetting.today
 ```
 
+**Frontend Fix:**
+Changed from `toLocaleString()` to `Intl.DateTimeFormat.formatToParts()`:
+
+```javascript
+// ❌ WRONG - Creates Date in browser timezone!
+const dateStr = now.toLocaleString('en-US', { timeZone: companyTimezone })
+const dateInTZ = new Date(dateStr)  // Browser parses this in LOCAL timezone
+
+// ✅ CORRECT - Parse parts to build Date correctly
+const formatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: companyTimezone,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit'
+})
+const parts = formatter.formatToParts(now)
+const year = parts.find(p => p.type === 'year').value
+const month = parts.find(p => p.type === 'month').value
+const day = parts.find(p => p.type === 'day').value
+const dateInTZ = new Date(`${year}-${month}-${day}T00:00:00`)  // Always UTC midnight
+```
+
 **Files Changed:**
 - `backend/app/services/schedule/template_instantiator.rb:155`
 - `backend/app/services/schedule/generator_service.rb:230`
 - `backend/app/services/schedule/generator_service.rb:258`
-- `backend/app/controllers/api/v1/bug_hunter_tests_controller.rb:219` (also fixed)
+- `backend/app/controllers/api/v1/bug_hunter_tests_controller.rb:219`
+- `frontend/src/utils/timezoneUtils.js:47-68` (getTodayInCompanyTimezone)
+- `frontend/src/utils/timezoneUtils.js:74-99` (getNowInCompanyTimezone)
 
 #### Impact
-- Schedule templates now instantiate using company timezone
-- Task generation respects company working days correctly
-- Prevents tasks from landing on weekends due to timezone mismatch
-- Bug Hunter working-days-enforcement test now passes
+- ✅ Schedule templates now instantiate using company timezone
+- ✅ Task generation respects company working days correctly
+- ✅ Frontend and backend now agree on "today"
+- ✅ Prevents tasks from landing on weekends due to timezone mismatch
+- ✅ Bug Hunter working-days-enforcement test now passes
+- ✅ Tasks with no predecessors start on next working day (Monday), not raw "today" (Sunday)
 
 **Related Rule:** Bible Chapter 9, RULE #9.3 (Company Settings - Working Days & Timezone)
 
@@ -5104,6 +5143,6 @@ heroku ps:restart solid_queue -a trapid-backend
 
 ---
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 **Maintained By:** Development Team
 **Review Schedule:** After each bug fix

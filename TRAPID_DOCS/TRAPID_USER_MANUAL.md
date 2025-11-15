@@ -1,7 +1,7 @@
 # TRAPID USER MANUAL
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 **Audience:** End Users (Non-Technical)
 
 ---
@@ -78,7 +78,7 @@ Trapid is a comprehensive construction management platform that helps you:
 │ 📕 LEXICON (BUGS):     Chapter 1 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## Getting Started with TRAPID
 
@@ -652,7 +652,7 @@ After 24 hours of inactivity:
 │ 📕 LEXICON (BUGS):     Chapter 3 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## What are Contacts?
 
@@ -936,7 +936,7 @@ See complete history of all interactions:
 │ 📕 LEXICON (BUGS):     Chapter 4 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## What are Price Books?
 
@@ -1068,7 +1068,7 @@ Before generating POs:
 │ 📕 LEXICON (BUGS):     Chapter 5 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## What is Jobs & Construction Management?
 
@@ -1170,7 +1170,7 @@ The system separates the physical job (Construction) from the schedule (Project)
 │ 📕 LEXICON (BUGS):     Chapter 6 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## What are Estimates?
 
@@ -1297,7 +1297,7 @@ Think of estimates as the bridge between your estimating software and Trapid's j
 │ 📕 LEXICON (BUGS):     Chapter 8 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## What are Purchase Orders?
 
@@ -2051,7 +2051,7 @@ System tracks total paid and balance owing.
 │ 📕 LEXICON (BUGS):     Chapter 9 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 
 ## What is Schedule Master?
 
@@ -2785,5 +2785,5 @@ After setting up Xero integration:
 
 ---
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 09:01 AEST
 **Maintained By:** Development Team
