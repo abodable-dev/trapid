@@ -28,7 +28,7 @@ export default function DocumentationPage() {
 
   const loadDocs = async () => {
     try {
-      const response = await api.get('/documentation')
+      const response = await api.get('/api/v1/documentation')
       if (response.data.success) {
         setDocs(response.data.data)
       }
@@ -41,8 +41,8 @@ export default function DocumentationPage() {
     setLoading(true)
     try {
       const url = chapter
-        ? `/documentation/${docId}?chapter=${chapter}`
-        : `/documentation/${docId}`
+        ? `/api/v1/documentation/${docId}?chapter=${chapter}`
+        : `/api/v1/documentation/${docId}`
 
       const response = await api.get(url)
       if (response.data.success) {
@@ -68,7 +68,7 @@ export default function DocumentationPage() {
     if (!searchQuery.trim()) return
 
     try {
-      const response = await api.get(`/documentation/search?q=${encodeURIComponent(searchQuery)}`)
+      const response = await api.get(`/api/v1/documentation/search?q=${encodeURIComponent(searchQuery)}`)
       if (response.data.success) {
         setSearchResults(response.data.data.results)
       }
