@@ -195,8 +195,8 @@ class Api::V1::BugHunterTestsController < ApplicationController
   def run_working_days_test(template_id)
     start_time = Time.now
 
-    # Get the template, or use Bug Hunter Schedule Master (ID 4) as default
-    template_id = template_id || 4
+    # Get the template, or use the default Schedule Master template
+    template_id = template_id || ScheduleTemplate.where(is_default: true).first&.id || 5
     template = ScheduleTemplate.find_by(id: template_id)
 
     unless template
@@ -289,8 +289,8 @@ class Api::V1::BugHunterTestsController < ApplicationController
     frontend_path = Rails.root.join('..', 'frontend')
     start_time = Time.now
 
-    # Get template ID from params, default to 4 (Bug Hunter Schedule Master)
-    template_id = params[:template_id] || '4'
+    # Get template ID from params, default to 5 (Schedule Master)
+    template_id = params[:template_id] || '5'
 
     # Set environment variable for the Playwright test
     env = {
