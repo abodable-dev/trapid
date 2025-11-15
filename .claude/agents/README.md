@@ -41,6 +41,14 @@ This directory contains specialized agent definitions for the Trapid project.
 - Documentation creation
 - Strategic decisions
 
+### 6. gantt-bug-hunter
+**Focus:** Gantt Chart & Schedule Master Bug Diagnosis
+- Gantt/Schedule Master bug diagnosis
+- Run 12 automated visual tests
+- Verify all 13 RULES from GANTT_BIBLE.md
+- Check Protected Code Patterns
+- Analyze cascade behavior
+
 ## How to Use
 
 ### Quick Commands
@@ -52,6 +60,7 @@ This directory contains specialized agent definitions for the Trapid project.
 "run production-bug-hunter"
 "run deploy-manager"
 "run planning-collaborator"
+"run gantt-bug-hunter"
 
 # Shorter versions
 "backend dev"
@@ -59,9 +68,6 @@ This directory contains specialized agent definitions for the Trapid project.
 "production bug hunter"
 "deploy"
 "plan"
-
-# Gantt Bug Hunter (separate workflow, not an agent)
-"run gantt bug hunter"
 "gantt"
 ```
 
@@ -71,7 +77,7 @@ This directory contains specialized agent definitions for the Trapid project.
 "run all agents"
 ```
 
-This will run all 5 agents in parallel with health check tasks.
+This will run all 6 agents in parallel with health check tasks.
 
 ## Run History
 

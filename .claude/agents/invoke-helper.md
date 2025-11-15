@@ -11,8 +11,8 @@ This document guides Claude Code on how to invoke agents based on user input.
 | `frontend dev`, `run frontend-developer`, `frontend` | frontend-developer | `.claude/agents/frontend-developer.md` |
 | `production bug hunter`, `run production-bug-hunter`, `bug hunter` | production-bug-hunter | `.claude/agents/production-bug-hunter.md` |
 | `plan`, `run planning-collaborator`, `planning` | planning-collaborator | `.claude/agents/planning-collaborator.md` |
-| `run all agents` | ALL | Run all 5 agents in parallel |
-| `gantt bug hunter`, `gantt`, `run gantt` | WORKFLOW | Follow Gantt Bug Hunter workflow (not an agent) |
+| `gantt`, `run gantt-bug-hunter`, `gantt bug hunter` | gantt-bug-hunter | `.claude/agents/gantt-bug-hunter.md` |
+| `run all agents` | ALL | Run all 6 agents in parallel |
 
 ## How to Invoke an Agent
 
@@ -101,22 +101,8 @@ After each agent run, update `.claude/agents/run-history.json`:
 
 When user requests "run all agents":
 
-1. Launch all 5 agents **in parallel** using a single message with 5 Task tool calls
+1. Launch all 6 agents **in parallel** using a single message with 6 Task tool calls
 2. Give each agent a health check task appropriate to their specialty
 3. Wait for all agents to complete
 4. Update run history for all agents
 5. Report aggregated results
-
-## Special Cases
-
-### Gantt Bug Hunter
-
-This is NOT an agent, it's a workflow defined in RULE #0.9.1 of GANTT_BIBLE.md:
-
-1. Read GANTT_BIBLE.md
-2. Run static code analysis (verify 13 RULES)
-3. Run automated tests (12 tests via API)
-4. If estimated time > 3 minutes, ask user first
-5. Report findings
-
-Do NOT create a "gantt-bug-hunter" agent file. This is a workflow, not an agent.

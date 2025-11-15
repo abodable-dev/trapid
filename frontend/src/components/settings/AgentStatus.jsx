@@ -46,7 +46,8 @@ export default function AgentStatus() {
       'frontend-developer': '🎨',
       'production-bug-hunter': '🔍',
       'deploy-manager': '🚀',
-      'planning-collaborator': '📋'
+      'planning-collaborator': '📋',
+      'gantt-bug-hunter': '🐛'
     };
     return icons[agentName] || '🤖';
   };
@@ -57,7 +58,8 @@ export default function AgentStatus() {
       'frontend-developer': 'Frontend Developer',
       'production-bug-hunter': 'Production Bug Hunter',
       'deploy-manager': 'Deploy Manager',
-      'planning-collaborator': 'Planning Collaborator'
+      'planning-collaborator': 'Planning Collaborator',
+      'gantt-bug-hunter': 'Gantt Bug Hunter'
     };
     return names[agentName] || agentName;
   };

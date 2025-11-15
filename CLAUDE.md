@@ -11,8 +11,8 @@
 | `production bug hunter` or `run production-bug-hunter` | production-bug-hunter | Read `.claude/agents/production-bug-hunter.md` and launch Task with those instructions |
 | `deploy` or `run deploy-manager` | deploy-manager | Read `.claude/agents/deploy-manager.md` and launch Task with those instructions |
 | `plan` or `run planning-collaborator` | planning-collaborator | Read `.claude/agents/planning-collaborator.md` and launch Task with those instructions |
-| `gantt` or `run gantt bug hunter` | (special workflow) | Follow GANTT_BIBLE.md RULE #0.9.1 workflow |
-| `run all agents` | All 5 agents | Launch all agents in parallel with health check tasks |
+| `gantt` or `run gantt-bug-hunter` | gantt-bug-hunter | Read `.claude/agents/gantt-bug-hunter.md` and launch Task with those instructions |
+| `run all agents` | All 6 agents | Launch all agents in parallel with health check tasks |
 
 **How to invoke an agent:**
 1. Read the agent's `.md` file from `.claude/agents/`
@@ -149,7 +149,7 @@ If UI/UX doesn't match guidelines:
 
 ## Agent System
 
-Trapid uses **5 specialized agents** defined in `.claude/agents/`. Each agent has specific capabilities and tracks its run history.
+Trapid uses **6 specialized agents** defined in `.claude/agents/`. Each agent has specific capabilities and tracks its run history.
 
 ### Available Agents
 
@@ -170,7 +170,6 @@ Trapid uses **5 specialized agents** defined in `.claude/agents/`. Each agent ha
 - Heroku log analysis
 - Error reproduction and fixing
 - Works with other agents for fixes
-- **Note:** For Gantt bugs, use "Gantt Bug Hunter" workflow (separate)
 
 **4. deploy-manager** (`/.claude/agents/deploy-manager.md`)
 - Commit and push changes to appropriate branch
@@ -185,6 +184,13 @@ Trapid uses **5 specialized agents** defined in `.claude/agents/`. Each agent ha
 - Documentation creation
 - Strategic decisions
 
+**6. gantt-bug-hunter** (`/.claude/agents/gantt-bug-hunter.md`)
+- Gantt Chart & Schedule Master bug diagnosis
+- Run 12 automated visual tests
+- Verify all 13 RULES from GANTT_BIBLE.md
+- Check Protected Code Patterns
+- Analyze cascade behavior
+
 ### Quick Commands
 
 **Run individual agents:**
@@ -194,6 +200,7 @@ run frontend-developer
 run production-bug-hunter
 run deploy-manager
 run planning-collaborator
+run gantt-bug-hunter
 ```
 
 **Shorter versions:**
@@ -203,14 +210,8 @@ frontend dev
 production bug hunter
 deploy
 plan
-```
-
-**Gantt Bug Hunter (separate workflow):**
-```
-run gantt bug hunter
 gantt
 ```
-This runs the Gantt-specific diagnostics from GANTT_BIBLE.md RULE #0.9.1
 
 **Run all agents:**
 ```
