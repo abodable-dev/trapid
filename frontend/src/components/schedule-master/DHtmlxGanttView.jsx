@@ -436,9 +436,10 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
     timelineStart.setMonth(timelineStart.getMonth() - 6)
     timelineStart.setHours(0, 0, 0, 0)
 
-    // Set end date to 2 years from today to give plenty of room for dragging
+    // Set end date to 10 years from today to accommodate longer project timelines
+    // (e.g., test schedules with 2025-day offsets = ~5.5 years)
     const timelineEnd = getToday()
-    timelineEnd.setFullYear(timelineEnd.getFullYear() + 2)
+    timelineEnd.setFullYear(timelineEnd.getFullYear() + 10)
     timelineEnd.setHours(23, 59, 59, 999)
 
     gantt.config.start_date = timelineStart

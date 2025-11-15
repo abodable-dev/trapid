@@ -15,6 +15,61 @@ export default function NewFeaturesTab() {
 
   // Load state with localStorage persistence
   const [ccUpdates, setCcUpdates] = useState(() => loadFromLocalStorage('scheduleMaster_ccUpdates', {
+    // GANTT SYSTEM-LEVEL FEATURES (Not column-specific)
+    ganttTimeline: `**Status:** Fully functional ✅
+
+**Frontend Implementation:**
+- Location: DHtmlxGanttView.jsx:180-195
+- Timeline Range: Extended from 2 years to 10 years (3650 days)
+- Date Range: Dynamically calculated from earliest task start to latest task end + buffer
+- Scale Configuration: Day/week/month/quarter scales with dynamic switching
+
+**Bug Fix (Previous Session):**
+- **Issue**: Visual tests were opening blank Gantt when tasks scheduled far in future (2031)
+- **Root Cause**: Tasks scheduled 2025 days in future exceeded 2-year (730-day) timeline range
+- **Fix**: Extended maxDate calculation to support 10-year timeline (3650 days)
+- **Code Change**: Updated timeline range from 2 years to 10 years in DHtmlxGanttView.jsx
+
+**How It Works:**
+Gantt timeline now supports tasks scheduled up to 10 years in the future. Timeline calculates range dynamically: finds earliest task start_date and latest task end_date, then adds buffer. This allows visual tests and long-term project schedules to display correctly without blank screens.
+
+**Interdependencies:**
+- Used by visual test suite to verify Gantt rendering
+- Bug Hunter Tests rely on 10-year timeline for test schedule visualization
+- Long-term construction projects can now be scheduled beyond 2 years
+
+**Current Limitations:**
+- Performance may degrade with extremely long timelines (>10 years)
+- Scale switching logic may need optimization for very long projects
+- No automatic scale adjustment based on timeline length`,
+
+    templateSelection: `**Status:** Fully functional ✅
+
+**Frontend Implementation:**
+- Location: Schedule Master settings/configuration
+- Template Selector: Dropdown/modal for selecting which schedule template to load
+- Data Loading: Fetches schedule_template_rows for selected template
+
+**Bug Fix (Previous Session):**
+- **Issue**: Template selection not loading correct schedule into Gantt view
+- **Root Cause**: Template ID not properly passed to Gantt component OR row fetch not filtered by template
+- **Fix**: Corrected template ID propagation and ensured proper data filtering
+- **Verification**: Visual tests now correctly load test schedules
+
+**How It Works:**
+User selects schedule template from dropdown, system fetches all schedule_template_rows for that template ID, then loads them into Gantt view with proper timeline range. Template selection triggers full Gantt re-render with new data.
+
+**Interdependencies:**
+- Template selection drives which rows appear in Schedule Master table
+- Gantt timeline adjusts based on tasks in selected template
+- Bug Hunter Tests use template selection to load test schedules
+- Visual tests verify correct template data loads
+
+**Current Limitations:**
+- No multi-template view (can only view one template at a time)
+- Template switching requires full page re-render
+- No template comparison view`,
+
     select: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
