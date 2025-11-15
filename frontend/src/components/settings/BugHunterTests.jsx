@@ -350,9 +350,9 @@ export default function BugHunterTests() {
                       {test.can_run_visual ? (
                         <button
                           onClick={() => runTest(test.id, true)}
-                          disabled={isRunning || !window.runGanttAutomatedTest}
+                          disabled={isRunning}
                           className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                          title={!window.runGanttAutomatedTest ? 'Open Gantt view first' : 'Run with visual feedback'}
+                          title="Run with visual feedback (will open Gantt automatically)"
                         >
                           <EyeIcon className="h-5 w-5" />
                         </button>

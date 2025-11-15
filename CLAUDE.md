@@ -1,5 +1,36 @@
 # Claude Code Instructions for Trapid Project
 
+## Gantt & Schedule Master Development
+
+**CRITICAL: Before ANY Gantt/Schedule Master work:**
+
+1. **Read the Gantt Bible:**
+   ```
+   /Users/rob/Projects/trapid/GANTT_SCHEDULE_RULES.md
+   ```
+
+2. **Give thumbs up and wait for user confirmation:**
+   - After reading the Bible, respond with 👍
+   - Wait for user to respond before proceeding
+   - This ensures you have the latest rules in context
+
+3. **The Bible is ABSOLUTE AUTHORITY:**
+   - All 13 RULES must be followed without exception
+   - Protected code patterns cannot be modified
+   - CC_UPDATE table must be updated for column changes (RULE #12)
+
+4. **Two-document system:**
+   - 📖 **GANTT_SCHEDULE_RULES.md** - RULES only (directives, MUST/NEVER/ALWAYS)
+   - 📕 **GANTT_BUGS_AND_FIXES.md** - KNOWLEDGE only (bug history, explanations)
+
+**When to read the Bible:**
+- At the start of every session involving Gantt work
+- Before making ANY changes to Schedule Master
+- Before investigating Gantt-related bugs
+- When user asks about Gantt functionality
+
+**Never proceed with Gantt work without reading the Bible first.**
+
 ## Error Handling
 - If errors are flagged, use the bug-hunter agent to find and diagnose issues
 - Consult with the backend-developer agent to develop solutions quickly

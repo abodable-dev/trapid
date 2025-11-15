@@ -1,6 +1,6 @@
 # Gantt & Schedule Master - The Bible (Development Rules)
-**Version:** 2.0.0
-**Last Updated:** November 15, 2025 at 4:15 PM AEST (Major restructure: Rules-only format, moved all knowledge to Lexicon)
+**Version:** 2.1.0
+**Last Updated:** November 15, 2025 at 4:30 PM AEST (Added RULE #12: CC_UPDATE Table documentation requirement)
 **Status:** Production-ready with DHtmlx trial
 **Authority Level:** ABSOLUTE - This is The Bible for all Gantt development
 **File Locations:**
@@ -520,7 +520,68 @@ const debouncedRender = (delay = 0) => {
 
 ---
 
-## RULE #12: Common Gotchas
+## RULE #12: Column Documentation - CC_UPDATE Table
+
+❌ **NEVER change Schedule Master columns without updating CC_UPDATE table**
+✅ **ALWAYS update NewFeaturesTab.jsx when column implementation changes**
+
+**Documentation location:** `frontend/src/components/schedule-master/NewFeaturesTab.jsx`
+
+**What is CC_UPDATE?**
+The CC_UPDATE table tracks the implementation status and technical details for every column in the Schedule Master table. It serves as the living documentation for product owners and developers.
+
+**Required updates when:**
+- Adding a new column to Schedule Master
+- Changing how a column works (frontend or backend)
+- Modifying database fields related to a column
+- Adding/removing event handlers for a column
+- Changing validation rules for a column
+
+**How to update:**
+
+1. Navigate to Settings → Schedule Master → New Features tab
+2. Find the column in the table
+3. Click the "CC Update" cell to edit
+4. Update the implementation details with this format:
+
+```markdown
+**Status:** [Fully functional ✅ | Partially implemented ⚠️ | Not implemented ❌]
+
+**Frontend Implementation:**
+- Location: [File path and line numbers]
+- Rendering: [How it's displayed]
+- Event handlers: [What handlers are attached]
+
+**Backend:**
+- Field: [Database field name(s)]
+- Type: [Data type]
+- Validation: [What validations exist]
+
+**How It Works:**
+[Plain English explanation of what this column does]
+
+**Current Limitations:**
+- [Known limitation 1]
+- [Known limitation 2]
+```
+
+**UI Access:**
+- Table available at: http://localhost:5173/settings?tab=schedule-master&subtab=new-features
+- Data persisted in localStorage: `scheduleMaster_ccUpdates`
+- Export function generates complete documentation file
+
+**Why this matters:**
+This table is the single source of truth for column implementation status. It helps:
+- Product owners understand what's coded vs what's planned
+- Developers know exactly where code lives
+- Bug hunters identify what's actually implemented
+- Future AI sessions understand the current state
+
+**For column specifications, see:** `/frontend/public/GANTT_BIBLE_COLUMNS.md`
+
+---
+
+## RULE #13: Common Gotchas
 
 ### Gotcha #1: Saving Without Predecessors
 ```javascript
@@ -632,13 +693,14 @@ predecessor_id = predecessor_task.sequence_order + 1
 
 Before committing Gantt code changes, verify:
 
-- [ ] Followed all RULES #1-12
+- [ ] Followed all RULES #1-13
 - [ ] Did NOT modify Protected Code Patterns
 - [ ] Included predecessor_ids in all updates
 - [ ] Used isLoadingData lock correctly
 - [ ] Read working days from company_settings
 - [ ] Checked lock hierarchy before cascade
 - [ ] Used single API call + cascade response
+- [ ] Updated CC_UPDATE table if columns changed (RULE #12)
 - [ ] Updated Bible if new RULE discovered
 - [ ] Updated Lexicon if bug fixed
 - [ ] Synced both files to frontend/public/
@@ -655,13 +717,14 @@ Before committing Gantt code changes, verify:
 - 📕 See Lexicon → "BUG-XXX" entries
 
 **Column Specifications:**
-- 📦 See `/docs/archive/GANTT_REFERENCE.md`
+- 📦 See `/frontend/public/GANTT_BIBLE_COLUMNS.md` (Bible)
+- 📋 See CC_UPDATE Table at Settings → Schedule Master → New Features tab (Living documentation)
 
 **Why We Made Certain Decisions:**
 - 📕 See Lexicon → "Design Decisions" section
 
 ---
 
-**Last Updated:** November 15, 2025 at 4:15 PM AEST
+**Last Updated:** November 15, 2025 at 4:30 PM AEST
 **Maintained By:** Development Team
 **Authority Level:** ABSOLUTE
