@@ -1,0 +1,2 @@
+class BugHunterTest < ApplicationRecord
+end

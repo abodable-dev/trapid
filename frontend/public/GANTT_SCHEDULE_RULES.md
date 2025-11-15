@@ -1,6 +1,6 @@
 # Gantt & Schedule Master - The Bible (Development Rules)
-**Version:** 1.1.0
-**Last Updated:** November 14, 2025 at 4:30 PM (Backend cascade service + bug-hunter automated testing)
+**Version:** 1.3.0
+**Last Updated:** November 15, 2025 at 12:20 AM AEST (Backend cascade service + bug-hunter automated testing)
 **Status:** Production-ready with DHtmlx trial
 **Authority Level:** ABSOLUTE - This is The Bible for all Gantt development
 **File Locations:**
@@ -98,6 +98,602 @@ Both buttons dynamically read the Bible file from `/frontend/public/GANTT_SCHEDU
 
 ---
 
+## 📚 Related Documentation
+
+This Bible is part of a comprehensive documentation system for the Gantt and Schedule Master features.
+
+### Core Documentation Files
+
+| Document | Purpose | Location |
+|----------|---------|----------|
+| **GANTT_SCHEDULE_RULES.md** (This File) | The Bible - All development rules and protected patterns | `/frontend/public/GANTT_SCHEDULE_RULES.md` |
+| **GANTT_BIBLE_COLUMNS.md** | Complete column documentation with implementation details | `/GANTT_BIBLE_COLUMNS.md` |
+| **GANTT_BUGS_AND_FIXES.md** | Bug tracking, Bug Hunter tool, test results | `/frontend/public/GANTT_BUGS_AND_FIXES.md` |
+| **GANTT_DRAG_FLICKER_FIXES.md** | Historical fixes for drag/flicker issues | `/frontend/GANTT_DRAG_FLICKER_FIXES.md` |
+
+### Column Documentation (GANTT_BIBLE_COLUMNS.md)
+
+**What It Contains:**
+- ✅ All 33 Schedule Master table columns
+- ✅ All 11 Gantt modal columns
+- ✅ Active/Inactive status for each column
+- ✅ Exact database field mappings
+- ✅ Implementation details (file locations, services, handlers)
+- ✅ Purpose and business logic for each column
+- ✅ Bug Hunter test numbers for validation
+- ✅ Lock hierarchy and priority system
+- ✅ Test coverage map
+
+**When to Reference:**
+- Adding or modifying column functionality
+- Understanding what a column does
+- Finding which service/handler processes a column
+- Checking test coverage for a column
+- Understanding lock behavior and priority
+
+**When to Update:**
+- Column implementation changes
+- New column added
+- Column behavior modified
+- Test coverage added/changed
+- Database schema changes
+
+### Bug Hunter Documentation (GANTT_BUGS_AND_FIXES.md)
+
+**What It Contains:**
+- All active and resolved bugs
+- Bug Hunter automated diagnostic tool usage
+- Test results history (10 automated tests)
+- Performance benchmarks
+- Investigation timelines for complex bugs
+
+**When to Reference:**
+- Debugging Gantt issues
+- Running performance diagnostics
+- Understanding past bug fixes
+- Checking test coverage
+
+### Quick Reference Card
+
+**For Column Info:** → `GANTT_BIBLE_COLUMNS.md`
+**For Development Rules:** → `GANTT_SCHEDULE_RULES.md` (this file)
+**For Bug Investigation:** → `GANTT_BUGS_AND_FIXES.md`
+## 🚨 CRITICAL: Read Before Touching Gantt Code
+
+**This section contains NON-NEGOTIABLE information you MUST know before working on Gantt/Schedule code.**
+
+### The #1 Killer Bug: Predecessor ID Mismatch
+
+**THE PROBLEM:**
+Predecessor IDs in the database are **1-based** (1, 2, 3...) but `sequence_order` is **0-based** (0, 1, 2...).
+
+**WHERE THIS HAPPENS:**
+- **Backend:** `schedule_cascade_service.rb:88, 100` - Converts with `+ 1`
+- **Backend:** `schedule_template_rows_controller.rb:116, 122` - Uses 1-based sequences
+- **Frontend:** DHtmlxGanttView.jsx - Task numbers displayed as 1-based but internally 0-based
+
+**WHY IT EXISTS:**
+Legacy decision: UI shows task #1, #2, #3 (1-based) but database sequence_order is 0, 1, 2 (0-based). Predecessors stored as 1-based IDs to match UI display.
+
+**CONSEQUENCE OF FORGETTING:**
+- Wrong tasks cascade when dependencies change
+- Circular dependency detection fails
+- Predecessor display shows wrong task numbers
+- **HOURS OF DEBUGGING** because the bug is silent (no errors, just wrong behavior)
+
+**THE FIX:**
+Always convert when comparing:
+```ruby
+# Backend: Finding dependents
+predecessor_id = predecessor_task.sequence_order + 1  # 0-based → 1-based
+
+# Backend: Comparing in predecessor_ids array
+pred_entry = dependent_task.predecessor_ids.find do |pred|
+  (pred['id'] || pred[:id]).to_i == predecessor_id  # Compare 1-based to 1-based
+end
+```
+
+```javascript
+// Frontend: Display task number
+const taskNumber = task.sequence_order + 1  // Show as #1, #2, #3
+
+// Frontend: Store in predecessor_ids
+{ id: taskNumber, type: "FS", lag: 0 }  // Store as 1-based
+```
+
+**TEST THIS:**
+1. Create Task #1 (sequence_order: 0)
+2. Create Task #2 (sequence_order: 1) with predecessor: 1FS
+3. Drag Task #1 → Task #2 should cascade
+4. If Task #3 cascades instead, you have the off-by-one bug!
+
+---
+
+### The #2 Killer Bug: Infinite Render Loops
+
+**THE PROBLEM:**
+`gantt.parse()` triggers spurious `onAfterTaskDrag` events even when no drag occurred, causing infinite update loops.
+
+**THE CYCLE:**
+1. User drags Task A → saves → updates state
+2. State update → useEffect → calls `gantt.parse()`
+3. `gantt.parse()` internally fires `onAfterTaskDrag` for all tasks
+4. Handler thinks user dragged → saves again → repeat from step 2
+5. **16+ consecutive drag events in 1 second = screen flickers**
+
+**THE FIX (Protected Pattern 1a + 1b):**
+```javascript
+// Three critical useRef flags
+const isDragging = useRef(false)
+const isLoadingData = useRef(false)
+const isSaving = useRef(false)
+
+// In onAfterTaskDrag handler:
+gantt.attachEvent('onAfterTaskDrag', (id, mode, event) => {
+  // CRITICAL: Set IMMEDIATELY before auto-scheduling runs
+  isDragging.current = true
+  isLoadingData.current = true
+
+  // ... handle drag ...
+
+  // CRITICAL: Only reset isDragging, let useEffect handle isLoadingData
+  isDragging.current = false
+  // DO NOT reset isLoadingData here!
+})
+
+// In useEffect that loads data:
+useEffect(() => {
+  // CRITICAL: Skip if dragging or already loading
+  if (isDragging.current) return
+  if (isLoadingData.current) return
+
+  isLoadingData.current = true
+  gantt.parse({ data: tasks, links: links })
+
+  // CRITICAL: 500ms minimum delay (tested value)
+  setTimeout(() => {
+    isLoadingData.current = false
+  }, 500)
+}, [tasks, ...])
+```
+
+**WHY 500MS:**
+- Tested extensively: 100ms = loops resume, 300ms = occasional flicker, 500ms = stable
+- Ensures all React state updates complete before re-enabling drag events
+- DO NOT reduce below 500ms "to optimize"
+
+**LOCATION:**
+- DHtmlxGanttView.jsx lines 1357-1418 (onAfterTaskDrag)
+- DHtmlxGanttView.jsx lines 3471-3502 (useEffect guard)
+
+**CONSEQUENCE OF FORGETTING:**
+- Severe UI flickering during drag
+- 8-16 Gantt reloads per drag operation
+- Poor user experience
+- Bug Hunter Test #2 fails (Excessive Gantt Reload Detection)
+
+---
+
+### Critical useRef Flags (The Anti-Loop Arsenal)
+
+**All flags in DHtmlxGanttView.jsx lines 40-47:**
+
+| Flag | Type | Purpose | Set By | Reset By | Reset Timing |
+|------|------|---------|--------|----------|--------------|
+| `isDragging` | boolean | Prevent data reload during active drag | onAfterTaskDrag | onAfterTaskDrag end | Immediately after drag |
+| `isLoadingData` | boolean | Suppress spurious drag events during parse | useEffect + drag handler | useEffect timeout | 500ms after parse |
+| `isSaving` | boolean | Prevent infinite save loops | handleTaskUpdate | handleTaskUpdate end | After API completes |
+| `suppressRender` | boolean | Anti-flicker: Block renders during completion | Drag start | Drag end | Immediately |
+| `manuallyPositionedTasks` | Set | Track which tasks user manually positioned | Lock checkbox | Unlock checkbox | Per task |
+| `pendingUnlocks` | Set | Prevent re-locking during reload | Unlock action | After reload | After data load |
+| `lastTasksSignature` | string | Prevent unnecessary reloads | useEffect | useEffect | On data change |
+
+**RULE:** Never reset `isLoadingData` in the drag handler's normal completion path. Only reset it:
+1. In useEffect's 500ms timeout (normal path)
+2. In early-exit paths (conflict, cancel, cascade modal)
+
+**WHY:** Resetting `isLoadingData` at end of drag handler allows spurious events from ongoing `gantt.parse()` to slip through unprotected.
+
+---
+
+### Backend Cascade Service Critical Info
+
+**File:** `backend/app/services/schedule_cascade_service.rb`
+
+**What It Does:**
+When a task's `start_date` or `duration` changes:
+1. Finds all dependent tasks (tasks with this as predecessor)
+2. Recalculates their start dates based on dependency type + lag
+3. Recursively cascades to their dependents
+4. Returns all affected tasks
+
+**Critical Behavior:**
+- Uses `update_column()` NOT `update()` - bypasses validations and callbacks for performance
+- Skips tasks where `manually_positioned? == true` (respects user manual positioning)
+- Only cascades when `start_date` or `duration` changed
+- Handles 4 dependency types: FS, SS, FF, SF
+- Prevents infinite loops by tracking `@affected_tasks` hash
+
+**Integration with Controller:**
+```ruby
+# In schedule_template_rows_controller.rb update action:
+# The cascade is triggered by after_update callback
+# Results stored in Thread-local variable
+
+after_update :cascade_to_dependents  # In model
+
+# In controller:
+affected_tasks = Thread.current[:cascade_affected_tasks] || [@row]
+Thread.current[:cascade_affected_tasks] = nil  # Clear it
+```
+
+**Thread-Local Variables:**
+- `Thread.current[:current_audit_user_id]` - For audit logging
+- `Thread.current[:cascade_affected_tasks]` - Return all cascaded tasks to frontend
+
+**WHY update_column:**
+- Performance: Updating 50 tasks in a cascade shouldn't trigger 50 sets of validations/callbacks
+- Safety: The after_update callback would cause infinite recursion if we used `update()`
+
+---
+
+### The Lock Hierarchy (5 Lock Types)
+
+**Priority Order (Highest to Lowest):**
+
+1. **`supplier_confirm`** - Supplier has committed to this date, NEVER cascade
+2. **`confirm`** - Internal confirmation, NEVER cascade
+3. **`start`** - Work has begun, NEVER cascade
+4. **`complete`** - Work is done, NEVER cascade
+5. **`manually_positioned`** - User manually dragged task, don't cascade
+
+**Backend Check:**
+```ruby
+# schedule_cascade_service.rb:63
+next if dependent_task.manually_positioned?
+
+# Note: Backend only checks manually_positioned
+# Frontend enforces all 5 lock types by not sending locked tasks to backend
+```
+
+**Frontend Check:**
+```javascript
+// DHtmlxGanttView.jsx - Determine if task is locked
+const isLocked = (task) => {
+  return task.supplier_confirm ||
+         task.confirm ||
+         task.start ||
+         task.complete ||
+         task.manually_positioned
+}
+```
+
+**Cascade Modal Behavior:**
+- Unlocked successors: Auto-selected to cascade (user can uncheck)
+- Locked successors: NOT selected (would require unlocking first)
+- User shown warning if dependencies will break
+
+---
+
+### API Pattern: Single Update + Cascade Response
+
+**Pattern:**
+```javascript
+// Frontend sends ONE task update
+PATCH /api/v1/schedule_templates/:id/rows/:row_id
+{
+  schedule_template_row: {
+    start_date: 5,
+    duration: 3
+  }
+}
+
+// Backend returns updated task + all cascaded tasks
+{
+  task: { id: 1, start_date: 5, duration: 3, ... },
+  cascaded_tasks: [
+    { id: 2, start_date: 8, ... },
+    { id: 3, start_date: 10, ... }
+  ]
+}
+```
+
+**Frontend Processing:**
+```javascript
+// DHtmlxGanttView.jsx:3366-3450
+const response = await api.patch(`/api/v1/schedule_templates/${template.id}/rows/${task.id}`, { ... })
+
+if (response.cascaded_tasks) {
+  // Update all cascaded tasks in state
+  response.cascaded_tasks.forEach(cascaded => {
+    updateTaskInState(cascaded)
+  })
+}
+```
+
+**WHY THIS PATTERN:**
+- ONE API call per user action (not N calls for N dependent tasks)
+- Backend calculates cascade (source of truth for dependency math)
+- Frontend gets all changes in one response
+- Prevents race conditions from multiple simultaneous updates
+
+---
+
+### Diagnostic Mode & Bug Hunter
+
+**Enable Diagnostic Logging:**
+```javascript
+// DHtmlxGanttView.jsx:26
+const DIAGNOSTIC_MODE = true  // Set to true for detailed console logs
+```
+
+**Bug Hunter Commands (Browser Console):**
+```javascript
+// Generate diagnostic report
+window.printBugHunterReport()
+
+// Enable specific debug categories
+window.enableGanttDebug(['drag', 'api', 'cascade'])
+
+// Export report for bug tracking
+window.exportBugHunterReport()
+
+// Reset counters for new test
+window.resetBugHunter()
+```
+
+**10 Automated Tests:**
+1. Duplicate API Call Detection (target: ≤ 2 per task)
+2. Excessive Gantt Reload Detection (target: ≤ 5 per drag)
+3. Slow Drag Operation Detection (target: < 5000ms)
+4. API Call Pattern Analysis (rapid repeated calls)
+5. Cascade Event Tracking (affected task count)
+6. State Update Batching (target: ≤ 3 per drag)
+7. Lock State Monitoring (locks prevent cascading)
+8. Performance Timing Analysis (all metrics vs targets)
+9. Health Status Assessment (overall system health)
+10. Actionable Recommendations (context-specific fixes)
+
+**Bug Hunter Location:** `/frontend/src/utils/ganttDebugger.js`
+**E2E Tests:** `/frontend/tests/e2e/gantt-cascade.spec.js`
+
+---
+
+### Performance: Debounced Render Pattern
+
+**Protected Pattern:**
+```javascript
+const renderTimeout = useRef(null)
+
+const debouncedRender = (delay = 0) => {
+  if (renderTimeout.current) {
+    clearTimeout(renderTimeout.current)
+  }
+  renderTimeout.current = setTimeout(() => {
+    if (ganttReady) gantt.render()
+  }, delay)
+}
+```
+
+**WHY:**
+- Direct `gantt.render()` causes 50-100ms lag per render
+- Debounce batches multiple state changes into one render
+- Reduces visual flashing during rapid updates
+
+**DO NOT:**
+- Remove the timeout mechanism
+- Change to direct `gantt.render()` calls
+- "Simplify" by removing renderTimeout.current check
+
+**CONSEQUENCE:** Removing debounce causes stuttering drag operations and visual flashing.
+
+---
+
+### DHtmlx Gantt Configuration Critical Values
+
+**MUST MATCH VALUES:**
+```javascript
+// DHtmlxGanttView.jsx:366-367
+gantt.config.task_height = 40  // MUST match row_height
+gantt.config.bar_height = 40   // MUST also match - DHtmlx uses for Y calculations!
+gantt.config.row_height = 40   // Base row height
+```
+
+**WHY:** Mismatched heights cause:
+- Task bars offset from grid rows
+- Click detection issues
+- Dependency lines misaligned
+
+**Auto-Scheduling:**
+```javascript
+gantt.config.auto_scheduling = false  // ALWAYS false!
+```
+
+**WHY:** Backend cascade service handles ALL dependency calculations. Frontend auto-scheduling would conflict.
+
+**Plugins:**
+```javascript
+gantt.plugins({
+  auto_scheduling: false,  // Disabled - backend handles it
+  critical_path: true,     // Enabled - visual indicator
+  drag_timeline: true,     // Enabled - scroll while dragging
+  tooltip: true,           // Enabled - hover info
+  undo: true              // Enabled - undo/redo support
+})
+```
+
+---
+
+### Working Days & Public Holidays
+
+**Configuration:**
+```javascript
+// DHtmlxGanttView.jsx:558-569
+gantt.config.work_time = true
+gantt.config.duration_unit = 'day'
+
+// Set working hours (24-hour day, full business day)
+gantt.setWorkTime({ hours: [0, 24] })
+
+// Mark weekends as non-working
+gantt.setWorkTime({ day: 0, hours: false }) // Sunday
+gantt.setWorkTime({ day: 6, hours: false }) // Saturday
+
+// Mark public holidays as non-working
+publicHolidays.forEach(holiday => {
+  gantt.setWorkTime({ date: new Date(holiday), hours: false })
+})
+```
+
+**Backend Fetches Holidays:**
+```javascript
+// Loads from: GET /api/v1/public_holidays
+```
+
+**Duration Calculation:**
+- Counts only working days
+- Skips weekends automatically
+- Skips public holidays
+- Example: 5-day task starting Monday might end next Tuesday (skips weekend)
+
+---
+
+### Common Gotchas
+
+**1. Saving With Predecessors**
+```javascript
+// WRONG: Omitting predecessor_ids causes them to be cleared
+await api.patch(`/rows/${task.id}`, {
+  schedule_template_row: {
+    start_date: 5
+  }
+})
+
+// CORRECT: Always include predecessor_ids
+await api.patch(`/rows/${task.id}`, {
+  schedule_template_row: {
+    start_date: 5,
+    predecessor_ids: task.predecessor_ids  // CRITICAL: Preserve!
+  }
+})
+```
+
+**2. Task Height Configuration**
+```javascript
+// WRONG: Mismatched values cause visual bugs
+gantt.config.row_height = 40
+gantt.config.task_height = 30  // Mismatched!
+
+// CORRECT: All three must match
+gantt.config.row_height = 40
+gantt.config.task_height = 40
+gantt.config.bar_height = 40
+```
+
+**3. Resetting isLoadingData Flag**
+```javascript
+// WRONG: Resetting at end of drag handler
+gantt.attachEvent('onAfterTaskDrag', (id) => {
+  isDragging.current = true
+  isLoadingData.current = true
+
+  // ... handle drag ...
+
+  isDragging.current = false
+  isLoadingData.current = false  // WRONG! Allows spurious events through
+})
+
+// CORRECT: Only useEffect resets isLoadingData
+gantt.attachEvent('onAfterTaskDrag', (id) => {
+  isDragging.current = true
+  isLoadingData.current = true
+
+  // ... handle drag ...
+
+  isDragging.current = false
+  // DO NOT reset isLoadingData here!
+})
+```
+
+**4. Checking Lock State**
+```javascript
+// WRONG: Only checking one lock type
+if (task.manually_positioned) { /* locked */ }
+
+// CORRECT: Check all 5 lock types
+if (task.supplier_confirm || task.confirm || task.start ||
+    task.complete || task.manually_positioned) {
+  /* locked */
+}
+```
+
+**5. Predecessor ID Conversion**
+```javascript
+// WRONG: Forgetting the +1 conversion
+const predecessorId = task.sequence_order
+
+// CORRECT: Always convert
+const predecessorId = task.sequence_order + 1  // 0-based → 1-based
+```
+
+---
+
+### File Structure Quick Reference
+
+**Frontend Components:**
+- `DHtmlxGanttView.jsx` (5276 lines) - Main Gantt component
+- `ScheduleTemplateEditor.jsx` (2500+ lines) - Main schedule editor
+- `CascadeDependenciesModal.jsx` - User choices for cascade
+- `TaskDependencyEditor.jsx` - Predecessor editor modal
+- `ganttDebugger.js` - Bug Hunter diagnostic tool
+
+**Backend Services:**
+- `schedule_cascade_service.rb` - Dependency cascade logic
+- `schedule/template_instantiator.rb` - Create job schedule from template
+- `schedule/task_spawner.rb` - Spawn photo/cert/subtasks
+
+**Backend Controllers:**
+- `schedule_templates_controller.rb` - Template CRUD
+- `schedule_template_rows_controller.rb` - Row CRUD + cascade
+- `schedule_tasks_controller.rb` - Project task management
+
+**Backend Models:**
+- `schedule_template.rb` - Template model
+- `schedule_template_row.rb` - Template row (with cascade callback)
+- `schedule_template_row_audit.rb` - Audit log for lock changes
+
+**Tests:**
+- `tests/e2e/gantt-cascade.spec.js` - E2E cascade tests
+- `backend/test/gantt_drag_test.rb` - Backend cascade tests
+
+---
+
+### Before You Start Coding: Checklist
+
+- [ ] Read this entire "Critical" section
+- [ ] Read GANTT_BIBLE_COLUMNS.md for column details
+- [ ] Read GANTT_BUGS_AND_FIXES.md for known issues
+- [ ] Understand predecessor ID mismatch (1-based vs 0-based)
+- [ ] Understand the 3 useRef anti-loop flags
+- [ ] Know the 5 lock types and their priority
+- [ ] Enable DIAGNOSTIC_MODE for your testing
+- [ ] Run Bug Hunter after changes: `window.printBugHunterReport()`
+- [ ] Test with locked and unlocked tasks
+- [ ] Test cascade with 3+ levels of dependencies
+- [ ] Test dragging tasks with both types of predecessors (FS, SS)
+- [ ] Verify no flickering during drag operations
+- [ ] Check Bug Hunter Test #2 (≤ 5 reloads per drag)
+
+**If You Skip This Checklist:**
+- You WILL introduce the predecessor ID bug (hours of debugging)
+- You WILL break the anti-loop protection (screen flickers)
+- You WILL cause cascade to skip locked tasks improperly
+- You WILL waste time debugging issues that are already documented here
+
+**Remember:** This code has been through 8+ iterations to fix subtle bugs. Do not "simplify" or "optimize" without understanding WHY each pattern exists.
+**For Historical Context:** → `GANTT_DRAG_FLICKER_FIXES.md`
+
+---
 ## 🔒 Protected Code Patterns - DO NOT MODIFY
 
 These patterns MUST NOT be changed or "optimized" without explicit user approval. They exist for specific technical reasons.
@@ -185,7 +781,7 @@ useEffect(() => {
 ### Protected Pattern 1b: isDragging Flag Management
 **Location:** DHtmlxGanttView.jsx (lines 1346, 1448, 1640, 1873-1894)
 **Added:** November 14, 2025
-**Updated:** November 14, 2025 at 12:55 PM (FINAL FIX - never reset isLoadingData in normal completion)
+**Updated:** November 14, 2025 at 12:55 PM AEST (FINAL FIX - never reset isLoadingData in normal completion)
 
 **The Problem:**
 The `isDragging.current` flag was only reset in specific code branches, causing blank screens. Additionally, resetting `isLoadingData.current` at the end of normal drag completion caused render loops to return because spurious drag events from ongoing `gantt.parse()` operations would slip through unprotected.
@@ -264,7 +860,7 @@ gantt.attachEvent('onAfterTaskDrag', (id, mode, event) => {
 
 ### Protected Pattern 1c: Anti-Flicker During Drag
 **Location:** DHtmlxGanttView.jsx (lines 216-233, 1893-1900)
-**Added:** November 14, 2025 at 1:45 PM
+**Added:** November 14, 2025 at 1:45 PM AEST
 
 **The Problem:**
 During active drag operations, render calls cause visual flickering and stuttering. The screen updates continuously as the task is being dragged, creating a poor user experience.
@@ -384,7 +980,7 @@ async delete(endpoint, options = {}) {
 
 ### Protected Pattern 4: Backend Cascade Service
 **Location:** backend/app/services/schedule_cascade_service.rb, backend/app/models/schedule_template_row.rb:24, backend/app/controllers/api/v1/schedule_template_rows_controller.rb:46-62
-**Added:** November 14, 2025 at 4:30 PM
+**Added:** November 14, 2025 at 4:30 PM AEST
 
 **The Problem:**
 When dragging a task with dependencies in the Gantt chart, the screen shakes/flickers and multiple reloads occur. This was caused by:
@@ -634,7 +1230,7 @@ Expected output:
 
 ### Protected Pattern 5: Bug-Hunter Automated Testing
 **Location:** test/bug_hunter_test.sh, frontend/tests/e2e/gantt-cascade.spec.js, frontend/playwright.config.js
-**Added:** November 14, 2025 at 4:30 PM
+**Added:** November 14, 2025 at 4:30 PM AEST
 
 **The Problem:**
 Testing Gantt cascade manually is time-consuming, error-prone, and requires screenshot sharing and console log analysis. Need automated verification that:
@@ -3015,7 +3611,7 @@ When working on Gantt/Schedule features, always:
 
 ## Document History
 
-**Version 1.0.5 - November 14, 2025 at 1:45 PM:**
+**Version 1.0.5 - November 14, 2025 at 1:45 PM AEST:**
 - **ANTI-FLICKER ENHANCEMENT:** Eliminated visual flickering during task drag operations
 - Added Protected Pattern 1c: Anti-Flicker During Drag
 - **Problem:** Screen flickered continuously while dragging tasks due to render calls
@@ -3026,7 +3622,7 @@ When working on Gantt/Schedule features, always:
 - Implemented user's suggestion: delay display update by half a second after drag
 - **Location:** DHtmlxGanttView.jsx lines 216-233 (debouncedRender), 1893-1900 (delayed render)
 
-**Version 1.0.4 - November 14, 2025 at 12:55 PM:**
+**Version 1.0.4 - November 14, 2025 at 12:55 PM AEST:**
 - **FINAL FIX - PRODUCTION READY:** Render loop issue completely resolved
 - Fixed render loop returning with 23+ spurious drag events after each drag
 - Root cause: Resetting `isLoadingData.current = false` at end of normal drag completion (line 1891)
@@ -3039,7 +3635,7 @@ When working on Gantt/Schedule features, always:
 - Updated Protected Pattern 1b with final implementation and detailed explanation
 - **Location:** DHtmlxGanttView.jsx lines 1886-1894
 
-**Version 1.0.3 - November 14, 2025 at 12:27 PM:**
+**Version 1.0.3 - November 14, 2025 at 12:27 PM AEST:**
 - **CRITICAL FIX:** Corrected Protected Pattern 1b - Removed `isLoadingData.current` reset from end of drag handler
 - Fixed render loop returning after second drag (10+ spurious drag events)
 - Root cause: Resetting `isLoadingData.current = false` at line 1871 interfered with ongoing `gantt.parse()` operations
@@ -3049,7 +3645,7 @@ When working on Gantt/Schedule features, always:
 - Only reset `isLoadingData.current` in early-exit code paths (conflict, cancel, cascade modal) to allow immediate next operation
 - **Location:** DHtmlxGanttView.jsx line 1871 (removed `isLoadingData.current = false`)
 
-**Version 1.0.2 - November 14, 2025 at 12:20 PM:**
+**Version 1.0.2 - November 14, 2025 at 12:20 PM AEST:**
 - **CRITICAL FIX:** Added Protected Pattern 1b - isDragging Flag Management
 - Fixed blank screen after dragging tasks
 - Root cause: `isDragging.current` flag never reset in some code paths (conflict, cascade modal, early returns)
@@ -3057,7 +3653,7 @@ When working on Gantt/Schedule features, always:
 - Solution: Added `isDragging.current = false` in all early return cases + final safety net at handler end
 - **Locations:** DHtmlxGanttView.jsx lines 1346, 1638, 1860
 
-**Version 1.0.1 - November 14, 2025 at 11:53 AM:**
+**Version 1.0.1 - November 14, 2025 at 11:53 AM AEST:**
 - **CRITICAL FIX:** Added Protected Pattern 1a - Render Loop Prevention
 - Fixed severe UI glitching/flickering when dragging tasks in Gantt
 - Root cause: `gantt.parse()` triggers spurious `onAfterTaskDrag` events causing render loops
@@ -3066,7 +3662,7 @@ When working on Gantt/Schedule features, always:
 - Documented the fix as a Protected Pattern to prevent future "optimization" attempts
 - **Location:** DHtmlxGanttView.jsx lines 3143-3168, 3398-3404
 
-**Version 1.0.0 - November 14, 2025 at 11:07 AM:**
+**Version 1.0.0 - November 14, 2025 at 11:07 AM AEST:**
 - **Added version control** (semantic versioning: MAJOR.MINOR.PATCH)
 - **Created sync script** (`scripts/sync-gantt-rules.sh`) for foolproof file syncing
 - **Added file location tracking** in document header
@@ -3094,3 +3690,26 @@ When working on Gantt/Schedule features, always:
 2. User validates changes with Claude.ai
 3. Validated version becomes new Bible
 4. All future sessions follow updated rules
+**Version 1.2.0 - November 14, 2025 at 11:30 PM AEST:**
+- **Added Related Documentation section** linking to GANTT_BIBLE_COLUMNS.md
+- Created comprehensive column documentation (33 Schedule Master + 11 Gantt columns)
+- Documented active status, implementation details, and test coverage for all columns
+- Added quick reference card for navigation between documentation files
+- Improved documentation discoverability and organization
+
+**Version 1.3.0 - November 15, 2025 at 12:20 AM AEST:**
+- **🚨 ADDED CRITICAL SECTION: "Read Before Touching Gantt Code"**
+- Documented #1 Killer Bug: Predecessor ID Mismatch (1-based vs 0-based)
+- Documented #2 Killer Bug: Infinite Render Loops (gantt.parse spurious events)
+- Added comprehensive useRef flags documentation (isDragging, isLoadingData, isSaving)
+- Documented Backend Cascade Service critical behavior
+- Added Lock Hierarchy (5 lock types with priorities)
+- Documented API Pattern: Single Update + Cascade Response
+- Added Diagnostic Mode & Bug Hunter integration guide
+- Documented Performance: Debounced Render Pattern
+- Added DHtmlx Gantt Configuration critical values
+- Documented Working Days & Public Holidays setup
+- Added Common Gotchas section (5 most frequent mistakes)
+- Added File Structure Quick Reference
+- Created "Before You Start Coding" checklist
+- **Purpose:** Prevent developers from introducing known bugs that took 8+ iterations to fix

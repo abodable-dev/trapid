@@ -542,11 +542,11 @@ export default function ContactsPage() {
     const badges = {
       customer: {
         label: 'Customer',
-        className: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-400'
+        className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200'
       },
       supplier: {
         label: 'Supplier',
-        className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-400/10 dark:text-yellow-500'
+        className: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200'
       },
       sales: {
         label: 'Sales',
@@ -1285,7 +1285,7 @@ export default function ContactsPage() {
                         className={`transition-colors duration-150 ${
                           selectedContacts.has(contact.id)
                             ? 'bg-indigo-50 dark:bg-indigo-900/20'
-                            : 'hover:bg-gray-50 dark:hover:bg-gray-750'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
                         }`}
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -1477,7 +1477,7 @@ export default function ContactsPage() {
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {filteredSuppliers.map((supplier) => (
-                      <tr key={supplier.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150">
+                      <tr key={supplier.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150">
                         {visibleClientColumns.supplier && (
                           <td className="px-6 py-4 whitespace-nowrap">
                             <Link

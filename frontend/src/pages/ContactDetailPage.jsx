@@ -836,13 +836,13 @@ export default function ContactDetailPage() {
               )}
             </div>
 
-            <div className="flex gap-1">
+            <div className="flex gap-2">
               {!isPageEditMode ? (
                 <button
                   onClick={() => setIsPageEditMode(true)}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
                 >
-                  <PencilIcon className="h-3 w-3" />
+                  <PencilIcon className="h-4 w-4" />
                   Edit
                 </button>
               ) : (
@@ -853,9 +853,9 @@ export default function ContactDetailPage() {
                       setIsPageEditMode(false)
                       await loadContact() // Reload to get fresh data
                     }}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition"
                   >
-                    <CheckCircleIcon className="h-3 w-3" />
+                    <CheckCircleIcon className="h-4 w-4" />
                     Save & Lock
                   </button>
                   <button
@@ -863,18 +863,18 @@ export default function ContactDetailPage() {
                       setIsPageEditMode(false)
                       loadContact() // Reload to discard changes
                     }}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
                   >
-                    <XCircleIcon className="h-3 w-3" />
+                    <XCircleIcon className="h-4 w-4" />
                     Cancel
                   </button>
                 </>
               )}
               <button
                 onClick={deleteContact}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition"
               >
-                <TrashIcon className="h-3 w-3" />
+                <TrashIcon className="h-4 w-4" />
                 Delete
               </button>
             </div>
@@ -2860,6 +2860,7 @@ export default function ContactDetailPage() {
               contact={contact}
               contactPersons={contactPersons}
               onUpdate={loadContact}
+              isEditMode={isPageEditMode}
             />
           </div>
         </div>

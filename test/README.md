@@ -1,319 +1,148 @@
-# Gantt Cascade Test Suite
+# Bug Hunter Gantt Test Suite
 
-Automated testing for the Gantt chart cascade functionality to prevent infinite loops and flickering.
+Automated tests for verifying Schedule Master cascade logic and Gantt chart functionality.
 
-## 🎯 What It Tests
-
-1. **Backend Cascade Logic** - Verifies that dependent tasks are recalculated correctly
-2. **Frontend Integration** - Ensures no screen flicker or infinite loops
-3. **API Efficiency** - Checks for duplicate API calls
-4. **Batch Updates** - Verifies single-batch state updates
-
-## 🔬 Bug-Hunter Diagnostic Features
-
-The E2E test includes **permanent diagnostic monitoring** that provides detailed insights:
-
-### What It Monitors:
-- ✅ **API Calls Per Task** - Detects duplicate calls (infinite loop indicator)
-- ✅ **State Update Batches** - Counts how many batch updates occur
-- ✅ **Gantt Reloads** - Tracks reload frequency (should be 1 or 0)
-- ✅ **Timing Analysis** - Measures drag duration and total test time
-- ✅ **Console Log Analysis** - Captures cascade and batch update messages
-
-### Diagnostic Report Output:
-```
-🔬 DETAILED DIAGNOSTIC REPORT
-======================================================================
-
-⏱️  Timing:
-   Drag duration: 1234.56ms
-   Total test time: 5678.90ms
-
-🌐 API Calls: 1 total
-   Task 299: 1 call
-
-📦 State Updates (Batches): 1
-   #1 at 1234.56ms
-
-🔄 Gantt Reloads: 1
-   #1 at 1234.56ms
-
-======================================================================
-```
-
-This helps debug issues quickly and verify fixes are working as expected.
-
-## ⚠️ Current Status
-
-### Backend Cascade Test: ✅ PASSING
-The backend cascade logic works correctly and has been verified through automated testing.
-
-### Frontend E2E Test: 🚧 IN PROGRESS
-The E2E test successfully uses DHtmlx's programmatic API to trigger drag events, but there are edge cases with the auto-calculation loop that need further investigation. The backend cascade works in manual testing through the UI.
-
-## 🚀 Quick Start
-
-### Run Backend Test Only (Recommended)
+## Quick Start
 
 ```bash
-cd backend
-rails runner test/gantt_drag_test.rb
-```
-
-**This verifies the core cascade logic is working.**
-
-### Run All Tests (Backend + Frontend)
-
-```bash
+# Run all tests with default template (Bug Hunter Schedule Master, ID: 4)
 ./test/run_gantt_tests.sh
+
+# Run backend test only (faster, no browser needed)
+cd backend && rails runner test/gantt_drag_test.rb
+
+# Run E2E test only (requires dev servers running)
+cd frontend && npm run test:gantt
 ```
 
-**Requirements:**
-- Backend server running (`cd backend && rails s`)
-- Frontend dev server running (`cd frontend && npm run dev`)
+## Testing Different Schedule Templates
 
-**Note:** Frontend E2E test may fail due to auto-calculation loop edge cases. Backend test passing confirms cascade logic is working.
+You can test any schedule template by specifying the template ID and name:
 
-### Run Backend Test Only
+### Backend Test
 
 ```bash
-cd backend
-rails runner test/gantt_drag_test.rb
+# Test Bug Hunter Schedule Master (default)
+cd backend && rails runner test/gantt_drag_test.rb
+
+# Test a different template
+cd backend && rails runner test/gantt_drag_test.rb 5 "My Custom Template"
+
+# Arguments:
+#   1. template_id (optional, default: 4)
+#   2. template_name (optional, default: "Bug Hunter Schedule Master")
 ```
 
-**Exit codes:**
-- `0` = Test passed ✅
-- `1` = Test failed ❌
-
-### Run Frontend E2E Test Only
+### E2E Test (Playwright)
 
 ```bash
-cd frontend
-npm run test:gantt
+# Test Bug Hunter Schedule Master (default)
+cd frontend && npm run test:gantt
+
+# Test a different template
+cd frontend && GANTT_TEST_TEMPLATE_ID=5 GANTT_TEST_TEMPLATE_NAME="My Custom Template" npm run test:gantt
+
+# Environment variables:
+#   GANTT_TEST_TEMPLATE_ID (optional, default: "4")
+#   GANTT_TEST_TEMPLATE_NAME (optional, default: "Bug Hunter Schedule Master")
 ```
 
-**Requirements:**
-- Frontend dev server running on `http://localhost:5173`
-- Valid test credentials in `.env.test.local`
+## Test Data Requirements
 
-## 📋 Test Commands
+For tests to work, your template must have:
 
-### Frontend (Playwright)
+1. **At least 3 tasks** in the template
+2. **At least 1 root task** (no predecessors, but has successors)
+3. **At least 2 dependent tasks** that depend on the root task
 
-```bash
-# Run Gantt cascade test (headless)
-npm run test:gantt
-
-# Run with UI (see browser)
-npm run test:e2e:headed
-
-# Run in debug mode
-npm run test:e2e:debug
-
-# Run all E2E tests
-npm run test:e2e
-```
-
-### Backend (Rails)
-
-```bash
-# Run Gantt cascade test
-rails runner test/gantt_drag_test.rb
-
-# Run with verbose logging
-RAILS_LOG_LEVEL=debug rails runner test/gantt_drag_test.rb
-```
-
-## 🔧 Configuration
-
-### Frontend Test Configuration
-
-Create `.env.test.local` in the `frontend/` directory:
-
-```env
-# Frontend URL
-FRONTEND_URL=http://localhost:5173
-
-# Test credentials
-TEST_EMAIL=admin@trapid.com
-TEST_PASSWORD=your_password_here
-```
-
-### Playwright Configuration
-
-Edit `frontend/playwright.config.js` to customize:
-- Test timeout
-- Browser options
-- Screenshot/video capture
-- Parallel execution
-
-## 🤖 For Bug-Hunter Agent
-
-The bug-hunter agent can run the full test suite automatically:
-
-```bash
-./test/run_gantt_tests.sh
-```
-
-**What the script does:**
-
-1. ✅ Runs backend cascade test
-2. ✅ Checks if frontend dev server is running
-3. ✅ Runs Playwright E2E test if available
-4. ✅ Reports comprehensive results
-5. ✅ Returns proper exit codes for automation
-
-**Exit codes:**
-- `0` = All tests passed
-- `1` = Backend test failed
-- `2` = Frontend test failed
-
-## 📊 Test Results
-
-### Backend Test Output
+### Example Task Structure
 
 ```
-🧪 GANTT DRAG TEST #1: Move Task 1 by 5 days
-============================================================
-✅ Found template: Schedule Master
-
-📋 Initial State:
-  Task 1 (299): start_date = 4
-  Task 2 (300): start_date = 6, predecessors = [{"id"=>1, "lag"=>0, "type"=>"FS"}]
-  Task 3 (301): start_date = 6, predecessors = [{"id"=>1, "lag"=>0, "type"=>"FS"}]
-
-🎯 Simulating drag: Moving Task 1 from day 4 to day 9
-
-📋 After Update:
-  Task 1 (299): start_date = 9 (moved +5 days)
-  Task 2 (300): start_date = 11 (should move +5 days)
-  Task 3 (301): start_date = 11 (should move +5 days)
-
-🔍 Verification:
-  ✅ Task 2 cascaded correctly (11)
-  ✅ Task 3 cascaded correctly (11)
-
-============================================================
-✅ TEST PASSED: Cascade logic works correctly
+Task 1 (ID 311) - Root task
+  ├─ Task 2 (ID 313) - Depends on Task 1 (FS)
+  └─ Task 3 (ID 312) - Depends on Task 1 (FS)
 ```
 
-### Frontend Test Output
+## Exit Codes
 
-```
-📊 TEST RESULTS
+- **0** - All tests passed ✅
+- **1** - Backend test failed (cascade logic broken)
+- **2** - Frontend E2E test failed (UI integration broken)
+- **3** - Frontend dev server not running
+- **4** - PostgreSQL not running
 
-🌐 API Calls: 1 total
-   Task 299: 1 call
+## What The Tests Verify
 
-📦 Backend Cascade: ✅ Yes
-📦 Batch Update: ✅ Yes
-🔄 Gantt Reloads: 1
+### Backend Test (gantt_drag_test.rb)
+- ✅ Task cascade calculations are correct
+- ✅ Dependent tasks move when root task moves
+- ✅ Dependency relationships are preserved
 
-============================================================
-✅ TEST PASSED: No infinite loop, backend cascade working!
-   - No duplicate API calls ✅
-   - Single Gantt reload ✅
-   - Backend cascade detected ✅
-   - Batch update applied ✅
-```
+### E2E Test (gantt-cascade.spec.js)
+- ✅ No infinite API loops
+- ✅ Single batch update (no screen flicker)
+- ✅ At most 1 Gantt reload
+- ✅ Backend cascade is detected and applied
 
-## 🐛 Troubleshooting
+## When to Run Tests
+
+**ALWAYS run before committing changes to:**
+- Schedule cascade logic (`backend/app/services/schedule_cascade_service.rb`)
+- Gantt drag/drop (`frontend/src/components/schedule-master/DHtmlxGanttView.jsx`)
+- Task dependencies (`backend/app/models/schedule_template_row.rb`)
+- Schedule row API (`backend/app/controllers/api/v1/schedule_template_rows_controller.rb`)
+
+**Also run when:**
+- Upgrading DHtmlx Gantt library
+- Upgrading React or Rails versions
+- Debugging screen flicker or infinite loops
+- Before production deployments
+
+## Troubleshooting
 
 ### Backend Test Fails
+- Check cascade logic in `backend/app/services/schedule_cascade_service.rb`
+- Verify predecessor relationships are correct
+- Check that `manually_positioned` field is set correctly
 
-**Problem:** Tasks not cascading correctly
+### E2E Test Fails
+- Check browser console for errors
+- Verify frontend dev server is running (`npm run dev`)
+- Check that Gantt modal opens correctly
+- Review test output for specific failure reason
 
-**Solution:**
-1. Check [ScheduleCascadeService](../backend/app/services/schedule_cascade_service.rb)
-2. Verify `after_update :cascade_to_dependents` callback in [ScheduleTemplateRow](../backend/app/models/schedule_template_row.rb)
-3. Check logs: `tail -f backend/log/development.log`
+### Tests Can't Find Tasks
+- Ensure your template has the required task structure (root + dependents)
+- Check that task IDs are correct for your template
+- The test will try to find any root task with dependents if ID 311 doesn't exist
 
-### Frontend Test Fails
+## CI/CD Integration
 
-**Problem:** "Cannot find Gantt view"
-
-**Solution:**
-1. Update selectors in `tests/e2e/gantt-cascade.spec.js`
-2. Check if login flow changed
-3. Verify frontend URL in `.env.test.local`
-
-**Problem:** "Dev server not running"
-
-**Solution:**
-```bash
-cd frontend
-npm run dev
-```
-
-### Playwright Not Installed
-
-**Solution:**
-```bash
-cd frontend
-npm install -D @playwright/test
-npx playwright install chromium
-```
-
-## 📚 File Structure
-
-```
-trapid/
-├── test/
-│   ├── run_gantt_tests.sh        # Main test runner
-│   └── README.md                  # This file
-├── backend/
-│   └── test/
-│       └── gantt_drag_test.rb    # Backend cascade test
-└── frontend/
-    ├── tests/
-    │   └── e2e/
-    │       ├── gantt-cascade.spec.js  # E2E test
-    │       └── auth.setup.js          # Auth helper
-    ├── playwright.config.js       # Playwright config
-    └── .env.test                  # Test environment template
-```
-
-## 🎓 Writing New Tests
-
-### Backend Test Example
-
-```ruby
-# backend/test/my_gantt_test.rb
-template = ScheduleTemplate.find(1)
-task = template.schedule_template_rows.find(299)
-
-task.update!(start_date: 10)
-task.reload
-
-# Verify cascade
-dependent = template.schedule_template_rows.find(300)
-assert_equal 12, dependent.start_date
-```
-
-### Frontend Test Example
-
-```javascript
-// frontend/tests/e2e/my-test.spec.js
-import { test, expect } from '@playwright/test';
-
-test('my gantt test', async ({ page }) => {
-  await page.goto('/');
-  // ... your test code
-});
-```
-
-## 📝 CI/CD Integration
-
-Add to your CI pipeline:
+Add to your CI/CD pipeline:
 
 ```yaml
-# .github/workflows/test.yml
-- name: Run Gantt Tests
-  run: ./test/run_gantt_tests.sh
+test:
+  script:
+    - brew services start postgresql@14
+    - cd backend && bin/rails server -p 3001 &
+    - cd frontend && npm run dev &
+    - sleep 10  # Wait for servers to start
+    - ./test/run_gantt_tests.sh
 ```
 
-## 🔗 Related Documentation
+## Git Pre-Push Hook
 
-- [Playwright Docs](https://playwright.dev)
-- [Rails Testing Guide](https://guides.rubyonrails.org/testing.html)
-- [GANTT_SCHEDULE_RULES.md](../GANTT_SCHEDULE_RULES.md)
+Create `.git/hooks/pre-push`:
+
+```bash
+#!/bin/bash
+echo "🔍 Running Bug Hunter tests before push..."
+./test/run_gantt_tests.sh
+```
+
+Make it executable:
+```bash
+chmod +x .git/hooks/pre-push
+```
+
+This ensures cascade logic is always verified before pushing changes.

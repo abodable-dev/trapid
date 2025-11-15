@@ -1,11 +1,12 @@
 import { XMarkIcon, PlayIcon, ArrowPathIcon, BeakerIcon } from '@heroicons/react/24/outline'
 import { useState, useEffect } from 'react'
+import { api } from '../../api'
 
 /**
  * GanttTestStatusModal - Shows the 10 Bug Hunter tests in a table with live test execution
  * With tabs for manual and automated test results
  */
-export default function GanttTestStatusModal({ isOpen, onClose}) {
+export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, templateId }) {
   const [testResults, setTestResults] = useState(null)
   const [isRunning, setIsRunning] = useState(false)
   const [lastRunTime, setLastRunTime] = useState(null)
@@ -324,32 +325,190 @@ export default function GanttTestStatusModal({ isOpen, onClose}) {
     try {
       // Check if Gantt instance is available
       if (!window.gantt) {
-        setAutomatedTestResult({
-          status: 'error',
-          message: 'Gantt chart not available. Please open the Gantt view first.',
-          details: null
-        })
-        setIsRunningAutomatedTest(false)
-        return
+        // If Gantt is not loaded and we have the onOpenGantt callback, open it automatically
+        if (onOpenGantt) {
+          console.log('🧪 Gantt not loaded - opening Gantt view automatically...')
+          testSteps.push('📍 Opening Gantt view (Gantt not currently loaded)...')
+
+          setAutomatedTestResult({
+            status: 'info',
+            message: 'Opening Gantt view automatically...',
+            details: {
+              steps: ['📍 Opening Gantt view - please wait...']
+            }
+          })
+
+          // Open the Gantt view
+          onOpenGantt()
+
+          // Wait for Gantt to load
+          let attempts = 0
+          const maxAttempts = 20 // 10 seconds max wait
+
+          while (!window.gantt && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 500))
+            attempts++
+          }
+
+          if (!window.gantt) {
+            setAutomatedTestResult({
+              status: 'error',
+              message: 'Gantt chart failed to load after 10 seconds',
+              details: {
+                steps: [
+                  '📍 Opened Gantt view',
+                  '❌ Gantt failed to load within 10 seconds'
+                ]
+              }
+            })
+            setIsRunningAutomatedTest(false)
+            return
+          }
+
+          testSteps.push('✅ Gantt view opened successfully')
+
+          // Wait for tasks to actually load in Gantt
+          let tasksLoaded = false
+          let waitAttempts = 0
+          const maxWaitAttempts = 20 // 10 seconds max
+
+          while (!tasksLoaded && waitAttempts < maxWaitAttempts) {
+            // Calculate remaining seconds
+            const remainingSeconds = Math.ceil((maxWaitAttempts - waitAttempts) * 0.5)
+
+            setAutomatedTestResult({
+              status: 'info',
+              message: `Waiting for tasks to load... ${remainingSeconds}s`,
+              details: {
+                steps: testSteps.concat([`⏳ Waiting for tasks to load into Gantt chart... (${remainingSeconds}s remaining)`])
+              }
+            })
+
+            await new Promise(resolve => setTimeout(resolve, 500))
+
+            // Check if tasks are loaded
+            const taskCount = window.gantt.getTaskByTime ? window.gantt.getTaskByTime().length : 0
+            if (taskCount > 0) {
+              tasksLoaded = true
+              testSteps.push(`✅ Tasks loaded successfully (${taskCount} tasks found)`)
+            }
+            waitAttempts++
+          }
+
+          if (!tasksLoaded) {
+            setAutomatedTestResult({
+              status: 'error',
+              message: 'Tasks failed to load in Gantt chart after 10 seconds',
+              details: {
+                steps: testSteps.concat([
+                  '⏳ Waited for tasks to load...',
+                  '❌ No tasks loaded after 10 seconds'
+                ])
+              }
+            })
+            setIsRunningAutomatedTest(false)
+            return
+          }
+
+          // Wait a bit more for UI to stabilize
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        } else {
+          setAutomatedTestResult({
+            status: 'error',
+            message: 'Gantt chart not available. Please open the Gantt view first.',
+            details: null
+          })
+          setIsRunningAutomatedTest(false)
+          return
+        }
       }
 
       const gantt = window.gantt
 
-      // Find all tasks
-      const tasks = []
+      // Check if tasks are already loaded
+      let initialTasks = []
       gantt.eachTask((task) => {
-        tasks.push(task)
+        initialTasks.push(task)
       })
 
-      if (tasks.length === 0) {
+      // If no tasks found and we have the callback, open the Gantt view
+      if (initialTasks.length === 0 && onOpenGantt) {
+        console.log('🧪 Gantt instance exists but no tasks loaded - opening Gantt view...')
+        testSteps.push('📍 Gantt instance exists but no tasks found - opening Gantt view...')
+
+        setAutomatedTestResult({
+          status: 'info',
+          message: 'Opening Gantt view to load tasks...',
+          details: {
+            steps: testSteps.concat(['📍 Opening Gantt view to load tasks...'])
+          }
+        })
+
+        // Open the Gantt view
+        onOpenGantt()
+
+        // Wait a bit for the modal to open
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        testSteps.push('✅ Gantt view opened - waiting for tasks...')
+      } else if (initialTasks.length > 0) {
+        testSteps.push(`✅ Gantt instance found with ${initialTasks.length} tasks loaded`)
+      } else {
+        testSteps.push('✅ Gantt instance found - checking for tasks...')
+      }
+
+      // Wait for tasks to load
+      let tasksLoaded = false
+      let waitAttempts = 0
+      const maxWaitAttempts = 20 // 10 seconds max
+
+      while (!tasksLoaded && waitAttempts < maxWaitAttempts) {
+        // Calculate remaining seconds
+        const remainingSeconds = Math.ceil((maxWaitAttempts - waitAttempts) * 0.5)
+
+        setAutomatedTestResult({
+          status: 'info',
+          message: `Waiting for tasks to load... ${remainingSeconds}s`,
+          details: {
+            steps: testSteps.concat([`⏳ Waiting for tasks to load... (${remainingSeconds}s remaining)`])
+          }
+        })
+
+        // Find all tasks
+        const tasks = []
+        gantt.eachTask((task) => {
+          tasks.push(task)
+        })
+
+        if (tasks.length > 0) {
+          tasksLoaded = true
+          testSteps.push(`✅ Tasks loaded successfully (${tasks.length} tasks found)`)
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 500))
+          waitAttempts++
+        }
+      }
+
+      if (!tasksLoaded) {
         setAutomatedTestResult({
           status: 'error',
-          message: 'No tasks available in Gantt chart',
-          details: null
+          message: 'No tasks available in Gantt chart after 10 seconds',
+          details: {
+            steps: testSteps.concat([
+              '⏳ Waited for tasks to load...',
+              '❌ No tasks found in Gantt chart after 10 seconds',
+              'ℹ️ This may indicate the template is empty or tasks failed to load'
+            ])
+          }
         })
         setIsRunningAutomatedTest(false)
         return
       }
+
+      // Find all tasks again for the test
+      const tasks = []
+      gantt.eachTask((task) => {
+        tasks.push(task)
+      })
 
       // STEP 1: Select task (first task or custom task by ID)
       let testTask
@@ -407,21 +566,77 @@ export default function GanttTestStatusModal({ isOpen, onClose}) {
       testSteps.push(`✅ Step 4: Captured original state - Start: ${originalStartDate.toLocaleDateString()}, Hold: ${originalHold}`)
       console.log('🧪 Test Step 4: Original state:', { originalStartDate, originalHold })
 
-      // STEP 2: Move task forward by 5 days
+      // STEP 2: Move task forward by 5 days and trigger backend cascade
       const newStartDate = new Date(originalStartDate)
       newStartDate.setDate(newStartDate.getDate() + 5)
       testSteps.push(`✅ Step 5: Moving task 5 days forward (${originalStartDate.toLocaleDateString()} → ${newStartDate.toLocaleDateString()})`)
       console.log('🧪 Test Step 5: Moving task from', originalStartDate, 'to', newStartDate)
 
-      // Set hold to true to lock the new position
-      gantt.updateTask(testTask.id, {
-        ...testTask,
-        start_date: newStartDate,
-        hold: true
-      })
+      // Calculate day offset from project start (today)
+      const projectStartDate = new Date()
+      projectStartDate.setHours(0, 0, 0, 0)
+      const dayOffset = Math.floor((newStartDate - projectStartDate) / (1000 * 60 * 60 * 24))
+
+      // Check template ID is available (passed as prop from parent)
+      if (!templateId) {
+        setAutomatedTestResult({
+          status: 'error',
+          message: 'Cannot find template ID - modal not initialized properly',
+          details: {
+            steps: testSteps.concat(['❌ Template ID not provided to modal'])
+          }
+        })
+        setIsRunningAutomatedTest(false)
+        return
+      }
+
+      // Call backend API to update task and trigger cascade
+      try {
+        const data = await api.patch(`/api/v1/schedule_templates/${templateId}/rows/${testTask.id}`, {
+          schedule_template_row: {
+            start_date: dayOffset,
+            duration: testTask.duration,
+            manually_positioned: true // Set to true to lock the position
+          }
+        })
+        console.log('🧪 Backend cascade response:', data)
+
+        // Apply backend updates to Gantt (main task + cascaded tasks)
+        const tasksToUpdate = [data.task || data]
+        if (data.cascaded_tasks) {
+          tasksToUpdate.push(...data.cascaded_tasks)
+        }
+
+        // Update all tasks in Gantt
+        tasksToUpdate.forEach(task => {
+          const ganttTask = gantt.getTask(task.id)
+          if (ganttTask) {
+            const date = new Date(projectStartDate)
+            date.setDate(date.getDate() + task.start_date)
+            ganttTask.start_date = date
+            ganttTask.duration = task.duration
+            gantt.updateTask(ganttTask.id)
+          }
+        })
+
+        testSteps.push(`✅ Backend cascade triggered - updated ${tasksToUpdate.length} task(s)`)
+        console.log('🧪 Applied', tasksToUpdate.length, 'task updates from backend')
+
+      } catch (error) {
+        console.error('🧪 Backend API call failed:', error)
+        setAutomatedTestResult({
+          status: 'error',
+          message: `Failed to call backend API: ${error.message}`,
+          details: {
+            steps: testSteps.concat([`❌ Backend API error: ${error.message}`])
+          }
+        })
+        setIsRunningAutomatedTest(false)
+        return
+      }
 
       // Wait for operations to complete
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await new Promise(resolve => setTimeout(resolve, 1000))
 
       // STEP 3: Check for screen flashes (Gantt reloads)
       const reportAfterMove = window.ganttBugHunter.generateReport()
@@ -495,31 +710,45 @@ export default function GanttTestStatusModal({ isOpen, onClose}) {
       }
       console.log('🧪 Test Step 7: Dependency checks:', dependencyChecks)
 
-      // STEP 5: Untick hold flag
-      testSteps.push('✅ Step 8: Unticking hold flag...')
-      console.log('🧪 Test Step 8: Unticking hold flag')
+      // STEP 5: Check if task has predecessors to test "return to original"
+      // Only tasks with predecessors can return to original when manually_positioned is unset
+      const hasPredecessors = testTask.predecessor_ids && testTask.predecessor_ids.length > 0
+      let returnedToOriginal = true // Default to true (meaning "not applicable" for tasks without predecessors)
 
-      gantt.updateTask(testTask.id, {
-        ...gantt.getTask(testTask.id),
-        hold: false
-      })
+      if (hasPredecessors) {
+        testSteps.push('✅ Step 8: Unticking manual position to allow cascade recalculation...')
+        console.log('🧪 Test Step 8: Unticking manual position')
 
-      await new Promise(resolve => setTimeout(resolve, 1000))
+        // Call backend API to unset manually_positioned
+        try {
+          await api.patch(`/api/v1/schedule_templates/${templateId}/rows/${testTask.id}`, {
+            schedule_template_row: {
+              manually_positioned: false
+            }
+          })
 
-      // STEP 6: Check everything goes back to original position
-      testSteps.push('✅ Step 9: Checking if task returns to original position...')
-      console.log('🧪 Test Step 9: Verifying return to original position')
+          await new Promise(resolve => setTimeout(resolve, 1000))
 
-      const currentTask = gantt.getTask(testTask.id)
-      const currentStartDate = new Date(currentTask.start_date)
-      const returnedToOriginal = currentStartDate.toDateString() === originalStartDate.toDateString()
+          // Reload task from Gantt
+          const currentTask = gantt.getTask(testTask.id)
+          const currentStartDate = new Date(currentTask.start_date)
+          returnedToOriginal = currentStartDate.toDateString() === originalStartDate.toDateString()
 
-      if (returnedToOriginal) {
-        testSteps.push(`✅ Step 10: Task returned to original position (${originalStartDate.toLocaleDateString()})`)
+          if (returnedToOriginal) {
+            testSteps.push(`✅ Step 9: Task returned to original position (${originalStartDate.toLocaleDateString()})`)
+          } else {
+            testSteps.push(`ℹ️ Step 9: Task position recalculated to ${currentStartDate.toLocaleDateString()} (original: ${originalStartDate.toLocaleDateString()})`)
+          }
+          console.log('🧪 Test Step 9: Return check:', returnedToOriginal, currentStartDate, 'vs', originalStartDate)
+        } catch (error) {
+          testSteps.push(`❌ Step 8: Failed to unset manual position: ${error.message}`)
+          console.error('🧪 Failed to unset manual position:', error)
+          returnedToOriginal = false
+        }
       } else {
-        testSteps.push(`❌ Step 10: Task did NOT return to original position (expected ${originalStartDate.toLocaleDateString()}, got ${currentStartDate.toLocaleDateString()})`)
+        testSteps.push('ℹ️ Step 8: Skipping "return to original" test - task has no predecessors')
+        console.log('🧪 Test Step 8: Task has no predecessors, cannot test return to original')
       }
-      console.log('🧪 Test Step 10: Return check:', returnedToOriginal, currentStartDate, 'vs', originalStartDate)
 
       // Get final Bug Hunter report
       const finalReport = window.ganttBugHunter.generateReport()
@@ -727,14 +956,14 @@ export default function GanttTestStatusModal({ isOpen, onClose}) {
                 </button>
 
                 <button
-                  onClick={runAutomatedDragTest}
+                  onClick={() => runAutomatedDragTest({ visual: false })}
                   disabled={isRunningAutomatedTest}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                     isRunningAutomatedTest
                       ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 hover:bg-blue-700 text-white'
                   }`}
-                  title="Automatically move a task and check for flickering"
+                  title="Fast automated test (runs in background)"
                 >
                   {isRunningAutomatedTest ? (
                     <>
@@ -745,6 +974,29 @@ export default function GanttTestStatusModal({ isOpen, onClose}) {
                     <>
                       <BeakerIcon className="h-5 w-5" />
                       Run Automated Test
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => runAutomatedDragTest({ visual: true })}
+                  disabled={isRunningAutomatedTest}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    isRunningAutomatedTest
+                      ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
+                      : 'bg-purple-600 hover:bg-purple-700 text-white'
+                  }`}
+                  title="Visual test mode - opens Gantt and shows each step (slower)"
+                >
+                  {isRunningAutomatedTest ? (
+                    <>
+                      <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                      Testing...
+                    </>
+                  ) : (
+                    <>
+                      <BeakerIcon className="h-5 w-5" />
+                      Run Visual Test
                     </>
                   )}
                 </button>
@@ -921,12 +1173,63 @@ export default function GanttTestStatusModal({ isOpen, onClose}) {
             {/* Automated Test Tab Content */}
             {activeTab === 'automated' && (
               <>
-                {automatedTestResult ? (
+                {/* Running Test Overlay - Shows during test execution */}
+                {isRunningAutomatedTest && (
+                  <div className="mb-4 p-8 rounded-lg border-2 border-blue-400 dark:border-blue-600 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 relative overflow-hidden">
+                    {/* Animated background pulse */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-200/50 dark:via-blue-700/30 to-transparent animate-pulse"></div>
+
+                    <div className="relative z-10 flex flex-col items-center gap-4">
+                      {/* Large spinning icon */}
+                      <div className="relative">
+                        <ArrowPathIcon className="h-16 w-16 text-blue-600 dark:text-blue-400 animate-spin" />
+                        <div className="absolute inset-0 h-16 w-16 rounded-full border-4 border-blue-200 dark:border-blue-700 animate-ping opacity-75"></div>
+                      </div>
+
+                      {/* Status message */}
+                      <div className="text-center">
+                        <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-2">
+                          {automatedTestResult?.message || 'Running Automated Test...'}
+                        </h3>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          Please wait while the test executes
+                        </p>
+                      </div>
+
+                      {/* Progress steps if available */}
+                      {automatedTestResult?.details?.steps && (
+                        <div className="w-full max-w-md mt-4">
+                          <div className="bg-white/50 dark:bg-gray-900/50 rounded-lg p-4 backdrop-blur-sm">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3 text-sm">Test Progress:</h4>
+                            <div className="space-y-2">
+                              {automatedTestResult.details.steps.map((step, idx) => (
+                                <div key={idx} className="flex items-start gap-2">
+                                  <span className="text-lg flex-shrink-0">
+                                    {step.startsWith('✅') ? '✅' :
+                                     step.startsWith('❌') ? '❌' :
+                                     step.startsWith('📍') ? '📍' :
+                                     step.startsWith('⚠️') ? '⚠️' : '▶️'}
+                                  </span>
+                                  <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">
+                                    {step.replace(/^[✅❌📍⚠️▶️]\s*/, '')}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {automatedTestResult && !isRunningAutomatedTest ? (
                   <div className="space-y-4">
                     {/* Test Result Header */}
                     <div className={`border rounded-lg p-4 ${
                       automatedTestResult.status === 'pass' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
                       automatedTestResult.status === 'fail' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
+                      automatedTestResult.status === 'info' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' :
                       'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
                     }`}>
                       <div className="flex gap-3">

@@ -52,56 +52,95 @@ export default function MasterSchedulePage() {
     }
   }
 
-  const handleTaskUpdate = async (taskId, field, value) => {
+  const handleTaskUpdate = async (taskId, fieldOrUpdates, valueOrOptions, maybeOptions) => {
     if (!project || saving) return
+
+    // Support both old signature (field, value) and new signature (updates, options)
+    let updates
+    let options = {}
+
+    if (typeof fieldOrUpdates === 'object') {
+      // New signature: handleTaskUpdate(taskId, updates, options)
+      updates = fieldOrUpdates
+      options = valueOrOptions || {}
+    } else {
+      // Old signature: handleTaskUpdate(taskId, field, value)
+      updates = { [fieldOrUpdates]: valueOrOptions }
+      options = maybeOptions || {}
+    }
 
     // Store original data for rollback
     const originalTasks = [...scheduleData.tasks]
 
-    // Optimistic update - update UI immediately
-    const updatedTasks = scheduleData.tasks.map(task => {
-      if (task.id === taskId) {
-        // Map frontend field names to backend field names if needed
-        const fieldMapping = {
-          'planned_start_date': 'start_date',
-          'planned_end_date': 'end_date',
-          'duration_days': 'duration',
-          'progress_percentage': 'progress',
-          'assigned_to': 'assigned_to',
-          'supplier': 'supplier'
+    // Map frontend field names to backend field names if needed
+    const fieldMapping = {
+      'planned_start_date': 'start_date',
+      'planned_end_date': 'end_date',
+      'duration_days': 'duration',
+      'progress_percentage': 'progress',
+      'assigned_to': 'assigned_to',
+      'supplier': 'supplier'
+    }
+
+    // Apply field mapping to updates
+    const mappedUpdates = {}
+    for (const [field, value] of Object.entries(updates)) {
+      const displayField = fieldMapping[field] || field
+      mappedUpdates[displayField] = value
+    }
+
+    // Optimistic update - ONLY if not skipping reload
+    // When skipReload is true (drag operations), Gantt handles the UI update internally
+    // Updating parent state here causes background page to re-render and shake
+    if (!options.skipReload) {
+      const updatedTasks = scheduleData.tasks.map(task => {
+        if (task.id === taskId) {
+          return { ...task, ...mappedUpdates }
         }
-
-        const displayField = fieldMapping[field] || field
-        return { ...task, [displayField]: value }
-      }
-      return task
-    })
-
-    setScheduleData({ ...scheduleData, tasks: updatedTasks })
+        return task
+      })
+      setScheduleData({ ...scheduleData, tasks: updatedTasks })
+    }
 
     try {
-      setSaving(true)
+      // Only set saving state for table edits (not drag operations)
+      // setSaving causes parent re-render which creates flicker
+      if (!options.skipReload) {
+        setSaving(true)
+      }
 
-      // Make API call
+      // Make API call with all updates at once
       const response = await api.patch(`/api/v1/projects/${project.id}/tasks/${taskId}`, {
-        project_task: { [field]: value }
+        project_task: updates
       })
 
       if (response.success) {
-        // Show success toast
-        setToast({ type: 'success', message: 'Task updated successfully' })
+        // Only show toast for table edits (drag operations are silent)
+        if (!options.skipReload) {
+          setToast({ type: 'success', message: 'Task updated successfully' })
+        }
 
-        // Re-fetch the schedule to ensure consistency
-        const scheduleResponse = await api.get(`/api/v1/projects/${project.id}/gantt`)
-        setScheduleData(scheduleResponse)
+        // Only re-fetch if skipReload is not set (eliminates flicker on drag)
+        if (!options.skipReload) {
+          const scheduleResponse = await api.get(`/api/v1/projects/${project.id}/gantt`)
+          setScheduleData(scheduleResponse)
+        }
+        // else: Completely silent background save - no flicker!
       } else {
         throw new Error(response.errors?.join(', ') || 'Update failed')
       }
     } catch (err) {
       console.error('Failed to update task:', err)
 
-      // Rollback on error
-      setScheduleData({ ...scheduleData, tasks: originalTasks })
+      // Rollback on error - only if we did an optimistic update
+      if (!options.skipReload) {
+        setScheduleData({ ...scheduleData, tasks: originalTasks })
+      } else {
+        // For drag operations, trigger a full reload to sync with backend
+        // since Gantt has already updated internally
+        const scheduleResponse = await api.get(`/api/v1/projects/${project.id}/gantt`)
+        setScheduleData(scheduleResponse)
+      }
 
       // Show error toast
       setToast({
@@ -109,7 +148,10 @@ export default function MasterSchedulePage() {
         message: err.message || 'Failed to update task. Please try again.'
       })
     } finally {
-      setSaving(false)
+      // Only clear saving state if we set it
+      if (!options.skipReload) {
+        setSaving(false)
+      }
     }
   }
 
@@ -231,11 +273,9 @@ export default function MasterSchedulePage() {
             setViewMode('table')
           }}
           tasks={scheduleData.tasks}
-          onUpdateTask={async (taskId, updates) => {
-            // Handle task updates from Gantt
-            for (const [field, value] of Object.entries(updates)) {
-              await handleTaskUpdate(taskId, field, value)
-            }
+          onUpdateTask={async (taskId, updates, options) => {
+            // Handle task updates from Gantt - pass all updates at once
+            await handleTaskUpdate(taskId, updates, options)
           }}
         />
       )}

@@ -147,7 +147,7 @@ export default function LinkXeroContactModal({ isOpen, onClose, contact, onSucce
                           className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
                             selectedXeroContact?.xero_id === xeroContact.xero_id
                               ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
-                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-750'
+                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
                           } ${linking ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           <div className="flex items-start justify-between">

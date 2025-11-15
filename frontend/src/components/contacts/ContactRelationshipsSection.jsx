@@ -246,15 +246,15 @@ export default function ContactRelationshipsSection({ contactId, isEditMode }) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <LinkIcon className="h-5 w-5" />
           Related Contacts
-        </h3>
+        </h2>
         <button
           onClick={startAdding}
-          className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md border border-gray-300 dark:border-gray-600"
         >
           <PlusIcon className="h-4 w-4" />
           Add Relationship
@@ -275,14 +275,14 @@ export default function ContactRelationshipsSection({ contactId, isEditMode }) {
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={() => saveRelationship(editingRelationship)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-green-600 hover:bg-green-700 rounded"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-green-600 hover:bg-green-700 rounded-md"
                   >
                     <CheckCircleIcon className="h-4 w-4" />
                     Save
                   </button>
                   <button
                     onClick={cancelEditing}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md"
                   >
                     <XCircleIcon className="h-4 w-4" />
                     Cancel
@@ -366,14 +366,14 @@ export default function ContactRelationshipsSection({ contactId, isEditMode }) {
               <button
                 onClick={() => saveRelationship(newRelationship, true)}
                 disabled={!newRelationship.related_contact_id}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-green-600 hover:bg-green-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-green-600 hover:bg-green-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <CheckCircleIcon className="h-4 w-4" />
                 Add
               </button>
               <button
                 onClick={cancelEditing}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md"
               >
                 <XCircleIcon className="h-4 w-4" />
                 Cancel

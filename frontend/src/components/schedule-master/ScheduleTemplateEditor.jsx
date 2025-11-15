@@ -2241,6 +2241,8 @@ export default function ScheduleTemplateEditor() {
       <GanttTestStatusModal
         isOpen={showTestStatusModal}
         onClose={() => setShowTestStatusModal(false)}
+        onOpenGantt={() => setShowGanttView(true)}
+        templateId={selectedTemplate?.id}
       />
 
       {/* Toast */}

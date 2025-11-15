@@ -7,6 +7,7 @@
 # - 1: Backend test failed
 # - 2: Frontend test failed
 # - 3: Frontend dev server not running
+# - 4: PostgreSQL not running
 
 echo "🧪 GANTT CASCADE TEST SUITE"
 echo "============================================================"
@@ -15,6 +16,40 @@ echo ""
 # Get the project root directory (absolute path)
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_ROOT" || exit 1
+
+# ============================================================================
+# PREREQUISITE CHECKS
+# ============================================================================
+echo "🔍 Checking prerequisites..."
+echo ""
+
+# Check if PostgreSQL is running
+if pg_isready -q 2>/dev/null; then
+  echo "✅ PostgreSQL is running"
+else
+  echo "❌ PostgreSQL is not running"
+  echo ""
+  echo "To start PostgreSQL:"
+  echo "  brew services start postgresql@14"
+  echo "  # or"
+  echo "  brew services start postgresql"
+  echo ""
+  exit 4
+fi
+
+# Check if backend Rails server is running (optional, only needed for E2E tests)
+if curl -s http://localhost:3001/api/v1/health > /dev/null 2>&1; then
+  echo "✅ Backend Rails server is running (localhost:3001)"
+  BACKEND_RUNNING=true
+else
+  echo "⚠️  Backend Rails server is not running (localhost:3001)"
+  echo "   (Not required for backend tests, but needed for E2E tests)"
+  BACKEND_RUNNING=false
+fi
+
+echo ""
+echo "============================================================"
+echo ""
 
 # Test 1: Backend Cascade Logic
 echo "📋 TEST 1: Backend Cascade Logic"
