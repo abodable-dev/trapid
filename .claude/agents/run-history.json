@@ -28,12 +28,12 @@
       "runs": []
     },
     "deploy-manager": {
-      "total_runs": 1,
-      "successful_runs": 1,
+      "total_runs": 2,
+      "successful_runs": 2,
       "failed_runs": 0,
-      "last_run": "2025-11-15T20:35:40Z",
+      "last_run": "2025-11-15T20:48:19Z",
       "last_status": "success",
-      "last_message": "Successfully deployed to staging (v390)",
+      "last_message": "Successfully deployed to staging (v392) - Added 6th agent",
       "runs": [
         {
           "timestamp": "2025-11-15T20:35:40Z",
@@ -45,6 +45,19 @@
             "commit": "f7b4c84",
             "heroku_release": "v390",
             "files_changed": 26
+          }
+        },
+        {
+          "timestamp": "2025-11-15T20:48:19Z",
+          "status": "success",
+          "message": "Successfully deployed to staging (v392) - Added 6th agent",
+          "duration_seconds": 43,
+          "details": {
+            "branch": "rob",
+            "commit": "c7bf863",
+            "heroku_release": "v392",
+            "files_changed": 7,
+            "new_agent": "gantt-bug-hunter"
           }
         }
       ]
@@ -70,7 +83,7 @@
   },
   "metadata": {
     "created": "2025-11-16T00:00:00Z",
-    "last_updated": "2025-11-15T20:35:40Z",
+    "last_updated": "2025-11-15T20:48:19Z",
     "version": "1.0"
   }
 }

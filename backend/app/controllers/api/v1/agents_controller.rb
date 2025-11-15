@@ -3,8 +3,6 @@
 module Api
   module V1
     class AgentsController < ApplicationController
-      skip_before_action :authenticate_user!, only: [:status]
-
       def status
         file_path = Rails.root.join('..', '.claude', 'agents', 'run-history.json')
 
