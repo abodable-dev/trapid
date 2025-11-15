@@ -2882,28 +2882,13 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
             console.log('🧪 Calling backend API:', apiUrl)
             await updateProgress(`🔄 Calling backend API for task #${testTask.id}...`)
 
-            const response = await fetch(apiUrl, {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              credentials: 'include', // Include session cookies for authentication
-              body: JSON.stringify({
-                schedule_template_row: {
-                  start_date: dayOffset,
-                  duration: testTask.duration,
-                  manually_positioned: true
-                }
-              })
+            const data = await api.patch(apiUrl, {
+              schedule_template_row: {
+                start_date: dayOffset,
+                duration: testTask.duration,
+                manually_positioned: true
+              }
             })
-
-            if (!response.ok) {
-              const errorText = await response.text()
-              console.error('🧪 Backend API error:', response.status, errorText)
-              throw new Error(`Backend API error (${response.status}): ${errorText || response.statusText}`)
-            }
-
-            const data = await response.json()
             console.log('🧪 Backend cascade response:', data)
 
             // Apply backend updates to Gantt (main task + cascaded tasks)
@@ -2989,22 +2974,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
         // Move back - unset manually_positioned to allow cascade recalculation
         if (templateId) {
           try {
-            const response = await fetch(`/api/v1/schedule_templates/${templateId}/rows/${testTask.id}`, {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              credentials: 'include', // Include session cookies for authentication
-              body: JSON.stringify({
-                schedule_template_row: {
-                  manually_positioned: false
-                }
-              })
+            await api.patch(`/api/v1/schedule_templates/${templateId}/rows/${testTask.id}`, {
+              schedule_template_row: {
+                manually_positioned: false
+              }
             })
-
-            if (response.ok) {
-              await updateProgress('✅ Unlocked task - cascade will recalculate position')
-            }
+            await updateProgress('✅ Unlocked task - cascade will recalculate position')
           } catch (error) {
             console.error('Failed to unlock task:', error)
           }
