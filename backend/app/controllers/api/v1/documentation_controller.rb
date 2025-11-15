@@ -53,6 +53,15 @@ module Api
             audience: 'Developers',
             path: '00_INDEX/DOCUMENTATION_AUTHORITY.md',
             chapters: nil
+          },
+          {
+            id: 'continuation',
+            name: 'Continuation Instructions',
+            description: 'Progress tracker and workflow for completing Trinity documentation',
+            icon: '📍',
+            audience: 'Developers',
+            path: '00_INDEX/CONTINUATION_INSTRUCTIONS.md',
+            chapters: nil
           }
         ]
 
@@ -76,6 +85,8 @@ module Api
                       Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'CHAPTER_GUIDE.md')
                     when 'authority'
                       Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'DOCUMENTATION_AUTHORITY.md')
+                    when 'continuation'
+                      Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'CONTINUATION_INSTRUCTIONS.md')
                     when 'readme'
                       Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'README.md')
                     else

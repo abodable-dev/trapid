@@ -56,6 +56,7 @@ const navigation = [
   { name: 'Health', href: '/health', icon: PlusIcon },
   { name: 'Performance', href: '/system/performance', icon: CpuChipIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+  { name: 'The Bible', href: '/documentation', icon: BookOpenIcon },
   { name: 'DHTMLX Gantt', href: '/settings?tab=schedule-master&openGantt=dhtmlx', icon: ChartBarIcon },
 ]
 
