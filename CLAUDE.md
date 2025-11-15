@@ -244,7 +244,7 @@ Trapid uses **6 specialized agents** defined in `.claude/agents/`. Each agent ha
 **6. gantt-bug-hunter** (`/.claude/agents/gantt-bug-hunter.md`)
 - Gantt Chart & Schedule Master bug diagnosis
 - Run 12 automated visual tests
-- Verify all 13 RULES from GANTT_BIBLE.md
+- Verify all 13 RULES from TRAPID_BIBLE.md Chapter 9
 - Check Protected Code Patterns
 - Analyze cascade behavior
 

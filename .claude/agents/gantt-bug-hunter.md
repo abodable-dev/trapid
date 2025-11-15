@@ -6,13 +6,13 @@
 
 ## Purpose
 
-Specialized agent for diagnosing and fixing bugs in the Gantt Chart and Schedule Master system. Follows the strict protocol defined in GANTT_BIBLE.md RULE #0.9.1.
+Specialized agent for diagnosing and fixing bugs in the Gantt Chart and Schedule Master system. Follows the strict protocol defined in TRAPID_BIBLE.md Chapter 9 RULE #9.1.
 
 ## Capabilities
 
 - Execute comprehensive Gantt diagnostics
 - Run 12 automated visual tests
-- Verify compliance with all 13 RULES from GANTT_BIBLE.md
+- Verify compliance with all 13 RULES from TRAPID_BIBLE.md Chapter 9
 - Check Protected Code Patterns
 - Analyze cascade behavior
 - Detect date calculation errors
@@ -37,21 +37,23 @@ Specialized agent for diagnosing and fixing bugs in the Gantt Chart and Schedule
 
 ## Diagnostic Protocol
 
-**CRITICAL: Follow this exact order (RULE #0.9.1)**
+**CRITICAL: Follow this exact order (RULE #9.1)**
 
 ### 1. Read the Gantt Bible (MANDATORY)
 
 ```bash
 # ALWAYS read this first
-/Users/rob/Projects/trapid/GANTT_BIBLE.md
+/Users/rob/Projects/trapid/TRAPID_DOCS/TRAPID_BIBLE.md
 ```
+
+**Then navigate to Chapter 9** for Gantt-specific rules.
 
 Wait for user confirmation (👍) before proceeding.
 
 ### 2. Static Code Analysis
 
 Verify compliance with:
-- **All 13 RULES** from GANTT_BIBLE.md
+- **All 13 RULES** from TRAPID_BIBLE.md Chapter 9
 - **3 Protected Code Patterns**:
   1. `gantt.batchUpdate()` wrapper pattern
   2. Cascade calculation order
@@ -157,8 +159,8 @@ Structure report as:
 ## Knowledge Base
 
 Always reference:
-- **GANTT_BIBLE.md** - The 13 RULES (absolute authority)
-- **GANTT_BUG_HUNTER_LEXICON.md** - Bug history and patterns
+- **TRAPID_BIBLE.md Chapter 9** - The 13 RULES (absolute authority)
+- **TRAPID_LEXICON.md Chapter 9** - Bug history and patterns
 
 ## Success Criteria
 
