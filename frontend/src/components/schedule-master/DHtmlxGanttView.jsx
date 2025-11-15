@@ -2791,12 +2791,22 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
 
     // Expose automated visual test function globally
     window.runGanttAutomatedTest = async (options = {}) => {
-      const { visual = false } = options
+      const { visual = false, templateId, onProgress } = options
       console.log('🧪 Running Gantt Automated Visual Test...', options)
 
-      // Import the test implementation from the modal
-      // For now, just return a simple result
       const testStartTime = Date.now()
+      const testSteps = []
+
+      // Helper function to update progress
+      const updateProgress = async (step, delayMs = visual ? 400 : 0) => {
+        testSteps.push(step)
+        if (onProgress) {
+          onProgress(step, testSteps)
+        }
+        if (delayMs > 0) {
+          await new Promise(resolve => setTimeout(resolve, delayMs))
+        }
+      }
 
       try {
         // Get all tasks
@@ -2814,54 +2824,217 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
           }
         }
 
-        // Select first task
-        const testTask = tasks[0]
+        // Select first task that has dependencies
+        const testTask = tasks.find(task => {
+          // Count tasks that depend on this task
+          const links = []
+          gantt.eachTask((t) => {
+            gantt.getLinks().forEach(link => {
+              if (link.source == task.id) {
+                links.push({ targetId: t.id, type: link.type })
+              }
+            })
+          })
+          return links.length > 0
+        }) || tasks[0]
+
         console.log('🧪 Testing task:', testTask.text)
+        await updateProgress(`✅ Selected task: ${testTask.text}`)
 
         // Get original state
         const originalStartDate = new Date(testTask.start_date)
+        await updateProgress(`✅ Original start date: ${originalStartDate.toLocaleDateString()}`)
+
+        // Find successor tasks to verify cascade
+        const successorTasks = []
+        gantt.getLinks().forEach(link => {
+          if (link.source == testTask.id) {
+            const successor = gantt.getTask(link.target)
+            successorTasks.push({
+              id: successor.id,
+              text: successor.text,
+              linkType: link.type,
+              originalStartDate: new Date(successor.start_date)
+            })
+          }
+        })
+        await updateProgress(`✅ Found ${successorTasks.length} dependent task(s)`)
 
         // Move task forward by 5 days
         const newStartDate = new Date(originalStartDate)
         newStartDate.setDate(newStartDate.getDate() + 5)
+        await updateProgress(`✅ Moving task 5 days forward (${originalStartDate.toLocaleDateString()} → ${newStartDate.toLocaleDateString()})`)
+        console.log('🧪 Moving task from', originalStartDate, 'to', newStartDate)
 
         if (visual) {
-          // Visual delay
           await new Promise(resolve => setTimeout(resolve, 800))
         }
 
-        testTask.start_date = newStartDate
-        gantt.updateTask(testTask.id)
+        // Calculate day offset from project start
+        const projectStartDate = new Date()
+        projectStartDate.setHours(0, 0, 0, 0)
+        const dayOffset = Math.floor((newStartDate - projectStartDate) / (1000 * 60 * 60 * 24))
+
+        // Call backend API to update task and trigger cascade
+        if (templateId) {
+          try {
+            const response = await fetch(`/api/v1/schedule_templates/${templateId}/rows/${testTask.id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                schedule_template_row: {
+                  start_date: dayOffset,
+                  duration: testTask.duration,
+                  manually_positioned: true
+                }
+              })
+            })
+
+            if (!response.ok) {
+              throw new Error(`Backend API error: ${response.statusText}`)
+            }
+
+            const data = await response.json()
+            console.log('🧪 Backend cascade response:', data)
+
+            // Apply backend updates to Gantt (main task + cascaded tasks)
+            const tasksToUpdate = [data.task || data]
+            if (data.cascaded_tasks) {
+              tasksToUpdate.push(...data.cascaded_tasks)
+            }
+
+            // Update all tasks in Gantt
+            tasksToUpdate.forEach(task => {
+              const ganttTask = gantt.getTask(task.id)
+              if (ganttTask) {
+                const date = new Date(projectStartDate)
+                date.setDate(date.getDate() + task.start_date)
+                ganttTask.start_date = date
+                ganttTask.duration = task.duration
+                ganttTask.manually_positioned = task.manually_positioned
+                gantt.updateTask(ganttTask.id)
+              }
+            })
+
+            await updateProgress(`✅ Backend cascade triggered - updated ${tasksToUpdate.length} task(s)`)
+          } catch (error) {
+            console.error('🧪 Backend API call failed:', error)
+            await updateProgress(`❌ Backend API error: ${error.message}`)
+            return {
+              status: 'error',
+              passed: false,
+              message: `Backend cascade failed: ${error.message}`,
+              testDuration: (Date.now() - testStartTime) / 1000,
+              steps: testSteps
+            }
+          }
+        } else {
+          // No template ID - do local update only (no cascade)
+          testTask.start_date = newStartDate
+          gantt.updateTask(testTask.id)
+          await updateProgress('⚠️ No template ID - local update only (no cascade)')
+        }
 
         if (visual) {
           await new Promise(resolve => setTimeout(resolve, 1200))
         }
 
-        // Move back
-        testTask.start_date = originalStartDate
-        gantt.updateTask(testTask.id)
+        // Check if dependent tasks cascaded correctly
+        let dependenciesWorked = true
+        const dependencyChecks = []
+
+        for (const successor of successorTasks) {
+          try {
+            const currentSuccessor = gantt.getTask(successor.id)
+            const currentStartDate = new Date(currentSuccessor.start_date)
+
+            // For Finish-to-Start (type 0), successor should move by 5 days
+            if (successor.linkType === 0) {
+              const expectedDate = new Date(successor.originalStartDate)
+              expectedDate.setDate(expectedDate.getDate() + 5)
+              const datesMatch = currentStartDate.toDateString() === expectedDate.toDateString()
+
+              if (datesMatch) {
+                dependencyChecks.push(`✅ Task "${successor.text}" moved correctly (+5 days)`)
+              } else {
+                const daysDiff = Math.round((currentStartDate - successor.originalStartDate) / (1000 * 60 * 60 * 24))
+                dependencyChecks.push(`❌ Task "${successor.text}" moved ${daysDiff} days instead of 5`)
+                dependenciesWorked = false
+              }
+            }
+          } catch (error) {
+            dependencyChecks.push(`❌ Error checking task "${successor.text}": ${error.message}`)
+            dependenciesWorked = false
+          }
+        }
+
+        if (successorTasks.length > 0) {
+          await updateProgress(dependenciesWorked ? `✅ All ${successorTasks.length} dependent task(s) cascaded correctly` : `❌ Some dependencies failed`)
+          for (const check of dependencyChecks) {
+            await updateProgress(`    ${check}`, 300)
+          }
+        } else {
+          await updateProgress('⚠️ No dependencies to check')
+        }
+
+        // Move back - unset manually_positioned to allow cascade recalculation
+        if (templateId) {
+          try {
+            const response = await fetch(`/api/v1/schedule_templates/${templateId}/rows/${testTask.id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                schedule_template_row: {
+                  manually_positioned: false
+                }
+              })
+            })
+
+            if (response.ok) {
+              await updateProgress('✅ Unlocked task - cascade will recalculate position')
+            }
+          } catch (error) {
+            console.error('Failed to unlock task:', error)
+          }
+        }
 
         if (visual) {
           await new Promise(resolve => setTimeout(resolve, 800))
         }
 
         const testDuration = (Date.now() - testStartTime) / 1000
+        const passed = (successorTasks.length === 0 || dependenciesWorked)
+
+        await updateProgress(passed ? '✅ TEST PASSED' : '❌ TEST FAILED', 600)
 
         return {
-          status: 'pass',
-          passed: true,
-          message: 'Visual test completed - task moved and returned to original position',
+          status: passed ? 'pass' : 'fail',
+          passed,
+          message: passed
+            ? `✅ PASS - Test completed successfully in ${testDuration.toFixed(1)}s!`
+            : `❌ FAIL - Cascade did not work correctly. Test ran for ${testDuration.toFixed(1)}s.`,
           testDuration,
           taskId: testTask.id,
-          taskName: testTask.text
+          taskName: testTask.text,
+          steps: testSteps,
+          metrics: {
+            successorCount: successorTasks.length,
+            dependenciesWorked
+          }
         }
       } catch (error) {
         console.error('🧪 Test error:', error)
+        await updateProgress(`❌ ERROR: ${error.message}`)
         return {
           status: 'error',
           passed: false,
           message: `Test failed: ${error.message}`,
-          testDuration: (Date.now() - testStartTime) / 1000
+          testDuration: (Date.now() - testStartTime) / 1000,
+          steps: testSteps
         }
       }
     }

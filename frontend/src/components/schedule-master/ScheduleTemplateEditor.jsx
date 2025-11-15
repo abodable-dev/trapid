@@ -312,10 +312,77 @@ export default function ScheduleTemplateEditor() {
 
         console.log('🧪 Running automated visual test...')
 
+        // Show a visual indicator that test is running
+        const testModal = document.createElement('div')
+        testModal.id = 'visual-test-modal'
+        testModal.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.8);
+          z-index: 10000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        `
+        testModal.innerHTML = `
+          <div style="
+            background: white;
+            dark:background: #1f2937;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+          ">
+            <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; color: #111827;">
+              🧪 Visual Test Running...
+            </h2>
+            <p id="test-status" style="color: #6b7280; margin-bottom: 1rem;">
+              Initializing test...
+            </p>
+            <div id="test-steps" style="
+              max-height: 400px;
+              overflow-y: auto;
+              background: #f9fafb;
+              padding: 1rem;
+              border-radius: 0.25rem;
+              font-family: monospace;
+              font-size: 0.875rem;
+              line-height: 1.5;
+            ">
+              <div style="color: #6b7280;">Test starting...</div>
+            </div>
+          </div>
+        `
+        document.body.appendChild(testModal)
+
+        const updateTestStatus = (message, steps = []) => {
+          const statusEl = document.getElementById('test-status')
+          const stepsEl = document.getElementById('test-steps')
+          if (statusEl) statusEl.textContent = message
+          if (stepsEl && steps.length > 0) {
+            stepsEl.innerHTML = steps.map(step => `<div style="margin-bottom: 0.25rem; color: #111827;">${step}</div>`).join('')
+          }
+        }
+
         try {
-          // Run the test with visual mode
-          const result = await window.runGanttAutomatedTest({ visual: true })
+          // Run the test with visual mode and template ID
+          updateTestStatus('Running automated test...')
+
+          const result = await window.runGanttAutomatedTest({
+            visual: true,
+            templateId: selectedTemplate.id,
+            onProgress: (step, allSteps) => {
+              updateTestStatus('Running automated test...', allSteps)
+            }
+          })
           console.log('🧪 Test completed:', result)
+
+          // Update modal with results
+          updateTestStatus(result.message, result.steps || [])
 
           // Save result to database
           await api.post(`/api/v1/bug_hunter_tests/${runVisualTestParam}/run`, {
@@ -325,15 +392,20 @@ export default function ScheduleTemplateEditor() {
             duration: result.testDuration
           })
 
-          // Show results - navigate back to Bug Hunter Tests with result indicator
+          // Show results for 3 seconds before closing
           setTimeout(() => {
+            document.body.removeChild(testModal)
             setShowGanttView(false)
             // Navigate to Bug Hunter Tests tab
             window.location.href = `/settings?tab=schedule-master&subtab=bug-hunter&testResult=${result.passed ? 'pass' : 'fail'}&testId=${runVisualTestParam}`
-          }, 2000) // Keep Gantt visible for 2 seconds after test completes
+          }, 3000) // Keep modal visible for 3 seconds to show results
         } catch (error) {
           console.error('❌ Test error:', error)
-          alert(`Test failed: ${error.message}`)
+          updateTestStatus(`❌ Test failed: ${error.message}`)
+          setTimeout(() => {
+            document.body.removeChild(testModal)
+            alert(`Test failed: ${error.message}`)
+          }, 2000)
         }
       }
 
