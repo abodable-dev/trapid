@@ -263,7 +263,9 @@ export default function BugHunterTests() {
   }
 
   const getTestHistory = (testId) => {
-    return testHistory.filter(h => h.test_id === testId).slice(0, 10)
+    const history = testHistory.filter(h => h.test_id === testId).slice(0, 10)
+    console.log('getTestHistory for', testId, '- Found', history.length, 'runs:', history)
+    return history
   }
 
   const filteredTests = tests.filter(test => {
@@ -476,8 +478,11 @@ export default function BugHunterTests() {
                           <span className="text-gray-400 text-xs">Never run</span>
                         )}
                         <button
-                          onClick={() => setShowHistory(showHistory === test.id ? null : test.id)}
-                          className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                          onClick={() => {
+                            console.log('Clock clicked for test:', test.id, 'Current showHistory:', showHistory)
+                            setShowHistory(showHistory === test.id ? null : test.id)
+                          }}
+                          className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-pointer"
                           title="View audit history"
                         >
                           <ClockIcon className="h-4 w-4" />
@@ -537,37 +542,54 @@ export default function BugHunterTests() {
                         : 'bg-yellow-50 dark:bg-yellow-900/20'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        {run.status === 'pass' ? (
-                          <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
-                        ) : run.status === 'fail' ? (
-                          <span className="text-red-600 dark:text-red-400 font-bold">✗</span>
-                        ) : (
-                          <span className="text-yellow-600 dark:text-yellow-400 font-bold">⚠</span>
-                        )}
-                        <span className="text-sm text-gray-900 dark:text-white truncate">
+                    <div className="flex items-center gap-2 mb-2">
+                      {run.status === 'pass' ? (
+                        <span className="text-green-600 dark:text-green-400 font-bold text-lg">✓</span>
+                      ) : run.status === 'fail' ? (
+                        <span className="text-red-600 dark:text-red-400 font-bold text-lg">✗</span>
+                      ) : (
+                        <span className="text-yellow-600 dark:text-yellow-400 font-bold text-lg">⚠</span>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-gray-900 dark:text-white font-medium mb-1">
+                          Run #{run.id} - {run.status === 'pass' ? 'PASSED' : run.status === 'fail' ? 'FAILED' : 'ERROR'}
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
                           {run.message || run.status.toUpperCase()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-2">
+                      <div>
+                        <span className="text-gray-400 dark:text-gray-500">Run At:</span>{' '}
+                        <span className="font-medium">
+                          {new Date(run.created_at || run.timestamp).toLocaleString('en-AU', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true
+                          })}
                         </span>
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">
-                        {formatDate(run.created_at || run.timestamp)}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex gap-4 text-xs text-gray-500 dark:text-gray-400">
+                      <div>
+                        <span className="text-gray-400 dark:text-gray-500">Run By:</span>{' '}
+                        <span className="font-medium">Claude Code (API)</span>
+                      </div>
                       {run.duration !== undefined && run.duration !== null && (
                         <div>
-                          Duration: <span className="font-medium">{run.duration}s</span>
+                          <span className="text-gray-400 dark:text-gray-500">Duration:</span>{' '}
+                          <span className="font-medium">{run.duration}s</span>
                         </div>
                       )}
                       {run.template_id && (
                         <div>
-                          Template: <span className="font-medium">{scheduleTemplates.find(t => t.id === run.template_id)?.name || `ID ${run.template_id}`}</span>
+                          <span className="text-gray-400 dark:text-gray-500">Template:</span>{' '}
+                          <span className="font-medium">{scheduleTemplates.find(t => t.id === run.template_id)?.name || `ID ${run.template_id}`}</span>
                         </div>
                       )}
-                      <div>
-                        Status: <span className="font-medium uppercase">{run.status}</span>
-                      </div>
                     </div>
                   </div>
                 ))
