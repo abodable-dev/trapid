@@ -862,22 +862,42 @@ CURRENT STATUS: UI checkbox works, value saves to database, but conditional acti
     actions: `**Status:** Fully functional ✅
 
 **Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2747-2766
-- Rendering: Three buttons - Move Up (↑), Move Down (↓), Delete (trash icon)
-- Event handlers: handleMoveRow(direction), handleDeleteRow(rowId) with confirmation
+- Location: ScheduleTemplateEditor.jsx:2729-2748
+- Rendering: Flex container with 3 buttons, 80px width, left-aligned, order: 100 (last)
+- Event handlers:
+  - Move Up: onMoveUp callback (line 2734), conditional render if canMoveUp
+  - Move Down: onMoveDown callback (line 2739), conditional render if canMoveDown
+  - Delete: onDelete callback (line 2743), always rendered
+- Icons: ArrowUpIcon, ArrowDownIcon, TrashIcon (h-4 w-4)
+- Styling: Flex gap-1, hover:text-indigo-600, hover:text-red-600 (delete)
 
 **Backend:**
-- Field: N/A (frontend operations trigger row updates)
-- Type: UI controls only
-- Validation: Move operations update sequence_order, delete operations cascade
+- Move operations: Update sequence_order, resequence all affected rows
+- Delete operation: API DELETE to /schedule_templates/:id/rows/:row_id
+- Cascade: Row deletion cascades to audits (dependent: :destroy)
 
 **How It Works:**
-Move Up/Down reorders tasks by swapping sequence_order values and updating display. Delete removes row with confirmation dialog. All operations trigger immediate save and rerender.
+Three action buttons for row management:
+1. **Move Up (↑)**: Swaps sequence_order with previous row, resequences, refreshes display. Only shown if not first row.
+2. **Move Down (↓)**: Swaps sequence_order with next row, resequences, refreshes display. Only shown if not last row.
+3. **Delete (trash)**: Shows confirmation dialog, sends DELETE request, removes from display on success.
+
+All operations trigger immediate save and re-render. Move operations update multiple rows to maintain continuous sequence numbering.
+
+**Interdependencies:**
+- canMoveUp: index > 0
+- canMoveDown: index < rows.length - 1
+- Delete requires confirmation (modal/alert)
+- Resequencing affects all rows after moved row
+- Delete may orphan predecessor references in other tasks
 
 **Current Limitations:**
-- No drag-and-drop reordering
+- No drag-and-drop reordering (move up/down only)
 - Cannot move multiple selected rows simultaneously
-- No undo/redo for delete operations`
+- No undo/redo for delete operations
+- Delete doesn't update dependent tasks (orphaned predecessor refs)
+- No bulk delete (must delete one at a time)
+- Move operations can be slow with many rows (resequences all)`
   }))
   const [columnComplete, setColumnComplete] = useState(() => loadFromLocalStorage('scheduleMaster_columnComplete', {}))
   const [mdInstructions, setMdInstructions] = useState(() => loadFromLocalStorage('scheduleMaster_mdInstructions', {}))

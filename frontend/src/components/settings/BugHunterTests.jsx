@@ -113,6 +113,13 @@ export default function BugHunterTests() {
     await checkAndCleanup()
 
     if (visual) {
+      // Check if template is selected
+      const templateId = selectedTemplates[testId]
+      if (!templateId) {
+        alert('Please select a Schedule Template first before running the visual test.')
+        return
+      }
+
       // Open the modal which will expose window.runGanttAutomatedTest
       setVisualTestId(testId)
       setShowTestStatusModal(true)
@@ -177,52 +184,62 @@ export default function BugHunterTests() {
     if (showTestStatusModal && visualTestId) {
       // Wait for modal to fully render and window.runGanttAutomatedTest to be available
       const runVisualTest = async () => {
+        console.log('🧪 Visual test starting for test ID:', visualTestId)
+
         // Wait a bit for the modal to mount and expose the function
         await new Promise(resolve => setTimeout(resolve, 500))
 
-        if (window.runGanttAutomatedTest) {
-          setRunningTests(prev => new Set([...prev, visualTestId]))
+        if (!window.runGanttAutomatedTest) {
+          console.error('❌ window.runGanttAutomatedTest not available')
+          return
+        }
 
-          try {
-            // Run the visual test
-            const result = await window.runGanttAutomatedTest({ silent: false, visual: true })
+        setRunningTests(prev => new Set([...prev, visualTestId]))
 
-            // Save the result to database with template ID
-            const templateId = selectedTemplates[visualTestId]
-            await api.post(`/api/v1/bug_hunter_tests/${visualTestId}/run`, {
-              template_id: templateId,
-              passed: result.passed,
+        try {
+          // Run the visual test
+          console.log('🧪 Calling window.runGanttAutomatedTest...')
+          const result = await window.runGanttAutomatedTest({ silent: false, visual: true })
+          console.log('🧪 Test result:', result)
+
+          // Save the result to database with template ID
+          const templateId = selectedTemplates[visualTestId]
+          console.log('🧪 Saving result to database for template:', templateId)
+
+          await api.post(`/api/v1/bug_hunter_tests/${visualTestId}/run`, {
+            template_id: templateId,
+            passed: result.passed,
+            message: result.message,
+            duration: result.testDuration || result.duration
+          })
+
+          setTestResults(prev => ({
+            ...prev,
+            [visualTestId]: {
+              status: result.passed ? 'pass' : 'fail',
               message: result.message,
+              timestamp: new Date().toISOString(),
               duration: result.testDuration || result.duration
-            })
+            }
+          }))
 
-            setTestResults(prev => ({
-              ...prev,
-              [visualTestId]: {
-                status: result.passed ? 'pass' : 'fail',
-                message: result.message,
-                timestamp: new Date().toISOString(),
-                duration: result.testDuration || result.duration
-              }
-            }))
-
-            await loadTestHistory()
-          } catch (error) {
-            setTestResults(prev => ({
-              ...prev,
-              [visualTestId]: {
-                status: 'fail',
-                message: error.message,
-                timestamp: new Date().toISOString()
-              }
-            }))
-          } finally {
-            setRunningTests(prev => {
-              const newSet = new Set(prev)
-              newSet.delete(visualTestId)
-              return newSet
-            })
-          }
+          await loadTestHistory()
+        } catch (error) {
+          console.error('❌ Visual test error:', error)
+          setTestResults(prev => ({
+            ...prev,
+            [visualTestId]: {
+              status: 'fail',
+              message: error.message,
+              timestamp: new Date().toISOString()
+            }
+          }))
+        } finally {
+          setRunningTests(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(visualTestId)
+            return newSet
+          })
         }
       }
 
