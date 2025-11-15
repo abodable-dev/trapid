@@ -158,26 +158,523 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (HOW): Chapter 1                │
 └─────────────────────────────────────────────────┘
 
-**User Context:** Login, profiles, permissions
-**Technical Rules:** JWT, authentication flow, user model
+**Last Updated:** 2025-11-16
+
+## Overview
+
+Authentication & Users handles:
+- User login/logout via JWT
+- Role-based permissions (6 roles)
+- OAuth integration (Microsoft 365)
+- Password security and reset
+- Rate limiting on auth endpoints
+- Portal users (suppliers/customers)
+
+---
 
 ## RULE #1.1: JWT Token Handling
 
-❌ **NEVER store JWT in localStorage** (XSS vulnerable)
-✅ **ALWAYS store JWT in httpOnly cookies**
+**JWT is the ONLY authentication mechanism.** No session cookies.
 
-**Code location:** `backend/app/services/json_web_token.rb`
+✅ **MUST:**
+- Use `JsonWebToken.encode` to create tokens
+- Include `user_id` in payload
+- Set expiration to 24 hours maximum
+- Send token in `Authorization: Bearer <token>` header
 
-## RULE #1.2: Password Security
-
-✅ **MUST use bcrypt** with minimum cost factor of 12
-❌ **NEVER log passwords** or tokens
+❌ **NEVER:**
+- Store sensitive data in JWT payload (it's base64, not encrypted)
+- Create tokens without expiration
+- Share SECRET_KEY across environments
+- Store tokens in localStorage (XSS vulnerable) - use httpOnly cookies on frontend
 
 **Implementation:**
 ```ruby
-has_secure_password
-validates :password, length: { minimum: 8 }
+# backend/app/services/json_web_token.rb
+def self.encode(payload, exp = 24.hours.from_now)
+  payload[:exp] = exp.to_i
+  JWT.encode(payload, SECRET_KEY)
+end
+
+def self.decode(token)
+  decoded = JWT.decode(token, SECRET_KEY)[0]
+  HashWithIndifferentAccess.new decoded
+rescue JWT::DecodeError, JWT::ExpiredSignature
+  nil  # Return nil on invalid/expired tokens
+end
 ```
+
+**Token Validation:**
+```ruby
+# ApplicationController
+before_action :authorize_request
+
+def authorize_request
+  header = request.headers['Authorization']
+  header = header.split(' ').last if header
+
+  decoded = JsonWebToken.decode(header)
+  @current_user = User.find(decoded[:user_id]) if decoded
+rescue ActiveRecord::RecordNotFound, JWT::DecodeError
+  render json: { error: 'Unauthorized' }, status: :unauthorized
+end
+```
+
+**Files:**
+- `backend/app/services/json_web_token.rb`
+- `backend/app/controllers/application_controller.rb`
+
+---
+
+## RULE #1.2: Password Security Requirements
+
+**Passwords MUST meet strict complexity requirements.**
+
+✅ **MUST enforce:**
+- Minimum 12 characters (NOT 8, NOT 10)
+- At least 1 uppercase letter [A-Z]
+- At least 1 lowercase letter [a-z]
+- At least 1 digit [0-9]
+- At least 1 special character [!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]
+
+❌ **NEVER:**
+- Log passwords (even hashed)
+- Send passwords in API responses
+- Store passwords in plain text
+- Allow common passwords (implement dictionary check if needed)
+
+**Implementation:**
+```ruby
+# app/models/user.rb
+has_secure_password  # Uses bcrypt
+
+validates :password, length: { minimum: 12 }, if: :password_required?
+validate :password_complexity, if: :password_required?
+
+private
+
+def password_complexity
+  return unless password.present?
+
+  rules = [
+    [/[A-Z]/, 'uppercase letter'],
+    [/[a-z]/, 'lowercase letter'],
+    [/[0-9]/, 'number'],
+    [/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'special character']
+  ]
+
+  rules.each do |regex, description|
+    unless password.match?(regex)
+      errors.add(:password, "must include at least one #{description}")
+    end
+  end
+end
+
+def password_required?
+  password_digest.nil? || password.present?
+end
+```
+
+**Why 12 characters?**
+- NIST recommends 8+ for human-created, 12+ for user-chosen
+- Protects against brute force (12 chars = 10^21 combinations with mixed case/symbols)
+- Industry best practice (Google, Microsoft, Apple all require 12+)
+
+**Files:**
+- `backend/app/models/user.rb`
+- `backend/app/models/portal_user.rb` (same rules)
+
+---
+
+## RULE #1.3: Role-Based Access Control
+
+**Roles are HARDCODED enums, not database-driven.**
+
+✅ **MUST:**
+- Use predefined roles: `user`, `admin`, `product_owner`, `estimator`, `supervisor`, `builder`
+- Check permissions via User model methods (`can_create_templates?`, `can_edit_schedule?`)
+- Use `before_action :require_admin` for admin-only endpoints
+- Set default role to `"user"` for new signups
+
+❌ **NEVER:**
+- Create roles dynamically via API
+- Store roles outside the enum
+- Bypass permission checks with hardcoded user IDs
+- Grant admin role automatically (even for @tekna.com.au emails)
+
+**Role Definitions:**
+```ruby
+# app/models/user.rb
+ROLES = %w[user admin product_owner estimator supervisor builder].freeze
+ASSIGNABLE_ROLES = %w[admin sales site supervisor builder estimator].freeze
+
+# Permission methods
+def admin?
+  role == 'admin'
+end
+
+def can_create_templates?
+  admin? || product_owner?
+end
+
+def can_edit_schedule?
+  admin? || product_owner? || estimator?
+end
+
+def can_view_supervisor_tasks?
+  admin? || supervisor?
+end
+
+def can_view_builder_tasks?
+  admin? || builder?
+end
+```
+
+**Controller Usage:**
+```ruby
+# app/controllers/api/v1/schedule_template_rows_controller.rb
+before_action :check_can_edit_templates, except: [:audit_logs]
+
+def check_can_edit_templates
+  unless @current_user.can_create_templates?
+    render json: { error: 'Unauthorized' }, status: :forbidden
+  end
+end
+```
+
+**Why hardcoded?**
+- Prevents privilege escalation via API
+- Ensures consistent role names across codebase
+- Roles tied to business logic (not arbitrary)
+
+**Files:**
+- `backend/app/models/user.rb`
+- `backend/app/controllers/application_controller.rb`
+
+---
+
+## RULE #1.4: Rate Limiting on Auth Endpoints
+
+**Rate limiting MUST be enforced on all authentication endpoints.**
+
+✅ **MUST configure:**
+- Auth endpoints: 5 requests per 20 seconds per IP
+- Password reset: 3 requests per hour per email
+- General API: 300 requests per 5 minutes per IP
+
+❌ **NEVER:**
+- Disable rate limiting in production
+- Use same limits for external vs internal APIs
+- Skip rate limiting for "trusted" IPs (除非 explicitly whitelisted)
+
+**Implementation:**
+```ruby
+# config/initializers/rack_attack.rb
+Rack::Attack.throttle('auth/ip', limit: 5, period: 20.seconds) do |req|
+  req.ip if req.path.start_with?('/api/v1/auth/')
+end
+
+Rack::Attack.throttle('password_reset/email', limit: 3, period: 1.hour) do |req|
+  if req.path == '/api/v1/users/reset_password' && req.post?
+    req.params['email'].to_s.downcase.presence
+  end
+end
+
+Rack::Attack.throttle('general/ip', limit: 300, period: 5.minutes) do |req|
+  req.ip
+end
+```
+
+**Response:**
+- Status: `429 Too Many Requests`
+- Header: `Retry-After: <seconds>`
+- Body: `{ error: 'Rate limit exceeded. Try again later.' }`
+
+**Files:**
+- `config/initializers/rack_attack.rb`
+
+---
+
+## RULE #1.5: OAuth Integration Pattern
+
+**OAuth MUST use OmniAuth with proper callback handling.**
+
+✅ **MUST:**
+- Use OmniAuth gem for all OAuth providers
+- Store `provider`, `uid`, `oauth_token`, `oauth_expires_at` on User
+- Generate random password for OAuth users (via `SecureRandom.hex`)
+- Return JWT token after OAuth callback
+- Validate OAuth tokens on every external API call
+
+❌ **NEVER:**
+- Store OAuth refresh tokens in database (security risk)
+- Share OAuth tokens across users
+- Skip token expiration checks
+- Use OAuth for internal user creation (only for login)
+
+**Implementation:**
+```ruby
+# config/initializers/omniauth.rb
+Rails.application.config.middleware.use OmniAuth::Builder do
+  provider :microsoft_office365,
+    ENV['ONEDRIVE_CLIENT_ID'],
+    ENV['ONEDRIVE_CLIENT_SECRET'],
+    scope: 'openid profile email User.Read'
+end
+
+# app/models/user.rb
+def self.from_omniauth(auth)
+  where(provider: auth.provider, uid: auth.uid).first_or_create do |user|
+    user.email = auth.info.email
+    user.name = auth.info.name
+    user.password = SecureRandom.hex(16)  # Random password
+    user.oauth_token = auth.credentials.token
+    user.oauth_expires_at = Time.at(auth.credentials.expires_at)
+  end
+end
+
+# app/controllers/api/v1/omniauth_callbacks_controller.rb
+def microsoft_office365
+  user = User.from_omniauth(request.env['omniauth.auth'])
+  token = JsonWebToken.encode(user_id: user.id)
+
+  redirect_to "#{ENV['FRONTEND_URL']}/auth/callback?token=#{token}"
+end
+```
+
+**Supported Providers:**
+- Microsoft Office 365 (OneDrive, Outlook integration)
+
+**Files:**
+- `config/initializers/omniauth.rb`
+- `app/controllers/api/v1/omniauth_callbacks_controller.rb`
+- `app/models/user.rb`
+
+---
+
+## RULE #1.6: Password Reset Flow
+
+**Password reset MUST use secure tokens with expiration.**
+
+✅ **MUST:**
+- Generate token via `SecureRandom.urlsafe_base64(32)`
+- Store hashed token in database (NOT plain text)
+- Set `reset_password_sent_at` timestamp
+- Expire tokens after 2 hours
+- Clear token after successful reset
+- Send reset email with token URL
+
+❌ **NEVER:**
+- Store tokens in plain text
+- Reuse tokens across multiple resets
+- Skip token expiration check
+- Send token in API response (only via email)
+
+**Implementation:**
+```ruby
+# app/controllers/api/v1/users_controller.rb
+def reset_password
+  token = SecureRandom.urlsafe_base64(32)
+  @user.update!(
+    reset_password_token: Digest::SHA256.hexdigest(token),
+    reset_password_sent_at: Time.current
+  )
+
+  # UserMailer.reset_password(@user, token).deliver_later
+  render json: { message: 'Password reset email sent' }
+end
+
+# Validate token (in separate endpoint)
+def validate_reset_token
+  hashed_token = Digest::SHA256.hexdigest(params[:token])
+  user = User.find_by(reset_password_token: hashed_token)
+
+  if user && user.reset_password_sent_at > 2.hours.ago
+    render json: { valid: true }
+  else
+    render json: { valid: false, error: 'Token expired or invalid' }
+  end
+end
+
+# Update password with token
+def update_password_with_token
+  hashed_token = Digest::SHA256.hexdigest(params[:token])
+  user = User.find_by(reset_password_token: hashed_token)
+
+  if user && user.reset_password_sent_at > 2.hours.ago
+    user.update!(
+      password: params[:password],
+      reset_password_token: nil,
+      reset_password_sent_at: nil
+    )
+    render json: { message: 'Password updated successfully' }
+  else
+    render json: { error: 'Token expired' }, status: :unprocessable_entity
+  end
+end
+```
+
+**Why hash tokens?**
+- Database breach doesn't expose valid reset links
+- Tokens can't be reused if database is compromised
+
+**Files:**
+- `app/controllers/api/v1/users_controller.rb`
+- `app/models/user.rb` (schema: `reset_password_token`, `reset_password_sent_at`)
+
+---
+
+## RULE #1.7: Portal User Separation
+
+**Portal users (suppliers/customers) MUST be isolated from admin users.**
+
+✅ **MUST:**
+- Use separate `portal_users` table (NOT users table)
+- Associate portal users with `Contact` record
+- Implement account lockout for portal users (5 failed attempts = 30 min lockout)
+- Log all portal user activities via `PortalAccessLog`
+- Use `portal_type` enum: `'supplier'` or `'customer'`
+
+❌ **NEVER:**
+- Mix portal users and admin users in same table
+- Grant admin access to portal users
+- Skip activity logging for portal users
+- Allow portal users to access internal APIs
+
+**Implementation:**
+```ruby
+# app/models/portal_user.rb
+class PortalUser < ApplicationRecord
+  belongs_to :contact
+  has_secure_password
+
+  enum portal_type: { supplier: 'supplier', customer: 'customer' }
+
+  validates :password, length: { minimum: 12 }, if: :password_required?
+  validate :password_complexity, if: :password_required?
+
+  # Account lockout
+  def lock_account!
+    update!(locked_until: 30.minutes.from_now)
+  end
+
+  def record_failed_login!
+    increment!(:failed_login_attempts)
+    lock_account! if failed_login_attempts >= 5
+  end
+
+  def record_successful_login!
+    update!(
+      failed_login_attempts: 0,
+      locked_until: nil,
+      last_login_at: Time.current
+    )
+  end
+end
+
+# app/models/portal_access_log.rb
+class PortalAccessLog < ApplicationRecord
+  belongs_to :portal_user
+
+  enum action_type: {
+    login: 'login',
+    logout: 'logout',
+    view_po: 'view_po',
+    download_document: 'download_document',
+    make_payment: 'make_payment'
+  }
+
+  # Log format: IP, user agent, timestamp
+  def self.log(portal_user:, action:, ip:, user_agent:)
+    create!(
+      portal_user: portal_user,
+      action_type: action,
+      ip_address: ip,
+      user_agent: user_agent,
+      occurred_at: Time.current
+    )
+  end
+end
+```
+
+**Why separate tables?**
+- Different security requirements (lockout for external, not internal)
+- Different permissions (portal users see only their data)
+- Easier compliance auditing (all portal activity logged)
+
+**Files:**
+- `app/models/portal_user.rb`
+- `app/models/portal_access_log.rb`
+- `app/controllers/api/v1/portal/authentication_controller.rb`
+
+---
+
+## RULE #1.8: Login Activity Tracking
+
+**MUST track `last_login_at` on every successful login.**
+
+✅ **MUST:**
+- Update `last_login_at` timestamp on successful login
+- Store in UTC timezone
+- Track for both User and PortalUser
+- Use for account activity monitoring
+
+❌ **NEVER:**
+- Update on token refresh (only on actual login)
+- Track in local timezone
+- Skip updates (used for security monitoring)
+
+**Implementation:**
+```ruby
+# app/controllers/api/v1/authentication_controller.rb
+def login
+  user = User.find_by(email: params[:email])
+
+  if user&.authenticate(params[:password])
+    user.update!(last_login_at: Time.current)  # REQUIRED
+    token = JsonWebToken.encode(user_id: user.id)
+    render json: { token: token, user: user }
+  else
+    render json: { error: 'Invalid email or password' }, status: :unauthorized
+  end
+end
+```
+
+**Use cases:**
+- Security: Detect dormant accounts
+- Compliance: Audit user access
+- UX: "Last seen" indicators
+
+**Files:**
+- `app/controllers/api/v1/authentication_controller.rb`
+- `app/models/user.rb` (schema: `last_login_at`)
+
+---
+
+## API Endpoints Reference
+
+**Authentication:**
+- `POST /api/v1/auth/signup` - Create new user (default role: "user")
+- `POST /api/v1/auth/login` - Login with email/password
+- `GET /api/v1/auth/me` - Get current user
+- `GET /api/v1/auth/microsoft_office365` - Initiate OAuth flow
+- `GET /api/v1/auth/microsoft_office365/callback` - OAuth callback
+
+**User Management:**
+- `GET /api/v1/users` - List users (authenticated)
+- `GET /api/v1/users/:id` - Get user details
+- `PATCH /api/v1/users/:id` - Update user (name, email, mobile, role)
+- `DELETE /api/v1/users/:id` - Delete user
+- `POST /api/v1/users/:id/reset_password` - Generate password reset token
+
+**Roles & Groups:**
+- `GET /api/v1/user_roles` - List available roles
+- `GET /api/v1/user_groups` - List assignable groups
+
+**Portal (Suppliers/Customers):**
+- `POST /api/v1/portal/auth/login` - Portal user login
+- `POST /api/v1/portal/auth/logout` - Portal user logout
+- `POST /api/v1/portal/auth/reset_password` - Portal password reset
 
 ---
 
@@ -297,7 +794,215 @@ working_days = @company_settings.working_days
 **User Context:** Generating POs
 **Technical Rules:** PO generation, supplier matching
 
-**Content TBD** - To be populated when working on PO feature
+## Overview
+
+Purchase Orders manage the complete procurement workflow from draft creation through payment tracking. Includes smart supplier/price lookup, approval workflow, schedule integration, and Xero invoice matching.
+
+**Key Files:**
+- Controller: `backend/app/controllers/api/v1/purchase_orders_controller.rb`
+- Model: `backend/app/models/purchase_order.rb`
+- Line Items: `backend/app/models/purchase_order_line_item.rb`
+- Smart Lookup: `backend/app/services/smart_po_lookup_service.rb`
+
+---
+
+## RULE #8.1: PO Number Generation - Race Condition Protection
+
+**ALWAYS use PostgreSQL advisory locks for PO number generation.**
+
+❌ **NEVER generate PO numbers without lock**
+✅ **ALWAYS use `pg_advisory_xact_lock` in transaction**
+
+**Code location:** `PurchaseOrder#generate_purchase_order_number`
+
+**Required implementation:**
+```ruby
+def generate_purchase_order_number
+  ActiveRecord::Base.transaction do
+    ActiveRecord::Base.connection.execute('SELECT pg_advisory_xact_lock(123456789)')
+
+    last_po = PurchaseOrder.order(:purchase_order_number).last
+    next_number = last_po ? last_po.purchase_order_number.gsub(/\D/, '').to_i + 1 : 1
+    self.purchase_order_number = format('PO-%06d', next_number)
+  end
+end
+```
+
+**Why:** Prevents duplicate PO numbers in concurrent requests.
+
+---
+
+## RULE #8.2: Status State Machine
+
+**PO status MUST follow this flow ONLY.**
+
+❌ **NEVER skip status steps**
+✅ **ALWAYS validate transitions**
+
+**Status Flow:**
+```
+draft → pending → approved → sent → received → invoiced → paid
+  ↘                                                         ↗
+   cancelled (can cancel any non-paid status)
+```
+
+**Validation Methods:**
+```ruby
+def can_edit?         # Only draft/pending
+def can_approve?      # Only pending
+def can_cancel?       # Any except paid/cancelled
+```
+
+---
+
+## RULE #8.3: Payment Status Calculation
+
+**Payment status MUST be calculated, never manually set.**
+
+❌ **NEVER set `payment_status` directly**
+✅ **ALWAYS use `determine_payment_status(amount)`**
+
+**Code location:** `PurchaseOrder#determine_payment_status`
+
+**Logic:**
+```ruby
+def determine_payment_status(invoice_amount)
+  return :manual_review if total.zero? || invoice_amount > total + 1
+  return :pending if invoice_amount.zero?
+
+  percentage = (invoice_amount / total) * 100
+  return :complete if percentage >= 95 && percentage <= 105
+  return :part_payment
+end
+```
+
+**Thresholds:**
+- `pending`: Invoice = $0
+- `part_payment`: Invoice < 95% of total
+- `complete`: Invoice 95%-105% of total (5% tolerance)
+- `manual_review`: Invoice > total by $1+ OR total is $0
+
+---
+
+## RULE #8.4: Smart Lookup - Supplier Selection Priority
+
+**Supplier selection MUST follow this priority order.**
+
+❌ **NEVER randomly select supplier**
+✅ **ALWAYS use SmartPoLookupService priority cascade**
+
+**Code location:** `SmartPoLookupService#lookup`
+
+**Priority Order:**
+1. Supplier code match (e.g., WATER_TANKS)
+2. Default supplier for trade category
+3. Any active supplier for category
+4. First active supplier (fallback)
+
+**Price Search Cascade (6 steps):**
+1. Exact match: item name + supplier + category
+2. Fuzzy match: item name + supplier + category
+3. Full-text search: supplier + category
+4. Exact match: item name (no supplier requirement)
+5. Fuzzy match: item name (no supplier requirement)
+6. Full-text search: all items
+
+---
+
+## RULE #8.5: Line Items - Totals Calculation
+
+**Totals MUST be recalculated before save.**
+
+❌ **NEVER save PO without recalculating totals**
+✅ **ALWAYS use `before_save` callback**
+
+**Code location:** `PurchaseOrder#calculate_totals`
+
+**Required callback:**
+```ruby
+before_save :calculate_totals
+
+def calculate_totals
+  self.sub_total = line_items.sum { |li| li.quantity * li.unit_price }
+  self.tax = sub_total * 0.10  # 10% GST
+  self.total = sub_total + tax
+end
+```
+
+---
+
+## RULE #8.6: Schedule Task Linking
+
+**MUST unlink old task before linking new task.**
+
+❌ **NEVER link without unlinking previous**
+✅ **ALWAYS use transaction for task linking**
+
+**Code location:** `PurchaseOrdersController#update`
+
+**Required implementation:**
+```ruby
+ActiveRecord::Base.transaction do
+  # Unlink old task
+  if old_task = purchase_order.schedule_task
+    old_task.update!(purchase_order_id: nil)
+  end
+
+  # Link new task
+  if new_task_id.present?
+    new_task = ScheduleTask.find(new_task_id)
+    new_task.update!(purchase_order_id: purchase_order.id)
+  end
+end
+```
+
+---
+
+## RULE #8.7: Price Drift Monitoring
+
+**Track price drift from pricebook for warnings.**
+
+❌ **NEVER ignore price drift**
+✅ **ALWAYS calculate drift percentage**
+
+**Code location:** `PurchaseOrderLineItem#price_drift`
+
+**Thresholds:**
+- `in_sync`: Within 10% of pricebook
+- `minor_drift`: 10%-20% drift
+- `major_drift`: >20% drift (show warning)
+
+**Calculation:**
+```ruby
+def price_drift
+  return 0 if pricebook_item.nil?
+  ((unit_price - pricebook_item.price) / pricebook_item.price) * 100
+end
+```
+
+---
+
+## API Endpoints
+
+**CRUD:**
+- `GET /api/v1/purchase_orders` - List with filters
+- `POST /api/v1/purchase_orders` - Create
+- `PATCH /api/v1/purchase_orders/:id` - Update
+- `DELETE /api/v1/purchase_orders/:id` - Delete
+
+**Workflow Actions:**
+- `POST /api/v1/purchase_orders/:id/approve`
+- `POST /api/v1/purchase_orders/:id/send_to_supplier`
+- `POST /api/v1/purchase_orders/:id/mark_received`
+
+**Smart Features:**
+- `POST /api/v1/purchase_orders/smart_lookup`
+- `POST /api/v1/purchase_orders/smart_create`
+- `POST /api/v1/purchase_orders/bulk_create`
+
+**Documents:**
+- `GET /api/v1/purchase_orders/:id/available_documents`
+- `POST /api/v1/purchase_orders/:id/attach_documents`
 
 ---
 

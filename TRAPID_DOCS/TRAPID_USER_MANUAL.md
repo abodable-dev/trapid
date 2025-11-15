@@ -78,7 +78,559 @@ Trapid is a comprehensive construction management platform that helps you:
 │ 📕 LEXICON (BUGS):     Chapter 1 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Content TBD** - To be populated with login instructions, profile management
+**Last Updated:** 2025-11-16
+
+## Getting Started with TRAPID
+
+Welcome to TRAPID! This chapter covers everything you need to log in, manage your profile, and understand user roles.
+
+---
+
+## Logging In
+
+### Method 1: Email & Password (Standard Login)
+
+1. **Navigate to TRAPID:**
+   - Open your web browser
+   - Go to `https://app.trapid.com` (or your company's custom URL)
+
+2. **Enter your credentials:**
+   - **Email:** Your work email address
+   - **Password:** Your secure password (12+ characters)
+
+3. **Click "Log In"**
+   - You'll be redirected to the dashboard
+   - Your session lasts 24 hours (auto-logout after)
+
+**First time?** Click "Sign Up" to create your account.
+
+---
+
+### Method 2: Login with Microsoft (Recommended)
+
+**Best for:** Users with Microsoft 365 accounts (Outlook, OneDrive)
+
+1. **Click "Login with Microsoft"** on the login page
+2. **Authenticate with Microsoft:**
+   - Enter your Microsoft email
+   - Enter your Microsoft password
+   - Approve TRAPID access (first time only)
+3. **Automatic redirect** to TRAPID dashboard
+4. **Bonus:** Automatic OneDrive and Outlook integration
+
+**Why use Microsoft login?**
+- ✅ One less password to remember
+- ✅ Automatic OneDrive folder creation for jobs
+- ✅ Outlook email integration ready to go
+- ✅ Same security as your Microsoft account
+
+---
+
+## Creating Your Account
+
+**To sign up:**
+
+1. **Click "Sign Up"** on the login page
+2. **Fill in your details:**
+   - **Name:** Your full name (e.g., "John Smith")
+   - **Email:** Work email address (must be unique)
+   - **Password:** Create a strong password (see requirements below)
+   - **Mobile Phone** (optional): For SMS notifications
+3. **Click "Create Account"**
+4. **You're in!** Default role is "User" (your admin can upgrade you)
+
+### Password Requirements
+
+Your password MUST include:
+- ✅ At least 12 characters
+- ✅ 1 uppercase letter (A-Z)
+- ✅ 1 lowercase letter (a-z)
+- ✅ 1 number (0-9)
+- ✅ 1 special character (!@#$%^&*)
+
+**Example strong passwords:**
+- `MyTrapid2025!` ✅
+- `Builder#Pass123` ✅
+- `password123` ❌ (no uppercase, no special char)
+- `Password123` ❌ (no special char)
+
+**Pro Tip:** Use a passphrase like `Coffee&Donuts2025!` - easy to remember, very secure!
+
+---
+
+## Forgot Your Password?
+
+**Don't worry, it happens!**
+
+1. **Click "Forgot Password?"** on the login page
+2. **Enter your email address**
+3. **Click "Send Reset Link"**
+4. **Check your email** (may take 1-2 minutes)
+5. **Click the reset link** in the email
+6. **Create a new password** (must meet requirements)
+7. **Log in** with your new password
+
+**Didn't receive the email?**
+- Check your spam/junk folder
+- Wait 5 minutes (server delays happen)
+- Contact your system administrator
+- Or ask an admin to reset your password manually
+
+**Link expired?**
+- Reset links expire after 2 hours for security
+- Request a new link (it's instant!)
+
+---
+
+## Understanding User Roles
+
+TRAPID has 6 user roles, each with different permissions:
+
+### 👤 User (Default)
+**What you can do:**
+- View jobs and projects
+- Access chat and documents
+- View estimates and purchase orders
+- Basic construction schedule viewing
+
+**What you CAN'T do:**
+- Create new jobs
+- Approve purchase orders
+- Edit construction schedules
+- Manage users
+
+**Best for:** General staff, office administrators
+
+---
+
+### 🔨 Builder
+**What you can do:**
+- Everything User can do, PLUS:
+- View assigned construction tasks
+- Update task progress
+- Mark tasks complete
+- Access builder-specific checklists
+
+**What you CAN'T do:**
+- Create schedules
+- Approve POs
+- Manage estimates
+
+**Best for:** Site workers, tradespeople, construction crew
+
+---
+
+### 👷 Supervisor
+**What you can do:**
+- Everything User can do, PLUS:
+- View all construction tasks on assigned projects
+- Monitor progress across multiple tasks
+- Access supervisor dashboard
+- View builder assignments
+
+**What you CAN'T do:**
+- Edit schedules
+- Approve POs
+- Create estimates
+
+**Best for:** Site supervisors, foremen, project leads
+
+---
+
+### 📊 Estimator
+**What you can do:**
+- Everything User can do, PLUS:
+- Create and edit estimates
+- Generate purchase orders from estimates
+- Edit construction schedules
+- Access price books
+
+**What you CAN'T do:**
+- Approve purchase orders (requires Manager/Admin)
+- Create schedule templates
+
+**Best for:** Estimators, project coordinators
+
+---
+
+### 📦 Product Owner
+**What you can do:**
+- Everything Estimator can do, PLUS:
+- Create schedule templates
+- Edit schedule templates
+- View audit logs
+
+**What you CAN'T do:**
+- Manage users
+- Change company settings
+
+**Best for:** Project managers, senior estimators
+
+---
+
+### 👑 Admin
+**What you can do:**
+- **EVERYTHING** in the system, including:
+- Manage users (create, edit, delete, change roles)
+- Company settings and configuration
+- All project management functions
+- All construction management functions
+- Full access to all data
+
+**What you CAN'T do:**
+- Nothing! Admins have complete access
+
+**Best for:** System administrators, company owners, IT managers
+
+---
+
+## Managing Your Profile
+
+### Viewing Your Profile
+
+1. **Click your name** in the top right corner
+2. **Select "My Profile"**
+3. **View your details:**
+   - Name
+   - Email
+   - Mobile phone
+   - Role
+   - Last login time
+
+---
+
+### Editing Your Profile
+
+**You can change:**
+- Your name
+- Your mobile phone number
+- Your password
+
+**You CANNOT change:**
+- Your email (contact admin if needed)
+- Your role (only admins can change this)
+
+**To update your profile:**
+
+1. **Click your name** → "My Profile"
+2. **Click "Edit Profile"**
+3. **Update fields:**
+   - Change name if needed
+   - Update mobile phone
+   - Leave password blank if not changing
+4. **Click "Save Changes"**
+
+**Result:** Profile updated instantly!
+
+---
+
+### Changing Your Password
+
+**From your profile:**
+
+1. **Go to "My Profile"** → "Edit Profile"
+2. **Scroll to "Change Password" section**
+3. **Enter your current password** (for security)
+4. **Enter new password** (must meet requirements)
+5. **Confirm new password** (type it again)
+6. **Click "Update Password"**
+
+**Result:** Password changed, you'll be logged out and must log in with new password.
+
+**Security tip:** Change your password every 3-6 months!
+
+---
+
+## Managing Users (Admin Only)
+
+**Only Admins can perform these actions.**
+
+### Viewing All Users
+
+1. **Click "Settings"** in main menu
+2. **Select "Users"**
+3. **See all users** with:
+   - Name
+   - Email
+   - Role
+   - Last login time
+   - Mobile phone
+
+**Filter by role:**
+- Click role dropdown to filter (e.g., show only Admins)
+
+---
+
+### Creating a New User
+
+1. **Go to Settings** → "Users"
+2. **Click "+ New User"**
+3. **Fill in details:**
+   - Name
+   - Email (must be unique)
+   - Role (select from dropdown)
+   - Mobile phone (optional)
+   - Temporary password (user can change on first login)
+4. **Click "Create User"**
+5. **Share login details** with the new user
+
+**Best practice:** Send them a temporary password via secure channel (not email!), ask them to change it on first login.
+
+---
+
+### Editing User Details
+
+1. **Go to Settings** → "Users"
+2. **Click the user's name**
+3. **Click "Edit User"**
+4. **Update details:**
+   - Name
+   - Email
+   - Mobile phone
+   - **Role** (change permissions!)
+5. **Click "Save Changes"**
+
+**Changing roles:**
+- Upgrading User → Estimator: They can now create estimates
+- Downgrading Admin → User: They lose all admin privileges (careful!)
+- Role change is IMMEDIATE (user doesn't need to log out/in)
+
+---
+
+### Resetting a User's Password
+
+**When a user forgets their password:**
+
+1. **Go to Settings** → "Users"
+2. **Click the user's name**
+3. **Click "Reset Password"**
+4. **Copy the reset link** (or click "Send Email" if configured)
+5. **Share link with user** via secure channel
+6. **User clicks link** → sets new password
+
+**Security:** Reset links expire after 2 hours.
+
+---
+
+### Deactivating a User
+
+**When someone leaves the company:**
+
+1. **Go to Settings** → "Users"
+2. **Click the user's name**
+3. **Click "Deactivate User"**
+4. **Confirm deletion**
+
+**What happens:**
+- User can no longer log in
+- Their data (estimates, POs, chat messages) remains
+- Their name shows as "Deactivated User" in historical records
+- Can be re-activated later if needed
+
+**Warning:** Cannot undo deletion easily. Consider just changing their role to "User" instead if you might need to re-enable access.
+
+---
+
+## Session & Security
+
+### Auto-Logout
+
+**Your session lasts 24 hours.**
+
+After 24 hours of inactivity:
+- You'll see "Unauthorized" error
+- Click "Refresh" or navigate to login page
+- Log in again to continue
+
+**Why?**
+- Security: Prevents unauthorized access on shared computers
+- Compliance: Industry best practice
+
+**Pro Tip:** Keep TRAPID tab open and active to avoid logout. But close it when stepping away from your computer!
+
+---
+
+### Security Best Practices
+
+✅ **Do This:**
+1. **Use a strong password** (12+ characters, mixed case, special chars)
+2. **Don't share your password** (even with coworkers)
+3. **Log out when leaving your computer** (or lock screen)
+4. **Change password every 3-6 months**
+5. **Use Microsoft login if available** (one less password to manage)
+6. **Report suspicious activity** to your admin immediately
+
+❌ **Avoid This:**
+1. **Don't write password on sticky note** (seriously, don't!)
+2. **Don't use same password as other sites** (breaches happen)
+3. **Don't share your account** (get them their own account)
+4. **Don't save password on shared computers** (only on your personal device)
+5. **Don't ignore "Unauthorized" errors** (might indicate security issue)
+
+---
+
+## Troubleshooting Login Issues
+
+### "Invalid email or password"
+
+**Possible causes:**
+- Wrong password (check caps lock!)
+- Wrong email (try alternate email)
+- Account doesn't exist (ask admin to create it)
+- Password expired (should auto-prompt for reset, but ask admin if stuck)
+
+**Solutions:**
+1. Click "Forgot Password?" to reset
+2. Double-check email spelling
+3. Contact your admin to verify account exists
+
+---
+
+### "Account locked" (Supplier/Customer Portal Only)
+
+**What it means:**
+- Too many failed login attempts (5 attempts)
+- Account temporarily locked for 30 minutes
+
+**Solutions:**
+1. Wait 30 minutes → try again
+2. Contact company to unlock your account
+3. Verify you're using correct password
+
+**This doesn't happen to internal users** (Admins, Estimators, etc.) - only external portal users.
+
+---
+
+### "Session expired" or "Unauthorized"
+
+**What it means:**
+- Your 24-hour session timed out
+- You need to log in again
+
+**Solutions:**
+1. Click "Refresh" or navigate to login page
+2. Log in again with your credentials
+3. Continue working
+
+**Not a bug!** This is normal security behavior.
+
+---
+
+### Microsoft Login Not Working
+
+**Possible issues:**
+1. **Microsoft account not set up** - Contact IT to create Microsoft 365 account
+2. **Permissions denied** - You must approve TRAPID access on first login
+3. **Email mismatch** - Microsoft email must match TRAPID email
+4. **Token expired** - Try logging out of Microsoft, then back in
+
+**Solutions:**
+- Log out of Microsoft completely → try again
+- Use standard email/password login instead
+- Contact admin if persists
+
+---
+
+### "Too Many Requests" Error
+
+**What it means:**
+- You tried logging in too many times too quickly
+- Rate limit protection activated (5 attempts per 20 seconds)
+
+**Solutions:**
+1. Wait 20 seconds
+2. Try logging in again
+3. If you've forgotten password, click "Forgot Password?" instead of guessing
+
+**Why this happens:**
+- Security: Prevents brute force attacks
+- You'll rarely see this unless trying many passwords quickly
+
+---
+
+## Frequently Asked Questions
+
+### Can I have multiple accounts?
+
+**No.** One account per person. If you need access to different roles, ask your admin to adjust your single account's role.
+
+---
+
+### Can I change my email address?
+
+**No.** Email is your unique identifier. If your email changes (e.g., marriage, job change), contact your admin to update it manually.
+
+---
+
+### How long until my password expires?
+
+**Never.** Passwords don't expire automatically in TRAPID. However, it's good practice to change them every 3-6 months.
+
+---
+
+### Can I use the same password on my phone?
+
+**Yes!** TRAPID is mobile-friendly. Use the same login credentials on any device.
+
+---
+
+### What happens if I forget my password AND can't access my email?
+
+**Contact your admin.** They can reset your password manually and share the new credentials with you securely.
+
+---
+
+### Can I login from multiple devices at once?
+
+**Yes!** You can be logged in on your desktop, laptop, and phone simultaneously. All use the same 24-hour session token.
+
+---
+
+### Why does my session expire after 24 hours?
+
+**Security best practice.** This prevents:
+- Unauthorized access on shared computers
+- Stale sessions lingering indefinitely
+- Security breaches from stolen tokens
+
+**Industry standard:** Most business apps use 12-24 hour sessions.
+
+---
+
+### Can I extend my session without logging out?
+
+**Not currently.** Sessions are hard-limited to 24 hours. Just log in again when prompted - it's quick!
+
+**Future feature:** Auto-refresh tokens to extend sessions indefinitely (coming soon).
+
+---
+
+### What's the difference between my role and my "assigned role"?
+
+**Role:** Your permission level (Admin, Estimator, User, etc.)
+**Assigned Role:** Your team/group assignment (Sales, Site, Supervisor, etc.)
+
+- **Role** controls what you CAN do in the system
+- **Assigned Role** is for filtering/grouping users (e.g., "Show all Sales users")
+
+**Example:**
+- Role: Estimator (can create estimates)
+- Assigned Role: Sales (works on sales team)
+
+---
+
+### Can I delete my own account?
+
+**No.** Only admins can delete accounts. Contact your admin if you need your account removed.
+
+---
+
+## Related Topics
+
+- **Chapter 2: Company Settings** - Configure system-wide settings (Admin only)
+- **Chapter 12: OneDrive Integration** - Using Microsoft login for automatic OneDrive access
+- **Chapter 13: Outlook/Email Integration** - Connecting your Outlook account
+- **Chapter 14: Chat & Communications** - Internal messaging system
 
 ---
 
@@ -155,7 +707,750 @@ Trapid is a comprehensive construction management platform that helps you:
 │ 📕 LEXICON (BUGS):     Chapter 8 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Content TBD** - To be populated with PO generation guide
+**Last Updated:** 2025-11-16
+
+## What are Purchase Orders?
+
+Purchase Orders (POs) are your system for ordering materials, equipment, and services from suppliers. Think of them as:
+- 📄 **Official Order Forms** - Professional documentation sent to suppliers
+- 💰 **Budget Tracking** - Monitor spending against estimates
+- 📦 **Delivery Tracking** - Know what's been ordered, received, and paid
+- 🔗 **Schedule Integration** - Link orders to specific construction tasks
+
+---
+
+## Quick Start: Creating Your First PO
+
+### Method 1: Generate from Estimate (Recommended)
+
+**Best for:** Converting approved estimates into supplier orders
+
+1. **Navigate to your job's Estimate page**
+2. **Click "Generate Purchase Orders"** button (top right)
+3. **Review the auto-generated POs:**
+   - System groups line items by category
+   - Smart lookup finds best supplier & price for each item
+   - PO numbers assigned automatically (PO-000001, PO-000002, etc.)
+4. **Verify details:**
+   - Check supplier assignments (change if needed)
+   - Review quantities and prices
+   - Adjust delivery dates
+5. **Click "Save All POs"**
+
+**Result:** Multiple draft POs ready for approval, organized by category.
+
+---
+
+### Method 2: Create Manual PO
+
+**Best for:** One-off purchases, change orders, additional items
+
+1. **Navigate to job's Purchase Orders page**
+2. **Click "+ New Purchase Order"**
+3. **Fill in required fields:**
+   - **Supplier:** Select from dropdown (or create new)
+   - **Delivery Date:** When you need items on site
+   - **Notes:** Special instructions, project phase, etc.
+4. **Add line items:**
+   - Click "+ Add Item"
+   - Enter item name, quantity, unit price
+   - Select category (helps with tracking)
+   - Repeat for each item
+5. **Review totals:**
+   - Sub-total calculated automatically
+   - Tax (10% GST) added
+   - Total shown at bottom
+6. **Click "Save as Draft"**
+
+**Result:** Single PO saved, ready for approval.
+
+---
+
+## Understanding PO Status
+
+Your PO moves through these stages:
+
+### 📝 Draft
+- **What it means:** PO is being prepared, not official yet
+- **You can:** Edit freely, add/remove items, delete PO
+- **Next step:** Submit for approval
+
+### ⏳ Pending Approval
+- **What it means:** PO submitted, waiting for manager approval
+- **You can:** View only (creator can still edit)
+- **Next step:** Manager approves or rejects
+
+### ✅ Approved
+- **What it means:** PO approved by manager, ready to send
+- **You can:** Send to supplier, minor edits only
+- **Next step:** Send to supplier
+
+### 📧 Sent to Supplier
+- **What it means:** Supplier received PO, items on order
+- **You can:** Track delivery, cancel if needed (contact supplier first!)
+- **Next step:** Mark as received when items arrive
+
+### 📦 Received
+- **What it means:** Goods/services delivered and checked
+- **You can:** Record invoice, track payment
+- **Next step:** Mark as invoiced
+
+### 🧾 Invoiced
+- **What it means:** Supplier invoice recorded in system
+- **You can:** Record payments, track balance owing
+- **Next step:** Mark as paid when fully paid
+
+### 💰 Paid
+- **What it means:** Fully paid, closed
+- **You can:** View only (archived)
+- **Next step:** None (completed)
+
+---
+
+## Smart Lookup: How It Works
+
+**Smart Lookup** automatically finds the best supplier and price for each line item.
+
+### How Items Are Matched
+
+**Priority 1:** Exact match (best)
+- Item name + your preferred supplier + category
+- Example: "Pine Timber 90x45" from "Timber Co" in "Framing" category
+
+**Priority 2:** Fuzzy match
+- Similar name + preferred supplier + category
+- Example: "Pine Tmber 90x45" matches "Pine Timber 90x45"
+
+**Priority 3:** Any supplier in category
+- Item name from any supplier in same category
+- Example: "Pine Timber 90x45" from any timber supplier
+
+**Priority 4:** Fallback
+- Best available match from entire pricebook
+- Better than blank!
+
+### How Suppliers Are Selected
+
+**Priority 1:** Supplier code on estimate
+- If estimate specifies "ABC-123", use that supplier
+
+**Priority 2:** Category default supplier
+- Each category has preferred supplier (set in Settings)
+- Example: "Framing" category → "Timber Co"
+
+**Priority 3:** Any active supplier
+- First active supplier with items in category
+
+**Priority 4:** Fallback
+- First active supplier in system
+
+**Pro Tip:** Set default suppliers for each category to get accurate smart lookups!
+
+---
+
+## Working with Purchase Orders
+
+### Editing a PO
+
+**Draft status:**
+1. Open PO
+2. Click "Edit"
+3. Change any field (supplier, items, dates, etc.)
+4. Click "Save"
+
+**Pending/Approved status:**
+1. Open PO
+2. Click "Edit"
+3. Limited fields available (status prevents major changes)
+4. To make major changes: Cancel PO → Creates new draft → Edit freely
+
+**Sent/Received/Invoiced/Paid:**
+- Cannot edit (locked)
+- To change: Cancel and create new PO
+
+### Approving a PO
+
+**Required permission:** Manager or Admin
+
+1. Open PO in "Pending" status
+2. Review line items, quantities, prices
+3. Check supplier and delivery date
+4. **Click "Approve"** (or "Reject" to send back to draft)
+5. PO moves to "Approved" status
+
+**What to check:**
+- ✅ Supplier is correct
+- ✅ Prices match estimate (or within reason)
+- ✅ Delivery date aligns with schedule
+- ✅ Budget available for this purchase
+
+### Sending to Supplier
+
+1. Open PO in "Approved" status
+2. Click "Send to Supplier"
+3. **Choose method:**
+   - **Email:** System sends PDF to supplier email
+   - **Download PDF:** Print or attach to email manually
+   - **Mark as Sent:** Already sent outside system
+4. PO moves to "Sent" status
+
+**Email includes:**
+- Professional PO document (PDF)
+- All line items with quantities and prices
+- Delivery instructions and site address
+- Contact information
+
+### Receiving Goods
+
+**When delivery arrives:**
+
+1. **Check delivery against PO:**
+   - Count items
+   - Check condition
+   - Note any shortages or damages
+2. **Open PO in system**
+3. **Click "Mark as Received"**
+4. **Enter details:**
+   - Date received
+   - Quantity received (if partial delivery, note in comments)
+   - Condition notes
+5. **Click "Save"**
+6. PO moves to "Received" status
+
+**Partial deliveries:**
+- Note what arrived in comments
+- Keep PO in "Sent" status until complete
+- Or mark as "Received" and note outstanding items
+
+### Recording Invoices
+
+**When supplier invoice arrives:**
+
+1. Open PO (should be in "Received" status)
+2. Click "Mark as Invoiced"
+3. **Enter invoice details:**
+   - Invoice number
+   - Invoice date
+   - Invoice amount
+4. **Attach invoice PDF** (optional but recommended)
+5. Click "Save"
+6. PO moves to "Invoiced" status
+
+**Payment status auto-calculated:**
+- System compares invoice amount to PO total
+- Shows "Pending", "Part Payment", or "Complete"
+- 5% tolerance for rounding (see Payment Tracking below)
+
+### Recording Payments
+
+1. Open PO in "Invoiced" status
+2. **Enter payment details:**
+   - Amount paid
+   - Payment date
+   - Payment method (EFT, check, credit card)
+   - Reference number
+3. **Click "Record Payment"**
+4. **Payment status updates:**
+   - If paid in full → "Paid" status (PO closed)
+   - If partial → "Part Payment" (can record more payments)
+
+**Multiple payments:**
+- Record each payment separately
+- System tracks total paid
+- Shows balance owing
+
+---
+
+## Understanding Payment Status
+
+### 💰 Payment Status Indicators
+
+**⏳ Pending**
+- No payment recorded yet
+- Invoice just received
+- Action: Schedule payment
+
+**🟡 Part Payment**
+- Some amount paid, but not complete
+- Example: $500 paid on $1000 PO
+- Action: Record remaining payments
+
+**✅ Complete**
+- Fully paid (within tolerance)
+- Example: $995-$1050 paid on $1000 PO (95-105% tolerance)
+- Action: None, PO can close
+
+**🚨 Manual Review**
+- Payment doesn't make sense
+- Example: $1100 paid on $1000 PO (overpaid!)
+- Action: Check with accounts, may need credit
+
+### Why 5% Tolerance?
+
+**Real-world scenarios:**
+- **Rounding:** $999.95 vs $1000.00
+- **Early payment discounts:** Pay $980 for 2% discount
+- **Partial shipments:** Last item $20, not worth separate invoice
+- **GST differences:** Calculation rounding
+
+**System considers these "Complete":**
+- PO Total: $1000
+- Paid: $950-$1050 = Complete ✅
+- Paid: $949 or less = Part Payment 🟡
+- Paid: $1051+ = Manual Review 🚨
+
+**To override:**
+- If $990 paid and supplier agrees that's full payment
+- Accept "Part Payment" status (accurate reflection)
+- Or adjust invoice amount to $990 → Shows "Complete"
+
+---
+
+## Price Drift Warnings
+
+**What is price drift?**
+- Comparison between pricebook price and PO line item price
+- Helps catch data entry errors and price increases
+
+**Color indicators:**
+- 🟢 **Green (0-5%):** Normal variation, no concern
+- 🟡 **Yellow (5-10%):** Notable increase, worth checking
+- 🔴 **Red (>10%):** Significant increase, review required
+
+**Common causes:**
+- ✅ **Legitimate:** Supplier raised prices, market increase
+- ✅ **Bulk pricing:** Ordered more, got discount (negative drift)
+- ❌ **Data error:** Typed $1000 instead of $100 (900% drift!)
+- ❌ **Wrong item:** Selected wrong pricebook item
+
+**Example:**
+- Pricebook: "2x4 Timber" = $5.00
+- PO line item: $5.75 (15% drift)
+- **Warning shows:** "Price is 15% higher than pricebook. Confirm before proceeding."
+
+**Actions:**
+- Review supplier quote
+- Check for data entry errors
+- Update pricebook if new normal price
+- Proceed if increase is legitimate
+
+---
+
+## Linking POs to Schedule Tasks
+
+**Why link?**
+- See which POs support which construction phases
+- Track material costs per task
+- Know when items must arrive for task start date
+
+**How to link:**
+
+1. **Open PO**
+2. **Scroll to "Schedule Task" field**
+3. **Select task from dropdown:**
+   - Shows all tasks for current job
+   - Example: "Framing - Week 2"
+4. **Click "Save"**
+
+**Result:**
+- PO appears in task details
+- Task shows associated PO cost
+- Delivery date aligned with task start
+
+**Important:**
+- One PO can link to ONE task only
+- One task can have MULTIPLE POs
+- Changing link moves PO to new task (safely handled)
+
+---
+
+## Common Workflows
+
+### Workflow 1: Estimate → PO → Delivery
+
+**Scenario:** Converting approved estimate into supplier orders
+
+1. **Estimate approved** by client
+2. **Generate POs** from estimate
+   - Click "Generate Purchase Orders"
+   - Review auto-created POs
+   - Verify suppliers and prices
+3. **Submit for approval**
+   - Click "Submit All for Approval"
+   - Manager reviews and approves
+4. **Send to suppliers**
+   - Approved POs → Click "Send to Supplier"
+   - Email sent automatically
+5. **Track deliveries**
+   - Items arrive → "Mark as Received"
+   - Record invoice → "Mark as Invoiced"
+   - Record payment → "Record Payment"
+6. **Close PO**
+   - Fully paid → Status: "Paid"
+   - Archived for records
+
+**Timeline:** 2-3 days for approval, 5-10 days delivery (varies by supplier)
+
+---
+
+### Workflow 2: Emergency Purchase
+
+**Scenario:** Need materials urgently, no estimate yet
+
+1. **Create manual PO**
+   - "+ New Purchase Order"
+   - Select supplier
+   - Add items needed
+2. **Submit for approval**
+   - Click "Submit for Approval"
+   - Call/text manager for quick approval
+3. **Call supplier**
+   - Confirm availability
+   - Arrange pickup or delivery
+4. **Send PO**
+   - Manager approves → "Send to Supplier"
+   - Email or call supplier with PO number
+5. **Pick up or receive**
+   - Get items on site
+   - "Mark as Received"
+6. **Process invoice**
+   - Invoice arrives → "Mark as Invoiced"
+   - Pay ASAP → "Record Payment"
+
+**Timeline:** Same day if supplier has stock
+
+---
+
+### Workflow 3: Bulk Ordering for Multiple Jobs
+
+**Scenario:** Ordering common materials for 3 jobs to get bulk discount
+
+1. **Create PO for primary job**
+   - Select job with most items
+   - Add ALL items (across all jobs)
+   - Note other job numbers in PO notes
+2. **Record total cost to primary job**
+   - Full PO tracked in primary job
+3. **Split costs in accounting**
+   - Use custom tables or manual tracking
+   - Allocate costs per job
+
+**Alternative (better tracking):**
+- Create separate PO per job
+- Note bulk order in PO notes
+- Coordinate delivery timing
+
+---
+
+## Troubleshooting
+
+### "PO number already exists"
+
+**What it means:** System tried to create duplicate PO number (rare!)
+
+**Solutions:**
+1. Refresh page and try again
+2. Check existing POs for duplicates
+3. Contact support if persists
+
+**Prevention:** System uses database locks to prevent this
+
+---
+
+### "Cannot edit PO in 'Sent' status"
+
+**What it means:** PO already sent to supplier, locked to prevent confusion
+
+**Solutions:**
+1. **Minor change:** Contact supplier directly, don't change system
+2. **Major change:**
+   - Cancel PO
+   - Create new PO with correct details
+   - Send new PO to supplier
+   - Explain cancellation
+
+**Why locked?** Prevents miscommunication with supplier
+
+---
+
+### "Smart lookup selected wrong supplier"
+
+**What it means:** System picked different supplier than you expected
+
+**Solutions:**
+1. **Check category default:**
+   - Settings → Price Books → Categories
+   - Update default supplier if needed
+2. **Manually override:**
+   - Change supplier in PO after generation
+   - Edit line items if needed
+3. **Review pricebook:**
+   - Ensure correct items are tagged to right suppliers
+
+**Prevention:** Set accurate default suppliers for each category
+
+---
+
+### "Payment status stuck on 'Part Payment'"
+
+**What it means:** Amount paid doesn't fall in "Complete" tolerance (95-105%)
+
+**Example:**
+- PO Total: $1000
+- Paid: $990 (99% - outside tolerance)
+- Shows: "Part Payment"
+
+**Solutions:**
+1. **Check if truly complete:**
+   - Did supplier accept $990 as full payment?
+   - Was there a discount?
+2. **Adjust invoice amount:**
+   - Change invoice from $1000 to $990
+   - Status updates to "Complete"
+3. **Pay remaining amount:**
+   - Pay additional $10
+   - Status updates to "Complete"
+4. **Accept status:**
+   - "Part Payment" is accurate if not fully paid
+
+**Understanding:** Status is CALCULATED, not manually set
+
+---
+
+### "Price drift warning won't go away"
+
+**What it means:** Line item price is >10% different from pricebook
+
+**Solutions:**
+1. **Update pricebook:**
+   - Settings → Price Books
+   - Update item price to current market price
+   - Drift warning disappears
+2. **Verify correct price:**
+   - Check supplier quote
+   - Ensure no data entry error
+3. **Acknowledge and proceed:**
+   - Click "I understand, proceed"
+   - Warning is informational only
+
+**Prevention:** Keep pricebook updated with current market prices
+
+---
+
+### "Cannot link PO to schedule task"
+
+**What it means:** Task already linked to another PO
+
+**Solutions:**
+1. **Check existing link:**
+   - Open schedule task
+   - See which PO is linked
+2. **Unlink other PO:**
+   - Open that PO
+   - Remove schedule task link
+   - Now link to new PO
+3. **Use different task:**
+   - Create new task if needed
+   - Link PO to new task
+
+**Why?** System enforces: One task = One PO (one-to-one relationship)
+
+---
+
+## Tips & Best Practices
+
+### ✅ Do This
+
+**1. Set default suppliers for categories**
+- Saves time on every PO generation
+- Ensures consistent supplier relationships
+- Better pricing through volume
+
+**2. Use smart lookup for bulk POs**
+- Faster than manual entry
+- More accurate pricing
+- Consistent item names
+
+**3. Link POs to schedule tasks**
+- Better cost tracking
+- Delivery timing aligned with construction
+- Easy to see material costs per phase
+
+**4. Review before sending**
+- Check all quantities and prices
+- Verify delivery date
+- Confirm supplier details
+- Double-check site address
+
+**5. Attach supplier invoices**
+- Easy reference later
+- Audit trail for accounting
+- Dispute resolution if needed
+
+**6. Record payments promptly**
+- Accurate cash flow tracking
+- Avoid duplicate payments
+- Better supplier relationships
+
+**7. Keep pricebook updated**
+- Reduces price drift warnings
+- Faster smart lookups
+- More accurate estimates
+
+### ❌ Avoid This
+
+**1. Editing sent POs**
+- Creates supplier confusion
+- Better to cancel and resend
+- Keep communication clear
+
+**2. Skipping approval workflow**
+- Budget overruns
+- Unauthorized purchases
+- Financial control issues
+
+**3. Manual POs for everything**
+- Slower than smart lookup
+- More data entry errors
+- Miss bulk discount opportunities
+
+**4. Ignoring price drift warnings**
+- May miss data entry errors
+- Budget surprises
+- Profit margin issues
+
+**5. Not linking to schedule**
+- Harder to track material costs
+- Delivery timing issues
+- Miss task dependencies
+
+**6. Deleting POs**
+- Lose purchase history
+- Audit trail gaps
+- Better to cancel instead
+
+**7. Using outdated pricebook**
+- Inaccurate estimates
+- Constant drift warnings
+- Manual price corrections
+
+---
+
+## Frequently Asked Questions
+
+### Can I edit a PO after it's sent?
+
+**No.** Once sent, PO is locked to prevent supplier confusion.
+
+**To change:** Cancel PO → Create new one → Send new PO to supplier
+
+---
+
+### Why does smart lookup pick different suppliers?
+
+**Reason:** System follows priority:
+1. Supplier code on estimate
+2. Category default supplier
+3. Any active supplier
+
+**Solution:** Set default suppliers in category settings
+
+---
+
+### Can I create POs without an estimate?
+
+**Yes!** Manual PO creation is fully supported.
+
+**Best for:** Change orders, additional items, emergency purchases
+
+---
+
+### What happens if I delete a PO?
+
+**Draft/Pending:** PO deleted permanently
+**Approved/Sent/Received/Invoiced/Paid:** Cannot delete (use cancel instead)
+
+**Better:** Use "Cancel" to create audit trail
+
+---
+
+### Can I merge multiple POs?
+
+**No.** System doesn't support merging.
+
+**Workaround:** Create new PO with all items → Cancel old POs
+
+---
+
+### How do I track partial payments?
+
+**Record each payment separately:**
+1. Enter amount paid
+2. Click "Record Payment"
+3. Status updates to "Part Payment"
+4. Repeat for next payment
+
+System tracks total paid and balance owing.
+
+---
+
+### Can I copy a PO to another job?
+
+**Not directly.** Must create new PO manually.
+
+**Workaround:**
+1. Open original PO
+2. Note items and quantities
+3. Create new PO in other job
+4. Enter same items
+
+**Feature request:** Copy PO function (coming soon!)
+
+---
+
+### What's the difference between "Received" and "Invoiced"?
+
+**Received:** Goods physically delivered to site
+**Invoiced:** Supplier invoice recorded in system
+
+**Typical flow:**
+1. Items arrive → Mark as "Received"
+2. Days/weeks later → Invoice arrives → Mark as "Invoiced"
+3. Process payment → Record payments
+
+---
+
+### Can I have multiple invoices for one PO?
+
+**Not directly.** System tracks one invoice per PO.
+
+**For multiple invoices:**
+- Use comments to track each invoice number
+- Record total amount paid across all invoices
+- Attach all invoice PDFs
+
+**Better:** Split into separate POs for each delivery
+
+---
+
+### How do I export PO data for accounting?
+
+**Options:**
+1. **Export to CSV:** POs page → "Export" button
+2. **Xero Integration:** Auto-sync POs to Xero (if enabled)
+3. **API Access:** Custom integration (developer required)
+
+**CSV includes:** PO number, supplier, items, amounts, dates, status
+
+---
+
+## Related Topics
+
+- **Chapter 4: Price Books & Suppliers** - Setting up pricebook for smart lookup
+- **Chapter 6: Estimates & Quoting** - Creating estimates to generate POs from
+- **Chapter 9: Schedule Master** - Linking POs to construction tasks
+- **Chapter 11: Documents** - Attaching supplier invoices and quotes
+- **Chapter 16: Payments** - Recording payments and tracking cash flow
 
 ---
 
