@@ -125,7 +125,8 @@ export default function DocumentationPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-12 gap-6">
           {/* Sidebar - Document List */}
-          <div className="col-span-3">
+          <div className="col-span-3 space-y-4">
+            {/* Document Selector */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Documents
@@ -155,6 +156,40 @@ export default function DocumentationPage() {
                 ))}
               </div>
             </div>
+
+            {/* Chapter Navigator (only for Trinity docs) */}
+            {selectedDoc?.chapters && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Chapters
+                </h2>
+                <div className="space-y-1 max-h-96 overflow-y-auto">
+                  <button
+                    onClick={() => setSearchParams({ doc: selectedDoc.id })}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                      !searchParams.get('chapter')
+                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    Full Document
+                  </button>
+                  {Array.from({ length: selectedDoc.chapters }, (_, i) => i).map((chapterNum) => (
+                    <button
+                      key={chapterNum}
+                      onClick={() => setSearchParams({ doc: selectedDoc.id, chapter: chapterNum })}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                        searchParams.get('chapter') === String(chapterNum)
+                          ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      Chapter {chapterNum}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Main Content */}
