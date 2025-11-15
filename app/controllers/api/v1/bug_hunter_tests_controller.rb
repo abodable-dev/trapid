@@ -132,7 +132,8 @@ class Api::V1::BugHunterTestsController < ApplicationController
       status: result[:passed] ? 'pass' : 'fail',
       message: result[:message],
       duration: result[:duration],
-      template_id: params[:template_id]
+      template_id: params[:template_id],
+      console_output: result[:output] || result[:console_output]
     )
 
     render json: result
@@ -140,17 +141,18 @@ class Api::V1::BugHunterTestsController < ApplicationController
     BugHunterTestRun.create!(
       test_id: test_id,
       status: 'error',
-      message: e.message
+      message: e.message,
+      console_output: e.backtrace&.join("\n")
     )
 
-    render json: { passed: false, message: e.message }, status: :internal_server_error
+    render json: { passed: false, message: e.message, console_output: e.backtrace&.join("\n") }, status: :internal_server_error
   end
 
   # GET /api/v1/bug_hunter_tests/history
   def history
     runs = BugHunterTestRun.recent
 
-    render json: runs.as_json(only: [:id, :test_id, :status, :message, :duration, :template_id, :created_at])
+    render json: runs.as_json(only: [:id, :test_id, :status, :message, :duration, :template_id, :created_at, :console_output])
   end
 
   # DELETE /api/v1/bug_hunter_tests/cleanup
@@ -265,10 +267,21 @@ class Api::V1::BugHunterTestsController < ApplicationController
         }
       }
     else
+      console_output = "VIOLATIONS FOUND:\n\n"
+      console_output += violations.map.with_index { |v, i| "#{i + 1}. #{v}" }.join("\n")
+      console_output += "\n\nCONFIGURATION:\n"
+      console_output += "Non-working days: #{non_working_days.join(', ')}\n"
+      console_output += "Template: #{template.name} (ID: #{template.id})\n"
+      console_output += "\nSTATS:\n"
+      console_output += "Total unlocked tasks: #{total_unlocked_tasks}\n"
+      console_output += "Total locked tasks: #{total_locked_tasks}\n"
+      console_output += "Locked on non-working days (allowed): #{locked_on_non_working.length}\n"
+
       {
         passed: false,
         message: "✗ Found #{violations.length} unlocked task(s) on non-working days: #{violations.first(3).join('; ')}",
         duration: duration,
+        console_output: console_output,
         details: {
           total_unlocked_tasks: total_unlocked_tasks,
           violations: violations.length,

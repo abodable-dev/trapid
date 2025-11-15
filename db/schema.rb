@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_14_233430) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_15_215911) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -50,6 +50,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_233430) do
     t.float "duration"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "template_id"
+    t.text "console_output"
     t.index ["created_at"], name: "index_bug_hunter_test_runs_on_created_at"
     t.index ["test_id"], name: "index_bug_hunter_test_runs_on_test_id"
   end
@@ -117,6 +119,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_233430) do
     t.string "twilio_phone_number"
     t.boolean "twilio_enabled", default: false
     t.string "timezone", default: "Australia/Brisbane"
+    t.jsonb "working_days"
   end
 
   create_table "construction_contacts", force: :cascade do |t|
@@ -944,6 +947,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_233430) do
     t.index ["source"], name: "index_rain_logs_on_source"
   end
 
+  create_table "sam_quick_est_items", force: :cascade do |t|
+    t.string "item_code", null: false
+    t.string "item_name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "claude_estimate", precision: 10, scale: 2
+    t.index ["item_code"], name: "index_sam_quick_est_items_on_item_code", unique: true
+  end
+
   create_table "schedule_task_checklist_items", force: :cascade do |t|
     t.bigint "schedule_task_id", null: false
     t.string "name", null: false
@@ -1358,6 +1370,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_14_233430) do
     t.index ["project_task_id"], name: "index_task_updates_on_project_task_id"
     t.index ["update_date"], name: "index_task_updates_on_update_date"
     t.index ["user_id"], name: "index_task_updates_on_user_id"
+  end
+
+  create_table "unreal_variables", force: :cascade do |t|
+    t.string "variable_name"
+    t.decimal "claude_value", precision: 10, scale: 2
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "user_9_30_upload_4b12581f", force: :cascade do |t|
