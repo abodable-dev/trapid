@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import packageJson from '../../../package.json'
 import BackButton from '../common/BackButton'
+import FloatingHelpButton from '../FloatingHelpButton'
 import {
   Dialog,
   DialogBackdrop,
@@ -502,6 +503,9 @@ export default function AppLayout({ children }) {
             {children}
           </div>
         </main>
+
+        {/* Floating Help Button */}
+        <FloatingHelpButton />
       </div>
     </div>
   )
