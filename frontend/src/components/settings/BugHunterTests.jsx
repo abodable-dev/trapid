@@ -515,11 +515,11 @@ export default function BugHunterTests() {
           <div className="mt-4 rounded-lg bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-900/5 dark:ring-white/10 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                Test History: {tests.find(t => t.id === showHistory)?.name}
+                Test Audit History: {tests.find(t => t.id === showHistory)?.name}
               </h3>
               <button
                 onClick={() => setShowHistory(null)}
-                className="text-gray-400 hover:text-gray-500"
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
               >
                 ✕
               </button>
@@ -528,40 +528,55 @@ export default function BugHunterTests() {
               {getTestHistory(showHistory).length > 0 ? (
                 getTestHistory(showHistory).map((run, idx) => (
                   <div
-                    key={idx}
+                    key={run.id || idx}
                     className={`p-3 rounded-md ${
                       run.status === 'pass'
                         ? 'bg-green-50 dark:bg-green-900/20'
-                        : 'bg-red-50 dark:bg-red-900/20'
+                        : run.status === 'fail'
+                        ? 'bg-red-50 dark:bg-red-900/20'
+                        : 'bg-yellow-50 dark:bg-yellow-900/20'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
                         {run.status === 'pass' ? (
-                          <span className="text-green-600 dark:text-green-400">✓</span>
+                          <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
+                        ) : run.status === 'fail' ? (
+                          <span className="text-red-600 dark:text-red-400 font-bold">✗</span>
                         ) : (
-                          <span className="text-red-600 dark:text-red-400">✗</span>
+                          <span className="text-yellow-600 dark:text-yellow-400 font-bold">⚠</span>
                         )}
-                        <span className="text-sm text-gray-900 dark:text-white">{run.message || run.status}</span>
+                        <span className="text-sm text-gray-900 dark:text-white truncate">
+                          {run.message || run.status.toUpperCase()}
+                        </span>
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">
                         {formatDate(run.created_at || run.timestamp)}
                       </span>
                     </div>
-                    {run.duration && (
-                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Duration: {run.duration}s
+                    <div className="mt-2 flex gap-4 text-xs text-gray-500 dark:text-gray-400">
+                      {run.duration !== undefined && run.duration !== null && (
+                        <div>
+                          Duration: <span className="font-medium">{run.duration}s</span>
+                        </div>
+                      )}
+                      {run.template_id && (
+                        <div>
+                          Template: <span className="font-medium">{scheduleTemplates.find(t => t.id === run.template_id)?.name || `ID ${run.template_id}`}</span>
+                        </div>
+                      )}
+                      <div>
+                        Status: <span className="font-medium uppercase">{run.status}</span>
                       </div>
-                    )}
-                    {run.template_id && (
-                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Template: {scheduleTemplates.find(t => t.id === run.template_id)?.name || `ID ${run.template_id}`}
-                      </div>
-                    )}
+                    </div>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No history available</p>
+                <div className="text-center py-8">
+                  <ClockIcon className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No test history found</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Run this test to see history</p>
+                </div>
               )}
             </div>
           </div>
