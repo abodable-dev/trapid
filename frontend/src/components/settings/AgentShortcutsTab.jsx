@@ -585,42 +585,44 @@ export default function AgentShortcutsTab() {
           </h3>
         </div>
 
-        {/* Bulk Actions - RULE #19.9 */}
-        {selectedCommandsIds.size > 0 && (
-          <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              {selectedCommandsIds.size} selected
-            </span>
-            <button
-              onClick={bulkDeleteCommands}
-              className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
-            >
-              Delete Selected
-            </button>
-            <button
-              onClick={() => setSelectedCommandsIds(new Set())}
-              className="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm"
-            >
-              Clear Selection
-            </button>
-          </div>
-        )}
-
         {/* Table Toolbar - RULE #19.11A: Edit/Save buttons inline with search */}
         <div className="mb-4 flex items-center justify-between gap-4">
-          {/* LEFT SIDE: Global Search - extends to first button */}
-          <div className="flex-1">
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search commands..."
-                value={globalSearchCommands}
-                onChange={(e) => setGlobalSearchCommands(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-          </div>
+          {/* LEFT SIDE: Global Search or Bulk Actions */}
+          <div className="flex-1 flex items-center gap-3">
+            {selectedCommandsIds.size > 0 ? (
+              /* Bulk Actions - RULE #19.9: Inline with toolbar */
+              <>
+                <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  {selectedCommandsIds.size} selected
+                </span>
+                <button
+                  onClick={bulkDeleteCommands}
+                  className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm whitespace-nowrap"
+                >
+                  Delete Selected
+                </button>
+                <button
+                  onClick={() => setSelectedCommandsIds(new Set())}
+                  className="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm whitespace-nowrap"
+                >
+                  Clear Selection
+                </button>
+              </>
+            ) : (
+              /* Global Search - when no selection */
+              <div className="flex-1">
+                <div className="relative">
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search commands..."
+                    value={globalSearchCommands}
+                    onChange={(e) => setGlobalSearchCommands(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+            )}
 
           {/* RIGHT SIDE: Action buttons (aligned right, specific order) */}
           <div className="flex items-center gap-2">
@@ -892,41 +894,44 @@ export default function AgentShortcutsTab() {
           </h3>
         </div>
 
-        {/* Bulk Actions - RULE #19.9 */}
-        {selectedSlangIds.size > 0 && (
-          <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              {selectedSlangIds.size} selected
-            </span>
-            <button
-              onClick={bulkDeleteSlang}
-              className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
-            >
-              Delete Selected
-            </button>
-            <button
-              onClick={() => setSelectedSlangIds(new Set())}
-              className="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm"
-            >
-              Clear Selection
-            </button>
-          </div>
-        )}
-
         {/* Table Toolbar - RULE #19.11A: Edit/Save buttons inline with search */}
         <div className="mb-4 flex items-center justify-between gap-4">
-          {/* LEFT SIDE: Global Search - extends to first button */}
-          <div className="flex-1">
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search slang..."
-                value={globalSearchSlang}
-                onChange={(e) => setGlobalSearchSlang(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
+          {/* LEFT SIDE: Global Search or Bulk Actions */}
+          <div className="flex-1 flex items-center gap-3">
+            {selectedSlangIds.size > 0 ? (
+              /* Bulk Actions - RULE #19.9: Inline with toolbar */
+              <>
+                <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  {selectedSlangIds.size} selected
+                </span>
+                <button
+                  onClick={bulkDeleteSlang}
+                  className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm whitespace-nowrap"
+                >
+                  Delete Selected
+                </button>
+                <button
+                  onClick={() => setSelectedSlangIds(new Set())}
+                  className="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm whitespace-nowrap"
+                >
+                  Clear Selection
+                </button>
+              </>
+            ) : (
+              /* Global Search - when no selection */
+              <div className="flex-1">
+                <div className="relative">
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search slang..."
+                    value={globalSearchSlang}
+                    onChange={(e) => setGlobalSearchSlang(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* RIGHT SIDE: Action buttons (aligned right, specific order) */}
