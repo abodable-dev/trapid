@@ -123,6 +123,15 @@
           }
         }
       ]
+    },
+    "ui-compliance-auditor": {
+      "total_runs": 0,
+      "successful_runs": 0,
+      "failed_runs": 0,
+      "last_run": null,
+      "last_status": null,
+      "last_message": null,
+      "runs": []
     }
   },
   "metadata": {

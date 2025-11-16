@@ -54,24 +54,73 @@ export default function CopyConsoleButton() {
       // Dynamically import html2canvas to avoid loading it upfront
       const html2canvas = (await import('html2canvas')).default
 
+      // Capture at very reduced scale for smallest possible file size
       const canvas = await html2canvas(document.body, {
         logging: false,
-        useCORS: true
+        useCORS: true,
+        scale: 0.3, // 30% scale - very small but still readable for Claude
+        width: window.innerWidth,
+        height: window.innerHeight,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight
       })
 
-      canvas.toBlob(async (blob) => {
+      // Try different clipboard methods
+      let clipboardSuccess = false
+
+      // Method 1: Try PNG format (best clipboard compatibility)
+      if (navigator.clipboard && navigator.clipboard.write) {
         try {
+          const pngDataUrl = canvas.toDataURL('image/png')
+          const pngResponse = await fetch(pngDataUrl)
+          const pngBlob = await pngResponse.blob()
+
+          const sizeMB = pngBlob.size / 1024 / 1024
+          const sizeKB = pngBlob.size / 1024
+
+          if (sizeMB >= 1) {
+            console.log(`📸 Screenshot size: ${sizeMB.toFixed(2)}MB (${canvas.width}x${canvas.height}px)`)
+          } else {
+            console.log(`📸 Screenshot size: ${sizeKB.toFixed(0)}KB (${canvas.width}x${canvas.height}px)`)
+          }
+
           await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
+            new ClipboardItem({ 'image/png': pngBlob })
           ])
+          clipboardSuccess = true
           setCopiedButton('screenshot')
           setTimeout(() => setCopiedButton(null), 2000)
-          console.log('📸 Screenshot copied to clipboard!')
-        } catch (err) {
-          console.error('Failed to copy screenshot:', err)
-          alert('Screenshot captured but clipboard copy failed. Please use browser screenshot tools.')
+          console.log('📸 Screenshot copied to clipboard! (PNG format)')
+        } catch (err1) {
+          console.warn('PNG clipboard failed:', err1)
         }
-      })
+      }
+
+      // If clipboard failed, download instead
+      if (!clipboardSuccess) {
+        console.warn('All clipboard methods failed, downloading instead')
+
+        // Create JPEG blob for download (smaller file size)
+        const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.5)
+        const jpegResponse = await fetch(jpegDataUrl)
+        const jpegBlob = await jpegResponse.blob()
+
+        const sizeKB = jpegBlob.size / 1024
+
+        const url = URL.createObjectURL(jpegBlob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `screenshot-${Date.now()}.jpg`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+
+        setCopiedButton('screenshot')
+        setTimeout(() => setCopiedButton(null), 2000)
+        console.log('📸 Screenshot downloaded!')
+        alert(`⚠️ Clipboard blocked by browser - screenshot saved to Downloads folder (${sizeKB.toFixed(0)}KB)\n\nTo enable clipboard: Check browser permissions for this site.`)
+      }
     } catch (err) {
       console.error('Screenshot failed:', err)
       alert('Screenshot failed. Please try again.')

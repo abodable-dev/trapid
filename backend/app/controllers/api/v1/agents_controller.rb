@@ -18,7 +18,8 @@ module Api
               'production-bug-hunter': default_agent_stats,
               'deploy-manager': default_agent_stats,
               'planning-collaborator': default_agent_stats,
-              'gantt-bug-hunter': default_agent_stats
+              'gantt-bug-hunter': default_agent_stats,
+              'ui-compliance-auditor': default_agent_stats
             },
             metadata: {
               created: Time.current.iso8601,

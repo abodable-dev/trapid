@@ -62,7 +62,7 @@ const parseRulesFromMarkdown = (content) => {
 
       // Start new rule
       currentRule = {
-        id: `${currentChapter}.${ruleMatch[1]}`,
+        id: ruleMatch[1], // Use just the rule number as ID (e.g., "19.6" not "19.19.6")
         ruleNumber: ruleMatch[1],
         chapter: currentChapter,
         chapterName: CHAPTER_NAMES[currentChapter] || `Chapter ${currentChapter}`,
@@ -401,8 +401,43 @@ export default function BibleTableView({ content }) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-900">
-      {/* Bulk Action Bar */}
+    <>
+      <style>{`
+        .bible-table-scroll {
+          scrollbar-width: auto !important;
+          scrollbar-color: #9CA3AF #E5E7EB !important;
+        }
+        .dark .bible-table-scroll {
+          scrollbar-color: #9CA3AF #4B5563 !important;
+        }
+        .bible-table-scroll::-webkit-scrollbar {
+          width: 14px !important;
+          height: 14px !important;
+        }
+        .bible-table-scroll::-webkit-scrollbar-track {
+          background: #E5E7EB !important;
+        }
+        .bible-table-scroll::-webkit-scrollbar-thumb {
+          background: #9CA3AF !important;
+          border-radius: 6px !important;
+          border: 2px solid #E5E7EB !important;
+        }
+        .bible-table-scroll::-webkit-scrollbar-thumb:hover {
+          background: #6B7280 !important;
+        }
+        .dark .bible-table-scroll::-webkit-scrollbar-track {
+          background: #4B5563 !important;
+        }
+        .dark .bible-table-scroll::-webkit-scrollbar-thumb {
+          background: #9CA3AF !important;
+          border-color: #4B5563 !important;
+        }
+        .dark .bible-table-scroll::-webkit-scrollbar-thumb:hover {
+          background: #D1D5DB !important;
+        }
+      `}</style>
+      <div className="h-full flex flex-col overflow-hidden bg-white dark:bg-gray-900">
+        {/* Bulk Action Bar */}
       {selectedRows.size > 0 && (
         <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-200 dark:border-indigo-800">
           <div className="flex items-center justify-between">
@@ -489,12 +524,12 @@ export default function BibleTableView({ content }) {
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto" style={{
+      <div className="bible-table-scroll flex-1 overflow-y-auto overflow-x-auto relative bg-white dark:bg-gray-900 min-h-0" style={{
         scrollbarWidth: 'thin',
-        scrollbarColor: '#9CA3AF #E5E7EB'
+        scrollbarColor: '#9CA3AF #4B5563'
       }}>
         <table className="w-full border-collapse">
-          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
+          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-20">
             <tr>
               {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
                 const column = COLUMNS.find(c => c.key === colKey)
@@ -633,6 +668,7 @@ export default function BibleTableView({ content }) {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   )
 }
