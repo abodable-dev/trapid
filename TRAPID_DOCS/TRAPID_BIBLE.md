@@ -420,6 +420,64 @@ Question: How should I implement X?
 
 ---
 
+## Chapter Relationship Map
+
+**Understanding Feature Dependencies:**
+
+This map shows how chapters relate to each other. When working on a feature, consult related chapters for complete context.
+
+### Core Infrastructure (Foundation for all features)
+- **Chapter 1:** Authentication & Users → Used by ALL chapters (user references, permissions)
+- **Chapter 2:** System Administration → Used by ALL chapters (timezone, company settings)
+
+### Data & Content Management
+- **Chapter 3:** Contacts & Relationships → Used by Ch 4 (suppliers), Ch 5 (clients), Ch 6 (quote contacts), Ch 8 (PO suppliers), Ch 14 (chat recipients), Ch 15 (Xero sync)
+- **Chapter 4:** Price Books & Suppliers → Used by Ch 6 (estimate pricing), Ch 8 (PO pricing), Ch 17 (price automation)
+- **Chapter 18:** Custom Tables & Formulas → Standalone dynamic data system
+
+### Project Execution Flow
+1. **Chapter 6:** Estimates & Quoting → Creates estimates for jobs
+2. **Chapter 5:** Jobs & Construction → Central project management
+3. **Chapter 8:** Purchase Orders → Generated from estimates (Ch 6)
+4. **Chapter 9:** Gantt & Schedule Master → Visual timeline for jobs (Ch 5)
+5. **Chapter 10:** Project Tasks & Checklists → Task management for jobs (Ch 5)
+6. **Chapter 11:** Weather & Public Holidays → Affects schedule (Ch 9) and tasks (Ch 10)
+
+### AI & Automation
+- **Chapter 7:** AI Plan Review → Analyzes plans from Ch 12 (OneDrive files)
+- **Chapter 17:** Workflows & Automation → Orchestrates approvals, price updates (Ch 4), folder creation (Ch 12)
+
+### Integrations
+- **Chapter 12:** OneDrive Integration → File storage for Ch 5 (jobs), Ch 7 (AI review), Ch 17 (folder automation)
+- **Chapter 13:** Outlook/Email Integration → Email matching to Ch 5 (jobs)
+- **Chapter 14:** Chat & Communications → Team communication for Ch 5 (jobs), Ch 10 (tasks)
+- **Chapter 15:** Xero Accounting → Syncs Ch 3 (contacts), links to Ch 8 (PO invoices)
+- **Chapter 16:** Payments & Financials → Tracks payments for Ch 8 (POs), reconciles Ch 15 (Xero invoices)
+
+### UI/UX
+- **Chapter 19:** UI/UX Standards & Patterns → Applies to ALL frontend features
+
+### Feature Interaction Examples:
+
+**Creating a Job (Chapter 5):**
+- Requires: User (Ch 1), Client contact (Ch 3), Company timezone (Ch 2)
+- May trigger: OneDrive folders (Ch 12), Gantt entry (Ch 9), Tasks (Ch 10), Chat channel (Ch 14)
+
+**Generating Purchase Orders (Chapter 8):**
+- Source: Estimate (Ch 6)
+- Uses: Supplier contacts (Ch 3), Pricebook items (Ch 4)
+- May create: Workflow approval (Ch 17), Xero bill (Ch 15), Payment tracking (Ch 16)
+
+**AI Plan Review (Chapter 7):**
+- Requires: OneDrive files (Ch 12), Estimate data (Ch 6), User auth (Ch 1)
+- Uses: Company settings (Ch 2) for timezone, currency
+
+**Gantt Scheduling (Chapter 9):**
+- Requires: Job (Ch 5), Tasks (Ch 10), Weather (Ch 11), Public Holidays (Ch 11), Timezone (Ch 2)
+- Affects: Task due dates (Ch 10), Workflow deadlines (Ch 17)
+
+---
+
 # Chapter 1: Authentication & Users
 
 ┌─────────────────────────────────────────────────┐
