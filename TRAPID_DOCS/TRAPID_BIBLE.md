@@ -9649,7 +9649,565 @@ add_foreign_key :payments, :purchase_orders, on_delete: :cascade
 │ 📘 USER MANUAL (HOW): Chapter 17               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## Overview
+
+This chapter defines rules for **Workflows & Automation**, covering background job processing, workflow approval systems, automated triggers, scheduled tasks, and model callbacks. The system uses Solid Queue for background job processing with automated retry logic and error handling.
+
+**Key Features:**
+- Multi-step workflow approvals
+- Background job processing (Solid Queue)
+- Automated price updates (daily recurring)
+- OneDrive folder creation automation
+- Xero contact synchronization
+- AI-powered plan reviews
+- Model callbacks for cascading updates
+- Idempotent job design
+
+**Key Files:**
+- Jobs: `backend/app/jobs/*.rb` (10+ background jobs)
+- Models: `backend/app/models/workflow_instance.rb`, `workflow_step.rb`
+- Queue: `backend/config/solid_queue.yml`
+- Frontend: `frontend/src/components/workflows/*.jsx`
+
+**Related Chapters:**
+- Chapter 12: OneDrive Integration (folder creation automation)
+- Chapter 15: Xero Accounting Integration (contact sync automation)
+- Chapter 7: AI Plan Review (AI automation)
+
+---
+
+## RULE #17.1: Solid Queue Background Job System
+
+**All background jobs MUST use ActiveJob with Solid Queue adapter and implement retry logic.**
+
+### Configuration
+
+✅ **MUST configure Solid Queue:**
+
+```yaml
+# config/solid_queue.yml
+production:
+  dispatchers:
+    - polling_interval: 1
+      batch_size: 500
+  workers:
+    - queues: "*"
+      threads: 3
+      processes: 1
+      polling_interval: 0.1
+  recurring_tasks:
+    - key: apply_price_updates
+      class_name: ApplyPriceUpdatesJob
+      schedule: every day at midnight
+```
+
+### Base Job Retry Logic
+
+✅ **MUST inherit from ApplicationJob:**
+
+```ruby
+# app/jobs/application_job.rb
+class ApplicationJob < ActiveJob::Base
+  retry_on ActiveRecord::Deadlocked, wait: :exponentially_longer, attempts: 5
+  retry_on Net::ReadTimeout, wait: 5.seconds, attempts: 3
+  retry_on Errno::ECONNREFUSED, wait: 10.seconds, attempts: 3
+
+  discard_on ActiveJob::DeserializationError
+
+  rescue_from(StandardError) do |exception|
+    Rails.logger.error "Job failed: #{exception.class} - #{exception.message}"
+    Rails.logger.error exception.backtrace.join("\n")
+    # TODO: Send to error tracking (Sentry/Rollbar)
+  end
+end
+```
+
+**Files:**
+- `backend/config/solid_queue.yml`
+- `backend/app/jobs/application_job.rb`
+
+---
+
+## RULE #17.2: Workflow State Machine
+
+**WorkflowInstance MUST auto-initialize first step and auto-advance through steps on completion.**
+
+### Workflow Lifecycle
+
+✅ **MUST implement state machine:**
+
+```ruby
+# app/models/workflow_instance.rb
+enum status: {
+  pending: 'pending',
+  in_progress: 'in_progress',
+  completed: 'completed',
+  rejected: 'rejected',
+  cancelled: 'cancelled'
+}
+
+after_create :initialize_first_step
+
+def initialize_first_step
+  first_step = workflow_definition.steps.first
+  update!(
+    status: 'in_progress',
+    current_step: first_step['name'],
+    started_at: Time.current
+  )
+  create_step(first_step)
+end
+
+def advance!
+  next_step_config = get_next_step
+  return false unless next_step_config
+
+  update!(current_step: next_step_config['name'])
+  create_step(next_step_config)
+  true
+end
+
+def complete!
+  update!(
+    status: 'completed',
+    completed_at: Time.current
+  )
+end
+```
+
+### Step Automation
+
+✅ **MUST auto-advance on step completion:**
+
+```ruby
+# app/models/workflow_step.rb
+after_update :check_workflow_advancement, if: :saved_change_to_status?
+
+def approve!(user:, comment: nil)
+  update!(
+    status: 'completed',
+    completed_at: Time.current,
+    comment: comment
+  )
+  workflow_instance.advance! || workflow_instance.complete!
+end
+
+def reject!(user:, comment:)
+  update!(
+    status: 'rejected',
+    completed_at: Time.current,
+    comment: comment
+  )
+  workflow_instance.update!(status: 'rejected')
+end
+```
+
+**Files:**
+- `backend/app/models/workflow_instance.rb`
+- `backend/app/models/workflow_step.rb`
+
+---
+
+## RULE #17.3: Idempotent Background Jobs
+
+**Background jobs MUST be idempotent to safely handle retries and re-runs.**
+
+### Idempotent Pattern
+
+✅ **MUST check completion status:**
+
+```ruby
+# app/jobs/create_job_folders_job.rb
+def perform(construction_id, template_id = nil)
+  construction = Construction.find(construction_id)
+
+  # Idempotent: Check if already created
+  if construction.onedrive_folders_created_at.present?
+    Rails.logger.info "Folders already exist for construction #{construction.id}"
+    return
+  end
+
+  construction.update!(onedrive_folder_creation_status: 'processing')
+
+  # ... folder creation logic
+
+  construction.update!(
+    onedrive_folders_created_at: Time.current,
+    onedrive_folder_creation_status: 'completed'
+  )
+rescue => e
+  construction.update!(onedrive_folder_creation_status: 'failed')
+  raise # Re-raise for retry
+end
+```
+
+### Check Before Create
+
+✅ **MUST verify record doesn't exist:**
+
+```ruby
+# app/jobs/check_yesterday_rain_job.rb
+def perform
+  yesterday = Date.yesterday
+  Construction.active.each do |construction|
+    # Idempotent: Skip if log already exists
+    next if RainLog.exists?(construction: construction, date: yesterday)
+
+    weather_data = fetch_weather(construction)
+    create_rain_log_if_rainfall(construction, yesterday, weather_data) if weather_data
+  end
+end
+```
+
+**Files:**
+- `backend/app/jobs/create_job_folders_job.rb:18-23`
+- `backend/app/jobs/check_yesterday_rain_job.rb`
+
+---
+
+## RULE #17.4: Price Update Automation
+
+**ApplyPriceUpdatesJob MUST run daily to apply scheduled price changes automatically.**
+
+### Daily Recurring Job
+
+✅ **MUST implement price application:**
+
+```ruby
+# app/jobs/apply_price_updates_job.rb
+def perform
+  today = Date.today
+  applicable_updates = PriceHistory.where('date_effective <= ?', today)
+    .where(applied: false)
+    .includes(:pricebook_item)
+
+  applicable_updates.each do |price_history|
+    item = price_history.pricebook_item
+
+    # Only update if this is the latest price for this date
+    latest_for_date = item.price_histories
+      .where('date_effective <= ?', today)
+      .order(date_effective: :desc)
+      .first
+
+    next unless latest_for_date.id == price_history.id
+
+    # Only update if supplier matches default
+    next unless item.default_supplier_id == price_history.supplier_id
+
+    old_price = item.current_price
+    item.update!(current_price: price_history.new_price)
+
+    price_history.update!(applied: true)
+
+    Rails.logger.info "Applied price update for item #{item.code}: #{old_price} → #{price_history.new_price}"
+  end
+end
+```
+
+**Scheduling:**
+```yaml
+# config/solid_queue.yml
+recurring_tasks:
+  - key: apply_price_updates
+    class_name: ApplyPriceUpdatesJob
+    schedule: every day at midnight
+```
+
+**Files:**
+- `backend/app/jobs/apply_price_updates_job.rb`
+- `backend/config/solid_queue.yml:18-20`
+
+---
+
+## RULE #17.5: Model Callback Automation
+
+**Models MUST use callbacks for cascading updates and automatic calculations.**
+
+### Automatic Calculations
+
+✅ **MUST update dependent data:**
+
+```ruby
+# app/models/purchase_order.rb
+before_save :calculate_totals
+after_save :update_construction_profit
+after_destroy :update_construction_profit
+
+def calculate_totals
+  self.sub_total = line_items.sum(&:total_price)
+  self.tax = sub_total * (tax_rate || 0.10)
+  self.total = sub_total + tax
+end
+
+def update_construction_profit
+  return unless construction
+  construction.recalculate_profit!
+end
+```
+
+### Auto-spawn Child Tasks
+
+✅ **MUST trigger child creation:**
+
+```ruby
+# app/models/project_task.rb
+after_save :spawn_child_tasks_on_status_change, if: :saved_change_to_status?
+
+def spawn_child_tasks_on_status_change
+  return unless spawn_rules_enabled?
+
+  case status
+  when 'completed'
+    spawn_photo_task if spawn_photo_on_completion?
+    spawn_certificate_task if spawn_certificate_on_completion?
+  when 'in_progress'
+    spawn_subtasks if spawn_subtasks_on_start?
+  end
+end
+```
+
+### Price History Tracking
+
+✅ **MUST track changes:**
+
+```ruby
+# app/models/pricebook_item.rb
+after_update :track_price_change, if: :should_track_price_change?
+
+def track_price_change
+  return if skip_price_history_callback
+
+  PriceHistory.create!(
+    pricebook_item: self,
+    old_price: current_price_was,
+    new_price: current_price,
+    change_reason: price_change_reason || 'Manual update',
+    changed_by: User.current
+  )
+end
+```
+
+**Files:**
+- `backend/app/models/purchase_order.rb` (callbacks)
+- `backend/app/models/project_task.rb` (spawn logic)
+- `backend/app/models/pricebook_item.rb` (history tracking)
+
+---
+
+## RULE #17.6: Job Status Tracking
+
+**Long-running jobs MUST update status fields to track progress.**
+
+### Status Enum Pattern
+
+✅ **MUST provide status visibility:**
+
+```ruby
+# app/models/construction.rb
+enum onedrive_folder_creation_status: {
+  not_requested: 'not_requested',
+  pending: 'pending',
+  processing: 'processing',
+  completed: 'completed',
+  failed: 'failed'
+}
+
+def create_folders_if_needed!(template_id = nil)
+  return unless folders_not_requested?
+  update!(onedrive_folder_creation_status: 'pending')
+  CreateJobFoldersJob.perform_later(id, template_id)
+end
+```
+
+### Import Progress Tracking
+
+✅ **MUST show percentage:**
+
+```ruby
+# app/jobs/import_job.rb
+def perform(import_session_id, table_id, column_mapping)
+  session = ImportSession.find(import_session_id)
+  session.update!(status: 'processing', progress: 0)
+
+  importer = DataImporter.new(session.file_path, column_mapping)
+
+  importer.on_progress do |processed, total|
+    progress = (processed.to_f / total * 100).round(2)
+    session.update!(progress: progress, processed_rows: processed, total_rows: total)
+  end
+
+  result = importer.import!
+  session.update!(status: 'completed', progress: 100, result: result)
+end
+```
+
+**Files:**
+- `backend/app/models/construction.rb` (status enum)
+- `backend/app/jobs/import_job.rb` (progress tracking)
+
+---
+
+## RULE #17.7: Batch Processing with Rate Limiting
+
+**Jobs that call external APIs MUST implement batch processing and rate limiting.**
+
+### Xero Contact Sync Pattern
+
+✅ **MUST batch and throttle:**
+
+```ruby
+# app/jobs/xero_contact_sync_job.rb
+BATCH_SIZE = 10
+RATE_LIMIT_DELAY = 1.second
+MAX_RETRIES = 3
+
+def perform
+  xero_contacts = fetch_xero_contacts
+
+  xero_contacts.in_groups_of(BATCH_SIZE, false) do |batch|
+    batch.each do |xero_contact|
+      sync_contact(xero_contact)
+      sleep(RATE_LIMIT_DELAY) # Respect API rate limits
+    end
+  end
+end
+
+def sync_contact(xero_contact)
+  retries = 0
+  begin
+    # ... sync logic
+  rescue XeroApiClient::RateLimitError => e
+    retries += 1
+    if retries <= MAX_RETRIES
+      wait_time = 2 ** retries # Exponential backoff
+      sleep(wait_time)
+      retry
+    else
+      raise
+    end
+  end
+end
+```
+
+**Batch Parameters:**
+- Batch size: 10 contacts
+- Rate limit: 1 second between API calls
+- Max retries: 3 with exponential backoff
+
+**Files:**
+- `backend/app/jobs/xero_contact_sync_job.rb:7-9`
+
+---
+
+## RULE #17.8: Workflow Metadata Storage
+
+**WorkflowInstance MUST store rich metadata in JSONB for flexible workflows.**
+
+### Metadata Schema
+
+✅ **MUST support all workflow types:**
+
+```ruby
+# app/models/workflow_instance.rb
+# metadata JSONB structure:
+{
+  client_details: {
+    name: string,
+    email: string,
+    phone: string,
+    address: string
+  },
+  financial_info: {
+    amount: decimal,
+    currency: string,
+    payment_terms: string
+  },
+  project_details: {
+    name: string,
+    reference: string,
+    site_address: string,
+    due_date: date,
+    priority: string
+  },
+  scope_requirements: {
+    scope: text,
+    special_requirements: text
+  },
+  references: {
+    external_reference: string,
+    onedrive_url: string
+  },
+  attachments: [
+    { filename: string, url: string, size: integer }
+  ]
+}
+```
+
+### Frontend Capture
+
+✅ **MUST collect metadata:**
+
+```javascript
+// frontend/src/components/workflows/WorkflowStartModal.jsx
+const metadata = {
+  client_details: {
+    name: formData.clientName,
+    email: formData.clientEmail,
+    phone: formData.clientPhone,
+    address: formData.clientAddress
+  },
+  financial_info: {
+    amount: formData.amount,
+    currency: formData.currency,
+    payment_terms: formData.paymentTerms
+  },
+  // ... rest of metadata
+  attachments: attachments.map(a => ({
+    filename: a.filename,
+    url: a.url,
+    size: a.size
+  }))
+};
+
+await api.post('/workflow_instances', {
+  workflow_type: 'purchase_order_approval',
+  subject_id: poId,
+  subject_type: 'PurchaseOrder',
+  metadata: metadata
+});
+```
+
+**Files:**
+- `backend/app/models/workflow_instance.rb` (JSONB storage)
+- `frontend/src/components/workflows/WorkflowStartModal.jsx` (metadata capture)
+
+---
+
+## API Endpoints Reference
+
+### Workflows
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/v1/workflow_instances` | List workflows |
+| POST | `/api/v1/workflow_instances` | Start workflow |
+| GET | `/api/v1/workflow_instances/:id` | Get workflow details |
+| POST | `/api/v1/workflow_steps/:id/approve` | Approve step |
+| POST | `/api/v1/workflow_steps/:id/reject` | Reject step |
+| POST | `/api/v1/workflow_steps/:id/request_changes` | Request changes |
+
+### Background Jobs
+
+| Job | Trigger | Schedule |
+|-----|---------|----------|
+| ApplyPriceUpdatesJob | Daily | Midnight |
+| CreateJobFoldersJob | Manual | On-demand |
+| XeroContactSyncJob | Webhook/Manual | On-demand |
+| AiReviewJob | Manual | On-demand |
+| ImportJob | Manual | On-demand |
 
 ---
 

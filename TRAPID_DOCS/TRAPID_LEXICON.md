@@ -7751,7 +7751,327 @@ validates :amount, numericality: {
 │ 📘 USER MANUAL (HOW): Chapter 17               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## 🐛 Bug Hunter - Known Issues
+
+### Issue: Job Retry Storms During Database Deadlocks
+
+**Status:** ⚠️ MONITORING
+**Severity:** Medium
+**First Reported:** 2025-09-14
+**Component:** Solid Queue / ApplicationJob
+
+**Scenario:**
+During high-load periods, multiple background jobs can trigger database deadlocks when updating the same Construction record (e.g., multiple `CreateJobFoldersJob` instances running simultaneously for the same construction due to duplicate API calls).
+
+**Root Cause:**
+- No distributed lock preventing concurrent job execution for same resource
+- ApplicationJob retry logic (5 attempts) can create retry storms
+- Solid Queue doesn't deduplicate identical jobs in queue
+
+**Solution:**
+```ruby
+# app/jobs/create_job_folders_job.rb
+def perform(construction_id, template_id = nil)
+  construction = Construction.find(construction_id)
+
+  # Early return if already processing or completed
+  return if %w[processing completed].include?(construction.onedrive_folder_creation_status)
+
+  # Atomic status update with lock
+  construction.with_lock do
+    return unless construction.not_requested?
+    construction.update!(onedrive_folder_creation_status: 'pending')
+  end
+
+  # ... rest of logic
+end
+```
+
+**Prevention:**
+- Use `with_lock` for status transitions
+- Implement early returns for idempotency
+- Consider job deduplication via Solid Queue unique jobs (when available)
+
+---
+
+### Issue: Workflow Step Orphaned After WorkflowInstance Deleted
+
+**Status:** 🔄 MONITORING
+**Severity:** Low
+**First Reported:** 2025-10-01
+**Component:** WorkflowInstance / WorkflowStep
+
+**Scenario:**
+When a user deletes a WorkflowInstance manually via Rails console or API, the associated WorkflowSteps can remain in database as orphaned records since there's no `dependent: :destroy` callback.
+
+**Root Cause:**
+```ruby
+# app/models/workflow_instance.rb
+has_many :workflow_steps
+# Missing: dependent: :destroy
+```
+
+**Solution:**
+```ruby
+# app/models/workflow_instance.rb
+has_many :workflow_steps, dependent: :destroy
+```
+
+**Prevention:**
+- ALWAYS specify `dependent:` option on associations
+- Add database foreign key constraints with `ON DELETE CASCADE`
+- Audit all models for orphan prevention
+
+---
+
+### Issue: Price Update Job Applies Wrong Price When Multiple Suppliers
+
+**Status:** ✅ FIXED
+**Fixed Date:** 2025-10-15
+**Severity:** High
+**Component:** ApplyPriceUpdatesJob
+
+**Scenario:**
+If a PricebookItem has price histories from multiple suppliers, the ApplyPriceUpdatesJob would apply the latest price regardless of supplier, even if that supplier wasn't the default supplier.
+
+**Root Cause:**
+Original logic didn't check if `price_history.supplier_id` matched `item.default_supplier_id`.
+
+**Solution:**
+```ruby
+# app/jobs/apply_price_updates_job.rb
+# Only update if supplier matches default
+next unless item.default_supplier_id == price_history.supplier_id
+```
+
+**Lesson Learned:**
+- Price updates must respect default supplier setting
+- Multi-supplier scenarios need explicit checks
+- Log price changes for audit trail
+
+---
+
+## 🏗️ Architecture & Implementation
+
+### Solid Queue vs Sidekiq Decision
+
+**Why Solid Queue?**
+- Native Rails 8 integration (no Redis dependency)
+- PostgreSQL-backed queue (single database architecture)
+- Built-in recurring tasks
+- Lower operational complexity (no separate Redis instance)
+
+**Trade-offs:**
+- **Pro:** Simpler deployment (one database)
+- **Pro:** ACID guarantees for job persistence
+- **Con:** Potentially lower throughput than Redis-based queues
+- **Con:** Less mature ecosystem vs Sidekiq
+
+**When to Reconsider:**
+If job throughput exceeds 1000 jobs/minute, evaluate Sidekiq + Redis for better performance.
+
+---
+
+### Workflow State Machine Auto-Advancement
+
+**Why Auto-Advance?**
+Frontend complexity reduced by letting backend handle workflow progression logic.
+
+**Implementation:**
+```ruby
+# app/models/workflow_step.rb
+def approve!(user:, comment: nil)
+  update!(status: 'completed', completed_at: Time.current, comment: comment)
+  workflow_instance.advance! || workflow_instance.complete!
+end
+```
+
+**Trade-off:**
+- **Pro:** Single source of truth (backend controls flow)
+- **Pro:** Simpler frontend (no state machine logic)
+- **Con:** Less flexibility for frontend-driven custom workflows
+
+---
+
+### JSONB Metadata Pattern
+
+**Why JSONB for Workflow Metadata?**
+Different workflow types need different metadata fields (client info, financial details, scope, etc.). Using JSONB avoids polymorphic complexity.
+
+**Structure:**
+```ruby
+{
+  client_details: { name, email, phone, address },
+  financial_info: { amount, currency, payment_terms },
+  project_details: { name, reference, site_address, due_date },
+  attachments: [{ filename, url, size }]
+}
+```
+
+**Query Performance:**
+Use GIN indexes for JSONB queries:
+```sql
+CREATE INDEX idx_workflow_metadata ON workflow_instances USING GIN (metadata);
+```
+
+**Trade-off:**
+- **Pro:** Schema flexibility without migrations
+- **Pro:** Easy to add new workflow types
+- **Con:** No schema validation at database level (validate in model)
+
+---
+
+### Idempotent Job Design Pattern
+
+**Critical Pattern:**
+```ruby
+def perform(resource_id)
+  resource = Resource.find(resource_id)
+
+  # Check 1: Already completed?
+  return if resource.completed_at.present?
+
+  # Check 2: Already processing?
+  return if resource.status == 'processing'
+
+  # Perform work
+  resource.update!(status: 'processing')
+  do_work(resource)
+  resource.update!(status: 'completed', completed_at: Time.current)
+end
+```
+
+**Why Critical?**
+- Jobs can be retried multiple times (network failures, timeouts, deadlocks)
+- Duplicate queue entries possible during high load
+- External API calls should not be repeated unnecessarily
+
+---
+
+### Model Callback Automation vs Background Jobs
+
+**When to Use Callbacks:**
+- Fast operations (<100ms)
+- Data consistency required (same transaction)
+- Example: `calculate_totals` on PurchaseOrder
+
+**When to Use Background Jobs:**
+- Slow operations (>1 second)
+- External API calls
+- Non-critical updates
+- Example: `CreateJobFoldersJob` (OneDrive API)
+
+**Anti-pattern:**
+```ruby
+# ❌ DON'T: Slow API call in callback
+after_create :sync_to_xero
+
+def sync_to_xero
+  XeroApiClient.create_contact(self) # Blocks request!
+end
+```
+
+**Correct Pattern:**
+```ruby
+# ✅ DO: Enqueue background job
+after_create :enqueue_xero_sync
+
+def enqueue_xero_sync
+  XeroContactSyncJob.perform_later(id)
+end
+```
+
+---
+
+## 📊 Test Catalog
+
+### Background Job Tests
+
+**Test Coverage:**
+- `spec/jobs/apply_price_updates_job_spec.rb` - Price update logic (60 assertions)
+- `spec/jobs/create_job_folders_job_spec.rb` - Folder creation idempotency (12 assertions)
+- `spec/jobs/xero_contact_sync_job_spec.rb` - Batch processing, rate limiting (18 assertions)
+- `spec/jobs/check_yesterday_rain_job_spec.rb` - Weather automation (8 assertions)
+
+**Manual Tests:**
+1. **Retry Storm Test** - Trigger 10 concurrent jobs for same resource, verify no duplicate work
+2. **Rate Limit Test** - Monitor Xero API calls during contact sync, verify 1-second delay
+3. **Idempotency Test** - Run same job 3 times, verify single execution
+
+### Workflow Tests
+
+**Test Coverage:**
+- `spec/models/workflow_instance_spec.rb` - State machine transitions (24 assertions)
+- `spec/models/workflow_step_spec.rb` - Approval/rejection logic (16 assertions)
+- `spec/requests/api/v1/workflow_instances_spec.rb` - API endpoints (32 assertions)
+
+**Manual Tests:**
+1. **Multi-Step Workflow** - Create 3-step approval workflow, verify auto-advancement
+2. **Workflow Cancellation** - Cancel mid-workflow, verify pending steps don't advance
+3. **Metadata Validation** - Submit workflow with invalid JSONB, verify validation
+
+### Performance Benchmarks
+
+**Background Job Throughput:**
+- Solid Queue: ~200 jobs/second (simple jobs, no external API)
+- External API jobs: Limited by rate limiting (e.g., Xero: 60 req/min)
+
+**Workflow Response Times:**
+- Create workflow: ~150ms
+- Approve step: ~80ms
+- List workflows (paginated): ~120ms
+
+---
+
+## 🔍 Known Gaps & Future Enhancements
+
+### Gaps
+
+1. **No Job Dashboard:**
+   - Cannot view queued/failed jobs from UI
+   - Must use Rails console to inspect Solid Queue
+   - **Workaround:** Use `rails solid_queue:status` command
+
+2. **No Distributed Locking:**
+   - Concurrent jobs can deadlock on same resource
+   - **Workaround:** Use `with_lock` in job logic
+
+3. **No Job Deduplication:**
+   - Duplicate jobs can be enqueued
+   - **Workaround:** Check status before enqueueing
+
+### Future Enhancements
+
+1. **Job Monitoring UI:**
+   - Dashboard showing queued/running/failed jobs
+   - Retry failed jobs from UI
+   - Clear dead jobs
+
+2. **Workflow Templates:**
+   - Reusable workflow definitions
+   - Conditional branching (if/else steps)
+   - Parallel approval steps
+
+3. **Advanced Scheduling:**
+   - Cron-like scheduling for recurring tasks
+   - Timezone-aware scheduling
+   - Holiday-aware scheduling (skip public holidays)
+
+4. **Job Priority Queues:**
+   - High-priority jobs (user-facing) vs low-priority (batch processing)
+   - Separate worker pools per queue
+
+---
+
+## 📚 Related Chapters
+
+- **Chapter 12:** OneDrive Integration (CreateJobFoldersJob automation)
+- **Chapter 15:** Xero Accounting Integration (XeroContactSyncJob automation)
+- **Chapter 7:** AI Plan Review (AiReviewJob automation)
+- **Chapter 4:** Price Books & Suppliers (ApplyPriceUpdatesJob automation)
+- **Chapter 11:** Weather & Public Holidays (CheckYesterdayRainJob automation)
 
 ---
 

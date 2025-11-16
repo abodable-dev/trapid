@@ -4073,7 +4073,192 @@ If a PO has a budget set:
 │ 📕 LEXICON (BUGS):     Chapter 17 (Developers) │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## What are Workflows & Automation?
+
+Workflows in Trapid help you manage multi-step approval processes for important business actions like Purchase Order approvals, Client onboarding, and Contract reviews. Each workflow has defined steps that must be completed in order by different team members.
+
+Automation features run background tasks like:
+- **Automated Price Updates** - Apply scheduled supplier price changes daily at midnight
+- **OneDrive Folder Creation** - Automatically create job folder structures
+- **Weather Tracking** - Check yesterday's rain automatically for active jobs
+- **Xero Sync** - Keep contacts synchronized with your accounting system
+
+These automations run in the background so you can focus on more important work.
+
+---
+
+## Getting Started
+
+### Starting a Workflow
+
+**Example: Purchase Order Approval Workflow**
+
+1. **Navigate to the resource** (e.g., a Purchase Order)
+2. **Click "Start Approval Workflow"** button
+3. **Fill in metadata:**
+   - Client details (name, email, phone)
+   - Financial info (amount, payment terms)
+   - Scope and requirements
+   - Attach supporting documents
+4. **Submit workflow** - The first approver is notified automatically
+
+**What happens next:**
+- Workflow appears in your "Pending Approvals" inbox
+- First approver receives notification
+- Each step must be completed before next step starts
+- You can track progress from the Workflows page
+
+---
+
+### Approving a Workflow Step
+
+When you receive a workflow approval notification:
+
+1. **Open "My Tasks" or "Workflows"** from the sidebar
+2. **Click on the workflow** to view details
+3. **Review all information:**
+   - Metadata (client info, amounts, scope)
+   - Attached documents (plans, quotes, etc.)
+   - Previous approval comments
+4. **Choose an action:**
+   - **Approve** - Move to next step (or complete workflow if final step)
+   - **Reject** - Stop workflow and notify requester
+   - **Request Changes** - Send back to requester with comments
+5. **Add comment** (optional but recommended)
+6. **Click "Submit"**
+
+The workflow automatically advances to the next step (no manual routing needed).
+
+---
+
+### Viewing Workflow Status
+
+**To check workflow progress:**
+
+1. **Navigate to Workflows page** (sidebar)
+2. **Filter workflows:**
+   - My Pending Approvals (awaiting your action)
+   - Workflows I Started
+   - All Workflows (admin only)
+3. **Click workflow** to see:
+   - Current step and status
+   - All completed steps with comments
+   - Pending steps and assigned approvers
+   - Full metadata and attachments
+
+**Workflow Statuses:**
+- 🟡 **Pending** - Not yet started
+- 🔵 **In Progress** - Currently at an approval step
+- ✅ **Completed** - All steps approved
+- ❌ **Rejected** - Rejected by an approver
+- ⏸️ **Cancelled** - Cancelled by requester or admin
+
+---
+
+## Common Tasks
+
+### Viewing Automated Job Status
+
+Some automations show their progress status:
+
+**OneDrive Folder Creation:**
+1. Go to Job page
+2. Check "Folder Status" field:
+   - Not Requested (not created yet)
+   - Pending (queued for creation)
+   - Processing (creating now)
+   - Completed (folders ready)
+   - Failed (see error message)
+
+**Price Updates:**
+1. Go to Price Books page
+2. Check "Last Price Update" timestamp
+3. View "Price History" to see when automated updates applied
+
+**Weather Tracking:**
+1. Go to Job page
+2. Click "Weather History" tab
+3. See automated rain logs from previous days
+
+---
+
+### Cancelling a Workflow
+
+**If you started a workflow by mistake:**
+
+1. Go to Workflows page
+2. Click your workflow
+3. Click "Cancel Workflow" button (top-right)
+4. Confirm cancellation
+5. Add reason (recommended)
+
+**Note:** Only requester or admin can cancel workflows.
+
+---
+
+### Retrying a Failed Automation
+
+**If an automated job fails (e.g., OneDrive folder creation):**
+
+1. **Check the error message** (shown in red on the page)
+2. **Fix the underlying issue:**
+   - For OneDrive: Check connection in Settings → Integrations
+   - For Xero: Verify Xero credentials
+   - For Weather: Verify job has valid address
+3. **Click "Retry" button** (appears on failed jobs)
+4. **Monitor status** - Should change to "Processing" then "Completed"
+
+**Still failing?** Contact your administrator or support.
+
+---
+
+## Troubleshooting
+
+### "Workflow Step Won't Advance"
+
+**Problem:** You approved a step but workflow didn't move to next step.
+
+**Solution:**
+- Refresh the page (workflow may have advanced)
+- Check if you're the assigned approver for current step
+- Verify you clicked "Submit" (not just "Save Draft")
+- Contact admin if workflow is stuck for >5 minutes
+
+---
+
+### "Background Job Taking Too Long"
+
+**Problem:** OneDrive folders show "Processing" for more than 10 minutes.
+
+**Solution:**
+- Check OneDrive connection: Settings → Integrations → OneDrive
+- Verify OneDrive has sufficient storage space
+- Click "Cancel" and retry if stuck >30 minutes
+- Contact support if issue persists
+
+---
+
+### "Price Updates Not Applying"
+
+**Problem:** Scheduled price changes didn't apply at midnight.
+
+**Solution:**
+- Verify price has "Effective Date" set correctly
+- Check that supplier matches the item's "Default Supplier"
+- Go to Price History and check if price was manually applied
+- Only latest price for each date applies (duplicates skipped)
+
+---
+
+## Related Topics
+
+- **Chapter 12:** OneDrive Integration (folder automation details)
+- **Chapter 15:** Xero Accounting Integration (sync automation)
+- **Chapter 7:** AI Plan Review (automated plan analysis)
+- **Chapter 11:** Weather & Public Holidays (automated weather tracking)
+- **Chapter 4:** Price Books & Suppliers (price update automation)
 
 ---
 
