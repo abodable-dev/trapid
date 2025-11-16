@@ -1,6 +1,6 @@
 # Trapid Documentation - Master Index
 
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-16 22:30 AEST
 **Version:** 1.0.0
 
 Welcome to the Trapid documentation system. This index helps you find the right documentation quickly.
@@ -15,19 +15,20 @@ These three documents share **mirrored chapters** - same chapter number = same f
 **Audience:** Claude Code + Human Developers
 **Content:** RULES, protected patterns, MUST/NEVER/ALWAYS directives
 **Authority:** ABSOLUTE for covered features
-**Chapters:** 0-18 (workflow-based)
+**Chapters:** 0-20 (21 chapters total)
 
 ### 📕 [TRAPID_LEXICON.md](../TRAPID_LEXICON.md)
 **Audience:** Claude Code + Human Developers
 **Content:** Bug history, edge cases, lessons learned
 **Authority:** Reference (supplements Bible)
-**Chapters:** 0-18 (matches Bible)
+**Chapters:** 0-20 (matches Bible, database-driven)
+**Source:** `documented_bugs` table (exported to .md)
 
 ### 📘 [TRAPID_USER_MANUAL.md](../TRAPID_USER_MANUAL.md)
 **Audience:** End Users (non-technical)
 **Content:** How to use features, tutorials, workflows
 **Authority:** User-facing only
-**Chapters:** 0-18 (matches Bible)
+**Chapters:** 0-20 (matches Bible)
 
 ---
 
@@ -82,8 +83,10 @@ These three documents share **mirrored chapters** - same chapter number = same f
 | 16 | Payments & Financials | ✅ | ✅ | ✅ |
 | 17 | Workflows & Automation | ✅ | ✅ | ✅ |
 | 18 | Custom Tables & Formulas | ✅ | ✅ | ✅ |
+| 19 | UI/UX Standards & Patterns | ✅ | 🔄 | ✅ |
+| 20 | Agent System & Automation | ✅ | ✅ | ✅ |
 
-**Pro Tip:** Chapter 9 = Gantt everywhere. Chapter 15 = Xero everywhere. Easy!
+**Pro Tip:** Chapter 9 = Gantt everywhere. Chapter 15 = Xero everywhere. Chapter 20 = Agents. Easy!
 
 ---
 

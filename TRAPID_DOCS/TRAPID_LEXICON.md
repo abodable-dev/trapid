@@ -1,7 +1,7 @@
 # TRAPID LEXICON - Bug History & Knowledge Base
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-16 19:50 AEST
+**Last Updated:** 2025-11-16 21:05 AEST
 **Authority Level:** Reference (supplements Bible)
 **Audience:** Claude Code + Human Developers
 
@@ -45,12 +45,24 @@ This file is the **knowledge base** for all Trapid development.
 
 - [Chapter 0: System-Wide Knowledge](#chapter-0-system-wide-knowledge)
 - [Chapter 1: Authentication & Users](#chapter-1-authentication-users)
+- [Chapter 2: System Administration](#chapter-2-system-administration)
 - [Chapter 3: Contacts & Relationships](#chapter-3-contacts-relationships)
 - [Chapter 4: Price Books & Suppliers](#chapter-4-price-books-suppliers)
 - [Chapter 5: Jobs & Construction Management](#chapter-5-jobs-construction-management)
 - [Chapter 6: Estimates & Quoting](#chapter-6-estimates-quoting)
+- [Chapter 7: AI Plan Review](#chapter-7-ai-plan-review)
 - [Chapter 8: Purchase Orders](#chapter-8-purchase-orders)
 - [Chapter 9: Gantt & Schedule Master](#chapter-9-gantt-schedule-master)
+- [Chapter 10: Project Tasks & Checklists](#chapter-10-project-tasks-checklists)
+- [Chapter 11: Weather & Public Holidays](#chapter-11-weather-public-holidays)
+- [Chapter 12: OneDrive Integration](#chapter-12-onedrive-integration)
+- [Chapter 13: Outlook/Email Integration](#chapter-13-outlook-email-integration)
+- [Chapter 14: Chat & Communications](#chapter-14-chat-communications)
+- [Chapter 15: Xero Accounting Integration](#chapter-15-xero-accounting-integration)
+- [Chapter 16: Payments & Financials](#chapter-16-payments-financials)
+- [Chapter 17: Workflows & Automation](#chapter-17-workflows-automation)
+- [Chapter 18: Custom Tables & Formulas](#chapter-18-custom-tables-formulas)
+- [Chapter 19: UI/UX Standards & Patterns](#chapter-19-ui-ux-standards-patterns)
 - [Chapter 20: Agent System & Automation](#chapter-20-agent-system-automation)
 
 ---
@@ -238,6 +250,34 @@ Check token expiration before OneDrive API calls:
 
 **Details:**
 Roles are hardcoded rather than database-driven to prevent privilege escalation via API exploits.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 2: System Administration
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  2               │
+│ 📘 USER MANUAL (HOW): Chapter  2               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
 ---
 
@@ -912,6 +952,34 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
+# Chapter 7: AI Plan Review
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  7               │
+│ 📘 USER MANUAL (HOW): Chapter  7               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
 # Chapter 8: Purchase Orders
 
 ┌─────────────────────────────────────────────────┐
@@ -1060,6 +1128,286 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
+# Chapter 10: Project Tasks & Checklists
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 10               │
+│ 📘 USER MANUAL (HOW): Chapter 10               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 11: Weather & Public Holidays
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 11               │
+│ 📘 USER MANUAL (HOW): Chapter 11               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 12: OneDrive Integration
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 12               │
+│ 📘 USER MANUAL (HOW): Chapter 12               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 13: Outlook/Email Integration
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 13               │
+│ 📘 USER MANUAL (HOW): Chapter 13               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 14: Chat & Communications
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 14               │
+│ 📘 USER MANUAL (HOW): Chapter 14               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 15: Xero Accounting Integration
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 15               │
+│ 📘 USER MANUAL (HOW): Chapter 15               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 16: Payments & Financials
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 16               │
+│ 📘 USER MANUAL (HOW): Chapter 16               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 17: Workflows & Automation
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 17               │
+│ 📘 USER MANUAL (HOW): Chapter 17               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 18: Custom Tables & Formulas
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 18               │
+│ 📘 USER MANUAL (HOW): Chapter 18               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 19: UI/UX Standards & Patterns
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 19               │
+│ 📘 USER MANUAL (HOW): Chapter 19               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
 # Chapter 20: Agent System & Automation
 
 ┌─────────────────────────────────────────────────┐
@@ -1193,7 +1541,7 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-**Last Generated:** 2025-11-16 19:50 AEST
+**Last Generated:** 2025-11-16 21:05 AEST
 **Generated By:** `rake trapid:export_lexicon`
 **Maintained By:** Development Team via Database UI
 **Review Schedule:** After each bug fix or knowledge entry
