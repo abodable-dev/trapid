@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_16_092718) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_16_101431) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -444,6 +444,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_16_092718) do
     t.text "details"
     t.text "examples"
     t.text "recommendations"
+    t.string "rule_reference"
     t.index ["chapter_number", "knowledge_type"], name: "index_documented_bugs_on_chapter_number_and_knowledge_type"
     t.index ["chapter_number", "status"], name: "index_documented_bugs_on_chapter_number_and_status"
     t.index ["chapter_number"], name: "index_documented_bugs_on_chapter_number"

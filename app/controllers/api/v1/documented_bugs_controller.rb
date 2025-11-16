@@ -107,6 +107,26 @@ module Api
         }
       end
 
+      # POST /api/v1/documented_bugs/export_to_markdown
+      # Exports Lexicon database to markdown file
+      def export_to_markdown
+        result = system("cd #{Rails.root} && bundle exec rake trapid:export_lexicon")
+
+        if result
+          render json: {
+            success: true,
+            message: 'Lexicon exported to TRAPID_LEXICON.md successfully',
+            file_path: Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_LEXICON.md').to_s,
+            total_entries: DocumentedBug.count
+          }
+        else
+          render json: {
+            success: false,
+            error: 'Export failed'
+          }, status: :internal_server_error
+        end
+      end
+
       private
 
       def set_documented_bug
@@ -140,6 +160,7 @@ module Api
           :details,
           :examples,
           :recommendations,
+          :rule_reference,
           metadata: {}
         )
       end
@@ -175,6 +196,7 @@ module Api
             details: bug.details,
             examples: bug.examples,
             recommendations: bug.recommendations,
+            rule_reference: bug.rule_reference,
             metadata: bug.metadata,
             created_at: bug.created_at,
             updated_at: bug.updated_at

@@ -96,6 +96,7 @@ namespace :trapid do
       performance = entries.where(knowledge_type: 'performance')
       dev_notes = entries.where(knowledge_type: 'dev_note')
       common_issues = entries.where(knowledge_type: 'common_issue')
+      terminology = entries.where(knowledge_type: 'terminology')
 
       # Bug Hunter section
       if bugs.any?
@@ -170,6 +171,11 @@ namespace :trapid do
         architecture.each_with_index do |arch, index|
           content << "### #{index + 1}. #{arch.bug_title}"
           content << ''
+
+          if arch.rule_reference.present?
+            content << "**Related Rule:** Bible #{arch.rule_reference}"
+            content << ''
+          end
 
           if arch.description.present?
             content << "**Decision:** #{arch.description}"
@@ -272,6 +278,42 @@ namespace :trapid do
           content << ''
           content << issue.description if issue.description.present?
           content << ''
+          content << '---'
+          content << ''
+        end
+      end
+
+      # Terminology section
+      if terminology.any?
+        content << '## 📖 Terminology'
+        content << ''
+
+        terminology.each do |term|
+          content << "### #{term.bug_title}"
+          content << ''
+
+          if term.description.present?
+            content << "**Definition:** #{term.description}"
+            content << ''
+          end
+
+          if term.details.present?
+            content << "**Details:**"
+            content << term.details
+            content << ''
+          end
+
+          if term.examples.present?
+            content << "**Examples:**"
+            content << term.examples
+            content << ''
+          end
+
+          if term.rule_reference.present?
+            content << "**Related Rule:** Bible #{term.rule_reference}"
+            content << ''
+          end
+
           content << '---'
           content << ''
         end
