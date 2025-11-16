@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, ArrowDownTrayIcon, TableCellsIcon, Squares2X2Icon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 
 // Layout Components
@@ -15,6 +15,8 @@ import KnowledgeEntryModal from '../components/KnowledgeEntryModal'
 import LoadingSkeleton from '../components/documentation/LoadingSkeleton'
 import Breadcrumb from '../components/documentation/Breadcrumb'
 import KeyboardShortcutsHelp from '../components/documentation/KeyboardShortcutsHelp'
+import LexiconTableView from '../components/documentation/LexiconTableView'
+import BibleTableView from '../components/documentation/BibleTableView'
 
 export default function DocumentationPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -43,6 +45,12 @@ export default function DocumentationPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingEntry, setEditingEntry] = useState(null)
   const [showHelp, setShowHelp] = useState(false)
+
+  // View mode for Lexicon (default to table view)
+  const [lexiconViewMode, setLexiconViewMode] = useState('table') // '3-panel' or 'table'
+
+  // View mode for Bible (default to table view)
+  const [bibleViewMode, setBibleViewMode] = useState('table') // 'markdown' or 'table'
 
   // Load docs list on mount
   useEffect(() => {
@@ -340,6 +348,34 @@ export default function DocumentationPage() {
               Knowledge Base
             </h2>
             <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setLexiconViewMode('3-panel')}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+                    lexiconViewMode === '3-panel'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  title="3-Panel View"
+                >
+                  <Squares2X2Icon className="w-4 h-4" />
+                  3-Panel
+                </button>
+                <button
+                  onClick={() => setLexiconViewMode('table')}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                    lexiconViewMode === 'table'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  title="Table View"
+                >
+                  <TableCellsIcon className="w-4 h-4" />
+                  Table
+                </button>
+              </div>
+
               <button
                 onClick={handleExportLexicon}
                 className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-600 text-white text-xs font-medium rounded-lg hover:bg-gray-700 transition-colors"
@@ -441,6 +477,147 @@ export default function DocumentationPage() {
     )
   }
 
+  // If Bible is selected and table view mode is active, render full-width table
+  if (selectedDoc?.id === 'bible' && bibleViewMode === 'table') {
+    return (
+      <>
+        <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+              📖 TRAPID Bible - Table View
+            </h1>
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setBibleViewMode('markdown')}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+                    bibleViewMode === 'markdown'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  title="Markdown View"
+                >
+                  <Squares2X2Icon className="w-4 h-4" />
+                  Markdown
+                </button>
+                <button
+                  onClick={() => setBibleViewMode('table')}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                    bibleViewMode === 'table'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  title="Table View"
+                >
+                  <TableCellsIcon className="w-4 h-4" />
+                  Table
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Table View */}
+          <div className="flex-1 overflow-hidden">
+            <BibleTableView content={content} />
+          </div>
+        </div>
+
+        {/* Keyboard Shortcuts Help */}
+        <KeyboardShortcutsHelp />
+      </>
+    )
+  }
+
+  // If Lexicon is selected and table view mode is active, render full-width table
+  if (selectedDoc?.id === 'lexicon' && lexiconViewMode === 'table') {
+    return (
+      <>
+        <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+              📕 TRAPID Lexicon - Table View
+            </h1>
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setLexiconViewMode('3-panel')}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+                    lexiconViewMode === '3-panel'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  title="3-Panel View"
+                >
+                  <Squares2X2Icon className="w-4 h-4" />
+                  3-Panel
+                </button>
+                <button
+                  onClick={() => setLexiconViewMode('table')}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                    lexiconViewMode === 'table'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  title="Table View"
+                >
+                  <TableCellsIcon className="w-4 h-4" />
+                  Table
+                </button>
+              </div>
+
+              <button
+                onClick={handleExportLexicon}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-600 text-white text-xs font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                title="Export Lexicon to TRAPID_LEXICON.md"
+              >
+                <ArrowDownTrayIcon className="w-4 h-4" />
+                Export
+              </button>
+              <button
+                onClick={handleAddEntry}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Add Entry
+              </button>
+            </div>
+          </div>
+
+          {/* Table View */}
+          <div className="flex-1 overflow-hidden">
+            <LexiconTableView
+              entries={entries}
+              onEdit={handleEditEntry}
+              onDelete={handleDeleteEntry}
+              stats={stats}
+            />
+          </div>
+        </div>
+
+        {/* Knowledge Entry Modal */}
+        <KnowledgeEntryModal
+          isOpen={showModal}
+          onClose={() => {
+            setShowModal(false)
+            setEditingEntry(null)
+          }}
+          onSave={handleSaveEntry}
+          chapterNumber={editingEntry?.chapter_number || 0}
+          chapterName={editingEntry?.chapter_name || 'Overview'}
+          entry={editingEntry}
+        />
+
+        {/* Keyboard Shortcuts Help */}
+        <KeyboardShortcutsHelp />
+      </>
+    )
+  }
+
+  // Default 3-panel layout
   return (
     <>
       <ThreePanelLayout

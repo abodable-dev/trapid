@@ -127,6 +127,83 @@ This file is the **absolute authority** for all Trapid development where chapter
 - `description`, `scenario`, `root_cause`, `solution`, `prevention` - Content fields
 - `rule_reference` - Link to Bible RULE (e.g., "Chapter 9, RULE #9.3")
 
+---
+
+## RULE #0.1: Mandatory Chapter Reading Before Component Creation
+
+**🔴 CRITICAL: Claude Code MUST automatically read relevant Bible chapters BEFORE creating any of these component types:**
+
+### Trigger: Creating New Components
+
+✅ **BEFORE writing ANY of the following, Claude Code MUST:**
+
+1. **Identify which chapter(s) apply** to the component being created
+2. **Read those chapter(s)** from TRAPID_BIBLE.md using the Read tool
+3. **Follow ALL rules** from those chapters
+4. **Ask the user** when rules require it (e.g., table type choice)
+
+### Component Types That Require Chapter Reading
+
+| Component Type | Required Chapter(s) | Example |
+|----------------|---------------------|---------|
+| **Any table component** | Chapter 19 (UI/UX) | ContactsPage, PriceBooksPage, **LexiconTableView** |
+| **Any modal/dialog** | Chapter 19 (UI/UX) | NewJobModal, EditContactModal |
+| **Any form** | Chapter 19 (UI/UX) | JobSetupForm, ContactForm |
+| **Gantt/Schedule components** | Chapter 9 (Gantt) + Chapter 19 (UI/UX) | ScheduleTemplateEditor, DHtmlxGanttView |
+| **Authentication flows** | Chapter 1 (Auth) | LoginPage, PasswordReset |
+| **Contact-related features** | Chapter 3 (Contacts) | ContactMerge, ContactRelationships |
+| **Price Book features** | Chapter 4 (Price Books) | SmartPoLookupService, PriceHistory |
+| **Job/Construction features** | Chapter 5 (Jobs) | JobDetailPage, ConstructionProfit |
+| **Estimate features** | Chapter 6 (Estimates) | JobMatcherService, EstimateImport |
+| **Purchase Order features** | Chapter 8 (POs) | POGenerator, POTable |
+| **Xero integration** | Chapter 15 (Xero) | XeroContactSync, XeroAuth |
+
+### Enforcement Mechanism
+
+**When creating ANY new component file:**
+
+1. **Check filename** - Does it match a pattern? (e.g., `*Table*.jsx`, `*Modal*.jsx`, `*Form*.jsx`)
+2. **If match → STOP** - Do NOT write the file yet
+3. **Read chapter(s)** - Use Read tool to read relevant Bible chapter(s)
+4. **Follow rules** - Apply all rules from that chapter
+5. **Ask user if required** - Some rules (like RULE #19.1) require asking first
+6. **Then create component** - Now write the file following all rules
+
+### Example: Creating a Table Component
+
+**❌ WRONG (what I did initially):**
+```
+User: "Create a table view for Lexicon"
+Claude: *immediately creates LexiconTableView.jsx without reading Chapter 19*
+Result: Non-compliant table, missing required features
+```
+
+**✅ CORRECT (what should happen):**
+```
+User: "Create a table view for Lexicon"
+Claude:
+  1. Recognize: "table view" → need to read Chapter 19
+  2. Read: /Users/rob/Projects/trapid/TRAPID_DOCS/TRAPID_BIBLE.md Chapter 19
+  3. See RULE #19.1: Must ask user which table type
+  4. Ask user: "Should I use DataTable.jsx (read-only) or full advanced table?"
+  5. User responds: "2" (full advanced table)
+  6. Create LexiconTableView.jsx with ALL required features from Chapter 19
+Result: Compliant table on first attempt
+```
+
+### Violation Consequences
+
+**If Claude Code creates a component without reading the required chapter(s):**
+
+1. Component will likely violate multiple rules
+2. Requires refactoring to fix violations
+3. Wastes time and tokens
+4. Demonstrates failure to follow RULE #0.1
+
+**Prevention:** This rule should be in Claude Code's system instructions and enforced automatically.
+
+---
+
 **API Endpoints:**
 - `GET /api/v1/documented_bugs` - List entries
 - `POST /api/v1/documented_bugs` - Create entry
@@ -10984,7 +11061,7 @@ end
 
 **Audience:** Claude Code + Human Developers
 **Authority:** ABSOLUTE
-**Last Updated:** 2025-11-16 12:30 AEST
+**Last Updated:** 2025-11-16 15:40 AEST
 
 This chapter defines ALL UI/UX patterns for Trapid. Every interactive element MUST follow these standards.
 
@@ -11020,6 +11097,7 @@ Please choose which type of table to implement:
 - Example: PublicHolidaysPage
 
 **Option 2: Table** (Editable / Full Features)
+- ✅ Row selection checkboxes with bulk actions
 - ✅ Inline editing capability
 - ✅ Column resizing
 - ✅ Column reordering
@@ -11058,11 +11136,14 @@ Which should I use? (1 or 2)
 ✅ **REQUIRED features for ALL tables (except DataTable.jsx):**
 
 **If you build a table (not using DataTable.jsx), it MUST have ALL of these:**
+- ✅ **Standardized toolbar layout** (RULE #19.11A - search left, action buttons right in specific order)
+- ✅ Row selection checkboxes (first column, with "Select All" in header)
 - ✅ Column resizing (drag handles on headers)
 - ✅ Column reordering (drag-and-drop headers)
 - ✅ Inline column filters (filter icon in each header)
 - ✅ Global search (search bar above table)
 - ✅ Column visibility toggle (eye icon button)
+- ✅ Bulk action buttons (shown when rows selected)
 - ✅ State persistence (save column widths, order, filters to localStorage)
 - ✅ Dark mode support
 - ✅ Sticky headers with gradient background
@@ -11115,14 +11196,41 @@ Which should I use? (1 or 2)
 
 ---
 
-## RULE #19.3: Column Search/Filter Requirements
+## RULE #19.3: Column Search/Filter Requirements (REQUIRED)
 
-### Inline Column Filters (Advanced Tables)
+### CRITICAL: ALL Data Columns Must Be Searchable
 
-✅ **MUST provide inline filters for searchable columns:**
+✅ **REQUIRED for ALL data columns:**
+- **Default:** `searchable: true` for ALL columns (except selection checkbox and actions)
 - Input field directly in header cell (below column label)
 - Dropdown for enum/status columns
+- Text input for all other columns
 - Debounced search for text inputs (optional optimization)
+
+❌ **EXCEPTIONS (not searchable):**
+- Selection checkbox column (first column)
+- Actions column (last column with Edit/Delete buttons)
+
+### Column Configuration Pattern
+
+**CRITICAL:** ALL data columns MUST have `searchable: true` by default:
+
+```jsx
+const columns = [
+  // Selection checkbox - NOT searchable
+  { key: 'select', label: '', searchable: false },
+
+  // ALL data columns - MUST be searchable
+  { key: 'name', label: 'Name', sortable: true, searchable: true },
+  { key: 'email', label: 'Email', sortable: true, searchable: true },
+  { key: 'status', label: 'Status', sortable: true, searchable: true, filterType: 'dropdown' },
+  { key: 'role', label: 'Role', sortable: true, searchable: true, filterType: 'dropdown' },
+  { key: 'created_at', label: 'Created', sortable: true, searchable: true },
+
+  // Actions column - NOT searchable
+  { key: 'actions', label: 'Actions', searchable: false }
+]
+```
 
 ### Filter Input Pattern
 
@@ -11155,6 +11263,18 @@ Which should I use? (1 or 2)
 - `onClick={(e) => e.stopPropagation()` to prevent sort trigger
 - Dark mode styling
 - Focus states (indigo ring)
+
+### When to Use Dropdown vs Text Input
+
+**Use `filterType: 'dropdown'` when:**
+- Column has a known, limited set of values (status, role, type, etc.)
+- Values are enum-like (Active/Inactive, Admin/User, etc.)
+- Fewer than 20 unique values expected
+
+**Use text input (default) when:**
+- Column has free-form text (names, emails, descriptions)
+- Many unique values possible
+- Numeric values (IDs, counts, etc.)
 
 ---
 
@@ -11244,6 +11364,257 @@ const handleDrop = (e, targetColumnKey) => {
 - Highlight dragged column (indigo background)
 - Persist column order to localStorage
 - Use semantic drag events (dragStart, dragOver, drop)
+
+---
+
+## RULE #19.5A: Column Visibility Toggle (REQUIRED)
+
+### Column Visibility UI Pattern
+
+✅ **MUST provide column visibility toggle with checkboxes:**
+
+**Standard Implementation:**
+
+```jsx
+// State management
+const [visibleColumns, setVisibleColumns] = useState({
+  column1: true,
+  column2: true,
+  column3: false,  // Hidden by default
+  actions: true    // Actions column always visible
+})
+
+// Toggle dropdown button
+<button
+  onClick={() => setShowColumnPicker(!showColumnPicker)}
+  className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+>
+  <EyeIcon className="h-4 w-4" />
+  <span className="text-sm">Columns</span>
+  <ChevronDownIcon className="h-4 w-4" />
+</button>
+
+// Dropdown menu with checkboxes
+{showColumnPicker && (
+  <div className="absolute z-20 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2">
+    {columns.map(column => (
+      column.key !== 'actions' && (  // Actions column always visible
+        <label key={column.key} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+          <input
+            type="checkbox"
+            checked={visibleColumns[column.key]}
+            onChange={() => handleToggleColumn(column.key)}
+            className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+          />
+          <span className="text-sm text-gray-900 dark:text-white">{column.label}</span>
+        </label>
+      )
+    ))}
+  </div>
+)}
+```
+
+### Column Visibility Logic
+
+```jsx
+const handleToggleColumn = (columnKey) => {
+  setVisibleColumns(prev => ({
+    ...prev,
+    [columnKey]: !prev[columnKey]
+  }))
+}
+
+// Render only visible columns in table headers
+{columnOrder.filter(key => visibleColumns[key]).map(colKey => {
+  const column = columns.find(c => c.key === colKey)
+  return (
+    <th key={colKey}>
+      {/* Header content */}
+    </th>
+  )
+})}
+
+// Render only visible columns in table body
+{columnOrder.filter(key => visibleColumns[key]).map(colKey => {
+  const column = columns.find(c => c.key === colKey)
+  return (
+    <td key={colKey}>
+      {/* Cell content */}
+    </td>
+  )
+})}
+```
+
+### Persistence Requirements
+
+✅ **MUST persist column visibility to localStorage:**
+
+```jsx
+// Save to localStorage whenever visibility changes
+useEffect(() => {
+  const state = {
+    columnWidths,
+    columnOrder,
+    visibleColumns,  // Save visibility state
+    sortConfig
+  }
+  localStorage.setItem('tableNameTableState', JSON.stringify(state))
+}, [columnWidths, columnOrder, visibleColumns, sortConfig])
+
+// Load from localStorage on mount
+const loadTableState = () => {
+  const savedState = localStorage.getItem('tableNameTableState')
+  if (savedState) {
+    const state = JSON.parse(savedState)
+    setVisibleColumns(state.visibleColumns || defaultVisibleColumns)
+    // ... load other state
+  }
+}
+```
+
+### UI Placement
+
+✅ **MUST place column visibility toggle:**
+- **Location:** Top-right of table, next to search bar or action buttons
+- **Icon:** EyeIcon from Heroicons
+- **Label:** "Columns" text (optional, but recommended)
+- **Dropdown:** Absolute positioned, z-20, appears below button
+
+### Special Cases
+
+✅ **Actions column:**
+- ALWAYS visible (no toggle for actions column)
+- Filter out from column picker UI
+
+❌ **NEVER:**
+- Allow hiding ALL columns (minimum 1 column must be visible)
+- Hide actions column (always keep visible)
+- Forget to persist visibility state
+
+---
+
+## RULE #19.5B: Column Width Persistence (REQUIRED)
+
+### Column Width State Management
+
+✅ **MUST persist column widths to localStorage:**
+
+**Standard Implementation:**
+
+```jsx
+// State for column widths (in pixels)
+const [columnWidths, setColumnWidths] = useState({
+  column1: 200,
+  column2: 300,
+  column3: 150,
+  actions: 100
+})
+
+// Apply width to header cells
+<th
+  style={{ width: columnWidths[column.key] }}
+  className="relative px-6 py-3"
+>
+  {/* Column content */}
+
+  {/* Resize handle */}
+  <div
+    className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+    onMouseDown={(e) => handleResizeStart(e, column.key)}
+    onClick={(e) => e.stopPropagation()}
+  />
+</th>
+```
+
+### Resize Handler Implementation
+
+```jsx
+const [resizingColumn, setResizingColumn] = useState(null)
+const [resizeStartX, setResizeStartX] = useState(0)
+const [resizeStartWidth, setResizeStartWidth] = useState(0)
+
+const handleResizeStart = (e, columnKey) => {
+  setResizingColumn(columnKey)
+  setResizeStartX(e.clientX)
+  setResizeStartWidth(columnWidths[columnKey] || 200)
+}
+
+const handleResizeMove = (e) => {
+  if (!resizingColumn) return
+  const diff = e.clientX - resizeStartX
+  const newWidth = Math.max(100, resizeStartWidth + diff)  // Min 100px
+  setColumnWidths(prev => ({
+    ...prev,
+    [resizingColumn]: newWidth
+  }))
+}
+
+const handleResizeEnd = () => {
+  setResizingColumn(null)
+}
+
+// Attach to document
+useEffect(() => {
+  if (resizingColumn) {
+    document.addEventListener('mousemove', handleResizeMove)
+    document.addEventListener('mouseup', handleResizeEnd)
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove)
+      document.removeEventListener('mouseup', handleResizeEnd)
+    }
+  }
+}, [resizingColumn, resizeStartX, resizeStartWidth])
+```
+
+### Persistence Requirements
+
+✅ **MUST save widths immediately after resize:**
+
+```jsx
+useEffect(() => {
+  const state = {
+    columnWidths,  // Save widths
+    columnOrder,
+    visibleColumns,
+    sortConfig
+  }
+  localStorage.setItem('tableNameTableState', JSON.stringify(state))
+}, [columnWidths, columnOrder, visibleColumns, sortConfig])
+```
+
+### Default Widths
+
+✅ **MUST provide sensible default widths:**
+
+```jsx
+const defaultColumnWidths = {
+  name: 200,
+  email: 250,
+  status: 120,
+  created_at: 180,
+  actions: 100
+}
+
+// Load from localStorage or use defaults
+const savedState = localStorage.getItem('tableNameTableState')
+if (savedState) {
+  const state = JSON.parse(savedState)
+  setColumnWidths(state.columnWidths || defaultColumnWidths)
+}
+```
+
+✅ **MUST:**
+- Minimum width: 100px (prevent columns from collapsing)
+- Persist widths to localStorage
+- Show resize cursor (`cursor-col-resize`)
+- Visual feedback on hover (indigo highlight on resize handle)
+- Apply widths using inline `style={{ width: columnWidths[key] }}`
+
+❌ **NEVER:**
+- Allow columns smaller than 100px
+- Resize without persisting
+- Make actions column resizable (optional, usually fixed width)
+- Forget to load widths from localStorage on mount
 
 ---
 
@@ -11374,17 +11745,148 @@ className={`${
 - Cell links: Use `<Link>` or `<button>` with `onClick={(e) => e.stopPropagation()`
 - Action menus: Stop propagation to prevent row click
 
-### Selection States
+### Row Selection (REQUIRED)
+
+**🔴 CRITICAL: ALL tables (except DataTable.jsx) MUST implement row selection with checkboxes.**
+
+✅ **MUST provide row selection:**
+- Checkbox in first column of each row
+- "Select All" checkbox in table header
+- Visual feedback for selected rows (background color change)
+- State management to track selected items (Set or array)
+- Bulk action buttons when rows are selected
+
+**🔴 CRITICAL: Selection Column Rules:**
+- ✅ **ALWAYS first column** (leftmost position in table)
+- ✅ **NEVER sortable** (no click handler, no sort chevron icons)
+- ✅ **NEVER draggable/reorderable** (exclude from column reordering logic)
+- ✅ **NEVER resizable** (exclude from column resize logic, fixed width to save space)
+- ✅ **Fixed width: `w-12`** (minimum size, just enough for checkbox)
+- ✅ **NOT in column visibility toggle** (always visible, cannot be hidden)
+- ✅ **NOT searchable** (no filter input in header)
+
+### Selection Checkbox Pattern (REQUIRED)
+
+**Header Checkbox (Select All):**
+
+```jsx
+{/* Selection column - NEVER draggable, ALWAYS first, fixed width */}
+<th className="relative px-6 py-3 w-12">
+  <input
+    type="checkbox"
+    className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+    checked={selectedItems.size === filteredItems.length && filteredItems.length > 0}
+    onChange={(e) => {
+      if (e.target.checked) {
+        setSelectedItems(new Set(filteredItems.map(item => item.id)))
+      } else {
+        setSelectedItems(new Set())
+      }
+    }}
+  />
+</th>
+```
+
+❌ **NEVER add draggable attribute to selection column header**
+❌ **NEVER include selection column in columnOrder state**
+
+**Row Checkbox:**
+
+```jsx
+<td className="px-6 py-4 w-12">
+  <input
+    type="checkbox"
+    className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+    checked={selectedItems.has(item.id)}
+    onChange={() => {
+      const newSelected = new Set(selectedItems)
+      if (newSelected.has(item.id)) {
+        newSelected.delete(item.id)
+      } else {
+        newSelected.add(item.id)
+      }
+      setSelectedItems(newSelected)
+    }}
+    onClick={(e) => e.stopPropagation()}
+  />
+</td>
+```
+
+### Selection State Management
+
+✅ **MUST use Set for tracking selections:**
+
+```jsx
+const [selectedItems, setSelectedItems] = useState(new Set())
+
+// Clear selection after bulk action
+const handleBulkDelete = async () => {
+  await deleteBulk(Array.from(selectedItems))
+  setSelectedItems(new Set())
+}
+```
+
+### Selection States (Visual Feedback)
 
 ✅ **MUST show selected state:**
 
 ```jsx
-className={`transition-colors duration-150 ${
-  selectedContacts.has(contact.id)
+<tr className={`transition-colors duration-150 ${
+  selectedItems.has(item.id)
     ? 'bg-indigo-50 dark:bg-indigo-900/20'
     : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
-}`}
+}`}>
 ```
+
+### Bulk Action Buttons
+
+✅ **MUST show bulk action buttons when items selected:**
+
+```jsx
+{selectedItems.size > 0 && (
+  <div className="mb-4 flex items-center gap-3">
+    <span className="text-sm text-gray-700 dark:text-gray-300">
+      {selectedItems.size} selected
+    </span>
+    <button
+      onClick={handleBulkDelete}
+      className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+    >
+      Delete Selected
+    </button>
+    <button
+      onClick={() => setSelectedItems(new Set())}
+      className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+    >
+      Clear Selection
+    </button>
+  </div>
+)}
+```
+
+### When to Skip Row Selection
+
+✅ **ONLY skip row selection when:**
+- Using DataTable.jsx component (simple read-only tables)
+- Table has inline editing mode (edit mode replaces selection)
+- Table is for display-only purposes with no actions
+
+❌ **NEVER skip row selection when:**
+- Table has delete functionality
+- Table supports bulk operations
+- Users need to perform actions on multiple items
+
+### Examples
+
+**Full-featured tables WITH row selection:**
+- ContactsPage (bulk update contact types)
+- ActiveJobsPage (bulk status updates)
+- UsersPage (bulk role assignments)
+- PurchaseOrdersPage (bulk approval)
+
+**Simple tables WITHOUT row selection (using DataTable.jsx):**
+- PublicHolidaysPage (read-only list)
+- HealthPage logs (display only)
 
 ---
 
@@ -11501,6 +12003,344 @@ className={`transition-colors duration-150 ${
   </div>
 )}
 ```
+
+---
+
+## RULE #19.11A: Table Toolbar Layout Standards (REQUIRED)
+
+### CRITICAL: Standardized Toolbar Layout
+
+Every table MUST have a toolbar area above the `<table>` element with a standardized layout:
+
+✅ **REQUIRED toolbar structure:**
+
+```jsx
+{/* Table Toolbar - RULE #19.11A */}
+<div className="mb-4 flex items-center justify-between gap-4">
+  {/* LEFT SIDE: Global Search (aligned left, takes available space) */}
+  <div className="flex-1 max-w-md">
+    <div className="relative">
+      <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+      <input
+        type="text"
+        placeholder="Search..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+      />
+    </div>
+  </div>
+
+  {/* RIGHT SIDE: Action buttons (aligned right, specific order) */}
+  <div className="flex items-center gap-2">
+    {/* 1. New [Entity] Button (if applicable) */}
+    <button
+      onClick={handleNewItem}
+      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
+    >
+      <PlusIcon className="h-5 w-5" />
+      New Contact {/* Change label based on entity: "New Job", "New Command", etc. */}
+    </button>
+
+    {/* 2. Column Visibility Toggle (ALWAYS include) */}
+    <button
+      onClick={() => setShowColumnSelector(!showColumnSelector)}
+      className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+      title="Toggle columns"
+    >
+      <EyeIcon className="h-5 w-5" />
+    </button>
+
+    {/* 3. Export Button (if applicable) */}
+    {hasExportFeature && (
+      <button
+        onClick={handleExport}
+        className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+        title="Export data"
+      >
+        <ArrowDownTrayIcon className="h-5 w-5" />
+      </button>
+    )}
+
+    {/* 4. Import Button (if applicable) */}
+    {hasImportFeature && (
+      <button
+        onClick={handleImport}
+        className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+        title="Import data"
+      >
+        <ArrowUpTrayIcon className="h-5 w-5" />
+      </button>
+    )}
+
+    {/* 5. Additional Toggles/Filters (if applicable) */}
+    {hasAdditionalFilters && (
+      <button
+        onClick={handleToggleFilters}
+        className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+        title="Additional filters"
+      >
+        <FunnelIcon className="h-5 w-5" />
+      </button>
+    )}
+  </div>
+</div>
+
+{/* Bulk Actions Row (appears below toolbar when rows selected) - RULE #19.9 */}
+{selectedItems.size > 0 && (
+  <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+    <span className="text-sm text-gray-700 dark:text-gray-300">
+      {selectedItems.size} selected
+    </span>
+    <button
+      onClick={handleBulkDelete}
+      className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+    >
+      Delete Selected
+    </button>
+    <button
+      onClick={() => setSelectedItems(new Set())}
+      className="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm"
+    >
+      Clear Selection
+    </button>
+  </div>
+)}
+
+{/* Table goes here */}
+<table className="...">
+  {/* ... */}
+</table>
+```
+
+### Left Side: Global Search
+
+✅ **MUST include:**
+- Full-width search input with magnifying glass icon
+- `flex-1 max-w-md` to take available space but limit max width
+- Aligned to left edge of toolbar
+- Dark mode support
+- Focus ring (indigo)
+
+❌ **NEVER:**
+- Put search on right side
+- Omit search icon
+- Make search fixed-width without flex
+
+### Right Side: Action Buttons (STRICT ORDER)
+
+✅ **MUST follow this order (left to right on right side):**
+
+**1. New [Entity] Button** (if applicable)
+- Creates new record for this table
+- Label changes based on entity: "New Contact", "New Job", "New Command", etc.
+- Primary indigo button style
+- Always FIRST button on right side (if present)
+
+**2. Column Visibility Toggle** (ALWAYS REQUIRED)
+- Eye icon button
+- Shows/hides column selector dropdown or modal
+- Gray button style
+- Always present (even if no other buttons)
+- SECOND position on right side
+
+**3. Export Button** (if applicable)
+- Arrow down icon
+- Exports table data (CSV, JSON, etc.)
+- Gray button style
+- THIRD position on right side (if present)
+
+**4. Import Button** (if applicable)
+- Arrow up icon
+- Imports data into table
+- Gray button style
+- FOURTH position on right side (if present)
+
+**5. Additional Toggles/Filters** (if applicable)
+- Any extra filter buttons (funnel icon, etc.)
+- Gray button style
+- LAST position on right side (if present)
+
+### Button Order Examples
+
+**Example 1: Contacts Table**
+```
+[Global Search]                    [New Contact] [Column Visibility] [Export] [Import]
+```
+
+**Example 2: Commands Table (no import/export)**
+```
+[Global Search]                    [New Command] [Column Visibility]
+```
+
+**Example 3: Read-only table (no new button)**
+```
+[Global Search]                    [Column Visibility] [Export]
+```
+
+### Spacing and Alignment
+
+✅ **MUST use:**
+- `mb-4` - margin bottom between toolbar and table/bulk actions
+- `flex items-center justify-between gap-4` - space between left and right
+- `gap-2` - consistent gap between right-side buttons
+- Same button height for all toolbar buttons (`py-2`)
+
+❌ **NEVER:**
+- Mix different button heights in toolbar
+- Use inconsistent spacing between buttons
+- Stack toolbar vertically (always horizontal)
+
+### Responsive Behavior
+
+✅ **REQUIRED for mobile:**
+- Toolbar should wrap to multiple rows on small screens
+- Search takes full width on first row
+- Buttons wrap to second row
+- Maintain button order even when wrapped
+
+```jsx
+<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+  {/* Search will wrap to full width on mobile */}
+  <div className="flex-1 min-w-[200px] max-w-md">
+    {/* Search input */}
+  </div>
+
+  {/* Buttons will wrap to next row on mobile */}
+  <div className="flex flex-wrap items-center gap-2">
+    {/* Buttons */}
+  </div>
+</div>
+```
+
+### Dark Mode Support
+
+✅ **MUST support dark mode:**
+- Search input: `dark:bg-gray-700 dark:text-white dark:border-gray-600`
+- Gray buttons: `dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600`
+- Primary button: `bg-indigo-600 hover:bg-indigo-700` (same in both modes)
+
+### Edit/Save/Reset Button Positioning (CRITICAL)
+
+**🔴 CRITICAL: Edit/Save/Reset buttons MUST be inline with toolbar**
+
+When a table has Edit/Save/Reset functionality (for inline editing mode):
+
+✅ **REQUIRED positioning:**
+- Edit/Save/Reset buttons MUST be on the same horizontal line as the global search toolbar
+- Place them on the right side, BEFORE the "New [Entity]" button
+- Use same button height as other toolbar buttons (`py-2`)
+- Maintain consistent gap (`gap-2`)
+
+❌ **NEVER:**
+- Position Edit/Save/Reset buttons ABOVE the toolbar
+- Put them on a separate line
+- Use different button heights
+
+**Correct positioning:**
+```jsx
+{/* Table Toolbar - RULE #19.11A */}
+<div className="mb-4 flex items-center justify-between gap-4">
+  {/* LEFT SIDE: Global Search */}
+  <div className="flex-1 max-w-md">
+    <div className="relative">
+      <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+      <input
+        type="text"
+        placeholder="Search..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+      />
+    </div>
+  </div>
+
+  {/* RIGHT SIDE: Action buttons (aligned right, specific order) */}
+  <div className="flex items-center gap-2">
+    {/* Edit/Save/Reset buttons (if inline editing feature exists) */}
+    {isEditing ? (
+      <>
+        <button
+          onClick={handleSave}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+        >
+          <CheckIcon className="h-5 w-5" />
+          Save
+        </button>
+        <button
+          onClick={handleCancel}
+          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2"
+        >
+          <XMarkIcon className="h-5 w-5" />
+          Cancel
+        </button>
+      </>
+    ) : (
+      <button
+        onClick={handleEdit}
+        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
+      >
+        <PencilIcon className="h-5 w-5" />
+        Edit
+      </button>
+    )}
+
+    {/* New [Entity] Button (if applicable) */}
+    <button
+      onClick={handleNewItem}
+      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
+    >
+      <PlusIcon className="h-5 w-5" />
+      New Contact
+    </button>
+
+    {/* Column Visibility Toggle (ALWAYS include) */}
+    <button
+      onClick={() => setShowColumnSelector(!showColumnSelector)}
+      className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+      title="Toggle columns"
+    >
+      <EyeIcon className="h-5 w-5" />
+    </button>
+
+    {/* Export/Import/Other buttons follow... */}
+  </div>
+</div>
+```
+
+**Updated button order (when Edit/Save buttons present):**
+1. **Edit** (when not editing) OR **Save + Cancel** (when editing)
+2. New [Entity] Button (if applicable)
+3. Column Visibility Toggle (ALWAYS REQUIRED)
+4. Export Button (if applicable)
+5. Import Button (if applicable)
+6. Additional Toggles/Filters (if applicable)
+
+**Example layouts:**
+
+**When NOT editing:**
+```
+[Global Search]        [Edit] [New Contact] [Column Visibility] [Export] [Import]
+```
+
+**When editing:**
+```
+[Global Search]        [Save] [Cancel] [New Contact] [Column Visibility] [Export] [Import]
+```
+
+**Why this matters:**
+- Keeps all actions in one visual row
+- Easier for users to find Edit/Save buttons
+- Consistent with toolbar layout pattern
+- Better use of screen space
+
+### Examples in Codebase
+
+**Files that follow this pattern:**
+- [frontend/src/components/settings/AgentShortcutsTab.jsx](frontend/src/components/settings/AgentShortcutsTab.jsx#L545-591) - Commands table toolbar
+- [frontend/src/components/settings/AgentShortcutsTab.jsx](frontend/src/components/settings/AgentShortcutsTab.jsx#L735-781) - Slang table toolbar
+- [frontend/src/pages/ContactsPage.jsx](frontend/src/pages/ContactsPage.jsx) - Contacts table with New Contact button
+- [frontend/src/pages/ActiveJobsPage.jsx](frontend/src/pages/ActiveJobsPage.jsx) - Jobs table
 
 ---
 
@@ -12456,6 +13296,90 @@ import BackButton from '../components/common/BackButton'
   Contacts
 </Link>
 ```
+
+---
+
+## RULE #19.6: Chapter 19 Documentation Maintenance (REQUIRED)
+
+**CRITICAL: Whenever you make changes to ANY table's column structure, features, or UI patterns, you MUST update Chapter 19 in TRAPID_BIBLE.md to keep documentation current.**
+
+### When to Update Chapter 19
+
+✅ **MUST update Chapter 19 when:**
+- Adding new table features (e.g., column visibility toggle, resizing, filters)
+- Modifying existing table patterns (e.g., changing resize behavior, filter logic)
+- Creating new table components or patterns
+- Changing standard UI patterns for tables (headers, sorting, search)
+- Adding new requirements for all tables (e.g., sticky headers, dark mode)
+- Discovering missing features that should be standard (e.g., column button missing)
+
+### What to Update
+
+✅ **MUST update these sections as needed:**
+
+1. **RULE sections** - Add new rules or update existing rules
+   - Example: RULE #19.5A (Column Visibility Toggle)
+   - Example: RULE #19.5B (Column Width Persistence)
+
+2. **Code examples** - Update implementation patterns
+   - Include full working code examples
+   - Show state management patterns
+   - Demonstrate UI components (buttons, dropdowns, etc.)
+
+3. **Protected Code Patterns** - Update protected file list
+   - Add new components to protected list
+   - Update existing component descriptions
+
+4. **Last Updated timestamp** - Update at top of Chapter 19
+   - Format: `**Last Updated:** 2025-11-16 HH:MM AEST`
+
+### Update Workflow
+
+```
+1. Make table change (e.g., add column visibility toggle)
+2. Test the change works correctly
+3. Update Chapter 19 with new RULE or pattern
+4. Update "Last Updated" timestamp in Chapter 19
+5. Commit changes together (table code + Chapter 19 update)
+```
+
+### Example: Adding Column Visibility Toggle
+
+**Scenario:** You discover the column visibility toggle button is missing from AgentShortcutsTab.
+
+**Steps:**
+1. ✅ Add column visibility toggle to AgentShortcutsTab.jsx
+2. ✅ Check if Chapter 19 has this requirement (found RULE #19.5A exists)
+3. ✅ If missing, add new RULE #19.X with full implementation pattern
+4. ✅ Update "Last Updated" timestamp in Chapter 19
+5. ✅ Commit both files together
+
+### Why This Rule Exists
+
+**Problem:** Table features get added but documentation gets stale, causing:
+- Inconsistent implementations across pages
+- Missing features in new tables
+- Lost knowledge when context is compacted
+- Duplicate work (rediscovering same patterns)
+
+**Solution:** Treat Chapter 19 as the **single source of truth** for ALL table patterns. Keep it current with every change.
+
+### Special Cases
+
+✅ **For minor bug fixes:**
+- Update Lexicon Chapter 19 (not Bible) if it's a known bug
+- Update Bible only if it reveals a missing RULE
+
+✅ **For new table components:**
+- Add complete RULE section with full implementation
+- Include code examples for state, UI, and handlers
+- Document in Protected Code Patterns section
+
+❌ **NEVER:**
+- Make table changes without updating Chapter 19
+- Create "custom" table patterns not documented in Chapter 19
+- Skip updating timestamp (helps track documentation freshness)
+- Forget to commit Bible changes with code changes
 
 ---
 
