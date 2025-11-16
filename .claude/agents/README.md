@@ -125,4 +125,4 @@ To modify an agent:
 - Agents are stateless (each run is independent)
 - Run history persists across sessions
 - Agent definitions are version-controlled
-- See CLAUDE.md for full project documentation
+- See TRAPID_DOCS/TRAPID_BIBLE.md and TRAPID_LEXICON.md for full project documentation

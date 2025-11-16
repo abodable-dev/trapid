@@ -114,8 +114,8 @@ Review this file for bugs: backend/app/models/contact.rb
 
 Read these files to understand how Claude Code works with Trapid:
 
-- `CLAUDE.md` - Main instructions for Claude Code
-- `docs/FRONTEND_DESIGN_GUIDELINES.md` - Design system and template usage
+- `TRAPID_DOCS/TRAPID_BIBLE.md` - RULES (absolute authority)
+- `TRAPID_DOCS/TRAPID_LEXICON.md` - Bug history & knowledge base
 - `docs/CONTRIBUTING.md` - Development workflow
 
 ## Important Notes

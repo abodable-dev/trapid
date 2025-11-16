@@ -87,7 +87,7 @@ If the script incorrectly flags a false positive:
 ### Integration with Deploy Agent
 
 The deploy-manager agent **automatically runs** `check_all_secrets.sh` before every deployment.
-This is enforced via the project's CLAUDE.md instructions.
+This is enforced via the project's TRAPID_BIBLE.md Chapter 20 (Agent System).
 
 If secrets are detected, deployment will be blocked until they are removed.
 

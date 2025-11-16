@@ -37,16 +37,16 @@ These three documents share **mirrored chapters** - same chapter number = same f
 ### By Audience
 
 **I'm an AI Agent (Claude Code):**
-1. Read [CLAUDE.md](../SUPPLEMENTARY/CLAUDE.md) for meta-instructions
-2. Check [CHAPTER_GUIDE.md](./CHAPTER_GUIDE.md) for feature → chapter mapping
-3. Read relevant Bible chapter for RULES
-4. Consult Lexicon chapter for bug history
+1. Check [CHAPTER_GUIDE.md](./CHAPTER_GUIDE.md) for feature → chapter mapping
+2. Read relevant Bible chapter for RULES
+3. Consult Lexicon chapter for bug history
+4. Follow Bible absolutely, use Lexicon for context
 
 **I'm a Developer:**
-1. Start with [GETTING_STARTED.md](../SUPPLEMENTARY/GETTING_STARTED.md)
-2. Read [CONTRIBUTING.md](../SUPPLEMENTARY/CONTRIBUTING.md) for workflow
-3. Check Bible for feature-specific rules
-4. Consult Lexicon for known issues
+1. Read [CONTRIBUTING.md](../../CONTRIBUTING.md) for workflow
+2. Check Bible for feature-specific rules
+3. Consult Lexicon for known issues
+4. See Bible Chapter 0 for Getting Started
 
 **I'm an End User:**
 1. Start with [User Manual Chapter 0](../TRAPID_USER_MANUAL.md#chapter-0-overview--getting-started)
@@ -54,9 +54,9 @@ These three documents share **mirrored chapters** - same chapter number = same f
 3. Follow step-by-step tutorials
 
 **I'm an Admin:**
-1. See [ARCHITECTURE.md](../SUPPLEMENTARY/ARCHITECTURE.md) for system design
-2. See [DEPLOYMENT.md](../SUPPLEMENTARY/DEPLOYMENT.md) for deployment
-3. See Bible Chapter 2 for System Administration rules
+1. See Bible Chapter 2 for System Administration rules
+2. See Bible Chapter 20 for Agent & Deployment setup
+3. Consult Lexicon for infrastructure knowledge
 
 ---
 
@@ -93,15 +93,13 @@ These three documents share **mirrored chapters** - same chapter number = same f
 ## 📁 Supplementary Documentation
 
 ### For Claude Code
-- [CLAUDE.md](../SUPPLEMENTARY/CLAUDE.md) - Meta-instructions for AI agents
-- [AGENT_USAGE.md](../SUPPLEMENTARY/AGENT_USAGE.md) - When to use which agent
+- See TRAPID_BIBLE.md Chapter 20 (Agent System & Automation) for agent instructions
 
 ### For Developers
-- [GETTING_STARTED.md](../SUPPLEMENTARY/GETTING_STARTED.md) - Environment setup
-- [CONTRIBUTING.md](../SUPPLEMENTARY/CONTRIBUTING.md) - Git workflow, PRs
-- [ARCHITECTURE.md](../SUPPLEMENTARY/ARCHITECTURE.md) - System design
-- [DEPLOYMENT.md](../SUPPLEMENTARY/DEPLOYMENT.md) - Deployment guide
-- [API_REFERENCE.md](../SUPPLEMENTARY/API_REFERENCE.md) - API endpoints
+- [CONTRIBUTING.md](../../CONTRIBUTING.md) - Git workflow, PRs
+- Bible Chapter 0 - Getting Started & Environment Setup
+- Bible Chapter 2 - System Administration & Architecture
+- Bible Chapter 20 - Agent System & Deployment
 
 ---
 
@@ -111,8 +109,7 @@ When documents conflict, follow this hierarchy:
 
 ### For AI Agents & Developers:
 1. **TRAPID_BIBLE.md** - ABSOLUTE authority for covered features
-2. **CLAUDE.md** - General AI instructions (defers to Bible)
-3. **TRAPID_LEXICON.md** - Knowledge reference (doesn't override)
+2. **TRAPID_LEXICON.md** - Knowledge reference (supplements Bible, doesn't override)
 
 ### For Human Developers:
 1. **CONTRIBUTING.md** - Development workflow

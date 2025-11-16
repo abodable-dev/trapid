@@ -8,7 +8,9 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   MagnifyingGlassIcon,
-  EyeIcon
+  EyeIcon,
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon
 } from '@heroicons/react/24/outline'
 
 export default function AgentShortcutsTab() {
@@ -300,6 +302,86 @@ export default function AgentShortcutsTab() {
     setSelectedSlangIds(new Set())
   }
 
+  // Export/Import Commands
+  const exportCommands = () => {
+    const dataStr = JSON.stringify(commands, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'claude-commands.json'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const importCommands = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'application/json'
+    input.onchange = (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result)
+          if (!Array.isArray(imported)) {
+            alert('Invalid file format - must be an array of commands')
+            return
+          }
+          setCommands(imported)
+          localStorage.setItem('claudeCommands', JSON.stringify(imported))
+          setExportStatus({ type: 'success', message: `Imported ${imported.length} commands` })
+          setTimeout(() => setExportStatus(null), 3000)
+        } catch (error) {
+          alert('Error parsing file: ' + error.message)
+        }
+      }
+      reader.readAsText(file)
+    }
+    input.click()
+  }
+
+  // Export/Import Slang
+  const exportSlang = () => {
+    const dataStr = JSON.stringify(slang, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'claude-slang.json'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const importSlang = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'application/json'
+    input.onchange = (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result)
+          if (!Array.isArray(imported)) {
+            alert('Invalid file format - must be an array of slang')
+            return
+          }
+          setSlang(imported)
+          localStorage.setItem('claudeSlang', JSON.stringify(imported))
+          setExportStatus({ type: 'success', message: `Imported ${imported.length} slang entries` })
+          setTimeout(() => setExportStatus(null), 3000)
+        } catch (error) {
+          alert('Error parsing file: ' + error.message)
+        }
+      }
+      reader.readAsText(file)
+    }
+    input.click()
+  }
+
   // Save to Lexicon
   const handleSaveCommands = async () => {
     setSaving(true)
@@ -494,14 +576,55 @@ export default function AgentShortcutsTab() {
 
       {/* COMMANDS TABLE */}
       <div className="mb-12">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
             Commands
             <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
               (What Claude will execute)
             </span>
           </h3>
-          <div className="flex gap-3">
+        </div>
+
+        {/* Bulk Actions - RULE #19.9 */}
+        {selectedCommandsIds.size > 0 && (
+          <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              {selectedCommandsIds.size} selected
+            </span>
+            <button
+              onClick={bulkDeleteCommands}
+              className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+            >
+              Delete Selected
+            </button>
+            <button
+              onClick={() => setSelectedCommandsIds(new Set())}
+              className="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm"
+            >
+              Clear Selection
+            </button>
+          </div>
+        )}
+
+        {/* Table Toolbar - RULE #19.11A: Edit/Save buttons inline with search */}
+        <div className="mb-4 flex items-center justify-between gap-4">
+          {/* LEFT SIDE: Global Search - extends to first button */}
+          <div className="flex-1">
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search commands..."
+                value={globalSearchCommands}
+                onChange={(e) => setGlobalSearchCommands(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
+
+          {/* RIGHT SIDE: Action buttons (aligned right, specific order) */}
+          <div className="flex items-center gap-2">
+            {/* Edit/Save/Reset buttons - RULE #19.11A */}
             {!isEditingCommands ? (
               <button
                 onClick={() => setIsEditingCommands(true)}
@@ -543,75 +666,57 @@ export default function AgentShortcutsTab() {
                 </button>
               </>
             )}
-          </div>
-        </div>
 
-        {/* Bulk Actions - RULE #19.9 */}
-        {selectedCommandsIds.size > 0 && (
-          <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              {selectedCommandsIds.size} selected
-            </span>
-            <button
-              onClick={bulkDeleteCommands}
-              className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
-            >
-              Delete Selected
-            </button>
-            <button
-              onClick={() => setSelectedCommandsIds(new Set())}
-              className="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm"
-            >
-              Clear Selection
-            </button>
-          </div>
-        )}
+            {/* Column Visibility Toggle */}
+            <div className="relative">
+              <button
+                onClick={() => setShowColumnPickerCommands(!showColumnPickerCommands)}
+                className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                title="Toggle columns"
+              >
+                <EyeIcon className="h-5 w-5" />
+              </button>
 
-        {/* Global Search and Column Visibility - RULE #19.5A */}
-        <div className="mb-4 flex items-center gap-3">
-          <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search commands..."
-              value={globalSearchCommands}
-              onChange={(e) => setGlobalSearchCommands(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-            />
-          </div>
+              {/* Column Picker Dropdown */}
+              {showColumnPickerCommands && (
+                <div className="absolute right-0 z-20 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 min-w-[200px]">
+                  {commandsColumns.map(column => (
+                    <label key={column.key} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumnsCommands[column.key]}
+                        onChange={() => {
+                          setVisibleColumnsCommands(prev => ({
+                            ...prev,
+                            [column.key]: !prev[column.key]
+                          }))
+                        }}
+                        className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span className="text-sm text-gray-900 dark:text-white">{column.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Column Visibility Toggle */}
-          <div className="relative">
+            {/* Export Button */}
             <button
-              onClick={() => setShowColumnPickerCommands(!showColumnPickerCommands)}
-              className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              onClick={exportCommands}
+              className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              title="Export commands"
             >
-              <EyeIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Columns</span>
-              <ChevronDownIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <ArrowDownTrayIcon className="h-5 w-5" />
             </button>
 
-            {/* Column Picker Dropdown */}
-            {showColumnPickerCommands && (
-              <div className="absolute right-0 z-20 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 min-w-[200px]">
-                {commandsColumns.map(column => (
-                  <label key={column.key} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumnsCommands[column.key]}
-                      onChange={() => {
-                        setVisibleColumnsCommands(prev => ({
-                          ...prev,
-                          [column.key]: !prev[column.key]
-                        }))
-                      }}
-                      className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span className="text-sm text-gray-900 dark:text-white">{column.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
+            {/* Import Button */}
+            <button
+              onClick={importCommands}
+              className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              title="Import commands"
+            >
+              <ArrowUpTrayIcon className="h-5 w-5" />
+            </button>
           </div>
         </div>
 
@@ -621,8 +726,8 @@ export default function AgentShortcutsTab() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
                 <tr>
-                  {/* Row Selection - RULE #19.9 */}
-                  <th className="relative px-6 py-3 w-12">
+                  {/* Row Selection - RULE #19.9: Minimal padding, centered, locked width */}
+                  <th className="relative px-2 py-3 w-8 text-center">
                     <input
                       type="checkbox"
                       className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
@@ -695,8 +800,8 @@ export default function AgentShortcutsTab() {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredCommands.map(cmd => (
                   <tr key={cmd.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    {/* Row Selection - RULE #19.9 */}
-                    <td className="px-6 py-4 w-12">
+                    {/* Row Selection - RULE #19.9: Minimal padding, centered, locked width */}
+                    <td className="px-2 py-3 w-8 text-center">
                       <input
                         type="checkbox"
                         className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
@@ -778,14 +883,55 @@ export default function AgentShortcutsTab() {
 
       {/* SLANG TABLE */}
       <div>
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
             Slang
             <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
               (Quick shortcuts like "sm" for Schedule Master)
             </span>
           </h3>
-          <div className="flex gap-3">
+        </div>
+
+        {/* Bulk Actions - RULE #19.9 */}
+        {selectedSlangIds.size > 0 && (
+          <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              {selectedSlangIds.size} selected
+            </span>
+            <button
+              onClick={bulkDeleteSlang}
+              className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+            >
+              Delete Selected
+            </button>
+            <button
+              onClick={() => setSelectedSlangIds(new Set())}
+              className="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm"
+            >
+              Clear Selection
+            </button>
+          </div>
+        )}
+
+        {/* Table Toolbar - RULE #19.11A: Edit/Save buttons inline with search */}
+        <div className="mb-4 flex items-center justify-between gap-4">
+          {/* LEFT SIDE: Global Search - extends to first button */}
+          <div className="flex-1">
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search slang..."
+                value={globalSearchSlang}
+                onChange={(e) => setGlobalSearchSlang(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
+
+          {/* RIGHT SIDE: Action buttons (aligned right, specific order) */}
+          <div className="flex items-center gap-2">
+            {/* Edit/Save/Reset buttons - RULE #19.11A */}
             {!isEditingSlang ? (
               <button
                 onClick={() => setIsEditingSlang(true)}
@@ -827,75 +973,57 @@ export default function AgentShortcutsTab() {
                 </button>
               </>
             )}
-          </div>
-        </div>
 
-        {/* Bulk Actions - RULE #19.9 */}
-        {selectedSlangIds.size > 0 && (
-          <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              {selectedSlangIds.size} selected
-            </span>
-            <button
-              onClick={bulkDeleteSlang}
-              className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
-            >
-              Delete Selected
-            </button>
-            <button
-              onClick={() => setSelectedSlangIds(new Set())}
-              className="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm"
-            >
-              Clear Selection
-            </button>
-          </div>
-        )}
+            {/* Column Visibility Toggle */}
+            <div className="relative">
+              <button
+                onClick={() => setShowColumnPickerSlang(!showColumnPickerSlang)}
+                className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                title="Toggle columns"
+              >
+                <EyeIcon className="h-5 w-5" />
+              </button>
 
-        {/* Global Search and Column Visibility - RULE #19.5A */}
-        <div className="mb-4 flex items-center gap-3">
-          <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search slang..."
-              value={globalSearchSlang}
-              onChange={(e) => setGlobalSearchSlang(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-            />
-          </div>
+              {/* Column Picker Dropdown */}
+              {showColumnPickerSlang && (
+                <div className="absolute right-0 z-20 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 min-w-[200px]">
+                  {slangColumns.map(column => (
+                    <label key={column.key} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumnsSlang[column.key]}
+                        onChange={() => {
+                          setVisibleColumnsSlang(prev => ({
+                            ...prev,
+                            [column.key]: !prev[column.key]
+                          }))
+                        }}
+                        className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span className="text-sm text-gray-900 dark:text-white">{column.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Column Visibility Toggle */}
-          <div className="relative">
+            {/* Export Button */}
             <button
-              onClick={() => setShowColumnPickerSlang(!showColumnPickerSlang)}
-              className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              onClick={exportSlang}
+              className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              title="Export slang"
             >
-              <EyeIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Columns</span>
-              <ChevronDownIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <ArrowDownTrayIcon className="h-5 w-5" />
             </button>
 
-            {/* Column Picker Dropdown */}
-            {showColumnPickerSlang && (
-              <div className="absolute right-0 z-20 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 min-w-[200px]">
-                {slangColumns.map(column => (
-                  <label key={column.key} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumnsSlang[column.key]}
-                      onChange={() => {
-                        setVisibleColumnsSlang(prev => ({
-                          ...prev,
-                          [column.key]: !prev[column.key]
-                        }))
-                      }}
-                      className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span className="text-sm text-gray-900 dark:text-white">{column.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
+            {/* Import Button */}
+            <button
+              onClick={importSlang}
+              className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              title="Import slang"
+            >
+              <ArrowUpTrayIcon className="h-5 w-5" />
+            </button>
           </div>
         </div>
 
@@ -905,8 +1033,8 @@ export default function AgentShortcutsTab() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
                 <tr>
-                  {/* Row Selection - RULE #19.9 */}
-                  <th className="relative px-6 py-3 w-12">
+                  {/* Row Selection - RULE #19.9: Minimal padding, centered, locked width */}
+                  <th className="relative px-2 py-3 w-8 text-center">
                     <input
                       type="checkbox"
                       className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
@@ -979,8 +1107,8 @@ export default function AgentShortcutsTab() {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredSlang.map(s => (
                   <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    {/* Row Selection - RULE #19.9 */}
-                    <td className="px-6 py-4 w-12">
+                    {/* Row Selection - RULE #19.9: Minimal padding, centered, locked width */}
+                    <td className="px-2 py-3 w-8 text-center">
                       <input
                         type="checkbox"
                         className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"

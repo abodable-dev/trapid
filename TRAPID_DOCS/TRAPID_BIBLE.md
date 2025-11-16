@@ -11061,7 +11061,7 @@ end
 
 **Audience:** Claude Code + Human Developers
 **Authority:** ABSOLUTE
-**Last Updated:** 2025-11-16 15:40 AEST
+**Last Updated:** 2025-11-16 16:10 AEST
 
 This chapter defines ALL UI/UX patterns for Trapid. Every interactive element MUST follow these standards.
 
@@ -11200,12 +11200,23 @@ Which should I use? (1 or 2)
 
 ### CRITICAL: ALL Data Columns Must Be Searchable
 
+**🔴 REQUIRED: Inline column filters are MANDATORY for all tables**
+
+Every table MUST have:
+1. **Global search bar** (above table, left side of toolbar - RULE #19.11A)
+2. **Inline column filters** (in column headers, below column label)
+
+Both work together:
+- Global search: Filters across ALL columns
+- Column filters: Filter individual columns
+
 ✅ **REQUIRED for ALL data columns:**
 - **Default:** `searchable: true` for ALL columns (except selection checkbox and actions)
 - Input field directly in header cell (below column label)
 - Dropdown for enum/status columns
 - Text input for all other columns
 - Debounced search for text inputs (optional optimization)
+- **Column is BOTH sortable AND searchable** (click label to sort, use filter input to search)
 
 ❌ **EXCEPTIONS (not searchable):**
 - Selection checkbox column (first column)
@@ -11761,17 +11772,20 @@ className={`${
 - ✅ **NEVER sortable** (no click handler, no sort chevron icons)
 - ✅ **NEVER draggable/reorderable** (exclude from column reordering logic)
 - ✅ **NEVER resizable** (exclude from column resize logic, fixed width to save space)
-- ✅ **Fixed width: `w-12`** (minimum size, just enough for checkbox)
+- ✅ **Fixed width: `w-8`** (minimum size, just enough for checkbox - approximately 32px)
+- ✅ **Minimal padding: `px-2 py-3`** (smaller than other columns' `px-6 py-4` to save maximum space)
+- ✅ **Centered alignment: `text-center`** (CRITICAL - centers checkbox within column for proper header/body alignment)
 - ✅ **NOT in column visibility toggle** (always visible, cannot be hidden)
 - ✅ **NOT searchable** (no filter input in header)
+- ✅ **Locked position** (cannot be moved, dragged, or reordered - always stays first)
 
 ### Selection Checkbox Pattern (REQUIRED)
 
 **Header Checkbox (Select All):**
 
 ```jsx
-{/* Selection column - NEVER draggable, ALWAYS first, fixed width */}
-<th className="relative px-6 py-3 w-12">
+{/* Selection column - NEVER draggable, ALWAYS first, fixed width, minimal padding, centered */}
+<th className="relative px-2 py-3 w-8 text-center">
   <input
     type="checkbox"
     className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
@@ -11789,11 +11803,14 @@ className={`${
 
 ❌ **NEVER add draggable attribute to selection column header**
 ❌ **NEVER include selection column in columnOrder state**
+❌ **NEVER use `px-6` or `px-3` padding - use `px-2` for minimum width**
+❌ **NEVER omit `text-center` - checkboxes will be misaligned without it**
 
 **Row Checkbox:**
 
 ```jsx
-<td className="px-6 py-4 w-12">
+{/* Row selection - MUST match header styling: minimal padding, centered, locked width */}
+<td className="px-2 py-3 w-8 text-center">
   <input
     type="checkbox"
     className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
@@ -12017,8 +12034,8 @@ Every table MUST have a toolbar area above the `<table>` element with a standard
 ```jsx
 {/* Table Toolbar - RULE #19.11A */}
 <div className="mb-4 flex items-center justify-between gap-4">
-  {/* LEFT SIDE: Global Search (aligned left, takes available space) */}
-  <div className="flex-1 max-w-md">
+  {/* LEFT SIDE: Global Search - extends to first button */}
+  <div className="flex-1">
     <div className="relative">
       <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
       <input
@@ -12117,15 +12134,33 @@ Every table MUST have a toolbar area above the `<table>` element with a standard
 
 ✅ **MUST include:**
 - Full-width search input with magnifying glass icon
-- `flex-1 max-w-md` to take available space but limit max width
+- `flex-1` to take all available space (NO max-width constraint)
 - Aligned to left edge of toolbar
+- **Search bar extends all the way to first button** (no gap, toolbar uses `justify-between`)
 - Dark mode support
 - Focus ring (indigo)
+
+**Visual Layout:**
+```
+[Global Search................................] [Edit] [Column] [Export] [Import]
+^-- flex-1 (extends to first button) ---------^-- gap-2 between buttons --^
+                                               ^
+                                               no gap here - justify-between handles spacing
+```
+
+**Key Points:**
+- `flex-1` makes search take ALL available space (extends to buttons)
+- **DO NOT use `max-w-md`** - this prevents search from extending to buttons
+- `justify-between` automatically spaces left and right sides
+- **Search bar RIGHT EDGE meets first button's LEFT EDGE** (gap-4 from toolbar provides spacing)
 
 ❌ **NEVER:**
 - Put search on right side
 - Omit search icon
 - Make search fixed-width without flex
+- **Use `max-w-md` on search container** (prevents full extension to buttons)
+- Add extra gap between search and first button (toolbar automatically spaces with `justify-between`)
+- Use `gap-4` inside the search container div
 
 ### Right Side: Action Buttons (STRICT ORDER)
 
@@ -12241,8 +12276,8 @@ When a table has Edit/Save/Reset functionality (for inline editing mode):
 ```jsx
 {/* Table Toolbar - RULE #19.11A */}
 <div className="mb-4 flex items-center justify-between gap-4">
-  {/* LEFT SIDE: Global Search */}
-  <div className="flex-1 max-w-md">
+  {/* LEFT SIDE: Global Search - extends to first button */}
+  <div className="flex-1">
     <div className="relative">
       <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
       <input

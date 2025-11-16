@@ -24,16 +24,9 @@ Each document type has absolute authority within its domain. When documents conf
 - **When it wins:** ALWAYS for covered features
 - **Example:** "Chapter 9 says NEVER use sequence_order directly" → This rule CANNOT be broken
 
-**2. CLAUDE.md** - META INSTRUCTIONS
-- **Scope:** General AI behavior, workflow, deployment
-- **Content:** How to work, when to use agents, commit style
-- **When it wins:** For general behavior NOT covered by Bible
-- **Defers to:** Bible for feature-specific rules
-- **Example:** "Read Bible first before Gantt work" → Must follow
-
-**3. TRAPID_LEXICON.md** - KNOWLEDGE REFERENCE
-- **Scope:** Bug history, architecture explanations
-- **Content:** How things work, why we chose X
+**2. TRAPID_LEXICON.md** - KNOWLEDGE REFERENCE
+- **Scope:** Bug history, architecture explanations, supplementary context
+- **Content:** How things work, why we chose X, past bugs
 - **When it wins:** NEVER (reference only, doesn't override)
 - **Purpose:** Supplements Bible with context
 - **Example:** "BUG-001 explains drag flicker history" → Helpful context, not a rule
@@ -47,12 +40,10 @@ Question: Should I do X?
    YES → Read Bible chapter → Follow ALL rules
    NO  → Continue to #2
 
-2. Does CLAUDE.md have instructions for this?
-   YES → Follow CLAUDE.md
-   NO  → Use best judgment
+2. Is there relevant Lexicon knowledge?
+   ALWAYS check for context and past bugs
 
-3. Is there relevant Lexicon knowledge?
-   ALWAYS check for context, but don't let it override rules
+3. Use best judgment based on Bible patterns and Lexicon lessons
 
 ```
 
@@ -141,14 +132,14 @@ Question: How should I implement X?
 
 ---
 
-### Example 2: CLAUDE.md vs Bible Conflict
+### Example 2: Lexicon vs Bible Conflict
 
-**Scenario:** CLAUDE.md says "Use concise commit messages". Bible Ch 9 says "Update CC_UPDATE table when columns change".
+**Scenario:** Lexicon suggests one approach based on past bugs. Bible Ch 9 has explicit RULE requiring different approach.
 
 **Resolution:**
-- **No conflict** - Different domains
-- **Both apply** - Concise message + update CC_UPDATE table
-- **Action:** Follow both
+- **Bible wins** - Rules are absolute
+- **Lexicon provides context** - Explains why rule exists or past attempts
+- **Action:** Follow Bible rule, use Lexicon to understand context
 
 ---
 
@@ -234,12 +225,10 @@ Question: How should I implement X?
 
 | Document | AI Agents | Developers | Users | Scope |
 |----------|-----------|------------|-------|-------|
-| **TRAPID_BIBLE.md** | ABSOLUTE | ABSOLUTE | N/A | Feature rules |
-| **CLAUDE.md** | ABSOLUTE | Advisory | N/A | AI meta-instructions |
-| **TRAPID_LEXICON.md** | Reference | Reference | N/A | Bug history |
+| **TRAPID_BIBLE.md** | ABSOLUTE | ABSOLUTE | N/A | Feature rules (MUST/NEVER/ALWAYS) |
+| **TRAPID_LEXICON.md** | Reference | Reference | N/A | Bug history, architecture decisions |
 | **TRAPID_USER_MANUAL.md** | N/A | N/A | ABSOLUTE | User guides |
 | **CONTRIBUTING.md** | Advisory | ABSOLUTE | N/A | Dev workflow |
-| **ARCHITECTURE.md** | Reference | Reference | N/A | System design |
 
 ---
 
