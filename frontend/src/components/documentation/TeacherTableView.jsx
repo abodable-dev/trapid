@@ -33,25 +33,71 @@ const CHAPTER_NAMES = {
   20: 'Agent System & Automation'
 }
 
-// Extract "Related To" category from section title (Chapter 19 only)
+// Extract "Related To" category from section title (all chapters)
 const extractRelatedTo = (title, chapter) => {
-  if (chapter !== 19) return null
-
   const titleLower = title.toLowerCase()
 
   // Priority order: most specific to least specific
+
+  // UI Components (Chapter 19 primarily)
   if (titleLower.includes('table')) return 'Table'
   if (titleLower.includes('form')) return 'Form'
-  if (titleLower.includes('modal')) return 'Modal'
+  if (titleLower.includes('modal') || titleLower.includes('dialog')) return 'Modal'
   if (titleLower.includes('toolbar')) return 'Toolbar'
-  if (titleLower.includes('search')) return 'Search'
-  if (titleLower.includes('filter')) return 'Filter'
+  if (titleLower.includes('button')) return 'Button'
   if (titleLower.includes('column')) return 'Column'
   if (titleLower.includes('row')) return 'Row'
-  if (titleLower.includes('button')) return 'Button'
-  if (titleLower.includes('dark mode')) return 'Dark Mode'
-  if (titleLower.includes('state') || titleLower.includes('persistence')) return 'State'
   if (titleLower.includes('layout')) return 'Layout'
+  if (titleLower.includes('dark mode')) return 'Dark Mode'
+
+  // Data & State
+  if (titleLower.includes('database') || titleLower.includes('schema')) return 'Database'
+  if (titleLower.includes('api') || titleLower.includes('endpoint')) return 'API'
+  if (titleLower.includes('state') || titleLower.includes('persistence')) return 'State'
+  if (titleLower.includes('cache') || titleLower.includes('caching')) return 'Cache'
+
+  // Search & Filtering
+  if (titleLower.includes('search')) return 'Search'
+  if (titleLower.includes('filter')) return 'Filter'
+  if (titleLower.includes('sort')) return 'Sort'
+  if (titleLower.includes('fuzzy') || titleLower.includes('matching')) return 'Matching'
+
+  // Authentication & Security
+  if (titleLower.includes('auth') || titleLower.includes('login') || titleLower.includes('token') || titleLower.includes('jwt')) return 'Auth'
+  if (titleLower.includes('password') || titleLower.includes('security') || titleLower.includes('encryption')) return 'Security'
+  if (titleLower.includes('permission') || titleLower.includes('role') || titleLower.includes('access')) return 'Permissions'
+
+  // Integrations
+  if (titleLower.includes('xero')) return 'Xero'
+  if (titleLower.includes('onedrive')) return 'OneDrive'
+  if (titleLower.includes('outlook') || titleLower.includes('email')) return 'Outlook'
+  if (titleLower.includes('twilio') || titleLower.includes('sms')) return 'Twilio'
+  if (titleLower.includes('ai') || titleLower.includes('claude') || titleLower.includes('grok')) return 'AI'
+
+  // Business Logic
+  if (titleLower.includes('gantt') || titleLower.includes('schedule') || titleLower.includes('cascade')) return 'Gantt'
+  if (titleLower.includes('task')) return 'Task'
+  if (titleLower.includes('job') || titleLower.includes('construction')) return 'Job'
+  if (titleLower.includes('estimate') || titleLower.includes('quote')) return 'Estimate'
+  if (titleLower.includes('purchase order') || titleLower.includes('po ')) return 'Purchase Order'
+  if (titleLower.includes('price') || titleLower.includes('pricing')) return 'Pricing'
+  if (titleLower.includes('contact') || titleLower.includes('relationship')) return 'Contact'
+  if (titleLower.includes('payment') || titleLower.includes('invoice')) return 'Payment'
+  if (titleLower.includes('workflow')) return 'Workflow'
+
+  // Technical Patterns
+  if (titleLower.includes('validation')) return 'Validation'
+  if (titleLower.includes('transaction')) return 'Transaction'
+  if (titleLower.includes('async') || titleLower.includes('background')) return 'Async'
+  if (titleLower.includes('webhook')) return 'Webhook'
+  if (titleLower.includes('sync') || titleLower.includes('synchronization')) return 'Sync'
+  if (titleLower.includes('migration')) return 'Migration'
+  if (titleLower.includes('timezone') || titleLower.includes('time zone')) return 'Timezone'
+  if (titleLower.includes('date') || titleLower.includes('calendar')) return 'Date/Time'
+  if (titleLower.includes('file') || titleLower.includes('upload') || titleLower.includes('download')) return 'File'
+  if (titleLower.includes('image') || titleLower.includes('photo')) return 'Image'
+  if (titleLower.includes('test') || titleLower.includes('testing')) return 'Testing'
+  if (titleLower.includes('documentation') || titleLower.includes('lexicon')) return 'Documentation'
 
   return 'General'
 }
