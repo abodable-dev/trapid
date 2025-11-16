@@ -53,6 +53,15 @@ module Api
             audience: 'Developers',
             path: '00_INDEX/CONTINUATION_INSTRUCTIONS.md',
             chapters: nil
+          },
+          {
+            id: 'table-standards',
+            name: 'Table Standards',
+            description: 'Complete inventory & upgrade plan for all tables (47+ tables)',
+            icon: '📊',
+            audience: 'Developers',
+            path: 'TABLE_STANDARDS.md',
+            chapters: nil
           }
         ]
 
@@ -76,6 +85,8 @@ module Api
                       Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'CHAPTER_GUIDE.md')
                     when 'continuation'
                       Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'CONTINUATION_INSTRUCTIONS.md')
+                    when 'table-standards'
+                      Rails.root.join('..', 'TRAPID_DOCS', 'TABLE_STANDARDS.md')
                     when 'readme'
                       Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'README.md')
                     else
