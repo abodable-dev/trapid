@@ -1,7 +1,7 @@
 # TRAPID LEXICON - Bug History & Knowledge Base
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-16 19:11 AEST
+**Last Updated:** 2025-11-16 19:41 AEST
 **Authority Level:** Reference (supplements Bible)
 **Audience:** Claude Code + Human Developers
 
@@ -51,6 +51,7 @@ This file is the **knowledge base** for all Trapid development.
 - [Chapter 6: Estimates & Quoting](#chapter-6-estimates-quoting)
 - [Chapter 8: Purchase Orders](#chapter-8-purchase-orders)
 - [Chapter 9: Gantt & Schedule Master](#chapter-9-gantt-schedule-master)
+- [Chapter 20: Agent System & Automation](#chapter-20-agent-system-automation)
 
 ---
 
@@ -1059,7 +1060,188 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-**Last Generated:** 2025-11-16 19:11 AEST
+# Chapter 20: Agent System & Automation
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 20               │
+│ 📘 USER MANUAL (HOW): Chapter 20               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-16
+
+---
+
+## 🐛 Bug Hunter
+
+### ⚡ Agent Shortcuts Not Case-Insensitive
+
+**Status:** ⚡ OPEN
+**First Reported:** 2025-11-16
+**Severity:** Low
+
+#### Scenario
+User types 'Backend Dev' (capital B) but system expects 'backend dev'.
+
+#### Root Cause
+Shortcut parsing is case-sensitive in CLAUDE.md
+
+#### Solution
+Update shortcut parser to normalize input: .toLowerCase().trim()
+
+#### Prevention
+Add test cases for case variations
+
+**Component:** CLAUDE.md agent recognition
+
+---
+
+## 🏛️ Architecture
+
+### Design Decisions & Rationale
+
+### 1. Database-Primary Agent Configuration
+
+**Decision:** Agent configurations are stored in database, not markdown files.
+
+**Rationale:**
+Needed structured data for run tracking, filtering, and real-time updates. Markdown files are read-only snapshots.
+
+**Implementation:**
+Created agent_definitions table with JSONB fields for metadata and run details. API endpoints for CRUD operations.
+
+**Trade-offs:**
+Trade-off: Requires database migration when adding new agents. Benefit: Live run tracking, success rates, recently_run? checks.
+
+---
+
+### 2. Run History Tracking with JSONB
+
+**Decision:** Agent run history stored in JSONB fields for flexibility.
+
+**Rationale:**
+Run details vary by agent type (files_created, tests_passed, duration_seconds, etc.). Fixed schema would be too rigid.
+
+**Implementation:**
+Used JSONB columns: last_run_details and metadata for flexible storage.
+
+**Trade-offs:**
+Trade-off: No strict validation on JSONB structure. Benefit: Each agent can track custom metrics.
+
+---
+
+### 3. Agent Type Taxonomy (4 Types)
+
+**Decision:** Agents categorized into 4 types: development, diagnostic, deployment, planning.
+
+**Details:**
+development: backend-developer, frontend-developer | diagnostic: production-bug-hunter, gantt-bug-hunter | deployment: deploy-manager | planning: planning-collaborator
+
+**Rationale:**
+Needed clear separation of concerns. Backend work vs frontend work vs bug hunting vs planning.
+
+**Implementation:**
+Created agent_type enum with 4 values. Each agent assigned single type.
+
+**Trade-offs:**
+Trade-off: Agents can only have one type. Benefit: Clear responsibility boundaries.
+
+---
+
+### 4. Database-Primary Agent Configuration
+
+**Decision:** Agent configurations are stored in database, not markdown files.
+
+**Rationale:**
+Needed structured data for run tracking, filtering, and real-time updates. Markdown files are read-only snapshots.
+
+**Implementation:**
+Created agent_definitions table with JSONB fields for metadata and run details. API endpoints for CRUD operations.
+
+**Trade-offs:**
+Trade-off: Requires database migration when adding new agents. Benefit: Live run tracking, success rates, recently_run? checks.
+
+---
+
+### 5. Run History Tracking with JSONB
+
+**Decision:** Agent run history stored in JSONB fields for flexibility.
+
+**Rationale:**
+Run details vary by agent type (files_created, tests_passed, duration_seconds, etc.). Fixed schema would be too rigid.
+
+**Implementation:**
+Used JSONB columns: last_run_details and metadata for flexible storage.
+
+**Trade-offs:**
+Trade-off: No strict validation on JSONB structure. Benefit: Each agent can track custom metrics.
+
+---
+
+### 6. Agent Type Taxonomy (4 Types)
+
+**Decision:** Agents categorized into 4 types: development, diagnostic, deployment, planning.
+
+**Details:**
+development: backend-developer, frontend-developer | diagnostic: production-bug-hunter, gantt-bug-hunter | deployment: deploy-manager | planning: planning-collaborator
+
+**Rationale:**
+Needed clear separation of concerns. Backend work vs frontend work vs bug hunting vs planning.
+
+**Implementation:**
+Created agent_type enum with 4 values. Each agent assigned single type.
+
+**Trade-offs:**
+Trade-off: Agents can only have one type. Benefit: Clear responsibility boundaries.
+
+---
+
+### 7. recently_run? Smart Test Skipping
+
+**Decision:** Diagnostic agents check if tests ran recently to avoid redundant runs.
+
+**Details:**
+Logic: Returns false if never run | Returns false if last run failed (always re-test failures) | Returns true if last_run_at > 60 minutes ago AND last_status == 'success'
+
+**Rationale:**
+Gantt Bug Hunter runs 12 automated tests (30-60 seconds). Wasteful to re-run if nothing changed.
+
+**Implementation:**
+AgentDefinition#recently_run?(minutes = 60) returns true if last successful run was within threshold.
+
+**Trade-offs:**
+Trade-off: Stale results if threshold too high. Benefit: Faster iteration during development.
+
+---
+
+## 📊 Test Catalog
+
+### Agent System Test Coverage
+
+Testing status for Agent System components.
+
+**Tests:**
+Unit Tests Needed: AgentDefinition#record_success, AgentDefinition#record_failure, AgentDefinition#success_rate, AgentDefinition#recently_run? | Integration Tests Needed: POST /api/v1/agent_definitions/:id/record_run, GET /api/v1/agent_definitions (priority sorting), Agent invocation protocol (end-to-end) | Current Coverage: 0% (no tests written yet)
+
+---
+
+## 🎓 Developer Notes
+
+### Syncing .claude/agents/*.md with Database
+
+Two sources of agent config: .claude/agents/*.md files and agent_definitions table.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+**Last Generated:** 2025-11-16 19:41 AEST
 **Generated By:** `rake trapid:export_lexicon`
 **Maintained By:** Development Team via Database UI
 **Review Schedule:** After each bug fix or knowledge entry

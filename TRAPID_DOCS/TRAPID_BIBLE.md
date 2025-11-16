@@ -12372,6 +12372,413 @@ import BackButton from '../components/common/BackButton'
 
 ---
 
+# Chapter 20: Agent System & Automation
+
+┌─────────────────────────────────────────────────┐
+│ 📕 LEXICON (BUGS):    Chapter 20                │
+│ 📘 USER MANUAL (HOW): N/A (Developer-only)      │
+└─────────────────────────────────────────────────┘
+
+**Last Updated:** 2025-11-16
+
+## Overview
+
+The Agent System provides specialized AI agents for development tasks. Each agent has specific capabilities, tracks run history, and is stored in the `agent_definitions` database table.
+
+**6 Active Agents:**
+1. **backend-developer** - Rails API development
+2. **frontend-developer** - React + Vite frontend
+3. **production-bug-hunter** - General bug diagnosis
+4. **deploy-manager** - Git + Heroku deployment
+5. **planning-collaborator** - Architecture planning
+6. **gantt-bug-hunter** - Gantt-specific diagnostics
+
+**Database-Primary:** Agent definitions stored in database, managed via API.
+
+---
+
+## RULE #20.1: Agent Definitions Are Database-Driven
+
+**Agent configurations MUST be stored in the `agent_definitions` table.**
+
+✅ **MUST:**
+- Store all agent metadata in database
+- Update run history after each agent execution
+- Use API endpoints to manage agents
+- Track success/failure rates
+- Maintain agent priority order
+
+❌ **NEVER:**
+- Hardcode agent configurations in code
+- Skip recording agent runs
+- Modify `.claude/agents/*.md` files without updating database
+- Create agents without database entries
+
+**Implementation:**
+
+```ruby
+# Record successful agent run
+agent = AgentDefinition.find_by(agent_id: 'backend-developer')
+agent.record_success(
+  "Created API endpoint successfully",
+  {
+    files_created: 3,
+    tests_passed: true,
+    duration_seconds: 45
+  }
+)
+
+# Record failed agent run
+agent.record_failure(
+  "Migration failed with syntax error",
+  {
+    error_type: "SyntaxError",
+    error_message: "unexpected token",
+    file: "db/migrate/...",
+    line: 12
+  }
+)
+```
+
+**Files:**
+- `backend/app/models/agent_definition.rb`
+- `backend/app/controllers/api/v1/agent_definitions_controller.rb`
+- `backend/db/migrate/*_create_agent_definitions.rb`
+
+---
+
+## RULE #20.2: Agent Invocation Protocol
+
+**Agents MUST follow a standardized invocation pattern.**
+
+✅ **MUST:**
+- Check if agent exists and is active
+- Record run start timestamp
+- Execute agent task
+- Record success or failure with details
+- Return comprehensive result
+
+❌ **NEVER:**
+- Invoke inactive agents
+- Skip recording run results
+- Return vague error messages
+- Execute agents without user context
+
+**Example Workflow:**
+
+```javascript
+// 1. User types shortcut
+"backend dev"
+
+// 2. Claude Code reads agent definition
+const agent = await fetch('/api/v1/agent_definitions/backend-developer')
+
+// 3. Execute agent task
+const result = await Task({
+  subagent_type: 'general-purpose',
+  prompt: agent.purpose + "\n\n" + userRequest,
+  model: agent.model
+})
+
+// 4. Record result
+await fetch(`/api/v1/agent_definitions/backend-developer/record_run`, {
+  method: 'POST',
+  body: {
+    status: result.success ? 'success' : 'failure',
+    message: result.message,
+    details: result.details
+  }
+})
+```
+
+---
+
+## RULE #20.3: Run History Tracking
+
+**Every agent execution MUST be recorded in run history.**
+
+✅ **MUST:**
+- Record total_runs, successful_runs, failed_runs
+- Store last_run_at timestamp
+- Save last_status and last_message
+- Include detailed last_run_details (JSONB)
+- Calculate success_rate automatically
+
+❌ **NEVER:**
+- Skip recording runs
+- Overwrite historical run data
+- Record runs for testing/debugging
+- Fake success/failure status
+
+**Database Fields:**
+
+```ruby
+# agent_definitions table
+total_runs: 0
+successful_runs: 0
+failed_runs: 0
+last_run_at: nil
+last_status: 'success' | 'failure' | 'error'
+last_message: "Completed successfully"
+last_run_details: {
+  duration_seconds: 45,
+  files_modified: 3,
+  tests_passed: true
+}
+```
+
+**Success Rate Calculation:**
+
+```ruby
+def success_rate
+  return 0 if total_runs.zero?
+  (successful_runs.to_f / total_runs * 100).round(1)
+end
+```
+
+---
+
+## RULE #20.4: Agent Types and Specialization
+
+**Each agent MUST have a specific agent_type and focus area.**
+
+✅ **MUST:**
+- Assign agent_type: `development`, `diagnostic`, `deployment`, or `planning`
+- Define clear focus area (e.g., "Rails API Backend Development")
+- Specify tools available to agent
+- Document when to use each agent
+- Provide example invocations
+
+❌ **NEVER:**
+- Create overlapping agent responsibilities
+- Use generic agent for specialized tasks
+- Skip documenting agent capabilities
+- Create agents without clear purpose
+
+**Agent Types:**
+
+| Type | Purpose | Examples |
+|------|---------|----------|
+| **development** | Code creation/modification | backend-developer, frontend-developer |
+| **diagnostic** | Bug hunting and analysis | production-bug-hunter, gantt-bug-hunter |
+| **deployment** | Release management | deploy-manager |
+| **planning** | Architecture and design | planning-collaborator |
+
+**Specialization Example:**
+
+```ruby
+# Gantt Bug Hunter - Highly specialized
+agent_type: 'diagnostic'
+focus: 'Gantt Chart & Schedule Master Bug Diagnosis'
+when_to_use: 'Gantt-related bugs ONLY'
+
+# Production Bug Hunter - General purpose
+agent_type: 'diagnostic'
+focus: 'General Production Bug Diagnosis & Resolution'
+when_to_use: 'All non-Gantt production bugs'
+```
+
+---
+
+## RULE #20.5: Agent Priority and Display Order
+
+**Agents MUST be displayed in priority order (higher priority first).**
+
+✅ **MUST:**
+- Set priority field (0-100)
+- Display agents sorted by: priority DESC, name ASC
+- Show active agents first
+- Hide inactive agents from main list
+
+❌ **NEVER:**
+- Display agents alphabetically only
+- Show inactive agents in main list
+- Change priority without reason
+
+**Priority Guidelines:**
+
+```ruby
+100 - Critical development agents (backend-developer)
+90  - Essential development agents (frontend-developer)
+85  - Specialized diagnostic agents (gantt-bug-hunter)
+80  - General diagnostic agents (production-bug-hunter)
+70  - Deployment agents (deploy-manager)
+60  - Planning agents (planning-collaborator)
+0   - Default (new agents)
+```
+
+---
+
+## RULE #20.6: Agent Shortcuts and Invocation
+
+**Agents MUST support both full names and shortcuts.**
+
+✅ **MUST:**
+- Support `run {agent-id}` (e.g., `run backend-developer`)
+- Support shortened versions (e.g., `backend dev`, `gantt`)
+- Document shortcuts in `example_invocations` field
+- Parse user input case-insensitively
+
+❌ **NEVER:**
+- Require exact agent_id match
+- Skip documenting shortcuts
+- Create conflicting shortcuts
+
+**Shortcut Patterns:**
+
+```plaintext
+backend-developer:
+  - "backend dev"
+  - "run backend-developer"
+  - "run backend"
+
+frontend-developer:
+  - "frontend dev"
+  - "run frontend-developer"
+  - "run frontend"
+
+gantt-bug-hunter:
+  - "gantt"
+  - "gantt bug hunter"
+  - "run gantt-bug-hunter"
+
+deploy-manager:
+  - "deploy"
+  - "run deploy-manager"
+  - "run deploy"
+
+production-bug-hunter:
+  - "production bug hunter"
+  - "bug hunter"
+  - "run production-bug-hunter"
+
+planning-collaborator:
+  - "plan"
+  - "run planning-collaborator"
+  - "run planner"
+```
+
+---
+
+## RULE #20.7: Recently Run Check (Smart Testing)
+
+**Diagnostic agents SHOULD check if tests ran recently to avoid redundant runs.**
+
+✅ **MUST:**
+- Check `last_run_at` timestamp
+- Compare to threshold (e.g., 60 minutes)
+- Skip redundant tests if recent successful run
+- ALWAYS re-run if last run failed
+- Ask user if uncertain
+
+❌ **NEVER:**
+- Skip tests without checking recency
+- Ignore failed runs in recency check
+- Use stale results without user awareness
+
+**Implementation:**
+
+```ruby
+# In AgentDefinition model
+def recently_run?(minutes = 60)
+  return false if last_run_at.nil?
+  return false if last_status != 'success'
+  last_run_at > minutes.minutes.ago
+end
+```
+
+**Usage in Agent:**
+
+```javascript
+// Gantt Bug Hunter protocol
+const agent = await getAgent('gantt-bug-hunter')
+
+if (agent.recently_run(60)) {
+  console.log(`⏭️ Tests skipped (last successful run was ${minutesAgo} minutes ago)`)
+  console.log(`Using cached results from ${agent.last_run_at}`)
+  // Proceed with static analysis only
+} else {
+  console.log(`🧪 Running full test suite (last run: ${agent.last_run_at || 'Never'})`)
+  // Run all 12 automated tests
+}
+```
+
+---
+
+## API Endpoints Reference
+
+### GET /api/v1/agent_definitions
+Returns list of all active agents, sorted by priority.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "agent_id": "backend-developer",
+      "name": "Backend Developer",
+      "agent_type": "development",
+      "focus": "Rails API Backend Development",
+      "priority": 100,
+      "total_runs": 42,
+      "successful_runs": 40,
+      "failed_runs": 2,
+      "success_rate": 95.2,
+      "status_emoji": "✅"
+    }
+  ]
+}
+```
+
+### GET /api/v1/agent_definitions/:agent_id
+Returns single agent with full details.
+
+### POST /api/v1/agent_definitions/:agent_id/record_run
+Records a run result.
+
+**Request:**
+```json
+{
+  "status": "success",
+  "message": "Created API endpoint successfully",
+  "details": {
+    "duration_seconds": 45,
+    "files_created": 3,
+    "tests_passed": true
+  }
+}
+```
+
+### POST /api/v1/agent_definitions (admin)
+Creates a new agent.
+
+### PATCH /api/v1/agent_definitions/:agent_id (admin)
+Updates an agent.
+
+### DELETE /api/v1/agent_definitions/:agent_id (admin)
+Deactivates an agent (sets `active: false`).
+
+---
+
+## Protected Code Patterns (Chapter 20)
+
+### AgentDefinition Model
+**File:** `backend/app/models/agent_definition.rb`
+**Protected:** `record_success()`, `record_failure()`, `success_rate()`, `recently_run?()` methods
+
+### Agent API Controller
+**File:** `backend/app/controllers/api/v1/agent_definitions_controller.rb`
+**Protected:** Run recording logic, parameter filtering, JSON response format
+
+❌ **DO NOT:**
+- Modify run recording methods without updating all agents
+- Change API response format (breaks frontend)
+- Remove JSONB fields (metadata, last_run_details)
+- Skip validations on agent creation
+
+---
+
 ## 📋 Quick Checklist Before Committing
 
 - [ ] Followed all RULES in relevant chapters
