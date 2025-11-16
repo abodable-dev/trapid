@@ -2480,7 +2480,217 @@ The template creates tasks for you automatically:
 │ 📕 LEXICON (BUGS):     Chapter 10 (Developers) │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+## What are Project Tasks?
+
+Project Tasks are individual work items within a construction job. They track progress, dependencies, assigned workers, and materials. Tasks can spawn automatically (photos, certificates, subtasks) and include supervisor checklists for quality assurance.
+
+**Benefits:**
+- **Work breakdown** - Large jobs split into manageable tasks
+- **Progress tracking** - See what's done, in progress, or delayed
+- **Dependencies** - Know which tasks must finish before others start
+- **Supervisor checklists** - Quality and safety checks per task
+
+---
+
+## Getting Started
+
+### Step 1: View Tasks for a Job
+
+1. Open a **Job** from the Jobs page
+2. Go to **Tasks** tab (or **Schedule Master** view)
+3. See list of tasks with:
+   - **Name** - Task description
+   - **Status** - Not Started, In Progress, Complete, On Hold
+   - **Dates** - Planned start/end, actual start/end
+   - **Assigned To** - Who's responsible
+
+**Automatic Creation:**
+- If job created from Schedule Master template, tasks auto-created from template
+- Otherwise, add tasks manually
+
+---
+
+### Step 2: Mark Task In Progress
+
+When work starts on a task:
+
+1. Find task in list
+2. Click **status dropdown**
+3. Select **"In Progress"**
+4. System automatically sets **Actual Start Date** to today
+
+**What happens:**
+- If task has **subtasks** configured, they spawn automatically
+- Task appears in "In Progress" filter
+- Team can see work has started
+
+---
+
+### Step 3: Mark Task Complete
+
+When task work is finished:
+
+1. Find task in list
+2. Click **status dropdown**
+3. Select **"Complete"**
+4. System automatically:
+   - Sets **Actual End Date** to today
+   - Sets **Progress** to 100%
+   - Spawns **photo task** (if required)
+   - Spawns **certificate task** (if required)
+
+**Auto-completion:**
+- If task has "Auto-complete predecessors" enabled, all tasks it depends on also complete automatically
+
+---
+
+## Key Features
+
+**Task Status Lifecycle:**
+- **Not Started** → Task planned but work hasn't begun
+- **In Progress** → Work currently happening
+- **Complete** → Task finished and verified
+- **On Hold** → Blocked or delayed (can resume later)
+
+**Automatic Task Spawning:**
+- **Photo Tasks** - Spawned when parent completes (documentation)
+- **Certificate Tasks** - Spawned with lag days after parent completes (compliance)
+- **Subtasks** - Spawned when parent starts (work breakdown)
+
+**Dependencies:**
+- Tasks can depend on other tasks (predecessors)
+- Dependency types: Finish-to-Start, Start-to-Start, Finish-to-Finish
+- Prevents scheduling conflicts
+
+**Supervisor Checklists:**
+- Safety checks ("Hard hats required")
+- Quality checks ("Inspect slab for cracks")
+- Photo requirements ("Photo of completed framing")
+- Note requirements ("Describe any defects found")
+
+**Materials Tracking:**
+- Tasks can link to purchase orders
+- System shows if materials arrive on time or delayed
+- Prevents starting tasks without materials
+
+---
+
+## Common Tasks
+
+### Create a New Task
+
+1. Go to **Job** → **Tasks** tab
+2. Click **"Add Task"** button
+3. Fill in:
+   - **Name** - "Install kitchen cabinets"
+   - **Duration** - Number of days (minimum 1)
+   - **Planned Start Date** - When task should begin
+   - **Assigned To** - Select worker or enter supplier name
+4. Click **"Save"**
+
+**Result:** Task appears in list with "Not Started" status.
+
+---
+
+### Add Task Dependency
+
+To make Task B wait for Task A to finish:
+
+1. Open **Task B** in edit mode
+2. Find **"Dependencies"** section
+3. Click **"Add Predecessor"**
+4. Select **Task A** from dropdown
+5. Select dependency type:
+   - **Finish-to-Start** (most common) - B starts after A finishes
+   - **Start-to-Start** - B starts when A starts
+   - **Finish-to-Finish** - B finishes when A finishes
+6. Click **"Save"**
+
+**Result:** Task B cannot start until Task A completes (if using Finish-to-Start).
+
+---
+
+### View Supervisor Checklist (Template Setup)
+
+**Note:** This feature is configured in Settings by admins. Field supervisors will complete checklists during job execution (UI coming soon).
+
+1. Go to **Settings** → **Supervisor Checklists**
+2. See list of checklist templates:
+   - Safety items
+   - Quality checks
+   - Pre-start requirements
+   - Completion verification
+3. Click **template** to edit
+
+**Checklist Types:**
+- **Checkbox** - Simple yes/no ("Hard hats worn?")
+- **Photo** - Requires photo upload ("Photo of slab")
+- **Note** - Requires text explanation ("Describe defects")
+- **Photo + Note** - Both required
+
+---
+
+### Link Task to Purchase Order
+
+To track if materials arrive on time:
+
+1. Open **Task** in edit mode
+2. Find **"Purchase Order"** field
+3. Select PO from dropdown
+4. Check **"Critical PO"** if materials MUST arrive on time
+5. Click **"Save"**
+
+**Result:**
+- Task shows materials status badge:
+  - **No PO** (gray) - No materials linked
+  - **On Time** (green) - PO delivery before task start
+  - **Delayed** (red) - PO delivery after task start
+
+---
+
+## Troubleshooting
+
+**Issue: Task won't mark complete**
+
+**Cause:** Task has incomplete dependencies or required checklist items.
+
+**Solution:**
+- Check if task has predecessors that aren't complete yet
+- Check if supervisor checklist items need completion
+- If you need to override, use "On Hold" status temporarily
+
+---
+
+**Issue: Can't add dependency - "Circular dependency detected"**
+
+**Cause:** Creating this dependency would cause a loop (A depends on B, B depends on C, C depends on A).
+
+**Solution:**
+- Review dependency chain to find the loop
+- Remove one dependency to break the cycle
+- Example: If A→B→C→A, remove either A→B, B→C, or C→A
+
+---
+
+**Issue: Subtasks didn't spawn when task started**
+
+**Cause:** Template row doesn't have "Has Subtasks" enabled.
+
+**Solution:**
+- Go to **Settings** → **Schedule Master** → **Templates**
+- Edit the template row for this task type
+- Enable **"Has Subtasks"** checkbox
+- Configure subtask templates
+- Future jobs will spawn subtasks correctly (existing jobs must add manually)
+
+---
+
+## Related Topics
+
+- **Chapter 9: Gantt & Schedule Master** - Template configuration for tasks
+- **Chapter 8: Purchase Orders** - Linking materials to tasks
+- **Chapter 5: Jobs & Construction Management** - Job lifecycle overview
+- **Chapter 11: Weather & Public Holidays** - How weather affects task scheduling
 
 ---
 

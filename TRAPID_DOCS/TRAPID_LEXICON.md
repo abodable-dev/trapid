@@ -5267,7 +5267,472 @@ Locked tasks are NOT cascaded.
 │ 📘 USER MANUAL (HOW): Chapter 10               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+---
+
+## Bug Hunter & Known Issues
+
+### Issue: Incomplete Checklist Item Completion Logic
+**Status:** 🔴 INCOMPLETE FEATURE
+**Severity:** Medium
+**Component:** ProjectTaskChecklistItem
+
+**Scenario:**
+- User creates supervisor checklist templates in Settings
+- Templates assigned to Schedule Master template rows
+- Job instantiated from template → checklist items created
+- **Problem:** No completion prompting or UI in ProjectTask detail view
+
+**Root Cause:**
+Checklist items are created via `TemplateInstantiator.create_checklist_items_for_task`, but:
+- No `ProjectTaskChecklistItemsController` exists for completion API
+- No UI component for displaying/completing checklist items in job view
+- Only template management UI exists (Settings page)
+
+**Workaround:**
+None. Feature is template-ready but lacks instance UI.
+
+**Proper Fix:**
+1. Create `ProjectTaskChecklistItemsController` with endpoints:
+   - `GET /api/v1/project_tasks/:task_id/checklist_items`
+   - `PATCH /api/v1/project_tasks/:task_id/checklist_items/:id` (toggle completion)
+   - `POST /api/v1/project_tasks/:task_id/checklist_items/:id/upload_photo`
+2. Add `<ChecklistPanel>` component to TaskDetailModal
+3. Add completion webhook to trigger when all items completed → auto-complete task
+
+**See:** Bible RULE #10.4
+
+---
+
+### Issue: Supervisor Checklist Items Lost in Template-to-Instance Flow
+**Status:** 🟢 RESOLVED
+**Severity:** High
+**Component:** TemplateInstantiator
+
+**Scenario:**
+- Admin configures supervisor checklists in Schedule Master template
+- Creates new job from template
+- **Expected:** Checklist items copied to ProjectTask instances
+- **Actual:** Checklist items not created
+
+**Root Cause:**
+`TemplateInstantiator.create_checklist_items_for_task` was not being called during job instantiation.
+
+**Fix Applied:**
+Added explicit call in `ScheduleTemplate.instantiate_for_job`:
+
+```ruby
+# app/services/schedule/template_instantiator.rb
+def instantiate_template_rows(job, template)
+  template.rows.each do |row|
+    task = create_task_from_row(job, row)
+    create_checklist_items_for_task(task) # ← Added this line
+  end
+end
+```
+
+**Verification:**
+Run Bug Hunter test `checklist-instantiation` to verify checklist items created for new jobs.
+
+**See:** Bible RULE #10.4
+
+---
+
+### Issue: Circular Dependency False Negatives
+**Status:** 🔄 MONITORING
+**Severity:** Low
+**Component:** TaskDependency
+
+**Scenario:**
+- Task A depends on Task B
+- Task B depends on Task C
+- Task C depends on Task A (circular)
+- **Expected:** Validation error when creating C → A dependency
+- **Actual:** Sometimes validation passes, allowing circular dependency
+
+**Root Cause:**
+`no_circular_dependencies` validation uses depth-first search with `visited.dup` on recursive calls. In rare cases with complex dependency graphs, the `visited` set doesn't properly track all paths.
+
+**Workaround:**
+Before creating dependency chain with 3+ levels, manually verify no circularity.
+
+**Proper Fix (if issue recurs):**
+Replace recursive DFS with iterative breadth-first search:
+
+```ruby
+def no_circular_dependencies
+  queue = [successor_task]
+  visited = Set.new
+
+  while queue.any?
+    task = queue.shift
+    next if task.nil?
+
+    if task.id == predecessor_task_id
+      errors.add(:base, "Circular dependency detected")
+      return
+    end
+
+    visited.add(task.id)
+
+    task.predecessor_tasks.each do |pred|
+      queue << pred unless visited.include?(pred.id)
+    end
+  end
+end
+```
+
+**See:** Bible RULE #10.2
+
+---
+
+### Issue: Task Auto-Completion Infinite Loop Risk
+**Status:** 🟢 RESOLVED
+**Severity:** Critical
+**Component:** ProjectTask
+
+**Scenario:**
+- Task A has `auto_complete_predecessors: true`
+- Task A depends on Task B
+- Task B has `auto_complete_predecessors: true`
+- Task B depends on Task C
+- **Risk:** Completing A triggers B completion, which triggers C completion recursively
+
+**Root Cause:**
+`after_save :complete_predecessors` callback could theoretically trigger infinite chains.
+
+**Fix Applied:**
+Callback explicitly checks `saved_change_to_status?` to only fire once per manual completion:
+
+```ruby
+after_save :complete_predecessors, if: -> {
+  auto_complete_predecessors? &&
+  complete? &&
+  saved_change_to_status? # ← Prevents re-triggering
+}
+```
+
+**Verification:**
+When Task A auto-completes Task B, the callback doesn't fire again for B (status didn't "change", it was set by update!).
+
+**See:** Bible RULE #10.6
+
+---
+
+### Issue: Materials Status Not Updating After PO Delivery Date Change
+**Status:** 🟢 RESOLVED
+**Severity:** Medium
+**Component:** ProjectTask
+
+**Scenario:**
+- Task linked to PO with `estimated_delivery_date: Jan 15`
+- Task `planned_start_date: Jan 20`
+- `materials_status` returns `'on_time'` ✅
+- User updates PO delivery to Jan 25 (after task start)
+- **Expected:** `materials_status` returns `'delayed'` 🔴
+- **Actual:** Status updates correctly (calculated field, not cached)
+
+**Resolution:**
+This is a non-issue. `materials_status` is a calculated method (not stored), so it always reflects current PO dates.
+
+**Verification:**
+```ruby
+task = ProjectTask.find(123)
+task.materials_status # => 'on_time'
+
+task.purchase_order.update!(estimated_delivery_date: task.planned_start_date + 5.days)
+
+task.reload
+task.materials_status # => 'delayed' (correctly updated)
+```
+
+**See:** Bible RULE #10.7
+
+---
+
+## Architecture & Design Decisions
+
+### Why Template-to-Instance Pattern for Checklists?
+
+**Decision:** Supervisor checklist templates are **copied** to ProjectTaskChecklistItem instances (not shared).
+
+**Rationale:**
+- **Independence:** Each job's checklist items can be completed independently without affecting template
+- **Data integrity:** Completed items are immutable (can't be deleted/modified after completion)
+- **Audit trail:** Each checklist item tracks who completed it and when
+- **Flexibility:** Job-specific checklist items can be added after job creation
+
+**Trade-off:**
+- **Storage:** Duplicate data (template + instances for each job)
+- **Updates:** Changing template doesn't retroactively update existing jobs
+
+**Alternative considered (rejected):**
+Sharing templates via foreign key. Rejected because:
+- Completion tracking would require junction table (more complex)
+- Deleting template would orphan job checklists
+- Can't track per-job completion state cleanly
+
+**Implementation:**
+See `TemplateInstantiator.create_checklist_items_for_task` in `/Users/rob/Projects/trapid/backend/app/services/schedule/template_instantiator.rb`
+
+---
+
+### Why Decimal Sequence Order Instead of Integer?
+
+**Decision:** Use `decimal(10, 2)` for `sequence_order` instead of integer.
+
+**Rationale:**
+- **Insertion flexibility:** Can insert Task 2.5 between Task 2 and Task 3 without reordering
+- **Parent-child proximity:** Subtasks use decimal increments (2.1, 2.2, 2.3) to stay near parent (2.0)
+- **Performance:** No need to update all tasks when inserting one (with integer sequence, inserting at position 5 requires updating all tasks >= 5)
+
+**Example:**
+```
+1.0 - Foundation
+2.0 - Framing
+  2.1 - 📸 Photo - Framing (spawned child)
+  2.2 - 📜 Certificate - Framing (spawned child)
+  2.3 - Inspect framing (subtask)
+3.0 - Roofing
+```
+
+**Trade-off:**
+- **Complexity:** Slightly more complex math for next sequence number
+- **UI:** Must format display (hide `.0` for top-level tasks)
+
+**Alternative considered (rejected):**
+Using `position` gem with ordered list. Rejected because:
+- Adds dependency
+- Doesn't support parent-child decimal nesting
+- Requires database locking for reorder operations
+
+**Implementation:**
+See `spawn_subtasks` in `/Users/rob/Projects/trapid/backend/app/services/schedule/task_spawner.rb`
+
+---
+
+### Why Store completed_by as String Instead of User FK?
+
+**Decision:** `ProjectTaskChecklistItem.completed_by` is `string`, not `belongs_to :user`.
+
+**Rationale:**
+- **Future flexibility:** Supports external supervisor check-ins (contractors, inspectors) who don't have user accounts
+- **Data integrity:** User deletion doesn't orphan checklist items (completed_by preserved)
+- **Mobile app:** Can store device username or external system ID
+
+**Trade-off:**
+- **No referential integrity:** Can't join to users table
+- **Display names:** Must store full name (not just ID) for historical accuracy
+
+**Implementation:**
+```ruby
+# app/models/project_task_checklist_item.rb
+attribute :completed_by, :string
+
+# When saving completion:
+item.update!(
+  is_completed: true,
+  completed_at: Time.current,
+  completed_by: Current.user&.full_name || "Unknown"
+)
+```
+
+---
+
+### Why Four Response Types for Checklists?
+
+**Decision:** Support `checkbox`, `photo`, `note`, `photo_and_note` response types.
+
+**Rationale:**
+- **Checkbox:** Simple safety checks ("Hard hats required")
+- **Photo:** Visual evidence ("Photo of completed slab")
+- **Note:** Text explanation ("Describe defects found")
+- **Photo + Note:** Both required ("Photo of issue + description")
+
+**Alternative considered (rejected):**
+Just `checkbox` and `photo`. Rejected because:
+- Many checklist items need written explanation
+- Some require both photo evidence AND written notes (e.g., defect documentation)
+- Combining photo + note is clearer than separate items
+
+**Validation enforcement:**
+See Bible RULE #10.5 - response data must be present before marking item complete.
+
+---
+
+### Why Auto-Complete Predecessors Feature?
+
+**Decision:** Allow tasks to auto-complete their predecessors when marked complete.
+
+**Rationale:**
+- **Logic:** If Task B is complete, Task A (predecessor) must be complete
+- **Reduces admin overhead:** Long dependency chains don't require manual completion of every task
+- **Prevents blocking:** 90% of project stuck waiting on forgotten 10% of tasks
+
+**Use case:**
+```
+Foundation → Framing → Roofing → Electrical → Handover
+
+If Handover is complete, all predecessors must be complete.
+Setting auto_complete_predecessors on Handover auto-completes the chain.
+```
+
+**Trade-off:**
+- **Loss of granularity:** Can't see exact completion dates for auto-completed tasks
+- **Audit trail required:** Must store completion_notes explaining auto-completion
+
+**Safety:**
+- Only fires on manual status change (not recursive)
+- Skips milestones (they should be explicitly completed)
+- Adds completion notes for transparency
+
+**Implementation:**
+See Bible RULE #10.6
+
+---
+
+## Test Catalog
+
+### Task Spawning Tests
+
+**Test:** `task-spawning-photo`
+**What it tests:** Photo task spawned when parent completes + `require_photo: true`
+**How to run:** Via Bug Hunter Tests UI → "Task Spawning - Photo"
+**Expected result:** New ProjectTask created with `spawned_type: 'photo'` and name prefix "📸 Photo - "
+
+---
+
+**Test:** `task-spawning-certificate`
+**What it tests:** Certificate task spawned with correct lag days
+**How to run:** Via Bug Hunter Tests UI → "Task Spawning - Certificate"
+**Expected result:** Task created with `planned_start_date = parent.actual_end_date + lag_days`
+
+---
+
+**Test:** `task-spawning-subtasks`
+**What it tests:** Subtasks spawned when parent marked in_progress
+**How to run:** Via Bug Hunter Tests UI → "Task Spawning - Subtasks"
+**Expected result:** All subtasks created with correct sequence_order (parent + 0.1 increments)
+
+---
+
+### Dependency Validation Tests
+
+**Test:** `circular-dependency-prevention`
+**What it tests:** Circular dependency detection (A→B→C→A)
+**How to run:** Via Bug Hunter Tests UI → "Circular Dependency Prevention"
+**Expected result:** Validation error when creating C→A dependency
+
+---
+
+**Test:** `self-dependency-prevention`
+**What it tests:** Task cannot depend on itself
+**How to run:** Via Bug Hunter Tests UI → "Self Dependency Prevention"
+**Expected result:** Validation error when creating A→A dependency
+
+---
+
+### Checklist Tests
+
+**Test:** `checklist-instantiation`
+**What it tests:** Checklist templates copied to ProjectTask instances
+**How to run:** Via Bug Hunter Tests UI → "Checklist Instantiation"
+**Expected result:** ProjectTaskChecklistItems created matching template count and fields
+
+---
+
+**Test:** `checklist-response-validation`
+**What it tests:** Response data required based on response_type
+**How to run:** Via Bug Hunter Tests UI → "Checklist Response Validation"
+**Expected result:**
+- Checkbox: Can complete without data ✅
+- Photo: Requires response_photo_url ❌ if missing
+- Note: Requires response_note ❌ if missing
+- Photo+Note: Requires both ❌ if either missing
+
+---
+
+### Materials Status Tests
+
+**Test:** `materials-status-calculation`
+**What it tests:** Correct status based on PO delivery vs task start
+**How to run:** Via Bug Hunter Tests UI → "Materials Status Calculation"
+**Expected result:**
+- No PO linked: `'no_po'`
+- PO delivery before task start: `'on_time'`
+- PO delivery after task start: `'delayed'`
+
+---
+
+## Known Gaps & Future Work
+
+### 1. Task Update Audit Trail (INCOMPLETE)
+
+**Status:** 🔴 NOT IMPLEMENTED
+**Priority:** Medium
+
+**What's needed:**
+- TaskUpdate model
+- Callbacks to log status/progress/assignment changes
+- API endpoint for task history
+- UI component showing activity feed in TaskDetailModal
+
+**Why important:**
+Construction projects need detailed audit trails for:
+- Dispute resolution ("Who changed the deadline?")
+- Performance analysis ("Why did this task take 2x longer?")
+- Compliance documentation
+
+**See:** Bible RULE #10.9
+
+---
+
+### 2. Checklist Item Completion UI (INCOMPLETE)
+
+**Status:** 🔴 NOT IMPLEMENTED
+**Priority:** High
+
+**What's needed:**
+- Controller endpoints for checklist item CRUD
+- Frontend component for displaying checklist items
+- Photo upload integration (Cloudinary)
+- Completion prompting when all items done
+
+**Why important:**
+Checklists are fully configured in templates but have no instance UI. Field supervisors can't use them.
+
+**Workaround:**
+None. Feature is unusable in current state.
+
+---
+
+### 3. Task Dependencies UI (LIMITED)
+
+**Status:** 🟡 BASIC IMPLEMENTATION
+**Priority:** Low
+
+**What exists:**
+- Backend validation works correctly
+- API endpoints support CRUD
+
+**What's missing:**
+- Visual dependency graph (Gantt-style)
+- Drag-to-create dependencies
+- Dependency impact preview ("If I move this task, what else shifts?")
+
+**Workaround:**
+Use text-based dependency selection in task edit form.
+
+---
+
+## Summary
+
+Chapter 10 Lexicon documents:
+- **5 known issues** (3 resolved, 1 monitoring, 1 incomplete feature)
+- **5 architecture decisions** (template-to-instance, decimal sequences, string completed_by, response types, auto-completion)
+- **8 test cases** for Bug Hunter verification
+- **3 known gaps** requiring future work
 
 ---
 

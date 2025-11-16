@@ -5133,7 +5133,938 @@ predecessor_id = predecessor_task.sequence_order + 1
 │ 📘 USER MANUAL (HOW): Chapter 10               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+---
+
+## Overview
+
+This chapter defines rules for the **Project Tasks & Checklists** system, which manages work breakdown, task dependencies, supervisor checklists, and automated task spawning. Tasks are instances of work within a job, created from Schedule Templates or manually, with full support for dependencies, progress tracking, and documentation requirements.
+
+**Related Chapters:**
+- Chapter 9: Gantt & Schedule Master (schedule template instantiation)
+- Chapter 5: Jobs & Construction Management (job lifecycle)
+- Chapter 8: Purchase Orders (materials tracking)
+
+---
+
+## RULE #10.1: Task Status Lifecycle & Automatic Date Updates
+
+**Task status MUST follow defined lifecycle with automatic date population.**
+
+### Status Flow
+
+```ruby
+# app/models/project_task.rb
+enum status: {
+  not_started: 0,
+  in_progress: 1,
+  complete: 2,
+  on_hold: 3
+}
+
+# Valid transitions:
+# not_started → in_progress → complete
+# any status → on_hold → previous status
+```
+
+### Automatic Date Updates
+
+✅ **MUST update dates automatically:**
+
+```ruby
+# When status changes to in_progress
+before_save :set_actual_start_date, if: -> { status_changed? && in_progress? }
+
+def set_actual_start_date
+  self.actual_start_date ||= Date.today
+end
+
+# When status changes to complete
+before_save :set_completion_data, if: -> { status_changed? && complete? }
+
+def set_completion_data
+  self.actual_end_date ||= Date.today
+  self.progress_percentage = 100
+end
+```
+
+❌ **NEVER:**
+- Allow status to skip lifecycle stages (not_started → complete without in_progress)
+- Overwrite existing actual dates when status changes again
+- Leave progress_percentage < 100 when status is complete
+
+**Why:**
+- Automatic dates provide accurate project tracking
+- Progress_percentage = 100 ensures consistent completion state
+- Prevents manual errors in date entry
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/models/project_task.rb`
+
+---
+
+## RULE #10.2: Task Dependencies & Circular Dependency Prevention
+
+**Tasks MUST validate dependency relationships to prevent circular dependencies and enforce project boundaries.**
+
+### Dependency Types
+
+```ruby
+# app/models/task_dependency.rb
+enum dependency_type: {
+  finish_to_start: 0,   # Most common: B starts after A finishes
+  start_to_start: 1,    # B starts when A starts
+  finish_to_finish: 2,  # B finishes when A finishes
+  start_to_finish: 3    # Rare: B finishes when A starts
+}
+```
+
+### Required Validations
+
+✅ **MUST validate:**
+
+```ruby
+# app/models/task_dependency.rb
+validates :predecessor_task_id, uniqueness: { scope: :successor_task_id }
+validates :dependency_type, presence: true
+validate :no_circular_dependencies
+validate :same_project
+
+def no_circular_dependencies
+  # Check if predecessor has successor in its dependency chain
+  visited = Set.new
+  check_circular(successor_task, visited)
+end
+
+def same_project
+  unless predecessor_task.project_id == successor_task.project_id
+    errors.add(:base, "Tasks must be in same project")
+  end
+end
+```
+
+❌ **NEVER:**
+- Allow task to depend on itself (self-dependency)
+- Allow circular chains (A depends on B, B depends on C, C depends on A)
+- Allow cross-project dependencies
+- Allow duplicate dependencies (same predecessor + successor pair)
+
+**Why:**
+- Circular dependencies cause infinite loops in scheduling calculations
+- Same-project constraint ensures consistent timeline management
+- Prevents logical impossibilities in task ordering
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/models/task_dependency.rb`
+
+---
+
+## RULE #10.3: Automatic Task Spawning from Templates
+
+**Tasks MUST spawn child tasks automatically based on template configuration and parent task status changes.**
+
+### Spawned Task Types
+
+```ruby
+# app/models/project_task.rb
+enum spawned_type: {
+  photo: 1,
+  certificate: 2,
+  subtask: 3
+}
+
+# spawned_type: nil = normal task (not spawned)
+```
+
+### Spawning Logic
+
+✅ **MUST implement via TaskSpawner service:**
+
+```ruby
+# app/services/schedule/task_spawner.rb
+
+# Photo Task: Spawned when parent completes, if require_photo: true
+def spawn_photo_task(parent_task)
+  return unless parent_task.schedule_template_row&.require_photo
+
+  ProjectTask.create!(
+    project: parent_task.project,
+    name: "📸 Photo - #{parent_task.name}",
+    spawned_type: :photo,
+    parent_task: parent_task,
+    planned_start_date: parent_task.actual_end_date,
+    duration_days: 1,
+    status: :not_started
+  )
+end
+
+# Certificate Task: Spawned when parent completes, if require_certificate: true
+def spawn_certificate_task(parent_task)
+  row = parent_task.schedule_template_row
+  return unless row&.require_certificate
+
+  lag_days = row.certificate_lag_days || 0
+
+  ProjectTask.create!(
+    project: parent_task.project,
+    name: "📜 Certificate - #{parent_task.name}",
+    spawned_type: :certificate,
+    parent_task: parent_task,
+    planned_start_date: parent_task.actual_end_date + lag_days.days,
+    duration_days: row.certificate_duration_days || 3,
+    status: :not_started
+  )
+end
+
+# Subtasks: Spawned when parent starts, if has_subtasks: true
+def spawn_subtasks(parent_task)
+  row = parent_task.schedule_template_row
+  return unless row&.has_subtasks
+
+  row.subtask_templates.each_with_index do |template, index|
+    ProjectTask.create!(
+      project: parent_task.project,
+      name: template.name,
+      spawned_type: :subtask,
+      parent_task: parent_task,
+      sequence_order: parent_task.sequence_order + (index + 1) * 0.1,
+      planned_start_date: parent_task.planned_start_date,
+      duration_days: template.duration_days,
+      status: :not_started
+    )
+  end
+end
+```
+
+### Spawning Triggers
+
+✅ **MUST trigger spawning on status changes:**
+
+```ruby
+# app/models/project_task.rb
+after_save :spawn_child_tasks, if: :status_changed?
+
+def spawn_child_tasks
+  if complete? && saved_change_to_status?
+    Schedule::TaskSpawner.new.spawn_photo_task(self)
+    Schedule::TaskSpawner.new.spawn_certificate_task(self)
+  end
+
+  if in_progress? && saved_change_to_status?
+    Schedule::TaskSpawner.new.spawn_subtasks(self)
+  end
+end
+```
+
+❌ **NEVER:**
+- Spawn tasks multiple times (check if already spawned)
+- Spawn tasks without checking template configuration
+- Create circular parent-child relationships
+- Skip sequence ordering for subtasks (causes display chaos)
+
+**Why:**
+- Automation reduces manual overhead
+- Photo/certificate tasks ensure compliance documentation
+- Subtasks allow detailed work breakdown
+- Sequence ordering keeps related tasks together in UI
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/services/schedule/task_spawner.rb`
+
+---
+
+## RULE #10.4: Supervisor Checklist Template-to-Instance Flow
+
+**Supervisor checklist templates MUST be copied to ProjectTask instances during job creation.**
+
+### Template Definition
+
+```ruby
+# app/models/supervisor_checklist_template.rb
+class SupervisorChecklistTemplate < ApplicationRecord
+  validates :name, presence: true
+  validates :category, inclusion: {
+    in: %w[Safety Quality Pre-Start Completion Documentation]
+  }
+  validates :response_type, inclusion: {
+    in: %w[checkbox photo note photo_and_note]
+  }
+
+  has_many :schedule_template_row_checklists
+  has_many :schedule_template_rows, through: :schedule_template_row_checklists
+end
+```
+
+### Instance Creation
+
+✅ **MUST copy templates to instances during job instantiation:**
+
+```ruby
+# app/services/schedule/template_instantiator.rb
+def create_checklist_items_for_task(project_task)
+  row = project_task.schedule_template_row
+  return unless row
+
+  row.supervisor_checklist_templates.each do |template|
+    ProjectTaskChecklistItem.create!(
+      project_task: project_task,
+      name: template.name,
+      description: template.description,
+      category: template.category,
+      response_type: template.response_type,
+      sequence_order: template.sequence_order,
+      is_completed: false
+    )
+  end
+end
+```
+
+### Required Fields
+
+✅ **ProjectTaskChecklistItem MUST include:**
+
+```ruby
+# app/models/project_task_checklist_item.rb
+validates :name, presence: true
+validates :response_type, inclusion: {
+  in: %w[checkbox photo note photo_and_note]
+}
+
+# Completion tracking
+attribute :is_completed, :boolean, default: false
+attribute :completed_at, :datetime
+attribute :completed_by, :string  # Username, not FK
+
+# Response data
+attribute :response_note, :text
+attribute :response_photo_url, :string
+```
+
+❌ **NEVER:**
+- Share checklist items across tasks (each task gets own copies)
+- Allow checklist item deletion after task starts
+- Skip category validation (required for filtering)
+- Store User FK for completed_by (store username string for flexibility)
+
+**Why:**
+- Template-to-instance pattern allows reuse without coupling
+- Each task needs independent checklist completion tracking
+- Username string supports future external supervisor check-ins
+- Category grouping improves UX in mobile checklist views
+
+**File References:**
+- `/Users/rob/Projects/trapid/backend/app/models/supervisor_checklist_template.rb`
+- `/Users/rob/Projects/trapid/backend/app/models/project_task_checklist_item.rb`
+- `/Users/rob/Projects/trapid/backend/app/services/schedule/template_instantiator.rb`
+
+---
+
+## RULE #10.5: Response Type Validation & Photo Upload
+
+**Checklist items MUST validate response data based on response_type.**
+
+### Response Types
+
+```ruby
+# Valid response types:
+# - checkbox: Simple completion toggle
+# - photo: Requires photo upload
+# - note: Requires text response
+# - photo_and_note: Requires both photo AND note
+```
+
+### Validation Logic
+
+✅ **MUST validate before marking complete:**
+
+```ruby
+# app/models/project_task_checklist_item.rb
+validate :response_data_present, if: :is_completed?
+
+def response_data_present
+  case response_type
+  when 'checkbox'
+    # No additional data required
+  when 'photo'
+    errors.add(:response_photo_url, "required") if response_photo_url.blank?
+  when 'note'
+    errors.add(:response_note, "required") if response_note.blank?
+  when 'photo_and_note'
+    errors.add(:response_photo_url, "required") if response_photo_url.blank?
+    errors.add(:response_note, "required") if response_note.blank?
+  end
+end
+```
+
+### Photo Upload via Cloudinary
+
+✅ **MUST use Cloudinary for photo storage:**
+
+```ruby
+# Frontend component: SupervisorChecklistItemRow.jsx
+const uploadPhoto = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', 'supervisor_checklist'); // Cloudinary preset
+  formData.append('folder', `jobs/${jobId}/checklists`);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    { method: 'POST', body: formData }
+  );
+
+  const data = await response.json();
+  return data.secure_url; // Store this in response_photo_url
+};
+```
+
+❌ **NEVER:**
+- Allow completion without required response data
+- Store photos in Rails backend (use Cloudinary)
+- Skip folder organization in Cloudinary (use job-specific folders)
+- Allow checklist item updates after completion (completed_at is immutable)
+
+**Why:**
+- Response validation ensures documentation quality
+- Cloudinary provides CDN, image optimization, and unlimited storage
+- Job-specific folders enable easy bulk export/archival
+- Immutable completion data prevents tampering
+
+**File Reference:** `/Users/rob/Projects/trapid/frontend/src/components/schedule-master/SupervisorChecklistItemRow.jsx`
+
+---
+
+## RULE #10.6: Auto-Complete Predecessors Feature
+
+**Tasks with auto_complete_predecessors = true MUST auto-complete all predecessor tasks when marked complete.**
+
+### Feature Purpose
+
+This feature prevents blocking on forgotten prerequisite tasks. When a downstream task completes, it proves the upstream work is done.
+
+### Implementation
+
+✅ **MUST implement via callback:**
+
+```ruby
+# app/models/project_task.rb
+after_save :complete_predecessors, if: -> {
+  auto_complete_predecessors? &&
+  complete? &&
+  saved_change_to_status?
+}
+
+def complete_predecessors
+  predecessor_tasks = TaskDependency
+    .where(successor_task_id: id)
+    .includes(:predecessor_task)
+    .map(&:predecessor_task)
+
+  predecessor_tasks.each do |task|
+    next if task.complete?
+
+    task.update!(
+      status: :complete,
+      actual_end_date: Date.today,
+      progress_percentage: 100,
+      completion_notes: "Auto-completed by successor task: #{name}"
+    )
+  end
+end
+```
+
+### UI Indicator
+
+✅ **MUST show checkbox in task form:**
+
+```jsx
+// TaskEditModal.jsx
+<label className="flex items-center gap-2">
+  <input
+    type="checkbox"
+    checked={task.auto_complete_predecessors || false}
+    onChange={(e) => setTask({
+      ...task,
+      auto_complete_predecessors: e.target.checked
+    })}
+  />
+  <span>Auto-complete predecessor tasks when this task completes</span>
+  <Tooltip>
+    If enabled, marking this task complete will automatically complete
+    all tasks it depends on (proving they're done).
+  </Tooltip>
+</label>
+```
+
+❌ **NEVER:**
+- Auto-complete tasks with incomplete subtasks (check has_subtasks)
+- Skip audit trail (add completion_notes explaining auto-completion)
+- Allow infinite recursion (predecessors don't trigger their own predecessors)
+- Auto-complete milestones (they should be explicitly completed)
+
+**Why:**
+- Reduces admin burden for long dependency chains
+- Proves prerequisite work is complete (otherwise downstream couldn't finish)
+- Prevents blocker syndrome where 90% tasks stuck on forgotten 10% tasks
+- Completion notes provide transparency on why task auto-completed
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/models/project_task.rb` (lines 150-165)
+
+---
+
+## RULE #10.7: Materials Status Calculation
+
+**Tasks linked to purchase orders MUST calculate materials_status based on delivery vs start dates.**
+
+### Calculated Field
+
+This is a **calculated field** (not stored), returned in API responses:
+
+```ruby
+# app/models/project_task.rb
+def materials_status
+  return 'no_po' unless purchase_order
+
+  delivery_date = purchase_order.estimated_delivery_date
+  return 'no_po' unless delivery_date
+
+  if delivery_date <= planned_start_date
+    'on_time'
+  else
+    'delayed'
+  end
+end
+```
+
+### API Response
+
+✅ **MUST include in task serialization:**
+
+```ruby
+# app/controllers/api/v1/project_tasks_controller.rb
+def show
+  task = ProjectTask.find(params[:id])
+
+  render json: {
+    id: task.id,
+    name: task.name,
+    status: task.status,
+    planned_start_date: task.planned_start_date,
+    purchase_order_id: task.purchase_order_id,
+    materials_status: task.materials_status, # ← Include calculated field
+    # ... other fields
+  }
+end
+```
+
+### UI Indicators
+
+✅ **MUST show status badges:**
+
+```jsx
+// TaskRow.jsx
+const MaterialsBadge = ({ status }) => {
+  const badges = {
+    no_po: { text: 'No PO', color: 'gray' },
+    on_time: { text: 'Materials On Time', color: 'green' },
+    delayed: { text: 'Materials Delayed', color: 'red' }
+  };
+
+  const { text, color } = badges[status];
+
+  return (
+    <span className={`badge badge-${color}`}>
+      {text}
+    </span>
+  );
+};
+```
+
+❌ **NEVER:**
+- Store materials_status in database (always calculate)
+- Show materials status for tasks without critical_po flag
+- Allow task to start if materials_status = 'delayed' (warn user)
+- Skip materials check during schedule cascade calculations
+
+**Why:**
+- Real-time calculation prevents stale data
+- Prevents crew arriving on site without materials
+- Critical_po flag identifies tasks that MUST wait for deliveries
+- Early warning system for procurement delays
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/models/project_task.rb` (lines 180-195)
+
+---
+
+## RULE #10.8: Sequence Order for Task Display
+
+**Tasks MUST use decimal sequence_order to maintain parent-child proximity in sorted lists.**
+
+### Sequence Strategy
+
+```ruby
+# Normal tasks: Integer sequence (1, 2, 3, ...)
+# Spawned subtasks: Parent + 0.1 increments (2.1, 2.2, 2.3, ...)
+
+# Example:
+# 1.0 - Foundation
+# 2.0 - Framing
+#   2.1 - 📸 Photo - Framing  (spawned)
+#   2.2 - 📜 Certificate - Framing Structure (spawned)
+# 3.0 - Roofing
+#   3.1 - Install trusses (subtask)
+#   3.2 - Install sheets (subtask)
+#   3.3 - Install gutters (subtask)
+# 4.0 - Electrical
+```
+
+### Implementation
+
+✅ **MUST set sequence on creation:**
+
+```ruby
+# app/services/schedule/task_spawner.rb
+def spawn_subtasks(parent_task)
+  row = parent_task.schedule_template_row
+  return unless row&.has_subtasks
+
+  row.subtask_templates.each_with_index do |template, index|
+    ProjectTask.create!(
+      # ... other fields
+      sequence_order: parent_task.sequence_order + (index + 1) * 0.1,
+      parent_task: parent_task
+    )
+  end
+end
+
+# For new top-level tasks:
+def next_sequence_order(project)
+  max = project.tasks.maximum(:sequence_order) || 0
+  max.ceil + 1.0  # Always round up to next integer
+end
+```
+
+### Database Index
+
+✅ **MUST index for efficient sorting:**
+
+```ruby
+# db/migrate/..._add_sequence_order_to_project_tasks.rb
+add_column :project_tasks, :sequence_order, :decimal, precision: 10, scale: 2
+add_index :project_tasks, [:project_id, :sequence_order]
+```
+
+❌ **NEVER:**
+- Use random sequence numbers (breaks visual grouping)
+- Allow gaps larger than 1.0 between top-level tasks
+- Use sequence > 9.9 for subtasks (use 9 or fewer subtasks per parent)
+- Resort entire project when adding one task (use smart insertion)
+
+**Why:**
+- Decimal allows infinite insertion between existing tasks
+- Parent-child proximity improves UX (related tasks grouped)
+- Indexed sorting prevents N+1 queries on large task lists
+- Predictable ordering simplifies drag-and-drop reordering
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/db/schema.rb` (project_tasks table)
+
+---
+
+## RULE #10.9: Task Update Audit Trail
+
+**INCOMPLETE FEATURE - Task status/progress changes SHOULD be logged to TaskUpdate model for history tracking.**
+
+### Intended Design
+
+```ruby
+# app/models/task_update.rb (DOES NOT EXIST YET)
+class TaskUpdate < ApplicationRecord
+  belongs_to :project_task
+  belongs_to :user, optional: true
+
+  validates :update_type, inclusion: {
+    in: %w[status_change progress_update note_added assignment_changed]
+  }
+  validates :old_value, presence: true, if: -> { update_type.ends_with?('_change') }
+  validates :new_value, presence: true
+end
+
+# Intended usage:
+# app/models/project_task.rb
+after_save :log_status_change, if: :saved_change_to_status?
+
+def log_status_change
+  TaskUpdate.create!(
+    project_task: self,
+    user: Current.user,
+    update_type: 'status_change',
+    old_value: saved_change_to_status[0],
+    new_value: saved_change_to_status[1],
+    timestamp: Time.current
+  )
+end
+```
+
+### Current Status
+
+🔴 **NOT IMPLEMENTED:**
+- TaskUpdate model does not exist
+- No audit trail for task changes
+- No "activity feed" in task detail view
+- No rollback capability
+
+### Recommendation
+
+✅ **WHEN IMPLEMENTING:**
+- Create TaskUpdate model with polymorphic support (for checklist items too)
+- Log status changes, progress updates, assignment changes, note additions
+- Store Current.user for attribution
+- Add API endpoint: `GET /api/v1/project_tasks/:id/updates`
+- Show activity feed in TaskDetailModal
+
+❌ **DON'T:**
+- Log every field change (too noisy) - only status, progress, assignment, notes
+- Store full task snapshots (use old_value/new_value for changed field only)
+- Allow TaskUpdate deletion (immutable audit log)
+
+**Why this is important:**
+- Construction projects require detailed audit trails for disputes
+- Task history helps diagnose why deadlines were missed
+- User attribution prevents "who changed this?" mysteries
+- Supports compliance documentation
+
+**File Reference:** N/A (feature not implemented)
+
+---
+
+## RULE #10.10: Duration Days Validation
+
+**Tasks MUST have duration_days >= 1 (no zero-day or negative durations).**
+
+### Validation
+
+✅ **MUST validate:**
+
+```ruby
+# app/models/project_task.rb
+validates :duration_days, presence: true, numericality: {
+  greater_than_or_equal_to: 1,
+  only_integer: true
+}
+```
+
+### Calculation Impact
+
+```ruby
+# Planned end date calculation
+def planned_end_date
+  return nil unless planned_start_date && duration_days
+
+  planned_start_date + (duration_days - 1).days
+end
+
+# Example:
+# Start: Jan 1, Duration: 1 day → End: Jan 1 (same day)
+# Start: Jan 1, Duration: 3 days → End: Jan 3
+```
+
+❌ **NEVER:**
+- Allow duration_days = 0 (causes same-day start/end, confusing)
+- Allow negative durations (logically impossible)
+- Skip duration validation on updates
+- Use decimal durations (always integer days)
+
+**Why:**
+- Minimum 1-day duration prevents same-day confusion
+- Integer days simplify schedule calculations
+- Enforces realistic project planning
+- Prevents date calculation errors in cascade logic
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/models/project_task.rb` (validations)
+
+---
+
+## RULE #10.11: Tags System for Flexible Categorization
+
+**Tasks MAY use JSONB tags array for flexible categorization beyond category field.**
+
+### Schema
+
+```ruby
+# db/migrate/..._add_tags_to_project_tasks.rb
+add_column :project_tasks, :tags, :jsonb, default: []
+add_index :project_tasks, :tags, using: :gin
+```
+
+### Usage Patterns
+
+✅ **RECOMMENDED tag patterns:**
+
+```ruby
+# Trade-based tags
+tags: ['plumbing', 'electrical', 'carpentry']
+
+# Priority tags
+tags: ['urgent', 'client_facing', 'weather_dependent']
+
+# Location tags
+tags: ['first_floor', 'exterior', 'garage']
+
+# Custom workflow tags
+tags: ['requires_permit', 'council_inspection', 'engineer_signoff']
+```
+
+### Querying
+
+✅ **MUST use GIN index for efficient queries:**
+
+```ruby
+# Find tasks with specific tag
+ProjectTask.where("tags @> ?", ['urgent'].to_json)
+
+# Find tasks with any of multiple tags
+ProjectTask.where("tags ?| array[:tags]", tags: ['plumbing', 'electrical'])
+
+# Find tasks with all of multiple tags
+ProjectTask.where("tags @> ?", ['urgent', 'client_facing'].to_json)
+```
+
+### API Response
+
+✅ **MUST include tags in serialization:**
+
+```ruby
+# app/controllers/api/v1/project_tasks_controller.rb
+render json: {
+  id: task.id,
+  name: task.name,
+  tags: task.tags || [],  # Always return array, never nil
+  # ... other fields
+}
+```
+
+❌ **NEVER:**
+- Store tags as comma-separated string (use JSONB array)
+- Allow duplicate tags in array
+- Skip GIN index (queries will be slow)
+- Use tags for data that should be proper associations (e.g., don't tag "assigned_to_john", use assigned_to FK)
+
+**Why:**
+- JSONB + GIN index provides fast querying
+- Flexible categorization without schema changes
+- Supports custom workflows per company
+- Array structure prevents duplicates and simplifies frontend
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/db/schema.rb` (project_tasks.tags column)
+
+---
+
+## Protected Code Patterns
+
+### 1. Task Spawning Service
+
+**File:** `/Users/rob/Projects/trapid/backend/app/services/schedule/task_spawner.rb`
+
+**DO NOT modify these methods without understanding Schedule Master integration:**
+
+```ruby
+class Schedule::TaskSpawner
+  def spawn_photo_task(parent_task)
+    # Called when parent task marked complete
+  end
+
+  def spawn_certificate_task(parent_task)
+    # Called when parent task marked complete
+    # Respects certificate_lag_days from template
+  end
+
+  def spawn_subtasks(parent_task)
+    # Called when parent task marked in_progress
+    # Uses sequence_order for proper display ordering
+  end
+end
+```
+
+**Reason:** Task spawning is tightly coupled with Schedule Master template system. Changes here affect job instantiation.
+
+---
+
+### 2. Circular Dependency Check
+
+**File:** `/Users/rob/Projects/trapid/backend/app/models/task_dependency.rb`
+
+**DO NOT modify without graph theory expertise:**
+
+```ruby
+validate :no_circular_dependencies
+
+def no_circular_dependencies
+  visited = Set.new
+  check_circular(successor_task, visited)
+end
+
+private
+
+def check_circular(task, visited)
+  return if task.nil?
+
+  if visited.include?(task.id)
+    errors.add(:base, "Circular dependency detected")
+    return
+  end
+
+  visited.add(task.id)
+
+  task.predecessor_dependencies.each do |dep|
+    check_circular(dep.predecessor_task, visited.dup)
+  end
+end
+```
+
+**Reason:** Incorrect implementation causes infinite loops or missed circular references.
+
+---
+
+### 3. Template Instantiation
+
+**File:** `/Users/rob/Projects/trapid/backend/app/services/schedule/template_instantiator.rb`
+
+**DO NOT skip checklist item creation:**
+
+```ruby
+def create_checklist_items_for_task(project_task)
+  row = project_task.schedule_template_row
+  return unless row
+
+  row.supervisor_checklist_templates.each do |template|
+    ProjectTaskChecklistItem.create!(
+      project_task: project_task,
+      name: template.name,
+      # ... copy template fields
+    )
+  end
+end
+```
+
+**Reason:** This is the ONLY place checklists are instantiated. Skip this and jobs have no checklists.
+
+---
+
+## Summary
+
+Chapter 10 establishes 11 rules covering:
+
+1. **Task lifecycle** - Status flow and automatic date updates
+2. **Dependencies** - Circular dependency prevention and validation
+3. **Task spawning** - Automatic photo/certificate/subtask creation
+4. **Supervisor checklists** - Template-to-instance flow
+5. **Response validation** - Photo/note requirements per response type
+6. **Auto-completion** - Predecessor auto-complete feature
+7. **Materials tracking** - PO delivery vs task start comparison
+8. **Sequence ordering** - Decimal sequences for parent-child proximity
+9. **Audit trail** - (INCOMPLETE) Task update history
+10. **Duration validation** - Minimum 1-day duration requirement
+11. **Tags system** - JSONB array for flexible categorization
+
+These rules ensure tasks are properly validated, dependencies are safe, automated workflows function correctly, and checklists support field supervisor workflows.
 
 ---
 
