@@ -261,8 +261,17 @@ namespace :trapid do
         dev_notes.each do |note|
           content << "### #{note.bug_title}"
           content << ''
-          content << note.description if note.description.present?
-          content << ''
+
+          if note.description.present?
+            content << note.description
+            content << ''
+          end
+
+          if note.details.present?
+            content << note.details
+            content << ''
+          end
+
           content << '---'
           content << ''
         end
