@@ -1,7 +1,7 @@
 # TRAPID TEACHER - Implementation Patterns & Code Examples
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-17 08:08 AEST
+**Last Updated:** 2025-11-17 09:16 AEST
 **Authority Level:** Reference (HOW to implement Bible rules)
 **Audience:** Claude Code + Human Developers
 
@@ -7695,6 +7695,844 @@ How to implement inline column filters in table headers
 
 ---
 
+## §19.31: Data-Dense Table Layout
+
+🧩 Component
+
+### Description
+## §19.31: Data-Dense Table Layout Pattern
+
+📖 **Bible Rule:** TRAPID_BIBLE.md RULE #19.31
+
+### Quick Start
+
+```jsx
+<table className="w-full">
+  <thead>
+    <tr>
+      <th className="px-4 py-2.5 text-xs">Header</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td className="px-4 py-2.5 text-sm truncate overflow-hidden whitespace-nowrap" title="Full content">
+        Truncated content
+      </td>
+    </tr>
+  </tbody>
+</table>
+```
+
+### Full Implementation
+
+```jsx
+const DataDenseTable = ({ rows }) => {
+  const [expandedRows, setExpandedRows] = useState(new Set())
+
+  return (
+    <table className="w-full border-collapse">
+      <thead className="sticky top-0 backdrop-blur-md bg-white/95 dark:bg-gray-900/95">
+        <tr className="border-b border-gray-100 dark:border-gray-800">
+          <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600 dark:text-gray-400">
+            Name
+          </th>
+          <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600 dark:text-gray-400">
+            Description
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, index) => (
+          <tr
+            key={row.id}
+            className={`border-b cursor-pointer ${
+              index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-100 dark:bg-gray-800/30'
+            }`}
+            onClick={() => toggleRow(row.id)}
+          >
+            <td
+              className="px-4 py-2.5 text-sm truncate overflow-hidden whitespace-nowrap"
+              title={row.name}
+            >
+              {row.name}
+            </td>
+            <td
+              className="px-4 py-2.5 text-sm truncate overflow-hidden whitespace-nowrap"
+              title={row.description}
+            >
+              {row.description}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+```
+
+### Key Measurements
+
+| Element | Padding | Font Size |
+|---------|---------|-----------|
+| Header  | `py-2.5 px-4` | `text-xs` |
+| Cell    | `py-2.5 px-4` | `text-sm` |
+
+### Truncation Pattern
+
+```jsx
+<td
+  className="truncate overflow-hidden whitespace-nowrap"
+  title={fullContent} // Hover tooltip
+>
+  {fullContent}
+</td>
+```
+
+
+---
+
+## §19.32: Zebra Striping (Alternating Row Colors)
+
+🧩 Component
+
+### Description
+## §19.32: Zebra Striping Implementation
+
+📖 **Bible Rule:** TRAPID_BIBLE.md RULE #19.32
+
+### Quick Start
+
+```jsx
+<tbody>
+  {rows.map((row, index) => (
+    <tr
+      key={row.id}
+      className={`
+        border-b hover:bg-blue-50/40
+        ${index % 2 === 0
+          ? 'bg-white dark:bg-gray-900'
+          : 'bg-gray-100 dark:bg-gray-800/30'
+        }
+      `}
+    >
+      <td>{row.content}</td>
+    </tr>
+  ))}
+</tbody>
+```
+
+### Full Implementation with State
+
+```jsx
+const ZebraTable = ({ data }) => {
+  const [sortedData, setSortedData] = useState(data)
+
+  // Zebra pattern is maintained even after filtering/sorting
+  return (
+    <tbody>
+      {sortedData.map((row, index) => (
+        <tr
+          key={row.id}
+          className={`
+            group
+            border-b border-gray-100 dark:border-gray-800/50
+            hover:bg-blue-50/40 dark:hover:bg-gray-800/30
+            cursor-pointer
+            transition-all duration-150
+            ${index % 2 === 0
+              ? 'bg-white dark:bg-gray-900'
+              : 'bg-gray-100 dark:bg-gray-800/30'
+            }
+          `}
+        >
+          <td className="px-4 py-2.5">{row.content}</td>
+        </tr>
+      ))}
+    </tbody>
+  )
+}
+```
+
+### Color Palette
+
+| Row Type | Light Mode | Dark Mode |
+|----------|------------|-----------|
+| Even     | `bg-white` | `bg-gray-900` |
+| Odd      | `bg-gray-100` | `bg-gray-800/30` |
+| Hover    | `bg-blue-50/40` | `bg-gray-800/30` |
+
+### Common Mistakes
+
+❌ **Too subtle:**
+```jsx
+// BAD: Not enough contrast
+bg-gray-50/50 // Too light
+```
+
+✅ **Good contrast:**
+```jsx
+// GOOD: Clear visual separation
+bg-gray-100 // Solid color, good contrast
+```
+
+### When to Use
+
+- ✅ Wide tables (> 5 columns)
+- ✅ Tables with many rows (> 10 rows)
+- ✅ Tables requiring horizontal tracking
+- ❌ Small tables (< 5 columns)
+- ❌ Short lists (< 5 rows)
+
+
+---
+
+## §19.33: Sticky Horizontal Scrollbar
+
+🧩 Component
+
+### Description
+## §19.33: Sticky Horizontal Scrollbar Implementation
+
+📖 **Bible Rule:** TRAPID_BIBLE.md RULE #19.33
+
+### Quick Start
+
+```jsx
+const [tableScrollWidth, setTableScrollWidth] = useState(0)
+const scrollContainerRef = useRef(null)
+const stickyScrollbarRef = useRef(null)
+
+// Scroll sync handlers
+const handleScroll = (e) => {
+  if (stickyScrollbarRef.current) {
+    stickyScrollbarRef.current.scrollLeft = e.target.scrollLeft
+  }
+}
+
+const handleStickyScroll = (e) => {
+  if (scrollContainerRef.current) {
+    scrollContainerRef.current.scrollLeft = e.target.scrollLeft
+  }
+}
+
+return (
+  <div className="flex-1 min-h-0 flex flex-col">
+    {/* Scrollable table */}
+    <div ref={scrollContainerRef} onScroll={handleScroll}>
+      <table>...</table>
+    </div>
+
+    {/* Sticky scrollbar */}
+    <div
+      ref={stickyScrollbarRef}
+      onScroll={handleStickyScroll}
+      className="overflow-x-scroll border-t-2 flex-shrink-0"
+      style={{ height: '16px' }}
+    >
+      <div style={{ width: `${tableScrollWidth}px`, height: '100%' }} />
+    </div>
+  </div>
+)
+```
+
+### Full Implementation with ResizeObserver
+
+```jsx
+const StickyScrollbarTable = ({ data }) => {
+  const [tableScrollWidth, setTableScrollWidth] = useState(0)
+  const scrollContainerRef = useRef(null)
+  const stickyScrollbarRef = useRef(null)
+
+  // Track table scroll width dynamically
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const updateScrollbar = () => {
+      setTableScrollWidth(container.scrollWidth)
+    }
+
+    updateScrollbar()
+    const resizeObserver = new ResizeObserver(updateScrollbar)
+    resizeObserver.observe(container)
+
+    return () => resizeObserver.disconnect()
+  }, [data])
+
+  const handleScroll = (e) => {
+    if (stickyScrollbarRef.current) {
+      stickyScrollbarRef.current.scrollLeft = e.target.scrollLeft
+    }
+  }
+
+  const handleStickyScroll = (e) => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = e.target.scrollLeft
+    }
+  }
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col">
+      {/* Scrollable table container */}
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-scroll overflow-x-auto"
+      >
+        <table className="w-full">
+          {/* Table content */}
+        </table>
+      </div>
+
+      {/* Sticky horizontal scrollbar */}
+      <div
+        ref={stickyScrollbarRef}
+        onScroll={handleStickyScroll}
+        className="sticky-scroll overflow-x-scroll overflow-y-hidden border-t-2 border-gray-400 flex-shrink-0"
+        style={{
+          height: '16px',
+          backgroundColor: '#F3F4F6'
+        }}
+      >
+        <div style={{ width: `${Math.max(tableScrollWidth, 100)}px`, height: '100%' }} />
+      </div>
+    </div>
+  )
+}
+```
+
+### Custom Scrollbar Styling
+
+```css
+.sticky-scroll::-webkit-scrollbar {
+  -webkit-appearance: none !important;
+  height: 14px !important;
+}
+.sticky-scroll::-webkit-scrollbar-track {
+  background: #E5E7EB !important;
+  border-radius: 0 !important;
+}
+.sticky-scroll::-webkit-scrollbar-thumb {
+  background: #6B7280 !important;
+  border-radius: 4px !important;
+  border: 2px solid #E5E7EB !important;
+}
+.sticky-scroll::-webkit-scrollbar-thumb:hover {
+  background: #4B5563 !important;
+}
+```
+
+### Height Guidelines
+
+| Height | Use Case |
+|--------|----------|
+| 14px   | Minimum (hard to grab) |
+| 16px   | **Recommended** (balance) |
+| 20px   | Maximum (wastes space) |
+
+### Common Issues
+
+**Problem:** Scrollbar doesn't update width when columns resize
+
+**Solution:** Use ResizeObserver
+```jsx
+const resizeObserver = new ResizeObserver(() => {
+  setTableScrollWidth(container.scrollWidth)
+})
+```
+
+**Problem:** Scrollbar and table out of sync
+
+**Solution:** Use refs and sync both directions
+```jsx
+// Main → Sticky
+const handleScroll = (e) => {
+  stickyScrollbarRef.current.scrollLeft = e.target.scrollLeft
+}
+
+// Sticky → Main
+const handleStickyScroll = (e) => {
+  scrollContainerRef.current.scrollLeft = e.target.scrollLeft
+}
+```
+
+
+---
+
+## §19.34: Modern Table Header Aesthetics
+
+🧩 Component
+
+### Description
+## §19.34: Modern Table Header Implementation
+
+📖 **Bible Rule:** TRAPID_BIBLE.md RULE #19.34
+
+### Quick Start
+
+```jsx
+<thead className="sticky top-0 z-20 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-sm">
+  <tr className="border-b border-gray-100 dark:border-gray-800">
+    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600 dark:text-gray-400 tracking-wider">
+      Column Name
+    </th>
+  </tr>
+</thead>
+```
+
+### Full Modern Header
+
+```jsx
+<thead className="sticky top-0 z-20 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-sm">
+  <tr className="border-b border-gray-100 dark:border-gray-800">
+    <th
+      className="
+        px-4 py-2.5
+        text-left text-xs font-medium
+        text-gray-600 dark:text-gray-400
+        tracking-wider
+        hover:bg-blue-50/50 dark:hover:bg-gray-800/30
+        hover:text-gray-900 dark:hover:text-gray-100
+        transition-all
+        cursor-pointer
+      "
+      onClick={() => handleSort('columnKey')}
+    >
+      <div className="flex items-center gap-2">
+        <span>Column Name</span>
+        {sortBy === 'columnKey' && (
+          <ChevronUpIcon className={`w-4 h-4 ${sortDir === 'desc' ? 'rotate-180' : ''}`} />
+        )}
+      </div>
+    </th>
+  </tr>
+</thead>
+```
+
+### Glass-Morphism Effect
+
+**Key properties:**
+```jsx
+backdrop-blur-md          // Blur background content
+bg-white/95               // 95% opacity white
+dark:bg-gray-900/95       // 95% opacity dark gray
+shadow-sm                 // Subtle shadow for depth
+```
+
+### Typography Standards
+
+| Property | Value | Purpose |
+|----------|-------|---------|
+| Font size | `text-xs` | Compact, modern look |
+| Font weight | `font-medium` | Not too heavy |
+| Text color | `text-gray-600` | Subtle, not harsh |
+| Letter spacing | `tracking-wider` | Improves readability |
+
+### Color Palette
+
+| Element | Light Mode | Dark Mode |
+|---------|------------|-----------|
+| Background | `bg-white/95` | `bg-gray-900/95` |
+| Text | `text-gray-600` | `text-gray-400` |
+| Border | `border-gray-100` | `border-gray-800` |
+| Hover BG | `bg-blue-50/50` | `bg-gray-800/30` |
+| Hover Text | `text-gray-900` | `text-gray-100` |
+
+### Sticky Positioning
+
+```jsx
+<thead className="sticky top-0 z-20">
+  {/* z-20 ensures header stays above table rows */}
+</thead>
+```
+
+### Common Mistakes
+
+❌ **Heavy font weight:**
+```jsx
+// BAD: Too heavy
+font-bold font-semibold
+```
+
+✅ **Medium weight:**
+```jsx
+// GOOD: Balanced
+font-medium
+```
+
+❌ **Opaque background:**
+```jsx
+// BAD: Loses glass-morphism
+bg-white
+```
+
+✅ **Semi-transparent:**
+```jsx
+// GOOD: Modern glass effect
+bg-white/95
+```
+
+
+---
+
+## §19.35: Table Border Framing
+
+🧩 Component
+
+### Description
+## §19.35: Table Border Framing Implementation
+
+📖 **Bible Rule:** TRAPID_BIBLE.md RULE #19.35
+
+### Quick Start
+
+```jsx
+<table className="w-full border-collapse border-l border-r border-gray-200 dark:border-gray-700">
+  <thead>...</thead>
+  <tbody>...</tbody>
+</table>
+```
+
+### Full Implementation
+
+```jsx
+const FramedTable = ({ data }) => {
+  return (
+    <div className="w-full">
+      <table className="w-full border-collapse border-l border-r border-gray-200 dark:border-gray-700">
+        <thead className="border-b border-gray-200 dark:border-gray-700">
+          <tr>
+            <th className="px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
+              Column
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(row => (
+            <tr key={row.id} className="border-b border-gray-100 dark:border-gray-800">
+              <td className="px-4 py-2.5">{row.content}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+```
+
+### Border Hierarchy
+
+| Element | Border | Color (Light) | Color (Dark) |
+|---------|--------|---------------|--------------|
+| Table frame | `border-l border-r` | `border-gray-200` | `border-gray-700` |
+| Header row | `border-b` | `border-gray-200` | `border-gray-700` |
+| Body rows | `border-b` | `border-gray-100` | `border-gray-800` |
+
+### Why Border Framing?
+
+**Visual Container Boundary:**
+- Full-width layouts need clear edges
+- Tables spanning entire viewport need definition
+- Dark mode benefits from explicit boundaries
+
+**Before (no borders):**
+```
+[Sidebar] | Table content blends with page background
+```
+
+**After (with borders):**
+```
+[Sidebar] | | Table is clearly framed | Page background
+```
+
+### Complete Border Pattern
+
+```jsx
+<table className="
+  w-full
+  border-collapse
+  border-l border-r                          // Left/Right frame
+  border-gray-200 dark:border-gray-700       // Frame color
+">
+  <thead className="
+    border-b                                  // Bottom border
+    border-gray-200 dark:border-gray-700      // Header border
+  ">
+    <tr>
+      <th className="border-b border-gray-200 dark:border-gray-700">
+        Header
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr className="
+      border-b                                // Row separator
+      border-gray-100 dark:border-gray-800    // Lighter for rows
+    ">
+      <td>Content</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+### Common Mistakes
+
+❌ **Apply to container div:**
+```jsx
+// BAD: Border on wrapper
+<div className="border-l border-r">
+  <table>...</table>
+</div>
+```
+
+✅ **Apply to table element:**
+```jsx
+// GOOD: Border on table
+<table className="border-l border-r">
+  ...
+</table>
+```
+
+❌ **Only top/bottom borders:**
+```jsx
+// BAD: Incomplete framing
+<table className="border-t border-b">
+```
+
+✅ **Complete frame:**
+```jsx
+// GOOD: Full container boundary
+<table className="border-l border-r">
+```
+
+
+---
+
+## §19.36: Expand/Collapse Row Details
+
+🧩 Component
+
+### Description
+## §19.36: Expand/Collapse Row Details Pattern
+
+📖 **Bible Rule:** TRAPID_BIBLE.md RULE #19.36
+
+### Quick Start
+
+```jsx
+const [expandedRows, setExpandedRows] = useState(new Set())
+
+const toggleRow = (id) => {
+  setExpandedRows(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+}
+
+return (
+  <tbody>
+    {rows.map(row => (
+      <React.Fragment key={row.id}>
+        <tr onClick={() => toggleRow(row.id)}>
+          <td>{expandedRows.has(row.id) ? '▼' : '▶'}</td>
+          <td>{row.summary}</td>
+        </tr>
+        {expandedRows.has(row.id) && (
+          <tr>
+            <td colSpan={columns.length}>
+              <pre>{row.details}</pre>
+            </td>
+          </tr>
+        )}
+      </React.Fragment>
+    ))}
+  </tbody>
+)
+```
+
+### Full Implementation
+
+```jsx
+const ExpandableTable = ({ data, columns }) => {
+  const [expandedRows, setExpandedRows] = useState(new Set())
+  const [visibleColumns, setVisibleColumns] = useState(['col1', 'col2', 'col3'])
+
+  const toggleRow = (id) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  return (
+    <table className="w-full">
+      <thead>
+        <tr>
+          <th className="w-12">Expand</th>
+          {visibleColumns.map(col => (
+            <th key={col}>{col}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((row, index) => (
+          <React.Fragment key={row.id}>
+            {/* Main row - clickable */}
+            <tr
+              onClick={() => toggleRow(row.id)}
+              className={`
+                cursor-pointer
+                hover:bg-blue-50/40 dark:hover:bg-gray-800/30
+                ${index % 2 === 0 ? 'bg-white' : 'bg-gray-100'}
+              `}
+            >
+              <td className="text-center">
+                <span className="text-gray-600">
+                  {expandedRows.has(row.id) ? '▼' : '▶'}
+                </span>
+              </td>
+              {visibleColumns.map(col => (
+                <td key={col} className="truncate overflow-hidden whitespace-nowrap">
+                  {row[col]}
+                </td>
+              ))}
+            </tr>
+
+            {/* Expanded details row */}
+            {expandedRows.has(row.id) && (
+              <tr className="bg-blue-50/20 dark:bg-gray-800/10">
+                <td colSpan={visibleColumns.length + 1} className="px-6 py-6">
+                  <div className="prose dark:prose-invert max-w-none text-sm">
+                    {/* Metadata */}
+                    <div className="mb-2 flex items-center gap-2 text-xs text-gray-500">
+                      <span>ID: {row.id}</span>
+                      <span>•</span>
+                      <span>Created: {row.created_at}</span>
+                    </div>
+
+                    {/* Detailed content */}
+                    <pre className="
+                      whitespace-pre-wrap text-xs
+                      bg-white dark:bg-gray-900
+                      p-4 rounded-lg
+                      border border-gray-100 dark:border-gray-700
+                      overflow-auto shadow-sm
+                    ">
+                      {row.detailedContent}
+                    </pre>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </React.Fragment>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+```
+
+### Set vs Array for Expansion State
+
+**✅ Use Set (Fast O(1) lookup):**
+```jsx
+const [expandedRows, setExpandedRows] = useState(new Set())
+
+// Check if expanded: O(1)
+expandedRows.has(row.id)
+
+// Toggle: O(1)
+const next = new Set(prev)
+next.has(id) ? next.delete(id) : next.add(id)
+```
+
+**❌ Use Array (Slow O(n) lookup):**
+```jsx
+const [expandedRows, setExpandedRows] = useState([])
+
+// Check if expanded: O(n) - SLOW!
+expandedRows.includes(row.id)
+
+// Toggle: O(n) - SLOW!
+expandedRows.includes(id)
+  ? expandedRows.filter(i => i !== id)
+  : [...expandedRows, id]
+```
+
+### Click Event Handling
+
+**✅ Entire row clickable:**
+```jsx
+<tr onClick={() => toggleRow(row.id)}>
+  <td>{expandIcon}</td>
+  <td onClick={(e) => e.stopPropagation()}>
+    <button>Action</button> {/* Stops propagation */}
+  </td>
+</tr>
+```
+
+**❌ Only icon clickable:**
+```jsx
+// BAD: Small touch target, bad UX
+<tr>
+  <td onClick={() => toggleRow(row.id)}>{expandIcon}</td>
+  <td>{content}</td>
+</tr>
+```
+
+### colSpan for Full-Width Details
+
+**✅ Correct (spans all columns):**
+```jsx
+<tr>
+  <td colSpan={visibleColumns.length + 1}> {/* +1 for expand column */}
+    <pre>{details}</pre>
+  </td>
+</tr>
+```
+
+**❌ Missing colSpan:**
+```jsx
+// BAD: Content constrained to first column
+<tr>
+  <td>
+    <pre>{details}</pre>
+  </td>
+</tr>
+```
+
+### Visual Separation
+
+```jsx
+<tr className="bg-blue-50/20 dark:bg-gray-800/10 border-b border-gray-50">
+  <td colSpan={columns.length}>
+    {/* Different background clearly shows expanded state */}
+  </td>
+</tr>
+```
+
+### Icons
+
+| State | Icon | Unicode |
+|-------|------|---------|
+| Collapsed | ▶ | `\u25B6` |
+| Expanded | ▼ | `\u25BC` |
+
+Or use Heroicons:
+```jsx
+import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
+
+{expandedRows.has(row.id)
+  ? <ChevronDownIcon className="w-4 h-4" />
+  : <ChevronRightIcon className="w-4 h-4" />
+}
+```
+
+
+---
+
 ## §19.4: Column Resizing Pattern
 
 🧩 Component
@@ -7728,6 +8566,102 @@ Pattern for eye icon dropdown to show/hide columns
 
 ---
 
+## §19.6: Scroll Behavior Implementation
+
+🧩 Component
+
+### Description
+## §19.6: Scroll Behavior Standards Implementation
+
+📖 **Bible Rule:** TRAPID_BIBLE.md RULE #19.6
+
+### Container Pattern
+
+Use flex layout with proper overflow handling:
+
+```jsx
+<div className="flex-1 min-h-0 flex flex-col">
+  <div
+    ref={scrollContainerRef}
+    onScroll={handleScroll}
+    className="flex-1 overflow-y-scroll overflow-x-auto"
+  >
+    <table>...</table>
+  </div>
+</div>
+```
+
+**Key Points:**
+- `flex-1 min-h-0 flex flex-col` on container (critical for proper scrolling)
+- `overflow-y-scroll overflow-x-auto` on scrollable area
+- `min-h-0` prevents flex children from overflowing
+
+### Scroll Sync Pattern
+
+Sync horizontal scroll between main container and sticky scrollbar:
+
+```jsx
+const handleScroll = (e) => {
+  const { scrollLeft } = e.target
+  if (stickyScrollbarRef.current) {
+    stickyScrollbarRef.current.scrollLeft = scrollLeft
+  }
+}
+
+const handleStickyScroll = (e) => {
+  if (scrollContainerRef.current) {
+    scrollContainerRef.current.scrollLeft = e.target.scrollLeft
+  }
+}
+```
+
+### ResizeObserver for Dynamic Updates
+
+```jsx
+useEffect(() => {
+  const container = scrollContainerRef.current
+  if (!container) return
+
+  const updateScrollbar = () => {
+    const { scrollWidth } = container
+    setTableScrollWidth(scrollWidth)
+  }
+
+  updateScrollbar()
+  const resizeObserver = new ResizeObserver(updateScrollbar)
+  resizeObserver.observe(container)
+
+  return () => resizeObserver.disconnect()
+}, [filteredData, columnWidths])
+```
+
+### Custom Scrollbar Styling
+
+```css
+.custom-scroll::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: #F3F4F6;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #9CA3AF;
+  border-radius: 8px;
+}
+```
+
+**Firefox support:**
+```css
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #9CA3AF #E5E7EB;
+}
+```
+
+
+---
+
 ## §19.9: Row Selection Pattern
 
 🧩 Component
@@ -7736,6 +8670,406 @@ Pattern for eye icon dropdown to show/hide columns
 
 ### Quick Summary
 Pattern for checkbox-based row selection with bulk actions
+
+---
+
+## §19.31: Data-Dense Table Layout
+
+⚡ Optimization
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.31
+
+### Quick Summary
+Compact table layout for displaying many rows without excessive scrolling
+
+### Full Implementation
+
+**Row Padding:**
+```jsx
+// Compact data rows
+<tr className="py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800">
+  <td className="px-4 py-2.5">...</td>
+</tr>
+
+// Compact header
+<th className="px-4 py-2.5 text-xs font-medium">...</th>
+```
+
+**Cell Truncation:**
+```jsx
+<td
+  className="px-4 py-2.5 truncate overflow-hidden whitespace-nowrap max-w-[200px]"
+  title={fullContent}
+>
+  {fullContent}
+</td>
+```
+
+**Expand for Full Content:**
+```jsx
+const [expandedRows, setExpandedRows] = useState(new Set())
+
+// Toggle expand on row click
+<tr onClick={() => toggleExpand(row.id)}>
+
+// Show full content when expanded
+{expandedRows.has(row.id) && (
+  <tr>
+    <td colSpan={visibleColumns.length} className="px-4 py-3 bg-gray-50 dark:bg-gray-800">
+      <div className="whitespace-pre-wrap">{fullContent}</div>
+    </td>
+  </tr>
+)}
+```
+
+### Common Mistakes
+- Using `py-6` padding (too spacious for data-dense tables)
+- Forgetting `title` attribute on truncated cells (no tooltip)
+- Not providing expansion mechanism for full content
+
+### When to Use
+- Data-heavy tables with > 50 rows
+- Dashboard views where screen space is limited
+- Tables with many columns that need horizontal scrolling
+- Lexicon/documentation tables with code snippets
+
+---
+
+## §19.32: Zebra Striping Pattern
+
+🧩 Component
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.32
+
+### Quick Summary
+Alternating row colors to improve horizontal tracking in wide tables
+
+### Full Implementation
+
+**Basic Pattern:**
+```jsx
+{filteredData.map((row, index) => (
+  <tr
+    key={row.id}
+    className={`
+      ${index % 2 === 0
+        ? 'bg-white dark:bg-gray-900'
+        : 'bg-gray-100 dark:bg-gray-800/30'
+      }
+      hover:bg-blue-50 dark:hover:bg-blue-900/20
+    `}
+  >
+    ...
+  </tr>
+))}
+```
+
+**With Row Selection:**
+```jsx
+className={`
+  ${index % 2 === 0
+    ? 'bg-white dark:bg-gray-900'
+    : 'bg-gray-100 dark:bg-gray-800/30'
+  }
+  ${selectedRows.has(row.id)
+    ? 'bg-indigo-50 dark:bg-indigo-900/20'
+    : ''
+  }
+  hover:bg-blue-50 dark:hover:bg-blue-900/20
+`}
+```
+
+### Common Mistakes
+- Using too subtle opacity like `bg-gray-50/50` (insufficient contrast)
+- Removing zebra striping on hover (both should be visible)
+- Applying zebra to header rows
+- Using zebra on narrow tables with < 5 columns (unnecessary)
+
+### When to Use
+- Wide tables with > 7 columns
+- Tables where horizontal eye tracking is difficult
+- Data-dense layouts with compact row spacing
+
+### When NOT to Use
+- Narrow tables with < 5 columns
+- Tables with very few rows (< 10)
+- Tables where every other row has visual grouping already
+
+---
+
+## §19.33: Sticky Horizontal Scrollbar
+
+🧩 Component
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.33
+
+### Quick Summary
+Always-visible scrollbar at bottom of table viewport for wide tables
+
+### Full Implementation
+
+**Setup Refs:**
+```jsx
+const tableContainerRef = useRef(null)
+const stickyScrollbarRef = useRef(null)
+const [scrollWidth, setScrollWidth] = useState(0)
+```
+
+**Sync Scroll Events:**
+```jsx
+const handleTableScroll = (e) => {
+  if (stickyScrollbarRef.current) {
+    stickyScrollbarRef.current.scrollLeft = e.target.scrollLeft
+  }
+}
+
+const handleStickyScroll = (e) => {
+  if (tableContainerRef.current) {
+    tableContainerRef.current.scrollLeft = e.target.scrollLeft
+  }
+}
+```
+
+**Track Width with ResizeObserver:**
+```jsx
+useEffect(() => {
+  const table = tableContainerRef.current?.querySelector('table')
+  if (!table) return
+
+  const resizeObserver = new ResizeObserver((entries) => {
+    for (let entry of entries) {
+      setScrollWidth(entry.target.scrollWidth)
+    }
+  })
+
+  resizeObserver.observe(table)
+  return () => resizeObserver.disconnect()
+}, [])
+```
+
+**Render Sticky Scrollbar:**
+```jsx
+<div className="flex flex-col flex-1 min-h-0">
+  {/* Main table container */}
+  <div
+    ref={tableContainerRef}
+    onScroll={handleTableScroll}
+    className="flex-1 overflow-auto"
+  >
+    <table>...</table>
+  </div>
+
+  {/* Sticky scrollbar */}
+  <div
+    ref={stickyScrollbarRef}
+    onScroll={handleStickyScroll}
+    className="overflow-x-auto overflow-y-hidden border-t-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
+    style={{ height: '16px' }}
+  >
+    <div style={{ width: `${scrollWidth}px`, height: '1px' }} />
+  </div>
+</div>
+```
+
+### Common Mistakes
+- Making scrollbar taller than 20px (wastes vertical space)
+- Making scrollbar shorter than 14px (hard to grab on touch devices)
+- Forgetting to sync scrollLeft bidirectionally
+- Not using ResizeObserver (scrollbar width won't update on column resize)
+
+### Testing Strategy
+- Test column resizing updates scrollbar width
+- Test scrolling main container updates sticky scrollbar
+- Test scrolling sticky scrollbar updates main container
+- Test on mobile/tablet touch devices
+
+---
+
+## §19.34: Modern Table Header Styling
+
+🧩 Component
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.34
+
+### Quick Summary
+Glass-morphism effect for modern, clean table headers
+
+### Full Implementation
+
+```jsx
+<thead className="sticky top-0 z-10 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-sm border-b border-gray-100 dark:border-gray-800">
+  <tr>
+    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600 dark:text-gray-400 tracking-wider">
+      Column Name
+    </th>
+  </tr>
+</thead>
+```
+
+**Breakdown of Classes:**
+- `backdrop-blur-md` - Glass-morphism blur effect
+- `bg-white/95 dark:bg-gray-900/95` - Semi-transparent background (95% opacity)
+- `shadow-sm` - Subtle shadow for depth
+- `border-b border-gray-100 dark:border-gray-800` - Thin bottom border
+- `text-xs` - Smaller font size
+- `font-medium` - Medium weight (not bold)
+- `text-gray-600 dark:text-gray-400` - Subtle text color
+- `tracking-wider` - Increased letter spacing
+
+### Common Mistakes
+- Using `bg-white` instead of `bg-white/95` (loses glass effect)
+- Using `font-bold` or `font-semibold` (too heavy)
+- Forgetting dark mode variants
+- Using bright or saturated header colors
+
+### Visual Effect
+The semi-transparent background with backdrop blur creates a modern "frosted glass" effect where content scrolling beneath the sticky header is slightly visible but blurred.
+
+---
+
+## §19.35: Table Border Framing
+
+🧩 Component
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.35
+
+### Quick Summary
+Complete border frame for full-width tables to provide visual container
+
+### Full Implementation
+
+```jsx
+<table className="w-full border-l border-r border-gray-200 dark:border-gray-700">
+  <thead>...</thead>
+  <tbody>...</tbody>
+</table>
+```
+
+**Why Left/Right Borders Matter:**
+
+Without borders:
+```
+┌─────────────────────────────┐
+│ [Content blends with page]  │
+│ No clear table boundary     │
+└─────────────────────────────┘
+```
+
+With border framing:
+```
+┌─────────────────────────────┐
+│ ┌─────────────────────────┐ │
+│ │  Clear table boundary   │ │
+│ └─────────────────────────┘ │
+└─────────────────────────────┘
+```
+
+### When Critical
+- Full-width layouts without sidebar margins
+- Tables spanning entire viewport width
+- Dark mode where table edges blend with background
+- Data-dense tables where visual containment helps focus
+
+### Common Mistakes
+- Applying borders to container `<div>` instead of `<table>` element
+- Using only `border-b` or `border-t` (incomplete framing)
+- Skipping borders entirely on full-width tables
+
+---
+
+## §19.36: Expand/Collapse Row Details
+
+🧩 Component
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.36
+
+### Quick Summary
+Row expansion pattern for showing detailed content in tables
+
+### Full Implementation
+
+**State Management:**
+```jsx
+const [expandedRows, setExpandedRows] = useState(new Set())
+
+const toggleExpand = (id) => {
+  setExpandedRows(prev => {
+    const next = new Set(prev)
+    if (next.has(id)) {
+      next.delete(id)
+    } else {
+      next.add(id)
+    }
+    return next
+  })
+}
+```
+
+**Render Pattern:**
+```jsx
+{filteredData.map((row, index) => (
+  <React.Fragment key={row.id}>
+    {/* Main row */}
+    <tr
+      onClick={() => toggleExpand(row.id)}
+      className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+    >
+      <td className="px-4 py-2.5">
+        <span className="text-gray-400 dark:text-gray-600">
+          {expandedRows.has(row.id) ? '▼' : '▶'}
+        </span>
+      </td>
+      <td className="px-4 py-2.5">{row.title}</td>
+      {/* ... other columns */}
+    </tr>
+
+    {/* Expanded detail row */}
+    {expandedRows.has(row.id) && (
+      <tr className="bg-blue-50/20 dark:bg-gray-800/10">
+        <td colSpan={visibleColumns.length} className="px-8 py-4">
+          <div className="space-y-2">
+            <div className="text-xs text-gray-500">
+              Line {row.lineNumber} • Chapter {row.chapter}
+            </div>
+            <pre className="bg-gray-900 dark:bg-gray-950 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
+              {row.code}
+            </pre>
+          </div>
+        </td>
+      </tr>
+    )}
+  </React.Fragment>
+))}
+```
+
+**Click Event Handling:**
+```jsx
+// Stop propagation on nested interactive elements
+<button onClick={(e) => {
+  e.stopPropagation()
+  handleEdit(row)
+}}>
+  Edit
+</button>
+```
+
+### Common Mistakes
+- Making only icon clickable (bad UX, small touch target)
+- Forgetting `colSpan={visibleColumns.length}` (content constrained to first column)
+- Using array instead of Set for expandedRows (slow lookup for large datasets)
+- Not handling click propagation on nested buttons/links
+- Expanding row inline without visual separation
+
+### Performance Notes
+- Use `Set` for O(1) lookup instead of array O(n) lookup
+- Use `React.Fragment` to avoid extra DOM nesting
+- Consider virtualization for > 1000 rows with expansions
+
+### Testing Strategy
+- Test clicking entire row toggles expansion
+- Test nested buttons don't trigger row expansion
+- Test keyboard navigation (Enter/Space to expand)
+- Test with filtered/sorted data maintains expansion state
 
 ---
 
@@ -8080,7 +9414,7 @@ const getAgentIcon = (agentName) => {
 ---
 
 
-**Last Generated:** 2025-11-17 08:08 AEST
+**Last Generated:** 2025-11-17 09:16 AEST
 **Generated By:** `rake trapid:export_teacher`
 **Maintained By:** Development Team via Database UI
 **Review Schedule:** After adding new patterns or updating examples

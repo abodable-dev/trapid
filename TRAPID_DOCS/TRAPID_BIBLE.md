@@ -228,64 +228,76 @@ If you see error X, do Y
 
 ---
 
-### Example: Table Component Design
+### Example: Data-Dense Table Layout
 
-**Question:** "I want to document how to build a table with sorting and filtering"
+**Question:** "I want to implement a compact table for displaying lots of documentation entries"
 
-**Bible (RULE #19.1):**
+**Bible (RULE #19.31):**
 ```markdown
-✅ MUST ask user which table type:
-1. DataTable.jsx (read-only)
-2. Advanced table (edit, bulk actions)
+✅ MUST use compact layout for data-heavy tables:
+- Compact padding on rows and headers
+- Cell truncation with hover tooltips
+- Row expansion for full content
 
-❌ NEVER create table without column resizing
-❌ NEVER create table without dark mode support
+❌ NEVER:
+- Use spacious padding (py-6) for data-dense tables
+- Skip expansion mechanism for truncated content
 
-See: TRAPID_TEACHER.md §19.1 for implementation
+See: TRAPID_TEACHER.md §19.31 for implementation
 ```
 
-**Teacher (§19.1):**
+**Teacher (§19.31):**
 ```markdown
-## §19.1: Advanced Table Pattern
+## §19.31: Data-Dense Table Layout
 
-### Full Code Example
+### Full Implementation
+
+**Row Padding:**
 ```jsx
-import AdvancedTable from '@/components/shared/AdvancedTable'
+// Compact data rows
+<tr className="py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800">
+  <td className="px-4 py-2.5">...</td>
+</tr>
 
-const MyTable = () => (
-  <AdvancedTable
-    data={items}
-    columns={columns}
-    onRowClick={handleRowClick}
-  />
-)
+// Compact header
+<th className="px-4 py-2.5 text-xs font-medium">...</th>
+```
+
+**Cell Truncation:**
+```jsx
+<td
+  className="px-4 py-2.5 truncate overflow-hidden whitespace-nowrap max-w-[200px]"
+  title={fullContent}
+>
+  {fullContent}
+</td>
 ```
 
 ### Common Mistakes
-- Forgetting to add `key` prop to columns
-- Not handling empty state
+- Using py-6 padding (too spacious for data-dense tables)
+- Forgetting title attribute on truncated cells (no tooltip)
 
-### Testing Strategy
-- Test sorting with 100+ rows
-- Test filter combinations
+### When to Use
+- Data-heavy tables with > 50 rows
+- Dashboard views where screen space is limited
 ```
 
 **Lexicon (Chapter 19 Bug Entry):**
 ```markdown
-Title: "Table filter dropdown showed stale data"
-Scenario: User changed chapter filter, saw old results
-Root Cause: Filter state not clearing on unmount
-Solution: Added useEffect cleanup
-Why This Matters: All filterable tables must clear state
+Title: "Data-dense table rows too spacious"
+Scenario: Documentation table showed only 10 rows per screen
+Root Cause: Used default py-6 padding instead of compact py-2.5
+Solution: Applied RULE #19.31 compact layout pattern
+Why This Matters: Data-dense tables need minimal padding for maximum row visibility
 ```
 
 **User Manual (Chapter 19):**
 ```markdown
-## How to Filter the Table
+## Viewing Table Details
 
-1. Click the dropdown in the column header
-2. Select your filter value
-3. Click "Clear Filters" to reset
+- Hover over any cell to see the full text in a tooltip
+- Click a row to expand and see complete details
+- Click again to collapse
 ```
 
 ---
@@ -4221,35 +4233,6 @@ This chapter defines ALL UI/UX patterns for Trapid. Every interactive element MU
 - Custom scrollbar styling via webkit pseudo-elements
 - Thin scrollbars: `scrollbar-width: thin` for Firefox
 
-**Container pattern:**
-```jsx
-<div className="flex-1 min-h-0 flex flex-col">
-  <div
-    ref={scrollContainerRef}
-    onScroll={handleScroll}
-    className="flex-1 overflow-y-scroll overflow-x-auto"
-  >
-    <table>...</table>
-  </div>
-</div>
-```
-
-**Scroll sync pattern:**
-```jsx
-const handleScroll = (e) => {
-  const { scrollLeft } = e.target
-  if (stickyScrollbarRef.current) {
-    stickyScrollbarRef.current.scrollLeft = scrollLeft
-  }
-}
-
-const handleStickyScroll = (e) => {
-  if (scrollContainerRef.current) {
-    scrollContainerRef.current.scrollLeft = e.target.scrollLeft
-  }
-}
-```
-
 ❌ **NEVER:**
 - Use `overflow: hidden` on flex containers (prevents scrolling)
 - Forget `min-h-0` on flex children (causes overflow issues)
@@ -4587,19 +4570,14 @@ const handleStickyScroll = (e) => {
 
 ## RULE #19.31: Data-Dense Table Layout Pattern
 
-✅ **MUST implement for data-heavy tables:**
-- Compact row padding: `py-2.5` (not `py-6`)
-- Compact header padding: `py-2.5` (not `py-4`)
-- Horizontal padding: `px-4` (balance between dense and readable)
-- Single-line cell truncation: `truncate overflow-hidden whitespace-nowrap`
-- Click entire row to expand for full content
-- Hover tooltips via `title` attribute on truncated cells
+✅ **MUST use compact layout for data-heavy tables:**
+- Compact padding on rows and headers
+- Cell truncation with hover tooltips
+- Row expansion for full content
 
 ❌ **NEVER:**
-- Use `py-6` or larger padding for data-dense tables
-- Allow multi-line cells without truncation option
-- Forget to provide expand mechanism for truncated content
-- Skip title attributes on truncated cells
+- Use spacious padding (`py-6`) for data-dense tables
+- Skip expansion mechanism for truncated content
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.31](TRAPID_TEACHER.md#1931-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
@@ -4610,18 +4588,15 @@ const handleStickyScroll = (e) => {
 
 ## RULE #19.32: Zebra Striping (Alternating Row Colors)
 
-✅ **MUST use for horizontal tracking in wide tables:**
-- Even rows: `bg-white dark:bg-gray-900`
-- Odd rows: `bg-gray-100 dark:bg-gray-800/30`
-- Ensure sufficient contrast (`bg-gray-100`, not `bg-gray-50/50`)
-- Maintain zebra pattern when filtering/sorting
-- Calculate using: `index % 2 === 0 ? 'even-styles' : 'odd-styles'`
+✅ **MUST use zebra striping for wide tables (> 7 columns):**
+- Alternating row colors for horizontal tracking
+- Sufficient contrast in both light and dark modes
+- Maintain pattern when filtering/sorting
 
 ❌ **NEVER:**
-- Use too subtle opacity (`bg-gray-50/50` is insufficient)
-- Remove zebra striping on hover (both should be visible)
-- Apply zebra to header rows
-- Use zebra striping on tables with < 5 columns (unnecessary)
+- Use too subtle colors (insufficient contrast)
+- Remove zebra on hover (both should be visible)
+- Use zebra on narrow tables (< 5 columns)
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.32](TRAPID_TEACHER.md#1932-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
@@ -4633,38 +4608,14 @@ const handleStickyScroll = (e) => {
 ## RULE #19.33: Sticky Horizontal Scrollbar
 
 ✅ **MUST implement for wide tables (> viewport width):**
-- Always-visible horizontal scrollbar at bottom of table viewport
-- Height: `16px` (balance visibility and space efficiency)
-- Synced scroll with main table container via refs
-- Border-top to separate from content: `border-t-2`
-- Fixed position at bottom: `flex-shrink-0`
-- Update scrollWidth via `ResizeObserver`
-
-**Implementation pattern:**
-```jsx
-// Container with flex layout
-<div className="flex-1 min-h-0 flex flex-col">
-  {/* Scrollable table */}
-  <div ref={scrollContainerRef} onScroll={handleScroll}>
-    <table>...</table>
-  </div>
-
-  {/* Sticky scrollbar */}
-  <div
-    ref={stickyScrollbarRef}
-    onScroll={handleStickyScroll}
-    style={{ height: '16px' }}
-  >
-    <div style={{ width: `${tableScrollWidth}px` }} />
-  </div>
-</div>
-```
+- Always-visible horizontal scrollbar at bottom of viewport
+- Bidirectional scroll sync with main table container
+- Dynamic width updates via ResizeObserver
 
 ❌ **NEVER:**
-- Make scrollbar taller than 20px (wastes space)
-- Make scrollbar shorter than 14px (hard to grab)
-- Forget to sync scrollLeft between container and sticky scrollbar
-- Skip ResizeObserver (scrollbar won't update on column resize)
+- Make scrollbar taller than 20px or shorter than 14px
+- Skip bidirectional scroll sync
+- Skip ResizeObserver (won't update on column resize)
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.33](TRAPID_TEACHER.md#1933-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
@@ -4675,20 +4626,15 @@ const handleStickyScroll = (e) => {
 
 ## RULE #19.34: Modern Table Header Aesthetics
 
-✅ **MUST apply for modern, clean table design:**
-- Backdrop blur: `backdrop-blur-md`
-- Semi-transparent background: `bg-white/95 dark:bg-gray-900/95`
-- Subtle shadow: `shadow-sm`
-- Thin border-bottom: `border-b border-gray-100 dark:border-gray-800`
-- Smaller font size: `text-xs`
-- Medium weight: `font-medium` (not `font-semibold` or `font-bold`)
-- Subtle text color: `text-gray-600 dark:text-gray-400`
-- Wider letter spacing: `tracking-wider`
+✅ **MUST apply glass-morphism effect to table headers:**
+- Semi-transparent background with backdrop blur
+- Subtle shadow and borders
+- Small font size with medium weight
+- Subtle colors in light and dark modes
 
 ❌ **NEVER:**
-- Use solid opaque backgrounds (loses modern glass-morphism effect)
+- Use solid opaque backgrounds (loses modern effect)
 - Use heavy font weights (`font-bold`, `font-semibold`)
-- Forget dark mode variants on all colors
 - Use bright or saturated header colors
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.34](TRAPID_TEACHER.md#1934-)
@@ -4701,20 +4647,14 @@ const handleStickyScroll = (e) => {
 ## RULE #19.35: Table Border Framing
 
 ✅ **MUST add complete border framing for full-width tables:**
-- Left border: `border-l`
-- Right border: `border-r`
-- Border color: `border-gray-200 dark:border-gray-700`
-- Applied to `<table>` element (not container)
-
-**Why:** Provides visual container boundary for tables, especially important for:
-- Full-width layouts without sidebar margins
-- Tables that span entire viewport
-- Dark mode where table edges blend with background
+- Left and right borders on `<table>` element
+- Consistent border colors in light and dark modes
+- Provides visual container boundary
 
 ❌ **NEVER:**
 - Skip borders on full-width tables
-- Use border-b or border-t only (incomplete framing)
-- Apply to container div instead of table element
+- Use incomplete framing (border-b or border-t only)
+- Apply borders to container div instead of table element
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.35](TRAPID_TEACHER.md#1935-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
@@ -4726,46 +4666,16 @@ const handleStickyScroll = (e) => {
 ## RULE #19.36: Expand/Collapse Row Details Pattern
 
 ✅ **MUST implement for tables with detailed content:**
-- Expand icon in first column: `▶` (collapsed) / `▼` (expanded)
-- Click entire row to toggle expansion (not just icon)
-- Expanded row spans all columns: `colSpan={visibleColumns.length}`
-- Different background for expanded content: `bg-blue-50/20 dark:bg-gray-800/10`
-- Show metadata in expanded view (line number, chapter, timestamp, etc.)
-- Code/content in `<pre>` with proper formatting and scrolling
-- Track expansion state with `Set` data structure (efficient lookup)
-
-**Implementation pattern:**
-```jsx
-const [expandedRows, setExpandedRows] = useState(new Set())
-
-const toggleRow = (id) => {
-  setExpandedRows(prev => {
-    const next = new Set(prev)
-    next.has(id) ? next.delete(id) : next.add(id)
-    return next
-  })
-}
-
-// In render
-<tr onClick={() => toggleRow(row.id)}>
-  <td>{expandedRows.has(row.id) ? '▼' : '▶'}</td>
-  ...
-</tr>
-{expandedRows.has(row.id) && (
-  <tr className="bg-blue-50/20 dark:bg-gray-800/10">
-    <td colSpan={visibleColumns.length}>
-      <pre>{row.detailedContent}</pre>
-    </td>
-  </tr>
-)}
-```
+- Expand icon with click entire row to toggle
+- Expanded row spans all columns with visual separation
+- Use `Set` for tracking expansion state (performance)
+- Properly formatted content in expanded view
 
 ❌ **NEVER:**
-- Make only icon clickable (bad UX, small touch target)
-- Expand row inline without visual separation
-- Forget to handle click event propagation on nested elements
-- Use array for expandedRows (slow lookup for large datasets)
-- Skip colSpan (expanded content will be constrained to first column)
+- Make only icon clickable (bad UX)
+- Use array for expandedRows (slow lookup)
+- Skip colSpan (content constrained to first column)
+- Forget click event propagation on nested elements
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.36](TRAPID_TEACHER.md#1936-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)

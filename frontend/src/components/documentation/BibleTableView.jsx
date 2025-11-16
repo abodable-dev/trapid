@@ -473,16 +473,7 @@ export default function BibleTableView({ content }) {
         return <div className="font-mono font-medium">#{rule.ruleNumber}</div>
 
       case 'chapter':
-        return (
-          <>
-            <div className="font-medium">Ch {rule.chapter}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              {rule.chapterName.length > 25
-                ? rule.chapterName.substring(0, 25) + '...'
-                : rule.chapterName}
-            </div>
-          </>
-        )
+        return <div className="font-medium">Ch {rule.chapter}: {rule.chapterName}</div>
 
       case 'title':
         return <div className="font-medium">{rule.title}</div>
@@ -660,7 +651,7 @@ export default function BibleTableView({ content }) {
           onScroll={handleScroll}
           className="bible-table-scroll flex-1 overflow-y-scroll overflow-x-auto relative bg-white dark:bg-gray-900"
         >
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse border-l border-r border-gray-200 dark:border-gray-700">
           <thead className="sticky top-0 z-20 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-sm">
             <tr className="border-b border-gray-100 dark:border-gray-800">
               {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
@@ -680,7 +671,7 @@ export default function BibleTableView({ content }) {
                       minWidth: columnWidths[colKey],
                       position: 'relative'
                     }}
-                    className={`group px-6 py-3.5 text-left text-xs font-medium text-gray-600 dark:text-gray-400 tracking-wider transition-all ${
+                    className={`group px-4 py-2.5 text-left text-xs font-medium text-gray-600 dark:text-gray-400 tracking-wider transition-all ${
                       column.sortable ? 'cursor-pointer hover:bg-blue-50/50 dark:hover:bg-gray-800/30 hover:text-gray-900 dark:hover:text-gray-100' : ''
                     } ${draggedColumn === colKey ? 'bg-blue-50 dark:bg-indigo-900/20' : ''}`}
                   >
@@ -746,10 +737,12 @@ export default function BibleTableView({ content }) {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900">
-            {filteredAndSorted.map(rule => (
+            {filteredAndSorted.map((rule, index) => (
               <React.Fragment key={rule.id}>
                 <tr
-                  className="group border-b border-gray-50 dark:border-gray-800/30 hover:bg-blue-50/30 dark:hover:bg-gray-800/20 cursor-pointer transition-all duration-150 hover:shadow-sm"
+                  className={`group border-b border-gray-100 dark:border-gray-800/50 hover:bg-blue-50/40 dark:hover:bg-gray-800/30 cursor-pointer transition-all duration-150 hover:shadow-md ${
+                    index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-100 dark:bg-gray-800/30'
+                  }`}
                   onClick={() => toggleRow(rule.id)}
                 >
                   {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
@@ -764,9 +757,10 @@ export default function BibleTableView({ content }) {
                           minWidth: columnWidths[colKey],
                           maxWidth: columnWidths[colKey]
                         }}
-                        className={`px-6 py-5 text-sm text-gray-900 dark:text-gray-100 ${
+                        className={`px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 ${
                           colKey === 'expand' || colKey === 'select' ? 'text-center' : ''
-                        } ${colKey === 'title' || colKey === 'chapter' ? '' : 'whitespace-nowrap'}`}
+                        } truncate overflow-hidden whitespace-nowrap`}
+                        title={colKey === 'title' ? rule.title : ''}
                       >
                         {renderCellContent(rule, colKey)}
                       </td>
@@ -807,7 +801,7 @@ export default function BibleTableView({ content }) {
           onScroll={handleStickyScroll}
           className="sticky-horizontal-scroll overflow-x-scroll overflow-y-hidden border-t-2 border-gray-400 dark:border-gray-500 flex-shrink-0"
           style={{
-            height: '20px',
+            height: '16px',
             scrollbarWidth: 'auto',
             scrollbarColor: '#6B7280 #E5E7EB',
             backgroundColor: '#F3F4F6'
