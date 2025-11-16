@@ -80,13 +80,144 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 **Audience:** Claude Code + Human Developers
 **Authority:** ABSOLUTE
-**Last Updated:** 2025-11-17 10:45 AEST
+**Last Updated:** 2025-11-17 08:50 AEST
 
-## RULE #0: Documentation Maintenance
+## RULE #0: Documentation Maintenance - What Goes Where
 
-✅ **MUST update Bible when:**
+The Trinity+1 system uses four documents with distinct purposes. **MUST** add content to the correct document.
 
-✅ **MUST update Lexicon when:**
+### 📖 TRAPID_BIBLE.md - RULES ONLY
+
+✅ **MUST add to Bible when:**
+- Creating a new MUST/NEVER/ALWAYS directive
+- Defining a protected code pattern that cannot be changed
+- Establishing a configuration value that must match exactly
+- Setting a coding standard that applies to all developers
+- Defining what is FORBIDDEN vs ALLOWED
+
+❌ **NEVER add to Bible:**
+- Code examples (belongs in Teacher)
+- Implementation steps (belongs in Teacher)
+- Bug history or explanations of WHY rules exist (belongs in Lexicon)
+- User-facing "how to use" guides (belongs in User Manual)
+- Architecture rationale or design decisions (belongs in Lexicon)
+
+**Bible Format:**
+```markdown
+## RULE #X.Y: Clear Directive Title
+
+✅ MUST/ALWAYS: Specific requirement
+❌ NEVER: Forbidden action
+
+See: TRAPID_TEACHER.md §X.Y for implementation
+```
+
+---
+
+### 🔧 TRAPID_TEACHER.md - HOW-TO & CODE EXAMPLES
+
+✅ **MUST add to Teacher when:**
+- Showing full code examples with comments
+- Providing step-by-step implementation guides
+- Demonstrating architecture patterns
+- Showing common mistakes and how to avoid them
+- Creating testing strategies
+- Writing migration guides for refactoring
+- Explaining HOW to follow a Bible rule
+
+❌ **NEVER add to Teacher:**
+- Rules (belongs in Bible)
+- Bug history (belongs in Lexicon)
+- User-facing guides (belongs in User Manual)
+
+**Teacher Format:**
+```markdown
+## §X.Y: Pattern/Component Name
+
+🧩 Component | 🟡 Intermediate
+
+📖 Related Bible Rules: TRAPID_BIBLE.md RULE #X.Y
+
+### Quick Summary
+One-line description
+
+### Code Example
+```jsx
+// Full working code with comments
+```
+
+### Common Mistakes
+- What NOT to do
+
+### Testing Strategy
+How to test this pattern
+```
+
+---
+
+### 📕 TRAPID_LEXICON.md - BUG HISTORY & KNOWLEDGE
+
+✅ **MUST add to Lexicon when:**
+- Fixing a bug (document scenario, root cause, solution)
+- Making an architecture decision (document WHY)
+- Learning something non-obvious about the codebase
+- Discovering a performance optimization
+- Finding a common issue that others might encounter
+- Explaining WHY a Bible rule exists
+
+❌ **NEVER add to Lexicon:**
+- Rules (belongs in Bible)
+- Code examples (belongs in Teacher)
+- User guides (belongs in User Manual)
+
+**Lexicon is database-driven:**
+1. Add entries via UI: Documentation page → 📕 TRAPID Lexicon
+2. Use `entry_type`: bug, architecture, test, performance, dev_note, common_issue
+3. Export: `bin/rails trapid:export_lexicon`
+
+**Entry Types:**
+- `bug` - Bug discoveries and fixes
+- `architecture` - System design decisions (WHY we built it this way)
+- `test` - Testing approaches
+- `performance` - Performance optimizations
+- `dev_note` - Development notes and gotchas
+- `common_issue` - Frequently encountered problems
+
+---
+
+### 📘 TRAPID_USER_MANUAL.md - END-USER GUIDES
+
+✅ **MUST add to User Manual when:**
+- Writing step-by-step feature guides for non-technical users
+- Creating troubleshooting guides
+- Documenting user-facing workflows
+- Adding FAQ sections
+
+❌ **NEVER add to User Manual:**
+- Code examples (belongs in Teacher)
+- Rules for developers (belongs in Bible)
+- Bug history (belongs in Lexicon)
+
+**User Manual Format:**
+```markdown
+## How to Create a Job
+
+1. Click "New Job" button
+2. Fill in job details...
+[Screenshots encouraged]
+
+### Troubleshooting
+If you see error X, do Y
+```
+
+---
+
+### Decision Tree: Where Should I Add This?
+
+**Is it a MUST/NEVER/ALWAYS rule?** → Bible
+**Is it a code example or HOW-TO?** → Teacher
+**Is it a bug fix, architecture decision, or WHY explanation?** → Lexicon
+**Is it for end-users?** → User Manual
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §0](TRAPID_TEACHER.md#0-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 0](TRAPID_LEXICON.md)
@@ -3918,9 +4049,18 @@ This chapter defines rules for **Custom Tables & Formulas**, a dynamic table gen
 
 **Audience:** Claude Code + Human Developers
 **Authority:** ABSOLUTE
-**Last Updated:** 2025-11-17 AEST
+**Last Updated:** 2025-11-17 15:30 AEST
 
 This chapter defines ALL UI/UX patterns for Trapid. Every interactive element MUST follow these standards.
+
+**Recent Updates:**
+- Updated RULE #19.6: Scroll Behavior Standards (added flex layout and scroll sync patterns)
+- Added RULE #19.31: Data-Dense Table Layout Pattern
+- Added RULE #19.32: Zebra Striping (Alternating Row Colors)
+- Added RULE #19.33: Sticky Horizontal Scrollbar
+- Added RULE #19.34: Modern Table Header Aesthetics
+- Added RULE #19.35: Table Border Framing
+- Added RULE #19.36: Expand/Collapse Row Details Pattern
 
 ---
 
@@ -4001,6 +4141,50 @@ This chapter defines ALL UI/UX patterns for Trapid. Every interactive element MU
 ---
 
 ## RULE #19.6: Scroll Behavior Standards
+
+✅ **MUST implement for scrollable tables:**
+- Use `flex` layout with `flex-1 min-h-0 flex flex-col` on container
+- Scrollable area: `overflow-y-scroll overflow-x-auto`
+- Sync horizontal scroll between main container and sticky scrollbar via refs
+- Track scrollWidth with `ResizeObserver` for dynamic updates
+- Custom scrollbar styling via webkit pseudo-elements
+- Thin scrollbars: `scrollbar-width: thin` for Firefox
+
+**Container pattern:**
+```jsx
+<div className="flex-1 min-h-0 flex flex-col">
+  <div
+    ref={scrollContainerRef}
+    onScroll={handleScroll}
+    className="flex-1 overflow-y-scroll overflow-x-auto"
+  >
+    <table>...</table>
+  </div>
+</div>
+```
+
+**Scroll sync pattern:**
+```jsx
+const handleScroll = (e) => {
+  const { scrollLeft } = e.target
+  if (stickyScrollbarRef.current) {
+    stickyScrollbarRef.current.scrollLeft = scrollLeft
+  }
+}
+
+const handleStickyScroll = (e) => {
+  if (scrollContainerRef.current) {
+    scrollContainerRef.current.scrollLeft = e.target.scrollLeft
+  }
+}
+```
+
+❌ **NEVER:**
+- Use `overflow: hidden` on flex containers (prevents scrolling)
+- Forget `min-h-0` on flex children (causes overflow issues)
+- Skip scroll sync between container and sticky scrollbar
+- Use inline scroll handlers without refs (performance issue)
+
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.6](TRAPID_TEACHER.md#196-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
@@ -4324,6 +4508,195 @@ This chapter defines ALL UI/UX patterns for Trapid. Every interactive element MU
 - Assume mouse users only
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.30](TRAPID_TEACHER.md#1930-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
+---
+
+## RULE #19.31: Data-Dense Table Layout Pattern
+
+✅ **MUST implement for data-heavy tables:**
+- Compact row padding: `py-2.5` (not `py-6`)
+- Compact header padding: `py-2.5` (not `py-4`)
+- Horizontal padding: `px-4` (balance between dense and readable)
+- Single-line cell truncation: `truncate overflow-hidden whitespace-nowrap`
+- Click entire row to expand for full content
+- Hover tooltips via `title` attribute on truncated cells
+
+❌ **NEVER:**
+- Use `py-6` or larger padding for data-dense tables
+- Allow multi-line cells without truncation option
+- Forget to provide expand mechanism for truncated content
+- Skip title attributes on truncated cells
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.31](TRAPID_TEACHER.md#1931-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
+---
+
+## RULE #19.32: Zebra Striping (Alternating Row Colors)
+
+✅ **MUST use for horizontal tracking in wide tables:**
+- Even rows: `bg-white dark:bg-gray-900`
+- Odd rows: `bg-gray-100 dark:bg-gray-800/30`
+- Ensure sufficient contrast (`bg-gray-100`, not `bg-gray-50/50`)
+- Maintain zebra pattern when filtering/sorting
+- Calculate using: `index % 2 === 0 ? 'even-styles' : 'odd-styles'`
+
+❌ **NEVER:**
+- Use too subtle opacity (`bg-gray-50/50` is insufficient)
+- Remove zebra striping on hover (both should be visible)
+- Apply zebra to header rows
+- Use zebra striping on tables with < 5 columns (unnecessary)
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.32](TRAPID_TEACHER.md#1932-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
+---
+
+## RULE #19.33: Sticky Horizontal Scrollbar
+
+✅ **MUST implement for wide tables (> viewport width):**
+- Always-visible horizontal scrollbar at bottom of table viewport
+- Height: `16px` (balance visibility and space efficiency)
+- Synced scroll with main table container via refs
+- Border-top to separate from content: `border-t-2`
+- Fixed position at bottom: `flex-shrink-0`
+- Update scrollWidth via `ResizeObserver`
+
+**Implementation pattern:**
+```jsx
+// Container with flex layout
+<div className="flex-1 min-h-0 flex flex-col">
+  {/* Scrollable table */}
+  <div ref={scrollContainerRef} onScroll={handleScroll}>
+    <table>...</table>
+  </div>
+
+  {/* Sticky scrollbar */}
+  <div
+    ref={stickyScrollbarRef}
+    onScroll={handleStickyScroll}
+    style={{ height: '16px' }}
+  >
+    <div style={{ width: `${tableScrollWidth}px` }} />
+  </div>
+</div>
+```
+
+❌ **NEVER:**
+- Make scrollbar taller than 20px (wastes space)
+- Make scrollbar shorter than 14px (hard to grab)
+- Forget to sync scrollLeft between container and sticky scrollbar
+- Skip ResizeObserver (scrollbar won't update on column resize)
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.33](TRAPID_TEACHER.md#1933-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
+---
+
+## RULE #19.34: Modern Table Header Aesthetics
+
+✅ **MUST apply for modern, clean table design:**
+- Backdrop blur: `backdrop-blur-md`
+- Semi-transparent background: `bg-white/95 dark:bg-gray-900/95`
+- Subtle shadow: `shadow-sm`
+- Thin border-bottom: `border-b border-gray-100 dark:border-gray-800`
+- Smaller font size: `text-xs`
+- Medium weight: `font-medium` (not `font-semibold` or `font-bold`)
+- Subtle text color: `text-gray-600 dark:text-gray-400`
+- Wider letter spacing: `tracking-wider`
+
+❌ **NEVER:**
+- Use solid opaque backgrounds (loses modern glass-morphism effect)
+- Use heavy font weights (`font-bold`, `font-semibold`)
+- Forget dark mode variants on all colors
+- Use bright or saturated header colors
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.34](TRAPID_TEACHER.md#1934-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
+---
+
+## RULE #19.35: Table Border Framing
+
+✅ **MUST add complete border framing for full-width tables:**
+- Left border: `border-l`
+- Right border: `border-r`
+- Border color: `border-gray-200 dark:border-gray-700`
+- Applied to `<table>` element (not container)
+
+**Why:** Provides visual container boundary for tables, especially important for:
+- Full-width layouts without sidebar margins
+- Tables that span entire viewport
+- Dark mode where table edges blend with background
+
+❌ **NEVER:**
+- Skip borders on full-width tables
+- Use border-b or border-t only (incomplete framing)
+- Apply to container div instead of table element
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.35](TRAPID_TEACHER.md#1935-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
+---
+
+## RULE #19.36: Expand/Collapse Row Details Pattern
+
+✅ **MUST implement for tables with detailed content:**
+- Expand icon in first column: `▶` (collapsed) / `▼` (expanded)
+- Click entire row to toggle expansion (not just icon)
+- Expanded row spans all columns: `colSpan={visibleColumns.length}`
+- Different background for expanded content: `bg-blue-50/20 dark:bg-gray-800/10`
+- Show metadata in expanded view (line number, chapter, timestamp, etc.)
+- Code/content in `<pre>` with proper formatting and scrolling
+- Track expansion state with `Set` data structure (efficient lookup)
+
+**Implementation pattern:**
+```jsx
+const [expandedRows, setExpandedRows] = useState(new Set())
+
+const toggleRow = (id) => {
+  setExpandedRows(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+}
+
+// In render
+<tr onClick={() => toggleRow(row.id)}>
+  <td>{expandedRows.has(row.id) ? '▼' : '▶'}</td>
+  ...
+</tr>
+{expandedRows.has(row.id) && (
+  <tr className="bg-blue-50/20 dark:bg-gray-800/10">
+    <td colSpan={visibleColumns.length}>
+      <pre>{row.detailedContent}</pre>
+    </td>
+  </tr>
+)}
+```
+
+❌ **NEVER:**
+- Make only icon clickable (bad UX, small touch target)
+- Expand row inline without visual separation
+- Forget to handle click event propagation on nested elements
+- Use array for expandedRows (slow lookup for large datasets)
+- Skip colSpan (expanded content will be constrained to first column)
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.36](TRAPID_TEACHER.md#1936-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
