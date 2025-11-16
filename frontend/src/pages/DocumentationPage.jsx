@@ -54,7 +54,7 @@ export default function DocumentationPage() {
   const [bibleViewMode, setBibleViewMode] = useState('table') // 'markdown' or 'table'
 
   // View mode for Teacher
-  const [teacherViewMode, setTeacherViewMode] = useState('markdown') // 'markdown' or 'table'
+  const [teacherViewMode, setTeacherViewMode] = useState('table') // 'markdown' or 'table'
 
   // View mode for User Manual
   const [manualViewMode, setManualViewMode] = useState('markdown') // 'markdown' or 'table'
