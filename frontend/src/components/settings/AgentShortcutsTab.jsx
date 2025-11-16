@@ -10,7 +10,8 @@ import {
   MagnifyingGlassIcon,
   EyeIcon,
   ArrowDownTrayIcon,
-  ArrowUpTrayIcon
+  ArrowUpTrayIcon,
+  Bars3Icon
 } from '@heroicons/react/24/outline'
 
 export default function AgentShortcutsTab() {
@@ -35,6 +36,8 @@ export default function AgentShortcutsTab() {
   const [visibleColumnsCommands, setVisibleColumnsCommands] = useState({ command: true, shortcut: true, audit: true })
   const [showColumnPickerCommands, setShowColumnPickerCommands] = useState(false)
   const [selectedCommandsIds, setSelectedCommandsIds] = useState(new Set())
+  const [columnOrderCommands, setColumnOrderCommands] = useState(['command', 'shortcut', 'audit'])
+  const [draggingColumnCommands, setDraggingColumnCommands] = useState(null)
 
   // Table state for Slang table - RULE #19 compliance
   const [globalSearchSlang, setGlobalSearchSlang] = useState('')
@@ -47,35 +50,38 @@ export default function AgentShortcutsTab() {
   const [visibleColumnsSlang, setVisibleColumnsSlang] = useState({ shortcut: true, meaning: true, audit: true })
   const [showColumnPickerSlang, setShowColumnPickerSlang] = useState(false)
   const [selectedSlangIds, setSelectedSlangIds] = useState(new Set())
+  const [columnOrderSlang, setColumnOrderSlang] = useState(['shortcut', 'meaning', 'audit'])
+  const [draggingColumnSlang, setDraggingColumnSlang] = useState(null)
 
   // Pre-populated Commands (what Claude executes)
   const now = new Date().toISOString()
   const baseCommands = [
-    { id: 1, command: 'Run all agents in parallel', shortcut: '/ag, all agents, allagent' },
-    { id: 2, command: 'Run Backend Developer agent', shortcut: '/backend, backend, backend dev' },
-    { id: 3, command: 'Run Frontend Developer agent', shortcut: '/frontend, frontend, frontend dev' },
-    { id: 4, command: 'Run Production Bug Hunter agent', shortcut: '/bug-hunter, bug hunter, production bug hunter' },
-    { id: 5, command: 'Run Deploy Manager agent', shortcut: '/deploy, deploy' },
-    { id: 6, command: 'Run Planning Collaborator agent', shortcut: '/plan, plan, planning' },
-    { id: 7, command: 'Run Gantt Bug Hunter agent', shortcut: '/gantt, gantt' },
-    { id: 8, command: 'Create new API endpoint', shortcut: '/api, create api' },
-    { id: 9, command: 'Add database migration', shortcut: '/migration, add migration' },
-    { id: 10, command: 'Fix N+1 query', shortcut: '/n+1, fix n+1' },
-    { id: 11, command: 'Create new React component', shortcut: '/component, create component' },
-    { id: 12, command: 'Add dark mode support', shortcut: '/darkmode, dark mode' },
-    { id: 13, command: 'Fix responsive layout', shortcut: '/responsive, fix responsive' },
-    { id: 14, command: 'Analyze Heroku logs', shortcut: '/logs, heroku logs' },
-    { id: 15, command: 'Debug production error', shortcut: '/debug, debug error' },
-    { id: 16, command: 'Check deployment health', shortcut: '/health, check health' },
-    { id: 17, command: 'Run database migrations on staging', shortcut: '/migrate, run migrations' },
-    { id: 18, command: 'Plan new feature', shortcut: '/feature, plan feature' },
-    { id: 19, command: 'Design database schema', shortcut: '/schema, design schema' },
-    { id: 20, command: 'Run Gantt visual tests', shortcut: '/gantt-test, test gantt' },
-    { id: 21, command: 'Verify timezone compliance', shortcut: '/timezone, check timezone' },
-    { id: 22, command: 'Test cascade behavior', shortcut: '/cascade, test cascade' },
-    { id: 23, command: 'Check working days enforcement', shortcut: '/workdays, working days' },
-    { id: 24, command: 'Create service object', shortcut: '/service, create service' },
-    { id: 25, command: 'Add background job', shortcut: '/job, background job' }
+    { id: 1, command: 'Run all agents in parallel', shortcut: 'allagent, all agents, run all' },
+    { id: 2, command: 'Run Backend Developer agent', shortcut: 'backend dev, run backend-developer, run backend' },
+    { id: 3, command: 'Run Frontend Developer agent', shortcut: 'frontend dev, run frontend-developer, run frontend' },
+    { id: 4, command: 'Run Production Bug Hunter agent', shortcut: 'bug hunter, run production-bug-hunter, run prod-bug' },
+    { id: 5, command: 'Run Deploy Manager agent', shortcut: 'deploy, run deploy-manager, deployment' },
+    { id: 6, command: 'Run Planning Collaborator agent', shortcut: 'planning, run planning-collaborator, run planner' },
+    { id: 7, command: 'Run Gantt Bug Hunter agent', shortcut: 'gantt, run gantt-bug-hunter, gantt bug hunter' },
+    { id: 8, command: 'Run UI Compliance Auditor agent', shortcut: 'ui audit, run ui-compliance-auditor, ui compliance' },
+    { id: 9, command: 'Create new API endpoint', shortcut: '/api, create api' },
+    { id: 10, command: 'Add database migration', shortcut: '/migration, add migration' },
+    { id: 11, command: 'Fix N+1 query', shortcut: '/n+1, fix n+1' },
+    { id: 12, command: 'Create new React component', shortcut: '/component, create component' },
+    { id: 13, command: 'Add dark mode support', shortcut: '/darkmode, dark mode' },
+    { id: 14, command: 'Fix responsive layout', shortcut: '/responsive, fix responsive' },
+    { id: 15, command: 'Analyze Heroku logs', shortcut: '/logs, heroku logs' },
+    { id: 16, command: 'Debug production error', shortcut: '/debug, debug error' },
+    { id: 17, command: 'Check deployment health', shortcut: '/health, check health' },
+    { id: 18, command: 'Run database migrations on staging', shortcut: '/migrate, run migrations' },
+    { id: 19, command: 'Plan new feature', shortcut: '/feature, plan feature' },
+    { id: 20, command: 'Design database schema', shortcut: '/schema, design schema' },
+    { id: 21, command: 'Run Gantt visual tests', shortcut: '/gantt-test, test gantt' },
+    { id: 22, command: 'Verify timezone compliance', shortcut: '/timezone, check timezone' },
+    { id: 23, command: 'Test cascade behavior', shortcut: '/cascade, test cascade' },
+    { id: 24, command: 'Check working days enforcement', shortcut: '/workdays, working days' },
+    { id: 25, command: 'Create service object', shortcut: '/service, create service' },
+    { id: 26, command: 'Add background job', shortcut: '/job, background job' }
   ]
 
   // Pre-populated Slang (shortcuts like "sm" for Schedule Master)
@@ -586,11 +592,25 @@ export default function AgentShortcutsTab() {
         </div>
 
         {/* Table Toolbar - RULE #19.11A: Edit/Save buttons inline with search */}
-        <div className="mb-4 flex items-center justify-between gap-4">
-          {/* LEFT SIDE: Global Search or Bulk Actions */}
-          <div className="flex-1 flex items-center gap-3">
-            {selectedCommandsIds.size > 0 ? (
-              /* Bulk Actions - RULE #19.9: Inline with toolbar */
+        <div className="mb-4 flex items-center justify-between gap-4" style={{ minHeight: '44px' }}>
+          {/* LEFT SIDE: Global Search */}
+          <div className="flex-1">
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search commands..."
+                value={globalSearchCommands}
+                onChange={(e) => setGlobalSearchCommands(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
+
+          {/* RIGHT SIDE: Action buttons (aligned right, specific order) */}
+          <div className="flex items-center gap-2">
+            {/* Bulk Actions - show when items selected */}
+            {selectedCommandsIds.size > 0 && (
               <>
                 <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
                   {selectedCommandsIds.size} selected
@@ -608,24 +628,7 @@ export default function AgentShortcutsTab() {
                   Clear Selection
                 </button>
               </>
-            ) : (
-              /* Global Search - when no selection */
-              <div className="flex-1">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search commands..."
-                    value={globalSearchCommands}
-                    onChange={(e) => setGlobalSearchCommands(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-              </div>
             )}
-
-          {/* RIGHT SIDE: Action buttons (aligned right, specific order) */}
-          <div className="flex items-center gap-2">
             {/* Edit/Save/Reset buttons - RULE #19.11A */}
             {!isEditingCommands ? (
               <button
@@ -729,7 +732,7 @@ export default function AgentShortcutsTab() {
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
                 <tr>
                   {/* Row Selection - RULE #19.9: Minimal padding, centered, locked width */}
-                  <th className="relative px-2 py-3 w-8 text-center">
+                  <th className="px-2 py-3 w-8 text-center">
                     <input
                       type="checkbox"
                       className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
@@ -743,29 +746,71 @@ export default function AgentShortcutsTab() {
                       }}
                     />
                   </th>
-                  {commandsColumns.filter(column => visibleColumnsCommands[column.key]).map(column => (
+                  {columnOrderCommands
+                    .map(key => commandsColumns.find(col => col.key === key))
+                    .filter(column => column && visibleColumnsCommands[column.key])
+                    .map(column => (
                     <th
                       key={column.key}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggingColumnCommands(column.key)
+                        e.dataTransfer.effectAllowed = 'move'
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        e.dataTransfer.dropEffect = 'move'
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        const draggedCol = draggingColumnCommands
+                        const targetCol = column.key
+                        if (draggedCol && draggedCol !== targetCol) {
+                          const newOrder = [...columnOrderCommands]
+                          const dragIndex = newOrder.indexOf(draggedCol)
+                          const targetIndex = newOrder.indexOf(targetCol)
+                          newOrder.splice(dragIndex, 1)
+                          newOrder.splice(targetIndex, 0, draggedCol)
+                          setColumnOrderCommands(newOrder)
+                        }
+                        setDraggingColumnCommands(null)
+                      }}
+                      onDragEnd={() => setDraggingColumnCommands(null)}
                       style={{ width: columnWidthsCommands[column.key] }}
-                      className="relative px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      onClick={() => column.sortable && handleSortCommands(column.key)}
+                      className={`relative px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-move hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${draggingColumnCommands === column.key ? 'opacity-50' : ''}`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <div>
-                              <div>{column.label}</div>
-                              {column.sublabel && (
-                                <div className="text-xs font-normal text-gray-400 dark:text-gray-500 normal-case">
-                                  {column.sublabel}
-                                </div>
+                            {/* Drag handle icon - NOT sortable */}
+                            <Bars3Icon
+                              className="h-4 w-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
+                              title="Drag to reorder"
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            {/* Sortable area - column label and sort indicator */}
+                            <div
+                              className="flex items-center gap-2 flex-1 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (column.sortable) handleSortCommands(column.key)
+                              }}
+                            >
+                              <div>
+                                <div>{column.label}</div>
+                                {column.sublabel && (
+                                  <div className="text-xs font-normal text-gray-400 dark:text-gray-500 normal-case">
+                                    {column.sublabel}
+                                  </div>
+                                )}
+                              </div>
+                              {column.sortable && sortConfigCommands.key === column.key && (
+                                sortConfigCommands.direction === 'asc' ?
+                                  <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                  <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                               )}
                             </div>
-                            {column.sortable && sortConfigCommands.key === column.key && (
-                              sortConfigCommands.direction === 'asc' ?
-                                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
-                                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                            )}
                           </div>
                           {column.searchable && (
                             <input
@@ -820,47 +865,57 @@ export default function AgentShortcutsTab() {
                         onClick={(e) => e.stopPropagation()}
                       />
                     </td>
-                    {visibleColumnsCommands.command && (
-                      <td className="px-6 py-4">
-                        {isEditingCommands ? (
-                          <input
-                            type="text"
-                            value={cmd.command}
-                            onChange={(e) => updateCommand(cmd.id, 'command', e.target.value)}
-                            placeholder="What Claude will do..."
-                            className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700"
-                          />
-                        ) : (
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            {cmd.command || <span className="text-gray-400 italic">No command</span>}
-                          </div>
-                        )}
-                      </td>
-                    )}
-                    {visibleColumnsCommands.shortcut && (
-                      <td className="px-6 py-4">
-                        {isEditingCommands ? (
-                          <input
-                            type="text"
-                            value={cmd.shortcut}
-                            onChange={(e) => updateCommand(cmd.id, 'shortcut', e.target.value)}
-                            placeholder="What user types (comma-separated)..."
-                            className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700"
-                          />
-                        ) : (
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            {cmd.shortcut || <span className="text-gray-400 italic">No shortcut</span>}
-                          </div>
-                        )}
-                      </td>
-                    )}
-                    {visibleColumnsCommands.audit && (
-                      <td className="px-6 py-4">
-                        <div className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line">
-                          {formatAuditInfo(cmd)}
-                        </div>
-                      </td>
-                    )}
+                    {/* Render cells in same order as reordered headers */}
+                    {columnOrderCommands
+                      .filter(key => visibleColumnsCommands[key])
+                      .map(key => {
+                        if (key === 'command') {
+                          return (
+                            <td key="command" className="px-6 py-4">
+                              {isEditingCommands ? (
+                                <input
+                                  type="text"
+                                  value={cmd.command}
+                                  onChange={(e) => updateCommand(cmd.id, 'command', e.target.value)}
+                                  placeholder="What Claude will do..."
+                                  className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700"
+                                />
+                              ) : (
+                                <div className="text-sm text-gray-900 dark:text-white">
+                                  {cmd.command || <span className="text-gray-400 italic">No command</span>}
+                                </div>
+                              )}
+                            </td>
+                          )
+                        } else if (key === 'shortcut') {
+                          return (
+                            <td key="shortcut" className="px-6 py-4">
+                              {isEditingCommands ? (
+                                <input
+                                  type="text"
+                                  value={cmd.shortcut}
+                                  onChange={(e) => updateCommand(cmd.id, 'shortcut', e.target.value)}
+                                  placeholder="What user types (comma-separated)..."
+                                  className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700"
+                                />
+                              ) : (
+                                <div className="text-sm text-gray-900 dark:text-white">
+                                  {cmd.shortcut || <span className="text-gray-400 italic">No shortcut</span>}
+                                </div>
+                              )}
+                            </td>
+                          )
+                        } else if (key === 'audit') {
+                          return (
+                            <td key="audit" className="px-6 py-4">
+                              <div className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                                {formatAuditInfo(cmd)}
+                              </div>
+                            </td>
+                          )
+                        }
+                        return null
+                      })}
                     {isEditingCommands && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <button
@@ -895,11 +950,25 @@ export default function AgentShortcutsTab() {
         </div>
 
         {/* Table Toolbar - RULE #19.11A: Edit/Save buttons inline with search */}
-        <div className="mb-4 flex items-center justify-between gap-4">
-          {/* LEFT SIDE: Global Search or Bulk Actions */}
-          <div className="flex-1 flex items-center gap-3">
-            {selectedSlangIds.size > 0 ? (
-              /* Bulk Actions - RULE #19.9: Inline with toolbar */
+        <div className="mb-4 flex items-center justify-between gap-4" style={{ minHeight: '44px' }}>
+          {/* LEFT SIDE: Global Search */}
+          <div className="flex-1">
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search slang..."
+                value={globalSearchSlang}
+                onChange={(e) => setGlobalSearchSlang(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
+
+          {/* RIGHT SIDE: Action buttons (aligned right, specific order) */}
+          <div className="flex items-center gap-2">
+            {/* Bulk Actions - show when items selected */}
+            {selectedSlangIds.size > 0 && (
               <>
                 <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
                   {selectedSlangIds.size} selected
@@ -917,25 +986,7 @@ export default function AgentShortcutsTab() {
                   Clear Selection
                 </button>
               </>
-            ) : (
-              /* Global Search - when no selection */
-              <div className="flex-1">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search slang..."
-                    value={globalSearchSlang}
-                    onChange={(e) => setGlobalSearchSlang(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-              </div>
             )}
-          </div>
-
-          {/* RIGHT SIDE: Action buttons (aligned right, specific order) */}
-          <div className="flex items-center gap-2">
             {/* Edit/Save/Reset buttons - RULE #19.11A */}
             {!isEditingSlang ? (
               <button
@@ -1039,7 +1090,7 @@ export default function AgentShortcutsTab() {
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
                 <tr>
                   {/* Row Selection - RULE #19.9: Minimal padding, centered, locked width */}
-                  <th className="relative px-2 py-3 w-8 text-center">
+                  <th className="px-2 py-3 w-8 text-center">
                     <input
                       type="checkbox"
                       className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
@@ -1053,29 +1104,71 @@ export default function AgentShortcutsTab() {
                       }}
                     />
                   </th>
-                  {slangColumns.filter(column => visibleColumnsSlang[column.key]).map(column => (
+                  {columnOrderSlang
+                    .map(key => slangColumns.find(col => col.key === key))
+                    .filter(column => column && visibleColumnsSlang[column.key])
+                    .map(column => (
                     <th
                       key={column.key}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggingColumnSlang(column.key)
+                        e.dataTransfer.effectAllowed = 'move'
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        e.dataTransfer.dropEffect = 'move'
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        const draggedCol = draggingColumnSlang
+                        const targetCol = column.key
+                        if (draggedCol && draggedCol !== targetCol) {
+                          const newOrder = [...columnOrderSlang]
+                          const dragIndex = newOrder.indexOf(draggedCol)
+                          const targetIndex = newOrder.indexOf(targetCol)
+                          newOrder.splice(dragIndex, 1)
+                          newOrder.splice(targetIndex, 0, draggedCol)
+                          setColumnOrderSlang(newOrder)
+                        }
+                        setDraggingColumnSlang(null)
+                      }}
+                      onDragEnd={() => setDraggingColumnSlang(null)}
                       style={{ width: columnWidthsSlang[column.key] }}
-                      className="relative px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      onClick={() => column.sortable && handleSortSlang(column.key)}
+                      className={`relative px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-move hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${draggingColumnSlang === column.key ? 'opacity-50' : ''}`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <div>
-                              <div>{column.label}</div>
-                              {column.sublabel && (
-                                <div className="text-xs font-normal text-gray-400 dark:text-gray-500 normal-case">
-                                  {column.sublabel}
-                                </div>
+                            {/* Drag handle icon - NOT sortable */}
+                            <Bars3Icon
+                              className="h-4 w-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
+                              title="Drag to reorder"
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            {/* Sortable area - column label and sort indicator */}
+                            <div
+                              className="flex items-center gap-2 flex-1 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (column.sortable) handleSortSlang(column.key)
+                              }}
+                            >
+                              <div>
+                                <div>{column.label}</div>
+                                {column.sublabel && (
+                                  <div className="text-xs font-normal text-gray-400 dark:text-gray-500 normal-case">
+                                    {column.sublabel}
+                                  </div>
+                                )}
+                              </div>
+                              {column.sortable && sortConfigSlang.key === column.key && (
+                                sortConfigSlang.direction === 'asc' ?
+                                  <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                                  <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                               )}
                             </div>
-                            {column.sortable && sortConfigSlang.key === column.key && (
-                              sortConfigSlang.direction === 'asc' ?
-                                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
-                                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                            )}
                           </div>
                           {column.searchable && (
                             <input
@@ -1130,47 +1223,57 @@ export default function AgentShortcutsTab() {
                         onClick={(e) => e.stopPropagation()}
                       />
                     </td>
-                    {visibleColumnsSlang.shortcut && (
-                      <td className="px-6 py-4">
-                        {isEditingSlang ? (
-                          <input
-                            type="text"
-                            value={s.shortcut}
-                            onChange={(e) => updateSlang(s.id, 'shortcut', e.target.value)}
-                            placeholder="Shortcut (e.g., sm)..."
-                            className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700"
-                          />
-                        ) : (
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            {s.shortcut || <span className="text-gray-400 italic">No shortcut</span>}
-                          </div>
-                        )}
-                      </td>
-                    )}
-                    {visibleColumnsSlang.meaning && (
-                      <td className="px-6 py-4">
-                        {isEditingSlang ? (
-                          <input
-                            type="text"
-                            value={s.meaning}
-                            onChange={(e) => updateSlang(s.id, 'meaning', e.target.value)}
-                            placeholder="What it means..."
-                            className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700"
-                          />
-                        ) : (
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            {s.meaning || <span className="text-gray-400 italic">No meaning</span>}
-                          </div>
-                        )}
-                      </td>
-                    )}
-                    {visibleColumnsSlang.audit && (
-                      <td className="px-6 py-4">
-                        <div className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line">
-                          {formatAuditInfo(s)}
-                        </div>
-                      </td>
-                    )}
+                    {/* Render cells in same order as reordered headers */}
+                    {columnOrderSlang
+                      .filter(key => visibleColumnsSlang[key])
+                      .map(key => {
+                        if (key === 'shortcut') {
+                          return (
+                            <td key="shortcut" className="px-6 py-4">
+                              {isEditingSlang ? (
+                                <input
+                                  type="text"
+                                  value={s.shortcut}
+                                  onChange={(e) => updateSlang(s.id, 'shortcut', e.target.value)}
+                                  placeholder="Shortcut (e.g., sm)..."
+                                  className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700"
+                                />
+                              ) : (
+                                <div className="text-sm text-gray-900 dark:text-white">
+                                  {s.shortcut || <span className="text-gray-400 italic">No shortcut</span>}
+                                </div>
+                              )}
+                            </td>
+                          )
+                        } else if (key === 'meaning') {
+                          return (
+                            <td key="meaning" className="px-6 py-4">
+                              {isEditingSlang ? (
+                                <input
+                                  type="text"
+                                  value={s.meaning}
+                                  onChange={(e) => updateSlang(s.id, 'meaning', e.target.value)}
+                                  placeholder="What it means..."
+                                  className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700"
+                                />
+                              ) : (
+                                <div className="text-sm text-gray-900 dark:text-white">
+                                  {s.meaning || <span className="text-gray-400 italic">No meaning</span>}
+                                </div>
+                              )}
+                            </td>
+                          )
+                        } else if (key === 'audit') {
+                          return (
+                            <td key="audit" className="px-6 py-4">
+                              <div className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                                {formatAuditInfo(s)}
+                              </div>
+                            </td>
+                          )
+                        }
+                        return null
+                      })}
                     {isEditingSlang && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <button

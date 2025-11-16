@@ -11061,7 +11061,7 @@ end
 
 **Audience:** Claude Code + Human Developers
 **Authority:** ABSOLUTE
-**Last Updated:** 2025-11-16 16:10 AEST
+**Last Updated:** 2025-11-16 16:15 AEST
 
 This chapter defines ALL UI/UX patterns for Trapid. Every interactive element MUST follow these standards.
 
@@ -11375,6 +11375,62 @@ const handleDrop = (e, targetColumnKey) => {
 - Highlight dragged column (indigo background)
 - Persist column order to localStorage
 - Use semantic drag events (dragStart, dragOver, drop)
+
+### Event Separation: Drag vs Sort (CRITICAL)
+
+🔴 **CRITICAL: Drag handle and sortable area MUST be separated**
+
+When implementing columns that are BOTH draggable AND sortable:
+
+✅ **REQUIRED pattern:**
+
+```jsx
+<th draggable onDragStart={...} onDragOver={...} onDrop={...} className="cursor-move">
+  <div className="flex items-center justify-between">
+    <div className="flex-1">
+      <div className="flex items-center gap-2">
+        {/* Drag handle - NOT sortable */}
+        <Bars3Icon
+          className="h-4 w-4 text-gray-400 dark:text-gray-500 flex-shrink-0"
+          title="Drag to reorder"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        />
+        {/* Sortable area - SEPARATE from drag handle */}
+        <div
+          className="flex items-center gap-2 flex-1 cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation()
+            if (column.sortable) handleSort(column.key)
+          }}
+        >
+          <div>{column.label}</div>
+          {isSorted && <ChevronUpIcon />}
+        </div>
+      </div>
+      {/* Column filter input below */}
+    </div>
+  </div>
+</th>
+```
+
+✅ **MUST:**
+- Add `e.stopPropagation()` to drag handle icon's `onClick` and `onMouseDown`
+- Wrap only the column label + sort indicator in a separate clickable div
+- Keep drag handle OUTSIDE the sortable area
+- Use `cursor-move` on entire `<th>` for dragging
+- Use `cursor-pointer` on sortable label area for sorting
+
+❌ **NEVER:**
+- Put the entire column header in one onClick handler (causes conflicts)
+- Make the drag handle sortable
+- Make the sort area draggable without separation
+- Forget `e.stopPropagation()` on the drag handle
+
+**Why This Matters:**
+Without event separation, clicking the drag handle triggers sorting, making column reordering impossible.
+
+**Example Implementation:** `AgentShortcutsTab.jsx:633-660, 823-850`
 
 ---
 
@@ -11857,29 +11913,91 @@ const handleBulkDelete = async () => {
 
 ### Bulk Action Buttons
 
+**🔴 CRITICAL: Bulk actions MUST be inline with toolbar (same row as search bar)**
+
+✅ **REQUIRED positioning:**
+- Bulk action buttons MUST appear inline with the search bar in the same toolbar row
+- When items selected: Show bulk actions on LEFT side of toolbar (replaces search bar)
+- When no items selected: Show search bar on LEFT side of toolbar
+- Use conditional rendering to toggle between search and bulk actions
+- Bulk actions and search bar NEVER appear together - one replaces the other
+
 ✅ **MUST show bulk action buttons when items selected:**
 
 ```jsx
-{selectedItems.size > 0 && (
-  <div className="mb-4 flex items-center gap-3">
-    <span className="text-sm text-gray-700 dark:text-gray-300">
-      {selectedItems.size} selected
-    </span>
-    <button
-      onClick={handleBulkDelete}
-      className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-    >
-      Delete Selected
-    </button>
-    <button
-      onClick={() => setSelectedItems(new Set())}
-      className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-    >
-      Clear Selection
-    </button>
+{/* Table Toolbar - RULE #19.11A */}
+<div className="mb-4 flex items-center justify-between gap-4">
+  {/* LEFT SIDE: Global Search or Bulk Actions */}
+  <div className="flex-1 flex items-center gap-3">
+    {selectedItems.size > 0 ? (
+      /* Bulk Actions - inline with toolbar */
+      <>
+        <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+          {selectedItems.size} selected
+        </span>
+        <button
+          onClick={handleBulkDelete}
+          className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm whitespace-nowrap"
+        >
+          Delete Selected
+        </button>
+        <button
+          onClick={() => setSelectedItems(new Set())}
+          className="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm whitespace-nowrap"
+        >
+          Clear Selection
+        </button>
+      </>
+    ) : (
+      /* Global Search - when no selection */
+      <div className="flex-1">
+        <div className="relative">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={globalSearch}
+            onChange={(e) => setGlobalSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+      </div>
+    )}
   </div>
-)}
+
+  {/* RIGHT SIDE: Action buttons */}
+  <div className="flex items-center gap-2">
+    {/* Edit/Save/Reset and other buttons */}
+  </div>
+</div>
 ```
+
+**Visual Layout:**
+
+**When NO items selected:**
+```
+[Search................................] [Edit] [Column] [Export] [New Item]
+^-- flex-1 (search extends to buttons) --^-- gap-2 between buttons --------^
+```
+
+**When items ARE selected:**
+```
+[3 selected] [Delete Selected] [Clear Selection] [Edit] [Column] [Export] [New Item]
+^-- bulk actions replace search bar -------------^-- gap-2 between buttons --------^
+```
+
+**Key Points:**
+- Use `whitespace-nowrap` on bulk action buttons to prevent text wrapping
+- Match button padding (`py-2`) with other toolbar buttons
+- Use `flex-1 flex items-center gap-3` wrapper for proper spacing
+- Search bar and bulk actions share the same left-side container
+- Both extend to the right-side buttons using `flex-1`
+
+❌ **NEVER:**
+- Show bulk actions on a separate row above the toolbar
+- Show search bar and bulk actions at the same time
+- Use different button heights for bulk actions vs toolbar buttons
+- Put bulk actions in a colored background box (separate from toolbar)
 
 ### When to Skip Row Selection
 
@@ -13785,6 +13903,54 @@ if (agent.recently_run(60)) {
   // Run all 12 automated tests
 }
 ```
+
+---
+
+## RULE #20.8: Shortcut Clarity - AgentShortcutsTab Updates
+
+**When Claude Code needs clarity on user shortcuts, it MUST update the AgentShortcutsTab.**
+
+✅ **MUST:**
+- Update `frontend/src/components/settings/AgentShortcutsTab.jsx` when adding new shortcuts
+- Add new shortcuts to the `baseCommands` array
+- Ensure shortcuts match agent file definitions exactly
+- Use sequential IDs (avoid duplicates)
+- Document the shortcut pattern in the command field
+- Follow the format: `{ id: N, command: 'What Claude executes', shortcut: 'what user types, comma-separated' }`
+
+❌ **NEVER:**
+- Leave shortcuts undocumented
+- Create duplicate IDs in baseCommands array
+- Use shortcuts that contradict agent definitions
+- Hardcode shortcuts outside the table
+
+**When To Update:**
+- New agent added to system
+- Existing agent shortcuts changed
+- User requests new shortcut patterns
+- Shortcut conflicts discovered
+
+**Example Update:**
+
+```javascript
+// Adding new agent shortcut
+const baseCommands = [
+  // ... existing shortcuts ...
+  { id: 8, command: 'Run UI Compliance Auditor agent', shortcut: 'ui audit, run ui-compliance-auditor, ui compliance' },
+  // ... more shortcuts ...
+]
+```
+
+**Files:**
+- `frontend/src/components/settings/AgentShortcutsTab.jsx` (primary source of truth for UI)
+- `.claude/agents/*.md` (agent definitions with shortcuts documented)
+
+**Process:**
+1. User provides unclear shortcut
+2. Claude checks AgentShortcutsTab.jsx
+3. If not found, update baseCommands array
+4. Ensure agent file has matching shortcuts
+5. Deploy changes
 
 ---
 
