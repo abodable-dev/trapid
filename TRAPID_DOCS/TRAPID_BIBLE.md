@@ -5144,7 +5144,494 @@ predecessor_id = predecessor_task.sequence_order + 1
 │ 📘 USER MANUAL (HOW): Chapter 11               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## Overview
+
+Weather & Public Holidays manages construction schedule interruptions through automatic rain logging and public holiday tracking. Integrates with Gantt/Schedule Master to automatically skip non-working days and provide accurate completion dates.
+
+**Key Files:**
+- Models: `backend/app/models/public_holiday.rb`, `backend/app/models/rain_log.rb`
+- Controllers: `backend/app/controllers/api/v1/public_holidays_controller.rb`, `backend/app/controllers/api/v1/rain_logs_controller.rb`
+- Service: `backend/app/services/weather_api_client.rb`
+- Job: `backend/app/jobs/check_yesterday_rain_job.rb`
+
+---
+
+## RULE #11.1: Unique Holidays Per Region
+
+**PublicHoliday records MUST be unique by date + region combination.**
+
+✅ **MUST:**
+- Validate uniqueness: `validates :date, uniqueness: { scope: :region }`
+- Use region codes: QLD, NSW, VIC, SA, WA, TAS, NT, NZ
+- Store date in UTC (no time component)
+
+❌ **NEVER:**
+- Allow duplicate holidays for same date + region
+- Use inconsistent region codes
+- Store holidays with time components
+
+**Implementation:**
+```ruby
+# app/models/public_holiday.rb
+validates :name, presence: true
+validates :date, presence: true, uniqueness: { scope: :region }
+validates :region, presence: true
+```
+
+**Database constraint:**
+```sql
+UNIQUE(date, region)
+```
+
+**Why this rule exists:**
+- Prevents data duplication
+- Ensures single source of truth for holiday checking
+- Region scoping allows different holidays per state (e.g., QLD vs NSW Labour Day dates differ)
+
+**Files:**
+- `backend/app/models/public_holiday.rb:3-5`
+- `backend/db/migrate/20251111122612_create_public_holidays.rb`
+
+---
+
+## RULE #11.2: Rain Log - One Entry Per Construction Per Day
+
+**RainLog records MUST be unique by construction_id + date.**
+
+✅ **MUST:**
+- Enforce uniqueness at database level: `UNIQUE(construction_id, date)`
+- Check for existing log before auto-creation
+- Use `find_or_initialize_by` pattern for updates
+
+❌ **NEVER:**
+- Create multiple rain logs for same job + date
+- Override existing automatic logs without checking source
+- Allow future-dated rain logs
+
+**Implementation:**
+```ruby
+# app/models/rain_log.rb
+validate :date_cannot_be_in_future
+
+def date_cannot_be_in_future
+  errors.add(:date, "can't be in the future") if date.present? && date > Date.current
+end
+
+# app/jobs/check_yesterday_rain_job.rb
+existing_log = construction.rain_logs.find_by(date: yesterday)
+next if existing_log  # Skip if already logged
+```
+
+**Why this rule exists:**
+- Prevents data duplication
+- Automatic job doesn't override manual entries
+- Future dates prevented (can't log rain that hasn't happened)
+- Ensures clean reporting
+
+**Files:**
+- `backend/app/models/rain_log.rb:15-18`
+- `backend/db/migrate/20251113082745_create_rain_logs.rb`
+
+---
+
+## RULE #11.3: Rainfall Severity Auto-Calculation
+
+**Severity MUST be auto-calculated from rainfall_mm when present.**
+
+✅ **MUST calculate severity as:**
+- Light: `< 5mm`
+- Moderate: `5mm to 15mm`
+- Heavy: `> 15mm`
+
+✅ **MUST:**
+- Auto-calculate on create if `rainfall_mm` present
+- Recalculate on update if `rainfall_mm` changes
+- Allow nil severity if `rainfall_mm` is nil or 0
+
+❌ **NEVER:**
+- Allow manual severity override without rainfall_mm
+- Use different thresholds without updating constants
+- Skip calculation for automatic entries
+
+**Implementation:**
+```ruby
+# app/models/rain_log.rb
+def self.calculate_severity(rainfall_mm)
+  return nil if rainfall_mm.nil? || rainfall_mm.zero?
+  rainfall_mm < 5 ? 'light' : rainfall_mm < 15 ? 'moderate' : 'heavy'
+end
+
+def auto_calculate_severity!
+  calculated = self.class.calculate_severity(rainfall_mm)
+  update_column(:severity, calculated) if calculated
+end
+
+# After create/update callbacks
+after_save :auto_calculate_severity!, if: :rainfall_mm_changed?
+```
+
+**Why this rule exists:**
+- Ensures consistent severity classification
+- Eliminates human judgment variability
+- Allows filtering by severity for impact analysis
+- Construction industry standard thresholds
+
+**Files:**
+- `backend/app/models/rain_log.rb:30-35`
+
+---
+
+## RULE #11.4: Manual Rain Logs Require Notes
+
+**Manual rain log entries MUST include notes explaining the entry.**
+
+✅ **MUST:**
+- Validate presence: `validates :notes, presence: true, if: :source_manual?`
+- Display notes in UI for audit trail
+- Include who created the entry (`created_by_user_id`)
+
+❌ **NEVER:**
+- Allow blank notes for manual entries
+- Skip audit trail for manual modifications
+- Allow automatic entries to have editable notes
+
+**Implementation:**
+```ruby
+# app/models/rain_log.rb
+belongs_to :created_by_user, class_name: 'User', optional: true
+
+enum :source, {
+  automatic: 'automatic',
+  manual: 'manual'
+}, prefix: true
+
+validates :notes, presence: true, if: :source_manual?
+```
+
+**Why this rule exists:**
+- Accountability for manual entries
+- Dispute resolution (contractor vs client disagreements)
+- Audit trail for insurance claims
+- Prevents silent data manipulation
+
+**Files:**
+- `backend/app/models/rain_log.rb:11-13`
+
+---
+
+## RULE #11.5: Weather API - Historical Data Only
+
+**WeatherAPI MUST only be called for historical dates (yesterday or earlier).**
+
+✅ **MUST:**
+- Validate date is not in future before API call
+- Use `Date.yesterday` for automatic checks
+- Raise `ArgumentError` if future date provided
+
+❌ **NEVER:**
+- Call weather API for today or future dates
+- Use weather forecasts (not historical data)
+- Proceed with API call if date validation fails
+
+**Implementation:**
+```ruby
+# app/services/weather_api_client.rb
+def fetch_historical(location, date)
+  raise ArgumentError, 'Date cannot be in the future' if date > Date.current
+
+  url = build_url('/history.json', {
+    q: location,
+    dt: date.strftime('%Y-%m-%d')
+  })
+
+  response = make_request(url)
+  parse_response(response)
+end
+```
+
+**Why this rule exists:**
+- WeatherAPI free tier only includes historical data
+- Forecasts are inaccurate for rain logging purposes
+- Prevents unnecessary API calls
+- Ensures data integrity (only log actual rainfall)
+
+**Files:**
+- `backend/app/services/weather_api_client.rb:14-18`
+- `backend/app/jobs/check_yesterday_rain_job.rb:11`
+
+---
+
+## RULE #11.6: Location Extraction Priority
+
+**Job location MUST be extracted in priority order: location field → site_address → job title.**
+
+✅ **MUST follow priority:**
+1. `construction.location` (if present)
+2. `construction.project.site_address` (extract suburb)
+3. `construction.title` (parse after dash)
+
+❌ **NEVER:**
+- Use random location extraction order
+- Fail silently if location cannot be determined
+- Use company address as fallback (wrong location)
+
+**Implementation:**
+```ruby
+# app/jobs/check_yesterday_rain_job.rb
+def extract_location(construction)
+  # Priority 1: Explicit location field
+  return construction.location if construction.location.present?
+
+  # Priority 2: Parse site_address (extract suburb)
+  if construction.project&.site_address.present?
+    address = construction.project.site_address
+    parts = address.split(',').map(&:strip)
+    return parts[-2] if parts.length > 1  # Suburb is second-to-last
+  end
+
+  # Priority 3: Extract from title (e.g., "House Build - Bondi")
+  if construction.title.include?('-')
+    potential_location = construction.title.split('-').last.strip
+    return potential_location if potential_location.present?
+  end
+
+  nil  # Skip if location cannot be determined
+end
+```
+
+**Why this rule exists:**
+- Explicit location is most accurate
+- Site address parsing is second-best (actual job location)
+- Title parsing is fallback for legacy jobs
+- Prevents API calls with invalid locations
+
+**Files:**
+- `backend/app/jobs/check_yesterday_rain_job.rb:45-65`
+
+---
+
+## RULE #11.7: Gantt Integration - Working Day Calculation
+
+**Schedule cascade MUST respect both working_days and public holidays.**
+
+✅ **MUST:**
+- Load company `working_days` configuration
+- Load `PublicHoliday` dates for relevant region (3-year range)
+- Skip task to next working day if lands on weekend OR holiday
+- Respect lock hierarchy (locked tasks can stay on holidays)
+
+❌ **NEVER:**
+- Check only weekends without holidays
+- Check only holidays without weekends
+- Override locked task dates
+- Use different holiday lookups across services
+
+**Implementation:**
+```ruby
+# app/services/schedule_cascade_service.rb
+def working_day?(date)
+  working_days = @company_settings.working_days || default_working_days
+  day_name = date.strftime('%A').downcase
+  working_days[day_name] == true && !@holidays.include?(date)
+end
+
+def skip_to_next_working_day(day_offset)
+  actual_date = @reference_date + day_offset.days
+
+  while !working_day?(actual_date)
+    actual_date += 1.day
+  end
+
+  (actual_date - @reference_date).to_i
+end
+
+def load_holidays
+  today = CompanySetting.today
+  year_range = (today.year..today.year + 2)
+
+  holiday_dates = PublicHoliday
+    .for_region(@region)
+    .where('EXTRACT(YEAR FROM date) IN (?)', year_range.to_a)
+    .pluck(:date)
+
+  Set.new(holiday_dates)  # O(1) lookup
+end
+```
+
+**Lock Hierarchy (prevents adjustment):**
+1. `supplier_confirm?` - Highest
+2. `confirm?`
+3. `start?`
+4. `complete?`
+5. `manually_positioned?` - Lowest
+
+**Why this rule exists:**
+- Accurate project completion dates
+- Respects company-specific working days (e.g., Sunday work in QLD construction)
+- Prevents tasks scheduled on public holidays
+- Lock hierarchy prevents overriding confirmed dates
+
+**Files:**
+- `backend/app/services/schedule_cascade_service.rb:180-220`
+- Chapter 9 (Gantt) RULE #9.2, #9.3
+
+---
+
+## RULE #11.8: Weather API Response Storage
+
+**Full weather API response MUST be stored in weather_api_response JSONB field.**
+
+✅ **MUST:**
+- Store complete API JSON response
+- Include location confirmation data
+- Preserve all weather metrics (temp, condition, etc.)
+- Use for future analysis and verification
+
+❌ **NEVER:**
+- Store only rainfall value
+- Discard API response after extraction
+- Modify API response before storage
+
+**Implementation:**
+```ruby
+# app/services/weather_api_client.rb
+def parse_response(response)
+  day_data = response.dig('forecast', 'forecastday', 0, 'day')
+
+  {
+    rainfall_mm: day_data['totalprecip_mm'].to_f,
+    date: response.dig('forecast', 'forecastday', 0, 'date'),
+    location: response.dig('location', 'name'),
+    region: response.dig('location', 'region'),
+    country: response.dig('location', 'country'),
+    max_temp_c: day_data['maxtemp_c'].to_f,
+    min_temp_c: day_data['mintemp_c'].to_f,
+    condition: day_data.dig('condition', 'text'),
+    raw_response: response  # Full API JSON
+  }
+end
+
+# app/jobs/check_yesterday_rain_job.rb
+rain_log = construction.rain_logs.create!(
+  rainfall_mm: weather_data[:rainfall_mm],
+  severity: RainLog.calculate_severity(weather_data[:rainfall_mm]),
+  source: 'automatic',
+  weather_api_response: weather_data[:raw_response]  # Store full response
+)
+```
+
+**Why this rule exists:**
+- Future analysis (temperature correlations, etc.)
+- Dispute resolution (verify API data)
+- Location verification (confirm API matched correct suburb)
+- Free additional data for potential features
+
+**Files:**
+- `backend/app/services/weather_api_client.rb:55-70`
+- `backend/app/models/rain_log.rb` (schema: `weather_api_response: jsonb`)
+
+---
+
+## API Endpoints Reference
+
+### GET /api/v1/public_holidays
+**Purpose:** List public holidays with filtering
+
+**Query Params:**
+- `region` (optional) - QLD, NSW, VIC, etc. (default: QLD)
+- `year` (optional) - Filter by specific year
+
+**Response (200 OK):**
+```json
+{
+  "holidays": [
+    {
+      "id": 1,
+      "name": "New Year's Day",
+      "date": "2025-01-01",
+      "region": "QLD"
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/v1/public_holidays/dates
+**Purpose:** Get array of holiday dates (optimized for Gantt view)
+
+**Query Params:**
+- `region` (optional) - Default: QLD
+- `year_start` (optional) - Default: current year
+- `year_end` (optional) - Default: current year + 2
+
+**Response (200 OK):**
+```json
+{
+  "dates": ["2025-01-01", "2025-01-27", "2025-04-18", "2025-04-19"]
+}
+```
+
+---
+
+### GET /api/v1/constructions/:construction_id/rain_logs
+**Purpose:** List rain logs for a job
+
+**Query Params:**
+- `start_date` (optional) - Filter from date
+- `end_date` (optional) - Filter to date
+- `source` (optional) - automatic, manual
+
+**Response (200 OK):**
+```json
+{
+  "rain_logs": [
+    {
+      "id": 1,
+      "construction_id": 5,
+      "date": "2025-01-15",
+      "rainfall_mm": 12.50,
+      "hours_affected": 4.00,
+      "severity": "moderate",
+      "source": "automatic",
+      "notes": null,
+      "created_by_user": null,
+      "created_at": "2025-01-16T00:05:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### POST /api/v1/constructions/:construction_id/rain_logs
+**Purpose:** Create manual rain log entry
+
+**Request Body:**
+```json
+{
+  "rain_log": {
+    "date": "2025-01-15",
+    "rainfall_mm": 25.0,
+    "hours_affected": 8.0,
+    "notes": "Heavy rain all day, crew sent home at noon"
+  }
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "rain_log": {
+    "id": 10,
+    "severity": "heavy",
+    "source": "manual",
+    ...
+  }
+}
+```
 
 ---
 

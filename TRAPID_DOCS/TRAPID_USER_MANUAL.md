@@ -2491,7 +2491,177 @@ The template creates tasks for you automatically:
 │ 📕 LEXICON (BUGS):     Chapter 11 (Developers) │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+## What is Weather Tracking?
+
+Weather Tracking automatically logs rainfall and public holidays for your construction jobs. When it rains, the system records the amount and calculates severity. Public holidays are automatically recognized by region so your schedule knows when crews won't be working.
+
+**Benefits:**
+- **Automatic rain logging** - Weather data fetched daily at midnight
+- **Public holiday calendar** - Regional holidays (QLD, NSW, VIC, etc.) prevent scheduling conflicts
+- **Schedule integration** - Gantt respects non-working days and holidays
+- **Delay documentation** - Rain history provides evidence for time extensions
+
+---
+
+## Getting Started
+
+### Step 1: View Rain History
+
+1. Open a **Job**
+2. Go to **Weather** tab
+3. See list of rain events:
+   - **Date** - When it rained
+   - **Amount** - Rainfall in mm
+   - **Severity** - Light (<5mm), Moderate (5-15mm), Heavy (>15mm)
+   - **Impact** - Work stopped? Delays caused?
+
+**Automatic Logging:**
+- System checks weather API daily at midnight
+- Extracts location from job title or address
+- Records rainfall if > 0mm
+- Calculates severity automatically
+
+---
+
+### Step 2: Add Manual Rain Entry
+
+If automatic logging missed a rain event:
+
+1. Open **Job** → **Weather** tab
+2. Click **"Add Rain Event"** button
+3. Fill in:
+   - **Date** - When it rained
+   - **Rainfall (mm)** - Amount measured on site
+   - **Notes** - Impact description (optional)
+4. Click **"Save"**
+
+**Tip:** Severity auto-calculates from rainfall amount. You don't need to select it manually.
+
+---
+
+### Step 3: Check Public Holidays
+
+1. Go to **Settings** → **Public Holidays**
+2. See calendar of upcoming holidays by region:
+   - **National Holidays** - Australia-wide (e.g., Christmas Day)
+   - **Regional Holidays** - State-specific (e.g., Melbourne Cup - VIC only)
+3. Filter by region: QLD, NSW, VIC, SA, WA, TAS, NT, NZ
+
+**Schedule Integration:**
+- Gantt automatically skips public holidays when calculating task dates
+- Working day logic respects company working days + public holidays
+- Lock hierarchy prevents tasks from being scheduled on holidays
+
+---
+
+## Key Features
+
+**Automatic Weather Tracking:**
+- Daily midnight check for yesterday's rainfall
+- Location extracted from job title (e.g., "House Build - Springfield, QLD")
+- Severity auto-calculated based on rainfall amount
+- Historical data stored permanently
+
+**Regional Public Holidays:**
+- Unique holidays per region (no duplicates)
+- Covers all Australian states + New Zealand
+- Used by Schedule Master for working day calculations
+
+**Schedule Integration:**
+- Gantt respects both working days AND public holidays
+- Task dates auto-adjust to skip non-working days
+- Manual override via lock hierarchy if needed
+
+**Rain History Documentation:**
+- Evidence for contract variations
+- Time extension justification
+- Weather delay tracking per job
+
+---
+
+## Common Tasks
+
+### Add a Custom Public Holiday
+
+If your region has a local holiday not in the system:
+
+1. Go to **Settings** → **Public Holidays**
+2. Click **"Add Holiday"** button
+3. Fill in:
+   - **Name** - "Local Show Day"
+   - **Date** - Select from calendar
+   - **Region** - QLD (or your region)
+4. Click **"Save"**
+
+**Result:** Schedule Master now skips this date when calculating task dates for jobs in that region.
+
+---
+
+### View Rain Impact on Schedule
+
+1. Open **Job** → **Gantt** tab
+2. See if any tasks were delayed by rain:
+   - Tasks with weather delays show rain icon
+   - Hover over icon to see rain event details
+3. Check **Weather** tab to see full rain history
+
+**Tip:** Use rain history to justify time extensions to clients or generate variation requests.
+
+---
+
+### Manual Rainfall Entry for Historical Jobs
+
+If you're migrating an old job with known rain delays:
+
+1. Open **Job** → **Weather** tab
+2. Click **"Add Rain Event"** for each historical event
+3. Enter date, rainfall amount, and impact notes
+4. System stores as permanent record
+
+**Benefit:** Complete weather history for contract documentation.
+
+---
+
+## Troubleshooting
+
+**Issue: Automatic rain check not working**
+
+**Cause:** Job location unclear or API limit exceeded.
+
+**Solution:**
+- Ensure job title includes suburb + region: "House Build - Springfield, QLD"
+- Or add full address in Job Details
+- Check Settings → Integrations to verify WeatherAPI is connected
+
+---
+
+**Issue: Wrong location being used for weather**
+
+**Cause:** Ambiguous suburb name (e.g., "Springfield" exists in NSW and QLD).
+
+**Solution:**
+- Include state/region in job title: "Springfield, QLD" not just "Springfield"
+- Or add full street address in Job Details
+- System prioritizes: Address > Job title > Job site address > Contact address
+
+---
+
+**Issue: Public holiday not recognized**
+
+**Cause:** Holiday might be region-specific or not in database.
+
+**Solution:**
+- Check Settings → Public Holidays to see if it exists
+- Add manually if it's a local holiday
+- Ensure job's region matches the holiday's region
+
+---
+
+## Related Topics
+
+- **Chapter 9: Gantt & Schedule Master** - How schedule respects holidays
+- **Chapter 5: Jobs & Construction Management** - Job location settings
+- **Chapter 2: System Administration** - Company settings and working days
 
 ---
 

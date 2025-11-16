@@ -5278,7 +5278,117 @@ Locked tasks are NOT cascaded.
 │ 📘 USER MANUAL (HOW): Chapter 11               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## 🐛 Bug Hunter: Weather & Public Holidays
+
+### Known Issues & Solutions
+
+#### Issue: WeatherAPI Location Ambiguity
+**Status:** 🔄 MONITORING
+**Severity:** Low
+**Last Occurred:** 2025-10-12
+
+**Scenario:**
+Job title "House Build - Springfield" → API returns weather for Springfield, NSW instead of Springfield, QLD → Incorrect rain data logged.
+
+**Root Cause:**
+- WeatherAPI matches first result for ambiguous location names
+- No state/region qualifier in location extraction
+- Multiple Australian suburbs share same name
+
+**Solution:**
+Add region qualifier when calling API: `q=Springfield,QLD` instead of `q=Springfield`
+
+**Prevention:**
+Update location extraction to append region based on company timezone setting.
+
+---
+
+#### Issue: Automatic Job Skips Missing Location
+**Status:** ⚠️ BY DESIGN
+**Severity:** Low
+
+**Scenario:**
+CheckYesterdayRainJob runs but skips jobs without extractable location → No rain logged even though it rained.
+
+**Root Cause:**
+- Job title doesn't include location (e.g., "New Build - March 2025")
+- No `construction.location` field set
+- No site_address on project
+
+**Solution:**
+Working as designed - job silently skipped with INFO log.
+
+**User Workaround:**
+1. Set explicit `construction.location` field in job details
+2. OR update job title format: "New Build - [Suburb]"
+3. OR ensure project has valid site_address
+
+---
+
+## 🏗️ Architecture & Implementation
+
+### Why Daily Automatic Rain Checks?
+
+**Decision:** Run `CheckYesterdayRainJob` daily at midnight via Solid Queue.
+
+**Rationale:**
+- Ensures complete rain history without manual entry burden
+- Historical data more reliable than forecasts
+- WeatherAPI free tier supports 100k calls/month (sufficient for all jobs)
+- Automatic entries prevent disputes (objective weather data vs subjective claims)
+
+**Alternative Considered:**
+- Manual entry only: Too much overhead, inconsistent data
+- Real-time checks during schedule updates: Unnecessary API calls, data already historical
+
+---
+
+### Severity Thresholds
+
+**Construction Industry Standards:**
+- **Light (< 5mm):** Can continue most outdoor work with precautions
+- **Moderate (5-15mm):** Delay concrete pours, painting, roofing
+- **Heavy (> 15mm):** Stop all outdoor construction work
+
+**Source:** Australian Building Codes Board + industry practice.
+
+---
+
+## 📊 Test Catalog
+
+### RSpec Tests
+
+**File:** `backend/spec/models/rain_log_spec.rb`
+
+```ruby
+describe RainLog do
+  it 'validates date not in future'
+  it 'validates uniqueness of construction + date'
+  it 'auto-calculates severity from rainfall_mm'
+  it 'requires notes for manual entries'
+  it 'allows nil notes for automatic entries'
+end
+```
+
+**File:** `backend/spec/services/weather_api_client_spec.rb`
+
+```ruby
+describe WeatherApiClient do
+  it 'fetches historical data for valid location + date'
+  it 'raises error for future date'
+  it 'parses API response correctly'
+  it 'stores full raw response'
+end
+```
+
+---
+
+## 🔗 Related Chapters
+
+- **Chapter 9: Gantt & Schedule Master** - Working day calculations, holiday integration
+- **Chapter 5: Jobs & Construction** - Location field for weather lookups
 
 ---
 
