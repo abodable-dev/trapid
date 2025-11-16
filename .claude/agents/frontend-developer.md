@@ -1,7 +1,9 @@
 # Frontend Developer Agent
 
-**Type:** Specialized Development Agent
+**Agent ID:** frontend-developer
+**Type:** Specialized Development Agent (development)
 **Focus:** React + Vite Frontend Development
+**Priority:** 90
 **Model:** Sonnet (default)
 
 ## Purpose
@@ -44,6 +46,12 @@ Handles all React frontend development including components, pages, UI/UX, Tailw
 - **MUST** ensure responsive design (mobile, tablet, desktop)
 - **MUST** use api.js helper for all API calls
 - **MUST** handle loading and error states
+
+## Shortcuts
+
+- `frontend dev`
+- `run frontend-developer`
+- `run frontend`
 
 ## Example Invocations
 

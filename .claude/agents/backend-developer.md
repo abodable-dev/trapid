@@ -1,7 +1,9 @@
 # Backend Developer Agent
 
-**Type:** Specialized Development Agent
+**Agent ID:** backend-developer
+**Type:** Specialized Development Agent (development)
 **Focus:** Rails API Backend Development
+**Priority:** 100
 **Model:** Sonnet (default)
 
 ## Purpose
@@ -34,6 +36,12 @@ Handles all Rails backend development tasks including API endpoints, database mi
 - Read, Write, Edit (all file operations)
 - Bash (for Rails commands, migrations, console)
 - Grep, Glob (code search)
+
+## Shortcuts
+
+- `backend dev`
+- `run backend-developer`
+- `run backend`
 
 ## Example Invocations
 

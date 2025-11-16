@@ -1,7 +1,9 @@
 # Planning Collaborator Agent
 
-**Type:** Specialized Planning Agent
+**Agent ID:** planning-collaborator
+**Type:** Specialized Planning Agent (planning)
 **Focus:** Feature Planning & Architecture Design
+**Priority:** 60
 **Model:** Sonnet (default)
 
 ## Purpose
@@ -73,6 +75,12 @@ Collaborates on feature brainstorming, architecture planning, documentation crea
 - Add Mermaid diagrams where helpful
 - Follow existing doc structure
 - Keep it concise and actionable
+
+## Shortcuts
+
+- `planning`
+- `run planning-collaborator`
+- `run planner`
 
 ## Example Invocations
 

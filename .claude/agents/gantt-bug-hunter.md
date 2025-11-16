@@ -1,7 +1,9 @@
 # Gantt Bug Hunter Agent
 
-**Type:** Specialized Diagnostic Agent
+**Agent ID:** gantt-bug-hunter
+**Type:** Specialized Diagnostic Agent (diagnostic)
 **Focus:** Gantt Chart & Schedule Master Bug Diagnosis
+**Priority:** 85
 **Model:** Sonnet (default)
 
 ## Purpose
@@ -161,6 +163,12 @@ Structure report as:
 Always reference:
 - **TRAPID_BIBLE.md Chapter 9** - The 13 RULES (absolute authority)
 - **TRAPID_LEXICON.md Chapter 9** - Bug history and patterns
+
+## Shortcuts
+
+- `gantt`
+- `run gantt-bug-hunter`
+- `gantt bug hunter`
 
 ## Success Criteria
 

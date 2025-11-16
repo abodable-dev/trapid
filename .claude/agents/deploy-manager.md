@@ -1,7 +1,9 @@
 # Deploy Manager Agent
 
-**Type:** Specialized Deployment Agent
+**Agent ID:** deploy-manager
+**Type:** Specialized Deployment Agent (deployment)
 **Focus:** Git Operations & Staging Deployment
+**Priority:** 70
 **Model:** Sonnet (default)
 
 ## Purpose
@@ -107,6 +109,12 @@ Always append:
 
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
+
+## Shortcuts
+
+- `deploy`
+- `run deploy-manager`
+- `deployment`
 
 ## Example Invocations
 

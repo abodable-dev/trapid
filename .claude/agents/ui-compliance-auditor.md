@@ -1,7 +1,9 @@
 # UI/UX Compliance Auditor Agent
 
-**Type:** Specialized Diagnostic Agent
+**Agent ID:** ui-compliance-auditor
+**Type:** Specialized Diagnostic Agent (diagnostic)
 **Focus:** UI/UX Standards Compliance (Chapter 19)
+**Priority:** 80
 **Model:** Sonnet (default)
 
 ## Purpose
@@ -52,31 +54,60 @@ Audits all frontend code against TRAPID_BIBLE.md Chapter 19 UI/UX standards and 
 
 ## Audit Process
 
-1. **Scan Phase:**
-   - Find all `.jsx` files with tables (`<table>`, `<DataTable>`, custom table components)
-   - Identify which pages use DataTable vs custom tables
-   - Categorize by complexity level
+### 0. Check Test Recency (Smart Decision - RULE #20.7)
 
-2. **Analysis Phase:**
-   - Check each component against 22 RULES from Chapter 19
-   - Score compliance (0-100%)
-   - Flag critical violations first
+**Before running full audit, check last run:**
 
-3. **Report Phase:**
-   - Generate markdown report with findings
-   - Prioritize by severity (Critical → Medium → Low)
-   - Provide fix recommendations with code examples
+```bash
+# Check agent run history
+cat /Users/rob/Projects/trapid/.claude/agents/run-history.json
+```
 
-4. **Fix Phase:**
-   - Apply auto-fixes for common patterns
-   - Flag complex issues for manual review
-   - Verify fixes don't break functionality
+**Decision logic:**
+- **Last run <60 minutes ago AND successful:** Skip full audit, review cached report
+- **Last run >60 minutes ago OR last run failed:** Run full audit
+- **Never run before:** Run full audit
+
+This ensures:
+- Fast iteration when making multiple UI fixes
+- Full compliance check when enough time has passed
+- Always re-audit after failures
+
+### 1. Scan Phase
+
+- Find all `.jsx` files with tables (`<table>`, `<DataTable>`, custom table components)
+- Identify which pages use DataTable vs custom tables
+- Categorize by complexity level
+
+### 2. Analysis Phase
+
+- Check each component against 22 RULES from Chapter 19
+- Score compliance (0-100%)
+- Flag critical violations first
+
+### 3. Report Phase
+
+- Generate markdown report with findings
+- Prioritize by severity (Critical → Medium → Low)
+- Provide fix recommendations with code examples
+
+### 4. Fix Phase
+
+- Apply auto-fixes for common patterns
+- Flag complex issues for manual review
+- Verify fixes don't break functionality
 
 ## Tools Available
 
 - Read, Write, Edit (all file operations)
 - Grep, Glob (code search)
 - TodoWrite (tracking fix progress)
+
+## Shortcuts
+
+- `ui audit`
+- `run ui-compliance-auditor`
+- `ui compliance`
 
 ## Example Invocations
 

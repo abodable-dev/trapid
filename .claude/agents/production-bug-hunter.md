@@ -1,7 +1,9 @@
 # Production Bug Hunter Agent
 
-**Type:** Specialized Diagnostic Agent
+**Agent ID:** production-bug-hunter
+**Type:** Specialized Diagnostic Agent (diagnostic)
 **Focus:** Production Bug Diagnosis & Resolution (All Systems)
+**Priority:** 80
 **Model:** Sonnet (default)
 
 **Note:** For Gantt-specific diagnostics, see "Gantt Bug Hunter" workflow below.
@@ -38,6 +40,27 @@ Diagnoses production bugs, analyzes Heroku logs, reproduces errors, and works wi
 - Grep, Glob (code search and analysis)
 - Task (can launch other agents for fixes)
 
+## Diagnostic Protocol
+
+### Check Test Recency (Smart Decision - RULE #20.7)
+
+**Before running diagnostic tests, check last run:**
+
+```bash
+# Check agent run history
+cat /Users/rob/Projects/trapid/.claude/agents/run-history.json
+```
+
+**Decision logic:**
+- **Last run <60 minutes ago AND successful:** Skip tests, use previous analysis
+- **Last run >60 minutes ago OR last run failed:** Run full diagnostics
+- **Never run before:** Run full diagnostics
+
+This ensures:
+- Fast iteration when diagnosing multiple issues
+- Full test coverage when enough time has passed
+- Always re-run after failures
+
 ## Gantt-Specific Protocol
 
 **For Gantt/Schedule Master bugs:**
@@ -52,6 +75,12 @@ Diagnoses production bugs, analyzes Heroku logs, reproduces errors, and works wi
 4. **Generate diagnostic report**
 
 See GANTT_BIBLE.md RULE #0.9.1 for full workflow.
+
+## Shortcuts
+
+- `bug hunter`
+- `run production-bug-hunter`
+- `run prod-bug`
 
 ## Example Invocations
 
