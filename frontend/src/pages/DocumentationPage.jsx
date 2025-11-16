@@ -52,6 +52,12 @@ export default function DocumentationPage() {
   // View mode for Bible (default to table view)
   const [bibleViewMode, setBibleViewMode] = useState('table') // 'markdown' or 'table'
 
+  // View mode for Teacher
+  const [teacherViewMode, setTeacherViewMode] = useState('markdown') // 'markdown' or 'table'
+
+  // View mode for User Manual
+  const [manualViewMode, setManualViewMode] = useState('markdown') // 'markdown' or 'table'
+
   // Load docs list on mount
   useEffect(() => {
     loadDocs()
@@ -481,6 +487,31 @@ export default function DocumentationPage() {
   if (selectedDoc?.id === 'bible' && bibleViewMode === 'table') {
     return (
       <>
+        {/* Document Tabs */}
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          <div className="flex space-x-1 px-4">
+            {docs.map((doc) => {
+              const isActive = selectedDoc?.id === doc.id
+              return (
+                <button
+                  key={doc.id}
+                  onClick={() => handleDocSelect(doc)}
+                  className={`
+                    px-4 py-3 text-sm font-medium border-b-2 transition-colors
+                    ${isActive
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                    }
+                  `}
+                >
+                  <span className="mr-2">{doc.icon}</span>
+                  {doc.name}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <div className="h-full flex flex-col bg-white dark:bg-gray-900">
           {/* Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
@@ -534,6 +565,31 @@ export default function DocumentationPage() {
   if (selectedDoc?.id === 'lexicon' && lexiconViewMode === 'table') {
     return (
       <>
+        {/* Document Tabs */}
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          <div className="flex space-x-1 px-4">
+            {docs.map((doc) => {
+              const isActive = selectedDoc?.id === doc.id
+              return (
+                <button
+                  key={doc.id}
+                  onClick={() => handleDocSelect(doc)}
+                  className={`
+                    px-4 py-3 text-sm font-medium border-b-2 transition-colors
+                    ${isActive
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                    }
+                  `}
+                >
+                  <span className="mr-2">{doc.icon}</span>
+                  {doc.name}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <div className="h-full flex flex-col bg-white dark:bg-gray-900">
           {/* Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
@@ -610,6 +666,86 @@ export default function DocumentationPage() {
           chapterName={editingEntry?.chapter_name || 'Overview'}
           entry={editingEntry}
         />
+
+        {/* Keyboard Shortcuts Help */}
+        <KeyboardShortcutsHelp />
+      </>
+    )
+  }
+
+  // If Teacher is selected and table view mode is active
+  if (selectedDoc?.id === 'teacher' && teacherViewMode === 'table') {
+    return (
+      <>
+        {/* Document Tabs */}
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          <div className="flex space-x-1 px-4">
+            {docs.map((doc) => {
+              const isActive = selectedDoc?.id === doc.id
+              return (
+                <button
+                  key={doc.id}
+                  onClick={() => handleDocSelect(doc)}
+                  className={`
+                    px-4 py-3 text-sm font-medium border-b-2 transition-colors
+                    ${isActive
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                    }
+                  `}
+                >
+                  <span className="mr-2">{doc.icon}</span>
+                  {doc.name}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+              🔧 Trapid Teacher - Markdown View
+            </h1>
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setTeacherViewMode('markdown')}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+                    teacherViewMode === 'markdown'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  title="Markdown View"
+                >
+                  <Squares2X2Icon className="w-4 h-4" />
+                  Markdown
+                </button>
+                <button
+                  onClick={() => setTeacherViewMode('table')}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                    teacherViewMode === 'table'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  title="Table View"
+                >
+                  <TableCellsIcon className="w-4 h-4" />
+                  Table
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Markdown View */}
+          <div className="flex-1 overflow-auto p-8">
+            <div className="max-w-4xl mx-auto">
+              <MarkdownRenderer content={content} />
+            </div>
+          </div>
+        </div>
 
         {/* Keyboard Shortcuts Help */}
         <KeyboardShortcutsHelp />
