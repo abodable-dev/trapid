@@ -33,22 +33,30 @@ const CHAPTER_NAMES = {
   20: 'Agent System & Automation'
 }
 
-// Extract "Related To" category from section title (all chapters)
+// Extract "Related To" category from section title - categorize by PRIMARY subject
 const extractRelatedTo = (title, chapter) => {
   const titleLower = title.toLowerCase()
 
-  // Priority order: most specific to least specific
+  // Priority: Check beginning of title for main subject (most specific first)
+  // This ensures we categorize by WHAT the rule is about, not what it mentions
 
-  // UI Components (Chapter 19 primarily)
-  if (titleLower.includes('table')) return 'Table'
+  // UI Component Subjects (Chapter 19 primarily)
+  if (titleLower.match(/^(table|advanced table|datatable)/)) return 'Table'
+  if (titleLower.includes('scroll')) return 'Scroll'
+  if (titleLower.includes('column') && !titleLower.includes('table')) return 'Column'
+  if (titleLower.includes('row') && !titleLower.includes('table')) return 'Row'
   if (titleLower.includes('form')) return 'Form'
-  if (titleLower.includes('modal') || titleLower.includes('dialog')) return 'Modal'
+  if (titleLower.includes('modal') || titleLower.includes('drawer')) return 'Modal'
   if (titleLower.includes('toolbar')) return 'Toolbar'
   if (titleLower.includes('button')) return 'Button'
-  if (titleLower.includes('column')) return 'Column'
-  if (titleLower.includes('row')) return 'Row'
+  if (titleLower.includes('badge') || titleLower.includes('status')) return 'Badge'
+  if (titleLower.includes('tooltip')) return 'Tooltip'
+  if (titleLower.includes('dropdown')) return 'Dropdown'
   if (titleLower.includes('layout')) return 'Layout'
-  if (titleLower.includes('dark mode')) return 'Dark Mode'
+  if (titleLower.includes('dark mode') || titleLower.includes('theme')) return 'Dark Mode'
+  if (titleLower.includes('navigation') || titleLower.includes('nav')) return 'Navigation'
+  if (titleLower.includes('header')) return 'Header'
+  if (titleLower.includes('footer')) return 'Footer'
 
   // Data & State
   if (titleLower.includes('database') || titleLower.includes('schema')) return 'Database'
@@ -85,7 +93,7 @@ const extractRelatedTo = (title, chapter) => {
   if (titleLower.includes('payment') || titleLower.includes('invoice')) return 'Payment'
   if (titleLower.includes('workflow')) return 'Workflow'
 
-  // Technical Patterns
+  // Technical Patterns (lower priority - only if not a UI component)
   if (titleLower.includes('validation')) return 'Validation'
   if (titleLower.includes('transaction')) return 'Transaction'
   if (titleLower.includes('async') || titleLower.includes('background')) return 'Async'
@@ -98,6 +106,9 @@ const extractRelatedTo = (title, chapter) => {
   if (titleLower.includes('image') || titleLower.includes('photo')) return 'Image'
   if (titleLower.includes('test') || titleLower.includes('testing')) return 'Testing'
   if (titleLower.includes('documentation') || titleLower.includes('lexicon')) return 'Documentation'
+
+  // UI patterns (catch any table-related if not already caught)
+  if (titleLower.includes('table')) return 'Table'
 
   return 'General'
 }
