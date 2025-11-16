@@ -219,6 +219,70 @@ If you see error X, do Y
 **Is it a bug fix, architecture decision, or WHY explanation?** → Lexicon
 **Is it for end-users?** → User Manual
 
+---
+
+### Example: Table Component Design
+
+**Question:** "I want to document how to build a table with sorting and filtering"
+
+**Bible (RULE #19.1):**
+```markdown
+✅ MUST ask user which table type:
+1. DataTable.jsx (read-only)
+2. Advanced table (edit, bulk actions)
+
+❌ NEVER create table without column resizing
+❌ NEVER create table without dark mode support
+
+See: TRAPID_TEACHER.md §19.1 for implementation
+```
+
+**Teacher (§19.1):**
+```markdown
+## §19.1: Advanced Table Pattern
+
+### Full Code Example
+```jsx
+import AdvancedTable from '@/components/shared/AdvancedTable'
+
+const MyTable = () => (
+  <AdvancedTable
+    data={items}
+    columns={columns}
+    onRowClick={handleRowClick}
+  />
+)
+```
+
+### Common Mistakes
+- Forgetting to add `key` prop to columns
+- Not handling empty state
+
+### Testing Strategy
+- Test sorting with 100+ rows
+- Test filter combinations
+```
+
+**Lexicon (Chapter 19 Bug Entry):**
+```markdown
+Title: "Table filter dropdown showed stale data"
+Scenario: User changed chapter filter, saw old results
+Root Cause: Filter state not clearing on unmount
+Solution: Added useEffect cleanup
+Why This Matters: All filterable tables must clear state
+```
+
+**User Manual (Chapter 19):**
+```markdown
+## How to Filter the Table
+
+1. Click the dropdown in the column header
+2. Select your filter value
+3. Click "Clear Filters" to reset
+```
+
+---
+
 **📖 Implementation:** See [TRAPID_TEACHER.md §0](TRAPID_TEACHER.md#0-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 0](TRAPID_LEXICON.md)
 
