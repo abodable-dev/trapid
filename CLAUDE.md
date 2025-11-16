@@ -280,7 +280,16 @@ If UI/UX doesn't match guidelines:
 
 ## Agent System
 
-Trapid uses **6 specialized agents** defined in `.claude/agents/`. Each agent has specific capabilities and tracks its run history.
+**📖 CRITICAL: See TRAPID_BIBLE.md Chapter 20 for complete Agent System RULES**
+
+Trapid uses **6 specialized agents** stored in the `agent_definitions` database table. Each agent has specific capabilities and tracks its run history.
+
+**Before working with agents:**
+1. Read Bible Chapter 20: `/TRAPID_DOCS/TRAPID_BIBLE.md` (Chapter 20)
+2. Read Lexicon Chapter 20: `/TRAPID_DOCS/TRAPID_LEXICON.md` (Chapter 20)
+3. Follow ALL 7 RULES from Bible Chapter 20
+
+**Database-Primary:** Agent configurations are stored in `agent_definitions` table, managed via API at `/api/v1/agent_definitions`.
 
 ### Available Agents
 
@@ -351,12 +360,24 @@ run all agents
 
 ### Agent Run History
 
-Run history is tracked in `.claude/agents/run-history.json`:
-- Total runs, successful runs, failed runs
-- Last run timestamp and status
-- Detailed run logs
+**Database-Driven:** Run history is tracked in `agent_definitions` table (see Bible Chapter 20 RULE #20.3):
+- `total_runs`, `successful_runs`, `failed_runs`
+- `last_run_at` timestamp
+- `last_status` and `last_message`
+- `last_run_details` (JSONB - flexible per-agent metrics)
+- Automatic `success_rate()` calculation
 
-View agent status: See `.claude/agents/README.md`
+**Recording runs:**
+```ruby
+agent = AgentDefinition.find_by(agent_id: 'backend-developer')
+agent.record_success("Created API endpoint", { files_created: 3 })
+# or
+agent.record_failure("Migration failed", { error_type: "SyntaxError" })
+```
+
+**Legacy files:**
+- `.claude/agents/run-history.json` (deprecated - use database)
+- `.claude/agents/README.md` (documentation only)
 
 ## Environment Variables
 
