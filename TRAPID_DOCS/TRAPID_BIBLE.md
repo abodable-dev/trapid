@@ -13644,7 +13644,7 @@ import BackButton from '../components/common/BackButton'
 
 ---
 
-## RULE #19.6: Chapter 19 Documentation Maintenance (REQUIRED)
+## RULE #19.29: Chapter 19 Documentation Maintenance (REQUIRED)
 
 **CRITICAL: Whenever you make changes to ANY table's column structure, features, or UI patterns, you MUST update Chapter 19 in TRAPID_BIBLE.md to keep documentation current.**
 
