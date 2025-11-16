@@ -3884,7 +3884,185 @@ After setting up Xero integration:
 │ 📕 LEXICON (BUGS):     Chapter 16 (Developers) │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## What is Payment Tracking?
+
+Payment tracking helps you record and monitor all payments made against purchase orders. The system tracks payment history, calculates remaining balances, and automatically syncs with Xero accounting software for accurate financial reporting.
+
+**Key Benefits:**
+- **Payment History** - See all payments made against each purchase order
+- **Automatic Status Updates** - Payment status updates based on amounts paid
+- **Xero Integration** - Payments sync automatically to your accounting software
+- **Budget Monitoring** - Track spending against budgeted amounts
+
+All financial data uses precise decimal calculations to ensure accuracy down to the cent.
+
+---
+
+## Getting Started
+
+### Recording a Payment
+
+1. Open a **Purchase Order** detail page
+2. Scroll to the **Payments** section
+3. Click **"Record Payment"** button
+4. Fill in payment details:
+   - **Amount**: Enter the payment amount (e.g., $1,234.56)
+   - **Payment Date**: Select when payment was made
+   - **Payment Method**: Choose from Bank Transfer, EFT, Check, Credit Card, Cash, or Other
+   - **Reference Number**: Enter check number or transaction reference (optional)
+   - **Notes**: Add any additional details (optional)
+5. Click **"Save Payment"**
+
+**The payment summary updates automatically showing total paid and remaining balance.**
+
+### Understanding Payment Status
+
+Purchase orders display a payment status badge with four states:
+
+- **Pending** (Gray) - No payments recorded yet
+- **Partial Payment** (Yellow) - Some amount paid, but not complete
+- **Paid** (Green) - Fully paid (within 5% tolerance)
+- **Needs Review** (Red) - Overpayment detected, requires manual review
+
+**Status updates automatically as you record payments.**
+
+### Viewing Payment History
+
+On any Purchase Order page:
+
+1. Look for the **Payments** section
+2. View the **payment summary box** showing:
+   - PO Total
+   - Total Paid (green)
+   - Remaining (red)
+3. Scroll down to see **payment timeline** with:
+   - Payment amount
+   - Date paid
+   - Payment method
+   - Reference number
+   - Who recorded the payment
+   - Xero sync status (green checkmark if synced)
+
+---
+
+## Common Tasks
+
+### Using "Pay Remaining" Quick Action
+
+When making a final payment:
+
+1. Click **"Record Payment"**
+2. Click the **"Use remaining amount"** button
+3. The amount field auto-fills with the remaining balance
+4. Select payment method and reference
+5. Click **"Save Payment"**
+
+**This ensures exact payment amounts without manual calculation.**
+
+### Matching Xero Invoices
+
+If you use Xero accounting:
+
+1. Open a Purchase Order
+2. Click **"Match Xero Invoice"** button
+3. Search for the invoice by number, supplier, or reference
+4. Click **"Match to PO"** next to the correct invoice
+5. Confirm the match
+
+**The system automatically:**
+- Links the invoice to the PO
+- Updates payment status
+- Syncs payment data to Xero
+
+### Checking Budget Variance
+
+If a PO has a budget set:
+
+1. Open the Purchase Order
+2. Look for the **Budget** section
+3. View:
+   - **Budgeted Amount**: Original budget
+   - **Actual Amount**: Current PO total
+   - **Variance**: Difference (red if over, green if under)
+
+**Over-budget POs are highlighted in red for visibility.**
+
+### Deleting an Incorrect Payment
+
+1. Navigate to the Purchase Order
+2. Find the payment in the payment timeline
+3. Click the red **trash icon** next to the payment
+4. Confirm deletion
+
+**Warning:** This will update the PO payment status and remaining balance. Deleted payments cannot be recovered.
+
+---
+
+## Troubleshooting
+
+### Payment Status Shows "Needs Review"
+
+**Problem:** The payment status badge is red and shows "Needs Review."
+
+**Cause:** The total paid amount exceeds the PO total by more than 5% or $1.
+
+**Solution:**
+1. Check the payment history for errors
+2. Verify the PO total is correct
+3. If overpayment is intentional (e.g., rush fees, shipping), note it in the payment notes
+4. Contact your manager to approve the overage
+
+---
+
+### Xero Sync Failed
+
+**Problem:** Payment shows a red X icon instead of green checkmark for Xero sync.
+
+**Cause:** The payment failed to sync to Xero (network issue, authentication expired, or invoice not matched).
+
+**Solution:**
+1. Ensure the PO has a matched Xero invoice first
+2. Click the **"Sync to Xero"** button to retry
+3. If sync continues to fail, check Xero connection status (Settings → Xero Integration)
+4. Contact your administrator if the problem persists
+
+---
+
+### Can't Find a Payment
+
+**Problem:** You recorded a payment but can't see it in the timeline.
+
+**Solution:**
+1. Verify you're viewing the correct Purchase Order
+2. Scroll down to the Payments section (below PO details)
+3. Check the payment summary box shows updated Total Paid
+4. Refresh the page (F5)
+5. If still missing, check if payment was recorded on a different PO
+
+---
+
+### Remaining Balance Doesn't Match
+
+**Problem:** The "Remaining" amount doesn't match your calculations.
+
+**Explanation:** The system calculates:
+- **Remaining = PO Total - Total Paid**
+
+**Check:**
+1. Verify the PO Total hasn't changed (line items updated?)
+2. Sum all payments in the timeline manually
+3. Ensure no payments were deleted or modified
+4. If discrepancy persists, contact support with PO number
+
+---
+
+## Related Topics
+
+- **Chapter 8:** Purchase Orders (creating and managing POs)
+- **Chapter 15:** Xero Accounting Integration (invoice matching, sync setup)
+- **Chapter 5:** Jobs & Construction Management (budget tracking)
 
 ---
 

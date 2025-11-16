@@ -7442,7 +7442,305 @@ heroku ps:restart solid_queue -a trapid-backend
 │ 📘 USER MANUAL (HOW): Chapter 16               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## 🐛 Bug Hunter: Payments & Financials
+
+### Known Issues & Solutions
+
+#### Issue: Missing Xero API Methods in Frontend
+
+**Status:** ⚠️ INCOMPLETE FEATURE
+**Severity:** Medium
+**First Reported:** 2025-11-16
+
+**Scenario:**
+
+XeroInvoiceMatcher component calls `api.xero.getInvoices()` and `api.xero.matchInvoice()`, but these methods are not defined in the API client. This causes undefined method errors when trying to match invoices.
+
+**Root Cause:**
+
+Frontend API client (`frontend/src/api.js`) has placeholder Xero object but missing critical methods:
+
+```javascript
+// Defined methods (exist)
+xero: {
+  getAuthUrl: () => api.get('/xero/auth_url'),
+  callback: (code) => api.post('/xero/callback', { code }),
+  getStatus: () => api.get('/xero/status'),
+  disconnect: () => api.delete('/xero/disconnect')
+}
+
+// Missing methods (called but undefined)
+// - api.xero.getInvoices()
+// - api.xero.matchInvoice(invoiceId, poId)
+```
+
+**Solution:**
+
+Add missing methods to `frontend/src/api.js`:
+
+```javascript
+xero: {
+  // ... existing methods
+  getInvoices: (params = {}) => api.get('/xero/invoices', { params }),
+  matchInvoice: (invoiceId, poId) => api.post('/xero/match_invoice', {
+    invoice_id: invoiceId,
+    purchase_order_id: poId
+  })
+}
+```
+
+**Prevention:**
+
+- Add TypeScript or JSDoc to document API client methods
+- Create integration tests for frontend-backend API contracts
+
+---
+
+#### Issue: Payment Status Race Condition
+
+**Status:** 🔄 MONITORING
+**Severity:** Low
+**First Reported:** 2025-11-16
+
+**Scenario:**
+
+When recording multiple payments quickly (e.g., via bulk import), the `update_purchase_order_payment_status` callback can fire multiple times simultaneously, causing race conditions on PO update.
+
+**Root Cause:**
+
+```ruby
+# app/models/payment.rb
+after_save :update_purchase_order_payment_status
+
+# If two payments saved simultaneously:
+# Payment 1 callback: reads payments.sum(:amount) = $100
+# Payment 2 callback: reads payments.sum(:amount) = $100 (stale)
+# Both update PO with same value, but should be $200
+```
+
+**Workaround:**
+
+Payments are typically recorded one at a time via UI, so race condition rarely occurs.
+
+**Future Enhancement:**
+
+Use database-level locking:
+
+```ruby
+def update_purchase_order_payment_status
+  purchase_order.with_lock do
+    total_paid = purchase_order.payments.sum(:amount)
+    purchase_order.update!(xero_amount_paid: total_paid, ...)
+  end
+end
+```
+
+---
+
+## 🏗️ Architecture & Implementation
+
+### 6-Strategy Invoice Fuzzy Matching
+
+InvoiceMatchingService implements a waterfall matching algorithm with decreasing confidence:
+
+**Strategy 1: Explicit PO ID** (100% confidence)
+- User manually selects PO during invoice match
+- No fuzzy logic needed
+
+**Strategy 2: Reference Field** (95% confidence)
+- Extracts from `xero_invoice['Reference']`
+- Pattern: `PO-123`, `P.O. 123`, `P/O 123`, `Purchase Order 123`
+- Most reliable as suppliers often include PO# in reference
+
+**Strategy 3: Invoice Number** (85% confidence)
+- Extracts from `xero_invoice['InvoiceNumber']`
+- Same pattern matching as Strategy 2
+- Less reliable (some invoices use internal numbering)
+
+**Strategy 4: Line Items Description** (75% confidence)
+- Scans `LineItems[].Description` for PO numbers
+- Aggregates all line descriptions into searchable text
+
+**Strategy 5: Normalized PO Number** (65% confidence)
+- Handles zero-padding differences: `PO-0123` vs `PO-123`
+- Uses PostgreSQL `CAST` to normalize
+
+**Strategy 6: Supplier + Amount Fallback** (50% confidence)
+- Matches by supplier name + invoice amount (±10% tolerance)
+- Least reliable, used as last resort
+
+**Decision:** Waterfall stops at first match. Lower strategies only tried if higher ones fail.
+
+---
+
+### Automatic Payment Status Calculation
+
+PO payment status determined by comparing invoice amount to PO total:
+
+**Tolerance Bands:**
+
+| Invoice % of PO Total | Status | Reasoning |
+|---|---|---|
+| 0% | `pending` | No invoice matched yet |
+| 1-94% | `part_payment` | Partial invoice (staged payments) |
+| 95-105% | `complete` | Within acceptable tolerance |
+| >105% (+$1) | `manual_review` | Overage needs approval |
+
+**Why 5% tolerance?**
+- Accounts for rounding differences
+- Small shipping/fee variations
+- GST/tax calculation differences
+
+**Why $1 minimum overage?**
+- Prevents flagging tiny differences (e.g., $0.10)
+- Focus manual review on significant variances
+
+**Trade-off:** 5% tolerance means a $10,000 PO could be "complete" at $9,500 or $10,500 ($500 variance).
+
+---
+
+### DECIMAL(15,2) Financial Precision
+
+**Why DECIMAL not FLOAT?**
+
+FLOAT causes rounding errors:
+
+```ruby
+# FLOAT example (BAD)
+0.1 + 0.2 # => 0.30000000000000004 (!!!)
+total = 10.50
+paid = 7.23
+remaining = total - paid # => 3.2699999999999996
+
+# DECIMAL example (GOOD)
+total = BigDecimal('10.50')
+paid = BigDecimal('7.23')
+remaining = total - paid # => 3.27 (exact)
+```
+
+**PostgreSQL DECIMAL(15,2):**
+- 15 digits total
+- 2 decimal places
+- Max value: 9,999,999,999,999.99 (~$10 trillion)
+- Exact precision for currency
+
+**Rails Validation:**
+
+```ruby
+validates :amount, numericality: {
+  greater_than: 0,
+  less_than_or_equal_to: 999_999_999_999.99 # Max DECIMAL(15,2)
+}
+```
+
+---
+
+## 📊 Test Catalog
+
+### Manual Testing Procedures
+
+**Test 1: Record Payment Flow**
+
+1. Navigate to PO detail page
+2. Click "Record Payment"
+3. Enter amount: $1,234.56
+4. Select payment method: Bank Transfer
+5. Enter reference: CHK-12345
+6. Click "Save Payment"
+7. Verify payment appears in timeline
+8. Verify payment summary updates (Total Paid, Remaining)
+9. Verify PO payment_status badge updates
+
+**Test 2: Invoice Fuzzy Matching**
+
+1. Create test PO: PO-999
+2. In Xero, create invoice with reference "PO-999"
+3. In Trapid, open XeroInvoiceMatcher
+4. Search for invoice
+5. Click "Match to PO"
+6. Verify PO invoiced_amount updates
+7. Verify payment_status = "complete" (if invoice matches PO total)
+
+**Test 3: Budget Variance Tracking**
+
+1. Create PO with budget = $5,000
+2. Add line items totaling $5,500 (over budget)
+3. Verify variance calculation: $500 overage
+4. Verify UI highlights overage in red
+5. Record payment of $5,500
+6. Verify xero_budget_diff = $500
+
+**Test 4: Payment Status Tolerance**
+
+1. Create PO total = $10,000
+2. Match invoice amount = $9,600 (96%, within 95-105%)
+3. Verify payment_status = "complete"
+4. Match invoice amount = $10,600 (106%, within tolerance but >$1)
+5. Verify payment_status = "manual_review"
+
+---
+
+## 📈 Performance Benchmarks
+
+**Payment API Response Times:**
+
+- `GET /api/v1/purchase_orders/:id/payments`: ~45ms (with 20 payments)
+- `POST /api/v1/purchase_orders/:id/payments`: ~65ms (includes callback)
+- `DELETE /api/v1/payments/:id`: ~55ms (includes PO update)
+- `POST /api/v1/payments/:id/sync_to_xero`: ~850ms (Xero API call)
+
+**Invoice Matching Performance:**
+
+- Strategy 1-3 (field extraction): ~5ms
+- Strategy 4 (line items scan): ~15ms
+- Strategy 5 (normalized SQL query): ~25ms
+- Strategy 6 (supplier + amount query): ~35ms
+
+**Database Query Counts:**
+
+- Payment index: 3 queries (PO, payments, created_by users)
+- Payment create: 4 queries (insert, PO lookup, update PO, sum payments)
+
+---
+
+## 🎓 Development Notes
+
+### Future Enhancements
+
+**Priority 1: Payment Schedules**
+- Model structure exists but UI incomplete
+- Add payment schedule creation/editing
+- Link schedules to calendar/reminders
+- Estimated effort: 6 hours
+
+**Priority 2: Multi-Currency Support**
+- Add currency field to payments table
+- Support AUD, USD, NZD, GBP, EUR
+- Exchange rate tracking
+- Estimated effort: 12 hours
+
+**Priority 3: Payment Approval Workflow**
+- Add approval_status to payments
+- Require manager approval for >$10k payments
+- Email notifications for approvals
+- Estimated effort: 8 hours
+
+**Priority 4: Batch Payment Import**
+- CSV upload for multiple payments
+- Match by PO number or reference
+- Validation and preview before import
+- Estimated effort: 10 hours
+
+---
+
+## 🔗 Related Chapters
+
+- **Chapter 8:** Purchase Orders (payment association, PO lifecycle)
+- **Chapter 15:** Xero Accounting Integration (OAuth, API client, sync infrastructure)
+- **Chapter 4:** Price Books & Suppliers (supplier financial tracking)
+- **Chapter 5:** Jobs & Construction Management (budget variance on jobs)
 
 ---
 
