@@ -620,6 +620,31 @@ export default function DocumentationPage() {
   // Default 3-panel layout
   return (
     <>
+      {/* Document Tabs */}
+      <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <div className="flex space-x-1 px-4">
+          {docs.map((doc) => {
+            const isActive = selectedDoc?.id === doc.id
+            return (
+              <button
+                key={doc.id}
+                onClick={() => handleDocSelect(doc)}
+                className={`
+                  px-4 py-3 text-sm font-medium border-b-2 transition-colors
+                  ${isActive
+                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                  }
+                `}
+              >
+                <span className="mr-2">{doc.icon}</span>
+                {doc.name}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       <ThreePanelLayout
         leftPanel={renderLeftPanel()}
         middlePanel={renderMiddlePanel()}
