@@ -17,6 +17,8 @@ import Breadcrumb from '../components/documentation/Breadcrumb'
 import KeyboardShortcutsHelp from '../components/documentation/KeyboardShortcutsHelp'
 import LexiconTableView from '../components/documentation/LexiconTableView'
 import BibleTableView from '../components/documentation/BibleTableView'
+import TeacherTableView from '../components/documentation/TeacherTableView'
+import UserManualTableView from '../components/documentation/UserManualTableView'
 
 export default function DocumentationPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -462,10 +464,41 @@ export default function DocumentationPage() {
       )
     }
 
-    // For Bible, Manual, etc. - show markdown
+    // For Bible, Manual, etc. - show markdown with view mode toggle
     return (
       <div className="h-full flex flex-col">
         {breadcrumbItems.length > 0 && <Breadcrumb items={breadcrumbItems} />}
+        {/* View Mode Toggle for Teacher and User Manual */}
+        {(selectedDoc?.id === 'teacher' || selectedDoc?.id === 'user-manual') && content && (
+          <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-end">
+            <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+              <button
+                onClick={() => selectedDoc.id === 'teacher' ? setTeacherViewMode('markdown') : setManualViewMode('markdown')}
+                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+                  (selectedDoc.id === 'teacher' ? teacherViewMode : manualViewMode) === 'markdown'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+                title="Markdown View"
+              >
+                <Squares2X2Icon className="w-4 h-4" />
+                Markdown
+              </button>
+              <button
+                onClick={() => selectedDoc.id === 'teacher' ? setTeacherViewMode('table') : setManualViewMode('table')}
+                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                  (selectedDoc.id === 'teacher' ? teacherViewMode : manualViewMode) === 'table'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+                title="Table View"
+              >
+                <TableCellsIcon className="w-4 h-4" />
+                Table
+              </button>
+            </div>
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto p-6">
           {content ? (
             <div className="max-w-none">
@@ -706,7 +739,7 @@ export default function DocumentationPage() {
           {/* Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              🔧 Trapid Teacher - Markdown View
+              🔧 Trapid Teacher - Table View
             </h1>
             <div className="flex items-center gap-2">
               {/* View Mode Toggle */}
@@ -739,11 +772,87 @@ export default function DocumentationPage() {
             </div>
           </div>
 
-          {/* Markdown View */}
-          <div className="flex-1 overflow-auto p-8">
-            <div className="max-w-4xl mx-auto">
-              <MarkdownRenderer content={content} />
+          {/* Table View */}
+          <div className="flex-1 overflow-hidden">
+            <TeacherTableView content={content} />
+          </div>
+        </div>
+
+        {/* Keyboard Shortcuts Help */}
+        <KeyboardShortcutsHelp />
+      </>
+    )
+  }
+
+  // If User Manual is selected and table view mode is active
+  if (selectedDoc?.id === 'user-manual' && manualViewMode === 'table') {
+    return (
+      <>
+        {/* Document Tabs */}
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          <div className="flex space-x-1 px-4">
+            {docs.map((doc) => {
+              const isActive = selectedDoc?.id === doc.id
+              return (
+                <button
+                  key={doc.id}
+                  onClick={() => handleDocSelect(doc)}
+                  className={`
+                    px-4 py-3 text-sm font-medium border-b-2 transition-colors
+                    ${isActive
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                    }
+                  `}
+                >
+                  <span className="mr-2">{doc.icon}</span>
+                  {doc.name}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+              📘 User Manual - Table View
+            </h1>
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setManualViewMode('markdown')}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+                    manualViewMode === 'markdown'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  title="Markdown View"
+                >
+                  <Squares2X2Icon className="w-4 h-4" />
+                  Markdown
+                </button>
+                <button
+                  onClick={() => setManualViewMode('table')}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors border-l border-gray-300 dark:border-gray-600 ${
+                    manualViewMode === 'table'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  title="Table View"
+                >
+                  <TableCellsIcon className="w-4 h-4" />
+                  Table
+                </button>
+              </div>
             </div>
+          </div>
+
+          {/* Table View */}
+          <div className="flex-1 overflow-hidden">
+            <UserManualTableView content={content} />
           </div>
         </div>
 

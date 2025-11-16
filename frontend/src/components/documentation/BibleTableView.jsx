@@ -122,6 +122,7 @@ export default function BibleTableView({ content }) {
   const [expandedRows, setExpandedRows] = useState(new Set())
   const [selectedRows, setSelectedRows] = useState(new Set())
   const [columnFilters, setColumnFilters] = useState({})
+  const [activeTab, setActiveTab] = useState('all') // Chapter filter tabs
 
   // Chapter 19 compliance: Column state management
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
@@ -135,6 +136,50 @@ export default function BibleTableView({ content }) {
 
   // Column reordering state
   const [draggedColumn, setDraggedColumn] = useState(null)
+
+  // Custom scrollbar state
+  const [scrollbarThumbHeight, setScrollbarThumbHeight] = useState(0)
+  const [scrollbarThumbTop, setScrollbarThumbTop] = useState(0)
+  const scrollContainerRef = React.useRef(null)
+
+  // Update custom scrollbar on scroll
+  const handleScroll = (e) => {
+    const container = e.target
+    const { scrollTop, scrollHeight, clientHeight } = container
+
+    if (scrollHeight <= clientHeight) {
+      setScrollbarThumbHeight(0)
+      return
+    }
+
+    const thumbHeight = (clientHeight / scrollHeight) * clientHeight
+    const thumbTop = (scrollTop / scrollHeight) * clientHeight
+
+    setScrollbarThumbHeight(thumbHeight)
+    setScrollbarThumbTop(thumbTop)
+  }
+
+  // Initialize scrollbar on mount and content change
+  React.useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const updateScrollbar = () => {
+      const { scrollHeight, clientHeight } = container
+      if (scrollHeight <= clientHeight) {
+        setScrollbarThumbHeight(0)
+        return
+      }
+      const thumbHeight = (clientHeight / scrollHeight) * clientHeight
+      setScrollbarThumbHeight(thumbHeight)
+    }
+
+    updateScrollbar()
+    const resizeObserver = new ResizeObserver(updateScrollbar)
+    resizeObserver.observe(container)
+
+    return () => resizeObserver.disconnect()
+  }, [filteredAndSorted])
 
   // Parse rules from markdown content
   const rules = useMemo(() => parseRulesFromMarkdown(content), [content])
@@ -404,35 +449,45 @@ export default function BibleTableView({ content }) {
     <>
       <style>{`
         .bible-table-scroll {
-          scrollbar-width: auto !important;
+          scrollbar-width: thin !important;
           scrollbar-color: #9CA3AF #E5E7EB !important;
         }
         .dark .bible-table-scroll {
-          scrollbar-color: #9CA3AF #4B5563 !important;
+          scrollbar-color: #D1D5DB #374151 !important;
         }
         .bible-table-scroll::-webkit-scrollbar {
-          width: 14px !important;
-          height: 14px !important;
+          -webkit-appearance: none !important;
+          width: 16px !important;
+          height: 16px !important;
         }
         .bible-table-scroll::-webkit-scrollbar-track {
-          background: #E5E7EB !important;
+          background: #F3F4F6 !important;
+          border-radius: 8px !important;
+          margin: 4px !important;
         }
         .bible-table-scroll::-webkit-scrollbar-thumb {
           background: #9CA3AF !important;
-          border-radius: 6px !important;
-          border: 2px solid #E5E7EB !important;
+          border-radius: 8px !important;
+          border: 3px solid #F3F4F6 !important;
         }
         .bible-table-scroll::-webkit-scrollbar-thumb:hover {
           background: #6B7280 !important;
         }
-        .dark .bible-table-scroll::-webkit-scrollbar-track {
+        .bible-table-scroll::-webkit-scrollbar-thumb:active {
           background: #4B5563 !important;
         }
+        .dark .bible-table-scroll::-webkit-scrollbar-track {
+          background: #1F2937 !important;
+          border-color: #1F2937 !important;
+        }
         .dark .bible-table-scroll::-webkit-scrollbar-thumb {
-          background: #9CA3AF !important;
-          border-color: #4B5563 !important;
+          background: #6B7280 !important;
+          border-color: #1F2937 !important;
         }
         .dark .bible-table-scroll::-webkit-scrollbar-thumb:hover {
+          background: #9CA3AF !important;
+        }
+        .dark .bible-table-scroll::-webkit-scrollbar-thumb:active {
           background: #D1D5DB !important;
         }
       `}</style>
@@ -523,11 +578,13 @@ export default function BibleTableView({ content }) {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bible-table-scroll flex-1 overflow-y-auto overflow-x-auto relative bg-white dark:bg-gray-900 min-h-0" style={{
-        scrollbarWidth: 'thin',
-        scrollbarColor: '#9CA3AF #4B5563'
-      }}>
+      {/* Table with Custom Scrollbar */}
+      <div className="flex-1 relative min-h-0">
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="bible-table-scroll h-full overflow-y-scroll overflow-x-auto relative bg-white dark:bg-gray-900"
+        >
         <table className="w-full border-collapse">
           <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-20">
             <tr>
