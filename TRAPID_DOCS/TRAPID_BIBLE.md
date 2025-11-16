@@ -3890,10 +3890,655 @@ DELETE /api/v1/estimate_reviews/:id
 │ 📘 USER MANUAL (HOW): Chapter 7                │
 └─────────────────────────────────────────────────┘
 
-**User Context:** AI plan analysis
-**Technical Rules:** Claude API, Grok integration, plan review service
+**Last Updated:** 2025-11-16
 
-**Content TBD** - To be populated when working on AI features
+## Overview
+
+AI Plan Review validates construction estimates against actual PDF plans using Claude 3.5 Sonnet. Downloads plans from OneDrive, extracts materials using AI vision, compares against estimate line items, and identifies discrepancies with severity ratings.
+
+**Key Files:**
+- Model: `backend/app/models/estimate_review.rb`
+- Controller: `backend/app/controllers/api/v1/estimate_reviews_controller.rb`
+- Service: `backend/app/services/plan_review_service.rb`
+- Job: `backend/app/jobs/ai_review_job.rb`
+- Frontend: `frontend/src/components/estimates/AiReviewModal.jsx`
+
+---
+
+## RULE #7.1: Estimate Must Be Matched to Construction
+
+**Estimates MUST be matched to a construction/job before AI review is allowed.**
+
+✅ **MUST:**
+- Validate `estimate.construction_id` is present before starting review
+- Return 422 status with clear error message if not matched
+- Show "Match to Job" button in UI if unmatched
+
+❌ **NEVER:**
+- Allow AI review on unmatched estimates
+- Start review without construction context
+
+**Implementation:**
+```ruby
+# app/services/plan_review_service.rb
+def validate_estimate_matched!
+  unless @estimate.construction
+    raise NoConstructionError, "Estimate must be matched to a construction/job before AI review"
+  end
+end
+```
+
+**Why this rule exists:**
+- OneDrive folder access requires construction association
+- Plan documents stored under job folders
+- Without construction context, cannot locate plan files
+
+**Files:**
+- `backend/app/services/plan_review_service.rb:20-25`
+- `backend/app/controllers/api/v1/estimate_reviews_controller.rb:14-18`
+
+---
+
+## RULE #7.2: OneDrive Plan Folder Structure
+
+**AI review MUST search for plans in exactly 3 specific OneDrive folders.**
+
+✅ **MUST search folders:**
+1. `01 - Plans`
+2. `02 - Engineering`
+3. `03 - Specifications`
+
+❌ **NEVER:**
+- Search entire OneDrive (security risk)
+- Use different folder names without updating constant
+- Skip folder validation
+
+**Implementation:**
+```ruby
+# app/services/plan_review_service.rb
+PLAN_FOLDER_PATHS = ['01 - Plans', '02 - Engineering', '03 - Specifications'].freeze
+
+def fetch_pdf_plans_from_onedrive
+  PLAN_FOLDER_PATHS.each do |folder_name|
+    folder = find_folder_by_name(folder_name)
+    next unless folder
+
+    files = list_files_in_folder(folder['id'])
+    pdf_files += files.select { |f| f['name'].end_with?('.pdf') }
+  end
+end
+```
+
+**Why this rule exists:**
+- Standardized folder structure across all jobs
+- Limits scope of file access (security)
+- Matches OneDrive setup workflow
+
+**Files:**
+- `backend/app/services/plan_review_service.rb:10`
+
+---
+
+## RULE #7.3: PDF File Size Limit
+
+**PDFs MUST be smaller than 20MB for Claude API analysis.**
+
+✅ **MUST:**
+- Check file size before download
+- Skip files > 20MB
+- Return error if NO valid PDFs found after filtering
+
+❌ **NEVER:**
+- Attempt to send files > 20MB to Claude API
+- Download large files unnecessarily
+- Proceed without plan documents
+
+**Implementation:**
+```ruby
+# app/services/plan_review_service.rb
+MAX_FILE_SIZE = 20.megabytes
+
+def fetch_pdf_plans_from_onedrive
+  pdf_files.each do |file|
+    if file['size'] > MAX_FILE_SIZE
+      Rails.logger.warn "Skipping #{file['name']} - too large (#{file['size']} bytes)"
+      next
+    end
+
+    content = download_file(file['id'])
+    valid_pdfs << { name: file['name'], size: file['size'], content: content }
+  end
+
+  raise PDFNotFoundError if valid_pdfs.empty?
+end
+```
+
+**Why this rule exists:**
+- Claude API has file size limits
+- Large PDFs cause timeouts and errors
+- Memory constraints on background job processing
+
+**Files:**
+- `backend/app/services/plan_review_service.rb:9`
+
+---
+
+## RULE #7.4: Async Processing with Background Jobs
+
+**AI review MUST be processed asynchronously via AiReviewJob.**
+
+✅ **MUST:**
+- Return 202 Accepted immediately with review_id
+- Enqueue AiReviewJob with estimate_id
+- Set initial status to 'pending', update to 'processing' in job
+- Frontend MUST poll for status (every 5 seconds recommended)
+
+❌ **NEVER:**
+- Process review synchronously (causes request timeout)
+- Block HTTP request waiting for Claude API response
+- Assume review completes instantly
+
+**Implementation:**
+```ruby
+# app/controllers/api/v1/estimate_reviews_controller.rb
+def create
+  review = EstimateReview.create!(estimate: @estimate, status: :pending)
+  AiReviewJob.perform_later(@estimate.id)
+
+  render json: {
+    success: true,
+    review_id: review.id,
+    status: 'processing',
+    message: 'AI review started. This may take 30-60 seconds.'
+  }, status: :accepted
+end
+```
+
+**Frontend polling:**
+```javascript
+// Poll every 5 seconds
+const pollInterval = setInterval(async () => {
+  const response = await api.get(`/api/v1/estimate_reviews/${reviewId}`)
+  if (response.status === 'completed' || response.status === 'failed') {
+    clearInterval(pollInterval)
+    showResults(response)
+  }
+}, 5000)
+```
+
+**Why this rule exists:**
+- Claude API takes 30-60 seconds for typical plans
+- OneDrive download adds additional latency
+- Prevents request timeouts and poor UX
+
+**Files:**
+- `backend/app/controllers/api/v1/estimate_reviews_controller.rb:12-22`
+- `backend/app/jobs/ai_review_job.rb`
+- `frontend/src/components/estimates/AiReviewModal.jsx:45-60`
+
+---
+
+## RULE #7.5: Claude API Model and Prompt Structure
+
+**MUST use claude-3-5-sonnet-20241022 model with structured PDF analysis prompt.**
+
+✅ **MUST:**
+- Use exact model ID: `claude-3-5-sonnet-20241022`
+- Send PDFs as base64-encoded documents with MIME type `application/pdf`
+- Request JSON response format with specific schema
+- Include estimate line items in prompt for comparison context
+- Set max_tokens to 4096 minimum
+
+❌ **NEVER:**
+- Use older Claude models (lack PDF support)
+- Send PDFs as text (loses formatting)
+- Omit response format instructions
+- Exceed token limits with oversized prompts
+
+**Implementation:**
+```ruby
+# app/services/plan_review_service.rb
+def send_to_claude_api(pdf_data, prompt)
+  client = Anthropic::Client.new(access_token: ENV['ANTHROPIC_API_KEY'])
+
+  content = pdf_data.map do |pdf|
+    {
+      type: 'document',
+      source: {
+        type: 'base64',
+        media_type: 'application/pdf',
+        data: pdf[:base64_content]
+      }
+    }
+  end
+
+  content << { type: 'text', text: prompt }
+
+  response = client.messages.create(
+    model: 'claude-3-5-sonnet-20241022',
+    max_tokens: 4096,
+    messages: [{ role: 'user', content: content }]
+  )
+
+  response.dig('content', 0, 'text')
+end
+```
+
+**Required prompt structure:**
+```ruby
+def build_analysis_prompt
+  <<~PROMPT
+    Analyze these construction plan PDFs and extract ALL materials/items mentioned.
+
+    Compare against this estimate:
+    #{JSON.pretty_generate(estimate_line_items)}
+
+    Return ONLY a JSON object with this exact structure:
+    {
+      "items_identified": [
+        {"category": "...", "item": "...", "quantity": 10, "unit": "ea"}
+      ],
+      "discrepancies": [
+        {
+          "type": "quantity_mismatch|missing|extra",
+          "severity": "high|medium|low",
+          "category": "...",
+          "item": "...",
+          "plan_quantity": 10,
+          "estimate_quantity": 8,
+          "recommendation": "..."
+        }
+      ]
+    }
+
+    Severity levels:
+    - HIGH: > 20% quantity difference
+    - MEDIUM: 10-20% difference
+    - LOW: < 10% difference
+  PROMPT
+end
+```
+
+**Why this rule exists:**
+- Claude 3.5 Sonnet has best PDF vision capabilities
+- Structured JSON output enables automated discrepancy detection
+- Max tokens ensures complete analysis for typical plans
+- Base64 encoding preserves PDF formatting/images
+
+**Files:**
+- `backend/app/services/plan_review_service.rb:95-125`
+
+---
+
+## RULE #7.6: Discrepancy Detection Logic
+
+**Discrepancies MUST be categorized into 4 types with severity ratings.**
+
+✅ **MUST categorize as:**
+1. **Matched** - Quantity difference ≤ 10%
+2. **Quantity Mismatch** - Same item, quantity difference > 10%
+   - HIGH severity: > 20% difference
+   - MEDIUM severity: 10-20% difference
+3. **Missing** - In plans but NOT in estimate (severity: INFO)
+4. **Extra** - In estimate but NOT in plans (severity: INFO)
+
+✅ **MUST use fuzzy matching:**
+- Remove non-alphanumeric characters from item descriptions
+- Case-insensitive comparison
+- Match by category + description
+
+❌ **NEVER:**
+- Require exact string match (causes false negatives)
+- Ignore category in matching (causes false positives)
+- Use < 10% threshold for mismatches (too strict)
+
+**Implementation:**
+```ruby
+# app/services/plan_review_service.rb
+def identify_discrepancies(parsed_analysis)
+  plan_items = parsed_analysis['items_identified'] || []
+  estimate_items = @estimate.estimate_line_items
+
+  matched = []
+  mismatched = []
+  missing = []
+  extra = []
+
+  plan_items.each do |plan_item|
+    est_item = estimate_items.find do |e|
+      fuzzy_match?(e.category, plan_item['category']) &&
+      fuzzy_match?(e.item_description, plan_item['item'])
+    end
+
+    if est_item
+      diff_pct = ((plan_item['quantity'] - est_item.quantity).abs.to_f / plan_item['quantity']) * 100
+
+      if diff_pct <= 10
+        matched << plan_item
+      else
+        severity = diff_pct > 20 ? 'high' : 'medium'
+        mismatched << {
+          type: 'quantity_mismatch',
+          severity: severity,
+          category: plan_item['category'],
+          item: plan_item['item'],
+          plan_quantity: plan_item['quantity'],
+          estimate_quantity: est_item.quantity,
+          difference_percent: diff_pct.round(1),
+          recommendation: "Verify with plans - estimate may be #{diff_pct > 0 ? 'short' : 'over'} by #{(plan_item['quantity'] - est_item.quantity).abs} units"
+        }
+      end
+    else
+      missing << {
+        type: 'missing',
+        severity: 'info',
+        category: plan_item['category'],
+        item: plan_item['item'],
+        plan_quantity: plan_item['quantity'],
+        recommendation: 'Item appears in plans but missing from estimate'
+      }
+    end
+  end
+
+  # Find extra items in estimate
+  estimate_items.each do |est_item|
+    unless plan_items.any? { |p| fuzzy_match?(p['item'], est_item.item_description) }
+      extra << {
+        type: 'extra',
+        severity: 'info',
+        estimate_quantity: est_item.quantity,
+        recommendation: 'Item in estimate but not found in plans - verify if needed'
+      }
+    end
+  end
+
+  {
+    matched: matched,
+    mismatched: mismatched,
+    missing: missing,
+    extra: extra
+  }
+end
+
+def fuzzy_match?(str1, str2)
+  normalize(str1) == normalize(str2)
+end
+
+def normalize(str)
+  str.to_s.downcase.gsub(/[^a-z0-9]/, '')
+end
+```
+
+**Why this rule exists:**
+- 10% tolerance accounts for rounding in plans
+- Fuzzy matching handles minor description variations
+- Severity ratings prioritize critical issues
+- Category matching reduces false positives (e.g., "bolt" in plumbing vs electrical)
+
+**Files:**
+- `backend/app/services/plan_review_service.rb:130-195`
+
+---
+
+## RULE #7.7: Confidence Score Calculation
+
+**Confidence score MUST be calculated as (matched %) minus penalty for discrepancies.**
+
+✅ **MUST calculate:**
+```ruby
+base_score = (items_matched / total_items) * 100
+penalty = (items_mismatched * 5) + (items_missing * 3) + (items_extra * 2)
+confidence_score = [base_score - penalty, 0].max  # Clamp to 0 minimum
+```
+
+✅ **MUST store:**
+- `confidence_score` - Final score (0-100)
+- `items_matched` - Count of matched items
+- `items_mismatched` - Count of quantity mismatches
+- `items_missing` - Count of missing items
+- `items_extra` - Count of extra items
+
+❌ **NEVER:**
+- Return confidence > 100 or < 0
+- Use equal penalty weights for all discrepancy types
+- Skip confidence calculation
+
+**Why this rule exists:**
+- Provides single metric for estimate accuracy
+- Weighted penalties reflect severity of issues
+- Mismatches penalized most (wrong quantity is critical)
+- Missing items penalized more than extras (safety concern)
+- Extras penalized least (may be intentional buffers)
+
+**Implementation:**
+```ruby
+# app/services/plan_review_service.rb
+def calculate_confidence_score(discrepancies)
+  matched = discrepancies[:matched].count
+  mismatched = discrepancies[:mismatched].count
+  missing = discrepancies[:missing].count
+  extra = discrepancies[:extra].count
+
+  total = matched + mismatched + missing
+  return 0 if total.zero?
+
+  base_score = (matched.to_f / total) * 100
+  penalty = (mismatched * 5) + (missing * 3) + (extra * 2)
+
+  [base_score - penalty, 0].max.round(2)
+end
+```
+
+**Files:**
+- `backend/app/services/plan_review_service.rb:200-215`
+
+---
+
+## RULE #7.8: Error Handling and Status Updates
+
+**Review status MUST be updated to 'failed' on ANY error with descriptive message.**
+
+✅ **MUST handle errors:**
+- `NoConstructionError` - Estimate not matched
+- `OneDriveNotConnectedError` - OneDrive credential missing
+- `PDFNotFoundError` - No valid PDFs in plan folders
+- `FileTooLargeError` - All PDFs exceed 20MB limit
+- `Anthropic::Error` - Claude API errors (rate limit, auth, etc.)
+- `StandardError` - Generic catch-all
+
+✅ **MUST update review record:**
+```ruby
+review.update!(
+  status: :failed,
+  ai_findings: { error: error_message },
+  reviewed_at: Time.current
+)
+```
+
+❌ **NEVER:**
+- Leave review in 'processing' state on error (orphaned record)
+- Expose sensitive error details to client
+- Retry automatically without user intervention
+
+**Implementation:**
+```ruby
+# app/services/plan_review_service.rb
+def handle_error(message)
+  @review.update!(
+    status: :failed,
+    ai_findings: { error: message },
+    reviewed_at: Time.current
+  )
+
+  { success: false, error: message }
+end
+
+# Usage
+begin
+  validate_estimate_matched!
+  pdf_files = fetch_pdf_plans_from_onedrive
+  # ... rest of processing
+rescue NoConstructionError => e
+  handle_error("Estimate must be matched to a job before AI review")
+rescue PDFNotFoundError => e
+  handle_error("No plan documents found in OneDrive folders: 01-Plans, 02-Engineering, 03-Specifications")
+rescue Anthropic::Error => e
+  handle_error("Claude API error: #{e.message}")
+rescue StandardError => e
+  Rails.logger.error("AI Review failed: #{e.message}\n#{e.backtrace.join("\n")}")
+  handle_error("Analysis failed. Please try again or contact support.")
+end
+```
+
+**Why this rule exists:**
+- Prevents orphaned 'processing' reviews
+- Provides actionable error messages to users
+- Enables retry after fixing underlying issue
+- Logs detailed errors for debugging
+
+**Files:**
+- `backend/app/services/plan_review_service.rb:220-240`
+- `backend/app/jobs/ai_review_job.rb:8-20`
+
+---
+
+## RULE #7.9: Prevent Duplicate Processing Reviews
+
+**MUST prevent multiple simultaneous reviews for the same estimate.**
+
+✅ **MUST check:**
+- Query for existing review with `status: processing`
+- Return 422 error if found
+- Allow new review only if previous is completed/failed
+
+❌ **NEVER:**
+- Allow concurrent reviews on same estimate
+- Overwrite existing processing review
+
+**Implementation:**
+```ruby
+# app/controllers/api/v1/estimate_reviews_controller.rb
+def create
+  # Check for existing processing review
+  existing_review = @estimate.estimate_reviews.find_by(status: 'processing')
+
+  if existing_review
+    return render json: {
+      success: false,
+      error: 'AI review already in progress for this estimate'
+    }, status: :unprocessable_entity
+  end
+
+  review = EstimateReview.create!(estimate: @estimate, status: :pending)
+  AiReviewJob.perform_later(@estimate.id)
+
+  render json: { success: true, review_id: review.id, status: 'processing' }, status: :accepted
+end
+```
+
+**Why this rule exists:**
+- Prevents race conditions
+- Avoids duplicate Claude API calls (cost savings)
+- Ensures clean UI state (single progress indicator)
+
+**Files:**
+- `backend/app/controllers/api/v1/estimate_reviews_controller.rb:14-25`
+
+---
+
+## API Endpoints Reference
+
+### POST /api/v1/estimates/:estimate_id/ai_review
+**Purpose:** Start AI plan review (async)
+
+**Request:** None
+
+**Response (202 Accepted):**
+```json
+{
+  "success": true,
+  "review_id": 123,
+  "status": "processing",
+  "message": "AI review started. This may take 30-60 seconds."
+}
+```
+
+**Response (422 Unprocessable Entity):**
+```json
+{
+  "success": false,
+  "error": "Estimate must be matched to a construction/job before AI review"
+}
+```
+
+---
+
+### GET /api/v1/estimate_reviews/:id
+**Purpose:** Get review status and results (for polling)
+
+**Response (Completed - 200 OK):**
+```json
+{
+  "success": true,
+  "review_id": 123,
+  "status": "completed",
+  "reviewed_at": "2025-11-16T10:30:00Z",
+  "confidence_score": 85.5,
+  "summary": {
+    "items_matched": 12,
+    "items_mismatched": 2,
+    "items_missing": 1,
+    "items_extra": 0,
+    "total_discrepancies": 3
+  },
+  "discrepancies": [...]
+}
+```
+
+**Response (Processing - 200 OK):**
+```json
+{
+  "success": true,
+  "review_id": 123,
+  "status": "processing",
+  "message": "AI review in progress. Check back in 30-60 seconds."
+}
+```
+
+---
+
+### GET /api/v1/estimates/:estimate_id/reviews
+**Purpose:** List all reviews for an estimate
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "reviews": [
+    {
+      "id": 123,
+      "status": "completed",
+      "confidence_score": 85.5,
+      "total_discrepancies": 3,
+      "reviewed_at": "2025-11-16T10:30:00Z",
+      "created_at": "2025-11-16T10:15:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### DELETE /api/v1/estimate_reviews/:id
+**Purpose:** Delete a review record
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Review deleted successfully"
+}
+```
 
 ---
 

@@ -1286,7 +1286,228 @@ Think of estimates as the bridge between your estimating software and Trapid's j
 │ 📕 LEXICON (BUGS):     Chapter 7 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Content TBD** - To be populated with AI plan review guide
+**Last Updated:** 2025-11-16
+
+## What is AI Plan Review?
+
+AI Plan Review automatically validates your construction estimates against actual PDF plans using artificial intelligence. Think of it as:
+- 🔍 **Quality Control** - AI reads your plans and checks if estimates match
+- 📊 **Discrepancy Detection** - Flags quantity mismatches, missing items, and extras
+- ⚡ **Fast Analysis** - Reviews in 30-60 seconds (vs hours of manual checking)
+- 📈 **Confidence Scoring** - Get a 0-100% accuracy rating for each estimate
+
+**How it works:**
+1. Upload construction plans to OneDrive (PDF format)
+2. Import or create an estimate in Trapid
+3. Click "AI Review" button
+4. AI analyzes plans, extracts materials, compares against estimate
+5. View detailed discrepancy report with recommendations
+
+---
+
+## Quick Start
+
+### Step 1: Prepare Your Plans
+1. **Save plans as PDFs** (from your architect/engineer)
+2. **Upload to OneDrive** in your job folder:
+   - `01 - Plans` (floor plans, elevations, sections)
+   - `02 - Engineering` (structural, MEP drawings)
+   - `03 - Specifications` (material specs, details)
+3. **Keep files under 20MB each** (split large files if needed)
+
+### Step 2: Match Estimate to Job
+1. Go to **Estimates** page
+2. Find your estimate
+3. Click **"Match to Job"** button
+4. Select the correct construction/job from dropdown
+5. Save
+
+### Step 3: Run AI Review
+1. Click **"AI Review"** button on estimate
+2. Wait 30-60 seconds (progress indicator shown)
+3. View results automatically when complete
+
+### Step 4: Review Results
+**Summary Cards show:**
+- ✅ **Items Matched** - Quantities align with plans
+- ⚠️ **Quantity Mismatches** - Plans vs estimate differences
+- ❌ **Missing Items** - In plans but not estimated
+- ℹ️ **Extra Items** - In estimate but not in plans
+
+**Confidence Score:**
+- 90-100% = Excellent (minor review only)
+- 75-89% = Good (check discrepancies)
+- 50-74% = Moderate issues (thorough review needed)
+- < 50% = Significant problems (revise estimate)
+
+---
+
+## Key Features
+
+### 🔍 Automatic Material Extraction
+- AI reads PDFs just like a human estimator would
+- Extracts item descriptions, quantities, and units
+- Recognizes construction terminology (framing, MEP, finishes)
+- Handles tables, schedules, and callout notes
+
+### ⚖️ Intelligent Matching
+- Fuzzy matching handles description variations
+  - "2x4x8 Stud" matches "2x4x8' Stud Timber"
+  - "100mm PVC" matches "100 mm PVC Pipe"
+- Groups by category (Framing, Plumbing, Electrical, etc.)
+- 10% tolerance for rounding differences
+
+### 🎯 Severity Ratings
+**High (Red)** - > 20% quantity difference
+- Example: Plan shows 10 units, estimate has 6 units (40% short)
+- **Action:** Investigate immediately, likely shortage
+
+**Medium (Yellow)** - 10-20% quantity difference
+- Example: Plan shows 100 units, estimate has 85 units (15% short)
+- **Action:** Review and adjust if necessary
+
+**Low (Green)** - < 10% quantity difference
+- Example: Plan shows 50 units, estimate has 48 units (4% variance)
+- **Action:** Within acceptable tolerance
+
+### 📋 Detailed Recommendations
+Each discrepancy includes:
+- Item description and category
+- Plan quantity vs estimate quantity
+- Percentage difference
+- Specific recommendation (e.g., "Verify with plans - estimate may be short by 4 units")
+
+---
+
+## Common Tasks
+
+### Re-running a Review
+If you update your estimate or plans:
+1. Open estimate details
+2. Click "AI Review" button again
+3. New review replaces previous results
+
+### Exporting Results
+(Feature coming soon)
+- PDF export of full review report
+- Email report to team members
+- Download discrepancy CSV
+
+### Updating Estimate from Review
+**Manual process:**
+1. Review discrepancy table
+2. Note quantity corrections needed
+3. Edit estimate line items manually
+4. Re-run AI review to verify
+
+**Auto-apply feature** (coming soon):
+- One-click button to update estimate with plan quantities
+
+---
+
+## Troubleshooting
+
+### "Estimate must be matched to a job before AI review"
+**Problem:** Estimate not linked to a construction/job.
+
+**Solution:**
+1. Go to Estimates page
+2. Find your estimate
+3. Click "Match to Job" button
+4. Select job from dropdown
+5. Try AI review again
+
+---
+
+### "No plan documents found in OneDrive"
+**Problem:** Plans not uploaded or in wrong folder.
+
+**Solution:**
+1. Check OneDrive for these exact folder names:
+   - `01 - Plans`
+   - `02 - Engineering`
+   - `03 - Specifications`
+2. Upload PDF files to at least one folder
+3. Ensure files are < 20MB each (compress if needed)
+4. Retry AI review
+
+---
+
+### "Review taking longer than expected"
+**Problem:** Large or complex plans taking extra time.
+
+**Solution:**
+- Wait up to 2 minutes
+- Refresh page to check status
+- If processing > 5 minutes, contact support
+
+---
+
+### High confidence but missing items flagged
+**Problem:** Plans show items you didn't include in estimate.
+
+**Possible causes:**
+- Future phase items (not needed now)
+- Optional upgrades (not in this quote)
+- Alternate materials (plan shows options)
+
+**Solution:**
+1. Review "Missing Items" list
+2. Determine if items are required THIS phase
+3. Add to estimate if necessary
+4. Ignore if intentionally excluded
+
+---
+
+### Quantity looks correct but flagged as mismatch
+**Problem:** Different units between plans and estimate.
+
+**Example:** Plan shows "100 linear feet", estimate shows "30 meters" (actually the same)
+
+**Solution:**
+1. Convert units to match (use consistent unit system)
+2. Update estimate
+3. Re-run review
+
+---
+
+## Tips for Best Results
+
+### Upload Quality Plans
+✅ **Do:**
+- Use high-resolution PDFs (text readable when zoomed)
+- Include all relevant sheets (floor plans, elevations, details)
+- Ensure text is searchable (not scanned images if possible)
+
+❌ **Avoid:**
+- Hand-drawn sketches (low accuracy)
+- Photos of plans (poor quality)
+- Incomplete plan sets (missing sheets)
+
+### Organize by Folder
+Store plans in correct OneDrive folders for best results:
+- **01 - Plans** → Architectural drawings
+- **02 - Engineering** → Structural, MEP, civil
+- **03 - Specifications** → Material specs, details
+
+### Match Estimate Detail Level
+- If plans show "100 SF drywall", don't estimate "100 SF interior finishes"
+- Use same item descriptions as plans when possible
+- Break down assemblies to match plan detail
+
+### Review Results Critically
+- AI is a helper, not a replacement for human judgment
+- Verify high-severity discrepancies manually
+- Consider context (phasing, alternates, allowances)
+
+---
+
+## Related Topics
+
+- **Chapter 5: Jobs & Construction** - Setting up jobs for plan upload
+- **Chapter 6: Estimates & Quoting** - Creating estimates for review
+- **Chapter 8: Purchase Orders** - Using validated estimates to generate POs
+- **Chapter 12: OneDrive Integration** - Uploading and organizing plan files
 
 ---
 

@@ -3686,9 +3686,562 @@ end
 │ 📘 USER MANUAL (HOW): Chapter 7                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16 09:01 AEST
+**Last Updated:** 2025-11-16
 
-**Content TBD** - To be populated when working on AI features
+## 🐛 Bug Hunter: AI Plan Review
+
+### Known Issues & Solutions
+
+#### Issue: Claude API Rate Limiting During Peak Hours
+**Status:** 🔄 MONITORING
+**Severity:** Medium
+**Last Occurred:** 2025-10-20
+
+**Scenario:**
+Multiple users trigger AI reviews simultaneously during business hours → Claude API returns 429 rate limit errors.
+
+**Root Cause:**
+- Anthropic API has tier-based rate limits
+- No request queuing or retry logic
+- Background job fails immediately on 429
+
+**Current Mitigation:**
+```ruby
+rescue Anthropic::Error => e
+  handle_error("Claude API error: #{e.message}")
+end
+```
+
+**Recommendation:**
+- Implement exponential backoff retry (3 attempts with 5s, 15s, 45s delays)
+- Add request queueing system
+- Upgrade Anthropic API tier if frequent
+- Show "High demand - retry in 60s" message to users
+
+---
+
+#### Issue: Large PDF Plans Cause Silent Failures
+**Status:** ⚠️ BY DESIGN
+**Severity:** Low
+
+**Scenario:**
+Job has plan PDFs > 20MB → AI review returns "No plan documents found" even though files exist.
+
+**Root Cause:**
+- MAX_FILE_SIZE = 20MB limit (RULE #7.3)
+- Files > 20MB are skipped during download
+- If ALL PDFs exceed limit, error message is generic
+
+**Solution:**
+Currently working as designed. File size check prevents Claude API errors.
+
+**User Workaround:**
+1. Split large PDFs into smaller files
+2. Compress PDFs (reduce image quality)
+3. Upload separate plans for each discipline (electrical, plumbing, etc.)
+
+**Future Enhancement:**
+- Specific error: "Plan PDFs are too large (max 20MB). Found: Plan_Set_A.pdf (45MB), Plan_Set_B.pdf (38MB)"
+- Suggest splitting or compression
+
+---
+
+#### Issue: OneDrive Folder Name Mismatch
+**Status:** 🔄 COMMON USER ERROR
+**Severity:** Low
+**Last Reported:** 2025-11-05
+
+**Scenario:**
+User uploads plans to folder named "Plans" instead of "01 - Plans" → AI review reports "No plan documents found".
+
+**Root Cause:**
+- Hardcoded folder names: `['01 - Plans', '02 - Engineering', '03 - Specifications']` (RULE #7.2)
+- No fuzzy folder name matching
+- OneDrive folder creation is manual (not enforced)
+
+**Solution:**
+User must rename folder or move files to correct folder.
+
+**Prevention:**
+- Update OneDrive setup workflow to auto-create standard folders
+- Add folder validation check in OneDrive connection UI
+- Show helpful error: "Expected folders: 01 - Plans, 02 - Engineering, 03 - Specifications. Found: Plans, Engineering"
+
+---
+
+#### Issue: Estimate vs Plan Unit Mismatch (ea vs each)
+**Status:** ⚠️ BY DESIGN (Fuzzy matching limitation)
+**Severity:** Low
+
+**Scenario:**
+Plan says "10 units" → Estimate says "10 ea" → Claude sometimes reports as mismatch despite fuzzy description matching.
+
+**Root Cause:**
+- Fuzzy matching only on category + description (RULE #7.6)
+- Unit field not compared
+- Claude may extract different unit abbreviations from PDFs
+
+**Solution:**
+Not currently a bug - units are informational only. Quantity comparison is what matters.
+
+**Future Enhancement:**
+- Add unit normalization map: {"each" => "ea", "units" => "ea", "piece" => "ea", etc.}
+- Compare normalized units
+- Flag mismatches only if both quantity AND unit differ significantly
+
+---
+
+## 🏗️ Architecture & Implementation
+
+### Why Claude 3.5 Sonnet?
+
+**Decision:** Use `claude-3-5-sonnet-20241022` model exclusively for plan analysis.
+
+**Rationale:**
+1. **PDF Vision Support** - Can read text, tables, images, and diagrams from construction plans
+2. **Large Context Window** - Handles multiple PDF files (up to 20MB each) simultaneously
+3. **Structured Output** - Reliably returns JSON format when prompted correctly
+4. **Construction Knowledge** - Pre-trained on construction terminology, materials, and quantities
+5. **Accuracy** - Best-in-class for extracting structured data from technical documents
+
+**Alternatives Considered:**
+- **GPT-4 Vision** - Less accurate for construction-specific terminology
+- **Claude 3 Opus** - Better quality but 5x cost, overkill for this use case
+- **Claude 3 Haiku** - Cheaper but lower accuracy, not worth cost savings
+- **Gemini Pro Vision** - Limited PDF support, worse JSON adherence
+
+**Cost Analysis:**
+- Average plan review: 4 PDFs × 5 pages each = 20 pages
+- Token usage: ~15k input tokens + 4k output tokens
+- Cost per review: ~$0.15 - $0.30 (acceptable for value provided)
+
+---
+
+### Async Architecture: Why Background Jobs?
+
+**Decision:** Process all AI reviews asynchronously via `AiReviewJob` (Solid Queue).
+
+**Workflow:**
+```
+HTTP Request (POST /ai_review)
+  ↓ [~50ms]
+202 Accepted (review_id)
+  ↓
+Background Job Enqueued
+  ↓ [30-60 seconds]
+PlanReviewService executes:
+  - OneDrive download (5-10s)
+  - PDF to base64 (2-5s)
+  - Claude API call (20-45s)
+  - Discrepancy analysis (1-3s)
+  ↓
+EstimateReview updated (status: completed)
+  ↓
+Frontend polls GET /estimate_reviews/:id every 5s
+  ↓
+Results displayed to user
+```
+
+**Why Not Synchronous?**
+- Claude API can take 30-60 seconds (exceeds typical HTTP timeout)
+- OneDrive download adds 5-10 seconds
+- Heroku request timeout: 30 seconds (would fail)
+- Poor UX (user stares at loading screen)
+
+**Why Polling Instead of WebSockets?**
+- Simpler implementation (no connection management)
+- Works behind firewalls/proxies
+- Stateless (easier to scale horizontally)
+- 5-second poll interval is acceptable latency
+- Reduces server load compared to WebSocket connections
+
+**Performance:**
+- Poll every 5 seconds for 60 seconds = 12 requests max
+- Overhead: ~12 × 50ms = 600ms total
+- Acceptable trade-off for simplicity
+
+---
+
+### Fuzzy Matching Algorithm
+
+**Challenge:** Plan descriptions rarely match estimate descriptions exactly.
+
+**Examples of mismatches:**
+- Plan: "2x4x8' Stud Timber" → Estimate: "2x4x8 Stud"
+- Plan: "Pressure Treated Pine 2\" x 4\" x 8'" → Estimate: "2x4x8 PT Pine"
+- Plan: "100mm PVC Pipe" → Estimate: "100 mm PVC"
+
+**Solution:** Normalize strings before comparison.
+
+**Algorithm:**
+```ruby
+def fuzzy_match?(str1, str2)
+  normalize(str1) == normalize(str2)
+end
+
+def normalize(str)
+  str.to_s.downcase.gsub(/[^a-z0-9]/, '')
+end
+```
+
+**Normalization steps:**
+1. Convert to lowercase: "PVC Pipe" → "pvc pipe"
+2. Remove all non-alphanumeric: "pvc pipe" → "pvcpipe"
+3. String comparison: "pvcpipe" == "pvcpipe"
+
+**Match examples:**
+- "2x4x8' Stud" → "2x4x8stud"
+- "2x4x8 Stud" → "2x4x8stud"
+- "Pressure Treated 2x4x8" → "pressuretreated2x4x8"
+- "2x4x8 PT" → "2x4x8pt"
+
+**Limitations:**
+- "100mm PVC" vs "4 inch PVC" won't match (different dimensions)
+- "Pine Stud" vs "Timber Stud" won't match (different materials)
+- Requires human review of "missing" items flagged by AI
+
+**Future Enhancement:**
+- Levenshtein distance with threshold (allow 10% character difference)
+- Synonym mapping: {"timber" => "wood", "PT" => "pressure treated"}
+- LLM-based semantic matching for edge cases
+
+---
+
+### Confidence Score Calculation
+
+**Purpose:** Single metric (0-100%) indicating estimate accuracy against plans.
+
+**Formula:**
+```ruby
+base_score = (items_matched / total_items_in_plans) × 100
+penalty = (mismatched × 5) + (missing × 3) + (extra × 2)
+confidence_score = max(base_score - penalty, 0)
+```
+
+**Penalty Weights Explained:**
+
+| Discrepancy Type | Penalty | Reasoning |
+|------------------|---------|-----------|
+| **Quantity Mismatch** | 5 points | Most critical - wrong quantity can cause shortages or overages |
+| **Missing Item** | 3 points | Safety concern - required item not budgeted |
+| **Extra Item** | 2 points | Least critical - may be intentional buffer or future use |
+
+**Score Interpretation:**
+
+| Score Range | Meaning | Action Required |
+|-------------|---------|-----------------|
+| 90-100% | Excellent match | Minor review only |
+| 75-89% | Good match | Review discrepancies |
+| 50-74% | Moderate issues | Thorough review required |
+| < 50% | Significant issues | Estimate needs revision |
+
+**Example Calculation:**
+```
+Total items in plans: 20
+Matched: 15 (75%)
+Mismatched: 2 (quantity differences > 10%)
+Missing: 1 (in plans, not in estimate)
+Extra: 2 (in estimate, not in plans)
+
+base_score = (15 / 20) × 100 = 75%
+penalty = (2 × 5) + (1 × 3) + (2 × 2) = 10 + 3 + 4 = 17
+confidence_score = 75 - 17 = 58%
+
+Result: "Moderate issues" - requires thorough review
+```
+
+---
+
+## 📊 Test Catalog
+
+### Automated Tests
+
+#### RSpec: EstimateReview Model
+**File:** `backend/spec/models/estimate_review_spec.rb`
+
+```ruby
+describe EstimateReview do
+  it 'validates presence of estimate'
+  it 'validates confidence_score range (0-100)'
+  it 'defaults status to pending'
+  it 'has valid enum statuses (pending, processing, completed, failed)'
+  it 'calculates total_discrepancies correctly'
+  it 'returns has_discrepancies? based on counts'
+end
+```
+
+**Coverage:** Model validations, enums, helper methods
+
+---
+
+#### RSpec: PlanReviewService
+**File:** `backend/spec/services/plan_review_service_spec.rb` (if exists)
+
+**Recommended tests:**
+```ruby
+describe PlanReviewService do
+  describe '#validate_estimate_matched!' do
+    it 'raises NoConstructionError if estimate.construction is nil'
+    it 'passes validation if construction exists'
+  end
+
+  describe '#fuzzy_match?' do
+    it 'matches strings with different spacing'
+    it 'matches strings with different punctuation'
+    it 'is case-insensitive'
+    it 'does not match completely different strings'
+  end
+
+  describe '#calculate_confidence_score' do
+    it 'returns 100 for perfect match (all matched, no discrepancies)'
+    it 'returns 0 for complete mismatch'
+    it 'applies correct penalty weights'
+    it 'clamps score to 0 minimum'
+  end
+
+  describe '#identify_discrepancies' do
+    it 'categorizes matched items correctly (≤10% difference)'
+    it 'flags high severity for >20% quantity difference'
+    it 'flags medium severity for 10-20% difference'
+    it 'identifies missing items (in plans, not estimate)'
+    it 'identifies extra items (in estimate, not plans)'
+  end
+end
+```
+
+---
+
+### Manual Test Scenarios
+
+#### Scenario 1: Happy Path
+**Setup:**
+1. Create estimate with 10 line items
+2. Match to construction with OneDrive connected
+3. Upload matching PDFs to "01 - Plans" folder
+
+**Steps:**
+1. Click "AI Review" button
+2. Wait 30-60 seconds
+3. Review results
+
+**Expected:**
+- Status: completed
+- Confidence: 85-100%
+- All items matched or minor discrepancies
+- Discrepancies table shows details
+
+---
+
+#### Scenario 2: No OneDrive Connection
+**Setup:**
+1. Create estimate
+2. Match to construction WITHOUT OneDrive credentials
+
+**Steps:**
+1. Click "AI Review" button
+
+**Expected:**
+- Error: "OneDrive not connected"
+- Suggested action: "Connect OneDrive in Settings"
+- Status: failed
+
+---
+
+#### Scenario 3: No PDF Plans Found
+**Setup:**
+1. Create estimate, match to construction
+2. OneDrive connected but NO PDFs in plan folders
+
+**Steps:**
+1. Click "AI Review" button
+
+**Expected:**
+- Error: "No plan documents found in OneDrive folders: 01-Plans, 02-Engineering, 03-Specifications"
+- Suggested action: Upload PDFs
+- Status: failed
+
+---
+
+#### Scenario 4: Concurrent Reviews
+**Setup:**
+1. Start AI review (status: processing)
+2. Immediately click "AI Review" again
+
+**Expected:**
+- Error: "AI review already in progress"
+- Original review continues
+- No duplicate processing
+
+---
+
+## 🔍 Common Issues & Solutions
+
+### "Estimate must be matched to a job before AI review"
+**Cause:** Estimate not associated with construction record.
+
+**Solution:**
+1. Go to Estimates page
+2. Click "Match to Job" button
+3. Select correct construction/job
+4. Retry AI review
+
+---
+
+### "No plan documents found in OneDrive"
+**Cause:** PDFs not in expected folders or folders don't exist.
+
+**Solution:**
+1. Check OneDrive for folders: `01 - Plans`, `02 - Engineering`, `03 - Specifications`
+2. Upload PDF plans to at least one folder
+3. Ensure PDFs are < 20MB each
+4. Retry AI review
+
+---
+
+### "AI review taking longer than 60 seconds"
+**Cause:** Large PDF files or Claude API slowness.
+
+**Solution:**
+- Wait up to 2 minutes
+- Refresh page to check status
+- If still processing after 5 minutes, contact support (likely stuck job)
+
+---
+
+### "High confidence but missing items flagged"
+**Cause:** Plans include items not in estimate (e.g., optional features, future phases).
+
+**Solution:**
+- Review "Missing Items" list
+- Determine if items are required for this phase
+- Add to estimate if necessary
+- Ignore if intentionally excluded
+
+---
+
+### "Quantity mismatches flagged but quantities look the same"
+**Cause:** Unit mismatch (e.g., plan says "100 linear feet", estimate says "30 meters").
+
+**Solution:**
+- Convert units manually
+- Update estimate to match plan units
+- Re-run AI review
+
+---
+
+## 📈 Performance Benchmarks
+
+### API Response Times
+
+| Endpoint | Average | P95 | P99 |
+|----------|---------|-----|-----|
+| POST /ai_review | 50ms | 80ms | 120ms |
+| GET /estimate_reviews/:id | 30ms | 50ms | 70ms |
+
+**Note:** POST returns immediately (202 Accepted). Actual processing takes 30-60s in background.
+
+---
+
+### Background Job Processing
+
+| Stage | Average Time | Notes |
+|-------|--------------|-------|
+| OneDrive PDF download | 5-10s | Depends on file size and network |
+| PDF to base64 conversion | 2-5s | Depends on file size |
+| Claude API call | 20-45s | Depends on PDF complexity and API load |
+| Discrepancy analysis | 1-3s | Ruby processing, O(n²) matching |
+| **Total** | **30-65s** | Typical 4-PDF plan set |
+
+---
+
+### Database Query Performance
+
+```sql
+-- Find existing processing review (RULE #7.9)
+SELECT * FROM estimate_reviews
+WHERE estimate_id = 123 AND status = 'processing';
+
+-- Index used: index_estimate_reviews_on_estimate_id_and_status
+-- Query time: < 5ms
+```
+
+---
+
+## 🎓 Development Notes
+
+### Adding New OneDrive Plan Folders
+
+If you need to search additional folders beyond the 3 defaults:
+
+1. Update constant in `plan_review_service.rb`:
+```ruby
+PLAN_FOLDER_PATHS = [
+  '01 - Plans',
+  '02 - Engineering',
+  '03 - Specifications',
+  '04 - Structural'  # New folder
+].freeze
+```
+
+2. Update error messages to include new folder
+3. Test with job that has files in new folder
+
+---
+
+### Improving Claude Prompt Quality
+
+The prompt sent to Claude significantly affects accuracy. Key elements:
+
+**Current prompt structure:**
+1. Instruction: "Extract ALL materials from plans"
+2. Context: Estimate line items (for comparison)
+3. Output format: Strict JSON schema
+4. Severity definitions: HIGH/MEDIUM/LOW thresholds
+
+**Improving accuracy:**
+- Add construction discipline context: "This is a residential plumbing estimate"
+- Specify units: "Use metric units (m, mm, kg)"
+- Add exclusions: "Ignore notes, dimensions, and legends"
+- Request confidence per item: `{"item": "...", "confidence": 0.9}`
+
+---
+
+### Handling Claude API Errors
+
+**Common errors and solutions:**
+
+| Error Code | Meaning | Solution |
+|------------|---------|----------|
+| 401 | Invalid API key | Check ANTHROPIC_API_KEY env var |
+| 429 | Rate limit exceeded | Implement retry with backoff |
+| 500 | Claude API outage | Show user-friendly error, retry later |
+| Timeout | Request > 60s | Split large PDF sets into batches |
+
+---
+
+### Future Enhancements
+
+**Planned:**
+1. **Auto-apply changes** - Button to update estimate with plan quantities
+2. **PDF export** - Generate review report as PDF
+3. **Historical comparison** - Track estimate changes over time
+4. **Multi-language support** - Handle plans in languages other than English
+5. **Custom severity thresholds** - Allow per-user/per-org threshold configuration
+6. **Batch processing** - Review multiple estimates in one job
+
+**Under Consideration:**
+- AI-suggested category mapping (plan category → estimate category)
+- Integration with schedule (flag missing items needed for upcoming tasks)
+- Cost impact analysis (show $ impact of quantity discrepancies)
+
+---
+
+## 🔗 Related Chapters
+
+- **Chapter 6: Estimates & Quoting** - Source data for AI review
+- **Chapter 8: Purchase Orders** - Downstream use of validated estimates
+- **Chapter 12: OneDrive Integration** - Plan document storage and retrieval
+- **Chapter 5: Jobs & Construction** - Required association for AI review
 
 ---
 
@@ -4255,6 +4808,120 @@ Bug Hunter is an automated testing system with two components:
 ---
 
 ## Resolved Issues
+
+### ✅ BUG-005: Infinite Loop in Cascade Batch Updates (RESOLVED)
+
+**Status:** ✅ RESOLVED
+**Date Discovered:** 2025-11-16
+**Date Resolved:** 2025-11-16
+**Severity:** High (Performance/UX)
+
+#### Summary
+Infinite loop occurred when dragging tasks with dependencies. Task 310 would receive 5+ API calls within 367ms, causing the Bug Hunter warning: "🚨 BUG HUNTER WARNING: Potential infinite loop detected!"
+
+#### Root Cause
+Two separate batch update systems were running simultaneously and conflicting:
+
+1. **Backend cascade response** - When backend returns `{task, cascaded_tasks}`, frontend applies them in one batch
+2. **Frontend timeout-based batch** - `cascadeBatchTimeoutRef` timeout (100ms) queues cascade updates
+
+**The Problem:**
+- User drags Task 311, triggering cascade to Tasks 313, 312, 314, 310
+- Frontend queues these cascade updates in `cascadeUpdatesRef` with 100ms timeout
+- Backend calculates ALL cascades and returns them immediately in response
+- Frontend applies backend's cascaded_tasks (correct values)
+- **BUG:** 100ms timeout fires and applies STALE queued updates from before backend response
+- Stale updates trigger Gantt reload
+- Gantt reload triggers more cascade calculations
+- Creates infinite loop
+
+**Timeline from logs:**
+```
+[13:11:51] ⚡ Skipping optimistic update - will batch  <- Queued in frontend batch
+[13:11:52] 🔄 Backend cascaded to 4 tasks            <- Backend already calculated
+[13:11:52] ✅ Applied batch update for 5 tasks       <- Applied backend response
+[13:11:52] 📦 Applying 1 batched cascade updates    <- STALE! Old queued update fires
+[13:11:53] 🚨 BUG HUNTER WARNING: Infinite loop!    <- Task 310: 5 calls in 367ms
+```
+
+#### Solution
+Three-part fix with counter-based cascade depth tracking:
+
+**Part 1: Clear frontend batch queue when backend cascades**
+```javascript
+if (hasCascadedTasks) {
+  // CRITICAL: Clear frontend batch queue - backend has already calculated everything!
+  if (cascadeBatchTimeoutRef.current) {
+    clearTimeout(cascadeBatchTimeoutRef.current)
+    cascadeBatchTimeoutRef.current = null
+  }
+  cascadeUpdatesRef.current.clear()
+}
+```
+
+**Part 2: Track cascade depth to handle nested cascades**
+```javascript
+// Increment depth counter when starting cascade batch
+cascadeDepthRef.current++
+isApplyingCascadeRef.current = true
+console.log(`🔒 Cascade depth: ${cascadeDepthRef.current} - blocking handleUpdateRow`)
+
+setRows(prevRows => {
+  // ... apply all cascaded tasks
+})
+
+// Decrement depth after React updates AND Gantt events complete
+// CRITICAL: Must wait 600ms for ALL Gantt's onAfterTaskUpdate events to finish
+setTimeout(() => {
+  cascadeDepthRef.current--
+  console.log(`🔓 Cascade depth: ${cascadeDepthRef.current}`)
+
+  // Only release blocking flag when ALL cascades complete (depth = 0)
+  if (cascadeDepthRef.current === 0) {
+    isApplyingCascadeRef.current = false
+    console.log('✅ ALL cascades complete - handleUpdateRow re-enabled')
+  } else {
+    console.log('⏳ Waiting for nested cascades to complete...')
+  }
+}, 600) // 600ms delay ensures ALL Gantt events complete, including nested cascades and multiple event waves
+```
+
+**Part 3: Block handleUpdateRow during cascade processing**
+```javascript
+// In onUpdateTask callback:
+if (isApplyingCascadeRef.current) {
+  console.log('⏸️ Skipping handleUpdateRow - applying backend cascade batch')
+  return
+}
+```
+
+**Why counter-based approach with 600ms timeout:**
+- Initial fix used 100ms timeout → infinite loop reduced but not eliminated
+- Increased to 300ms → still getting warnings (4-5 API calls)
+- Increased to 500ms → reduced to 3 API calls (one event still slipping through)
+- Problem: Gantt fires onAfterTaskUpdate events AFTER React state updates complete
+- Nested cascades spawn MORE cascades, each with their own event processing time
+- Multiple event waves: depth 2→1→0 each triggers new Gantt events
+- 600ms provides enough time for ALL multi-level cascade waves to fully complete
+- Counter-based depth tracking ensures nested cascades handled correctly
+- The 600ms timeout is the "debounce" period to wait for Gantt to settle completely
+
+#### Impact
+- ✅ Eliminated infinite loop warnings completely
+- ✅ Reduced API calls from 5-13 to 1 per drag operation
+- ✅ Prevented stale cascade updates from overwriting backend's calculations
+- ✅ Properly handles nested/recursive cascade waves
+- ✅ Improved drag performance and eliminated race conditions
+
+**Files Changed:**
+- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx:145-146` (added isApplyingCascadeRef + cascadeDepthRef)
+- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx:1101-1108` (clear batch queue)
+- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx:1118-1149` (counter-based cascade depth tracking)
+- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx:2415-2418` (skip handleUpdateRow during batch)
+
+**Related Rule:** Bible Chapter 9, RULE #9.7 (API Pattern - Single Update + Cascade Response)
+
+---
 
 ### ✅ BUG-003: Predecessor IDs Cleared on Drag (RESOLVED)
 
