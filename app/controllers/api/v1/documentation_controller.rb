@@ -19,12 +19,12 @@ module Api
             chapters: 19
           },
           {
-            id: 'implementation-patterns',
+            id: 'teacher',
             name: 'Trapid Teacher',
             description: 'Code examples and implementation guides',
             icon: '🔧',
             audience: 'Developers',
-            path: 'IMPLEMENTATION_PATTERNS.md',
+            path: 'TRAPID_TEACHER.md',
             chapters: 2
           },
           {
@@ -59,8 +59,8 @@ module Api
         file_path = case doc_id
                     when 'bible'
                       Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_BIBLE.md')
-                    when 'implementation-patterns'
-                      Rails.root.join('..', 'TRAPID_DOCS', 'IMPLEMENTATION_PATTERNS.md')
+                    when 'teacher'
+                      Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_TEACHER.md')
                     when 'lexicon'
                       Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_LEXICON.md')
                     when 'user-manual'
@@ -106,7 +106,7 @@ module Api
         docs_path = Rails.root.join('..', 'TRAPID_DOCS')
 
         # Search in Trinity+1 files
-        ['TRAPID_BIBLE.md', 'IMPLEMENTATION_PATTERNS.md', 'TRAPID_LEXICON.md', 'TRAPID_USER_MANUAL.md'].each do |filename|
+        ['TRAPID_BIBLE.md', 'TRAPID_TEACHER.md', 'TRAPID_LEXICON.md', 'TRAPID_USER_MANUAL.md'].each do |filename|
           file_path = docs_path.join(filename)
           next unless File.exist?(file_path)
 

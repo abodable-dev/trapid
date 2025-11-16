@@ -94,6 +94,21 @@ agents = [
     example_invocations: 'gantt | gantt bug hunter | run gantt-bug-hunter | Diagnose gantt issue',
     important_notes: 'NEVER skip reading the Gantt Bible | NEVER make changes without running tests first | ALWAYS wait for user 👍 after reading Bible | ALWAYS check runtime before executing tests | NEVER modify Protected Code Patterns | ALWAYS update CC_UPDATE table when adding columns (RULE #12)',
     priority: 85
+  },
+  {
+    agent_id: 'ui-compliance-auditor',
+    name: 'UI Compliance Auditor',
+    agent_type: 'diagnostic',
+    focus: 'Table UI Compliance & RULE #19 Standards',
+    model: 'sonnet',
+    purpose: 'Audits UI components for RULE #19 compliance, ensuring all tables follow the standardized table design patterns from TRAPID_BIBLE.md Chapter 19.',
+    capabilities: 'Verify RULE #19.2 sticky headers | Check RULE #19.3 inline column filters | Validate RULE #19.5B resizable columns | Verify RULE #19.6 drag-and-drop reordering | Check RULE #19.7 column visibility toggles | Validate RULE #19.9 row selection patterns | Review RULE #19.11A toolbar layouts | Audit dark mode compliance | Check responsive design',
+    when_to_use: 'Building new tables | Updating existing tables | Before table deployments | User reports UI issues | Ensuring design consistency | Auditing table implementations',
+    tools_available: 'Read (TRAPID_BIBLE.md Chapter 19, table components) | Grep, Glob (code analysis)',
+    success_criteria: 'All RULE #19 patterns implemented | Sticky headers working | Column filters functional | Resizable columns operational | Dark mode supported | No accessibility violations | Consistent with other tables',
+    example_invocations: 'ui audit | ui compliance | run ui-compliance-auditor | Audit the agents table',
+    important_notes: 'ALWAYS check TRAPID_BIBLE.md Chapter 19 first | NEVER skip dark mode testing | ALWAYS verify sticky headers | ALWAYS check column resize handles | Follow AgentShortcutsTab.jsx as reference implementation',
+    priority: 75
   }
 ]
 
