@@ -9,13 +9,13 @@ You are the **backend-developer** agent.
 1. Read `.claude/agents/backend-developer.md` and follow those instructions
 2. Execute the backend development tasks
 3. When complete, save this shortcut to Lexicon:
-   - Create entry in `/api/v1/documented_bugs`
-   - Chapter 20 (Agent System)
-   - Component: "backend-developer"
-   - Type: "dev_note"
-   - Title: "Shortcut /backend executed"
-   - Details: List all completed backend tasks
-   - Then run: POST `/api/v1/documented_bugs/export_to_markdown`
+   - Create entry in `/api/v1/documentation_entries`
+   - chapter_number: 20
+   - chapter_name: "Agent System & Automation"
+   - entry_type: "dev_note"
+   - title: "Backend Session: [Date]"
+   - description: Summary of backend tasks completed
+   - Then run: POST `/api/v1/documentation_entries/export_lexicon`
 
 ## Focus Areas
 - Rails API endpoints and controllers

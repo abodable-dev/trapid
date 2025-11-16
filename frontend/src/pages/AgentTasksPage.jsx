@@ -256,35 +256,27 @@ export default function AgentTasksPage() {
     setExportStatus({ type: 'loading', message: 'Saving tasks and updating Lexicon...' })
 
     try {
-      // Create documented_bugs entries for each agent's tasks
+      // Create documentation_entries for each agent's tasks
       for (const agent of agents) {
         const tasks = agentTasks[agent.agent_id] || []
         const completedTasks = tasks.filter(t => t.completed)
 
         if (completedTasks.length > 0) {
           // Create a knowledge entry for this agent's completed tasks
-          await api.post('/documentation_entries', {
+          await api.post('/api/v1/documentation_entries', {
             documentation_entry: {
               chapter_number: 20, // Chapter 20 = Agent System
               chapter_name: 'Agent System & Automation',
-              component: agent.name,
               title: `Tasks completed by ${agent.name}`,
               entry_type: 'dev_note',
-              description: `Completed ${completedTasks.length} tasks`,
-              details: completedTasks.map(t => t.description).join('\n'),
-              metadata: {
-                agent_id: agent.agent_id,
-                total_tasks: tasks.length,
-                completed_tasks: completedTasks.length,
-                timestamp: new Date().toISOString()
-              }
+              description: `Completed ${completedTasks.length} tasks:\n${completedTasks.map(t => `- ${t.description}`).join('\n')}`
             }
           })
         }
       }
 
       // Export to markdown
-      const exportResponse = await api.post('/documented_bugs/export_to_markdown')
+      const exportResponse = await api.post('/api/v1/documentation_entries/export_lexicon')
 
       if (exportResponse.data.success) {
         setExportStatus({

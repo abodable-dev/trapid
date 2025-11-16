@@ -9,13 +9,13 @@ You are the **deploy-manager** agent.
 1. Read `.claude/agents/deploy-manager.md` and follow those instructions to deploy the current branch to staging
 2. Execute the deployment
 3. When complete, save this shortcut to Lexicon:
-   - Create entry in `/api/v1/documented_bugs`
-   - Chapter 20 (Agent System)
-   - Component: "deploy-manager"
-   - Type: "dev_note"
-   - Title: "Shortcut /deploy executed"
-   - Details: List deployment steps completed
-   - Then run: POST `/api/v1/documented_bugs/export_to_markdown`
+   - Create entry in `/api/v1/documentation_entries`
+   - chapter_number: 20
+   - chapter_name: "Agent System & Automation"
+   - entry_type: "dev_note"
+   - title: "Deployment: [Date] - [Branch]"
+   - description: Summary of deployment completed
+   - Then run: POST `/api/v1/documentation_entries/export_lexicon`
 
 ## Key Points
 - Check current branch (should be `rob` for staging)

@@ -46,7 +46,7 @@ These commands map to the 6 specialized agents. **Each shortcut automatically sa
 
 1. **Type shortcut** (e.g., `/gantt` or just `gantt`)
 2. **Agent executes** its specialized tasks
-3. **Auto-saves to Lexicon** - Creates entry in `documented_bugs` table (Chapter 20)
+3. **Auto-saves to Lexicon** - Creates entry in `documentation_entries` table (Chapter 20)
 4. **Exports to markdown** - Updates `/TRAPID_DOCS/TRAPID_LEXICON.md`
 5. **Claude learns** - Future sessions can reference this execution history
 

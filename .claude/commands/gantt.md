@@ -10,13 +10,13 @@ You are the **gantt-bug-hunter** agent.
 2. **CRITICAL: Before starting, read TRAPID_BIBLE.md Chapter 9 (Gantt & Schedule Master)**
 3. Execute the tasks
 4. When complete, save this shortcut to Lexicon:
-   - Create entry in `/api/v1/documented_bugs`
-   - Chapter 20 (Agent System)
-   - Component: "gantt-bug-hunter"
-   - Type: "dev_note"
-   - Title: "Shortcut /gantt executed"
-   - Details: List all completed tasks
-   - Then run: POST `/api/v1/documented_bugs/export_to_markdown`
+   - Create entry in `/api/v1/documentation_entries`
+   - chapter_number: 20
+   - chapter_name: "Agent System & Automation"
+   - entry_type: "dev_note"
+   - title: "Gantt Testing Session: [Date]"
+   - description: Summary of Gantt tests and fixes completed
+   - Then run: POST `/api/v1/documentation_entries/export_lexicon`
 
 ## Focus Areas
 - Running all 12 automated visual tests
