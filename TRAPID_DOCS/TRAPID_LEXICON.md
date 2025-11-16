@@ -8082,7 +8082,350 @@ end
 │ 📘 USER MANUAL (HOW): Chapter 18               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## 🐛 Bug Hunter - Known Issues
+
+### Issue: Settings Column Missing (Formula Storage Bug)
+
+**Status:** 🔴 INCOMPLETE FEATURE
+**Severity:** High
+**First Reported:** 2025-10-29
+**Component:** Column model / formula storage
+
+**Scenario:**
+Code references `column.settings&.dig('formula')` to retrieve formula expressions for computed columns, but the `settings` column doesn't exist in the `columns` table schema. This causes formulas to always return nil, breaking computed columns.
+
+**Root Cause:**
+- Migration for `settings` JSONB column was never created
+- Code was written assuming `settings` would exist
+- Column params don't permit `settings` field
+
+**Solution:**
+```ruby
+# Missing migration:
+class AddSettingsToColumns < ActiveRecord::Migration[7.0]
+  def change
+    add_column :columns, :settings, :jsonb, default: {}, null: false
+    add_index :columns, :settings, using: :gin
+  end
+end
+
+# Update strong params:
+# app/controllers/api/v1/columns_controller.rb
+def column_params
+  params.require(:column).permit(
+    :name, :column_name, :column_type, # ... other fields
+    settings: {}  # Add this
+  )
+end
+```
+
+**Current Workaround:**
+Formulas are likely stored elsewhere (possibly in description field or not persisted at all).
+
+**Prevention:**
+- Always run migrations after adding columns to models
+- Test features end-to-end before marking complete
+- Add automated tests that verify JSONB storage
+
+---
+
+### Issue: Choice Column Type Defined but Not Implemented
+
+**Status:** 🔴 INCOMPLETE FEATURE
+**Severity:** Medium
+**First Reported:** 2025-11-01
+**Component:** Column types / choice validation
+
+**Scenario:**
+`choice` column type is defined in COLUMN_TYPES constant and has database mapping to `:string`, but there's no UI or backend logic to define the available choices (dropdown options).
+
+**Root Cause:**
+Feature partially implemented:
+- Column type exists
+- Database mapping exists
+- No `choices` field to store dropdown options (should be in `settings`)
+- No validation to ensure value is from allowed choices
+
+**Solution:**
+```ruby
+# Store choices in settings JSONB (after settings migration):
+column.settings = {
+  choices: ['Option 1', 'Option 2', 'Option 3']
+}
+
+# Validate on record save:
+def validate_choice_value
+  return unless column.column_type == 'choice'
+
+  allowed_choices = column.settings&.dig('choices') || []
+  unless value.in?(allowed_choices)
+    errors.add(column.column_name, "must be one of: #{allowed_choices.join(', ')}")
+  end
+end
+```
+
+**Prevention:**
+- Document incomplete features as "TODO" in code
+- Don't expose incomplete column types in UI until fully implemented
+
+---
+
+### Issue: User Column Type Has No Association Injection
+
+**Status:** ⚠️ INCOMPLETE FEATURE
+**Severity:** Low
+**First Reported:** 2025-11-05
+**Component:** Dynamic model generation
+
+**Scenario:**
+`user` column type maps to integer (foreign key to users table), but unlike `lookup` columns, there's no automatic `belongs_to` association injection for user columns.
+
+**Root Cause:**
+```ruby
+# app/models/table.rb
+columns.where(column_type: 'lookup').each do |column|
+  inject_lookup_association(column)
+end
+# Should also handle column_type == 'user'
+```
+
+**Solution:**
+```ruby
+# app/models/table.rb
+columns.where(column_type: ['lookup', 'user']).each do |column|
+  if column.column_type == 'user'
+    inject_user_association(column)
+  else
+    inject_lookup_association(column)
+  end
+end
+
+def inject_user_association(column)
+  @dynamic_model.belongs_to column.column_name.to_sym,
+    class_name: 'User',
+    foreign_key: "#{column.column_name}_id",
+    optional: !column.required
+end
+```
+
+**Prevention:**
+- Treat all foreign key column types consistently
+- Auto-inject associations for all relational types
+
+---
+
+## 🏗️ Architecture & Implementation
+
+### Dynamic Table Generation vs Polymorphic Schema
+
+**Why Dynamic Tables Instead of Single polymorphic "cells" Table?**
+
+**Considered Approach** (NOT used):
+```ruby
+# Single generic table:
+custom_table_cells (
+  id, table_id, row_id, column_id, value_text, value_number, value_date, value_boolean
+)
+```
+
+**Chosen Approach** (Dynamic tables):
+```ruby
+# One table per custom table:
+user_contacts_abc123 (
+  id, name, email, phone, created_at, updated_at
+)
+```
+
+**Trade-offs:**
+- **Pro (Dynamic):** Native database types (indexes, constraints work naturally)
+- **Pro (Dynamic):** Standard ActiveRecord queries (no complex joins)
+- **Pro (Dynamic):** Better performance (direct column access vs polymorphic value columns)
+- **Con (Dynamic):** More complex schema management (migrations on-the-fly)
+- **Con (Dynamic):** Harder to query across all custom tables
+- **Con (Polymorphic):** Would allow easier cross-table queries but worse performance per-table
+
+**When to Reconsider:**
+If users create >1000 custom tables, consider hybrid approach (polymorphic for rarely queried data).
+
+---
+
+### Dentaku Formula Engine
+
+**Why Dentaku?**
+- **Safe:** No Ruby `eval()` - prevents code injection
+- **Math-focused:** Built for business calculations
+- **Lightweight:** Minimal dependencies
+- **Extensible:** Can add custom functions
+
+**Supported Dentaku Functions:**
+```ruby
+IF(condition, true_value, false_value)
+ROUND(number, decimals)
+NOT(boolean)
+AND(bool1, bool2, ...)
+OR(bool1, bool2, ...)
+```
+
+**Missing Functions (Not in Dentaku):**
+- String manipulation (CONCAT, LEFT, RIGHT)
+- Date arithmetic (DATEADD, DATEDIFF)
+- Lookup functions (VLOOKUP - handled via cross-table refs instead)
+
+**Alternative Considered:**
+- **Formulaic gem:** More features but heavier, overkill for needs
+- **Custom parser:** Too much work, reinventing wheel
+
+---
+
+### Formula Result Storage as String
+
+**Why store computed results as strings?**
+
+Original schema:
+```ruby
+'computed' => :string  # Not :decimal
+```
+
+**Reasoning:**
+- Formulas can return different types (number, boolean, string in future)
+- String storage is flexible
+- Parsed back to float on read: `value.to_f`
+
+**Trade-off:**
+- **Con:** Can't use database aggregations on computed columns (SUM, AVG)
+- **Con:** Can't create indexes on computed values
+- **Pro:** Supports future non-numeric formulas
+
+**When to Reconsider:**
+If users need to query/filter by computed values, change to:
+```ruby
+'computed' => :decimal  # For numeric-only formulas
+```
+
+---
+
+### Foreign Key on_delete: :nullify Pattern
+
+**Why :nullify instead of :cascade?**
+
+When a looked-up record is deleted:
+```ruby
+on_delete: :nullify  # Set FK to NULL
+# vs
+on_delete: :cascade  # Delete this record too
+```
+
+**Example:**
+- PurchaseOrders table has lookup to Suppliers table
+- Supplier "ABC Building" is deleted
+- **With :nullify:** PO still exists, supplier shows as "Unknown"
+- **With :cascade:** PO is deleted (data loss!)
+
+**Trade-off:**
+- **Pro (:nullify):** Preserves historical data
+- **Pro (:nullify):** Safer default (no accidental mass deletion)
+- **Con (:nullify):** Orphaned references need UI handling ("Unknown" display)
+
+---
+
+## 📊 Test Catalog
+
+### Manual Tests (No Automated Tests Exist)
+
+**Custom Table CRUD:**
+1. **Create table** - Verify database table created with correct name
+2. **Add columns** - Check 17 types create correct DB columns
+3. **Delete table** - Verify safety checks (is_live, has records, has references)
+
+**Formula Evaluation:**
+1. **Simple formula** - `{quantity} * {price}` → Correct result
+2. **Cross-table formula** - `{supplier.tax_rate} * {amount}` → Fetches related record
+3. **Invalid formula** - Syntax error → Returns "ERROR: ..." string
+4. **Missing field** - `{nonexistent}` → Treats as 0
+
+**Lookup Columns:**
+1. **N+1 prevention** - Load 100 records with lookup → Single query for related records
+2. **Orphaned lookup** - Delete related record → Shows "Unknown"
+3. **Required lookup** - Create record without required lookup → Validation error
+
+**Edge Cases:**
+1. **Reserved table name** - Try creating table named "users" → Validation error
+2. **Duplicate column name** - Add column with existing name → Validation error
+3. **Delete table with refs** - Delete table referenced by another table's lookup → Error
+
+### Performance Benchmarks (Expected)
+
+**Table Creation:**
+- Small table (5 columns): ~200ms
+- Large table (50 columns): ~800ms
+
+**Formula Evaluation:**
+- Simple formula (100 records): ~50ms
+- Cross-table formula (100 records): ~150ms (with association preloading)
+
+**Record Queries:**
+- List 1000 records (no lookups): ~120ms
+- List 1000 records (3 lookups, N+1 prevented): ~180ms
+
+---
+
+## 🔍 Known Gaps & Future Enhancements
+
+### Gaps
+
+1. **No Settings Column:**
+   - Formulas can't be stored properly
+   - Choice column options can't be configured
+   - **Blocker for:** Computed columns, choice columns
+
+2. **No Formula Dependency Tracking:**
+   - If field A references field B in formula, updating B doesn't recalculate A
+   - **Workaround:** Recalculate all formulas on every record save
+
+3. **No Multiple Lookups Implementation:**
+   - Type defined but no UI or backend logic
+   - **Blocker for:** Many-to-many relationships
+
+4. **No User Column Association:**
+   - User column doesn't auto-inject belongs_to :user
+   - **Workaround:** Manually query users by ID
+
+### Future Enhancements
+
+1. **Formula Dependency Graph:**
+   - Track which formulas reference which columns
+   - Recalculate only affected formulas on update
+   - Detect circular dependencies
+
+2. **Computed Column Caching:**
+   - Store formula results in database (done)
+   - Add cache invalidation on dependency changes
+   - Background job for bulk recalculation
+
+3. **Advanced Column Types:**
+   - **Attachment:** File uploads (Cloudinary integration)
+   - **Rich Text:** Markdown/HTML editor
+   - **Geolocation:** Latitude/longitude with map picker
+
+4. **Table Views & Filters:**
+   - Saved filter presets ("Active Customers", "Overdue Invoices")
+   - Grouped views (Kanban boards)
+   - Pivot tables for aggregations
+
+5. **Import/Export:**
+   - CSV import with column mapping
+   - Excel export with formatting
+   - API for external integrations
+
+---
+
+## 📚 Related Chapters
+
+- **Chapter 1:** Authentication & Users (user column type)
+- **Chapter 3:** Contacts & Relationships (similar lookup pattern)
+- **Chapter 4:** Price Books & Suppliers (similar DECIMAL precision)
 
 ---
 

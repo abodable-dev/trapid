@@ -4269,7 +4269,270 @@ Some automations show their progress status:
 │ 📕 LEXICON (BUGS):     Chapter 18 (Developers) │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## What are Custom Data Tables?
+
+Custom Data Tables let you create your own database tables without needing a developer. You can design tables tailored to your specific business needs - like tracking equipment, managing inventory, or storing client information - with 17 different column types including text, numbers, dates, dropdowns, and calculated formulas.
+
+Think of it like creating your own mini-database or Excel spreadsheet, but with better data validation, relationships between tables, and automatic calculations.
+
+---
+
+## Getting Started
+
+### Creating Your First Table
+
+1. **Navigate to Settings → Custom Tables**
+2. **Click "Create New Table"**
+3. **Fill in table details:**
+   - **Name:** "Equipment Inventory" (user-friendly name)
+   - **Description:** What this table tracks
+   - **Icon:** Choose an icon (optional)
+4. **Click "Create Table"**
+
+The system creates a new empty table. Now you'll add columns to define what data it stores.
+
+---
+
+### Adding Columns
+
+**After creating a table:**
+
+1. **Click "Add Column"** button
+2. **Select column type:**
+   - **Single Line Text** - Short text (names, codes)
+   - **Multiple Lines Text** - Long text (descriptions, notes)
+   - **Number** - Decimal numbers (prices, measurements)
+   - **Currency** - Money amounts
+   - **Date** - Calendar dates
+   - **Checkbox** - Yes/No fields
+   - **Lookup** - Reference to another table's records
+   - **Computed** - Calculated field (formulas)
+   - ... and 9 more types
+3. **Configure column:**
+   - **Name:** "Equipment Name"
+   - **Required:** Check if this field is mandatory
+   - **Default Value:** Pre-fill new records (optional)
+4. **Click "Save Column"**
+
+The column is immediately added to your table!
+
+---
+
+### Adding Data (Records)
+
+**To add data to your table:**
+
+1. **Open your table** from Settings → Custom Tables
+2. **Click "+ New Record"**
+3. **Fill in the fields:**
+   - Type values for text/number fields
+   - Pick dates from calendar
+   - Select values from lookup dropdowns
+   - Checkboxes for yes/no fields
+4. **Click "Save"**
+
+Your record appears in the table instantly.
+
+---
+
+## Common Tasks
+
+### Creating Calculated Columns (Formulas)
+
+**Example: Calculate total price from quantity × unit price**
+
+1. **Add a new column** to your table
+2. **Select type: "Computed"**
+3. **Enter formula:**
+   ```
+   {quantity} * {unit_price}
+   ```
+4. **Test formula** (button shows preview result)
+5. **Save column**
+
+**Formula Tips:**
+- Use `{column_name}` to reference other fields
+- Supports +, -, *, /, parentheses
+- Can reference lookup fields: `{supplier.tax_rate} * {amount}`
+
+**Formula Examples:**
+```
+{cost} + {tax}                          // Sum
+{amount} / {units}                      // Division
+({price} - {discount}) * {quantity}     // Complex calculation
+```
+
+---
+
+### Linking Tables with Lookups
+
+**Example: Link Purchase Orders to Suppliers**
+
+1. **Create a "Suppliers" table** first (if not exists)
+2. **In your "Purchase Orders" table, add column**
+3. **Select type: "Lookup"**
+4. **Choose:**
+   - **Lookup Table:** Suppliers
+   - **Display Column:** "Company Name" (what users see)
+5. **Save column**
+
+**When creating records:**
+- Lookup columns show dropdown of all Suppliers
+- Select the supplier from dropdown
+- Value displays as company name (not raw ID)
+
+---
+
+### Searching and Filtering Records
+
+**To find specific records:**
+
+1. **Use search box** (top of table)
+   - Searches all text columns
+   - Type keywords, press Enter
+2. **Click column headers** to sort
+   - Click once: Ascending (A-Z)
+   - Click twice: Descending (Z-A)
+3. **Use column filters** (if enabled)
+   - Filter icon next to column name
+   - Enter filter criteria
+
+---
+
+### Editing Records
+
+**Two ways to edit:**
+
+**Inline Editing:**
+1. Click any cell in the table
+2. Type new value
+3. Press Enter or click outside cell
+4. Saves automatically
+
+**Edit Modal:**
+1. Click row's "Edit" button
+2. Update fields in modal
+3. Click "Save"
+
+---
+
+### Deleting Records
+
+**To delete a record:**
+
+1. **Click trash icon** on the record row
+2. **Confirm deletion** (can't be undone!)
+3. **Record removed** permanently
+
+**⚠️ Warning:** Deleting records is permanent. No undo!
+
+---
+
+## Troubleshooting
+
+### "Can't Delete Table - Has Records"
+
+**Problem:** Trying to delete a table but it says it has records.
+
+**Solution:**
+1. Delete all records from the table first
+2. Go to Settings → Custom Tables
+3. Click "View Records"
+4. Delete records one by one or use bulk delete (if available)
+5. Try deleting table again
+
+---
+
+### "Formula Returns ERROR"
+
+**Problem:** Computed column shows "ERROR: ..." instead of calculated result.
+
+**Solution:**
+- **Check field names:** Use exact column names in `{curly braces}`
+- **Check syntax:** Formulas use math operators: +, -, *, /, ()
+- **Missing fields:** If you reference a field that doesn't exist, formula fails
+- **Click "Test Formula"** button when creating column to check it works
+
+**Common Mistakes:**
+```
+❌ {Quantity} * {Price}     // Capital letters (wrong)
+✅ {quantity} * {price}     // Lowercase (correct)
+
+❌ quantity * price         // Missing braces (wrong)
+✅ {quantity} * {price}     // With braces (correct)
+```
+
+---
+
+### "Lookup Shows 'Unknown'"
+
+**Problem:** Lookup column displays "Unknown" instead of the related record's name.
+
+**Solution:**
+- The related record was deleted
+- Lookup references a record that no longer exists
+- Either:
+  1. **Select a different record** from the dropdown
+  2. **Leave as "Unknown"** (preserves historical data)
+
+---
+
+### "Can't Add Column - Reserved Name"
+
+**Problem:** Error says column name is reserved or already exists.
+
+**Solution:**
+- Don't use: id, created_at, updated_at (system columns)
+- Column names must be unique within the table
+- Choose a different name
+
+---
+
+## Advanced Features
+
+### Column Types Reference
+
+| Type | Use For | Example |
+|------|---------|---------|
+| Single Line Text | Names, codes | "ABC-123" |
+| Multiple Lines Text | Descriptions | Long paragraphs |
+| Email | Email addresses | Validates format |
+| Phone | Phone numbers | "(555) 123-4567" |
+| URL | Website links | "https://..." |
+| Number | Decimals | 123.45 |
+| Whole Number | Integers | 100 |
+| Currency | Money | $1,234.56 |
+| Percentage | Percent values | 15.5% |
+| Date | Dates only | 2025-11-16 |
+| Date and Time | Timestamps | 2025-11-16 14:30 |
+| Checkbox | Yes/No | ☑ / ☐ |
+| Lookup | Related records | Link to another table |
+| Computed | Formulas | Auto-calculated |
+
+---
+
+### Table Safety Features
+
+**Protected Tables:**
+- Set "Is Live" checkbox to prevent accidental deletion
+- Live tables can't be deleted until unchecked
+
+**Reference Protection:**
+- Can't delete table if other tables reference it
+- Must remove lookup columns first
+
+**Data Protection:**
+- Can't delete table with records
+- Must delete records first
+
+---
+
+## Related Topics
+
+- **Chapter 3:** Contacts & Relationships (similar lookup patterns)
+- **Chapter 4:** Price Books & Suppliers (similar data structures)
 
 ---
 

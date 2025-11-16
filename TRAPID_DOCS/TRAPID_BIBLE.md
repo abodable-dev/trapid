@@ -10218,7 +10218,642 @@ await api.post('/workflow_instances', {
 │ 📘 USER MANUAL (HOW): Chapter 18               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## Overview
+
+This chapter defines rules for **Custom Tables & Formulas**, a dynamic table generation system that allows users to create custom data tables with typed columns, formula calculations, and cross-table relationships. The system uses Rails' dynamic class generation to create individual database tables for each custom table.
+
+**Key Features:**
+- 17 column types (text, number, date, lookup, computed, etc.)
+- Formula evaluation via Dentaku gem
+- Cross-table lookups in formulas
+- Dynamic ActiveRecord model generation
+- Lookup columns with searchable display values
+- N+1 query prevention via batch loading
+
+**Key Files:**
+- Models: `backend/app/models/table.rb`, `column.rb`
+- Services: `backend/app/services/table_builder.rb`, `formula_evaluator.rb`
+- Controllers: `backend/app/controllers/api/v1/tables_controller.rb`, `columns_controller.rb`, `records_controller.rb`
+- Frontend: `frontend/src/pages/TablePage.jsx`, `frontend/src/components/table/AddColumnModal.jsx`
+
+**Related Chapters:**
+- Chapter 1: Authentication & Users (user column type references User model)
+- Chapter 3: Contacts & Relationships (similar lookup pattern)
+
+---
+
+## RULE #18.1: Dynamic Table Creation Pattern
+
+**Each custom table MUST create a separate physical database table with dynamic ActiveRecord model.**
+
+### Database Table Naming
+
+✅ **MUST use auto-generated unique name:**
+
+```ruby
+# app/models/table.rb
+before_validation :set_database_table_name, on: :create
+
+def set_database_table_name
+  return if database_table_name.present?
+
+  safe_name = name.parameterize.underscore
+  unique_suffix = SecureRandom.hex(3)
+  self.database_table_name = "user_#{safe_name}_#{unique_suffix}"
+end
+```
+
+**Pattern:** `user_<table_name>_<random_hex>`
+- Example: `user_contacts_abc123`
+- Prevents name collisions
+- Scopes to user-created tables
+
+❌ **NEVER:**
+- Use table names without prefix
+- Allow reserved names: `["user", "users", "table", "tables", "column", "columns", "record", "records"]`
+- Reuse database_table_name across tables
+
+### Dynamic Model Generation
+
+✅ **MUST create ActiveRecord model at runtime:**
+
+```ruby
+# app/models/table.rb
+def dynamic_model
+  return @dynamic_model if @dynamic_model
+
+  class_name = name.gsub(/[^a-zA-Z0-9_]/, '').classify
+
+  @dynamic_model = Object.const_set(class_name, Class.new(ApplicationRecord) do
+    self.table_name = database_table_name
+  end)
+
+  # Auto-inject lookup associations
+  columns.where(column_type: 'lookup').each do |column|
+    inject_lookup_association(column)
+  end
+
+  @dynamic_model
+end
+```
+
+**Files:**
+- `backend/app/models/table.rb:85-110`
+- `backend/app/services/table_builder.rb`
+
+---
+
+## RULE #18.2: Column Type System
+
+**Columns MUST support all 17 data types with proper validation and database mapping.**
+
+### Column Type Definitions
+
+✅ **MUST map column types correctly:**
+
+```ruby
+# Column Types → Database Types
+COLUMN_TYPE_MAPPINGS = {
+  'single_line_text' => :string,        # VARCHAR(255)
+  'multiple_lines_text' => :text,       # TEXT
+  'email' => :string,                   # VARCHAR with email validation
+  'phone' => :string,                   # VARCHAR with phone format
+  'url' => :string,                     # VARCHAR with URL validation
+  'number' => :decimal,                 # DECIMAL(15,2)
+  'whole_number' => :integer,           # INTEGER
+  'currency' => :decimal,               # DECIMAL(15,2)
+  'percentage' => :decimal,             # DECIMAL(15,2)
+  'date' => :date,                      # DATE
+  'date_and_time' => :datetime,         # TIMESTAMP
+  'boolean' => :boolean,                # BOOLEAN
+  'choice' => :string,                  # VARCHAR (single select)
+  'lookup' => :integer,                 # INTEGER (foreign key)
+  'multiple_lookups' => :text,          # TEXT (JSON array)
+  'user' => :integer,                   # INTEGER (FK to users)
+  'computed' => :string                 # VARCHAR (formula result)
+}
+```
+
+### Column Creation
+
+✅ **MUST use TableBuilder for physical schema changes:**
+
+```ruby
+# app/services/table_builder.rb
+def add_column(column)
+  db_type = COLUMN_TYPE_MAPPINGS[column.column_type]
+
+  ActiveRecord::Migration.suppress_messages do
+    ActiveRecord::Migration.add_column(
+      table.database_table_name,
+      column.column_name,
+      db_type,
+      **column_options(column)
+    )
+  end
+
+  # Add indexes for lookups
+  add_lookup_index(column) if column.column_type.in?(['lookup', 'user'])
+
+  # Add foreign key constraints
+  add_foreign_key(column) if column.column_type == 'lookup'
+end
+
+def column_options(column)
+  opts = {}
+  opts[:limit] = column.max_length if column.column_type.ends_with?('text')
+  opts[:precision] = 15 if column.column_type.in?(['number', 'currency', 'percentage'])
+  opts[:scale] = 2 if column.column_type.in?(['number', 'currency', 'percentage'])
+  opts[:null] = !column.required
+  opts[:default] = column.default_value if column.default_value.present?
+  opts
+end
+```
+
+**Files:**
+- `backend/app/services/table_builder.rb:45-78`
+- `backend/app/models/column.rb:15-35`
+
+---
+
+## RULE #18.3: Formula Evaluation System
+
+**Computed columns MUST use Dentaku gem for safe formula evaluation with cross-table support.**
+
+### Formula Syntax
+
+✅ **MUST support curly brace references:**
+
+```ruby
+# Valid formula examples:
+"{quantity} * {unit_price}"                    # Simple calculation
+"({cost} + {tax}) * {quantity}"                # Grouping
+"{amount} / {units}"                           # Division with decimal result
+"{supplier.tax_rate} * {amount}"               # Cross-table lookup
+"IF({quantity} > 100, {bulk_price}, {unit_price})" # Conditional (Dentaku function)
+```
+
+### Formula Evaluator
+
+✅ **MUST evaluate formulas safely:**
+
+```ruby
+# app/services/formula_evaluator.rb
+def evaluate(formula_expression, record_data, record_instance = nil)
+  # Step 1: Replace {field_name} with variable placeholders
+  variables = {}
+  processed_formula = formula_expression.gsub(/\{([^}]+)\}/) do |match|
+    field_ref = $1
+
+    if field_ref.include?('.')
+      # Cross-table reference: {lookup_column.target_field}
+      value = resolve_cross_table_reference(field_ref, record_instance)
+    else
+      # Direct field reference
+      value = record_data[field_ref] || 0
+    end
+
+    var_name = field_ref.gsub('.', '_')
+    variables[var_name] = value.to_f
+    var_name
+  end
+
+  # Step 2: Evaluate with Dentaku
+  calculator = Dentaku::Calculator.new
+  result = calculator.evaluate(processed_formula, variables)
+
+  # Step 3: Round floats to 2 decimals
+  result.is_a?(Float) ? result.round(2) : result
+rescue => e
+  "ERROR: #{e.message}"
+end
+
+def resolve_cross_table_reference(field_ref, record_instance)
+  lookup_column_name, target_field = field_ref.split('.')
+
+  # Get related record via association
+  related_record = record_instance.send(lookup_column_name.to_sym)
+  return 0 unless related_record
+
+  related_record.send(target_field.to_sym) || 0
+end
+```
+
+### Cross-Table Reference Optimization
+
+✅ **MUST flag columns with cross-table refs:**
+
+```ruby
+# app/models/column.rb
+before_save :detect_cross_table_references, if: -> { column_type == 'computed' }
+
+def detect_cross_table_references
+  formula = settings&.dig('formula') || ''
+  self.has_cross_table_refs = FormulaEvaluator.uses_cross_table_references?(formula)
+end
+
+# app/services/formula_evaluator.rb
+def self.uses_cross_table_references?(formula_expression)
+  formula_expression.match?(/\{[^}]+\.[^}]+\}/)
+end
+```
+
+**Why:** Filters which formulas need full record instance vs just data hash (performance).
+
+**Files:**
+- `backend/app/services/formula_evaluator.rb:10-85`
+- `backend/app/models/column.rb:95-105`
+
+---
+
+## RULE #18.4: Lookup Column Pattern
+
+**Lookup columns MUST auto-inject belongs_to associations and prevent N+1 queries.**
+
+### Association Injection
+
+✅ **MUST create associations dynamically:**
+
+```ruby
+# app/models/table.rb
+def inject_lookup_association(column)
+  return unless column.lookup_table_id.present?
+
+  target_table = Table.find(column.lookup_table_id)
+  target_class = target_table.name.classify
+
+  @dynamic_model.belongs_to column.column_name.to_sym,
+    class_name: target_class,
+    foreign_key: "#{column.column_name}_id",
+    optional: !column.required
+end
+```
+
+### Batch Loading (N+1 Prevention)
+
+✅ **MUST batch-load related records:**
+
+```ruby
+# app/controllers/api/v1/records_controller.rb
+def build_lookup_cache(records, table)
+  cache = {}
+
+  table.columns.where(column_type: 'lookup').each do |column|
+    next unless column.lookup_table_id.present?
+
+    target_table = Table.find(column.lookup_table_id)
+    foreign_key = "#{column.column_name}_id"
+
+    # Collect all foreign key IDs
+    ids = records.map { |r| r.send(foreign_key) }.compact.uniq
+    next if ids.empty?
+
+    # Batch load related records
+    related_records = target_table.dynamic_model.where(id: ids).index_by(&:id)
+
+    cache[column.id] = {
+      records: related_records,
+      display_column: column.lookup_display_column || target_table.title_column
+    }
+  end
+
+  cache
+end
+```
+
+### Lookup Response Format
+
+✅ **MUST return id + display value:**
+
+```json
+{
+  "supplier": {
+    "id": 5,
+    "display": "ABC Building Supplies"
+  }
+}
+```
+
+**Files:**
+- `backend/app/models/table.rb:112-125`
+- `backend/app/controllers/api/v1/records_controller.rb:95-125`
+
+---
+
+## RULE #18.5: Record CRUD with Formula Calculation
+
+**Record operations MUST trigger formula recalculation for computed columns.**
+
+### Record Creation/Update
+
+✅ **MUST calculate formulas on save:**
+
+```ruby
+# app/controllers/api/v1/records_controller.rb
+def create
+  record = @table.dynamic_model.new(record_params)
+
+  if record.save
+    # Calculate computed columns AFTER save (so ID exists for lookups)
+    update_computed_columns(record)
+
+    render json: record_to_json(record), status: :created
+  else
+    render json: { errors: record.errors.full_messages }, status: :unprocessable_entity
+  end
+end
+
+def update_computed_columns(record)
+  computed_columns = @table.columns.where(column_type: 'computed')
+
+  computed_columns.each do |column|
+    formula = column.settings&.dig('formula')
+    next unless formula.present?
+
+    # Get current record data
+    record_data = record.attributes
+
+    # Evaluate formula
+    result = FormulaEvaluator.new.evaluate(
+      formula,
+      record_data,
+      column.has_cross_table_refs? ? record : nil
+    )
+
+    # Update computed field
+    record.update_column(column.column_name, result.to_s)
+  end
+end
+```
+
+### Record Retrieval with Formulas
+
+✅ **MUST transform computed values on read:**
+
+```ruby
+# app/controllers/api/v1/records_controller.rb
+def record_to_json(record)
+  json = record.attributes
+
+  @table.columns.each do |column|
+    case column.column_type
+    when 'computed'
+      # Parse string back to number
+      value = json[column.column_name]
+      json[column.column_name] = value.present? ? value.to_f : 0
+
+    when 'lookup'
+      # Replace FK with {id, display}
+      if lookup_cache[column.id]
+        id = json["#{column.column_name}_id"]
+        related = lookup_cache[column.id][:records][id]
+        display_col = lookup_cache[column.id][:display_column]
+
+        json[column.column_name] = {
+          id: id,
+          display: related&.send(display_col) || 'Unknown'
+        }
+      end
+    end
+  end
+
+  json
+end
+```
+
+**Files:**
+- `backend/app/controllers/api/v1/records_controller.rb:20-65`
+
+---
+
+## RULE #18.6: Table Deletion Safety
+
+**Table deletion MUST enforce safety checks to prevent data loss and broken references.**
+
+### Safety Checks
+
+✅ **MUST validate before deletion:**
+
+```ruby
+# app/controllers/api/v1/tables_controller.rb
+def destroy
+  # Check 1: Is table marked as live?
+  if @table.is_live?
+    return render json: {
+      error: 'Cannot delete live table. Set is_live to false first.'
+    }, status: :unprocessable_entity
+  end
+
+  # Check 2: Does table have records?
+  record_count = @table.dynamic_model.count
+  if record_count > 0
+    return render json: {
+      error: "Cannot delete table with #{record_count} records. Delete records first."
+    }, status: :unprocessable_entity
+  end
+
+  # Check 3: Do other tables reference this table?
+  referencing_columns = Column.where(lookup_table_id: @table.id)
+  if referencing_columns.any?
+    table_names = referencing_columns.map { |c| c.table.name }.uniq.join(', ')
+    return render json: {
+      error: "Cannot delete. Referenced by lookup columns in: #{table_names}"
+    }, status: :unprocessable_entity
+  end
+
+  # Safe to delete
+  TableBuilder.new(@table).drop_database_table
+  @table.destroy
+
+  head :no_content
+end
+```
+
+### Physical Table Cleanup
+
+✅ **MUST drop database table:**
+
+```ruby
+# app/services/table_builder.rb
+def drop_database_table
+  ActiveRecord::Migration.suppress_messages do
+    ActiveRecord::Migration.drop_table(table.database_table_name, if_exists: true)
+  end
+
+  # Remove dynamic model from memory
+  class_name = table.name.classify
+  Object.send(:remove_const, class_name) if Object.const_defined?(class_name)
+end
+```
+
+**Files:**
+- `backend/app/controllers/api/v1/tables_controller.rb:55-85`
+- `backend/app/services/table_builder.rb:90-100`
+
+---
+
+## RULE #18.7: Column Validation Rules
+
+**Columns MUST validate based on type-specific constraints.**
+
+### Type-Specific Validations
+
+✅ **MUST enforce validation rules:**
+
+```ruby
+# app/models/column.rb
+validates :name, presence: true
+validates :column_name, presence: true, uniqueness: { scope: :table_id }
+validates :column_type, inclusion: { in: COLUMN_TYPES }
+
+# Type-specific validations
+validate :validate_max_length_for_text_columns
+validate :validate_min_max_for_numeric_columns
+validate :validate_lookup_table_exists
+
+def validate_max_length_for_text_columns
+  return unless column_type.ends_with?('text')
+
+  if max_length.present? && max_length > 65535
+    errors.add(:max_length, 'cannot exceed 65,535 for text columns')
+  end
+end
+
+def validate_min_max_for_numeric_columns
+  return unless column_type.in?(%w[number whole_number currency percentage])
+
+  if min_value.present? && max_value.present? && min_value > max_value
+    errors.add(:min_value, 'cannot be greater than max_value')
+  end
+end
+
+def validate_lookup_table_exists
+  return unless column_type.in?(%w[lookup multiple_lookups])
+
+  if lookup_table_id.blank?
+    errors.add(:lookup_table_id, 'is required for lookup columns')
+  elsif !Table.exists?(lookup_table_id)
+    errors.add(:lookup_table_id, 'references non-existent table')
+  end
+end
+```
+
+### Record-Level Validation
+
+✅ **MUST validate record data before save:**
+
+```ruby
+# app/controllers/api/v1/records_controller.rb
+def validate_record_data(record, params)
+  @table.columns.each do |column|
+    value = params[column.column_name]
+
+    # Required check
+    if column.required && value.blank?
+      record.errors.add(column.column_name, column.validation_message || 'is required')
+    end
+
+    # Type-specific validation
+    case column.column_type
+    when 'email'
+      unless value =~ URI::MailTo::EMAIL_REGEXP
+        record.errors.add(column.column_name, 'is not a valid email')
+      end
+    when 'url'
+      unless value =~ URI::DEFAULT_PARSER.make_regexp
+        record.errors.add(column.column_name, 'is not a valid URL')
+      end
+    when 'number', 'currency', 'percentage'
+      if column.min_value && value.to_f < column.min_value
+        record.errors.add(column.column_name, "must be at least #{column.min_value}")
+      end
+      if column.max_value && value.to_f > column.max_value
+        record.errors.add(column.column_name, "cannot exceed #{column.max_value}")
+      end
+    end
+  end
+end
+```
+
+**Files:**
+- `backend/app/models/column.rb:40-75`
+- `backend/app/controllers/api/v1/records_controller.rb:130-165`
+
+---
+
+## RULE #18.8: Foreign Key Constraints
+
+**Lookup columns MUST use foreign keys with nullify-on-delete behavior.**
+
+### Foreign Key Pattern
+
+✅ **MUST add foreign keys for lookups:**
+
+```ruby
+# app/services/table_builder.rb
+def add_foreign_key(column)
+  return unless column.column_type == 'lookup'
+  return unless column.lookup_table_id.present?
+
+  target_table = Table.find(column.lookup_table_id)
+
+  ActiveRecord::Migration.suppress_messages do
+    ActiveRecord::Migration.add_foreign_key(
+      table.database_table_name,
+      target_table.database_table_name,
+      column: "#{column.column_name}_id",
+      on_delete: :nullify  # Don't cascade delete
+    )
+  end
+end
+```
+
+**Why :nullify?**
+- Deleting a supplier doesn't delete purchase orders
+- Orphaned references show as "Unknown" in UI
+- Preserves historical data integrity
+
+❌ **NEVER use on_delete: :cascade** for lookup columns (data loss risk)
+
+**Files:**
+- `backend/app/services/table_builder.rb:82-95`
+
+---
+
+## API Endpoints Reference
+
+### Tables
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/v1/tables` | List all tables with record counts |
+| GET | `/api/v1/tables/:id` | Get table with columns |
+| POST | `/api/v1/tables` | Create new table |
+| PATCH | `/api/v1/tables/:id` | Update table metadata |
+| DELETE | `/api/v1/tables/:id` | Delete table (with safety checks) |
+
+### Columns
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/v1/tables/:table_id/columns` | Add column to table |
+| PATCH | `/api/v1/tables/:table_id/columns/:id` | Update column |
+| DELETE | `/api/v1/tables/:table_id/columns/:id` | Remove column |
+| GET | `/api/v1/tables/:table_id/columns/:id/lookup_options` | Get lookup values |
+| POST | `/api/v1/tables/:table_id/columns/test_formula` | Test formula on sample |
+| GET | `/api/v1/tables/:table_id/columns/:id/lookup_search?q=` | Search lookups |
+
+### Records
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/v1/tables/:table_id/records` | List records (search, sort, paginate) |
+| GET | `/api/v1/tables/:table_id/records/:id` | Get single record |
+| POST | `/api/v1/tables/:table_id/records` | Create record |
+| PATCH | `/api/v1/tables/:table_id/records/:id` | Update record |
+| DELETE | `/api/v1/tables/:table_id/records/:id` | Delete record |
 
 ---
 
