@@ -716,7 +716,7 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
       </div>
 
       {/* Table Container with Sticky Scrollbar - using flex layout */}
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col px-4">
         {/* Table with Sticky Gradient Headers (RULE #19.2) */}
         <div
           ref={scrollContainerRef}
@@ -728,8 +728,8 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
           }}
         >
           <table className="w-full border-collapse">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
-            <tr>
+            <thead className="sticky top-0 z-10 backdrop-blur-sm bg-white/80 dark:bg-gray-900/80">
+            <tr className="border-b border-gray-200 dark:border-gray-800">
               {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
                 const column = COLUMNS.find(c => c.key === colKey)
                 if (!column) return null
@@ -747,9 +747,9 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
                       minWidth: columnWidths[colKey],
                       position: 'relative'
                     }}
-                    className={`px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 ${
-                      column.sortable ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700' : ''
-                    } ${draggedColumn === colKey ? 'bg-indigo-100 dark:bg-indigo-900' : ''}`}
+                    className={`group px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 tracking-wide transition-colors ${
+                      column.sortable ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50' : ''
+                    } ${draggedColumn === colKey ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}
                   >
                     {/* Select All Checkbox (RULE #19.1) */}
                     {colKey === 'select' ? (

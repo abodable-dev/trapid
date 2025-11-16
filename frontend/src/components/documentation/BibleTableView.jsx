@@ -654,15 +654,15 @@ export default function BibleTableView({ content }) {
       </div>
 
       {/* Table with Custom Scrollbar */}
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col px-4">
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
           className="bible-table-scroll flex-1 overflow-y-scroll overflow-x-auto relative bg-white dark:bg-gray-900"
         >
         <table className="w-full border-collapse">
-          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-20">
-            <tr>
+          <thead className="sticky top-0 z-20 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-sm">
+            <tr className="border-b border-gray-100 dark:border-gray-800">
               {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
                 const column = COLUMNS.find(c => c.key === colKey)
                 if (!column) return null
@@ -680,9 +680,9 @@ export default function BibleTableView({ content }) {
                       minWidth: columnWidths[colKey],
                       position: 'relative'
                     }}
-                    className={`px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 ${
-                      column.sortable ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700' : ''
-                    } ${draggedColumn === colKey ? 'bg-indigo-100 dark:bg-indigo-900' : ''}`}
+                    className={`group px-6 py-3.5 text-left text-xs font-medium text-gray-600 dark:text-gray-400 tracking-wider transition-all ${
+                      column.sortable ? 'cursor-pointer hover:bg-blue-50/50 dark:hover:bg-gray-800/30 hover:text-gray-900 dark:hover:text-gray-100' : ''
+                    } ${draggedColumn === colKey ? 'bg-blue-50 dark:bg-indigo-900/20' : ''}`}
                   >
                     {colKey === 'select' ? (
                       <input
@@ -735,7 +735,7 @@ export default function BibleTableView({ content }) {
                     {/* Resize Handle */}
                     {column.resizable && (
                       <div
-                        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                        className="absolute top-0 right-0 w-1 h-full cursor-col-resize bg-blue-500 dark:bg-blue-500 transition-all opacity-0 group-hover:opacity-100 z-20"
                         onMouseDown={(e) => handleResizeStart(e, colKey)}
                         onClick={(e) => e.stopPropagation()}
                       />
@@ -745,11 +745,11 @@ export default function BibleTableView({ content }) {
               })}
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="bg-white dark:bg-gray-900">
             {filteredAndSorted.map(rule => (
               <React.Fragment key={rule.id}>
                 <tr
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-150"
+                  className="group border-b border-gray-50 dark:border-gray-800/30 hover:bg-blue-50/30 dark:hover:bg-gray-800/20 cursor-pointer transition-all duration-150 hover:shadow-sm"
                   onClick={() => toggleRow(rule.id)}
                 >
                   {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
@@ -764,7 +764,7 @@ export default function BibleTableView({ content }) {
                           minWidth: columnWidths[colKey],
                           maxWidth: columnWidths[colKey]
                         }}
-                        className={`px-4 py-3 text-sm text-gray-900 dark:text-white ${
+                        className={`px-6 py-5 text-sm text-gray-900 dark:text-gray-100 ${
                           colKey === 'expand' || colKey === 'select' ? 'text-center' : ''
                         } ${colKey === 'title' || colKey === 'chapter' ? '' : 'whitespace-nowrap'}`}
                       >
@@ -774,15 +774,15 @@ export default function BibleTableView({ content }) {
                   })}
                 </tr>
                 {expandedRows.has(rule.id) && (
-                  <tr className="bg-gray-50 dark:bg-gray-800/50">
-                    <td colSpan={columnOrder.filter(key => visibleColumns[key]).length} className="px-4 py-4">
+                  <tr className="bg-blue-50/20 dark:bg-gray-800/10 border-b border-gray-50 dark:border-gray-800/30">
+                    <td colSpan={columnOrder.filter(key => visibleColumns[key]).length} className="px-6 py-6">
                       <div className="prose dark:prose-invert max-w-none text-sm">
                         <div className="mb-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                           <span className="font-mono">Line {rule.lineNumber}</span>
                           <span>•</span>
                           <span>Chapter {rule.chapter}: {rule.chapterName}</span>
                         </div>
-                        <pre className="whitespace-pre-wrap text-xs bg-gray-100 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 overflow-auto">
+                        <pre className="whitespace-pre-wrap text-xs bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-700 overflow-auto shadow-sm">
                           {rule.content}
                         </pre>
                       </div>
