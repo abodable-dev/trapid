@@ -336,11 +336,16 @@ class Api::V1::BugHunterTestsController < ApplicationController
     start_time = Time.now
 
     # Get template ID from params, default to 4 (Bug Hunter Schedule Master)
-    template_id = params[:template_id] || '4'
+    # Validate template_id to prevent command injection
+    raw_template_id = params[:template_id] || '4'
+    unless raw_template_id.to_s =~ /\A\d+\z/
+      raise ArgumentError, "Invalid template_id: must be a positive integer"
+    end
+    template_id = raw_template_id.to_i.to_s
 
     # Set environment variable for the Playwright test
     env = {
-      'GANTT_TEST_TEMPLATE_ID' => template_id.to_s
+      'GANTT_TEST_TEMPLATE_ID' => template_id
     }
 
     # Run the Playwright test with timeout
