@@ -20,7 +20,7 @@ module Api
           },
           {
             id: 'implementation-patterns',
-            name: 'Implementation Patterns',
+            name: 'Teach',
             description: 'Code examples and implementation guides',
             icon: '🔧',
             audience: 'Developers',
