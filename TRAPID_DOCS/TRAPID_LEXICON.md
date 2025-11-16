@@ -141,11 +141,61 @@ If schema.rb changed but no new migration exists, agent now creates one before d
 │ 📘 USER MANUAL (HOW): Chapter 1                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16 09:01 AEST
+**Last Updated:** 2025-11-16 12:49 AEST
 
 ## 🐛 Bug Hunter: Authentication & Users
 
 ### Known Issues & Solutions
+
+#### BUG-001: Nil User in Authorization Check
+**Date:** 2025-11-16 12:49 AEST
+**Status:** ✅ RESOLVED
+**Severity:** Critical (500 errors on legitimate API calls)
+**Affected Endpoints:** Schedule Templates, Schedule Template Rows, Setup
+
+**Scenario:**
+User attempts to update schedule template rows via Gantt drag-and-drop. API returns error:
+```
+Error: undefined method `can_create_templates?' for nil
+```
+
+**Root Cause:**
+1. `ApplicationController#authorize_request` decoded JWT token but didn't validate that `@current_user` was set
+2. If JWT was missing/invalid, `decoded` would be `nil` → `@current_user` remained `nil`
+3. No error was raised - request continued
+4. When `check_can_edit_templates` called `@current_user.can_create_templates?`, it failed with NoMethodError
+
+**Code Location:**
+- `backend/app/controllers/application_controller.rb:13-29`
+- `backend/app/controllers/api/v1/schedule_template_rows_controller.rb:209-213`
+- `backend/app/controllers/api/v1/schedule_templates_controller.rb:113-123`
+- `backend/app/controllers/api/v1/setup_controller.rb:119-124`
+
+**Fix Applied:**
+1. **Added explicit nil check** in `ApplicationController#authorize_request`:
+   ```ruby
+   unless @current_user
+     render json: { error: 'Unauthorized - invalid or missing token' }, status: :unauthorized
+     return
+   end
+   ```
+
+2. **Added safe navigation operator** to all `can_create_templates?` calls:
+   ```ruby
+   unless @current_user&.can_create_templates?
+   ```
+
+**Prevention:**
+- ALWAYS use safe navigation (`&.`) when calling methods on `@current_user`
+- Ensure `authorize_request` validates `@current_user` is not nil
+- Return proper 401 Unauthorized instead of allowing nil to propagate
+
+**Testing:**
+- Restart Rails server after fix
+- Test Gantt drag-and-drop with valid session
+- Test API endpoints without Authorization header → should get 401, not 500
+
+---
 
 #### Issue: JWT Token Expiration Not Handled in Frontend
 **Status:** ⚠️ DESIGN LIMITATION

@@ -66,6 +66,7 @@ This file is the **absolute authority** for all Trapid development where chapter
 - [Chapter 16: Payments & Financials](#chapter-16-payments--financials)
 - [Chapter 17: Workflows & Automation](#chapter-17-workflows--automation)
 - [Chapter 18: Custom Tables & Formulas](#chapter-18-custom-tables--formulas)
+- [Chapter 19: UI/UX Standards & Patterns](#chapter-19-uiux-standards--patterns)
 
 ---
 
@@ -4999,6 +5000,1429 @@ XERO_WEBHOOK_KEY=your_webhook_signing_key
 └─────────────────────────────────────────────────┘
 
 **Content TBD**
+
+---
+
+# Chapter 19: UI/UX Standards & Patterns
+
+┌─────────────────────────────────────────────────┐
+│ 📕 LEXICON (BUGS):    Chapter 19               │
+│ 📘 USER MANUAL (HOW): Chapter 19               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Authority:** ABSOLUTE
+**Last Updated:** 2025-11-16 12:30 AEST
+
+This chapter defines ALL UI/UX patterns for Trapid. Every interactive element MUST follow these standards.
+
+## RULE #19.1: Standard Table Component Usage
+
+### Component Hierarchy
+
+✅ **MUST use this hierarchy:**
+1. **DataTable.jsx** - For simple data tables (read-only, basic sorting)
+2. **Custom table implementations** - For advanced features (column reordering, resizing, inline filters)
+
+❌ **NEVER:**
+- Mix patterns within same table
+- Create new table components without review
+- Use raw HTML tables without following standards
+
+### When to Use DataTable Component
+
+✅ **USE DataTable.jsx when:**
+- Simple list/grid view needed
+- Basic sorting sufficient
+- No column reordering required
+- No column resizing required
+- No inline column filters needed
+
+**Example:** UsersPage, simple lists, report views
+
+### When to Use Custom Table Implementation
+
+✅ **USE custom table when:**
+- Advanced features needed (resizing, reordering, inline filters)
+- Complex interactions (bulk selection, drag-drop)
+- High-density data requiring scroll optimization
+- Column state persistence needed
+
+**Example:** ContactsPage, POTable, PriceBooksPage
+
+---
+
+## RULE #19.2: Table Header Requirements
+
+### All Tables MUST Have:
+
+✅ **REQUIRED header elements:**
+1. **Sortable columns** - Click to sort (with visual indicators)
+2. **Column visibility controls** - Show/hide columns via dropdown/modal
+3. **Sticky headers** - Headers stay visible when scrolling vertically
+4. **Dark mode support** - All header elements
+
+### Header Classes (Standard Pattern)
+
+```jsx
+<thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
+```
+
+✅ **MUST include:**
+- Gradient background (light and dark modes)
+- `sticky top-0 z-10` for fixed headers
+- Border separation between headers and body
+
+### Sort Indicators (Standard Pattern)
+
+✅ **MUST show sort state:**
+- Unsorted: Chevron icons on hover (gray, low opacity)
+- Ascending: ChevronUpIcon (indigo-600 dark:indigo-400)
+- Descending: ChevronDownIcon (indigo-600 dark:indigo-400)
+
+```jsx
+{isSortable && isSorted && (
+  sortDirection === 'asc' ?
+    <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+    <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+)}
+```
+
+---
+
+## RULE #19.3: Column Search/Filter Requirements
+
+### Inline Column Filters (Advanced Tables)
+
+✅ **MUST provide inline filters for searchable columns:**
+- Input field directly in header cell (below column label)
+- Dropdown for enum/status columns
+- Debounced search for text inputs (optional optimization)
+
+### Filter Input Pattern
+
+```jsx
+{column.searchable && (
+  column.filterType === 'dropdown' ? (
+    <select
+      value={columnFilters[column.key] || ''}
+      onChange={(e) => handleColumnFilterChange(column.key, e.target.value)}
+      onClick={(e) => e.stopPropagation()}
+      className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+    >
+      <option value="">All {column.label}</option>
+      {/* Options */}
+    </select>
+  ) : (
+    <input
+      type="text"
+      placeholder="Search..."
+      value={columnFilters[column.key] || ''}
+      onChange={(e) => handleColumnFilterChange(column.key, e.target.value)}
+      onClick={(e) => e.stopPropagation()}
+      className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+    />
+  )
+)}
+```
+
+✅ **MUST include:**
+- `onClick={(e) => e.stopPropagation()` to prevent sort trigger
+- Dark mode styling
+- Focus states (indigo ring)
+
+---
+
+## RULE #19.4: Column Resizing Standards
+
+### Resize Handle Implementation
+
+✅ **MUST provide resize handles for all columns (except actions):**
+
+```jsx
+<div
+  className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+  onMouseDown={(e) => handleResizeStart(e, column.key)}
+  onClick={(e) => e.stopPropagation()}
+/>
+```
+
+### Resize Logic Pattern
+
+```jsx
+const handleResizeMove = (e) => {
+  if (!resizingColumn) return
+  const diff = e.clientX - resizeStartX
+  const newWidth = Math.max(100, resizeStartWidth + diff)
+  setColumnWidths(prev => ({
+    ...prev,
+    [resizingColumn]: newWidth
+  }))
+}
+```
+
+✅ **MUST:**
+- Minimum width: 100px
+- Persist widths to localStorage
+- Use `cursor-col-resize` cursor
+- Show visual feedback on hover (indigo highlight)
+
+❌ **NEVER:**
+- Allow columns to shrink below 100px
+- Resize without persisting state
+- Make action columns resizable
+
+---
+
+## RULE #19.5: Column Reordering Standards
+
+### Drag-and-Drop Implementation
+
+✅ **MUST support column reordering via drag-and-drop:**
+
+```jsx
+<th
+  draggable
+  onDragStart={(e) => handleDragStart(e, column.key)}
+  onDragOver={handleDragOver}
+  onDrop={(e) => handleDrop(e, column.key)}
+>
+  <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+  {/* Column content */}
+</th>
+```
+
+### Drag Handlers Pattern
+
+```jsx
+const handleDrop = (e, targetColumnKey) => {
+  e.preventDefault()
+  if (!draggedColumn || draggedColumn === targetColumnKey) {
+    setDraggedColumn(null)
+    return
+  }
+
+  const draggedIndex = columnOrder.indexOf(draggedColumn)
+  const targetIndex = columnOrder.indexOf(targetColumnKey)
+
+  const newOrder = [...columnOrder]
+  newOrder.splice(draggedIndex, 1)
+  newOrder.splice(targetIndex, 0, draggedColumn)
+
+  setColumnOrder(newOrder)
+  setDraggedColumn(null)
+}
+```
+
+✅ **MUST:**
+- Show drag handle icon (Bars3Icon) in header
+- Highlight dragged column (indigo background)
+- Persist column order to localStorage
+- Use semantic drag events (dragStart, dragOver, drop)
+
+---
+
+## RULE #19.6: Scroll Behavior Standards
+
+### Vertical Scrolling
+
+✅ **MUST constrain scroll to viewable screen:**
+
+```jsx
+<div className="flex-1 overflow-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" style={{
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#9CA3AF #E5E7EB'
+}}>
+```
+
+**Container structure:**
+- Parent: `h-screen flex flex-col` (full viewport height)
+- Table wrapper: `flex-1 overflow-auto` (scrolls within remaining space)
+- Table: `sticky top-0` headers
+
+### Horizontal Scrolling
+
+✅ **MUST support horizontal scroll for wide tables:**
+
+```jsx
+<table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+```
+
+✅ **MUST:**
+- Set `overflow-auto` on wrapper div
+- Use `minWidth: '100%'` for responsive behavior
+- Use `width: 'max-content'` to allow expansion
+- Keep headers sticky on both axes
+
+❌ **NEVER:**
+- Use fixed table width when columns can overflow
+- Allow body to scroll independently of headers
+- Block horizontal scroll when content exceeds viewport
+
+### Custom Scrollbar Styling
+
+✅ **MUST style scrollbars consistently:**
+
+```css
+scrollbarWidth: 'thin',
+scrollbarColor: '#9CA3AF #E5E7EB'  /* Firefox */
+```
+
+**Note:** For Webkit, add global CSS if needed (Chrome/Safari)
+
+---
+
+## RULE #19.7: Column Width Standards
+
+### Fixed vs Dynamic Widths
+
+✅ **MUST set column widths consistently:**
+
+```jsx
+<th style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}>
+<td style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}>
+```
+
+**Default widths by column type:**
+- **ID/Number columns:** 100-150px
+- **Name columns:** 200-250px
+- **Status columns:** 150px
+- **Action columns:** 100px
+- **Description columns:** 250-300px
+
+✅ **MUST persist widths:**
+- Save to localStorage on resize
+- Load from localStorage on mount
+- Provide sensible defaults if no saved state
+
+---
+
+## RULE #19.8: Cell Content Standards
+
+### Text Overflow Handling
+
+✅ **MUST handle long text:**
+- Use `truncate` for single-line cells with overflow
+- Use `whitespace-nowrap` for cells that should never wrap
+- Show full text on hover (via title attribute or tooltip)
+
+### Cell Padding
+
+✅ **STANDARD cell padding:**
+- Regular density: `px-4 py-5` or `px-6 py-4`
+- Compact density: `px-3 py-2`
+
+### Cell Alignment
+
+✅ **MUST align by content type:**
+- Text: Left align
+- Numbers/Currency: Right align
+- Actions: Right align
+- Status badges: Left align
+
+```jsx
+className={`${
+  column.align === 'right'
+    ? 'text-right'
+    : column.align === 'center'
+    ? 'text-center'
+    : 'text-left'
+}`}
+```
+
+---
+
+## RULE #19.9: Row Interaction Standards
+
+### Hover States
+
+✅ **MUST provide hover feedback:**
+
+```jsx
+<tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150">
+```
+
+### Click Handlers
+
+✅ **MUST use semantic click patterns:**
+- Row click: Navigate or expand row
+- Cell links: Use `<Link>` or `<button>` with `onClick={(e) => e.stopPropagation()`
+- Action menus: Stop propagation to prevent row click
+
+### Selection States
+
+✅ **MUST show selected state:**
+
+```jsx
+className={`transition-colors duration-150 ${
+  selectedContacts.has(contact.id)
+    ? 'bg-indigo-50 dark:bg-indigo-900/20'
+    : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+}`}
+```
+
+---
+
+## RULE #19.10: Column Visibility Standards
+
+### Column Toggle UI
+
+✅ **MUST provide column visibility controls:**
+- Dropdown menu (Menu from Headless UI)
+- Checkbox list of all columns
+- Persist visibility state to localStorage
+
+### Column Visibility Pattern
+
+```jsx
+<Menu as="div" className="relative inline-block text-left">
+  <MenuButton className="inline-flex items-center gap-x-2 rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600">
+    <AdjustmentsHorizontalIcon className="h-5 w-5" />
+    Columns
+  </MenuButton>
+
+  <MenuItems className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5">
+    {/* Checkbox items */}
+  </MenuItems>
+</Menu>
+```
+
+✅ **MUST:**
+- Show all columns in list (even hidden ones)
+- Mark currently visible with checkboxes
+- Persist state to localStorage
+- Use AdjustmentsHorizontalIcon
+
+---
+
+## RULE #19.11: Search & Filter UI Standards
+
+### Global Search Box
+
+✅ **MUST provide global search:**
+
+```jsx
+<div className="relative">
+  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+  <input
+    type="text"
+    placeholder="Search..."
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+  />
+</div>
+```
+
+✅ **MUST include:**
+- Magnifying glass icon on left
+- Clear button on right (when text present)
+- Dark mode styling
+- Focus ring (indigo or blue)
+
+### Filter Results Count
+
+✅ **MUST show results count when filtering:**
+
+```jsx
+{searchQuery && (
+  <div className="text-sm text-gray-600 dark:text-gray-400">
+    Found {filteredItems.length} of {items.length} items
+  </div>
+)}
+```
+
+---
+
+## RULE #19.12: Empty States
+
+### No Data State
+
+✅ **MUST show empty state when no data:**
+
+```jsx
+<div className="text-center py-12">
+  <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" /* ... */>
+    {/* Icon */}
+  </svg>
+  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+    No data
+  </h3>
+  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+    Get started by adding a new record.
+  </p>
+  <div className="mt-6">
+    <button /* ... */>Add Record</button>
+  </div>
+</div>
+```
+
+### No Search Results State
+
+✅ **MUST differentiate between empty and filtered:**
+
+```jsx
+{filteredItems.length === 0 && (
+  <tr>
+    <td colSpan={visibleColumnCount} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+      {searchQuery
+        ? `No items found matching your filters`
+        : 'No items found. Click "Add New" to create one.'}
+    </td>
+  </tr>
+)}
+```
+
+---
+
+## RULE #19.13: State Persistence Standards
+
+### What to Persist to localStorage
+
+✅ **MUST persist these states:**
+1. Column widths
+2. Column order
+3. Column visibility
+4. Sort state (optional)
+
+✅ **MUST use unique keys:**
+- Format: `{page}_{table}_columnWidths`
+- Example: `contacts_table_columnWidths`, `po_table_columnOrder`
+
+### Persistence Pattern
+
+```jsx
+// Load on mount
+const [columnWidths, setColumnWidths] = useState(() => {
+  const saved = localStorage.getItem('contacts_columnWidths')
+  return saved ? JSON.parse(saved) : defaultWidths
+})
+
+// Save on change
+useEffect(() => {
+  localStorage.setItem('contacts_columnWidths', JSON.stringify(columnWidths))
+}, [columnWidths])
+```
+
+❌ **NEVER:**
+- Use generic keys that could collide
+- Persist without try/catch (localStorage can fail)
+- Forget to provide defaults
+
+---
+
+## RULE #19.14: Sorting Standards
+
+### Sort Priority
+
+✅ **MUST support primary/secondary sort:**
+
+```jsx
+// Primary sort
+if (aPrimaryVal !== bPrimaryVal) {
+  if (aPrimaryVal < bPrimaryVal) return sortDirection === 'asc' ? -1 : 1
+  if (aPrimaryVal > bPrimaryVal) return sortDirection === 'asc' ? 1 : -1
+}
+
+// Secondary sort (if primary values equal)
+const aSecondaryVal = getSortValue(a, secondarySortBy)
+const bSecondaryVal = getSortValue(b, secondarySortBy)
+
+if (aSecondaryVal < bSecondaryVal) return secondarySortDirection === 'asc' ? -1 : 1
+if (aSecondaryVal > bSecondaryVal) return secondarySortDirection === 'asc' ? 1 : -1
+return 0
+```
+
+### Sort Cycle Behavior
+
+✅ **MUST cycle through 3 states:**
+1. Ascending
+2. Descending
+3. None (return to default/secondary sort)
+
+### Null Handling in Sort
+
+✅ **MUST handle null/undefined:**
+
+```jsx
+if (aValue == null && bValue == null) return 0
+if (aValue == null) return 1  // Nulls last
+if (bValue == null) return -1
+```
+
+---
+
+## RULE #19.15: Dark Mode Requirements
+
+### All Tables MUST Support Dark Mode
+
+✅ **REQUIRED dark mode classes:**
+
+**Headers:**
+```jsx
+className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800"
+```
+
+**Body:**
+```jsx
+className="bg-white dark:bg-gray-800"
+```
+
+**Borders:**
+```jsx
+className="border-gray-200 dark:border-gray-700"
+```
+
+**Text:**
+```jsx
+className="text-gray-900 dark:text-white"  // Primary text
+className="text-gray-600 dark:text-gray-400"  // Secondary text
+className="text-gray-500 dark:text-gray-400"  // Placeholder/label
+```
+
+**Hover:**
+```jsx
+className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+```
+
+❌ **NEVER:**
+- Use light-mode-only colors
+- Forget dark mode on new elements
+- Use pure white/black (use gray-50/gray-900 instead)
+
+---
+
+## RULE #19.16: Performance Standards
+
+### Memoization Requirements
+
+✅ **MUST memoize expensive computations:**
+
+```jsx
+const filteredAndSortedData = useMemo(() => {
+  // Filter and sort logic
+}, [data, filters, sortConfig])
+```
+
+### When to Memoize
+
+✅ **MUST memoize when:**
+- Filtering large datasets (>100 rows)
+- Sorting complex data structures
+- Computing derived values from props/state
+
+### Event Handler Optimization
+
+✅ **RECOMMENDED patterns:**
+- Debounce search inputs (if >500 items)
+- Throttle resize handlers (if needed)
+- Use `useCallback` for handlers passed to children
+
+❌ **NEVER:**
+- Filter/sort on every render without memoization
+- Create inline functions for sort/filter in map()
+
+---
+
+## RULE #19.17: Accessibility Standards
+
+### Keyboard Navigation
+
+✅ **MUST support:**
+- Tab through interactive elements
+- Enter/Space to trigger actions
+- Arrow keys for menu navigation (via Headless UI)
+
+### ARIA Attributes
+
+✅ **MUST include:**
+- `scope="col"` on `<th>` elements
+- `aria-label` or `aria-labelledby` on tables
+- `aria-sort` on sorted columns (optional enhancement)
+
+### Screen Reader Support
+
+✅ **MUST provide:**
+- Semantic HTML (`<table>`, `<thead>`, `<tbody>`)
+- `sr-only` text for icon-only buttons
+- Descriptive labels for all inputs
+
+---
+
+## RULE #19.18: Testing Considerations
+
+### What to Test
+
+✅ **MUST verify:**
+1. Sort works correctly (asc/desc/none)
+2. Filters narrow results
+3. Column resize persists
+4. Column reorder persists
+5. Column visibility persists
+6. Empty states display correctly
+7. Dark mode renders properly
+8. Responsive behavior on mobile
+
+### Common Test Scenarios
+
+- Add data → table updates
+- Remove data → empty state appears
+- Search → results filter
+- Clear search → full results return
+- Resize column → width persists on reload
+- Hide column → column disappears and persists
+- Sort by column A → sort by column B → verify secondary sort
+
+---
+
+## Protected Code Patterns (Chapter 19)
+
+### DataTable Component Structure
+**File:** `frontend/src/components/DataTable.jsx`
+**Protected:** Core sorting and filtering logic, dark mode classes, empty states
+
+### Advanced Table Pattern (ContactsPage)
+**File:** `frontend/src/pages/ContactsPage.jsx`
+**Protected:** Column resize logic, drag-and-drop handlers, localStorage persistence
+
+### Advanced Table Pattern (POTable)
+**File:** `frontend/src/components/purchase-orders/POTable.jsx`
+**Protected:** Inline filter implementation, column configuration pattern
+
+❌ **DO NOT:**
+- Remove resize handles from existing tables
+- Remove inline filters without replacement
+- Change localStorage key patterns (breaks user preferences)
+- Remove dark mode support
+- Remove sticky headers
+- Remove sort indicators
+
+---
+
+## RULE #19.19: URL State Management
+
+### URL as Single Source of Truth
+
+✅ **MUST sync component state with URL for:**
+- Active tab selection
+- Filter/search queries (optional, for shareable links)
+- Pagination state
+- Sort state (optional)
+
+### URL Parameters Pattern
+
+```jsx
+import { useNavigate, useLocation } from 'react-router-dom'
+
+// Read URL params on mount
+const getInitialTab = () => {
+  const params = new URLSearchParams(location.search)
+  const tab = params.get('tab')
+  return tabs.indexOf(tab) >= 0 ? tabs.indexOf(tab) : 0
+}
+
+const [activeTab, setActiveTab] = useState(getInitialTab())
+
+// Update URL when state changes
+const handleTabChange = (index) => {
+  setActiveTab(index)
+  const tabName = tabs[index]
+  navigate(`/contacts?tab=${tabName}`, { replace: true })
+}
+
+// Listen for URL changes (browser back/forward)
+useEffect(() => {
+  const newIndex = getInitialTab()
+  if (newIndex !== activeTab) {
+    setActiveTab(newIndex)
+  }
+}, [location.search])
+```
+
+✅ **MUST:**
+- Use `navigate()` with `{ replace: true }` for tab changes
+- Support browser back/forward buttons
+- Validate URL params before using
+- Provide fallback for invalid params
+
+❌ **NEVER:**
+- Store tab state only in component (URL must be updated)
+- Break browser back button by not syncing URL
+- Use push navigation for every state change (causes history spam)
+
+### When to Use URL Params
+
+✅ **USE URL params for:**
+- Tab selection (always)
+- Page/view selection
+- Filter states that should be shareable
+
+❌ **AVOID URL params for:**
+- Transient UI state (modal open/closed)
+- Scroll position
+- Column widths/order (use localStorage)
+- Form input values (unless search forms)
+
+---
+
+## RULE #19.20: Search Functionality Standards
+
+### Global Search Pattern
+
+✅ **MUST implement global search with:**
+
+```jsx
+const [searchQuery, setSearchQuery] = useState('')
+
+// Listen for global search events from AppLayout
+useEffect(() => {
+  const handleGlobalSearch = (event) => {
+    setSearchQuery(event.detail)
+  }
+
+  window.addEventListener('global-search', handleGlobalSearch)
+  return () => {
+    window.removeEventListener('global-search', handleGlobalSearch)
+  }
+}, [])
+
+// Filter logic
+const filteredItems = items.filter(item =>
+  item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  item.email?.toLowerCase().includes(searchQuery.toLowerCase())
+)
+```
+
+### Search Box UI Requirements
+
+✅ **MUST include:**
+- MagnifyingGlassIcon on left (gray-400)
+- Clear button on right (when text present)
+- Placeholder text describing what's searchable
+- Dark mode styling
+- Focus ring (blue-500 or indigo-500)
+
+```jsx
+<div className="relative">
+  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+  <input
+    type="text"
+    placeholder="Search contacts..."
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+  />
+  {searchQuery && (
+    <button
+      onClick={() => setSearchQuery('')}
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+    >
+      <XMarkIcon className="h-5 w-5" />
+    </button>
+  )}
+</div>
+```
+
+### Search Debouncing
+
+✅ **RECOMMENDED for large datasets (>500 items):**
+
+```jsx
+import { useState, useEffect } from 'react'
+
+const [searchInput, setSearchInput] = useState('')
+const [debouncedSearch, setDebouncedSearch] = useState('')
+
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(searchInput)
+  }, 300)
+
+  return () => clearTimeout(timer)
+}, [searchInput])
+
+// Use debouncedSearch for filtering
+```
+
+### Search Results Display
+
+✅ **MUST show when filtering:**
+
+```jsx
+{searchQuery && (
+  <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+    Found {filteredItems.length} of {items.length} items
+  </div>
+)}
+```
+
+---
+
+## RULE #19.21: Form Standards
+
+### Form Layout
+
+✅ **MUST use consistent form layouts:**
+
+**In Modals:**
+```jsx
+<form onSubmit={handleSubmit} className="space-y-6">
+  <div>
+    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+      Name
+    </label>
+    <input
+      type="text"
+      id="name"
+      className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm"
+    />
+  </div>
+
+  <div className="flex justify-end gap-3">
+    <button type="button" onClick={onClose} className="...">Cancel</button>
+    <button type="submit" className="...">Save</button>
+  </div>
+</form>
+```
+
+### Input Field Requirements
+
+✅ **MUST include for all inputs:**
+- Label with `htmlFor` matching input `id`
+- Dark mode styling
+- Focus states (indigo ring)
+- Placeholder text (optional)
+- Error state styling
+
+### Input Classes (Standard)
+
+```jsx
+// Base input
+className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm"
+
+// Error state
+className="block w-full rounded-md border-red-300 dark:border-red-600 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-500 focus:border-red-500 focus:ring-red-500 dark:bg-gray-700 sm:text-sm"
+```
+
+### Validation & Error Display
+
+✅ **MUST show validation errors:**
+
+```jsx
+{errors.email && (
+  <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+    {errors.email}
+  </p>
+)}
+```
+
+### Submit Button States
+
+✅ **MUST show loading state:**
+
+```jsx
+<button
+  type="submit"
+  disabled={loading}
+  className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  {loading ? (
+    <>
+      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+      Saving...
+    </>
+  ) : (
+    'Save'
+  )}
+</button>
+```
+
+---
+
+## RULE #19.22: Modal & Drawer Standards
+
+### When to Use What
+
+✅ **USE Dialog/Modal when:**
+- Require immediate user action
+- Confirming destructive actions
+- Simple forms (1-5 fields)
+- Alerts and notifications
+
+✅ **USE SlideOver/Drawer when:**
+- Complex forms (>5 fields)
+- Viewing detailed information
+- Multi-step wizards
+- Editing without leaving context
+
+✅ **USE Full Page when:**
+- Very complex forms
+- Multi-section editing
+- Creating new major entities
+- When user needs full context
+
+### Modal Implementation (Headless UI)
+
+```jsx
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
+
+<Dialog open={isOpen} onClose={onClose} className="relative z-50">
+  <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+
+  <div className="fixed inset-0 flex items-center justify-center p-4">
+    <DialogPanel className="mx-auto max-w-lg rounded-xl bg-white dark:bg-gray-800 p-6">
+      <DialogTitle className="text-lg font-medium text-gray-900 dark:text-white">
+        Modal Title
+      </DialogTitle>
+
+      {/* Content */}
+
+      <div className="mt-6 flex justify-end gap-3">
+        <button onClick={onClose}>Cancel</button>
+        <button>Confirm</button>
+      </div>
+    </DialogPanel>
+  </div>
+</Dialog>
+```
+
+### Modal Sizes
+
+✅ **STANDARD modal widths:**
+- `max-w-sm` (384px) - Simple confirmations
+- `max-w-md` (448px) - Small forms
+- `max-w-lg` (512px) - Standard forms
+- `max-w-xl` (576px) - Complex forms
+- `max-w-2xl` (672px) - Wide content
+- `max-w-4xl` (896px) - Very wide content
+- `max-w-7xl` (1280px) - Full-width modals
+
+### Close Button Placement
+
+✅ **MUST include close button:**
+
+```jsx
+<div className="absolute right-4 top-4">
+  <button
+    onClick={onClose}
+    className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+  >
+    <XMarkIcon className="h-6 w-6" />
+  </button>
+</div>
+```
+
+---
+
+## RULE #19.23: Toast Notification Standards
+
+### Toast Component Usage
+
+✅ **MUST use Toast component for:**
+- Success confirmations
+- Error messages
+- Warning notifications
+- Info messages
+
+### Toast Implementation
+
+```jsx
+import Toast from '../components/Toast'
+
+const [toast, setToast] = useState(null)
+
+// Trigger toast
+setToast({
+  message: 'Contact saved successfully',
+  type: 'success' // 'success' | 'error' | 'warning' | 'info'
+})
+
+// Render toast
+{toast && (
+  <Toast
+    message={toast.message}
+    type={toast.type}
+    onClose={() => setToast(null)}
+  />
+)}
+```
+
+### Toast Message Guidelines
+
+✅ **MUST write clear messages:**
+- Success: "Contact saved successfully", "Email sent"
+- Error: "Failed to save contact. Please try again."
+- Warning: "Changes not saved. Please review form."
+- Info: "New update available"
+
+❌ **NEVER:**
+- Show technical error messages to users
+- Use toasts for critical errors (use modal instead)
+- Stack multiple toasts (replace existing)
+- Show toasts longer than 5 seconds (auto-dismiss)
+
+### Toast Position
+
+✅ **STANDARD position:** Top-right of screen (fixed positioning)
+
+---
+
+## RULE #19.24: Loading State Standards
+
+### Page-Level Loading
+
+✅ **MUST show full-page loader while fetching critical data:**
+
+```jsx
+if (loading) {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400 mx-auto"></div>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+      </div>
+    </div>
+  )
+}
+```
+
+### Component-Level Loading
+
+✅ **USE skeleton screens for partial loads:**
+
+```jsx
+{loading ? (
+  <div className="animate-pulse space-y-4">
+    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+  </div>
+) : (
+  <div>{data}</div>
+)}
+```
+
+### Button Loading States
+
+✅ **MUST disable and show spinner:**
+
+```jsx
+<button disabled={loading} className="...">
+  {loading ? (
+    <>
+      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+      Loading...
+    </>
+  ) : (
+    'Submit'
+  )}
+</button>
+```
+
+### Inline Loading Indicators
+
+✅ **USE for in-place updates:**
+
+```jsx
+{updating ? (
+  <div className="flex items-center gap-2">
+    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+    <span className="text-sm text-gray-500">Updating...</span>
+  </div>
+) : (
+  <span>{value}</span>
+)}
+```
+
+---
+
+## RULE #19.25: Button & Action Standards
+
+### Button Hierarchy
+
+✅ **MUST use correct button type for context:**
+
+**Primary (Call-to-action):**
+```jsx
+className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+```
+
+**Secondary:**
+```jsx
+className="bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+```
+
+**Destructive:**
+```jsx
+className="bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-400"
+```
+
+**Tertiary/Ghost:**
+```jsx
+className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300"
+```
+
+### Button Sizes
+
+✅ **STANDARD sizes:**
+- Small: `px-3 py-1.5 text-xs`
+- Medium: `px-4 py-2 text-sm` (default)
+- Large: `px-6 py-3 text-base`
+
+### Icon Buttons
+
+✅ **MUST include accessible label:**
+
+```jsx
+<button
+  aria-label="Delete contact"
+  className="p-2 text-gray-400 hover:text-gray-500"
+>
+  <TrashIcon className="h-5 w-5" />
+</button>
+```
+
+### Dropdown Action Menus
+
+✅ **USE Headless UI Menu:**
+
+```jsx
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
+
+<Menu as="div" className="relative">
+  <MenuButton className="...">
+    <EllipsisVerticalIcon className="h-5 w-5" />
+  </MenuButton>
+
+  <MenuItems className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg">
+    <MenuItem>
+      {({ focus }) => (
+        <button className={`${focus ? 'bg-gray-100 dark:bg-gray-700' : ''} ...`}>
+          Edit
+        </button>
+      )}
+    </MenuItem>
+  </MenuItems>
+</Menu>
+```
+
+---
+
+## RULE #19.26: Status Badge Standards
+
+### Badge Color Coding
+
+✅ **MUST use semantic colors:**
+
+**Success/Active/Verified:**
+```jsx
+className="bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50"
+```
+
+**Warning/Pending:**
+```jsx
+className="bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800/50"
+```
+
+**Error/Cancelled:**
+```jsx
+className="bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/50"
+```
+
+**Info/Draft:**
+```jsx
+className="bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50"
+```
+
+**Neutral/Inactive:**
+```jsx
+className="bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800/50"
+```
+
+### Badge Variants
+
+✅ **USE appropriate variant:**
+
+**Pill (rounded-full):**
+```jsx
+<span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-700">
+  <CheckCircleIcon className="h-3.5 w-3.5" />
+  Active
+</span>
+```
+
+**Rounded (rounded-md):**
+```jsx
+<span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+  Draft
+</span>
+```
+
+### Icon Usage in Badges
+
+✅ **RECOMMENDED icons by status:**
+- Success: CheckCircleIcon
+- Error: XCircleIcon
+- Warning: ExclamationTriangleIcon
+- Info: InformationCircleIcon
+
+---
+
+## RULE #19.27: Empty State Standards
+
+### Empty State Variants
+
+✅ **MUST differentiate between:**
+
+**1. First-time empty (no data ever):**
+```jsx
+<div className="text-center py-12">
+  <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500">
+    {/* Appropriate icon */}
+  </svg>
+  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+    No contacts yet
+  </h3>
+  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+    Get started by creating your first contact.
+  </p>
+  <div className="mt-6">
+    <button onClick={handleCreate} className="...">
+      <PlusIcon className="h-5 w-5 mr-2" />
+      Add Contact
+    </button>
+  </div>
+</div>
+```
+
+**2. Filtered empty (no results for search/filter):**
+```jsx
+<div className="text-center py-12">
+  <MagnifyingGlassIcon className="mx-auto h-12 w-12 text-gray-400" />
+  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+    No results found
+  </h3>
+  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+    Try adjusting your search or filters.
+  </p>
+  <div className="mt-6">
+    <button onClick={clearFilters} className="...">
+      Clear Filters
+    </button>
+  </div>
+</div>
+```
+
+**3. Error state:**
+```jsx
+<div className="text-center py-12">
+  <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-red-500" />
+  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+    Failed to load data
+  </h3>
+  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+    {error.message}
+  </p>
+  <div className="mt-6">
+    <button onClick={retry} className="...">
+      Try Again
+    </button>
+  </div>
+</div>
+```
+
+---
+
+## RULE #19.28: Navigation Standards
+
+### Breadcrumbs
+
+✅ **USE for deep navigation:**
+
+```jsx
+<nav className="flex mb-4" aria-label="Breadcrumb">
+  <ol className="inline-flex items-center space-x-1">
+    <li>
+      <Link to="/" className="text-gray-500 hover:text-gray-700">
+        Home
+      </Link>
+    </li>
+    <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+    <li>
+      <Link to="/contacts" className="text-gray-500 hover:text-gray-700">
+        Contacts
+      </Link>
+    </li>
+    <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+    <li className="text-gray-900 dark:text-white font-medium">
+      {contact.name}
+    </li>
+  </ol>
+</nav>
+```
+
+### Back Button
+
+✅ **USE BackButton component:**
+
+```jsx
+import BackButton from '../components/common/BackButton'
+
+<BackButton />  // Auto-detects if can go back, otherwise navigates to fallback
+```
+
+### Active Link Highlighting
+
+✅ **MUST highlight active navigation:**
+
+```jsx
+<Link
+  to="/contacts"
+  className={`${
+    location.pathname === '/contacts'
+      ? 'bg-gray-900 text-white'
+      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+  } px-3 py-2 rounded-md text-sm font-medium`}
+>
+  Contacts
+</Link>
+```
+
+---
+
+## Protected Code Patterns (Chapter 19 - All Sections)
+
+### DataTable Component Structure
+**File:** `frontend/src/components/DataTable.jsx`
+**Protected:** Core sorting and filtering logic, dark mode classes, empty states
+
+### Advanced Table Pattern (ContactsPage)
+**File:** `frontend/src/pages/ContactsPage.jsx`
+**Protected:** Column resize logic, drag-and-drop handlers, localStorage persistence, URL tab management
+
+### Advanced Table Pattern (POTable)
+**File:** `frontend/src/components/purchase-orders/POTable.jsx`
+**Protected:** Inline filter implementation, column configuration pattern
+
+### Toast Component
+**File:** `frontend/src/components/Toast.jsx`
+**Protected:** Toast timing logic, animation patterns
+
+### BackButton Component
+**File:** `frontend/src/components/common/BackButton.jsx`
+**Protected:** Navigation history logic
+
+❌ **DO NOT:**
+- Remove resize handles from existing tables
+- Remove inline filters without replacement
+- Change localStorage key patterns (breaks user preferences)
+- Remove dark mode support from any component
+- Remove sticky headers
+- Remove sort indicators
+- Change URL parameter names (breaks bookmarks)
+- Modify toast auto-dismiss timing without approval
+- Remove search debouncing from large datasets
+- Change button color coding (semantic meaning)
+- Modify badge color scheme (status indicators)
 
 ---
 

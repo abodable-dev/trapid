@@ -7,6 +7,8 @@ import CopyConsoleButton from './components/CopyConsoleButton'
 // Eager load: Critical pages that should load immediately
 import Dashboard from './pages/Dashboard'
 import AuthCallback from './pages/AuthCallback'
+import AutoLoginPage from './pages/AutoLoginPage'
+import Login from './pages/Login'
 
 // Lazy load: Everything else (loads on-demand)
 const ActiveJobsPage = lazy(() => import('./pages/ActiveJobsPage'))
@@ -75,6 +77,8 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/auto-login" element={<AutoLoginPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
         <Route path="/chat" element={<AppLayout><ChatPage /></AppLayout>} />

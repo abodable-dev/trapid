@@ -118,7 +118,7 @@ module Api
 
       def check_admin_access
         # Only admins or users who can create templates should be able to pull setup data
-        unless @current_user.can_create_templates?
+        unless @current_user&.can_create_templates?
           render json: { error: 'Unauthorized - Admin access required' }, status: :forbidden
         end
       end

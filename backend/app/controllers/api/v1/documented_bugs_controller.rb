@@ -3,6 +3,7 @@
 module Api
   module V1
     class DocumentedBugsController < ApplicationController
+      skip_before_action :authorize_request, only: [:index, :show, :stats]
       before_action :set_documented_bug, only: [:show, :update, :destroy]
 
       # GET /api/v1/documented_bugs
@@ -86,6 +87,7 @@ module Api
       def stats
         stats = {
           total_bugs: DocumentedBug.count,
+          by_type: DocumentedBug.group(:knowledge_type).count,
           by_status: DocumentedBug.group(:status).count,
           by_severity: DocumentedBug.group(:severity).count,
           by_chapter: DocumentedBug.group(:chapter_number, :chapter_name).count.map do |(num, name), count|
