@@ -96,11 +96,43 @@ This file is the **absolute authority** for all Trapid development where chapter
 - Performance optimizations (goes in Lexicon unless it creates a new RULE)
 
 ### When to Update Lexicon
+
+**🔴 CRITICAL: Lexicon is database-driven via `documented_bugs` table**
+
+**Lexicon Source of Truth:** Database table `documented_bugs`, NOT the `.md` file
+**Exported to:** `TRAPID_LEXICON.md` (auto-generated, do NOT edit directly)
+
 ✅ **MUST update Lexicon when:**
 1. Discovering a new bug
 2. Resolving an existing bug
 3. Adding architecture/background knowledge
 4. Explaining WHY a rule exists
+
+**How to Update Lexicon:**
+```
+1. Go to Trapid app → Documentation page
+2. Click "📕 TRAPID Lexicon"
+3. Add/edit entries via UI (stores in documented_bugs table)
+4. Run: bin/rails trapid:export_lexicon
+5. Commit the updated TRAPID_LEXICON.md file
+```
+
+**Database Schema:**
+- `chapter_number` - Which chapter (0-20)
+- `chapter_name` - Chapter title
+- `knowledge_type` - Type: bug, architecture, test, performance, dev_note, common_issue, terminology
+- `bug_title` - Entry title
+- `status` - For bugs: open, fixed, by_design, monitoring
+- `severity` - For bugs: low, medium, high, critical
+- `description`, `scenario`, `root_cause`, `solution`, `prevention` - Content fields
+- `rule_reference` - Link to Bible RULE (e.g., "Chapter 9, RULE #9.3")
+
+**API Endpoints:**
+- `GET /api/v1/documented_bugs` - List entries
+- `POST /api/v1/documented_bugs` - Create entry
+- `PATCH /api/v1/documented_bugs/:id` - Update entry
+- `DELETE /api/v1/documented_bugs/:id` - Delete entry
+- `POST /api/v1/documented_bugs/export_to_markdown` - Export to .md file
 
 ### Trinity Completion Rule (CRITICAL)
 
@@ -143,51 +175,45 @@ This file is the **absolute authority** for all Trapid development where chapter
 When fixing a bug, follow this workflow:
 
 1. **Fix the bug** - Write the code fix
-2. **Update Lexicon** - Document in `TRAPID_LEXICON.md` under correct chapter
-3. **Update Bible** - Add new RULE if bug revealed a coding pattern violation
-4. **Test the fix** - Verify bug is resolved
-5. **Commit** - Include Lexicon update in same commit as fix
+2. **Update Lexicon via UI** - Add entry to `documented_bugs` table via Trapid Documentation page
+3. **Export Lexicon** - Run `bin/rails trapid:export_lexicon` to regenerate `.md` file
+4. **Update Bible** - Add new RULE if bug revealed a coding pattern violation
+5. **Test the fix** - Verify bug is resolved
+6. **Commit** - Include code fix + exported Lexicon file in same commit
 
-**Lexicon Bug Entry Format:**
-```markdown
-### ✅ BUG-XXX: [Bug Title] (RESOLVED)
+**Lexicon Bug Entry Fields (via UI):**
 
-**Status:** ✅ RESOLVED
-**Date Discovered:** YYYY-MM-DD
-**Date Resolved:** YYYY-MM-DD
-**Severity:** Low/Medium/High/Critical
+When adding a bug entry via Trapid Documentation UI, fill in:
 
-#### Summary
-Brief description of the bug and its impact.
+**Required:**
+- `chapter_number` - Chapter where bug occurred (0-20)
+- `chapter_name` - e.g., "Gantt & Schedule Master"
+- `knowledge_type` - Select "bug"
+- `bug_title` - Concise title (e.g., "Gantt Shaking During Cascade")
 
-#### Root Cause
-**Backend/Frontend/Both:** Detailed explanation of what caused the bug.
+**Bug-Specific:**
+- `status` - open, fixed, by_design, monitoring
+- `severity` - low, medium, high, critical
+- `first_reported` - Date discovered (YYYY-MM-DD)
+- `fixed_date` - Date resolved (YYYY-MM-DD)
 
-**Example Problem:**
-- Concrete example showing the bug in action
+**Content:**
+- `description` - Brief summary of bug and impact
+- `scenario` - How the bug manifests (user-facing description)
+- `root_cause` - Technical explanation of what caused it
+- `solution` - How it was fixed (code snippets, file paths)
+- `prevention` - How to avoid this bug in future
+- `component` - Specific component (e.g., "DHtmlxGanttView")
+- `rule_reference` - Link to Bible rule (e.g., "Chapter 9, RULE #9.3")
 
-#### Solution
-**Backend Fix:**
-```language
-// ❌ WRONG - description
-code example
-
-// ✅ CORRECT - description
-code example
+**After saving:**
+```bash
+bin/rails trapid:export_lexicon
+git add TRAPID_DOCS/TRAPID_LEXICON.md
+git commit -m "docs: Document [bug title] in Lexicon"
 ```
 
-**Files Changed:**
-- `path/to/file.ext:line` - description
-
-#### Impact
-- ✅ What was fixed
-- ✅ What improved
-- ✅ Related tests that now pass
-
-**Related Rule:** Bible Chapter X, RULE #Y.Z (if applicable)
-```
-
-**Example Reference:** See `BUG-004: Timezone Violations` in Lexicon Chapter 9
+**Example Reference:** See Lexicon Chapter 9 entries in `documented_bugs` table
 
 ## RULE #1: Code Quality Standards
 

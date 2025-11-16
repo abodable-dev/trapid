@@ -46,6 +46,7 @@ const MasterSchedulePage = lazy(() => import('./pages/MasterSchedulePage')) // 3
 const PDFMeasurementTestPage = lazy(() => import('./pages/PDFMeasurementTestPage')) // PDF library
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage')) // PDF library
 const DocumentationPage = lazy(() => import('./pages/DocumentationPage')) // TRAPID_DOCS viewer
+const AgentTasksPage = lazy(() => import('./pages/AgentTasksPage')) // Agent task manager
 const ChatPage = lazy(() => import('./pages/ChatPage')) // AI chat
 const TrainingPage = lazy(() => import('./pages/TrainingPage')) // Jitsi video
 const TrainingSessionPage = lazy(() => import('./pages/TrainingSessionPage')) // Jitsi video
@@ -86,6 +87,7 @@ function App() {
         <Route path="/xest" element={<AppLayout><XestPage /></AppLayout>} />
         <Route path="/documents" element={<AppLayout><DocumentsPage /></AppLayout>} />
         <Route path="/documentation" element={<AppLayout><DocumentationPage /></AppLayout>} />
+        <Route path="/agents/tasks" element={<AppLayout><AgentTasksPage /></AppLayout>} />
         <Route path="/pdf-measure-test" element={<AppLayout><PDFMeasurementTestPage /></AppLayout>} />
         <Route path="/jobs/:id/setup" element={<AppLayout><JobSetupPage /></AppLayout>} />
         <Route path="/jobs/:id/schedule" element={<AppLayout><MasterSchedulePage /></AppLayout>} />

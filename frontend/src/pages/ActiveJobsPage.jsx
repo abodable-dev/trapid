@@ -172,16 +172,7 @@ export default function ActiveJobsPage() {
         }}>
           <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
             {/* Table header with gradient background and sticky positioning */}
-            <thead
-              data-version="gradient-fix-v2"
-              className="sticky top-0 z-10"
-              style={{
-                backgroundImage: 'linear-gradient(to right, rgb(249 250 251), rgb(243 244 246))',
-                position: 'sticky',
-                top: 0,
-                zIndex: 10
-              }}
-            >
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
               <tr>
                 <th style={{ minWidth: '50px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   #
