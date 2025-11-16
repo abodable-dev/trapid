@@ -96,11 +96,11 @@ const parseRulesFromMarkdown = (content) => {
 
 // Define columns (RULE #19.1 compliant)
 const COLUMNS = [
-  { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
-  { key: 'expand', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
+  { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 40 },
   { key: 'rule', label: 'Rule #', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 100 },
   { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200 },
-  { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 400 }
+  { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 300 },
+  { key: 'content', label: 'Content', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 400 }
 ]
 
 const DEFAULT_COLUMN_WIDTHS = COLUMNS.reduce((acc, col) => {
@@ -119,7 +119,6 @@ export default function BibleTableView({ content }) {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('rule')
   const [sortDir, setSortDir] = useState('asc')
-  const [expandedRows, setExpandedRows] = useState(new Set())
   const [selectedRows, setSelectedRows] = useState(new Set())
   const [columnFilters, setColumnFilters] = useState({})
   const [activeTab, setActiveTab] = useState('all') // Chapter filter tabs
@@ -203,6 +202,9 @@ export default function BibleTableView({ content }) {
           break
         case 'title':
           result = result.filter(r => r.title?.toLowerCase().includes(value.toLowerCase()))
+          break
+        case 'content':
+          result = result.filter(r => r.content?.toLowerCase().includes(value.toLowerCase()))
           break
       }
     })
@@ -425,15 +427,6 @@ export default function BibleTableView({ content }) {
     }
   }
 
-  const toggleRow = (id) => {
-    const newExpanded = new Set(expandedRows)
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id)
-    } else {
-      newExpanded.add(id)
-    }
-    setExpandedRows(newExpanded)
-  }
 
   const SortIcon = ({ column }) => {
     if (sortBy !== column) return null
@@ -462,13 +455,6 @@ export default function BibleTableView({ content }) {
           />
         )
 
-      case 'expand':
-        return (
-          <span className="text-gray-400 dark:text-gray-500 text-xs">
-            {expandedRows.has(rule.id) ? '▼' : '▶'}
-          </span>
-        )
-
       case 'rule':
         return <div className="font-mono font-medium">#{rule.ruleNumber}</div>
 
@@ -477,6 +463,13 @@ export default function BibleTableView({ content }) {
 
       case 'title':
         return <div className="font-medium">{rule.title}</div>
+
+      case 'content':
+        return (
+          <div className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+            {rule.content || '-'}
+          </div>
+        )
 
       default:
         return null
@@ -669,9 +662,10 @@ export default function BibleTableView({ content }) {
                     style={{
                       width: columnWidths[colKey],
                       minWidth: columnWidths[colKey],
+                      maxWidth: columnWidths[colKey],
                       position: 'relative'
                     }}
-                    className={`group px-4 py-2.5 text-left text-xs font-medium text-gray-600 dark:text-gray-400 tracking-wider transition-all ${
+                    className={`group ${colKey === 'select' ? 'px-1' : 'px-4'} py-2.5 text-left text-xs font-medium text-gray-600 dark:text-gray-400 tracking-wider transition-all ${
                       column.sortable ? 'cursor-pointer hover:bg-blue-50/50 dark:hover:bg-gray-800/30 hover:text-gray-900 dark:hover:text-gray-100' : ''
                     } ${draggedColumn === colKey ? 'bg-blue-50 dark:bg-indigo-900/20' : ''}`}
                   >
@@ -740,10 +734,9 @@ export default function BibleTableView({ content }) {
             {filteredAndSorted.map((rule, index) => (
               <React.Fragment key={rule.id}>
                 <tr
-                  className={`group border-b border-gray-100 dark:border-gray-800/50 hover:bg-blue-50/40 dark:hover:bg-gray-800/30 cursor-pointer transition-all duration-150 hover:shadow-md ${
+                  className={`group border-b border-gray-100 dark:border-gray-800/50 hover:bg-blue-50/40 dark:hover:bg-gray-800/30 transition-all duration-150 hover:shadow-md ${
                     index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-100 dark:bg-gray-800/30'
                   }`}
-                  onClick={() => toggleRow(rule.id)}
                 >
                   {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
                     const column = COLUMNS.find(c => c.key === colKey)
@@ -757,32 +750,16 @@ export default function BibleTableView({ content }) {
                           minWidth: columnWidths[colKey],
                           maxWidth: columnWidths[colKey]
                         }}
-                        className={`px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 ${
-                          colKey === 'expand' || colKey === 'select' ? 'text-center' : ''
-                        } truncate overflow-hidden whitespace-nowrap`}
-                        title={colKey === 'title' ? rule.title : ''}
+                        className={`${colKey === 'select' ? 'px-1' : 'px-4'} py-2.5 text-sm text-gray-900 dark:text-gray-100 ${
+                          colKey === 'select' ? 'text-center' : ''
+                        } ${colKey === 'content' ? 'align-top' : 'truncate overflow-hidden whitespace-nowrap'}`}
+                        title={colKey === 'title' ? rule.title : colKey === 'content' ? rule.content : ''}
                       >
                         {renderCellContent(rule, colKey)}
                       </td>
                     )
                   })}
                 </tr>
-                {expandedRows.has(rule.id) && (
-                  <tr className="bg-blue-50/20 dark:bg-gray-800/10 border-b border-gray-50 dark:border-gray-800/30">
-                    <td colSpan={columnOrder.filter(key => visibleColumns[key]).length} className="px-6 py-6">
-                      <div className="prose dark:prose-invert max-w-none text-sm">
-                        <div className="mb-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                          <span className="font-mono">Line {rule.lineNumber}</span>
-                          <span>•</span>
-                          <span>Chapter {rule.chapter}: {rule.chapterName}</span>
-                        </div>
-                        <pre className="whitespace-pre-wrap text-xs bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-700 overflow-auto shadow-sm">
-                          {rule.content}
-                        </pre>
-                      </div>
-                    </td>
-                  </tr>
-                )}
               </React.Fragment>
             ))}
           </tbody>
