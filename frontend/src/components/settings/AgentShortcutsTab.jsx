@@ -27,10 +27,11 @@ export default function AgentShortcutsTab() {
   const [visibleColumns, setVisibleColumns] = useState({ command: true, shortcut: true, audit: true, actions: true })
 
   // Pre-populated Claude Code shortcuts
-  const defaultShortcuts = [
-    { id: 1, command: 'Run all agents in parallel', shortcut: '/ag, all agents, allagent', lastUpdated: new Date().toISOString(), updatedBy: 'System' },
-    { id: 2, command: 'Run Backend Developer agent', shortcut: '/backend, backend, backend dev', lastUpdated: new Date().toISOString(), updatedBy: 'System' },
-    { id: 3, command: 'Run Frontend Developer agent', shortcut: '/frontend, frontend, frontend dev', lastUpdated: new Date().toISOString(), updatedBy: 'System' },
+  const now = new Date().toISOString()
+  const baseShortcuts = [
+    { id: 1, command: 'Run all agents in parallel', shortcut: '/ag, all agents, allagent' },
+    { id: 2, command: 'Run Backend Developer agent', shortcut: '/backend, backend, backend dev' },
+    { id: 3, command: 'Run Frontend Developer agent', shortcut: '/frontend, frontend, frontend dev' },
     { id: 4, command: 'Run Production Bug Hunter agent', shortcut: '/bug-hunter, bug hunter, production bug hunter' },
     { id: 5, command: 'Run Deploy Manager agent', shortcut: '/deploy, deploy' },
     { id: 6, command: 'Run Planning Collaborator agent', shortcut: '/plan, plan, planning' },
@@ -80,6 +81,13 @@ export default function AgentShortcutsTab() {
     { id: 50, command: 'Check Heroku dyno status', shortcut: '/dyno, dyno status' }
   ]
 
+  // Add audit info to all shortcuts
+  const defaultShortcuts = baseShortcuts.map(s => ({
+    ...s,
+    lastUpdated: now,
+    updatedBy: 'System'
+  }))
+
   useEffect(() => {
     loadCurrentUser()
     loadShortcuts()
@@ -126,9 +134,9 @@ export default function AgentShortcutsTab() {
       const savedState = localStorage.getItem('agentShortcutsTableState')
       if (savedState) {
         const state = JSON.parse(savedState)
-        setColumnWidths(state.columnWidths || { command: 400, shortcut: 450 })
-        setColumnOrder(state.columnOrder || ['command', 'shortcut', 'actions'])
-        setVisibleColumns(state.visibleColumns || { command: true, shortcut: true, actions: true })
+        setColumnWidths(state.columnWidths || { command: 400, shortcut: 450, audit: 200 })
+        setColumnOrder(state.columnOrder || ['command', 'shortcut', 'audit', 'actions'])
+        setVisibleColumns(state.visibleColumns || { command: true, shortcut: true, audit: true, actions: true })
         setSortConfig(state.sortConfig || { key: null, direction: 'asc' })
       }
     } catch (error) {
@@ -262,8 +270,24 @@ export default function AgentShortcutsTab() {
   const columns = [
     { key: 'command', label: 'Command', sublabel: '(Claude will execute this)', sortable: true, searchable: true },
     { key: 'shortcut', label: 'Shortcut', sublabel: '(User types this)', sortable: true, searchable: true },
+    { key: 'audit', label: 'Last Updated', sublabel: '', sortable: true, searchable: false },
     { key: 'actions', label: 'Actions', sortable: false, searchable: false }
   ]
+
+  // Helper function to format date
+  const formatAuditInfo = (shortcut) => {
+    if (!shortcut.lastUpdated) return 'Never'
+    const date = new Date(shortcut.lastUpdated)
+    const formattedDate = date.toLocaleDateString('en-AU', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+    const by = shortcut.updatedBy || 'Unknown'
+    return `${formattedDate}\nby ${by}`
+  }
 
   if (loading) {
     return <div className="animate-pulse p-6">Loading shortcuts...</div>
@@ -440,6 +464,11 @@ export default function AgentShortcutsTab() {
                         {shortcut.shortcut || <span className="text-gray-400 italic">No shortcut</span>}
                       </div>
                     )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                      {formatAuditInfo(shortcut)}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     {isEditing && (
