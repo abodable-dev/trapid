@@ -20,7 +20,7 @@ module Api
           },
           {
             id: 'implementation-patterns',
-            name: 'Teach',
+            name: 'Trapid Teacher',
             description: 'Code examples and implementation guides',
             icon: '🔧',
             audience: 'Developers',
