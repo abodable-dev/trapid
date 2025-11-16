@@ -33,6 +33,29 @@ const CHAPTER_NAMES = {
   20: 'Agent System & Automation'
 }
 
+// Extract "Related To" category from section title (Chapter 19 only)
+const extractRelatedTo = (title, chapter) => {
+  if (chapter !== 19) return null
+
+  const titleLower = title.toLowerCase()
+
+  // Priority order: most specific to least specific
+  if (titleLower.includes('table')) return 'Table'
+  if (titleLower.includes('form')) return 'Form'
+  if (titleLower.includes('modal')) return 'Modal'
+  if (titleLower.includes('toolbar')) return 'Toolbar'
+  if (titleLower.includes('search')) return 'Search'
+  if (titleLower.includes('filter')) return 'Filter'
+  if (titleLower.includes('column')) return 'Column'
+  if (titleLower.includes('row')) return 'Row'
+  if (titleLower.includes('button')) return 'Button'
+  if (titleLower.includes('dark mode')) return 'Dark Mode'
+  if (titleLower.includes('state') || titleLower.includes('persistence')) return 'State'
+  if (titleLower.includes('layout')) return 'Layout'
+
+  return 'General'
+}
+
 // Parse markdown content to extract sections (§X.Y format)
 const parseSectionsFromMarkdown = (content) => {
   if (!content) return []
@@ -63,6 +86,7 @@ const parseSectionsFromMarkdown = (content) => {
       const sectionNumber = sectionMatch[1]
       const sectionParts = sectionNumber.split('.')
       const chapterFromSection = parseInt(sectionParts[0])
+      const title = sectionMatch[2].trim()
 
       // Start new section
       currentSection = {
@@ -70,7 +94,8 @@ const parseSectionsFromMarkdown = (content) => {
         sectionNumber: sectionNumber,
         chapter: chapterFromSection,
         chapterName: CHAPTER_NAMES[chapterFromSection] || `Chapter ${chapterFromSection}`,
-        title: sectionMatch[2].trim(),
+        title: title,
+        relatedTo: extractRelatedTo(title, chapterFromSection),
         content: '',
         lineNumber: index + 1
       }
@@ -104,6 +129,7 @@ const COLUMNS = [
   { key: 'expand', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
   { key: 'section', label: 'Section §', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 120 },
   { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200 },
+  { key: 'relatedTo', label: 'Related To', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 130 },
   { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 400 }
 ]
 
@@ -293,6 +319,9 @@ export default function TeacherTableView({ content }) {
         case 'chapter':
           result = result.filter(s => s.chapter === parseInt(value))
           break
+        case 'relatedTo':
+          result = result.filter(s => s.relatedTo === value)
+          break
         case 'title':
           result = result.filter(s => s.title?.toLowerCase().includes(value.toLowerCase()))
           break
@@ -317,6 +346,10 @@ export default function TeacherTableView({ content }) {
         case 'chapter':
           aVal = a.chapter
           bVal = b.chapter
+          break
+        case 'relatedTo':
+          aVal = a.relatedTo || ''
+          bVal = b.relatedTo || ''
           break
         case 'title':
           aVal = a.title || ''
@@ -365,6 +398,11 @@ export default function TeacherTableView({ content }) {
     return chapters.map(num => ({ value: num, label: `Ch ${num}: ${CHAPTER_NAMES[num]}` }))
   }, [sections])
 
+  const uniqueRelatedTo = useMemo(() => {
+    const relatedToValues = [...new Set(sections.map(s => s.relatedTo).filter(Boolean))].sort()
+    return relatedToValues
+  }, [sections])
+
   const renderCellContent = (section, columnKey) => {
     switch (columnKey) {
       case 'select':
@@ -400,6 +438,15 @@ export default function TeacherTableView({ content }) {
                 : section.chapterName}
             </div>
           </>
+        )
+
+      case 'relatedTo':
+        return section.relatedTo ? (
+          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+            {section.relatedTo}
+          </span>
+        ) : (
+          <span className="text-gray-400 dark:text-gray-600">-</span>
         )
 
       case 'title':
@@ -601,6 +648,9 @@ export default function TeacherTableView({ content }) {
                               <option value="">All</option>
                               {colKey === 'chapter' && uniqueChapters.map(ch => (
                                 <option key={ch.value} value={ch.value}>{ch.label}</option>
+                              ))}
+                              {colKey === 'relatedTo' && uniqueRelatedTo.map(val => (
+                                <option key={val} value={val}>{val}</option>
                               ))}
                             </select>
                           )}
