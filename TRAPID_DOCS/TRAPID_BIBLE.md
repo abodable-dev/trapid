@@ -94,6 +94,7 @@ The Trinity+1 system uses four documents with distinct purposes. **MUST** add co
 - Establishing a configuration value that must match exactly
 - Setting a coding standard that applies to all developers
 - Defining what is FORBIDDEN vs ALLOWED
+- **Creating detailed standards to prevent inconsistencies** (like Chapter 19: UI/UX)
 
 ❌ **NEVER add to Bible:**
 - Code examples (belongs in Teacher)
@@ -101,6 +102,12 @@ The Trinity+1 system uses four documents with distinct purposes. **MUST** add co
 - Bug history or explanations of WHY rules exist (belongs in Lexicon)
 - User-facing "how to use" guides (belongs in User Manual)
 - Architecture rationale or design decisions (belongs in Lexicon)
+
+**Bible Can Have:**
+- **Single simple rules** (e.g., "MUST use environment variables for secrets")
+- **Multiple detailed rules** (e.g., Chapter 19 has 39 UI/UX rules to prevent inconsistent interfaces)
+
+**Key Distinction:** Bible contains WHAT you must/must not do. Teacher contains HOW to do it (with code).
 
 **Bible Format:**
 ```markdown
