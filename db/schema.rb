@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_16_101431) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_16_211635) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -421,11 +421,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_16_101431) do
     t.index ["name"], name: "index_documentation_categories_on_name", unique: true
   end
 
-  create_table "documented_bugs", force: :cascade do |t|
+  create_table "documentation_entries", force: :cascade do |t|
     t.integer "chapter_number", null: false
     t.string "chapter_name", null: false
     t.string "component"
-    t.string "bug_title", null: false
+    t.string "title", null: false
     t.string "status", default: "open"
     t.string "severity", default: "medium"
     t.date "first_reported"
@@ -439,19 +439,28 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_16_101431) do
     t.text "search_text"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "knowledge_type", default: "bug", null: false
+    t.string "entry_type", default: "bug", null: false
     t.text "description"
     t.text "details"
     t.text "examples"
     t.text "recommendations"
     t.string "rule_reference"
-    t.index ["chapter_number", "knowledge_type"], name: "index_documented_bugs_on_chapter_number_and_knowledge_type"
-    t.index ["chapter_number", "status"], name: "index_documented_bugs_on_chapter_number_and_status"
-    t.index ["chapter_number"], name: "index_documented_bugs_on_chapter_number"
-    t.index ["knowledge_type"], name: "index_documented_bugs_on_knowledge_type"
-    t.index ["search_text"], name: "index_documented_bugs_on_search_text", opclass: :gin_trgm_ops, using: :gin
-    t.index ["severity"], name: "index_documented_bugs_on_severity"
-    t.index ["status"], name: "index_documented_bugs_on_status"
+    t.string "section_number"
+    t.string "difficulty"
+    t.text "summary"
+    t.text "code_example"
+    t.text "common_mistakes"
+    t.text "testing_strategy"
+    t.text "related_rules"
+    t.index ["chapter_number", "entry_type"], name: "index_documentation_entries_on_chapter_number_and_entry_type"
+    t.index ["chapter_number", "section_number"], name: "idx_on_chapter_number_section_number_9d7330bbf5"
+    t.index ["chapter_number", "status"], name: "index_documentation_entries_on_chapter_number_and_status"
+    t.index ["chapter_number"], name: "index_documentation_entries_on_chapter_number"
+    t.index ["entry_type"], name: "index_documentation_entries_on_entry_type"
+    t.index ["search_text"], name: "index_documentation_entries_on_search_text", opclass: :gin_trgm_ops, using: :gin
+    t.index ["section_number"], name: "index_documentation_entries_on_section_number"
+    t.index ["severity"], name: "index_documentation_entries_on_severity"
+    t.index ["status"], name: "index_documentation_entries_on_status"
   end
 
   create_table "emails", force: :cascade do |t|
@@ -569,6 +578,37 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_16_101431) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_grok_plans_on_user_id"
+  end
+
+  create_table "implementation_patterns", force: :cascade do |t|
+    t.integer "chapter_number", null: false
+    t.string "chapter_name", null: false
+    t.string "section_number", null: false
+    t.string "pattern_title", null: false
+    t.string "bible_rule_reference"
+    t.text "quick_start"
+    t.text "full_implementation"
+    t.text "architecture"
+    t.text "common_mistakes"
+    t.text "testing"
+    t.text "migration_guide"
+    t.text "integration"
+    t.text "notes"
+    t.jsonb "code_examples", default: []
+    t.jsonb "metadata", default: {}
+    t.text "search_text"
+    t.string "complexity", default: "medium"
+    t.string "languages", default: [], array: true
+    t.string "tags", default: [], array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chapter_number", "section_number"], name: "index_implementation_patterns_on_chapter_and_section", unique: true
+    t.index ["chapter_number"], name: "index_implementation_patterns_on_chapter_number"
+    t.index ["complexity"], name: "index_implementation_patterns_on_complexity"
+    t.index ["languages"], name: "index_implementation_patterns_on_languages", using: :gin
+    t.index ["search_text"], name: "index_implementation_patterns_on_search_text", opclass: :gin_trgm_ops, using: :gin
+    t.index ["section_number"], name: "index_implementation_patterns_on_section_number"
+    t.index ["tags"], name: "index_implementation_patterns_on_tags", using: :gin
   end
 
   create_table "import_sessions", force: :cascade do |t|
@@ -1434,6 +1474,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_16_101431) do
     t.index ["project_task_id"], name: "index_task_updates_on_project_task_id"
     t.index ["update_date"], name: "index_task_updates_on_update_date"
     t.index ["user_id"], name: "index_task_updates_on_user_id"
+  end
+
+  create_table "teaching_patterns", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "unreal_variables", force: :cascade do |t|

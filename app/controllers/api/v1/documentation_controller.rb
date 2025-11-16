@@ -25,7 +25,9 @@ module Api
             icon: '🔧',
             audience: 'Developers',
             path: 'TRAPID_TEACHER.md',
-            chapters: 20
+            chapters: 20,
+            has_database: true,
+            api_path: '/api/v1/implementation_patterns'
           },
           {
             id: 'lexicon',
@@ -34,7 +36,9 @@ module Api
             icon: '📕',
             audience: 'Developers',
             path: 'TRAPID_LEXICON.md',
-            chapters: 20
+            chapters: 20,
+            has_database: true,
+            api_path: '/api/v1/documented_bugs'
           },
           {
             id: 'user-manual',

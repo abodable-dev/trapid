@@ -296,11 +296,20 @@ Rails.application.routes.draw do
       get 'documentation/search', to: 'documentation#search'
       get 'documentation/:id', to: 'documentation#show'
 
-      # Documented Bugs (Lexicon)
-      resources :documented_bugs do
+      # Documentation Entries (Lexicon + Teacher combined)
+      resources :documentation_entries do
         collection do
           get :stats
-          post :export_to_markdown
+          post :export_lexicon
+          post :export_teacher
+        end
+      end
+
+      # Legacy routes for backwards compatibility
+      resources :documented_bugs, controller: 'documentation_entries' do
+        collection do
+          get :stats
+          post :export_to_markdown, action: :export_lexicon
         end
       end
 
