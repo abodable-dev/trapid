@@ -4547,3 +4547,299 @@ Your record appears in the table instantly.
 
 **Last Updated:** 2025-11-16 09:01 AEST
 **Maintained By:** Development Team
+
+---
+
+# Chapter 19: UI/UX Standards & Patterns
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 19                │
+│ 📕 LEXICON (BUGS):    Chapter 19                │
+└─────────────────────────────────────────────────┘
+
+**Audience:** End Users
+**Purpose:** User guide for navigating Trapid's interface
+**Last Updated:** 2025-11-16
+
+---
+
+## What is This Chapter About?
+
+This chapter explains how to use Trapid's interface effectively. While most features are intuitive, knowing these tips will help you work faster and more efficiently.
+
+**Key Interface Elements:**
+- **Tables:** Resize columns, filter data, search across records
+- **Modals:** Pop-up windows for creating/editing items
+- **Search Boxes:** Quick filtering with clear buttons
+- **Empty States:** Helpful prompts when starting fresh
+- **Dark Mode:** Automatic dark theme based on your computer settings
+
+---
+
+## Getting Started
+
+### Using Tables
+
+Tables are the heart of Trapid - they display contacts, jobs, purchase orders, suppliers, and more.
+
+#### Searching and Filtering
+
+**Quick Search:**
+1. Find the search box at the top of any page
+2. Type to filter results instantly
+3. Click the **X button** to clear your search
+
+**Column Filters:**
+1. Look for filter boxes in the table headers
+2. Type to filter specific columns
+3. Combine filters to narrow results
+
+**Sorting:**
+1. Click any column header to sort
+2. Click again to reverse sort direction
+3. Arrow icons show current sort
+
+#### Customizing Columns
+
+**Resize Columns:**
+1. Hover between column headers
+2. Drag the resize handle left/right
+3. Your preferences are saved automatically
+
+**Reorder Columns:**
+1. Click and hold a column header
+2. Drag left or right to reorder
+3. Drop in new position
+
+**Scroll Long Lists:**
+- Table headers "stick" to the top as you scroll
+- Never lose track of which column you're viewing
+
+---
+
+### Working with Modals (Pop-ups)
+
+Modals appear when creating or editing items.
+
+**Opening a Modal:**
+- Click buttons like "Add Contact", "New Job", "Create PO"
+- Modal appears on top of current page
+
+**Closing a Modal:**
+- Click the **X button** (top-right corner)
+- Press **ESC key** on keyboard
+- Click **Cancel** button
+- Click outside the modal (on the dark background)
+
+**Saving Changes:**
+- Fill out the form fields
+- Click **Save** or **Submit** button
+- Modal closes automatically on success
+
+---
+
+### Using Search Effectively
+
+**Search Tips:**
+- Search works across all visible columns
+- Results update as you type (no need to press Enter)
+- Use the **X button** to clear and start over
+
+**Advanced Filtering:**
+- Use column filters for targeted searches
+- Example: Filter "City" column for "Sydney", then search for "John"
+- Filters stack - narrow results step by step
+
+---
+
+### Understanding Empty States
+
+When a page has no data, you'll see an empty state message.
+
+**What They Tell You:**
+- "No items found" - nothing matches your filters
+- "Get started by..." - helpful next steps
+- Action button - creates your first item
+
+**Example:**
+```
+No contacts found
+Get started by adding your first contact
+
+[+ Add Contact]  ← Click this button
+```
+
+---
+
+### Dark Mode
+
+Trapid automatically matches your computer's dark mode setting.
+
+**How It Works:**
+- **Mac:** System Preferences → General → Appearance → Dark
+- **Windows:** Settings → Personalization → Colors → Choose your color → Dark
+- Trapid instantly switches to dark theme
+
+**Manual Toggle:**
+- Currently uses system preference only
+- Manual toggle coming in future update
+
+---
+
+## Common Tasks
+
+### Finding Records Quickly
+
+**Use Case:** "I need to find a specific contact"
+
+**Steps:**
+1. Go to Contacts page
+2. Type name in search box
+3. Click contact to open details
+
+**Pro Tip:** Use column filters if you know specifics:
+- Filter "City" for "Melbourne"
+- Filter "Type" for "Customer"
+- Then search by name
+
+---
+
+### Organizing Table Views
+
+**Use Case:** "I want to see different columns"
+
+**Steps:**
+1. **Resize:** Drag column borders to ideal width
+2. **Reorder:** Drag column headers to rearrange
+3. **Hide:** (Feature coming soon)
+
+**Pro Tip:** Your column preferences are saved per-page and persist between sessions.
+
+---
+
+### Working with Long Lists
+
+**Use Case:** "I need to scroll through 500 contacts"
+
+**Steps:**
+1. Scroll down the table
+2. Headers "stick" to top - you always see column names
+3. Use search/filters to narrow results instead of scrolling
+
+**Pro Tip:** Filter by specific criteria to see fewer results:
+- Active customers only
+- Suppliers in a specific city
+- Jobs created this month
+
+---
+
+## Troubleshooting
+
+### "I Can't Find the Search Box"
+
+**Problem:** Can't locate search on a page.
+
+**Solution:**
+- Look at the very top of the page content
+- Search box has a magnifying glass icon
+- Usually above the table
+
+---
+
+### "My Search Isn't Working"
+
+**Problem:** Typing in search doesn't show results.
+
+**Solution:**
+- Check your spelling
+- Remove column filters (they stack with search)
+- Click the X button to clear and try again
+- Refresh the page if search seems stuck
+
+---
+
+### "Table Columns Are Too Narrow"
+
+**Problem:** Can't see full text in columns.
+
+**Solution:**
+- Hover between column headers
+- Drag the resize handle to widen column
+- Preferences save automatically
+
+---
+
+### "Modal Won't Close"
+
+**Problem:** Pop-up window stuck on screen.
+
+**Solution:**
+- Try the X button (top-right)
+- Press ESC key on keyboard
+- Click outside modal on dark background
+- Click Cancel button if available
+- Last resort: Refresh the page (unsaved changes will be lost)
+
+---
+
+### "I Accidentally Cleared My Filters"
+
+**Problem:** Clicked X and lost filter settings.
+
+**Solution:**
+- Column filters: Type them again
+- Search: Type query again
+- Column order/size: These persist, don't worry
+
+---
+
+## Advanced Features
+
+### Keyboard Shortcuts
+
+**Navigation:**
+- `ESC` - Close modal
+- `TAB` - Move between form fields
+- `ENTER` - Submit form (when in text field)
+
+**Future Shortcuts** (coming soon):
+- `Cmd+K` / `Ctrl+K` - Quick search
+- `Cmd+N` / `Ctrl+N` - New item
+
+---
+
+### Bulk Operations
+
+Some tables support selecting multiple items:
+
+1. Click checkboxes in left column
+2. Select individual items or "Select All"
+3. Bulk action buttons appear at top
+4. Perform action (delete, export, etc.)
+
+**Available On:**
+- Contacts page
+- (More coming soon)
+
+---
+
+## Related Topics
+
+- **Chapter 3:** Contacts & Relationships (how to use Contacts table)
+- **Chapter 4:** Price Books & Suppliers (using Suppliers table)
+- **Chapter 5:** Jobs & Construction (Jobs table features)
+- **Chapter 8:** Purchase Orders (PO table with advanced features)
+
+---
+
+## Getting Help
+
+**Need assistance?**
+- Check feature-specific chapters (1-18) for details
+- Contact your team lead
+- Email support (coming soon)
+
+---
+
+**Last Updated:** 2025-11-16
+**Maintained By:** Development Team

@@ -102,6 +102,40 @@ This file is the **absolute authority** for all Trapid development where chapter
 3. Adding architecture/background knowledge
 4. Explaining WHY a rule exists
 
+### Trinity Completion Rule (CRITICAL)
+
+**🔴 RULE: When completing ANY Bible chapter, you MUST also complete Lexicon + User Manual for that chapter**
+
+✅ **MUST complete all three documents:**
+1. **Bible Chapter** - COMPREHENSIVE rules (MUST/NEVER/ALWAYS patterns)
+2. **Lexicon Chapter** - COMPREHENSIVE bugs + architecture + tests
+3. **User Manual Chapter** - BRIEF user guide (how-to for end users)
+
+❌ **NEVER leave a chapter partially complete**
+- Bible without Lexicon = Rules without context (BAD)
+- Bible without User Manual = No user-facing guide (BAD)
+- Only Bible completed = INCOMPLETE Trinity (BAD)
+
+✅ **Workflow:**
+```
+1. Research feature (use Task agent if needed)
+2. Write Bible chapter (comprehensive)
+3. Write Lexicon chapter (comprehensive)
+4. Write User Manual chapter (brief)
+5. Commit all three documents together
+6. Update CONTINUATION_INSTRUCTIONS.md
+7. Commit and push progress
+```
+
+**Example:**
+- ✅ CORRECT: Chapter 9 has Bible + Lexicon + User Manual
+- ❌ WRONG: Chapter 19 has only Bible (missing Lexicon + User Manual)
+
+**If you discover an incomplete chapter:**
+1. Immediately complete the missing Lexicon + User Manual
+2. Update CONTINUATION_INSTRUCTIONS.md to mark complete
+3. Commit all changes
+
 ### Bug Fix Documentation Workflow
 
 **🔴 CRITICAL: Every bug fix MUST be documented in Lexicon**

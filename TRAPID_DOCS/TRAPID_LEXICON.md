@@ -5291,6 +5291,119 @@ if (isApplyingCascadeRef.current) {
 
 ---
 
+### ✅ BUG-006: Gantt "Shaking" During Cascade Operations (RESOLVED)
+
+**Status:** ✅ RESOLVED
+**Date Discovered:** 2025-11-16
+**Date Resolved:** 2025-11-16
+**Severity:** Medium (UX issue)
+
+#### Summary
+Gantt chart displayed visual "shaking" or slow flickering during cascade operations due to excessive reloads triggered by signature-based change detection.
+
+#### Root Cause
+The signature-based reload fix (implemented to show cascade updates visually) was triggering a reload for EVERY cascade batch update:
+
+1. User drags Task 311 → triggers cascade to 4 dependent tasks
+2. Backend returns cascaded tasks
+3. Frontend applies batch update → signature changes → triggers reload
+4. Cascade depth timeout fires → signature changes → triggers another reload
+5. Each cascade wave creates multiple signature changes
+6. **Result:** 5+ Gantt reloads within 2-3 seconds = visible "shaking"
+
+**Console evidence:**
+```
+🔄 [11229.20ms] Starting Gantt reload - 5 tasks
+🔄 [11497.70ms] Starting Gantt reload - 5 tasks  (268ms later)
+🔄 [12705.60ms] Starting Gantt reload - 5 tasks  (1208ms later)
+🔄 [14144.20ms] Starting Gantt reload - 5 tasks  (1438ms later)
+🔄 [17658.20ms] Starting Gantt reload - 5 tasks  (3514ms later)
+```
+
+**Why this happened:**
+- BUG-001 fix prevented reloads DURING drag using `isLoadingData` lock
+- BUG-002 fix used verification-based pending clearing
+- To show cascade updates visually, signature-based reload was allowed to bypass `isLoadingData` lock
+- **Problem:** This bypassed the lock for ALL signature changes, including intermediate cascade updates
+- Each cascade batch changed the signature → triggered immediate reload
+- No throttling mechanism during multi-wave cascade operations
+
+#### Solution
+Two-part fix using cascade depth tracking:
+
+**Part 1: Pass cascade depth to DHtmlxGanttView**
+```javascript
+// ScheduleTemplateEditor.jsx:2538
+<DHtmlxGanttView
+  cascadeDepthRef={cascadeDepthRef}
+  // ... other props
+/>
+```
+
+**Part 2: Throttle signature-based reloads during cascades**
+```javascript
+// DHtmlxGanttView.jsx:3884-3891
+// ANTI-SHAKE: Throttle signature-based reloads during cascade operations
+// If cascades are in progress (depth > 0), defer the reload until cascades complete
+const cascadeDepth = cascadeDepthRef?.current || 0
+if (signatureChanged && cascadeDepth > 0) {
+  console.log(`⏸️ Signature changed but cascade depth = ${cascadeDepth} - deferring reload until cascades complete`)
+  return
+}
+```
+
+**Part 3: Trigger reload when cascades complete**
+```javascript
+// ScheduleTemplateEditor.jsx:1214-1216
+if (cascadeDepthRef.current === 0) {
+  isApplyingCascadeRef.current = false
+  console.log('✅ ALL cascades complete - handleUpdateRow re-enabled')
+
+  // ANTI-SHAKE FIX: Trigger a state update to allow Gantt reload now that cascades are done
+  // This ensures all cascade updates are displayed in one final reload
+  setRows(prevRows => [...prevRows])
+}
+```
+
+#### How It Works
+1. User drags task → cascade depth increments to 1
+2. Backend returns cascaded tasks → signature changes BUT reload is deferred (depth = 1)
+3. More cascade waves trigger → signature changes BUT reload is deferred (depth still > 0)
+4. After 750ms timeout → cascade depth decrements to 0
+5. When depth reaches 0 → `setRows([...prevRows])` triggers state update
+6. State update triggers DHtmlxGanttView effect → signature has changed AND depth = 0 → reload happens ONCE
+7. **Result:** All cascade updates consolidated into ONE reload after cascades complete
+
+#### Performance Impact
+
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Gantt reloads per drag | 5-8 | 1 | 80-87% reduction |
+| Visible shaking | YES | NO | Eliminated ✅ |
+| Cascade updates displayed | YES | YES | Maintained ✅ |
+
+#### Key Learnings
+
+1. **Throttle vs. Bypass** - Signature-based reloads should be throttled during cascade operations, not completely bypassed
+2. **Cascade Depth is Key** - The `cascadeDepthRef` counter tracks when ALL cascade waves complete
+3. **Batched Visual Updates** - Consolidating all cascade signature changes into one reload provides smooth UX
+4. **State Update Trick** - `setRows([...prevRows])` triggers effect without changing data, perfect for deferred reloads
+
+**Files Changed:**
+- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx:2538` (pass cascadeDepthRef prop)
+- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx:1214-1216` (trigger reload when cascades complete)
+- `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:35` (accept cascadeDepthRef prop)
+- `frontend/src/components/schedule-master/DHtmlxGanttView.jsx:3884-3891` (throttle reloads during cascades)
+
+**Related Bugs:**
+- BUG-001 (Drag Flickering) - Original flicker fix
+- BUG-002 (Infinite Cascade Loop) - Verification-based pending clearing
+- BUG-005 (Infinite Loop in Cascade Batch Updates) - Cascade depth tracking implementation
+
+**Related Rule:** Bible Chapter 9, RULE #9.2 (Drag Lock Must Be Immediate)
+
+---
+
 ### ✅ BUG-003: Predecessor IDs Cleared on Drag (RESOLVED)
 
 **Status:** ✅ RESOLVED
@@ -8432,3 +8545,766 @@ on_delete: :cascade  # Delete this record too
 **Last Updated:** 2025-11-16 09:01 AEST
 **Maintained By:** Development Team
 **Review Schedule:** After each bug fix
+
+---
+
+# Chapter 19: UI/UX Standards & Patterns
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 19                │
+│ 📘 USER MANUAL (HOW): Chapter 19                │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog for UI/UX patterns
+**Last Updated:** 2025-11-16
+
+---
+
+## 🐛 Bug Hunter
+
+### Known UI/UX Issues
+
+This section tracks **discovered but not yet resolved** UI/UX inconsistencies across the codebase.
+
+---
+
+### ⚠️ ISSUE-001: Missing Clear Buttons on Search Boxes (MEDIUM PRIORITY)
+
+**Status:** 🟡 OPEN (Awaiting user approval for mass changes)
+**Date Discovered:** 2025-11-16
+**Severity:** Medium
+**Impact:** 73 search boxes affected
+
+#### Summary
+Most search inputs lack a clear button (X icon) to reset the search query. Users must manually delete text or refresh the page.
+
+**Affected Components:**
+- PriceBooksPage.jsx
+- SuppliersPage.jsx
+- JobsPage.jsx
+- PurchaseOrdersPage.jsx
+- DocumentsPage.jsx
+- EstimatesPage.jsx
+- [... 67 more search boxes]
+
+#### Expected vs Actual
+
+**✅ Gold Standard (ContactsPage.jsx):**
+```jsx
+<div className="relative">
+  <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2" />
+  <input
+    type="text"
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className="pl-10 pr-10"
+  />
+  {searchQuery && (
+    <button
+      onClick={() => setSearchQuery('')}
+      className="absolute right-3 top-1/2 -translate-y-1/2"
+    >
+      <XMarkIcon className="w-5 h-5" />
+    </button>
+  )}
+</div>
+```
+
+**❌ Current State (Most Pages):**
+```jsx
+<div className="relative">
+  <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2" />
+  <input
+    type="text"
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className="pl-10"
+  />
+  {/* Missing clear button */}
+</div>
+```
+
+#### Solution Plan
+See: `/Users/rob/Projects/trapid/TRAPID_DOCS/TABLE_STANDARDS.md` (Phase 1 implementation plan)
+
+**Related Rule:** Bible Chapter 19, RULE #19.20b
+
+---
+
+### ⚠️ ISSUE-002: Missing Close Buttons on Modals (MEDIUM PRIORITY)
+
+**Status:** 🟡 OPEN (Awaiting user approval)
+**Date Discovered:** 2025-11-16
+**Severity:** Medium
+**Impact:** 58 modals affected
+
+#### Summary
+Many modals lack a visible close button (X icon in top-right). Users can only close via Cancel button or ESC key, which is not discoverable.
+
+**Affected Components:**
+- EstimateModal.jsx
+- TaskModal.jsx
+- ContactFormModal.jsx
+- SupplierModal.jsx
+- [... 54 more modals]
+
+#### Expected vs Actual
+
+**✅ Gold Standard Pattern:**
+```jsx
+<DialogPanel className="relative">
+  {/* Close button (top-right) */}
+  <button
+    onClick={onClose}
+    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+  >
+    <XMarkIcon className="w-6 h-6" />
+  </button>
+
+  <DialogTitle>Modal Title</DialogTitle>
+  {/* Content */}
+</DialogPanel>
+```
+
+**❌ Current State (58 modals):**
+```jsx
+<DialogPanel>
+  {/* Missing close button */}
+  <DialogTitle>Modal Title</DialogTitle>
+  {/* Content */}
+</DialogPanel>
+```
+
+#### Solution Plan
+Add top-right X button to all HeadlessUI Dialog implementations.
+
+**Related Rule:** Bible Chapter 19, RULE #19.22b
+
+---
+
+### ⚠️ ISSUE-003: Empty States Without Action Buttons (MEDIUM PRIORITY)
+
+**Status:** 🟡 OPEN (Awaiting user approval)
+**Date Discovered:** 2025-11-16
+**Severity:** Medium
+**Impact:** 66 empty states affected
+
+#### Summary
+Many empty states show "No items found" but lack a call-to-action button to create the first item.
+
+**Affected Components:**
+- PriceBooksPage (no price books)
+- SuppliersPage (no suppliers)
+- JobsPage (no jobs)
+- [... 63 more empty states]
+
+#### Expected vs Actual
+
+**✅ Gold Standard (ContactsPage):**
+```jsx
+{contacts.length === 0 && !loading && (
+  <tr>
+    <td colSpan={columns.length} className="text-center py-12">
+      <div className="text-gray-500 dark:text-gray-400">
+        <p className="text-lg font-medium">No contacts found</p>
+        <p className="text-sm mt-1">Get started by adding your first contact</p>
+        <button
+          onClick={() => setShowNewContactModal(true)}
+          className="mt-4 btn-primary"
+        >
+          <PlusIcon className="w-5 h-5 mr-2" />
+          Add Contact
+        </button>
+      </div>
+    </td>
+  </tr>
+)}
+```
+
+**❌ Current State (66 components):**
+```jsx
+{items.length === 0 && (
+  <div className="text-center py-8 text-gray-500">
+    No items found
+    {/* Missing action button */}
+  </div>
+)}
+```
+
+#### Solution Plan
+Add primary action button to all empty states with helpful microcopy.
+
+**Related Rule:** Bible Chapter 19, RULE #19.27b
+
+---
+
+### ⚠️ ISSUE-004: Tables Missing Sticky Headers (LOW PRIORITY)
+
+**Status:** 🟡 OPEN (Awaiting user approval)
+**Date Discovered:** 2025-11-16
+**Severity:** Low
+**Impact:** 36 tables affected
+
+#### Summary
+Tables without sticky headers lose column context when scrolling long lists.
+
+**Affected Tables:**
+- SuppliersPage.jsx
+- PriceBooksPage.jsx
+- JobDetailPage.jsx (tasks table)
+- [... 33 more tables]
+
+#### Solution
+Add `sticky top-0 z-10` to `<thead>` elements.
+
+**Related Rule:** Bible Chapter 19, RULE #19.2
+
+---
+
+### ⚠️ ISSUE-005: Tables Missing Inline Column Filters (LOW PRIORITY)
+
+**Status:** 🟡 OPEN (Awaiting user approval)
+**Date Discovered:** 2025-11-16
+**Severity:** Low
+**Impact:** 44 tables affected
+
+#### Summary
+Tables without inline filters force users to search across all columns instead of targeted filtering.
+
+**Solution:**
+See ContactsPage.jsx for reference implementation of inline filter inputs in `<th>` elements.
+
+**Related Rule:** Bible Chapter 19, RULE #19.3
+
+---
+
+### 🟢 ISSUE-006: Icon Buttons Missing aria-label (ACCESSIBILITY)
+
+**Status:** 🟡 OPEN
+**Date Discovered:** 2025-11-16
+**Severity:** Low (Accessibility)
+**Impact:** ~50 icon buttons
+
+#### Summary
+Icon-only buttons lack `aria-label` attributes for screen readers.
+
+**Example Fix:**
+```jsx
+// ❌ WRONG
+<button onClick={handleDelete}>
+  <TrashIcon className="w-5 h-5" />
+</button>
+
+// ✅ CORRECT
+<button onClick={handleDelete} aria-label="Delete item">
+  <TrashIcon className="w-5 h-5" />
+</button>
+```
+
+**Related Rule:** Bible Chapter 19, RULE #19.25c
+
+---
+
+### 🟢 ISSUE-007: Tab Components Not Synced to URL (LOW PRIORITY)
+
+**Status:** 🟡 OPEN
+**Date Discovered:** 2025-11-16
+**Severity:** Low
+**Impact:** ~20 tabbed interfaces
+
+#### Summary
+Most tabbed interfaces don't sync active tab to URL query parameter, making bookmarking/sharing impossible.
+
+**✅ Gold Standard (ContactsPage):**
+```jsx
+const [activeTab, setActiveTab] = useState(() => {
+  const params = new URLSearchParams(location.search)
+  const tab = params.get('tab')
+  return tabs.indexOf(tab) >= 0 ? tabs.indexOf(tab) : 0
+})
+
+useEffect(() => {
+  const params = new URLSearchParams(location.search)
+  params.set('tab', tabs[activeTab])
+  navigate(`?${params.toString()}`, { replace: true })
+}, [activeTab])
+```
+
+**Related Rule:** Bible Chapter 19, RULE #19.28 (if added)
+
+---
+
+## 🏛️ Architecture
+
+### Why These Design Decisions Were Made
+
+---
+
+### 1. HeadlessUI + Heroicons (Not Bootstrap or MUI)
+
+**Decision:** Use HeadlessUI for accessible, unstyled components + Heroicons for consistent icon library
+
+**Why:**
+- **Accessibility Built-In:** HeadlessUI handles ARIA attributes, focus management, keyboard navigation automatically
+- **Styling Freedom:** Unstyled components allow full TailwindCSS customization
+- **Icon Consistency:** Heroicons provides 24-outline style across all 200+ icon usages
+- **Official Support:** Both maintained by Tailwind Labs (same team as TailwindCSS)
+- **No Bloat:** Only import what you need (tree-shakeable)
+
+**Trade-offs:**
+- **Pro:** Complete design control, accessibility guaranteed
+- **Con:** More code than pre-styled components (MUI, Bootstrap)
+- **Pro:** Smaller bundle size than MUI (~20KB vs ~200KB)
+- **Con:** No built-in themes (we don't want this anyway)
+
+**Protected Pattern:** All HeadlessUI Dialog, Tab, Listbox, Menu implementations are protected
+
+**Files:**
+- Package: `@headlessui/react: ^2.2.9`, `@heroicons/react: ^2.2.0`
+- 20+ components use HeadlessUI
+- All icons imported from `@heroicons/react/24/outline`
+
+---
+
+### 2. TailwindCSS (Not CSS-in-JS or SCSS)
+
+**Decision:** Pure TailwindCSS utility classes with dark mode via `dark:` prefix
+
+**Why:**
+- **Build-Time Compilation:** CSS generated once at build, not runtime (faster performance)
+- **Dark Mode Built-In:** TailwindCSS's `dark:` prefix handles all dark mode styling
+- **Type Safety:** ClassName typos caught at development time
+- **Developer Experience:** Utility-first pattern familiar across entire codebase
+- **No Context Issues:** CSS-in-JS can have theme context bugs, Tailwind doesn't
+
+**Trade-offs:**
+- **Pro:** Zero runtime overhead, predictable CSS output
+- **Con:** Long className strings (but co-located with component)
+- **Pro:** 5,920+ dark mode classes work without additional libraries
+- **Con:** No dynamic theme switching (uses OS preference only)
+
+**Evidence:**
+- Zero CSS-in-JS libraries in dependencies (no styled-components, emotion)
+- `/Users/rob/Projects/trapid/frontend/tailwind.config.js` - minimal config
+- 5,920+ `dark:` prefix usages detected in codebase
+
+**Protected Pattern:** TailwindCSS is permanent, no CSS-in-JS migration planned
+
+---
+
+### 3. ContactsPage as Gold Standard Reference
+
+**Decision:** `/Users/rob/Projects/trapid/frontend/src/pages/ContactsPage.jsx` is the reference implementation for all advanced tables
+
+**Why:**
+- **Feature Complete:** Has ALL 10 advanced table features:
+  1. Sticky headers
+  2. Column resize (drag handles)
+  3. Column reorder (drag-drop)
+  4. Inline column filters
+  5. Search with clear button
+  6. Multi-level sort
+  7. localStorage persistence
+  8. Dark mode support
+  9. Row actions
+  10. Empty states with action buttons
+
+- **User's Favorite:** User explicitly stated "thats the table i like best in the software"
+- **Well-Structured Code:** Clear patterns for state management, event handlers, localStorage persistence
+
+**Other Reference Implementations:**
+- **POTable.jsx:** Purchase order table (row actions, status badges)
+- **DataTable.jsx:** Simple read-only table component (for basic lists)
+
+**Authority:** Bible Chapter 19 designates ContactsPage as gold standard
+
+**Related File:** `/Users/rob/Projects/trapid/TRAPID_DOCS/TABLE_STANDARDS.md`
+
+---
+
+### 4. Dark Mode via CSS (Not JavaScript State)
+
+**Decision:** Dark mode implemented via TailwindCSS `dark:` prefix using `prefers-color-scheme` media query
+
+**Why:**
+- **Zero JavaScript Overhead:** Dark mode applied via CSS media query, no JS state required
+- **Respects User Preference:** Automatically responds to OS dark mode setting
+- **WCAG Compliance:** Respects `prefers-color-scheme` accessibility requirement
+- **No Flash of Wrong Theme:** CSS loads before JS, preventing theme flash on page load
+
+**Trade-offs:**
+- **Pro:** Fastest possible dark mode implementation
+- **Pro:** Works even if JavaScript disabled
+- **Con:** No manual toggle (future enhancement if needed)
+- **Pro:** 5,920+ dark mode classes already implemented
+
+**Pattern:**
+```jsx
+// Standard light/dark pattern
+<div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+  <div className="border-gray-200 dark:border-gray-700" />
+</div>
+```
+
+**Protected:** All `dark:` classes must be preserved
+
+---
+
+### 5. Badge Component (Semantic Color System)
+
+**Decision:** Centralized Badge component for all status indicators
+
+**Location:** `/Users/rob/Projects/trapid/frontend/src/components/Badge.jsx`
+
+**Why:**
+- **Single Source of Truth:** Status colors defined in one place
+- **Semantic Consistency:** Red = danger, Green = success, Yellow = warning (always)
+- **Accessibility:** High contrast ratios in both light and dark modes
+- **8 Color Options:** gray, red, yellow, green, blue, indigo, purple, pink
+
+**Usage:**
+```jsx
+<Badge color="green">Active</Badge>
+<Badge color="red" withDot>Error</Badge>
+<Badge color="yellow">Pending</Badge>
+```
+
+**Files Using Badge:**
+- POStatusBadge.jsx (Purchase order status)
+- PaymentStatusBadge.jsx (Payment status)
+- EstimateStatusBadge.jsx (Estimate status)
+- SeverityBadge.jsx (AI review severity)
+
+**Color Authority:** `/Users/rob/Projects/trapid/frontend/COLOR_SYSTEM.md`
+
+---
+
+### 6. HeadlessUI Dialog for All Modals (Not Custom Modal)
+
+**Decision:** All modals use HeadlessUI Dialog component
+
+**Why:**
+- **Accessibility Standards:** Built-in ARIA attributes (`role="dialog"`, `aria-labelledby`, etc.)
+- **Focus Management:** Automatically traps focus in modal, restores to trigger element on close
+- **Keyboard Support:** ESC to close, Tab navigation within modal
+- **Backdrop Handling:** Click-outside-to-close pattern built-in
+
+**Pattern:**
+```jsx
+<Dialog open={isOpen} onClose={onClose} className="relative z-50">
+  <DialogBackdrop className="fixed inset-0 bg-black/30" />
+  <div className="fixed inset-0 overflow-y-auto">
+    <DialogPanel className="...">
+      <DialogTitle>Modal Title</DialogTitle>
+      {/* Content */}
+    </DialogPanel>
+  </div>
+</Dialog>
+```
+
+**Evidence:** 20+ modal implementations use this pattern
+
+**Protected:** HeadlessUI Dialog pattern is protected, no custom modal library
+
+---
+
+### 7. No Form Library (Custom Form State)
+
+**Decision:** Manual form state management (no react-hook-form, Formik, etc.)
+
+**Why:**
+- **Simplicity:** Most forms are simple (5-10 fields), library overhead not justified
+- **Control:** Direct access to form state without library abstraction
+- **Bundle Size:** react-hook-form adds ~40KB, we avoid this
+- **Flexibility:** Custom validation logic per form without library constraints
+
+**Pattern:**
+```jsx
+const [formData, setFormData] = useState({
+  name: '',
+  email: '',
+  phone: ''
+})
+
+const [errors, setErrors] = useState({})
+
+const handleSubmit = async (e) => {
+  e.preventDefault()
+  // Custom validation
+  if (!formData.name) {
+    setErrors({ name: 'Name is required' })
+    return
+  }
+  // Submit
+}
+```
+
+**Trade-off:**
+- **Pro:** Zero library dependencies, full control
+- **Con:** More boilerplate for very complex forms (20+ fields)
+
+**When to Reconsider:** If forms exceed 20 fields or need complex validation schemas
+
+---
+
+### 8. HTML `<table>` Elements (Not ag-grid or react-table)
+
+**Decision:** Manual table implementation using HTML `<table>` elements
+
+**Why:**
+- **Custom Features:** Full control over column resize, reorder, inline filters
+- **Performance:** No library overhead, direct DOM manipulation for drag operations
+- **Styling Freedom:** Complete TailwindCSS customization
+- **Bundle Size:** ag-grid Enterprise would add ~500KB, we avoid this
+
+**Trade-offs:**
+- **Pro:** Zero cost for table library (~500KB saved)
+- **Pro:** Custom features exactly match needs (ContactsPage pattern)
+- **Con:** More code to maintain (but well-abstracted in ContactsPage)
+
+**When to Reconsider:** If we need virtual scrolling for 10,000+ row tables
+
+**Reference:** ContactsPage.jsx has all advanced features implemented manually
+
+---
+
+### 9. React Context API (Not Redux or Zustand)
+
+**Decision:** Use React Context API for global state (dark mode, user, company settings)
+
+**Why:**
+- **Built-In:** No additional library needed
+- **Sufficient:** App state is simple (user, company, settings)
+- **Tree-Shakeable:** Only components that use context import it
+
+**Current Contexts:**
+- AuthContext (user authentication)
+- CompanyContext (company settings, timezone)
+- NotificationContext (toast notifications)
+
+**Trade-offs:**
+- **Pro:** Zero library dependencies
+- **Con:** Re-renders can be broader than Redux (but not an issue at current scale)
+
+**When to Reconsider:** If app state becomes highly complex (50+ global state values)
+
+---
+
+### 10. Axios HTTP Client (Not Fetch API)
+
+**Decision:** Use Axios for all API calls
+
+**Why:**
+- **Interceptors:** Centralized auth token injection, error handling
+- **Automatic JSON:** Request/response transformation built-in
+- **Timeout Support:** Configurable timeouts per request
+- **Error Handling:** Structured error responses
+
+**Setup:** `/Users/rob/Projects/trapid/frontend/src/api/axios.js`
+
+**Pattern:**
+```javascript
+// Centralized axios instance
+const api = axios.create({
+  baseURL: '/api/v1',
+  timeout: 30000
+})
+
+// Auth token interceptor
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('authToken')
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
+```
+
+**Protected:** Axios patterns are protected, no migration to fetch planned
+
+---
+
+## 📊 Test Catalog
+
+### UI/UX Testing Infrastructure
+
+---
+
+### E2E Tests (Playwright)
+
+**Status:** ✅ Minimal coverage (Gantt only)
+
+**Existing Tests:**
+1. **Gantt Cascade Test** (`frontend/tests/gantt-cascade.spec.js`)
+   - Tests cascade behavior (date/duration updates)
+   - Has visual bug-hunter diagnostics
+   - Status: Passing (as of last commit)
+
+**Missing E2E Tests:**
+- Table interactions (resize, reorder, filter)
+- Modal open/close/submit flows
+- Form validation flows
+- Search functionality
+- Empty state action buttons
+- Dark mode switching (if manual toggle added)
+
+**Config:** `/Users/rob/Projects/trapid/frontend/playwright.config.js`
+
+---
+
+### Unit Tests (Vitest)
+
+**Status:** ⚠️ Infrastructure exists, no tests written
+
+**Setup:**
+- Vitest configured in `vite.config.js`
+- React Testing Library available
+- No component tests written yet
+
+**Missing Unit Tests:**
+- Badge component (color variants)
+- Toast notifications
+- Form validation logic
+- Table state management
+- Column resize calculations
+
+---
+
+### Visual Regression Tests
+
+**Status:** ❌ Not implemented
+
+**Recommendation:**
+- Use Playwright screenshots for visual regression
+- Test light mode + dark mode for key pages
+- Store baseline screenshots in `tests/snapshots/`
+
+**Priority Pages:**
+- ContactsPage (gold standard)
+- POTable (complex table)
+- Dashboard (multiple components)
+
+---
+
+### Accessibility Tests
+
+**Status:** ❌ Not implemented
+
+**Recommendation:**
+- Integrate `@axe-core/playwright` for automated accessibility testing
+- Test ARIA attributes on modals, buttons, forms
+- Test keyboard navigation flows
+
+**Priority Components:**
+- HeadlessUI Dialog (modals)
+- Icon buttons (aria-label)
+- Form inputs (label association)
+- Tables (proper `<thead>`, `<tbody>`, `<th>` usage)
+
+---
+
+### Manual Testing Checklist
+
+**Current State:** Ad-hoc testing only
+
+**Recommended Checklist:**
+- [ ] Dark mode toggle (all pages)
+- [ ] Table column resize (ContactsPage, POTable, etc.)
+- [ ] Table column reorder (drag-drop)
+- [ ] Search with clear button
+- [ ] Modal close (X button + ESC key + click outside)
+- [ ] Empty states show action button
+- [ ] Form validation errors display correctly
+- [ ] Toast notifications appear and dismiss
+- [ ] Responsive design (mobile, tablet, desktop)
+
+---
+
+## 🔍 Known Gaps & Future Enhancements
+
+### Gaps
+
+1. **73 Search Boxes Without Clear Buttons**
+   - **Impact:** Poor UX (users must manually delete text)
+   - **Blocker for:** Meeting Bible RULE #19.20b
+   - **Fix:** Add X button to all search inputs (see ContactsPage pattern)
+
+2. **58 Modals Without Close Buttons**
+   - **Impact:** Non-discoverable close action (ESC key only)
+   - **Blocker for:** Meeting Bible RULE #19.22b
+   - **Fix:** Add top-right X button to all HeadlessUI Dialogs
+
+3. **66 Empty States Without Action Buttons**
+   - **Impact:** Users don't know how to create first item
+   - **Blocker for:** Meeting Bible RULE #19.27b
+   - **Fix:** Add primary action button to all empty states
+
+4. **36 Tables Without Sticky Headers**
+   - **Impact:** Lose column context when scrolling
+   - **Blocker for:** Meeting Bible RULE #19.2
+   - **Fix:** Add `sticky top-0 z-10` to `<thead>` elements
+
+5. **44 Tables Without Inline Filters**
+   - **Impact:** Less targeted filtering
+   - **Blocker for:** Meeting Bible RULE #19.3
+   - **Fix:** Add filter inputs to `<th>` elements (see ContactsPage)
+
+6. **No Visual Regression Tests**
+   - **Impact:** Dark mode regressions not caught
+   - **Blocker for:** Confident UI changes
+   - **Fix:** Implement Playwright screenshot comparisons
+
+7. **No Accessibility Tests**
+   - **Impact:** ARIA violations not caught
+   - **Blocker for:** WCAG compliance
+   - **Fix:** Integrate axe-core for automated testing
+
+---
+
+### Future Enhancements
+
+1. **Manual Dark Mode Toggle**
+   - Currently uses OS preference only
+   - Add user preference storage (localStorage)
+   - Add toggle button in header/settings
+
+2. **Keyboard Shortcuts**
+   - Add hotkeys for common actions (Cmd+K for search, etc.)
+   - Display keyboard shortcuts in help menu
+
+3. **Table Column Presets**
+   - Save/load custom column configurations
+   - Share column presets with team
+
+4. **Advanced Empty States**
+   - Show "Getting Started" guides for complex features
+   - Video tutorials embedded in empty states
+
+5. **Toast Notification Improvements**
+   - Undo actions from toast (e.g., "Undo delete")
+   - Progress bars for long-running actions
+
+6. **Responsive Table Improvements**
+   - Card view for mobile devices
+   - Horizontal scroll hints for tables
+
+7. **Loading Skeleton Screens**
+   - Replace spinners with content placeholders
+   - Improve perceived performance
+
+8. **Storybook Integration**
+   - Document all UI components
+   - Interactive component playground
+
+---
+
+## 📚 Related Chapters
+
+- **Chapter 1:** Authentication & Users (AuthContext, user state)
+- **Chapter 2:** System Administration (CompanyContext, settings)
+- **Chapter 9:** Gantt & Schedule Master (protected custom table implementation)
+
+---
+
+**Last Updated:** 2025-11-16
+**Maintained By:** Development Team
+**Review Schedule:** After each UI/UX change
