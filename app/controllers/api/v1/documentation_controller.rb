@@ -11,7 +11,7 @@ module Api
         docs = [
           {
             id: 'bible',
-            name: 'TRAPID Bible',
+            name: 'Bible',
             description: 'Development rules and protected patterns',
             icon: '📖',
             audience: 'Developers',
@@ -20,7 +20,7 @@ module Api
           },
           {
             id: 'teacher',
-            name: 'Trapid Teacher',
+            name: 'Teacher',
             description: 'Code examples and implementation guides',
             icon: '🔧',
             audience: 'Developers',
@@ -29,7 +29,7 @@ module Api
           },
           {
             id: 'lexicon',
-            name: 'TRAPID Lexicon',
+            name: 'Lexicon',
             description: 'Bug history and knowledge base',
             icon: '📕',
             audience: 'Developers',
@@ -38,7 +38,7 @@ module Api
           },
           {
             id: 'user-manual',
-            name: 'TRAPID User Manual',
+            name: 'User Manual',
             description: 'Step-by-step user guides',
             icon: '📘',
             audience: 'End Users',
