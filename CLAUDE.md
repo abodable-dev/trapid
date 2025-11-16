@@ -51,6 +51,9 @@ See: TRAPID_TEACHER.md §19.1 for full code examples
 **What:** Full code examples and step-by-step guides
 **Authority:** REFERENCE (examples, not rules)
 
+**Source of Truth:** Database table `documentation_entries` (NOT the .md file)
+**Exported to:** `TRAPID_TEACHER.md` (auto-generated via `bin/rails trapid:export_teacher`)
+
 **Contains:**
 - ✅ Full code examples with comments
 - ✅ Step-by-step implementation guides
@@ -59,10 +62,18 @@ See: TRAPID_TEACHER.md §19.1 for full code examples
 - ✅ Testing strategies
 - ✅ Migration guides for refactoring
 
+**Entry Types:** `component`, `feature`, `util`, `hook`, `integration`, `optimization`
+
 **Does NOT contain:**
 - ❌ Rules (see Bible)
 - ❌ Bug history (see Lexicon)
 - ❌ User guides (see User Manual)
+
+**Update Workflow:**
+1. Go to Trapid app → Documentation page → 🔧 TRAPID Teacher
+2. Add/edit entries via UI (stores in `documentation_entries` table with Teacher entry_type)
+3. Run: `bin/rails trapid:export_teacher`
+4. Commit the updated `TRAPID_TEACHER.md` file
 
 **Example:**
 ```markdown
@@ -95,7 +106,7 @@ const MyTable = () => (
 **What:** Bug history, lessons learned, architecture context
 **Authority:** REFERENCE (explains WHY rules exist)
 
-**Source of Truth:** Database table `documented_bugs` (NOT the .md file)
+**Source of Truth:** Database table `documentation_entries` (NOT the .md file)
 **Exported to:** `TRAPID_LEXICON.md` (auto-generated via `bin/rails trapid:export_lexicon`)
 
 **Contains:**
@@ -106,9 +117,11 @@ const MyTable = () => (
 - ✅ Common issues and gotchas
 - ✅ Terminology definitions
 
+**Entry Types:** `bug`, `architecture`, `test`, `performance`, `dev_note`, `common_issue`
+
 **Update Workflow:**
 1. Go to Trapid app → Documentation page → 📕 TRAPID Lexicon
-2. Add/edit entries via UI (stores in `documented_bugs` table)
+2. Add/edit entries via UI (stores in `documentation_entries` table with Lexicon entry_type)
 3. Run: `bin/rails trapid:export_lexicon`
 4. Commit the updated `TRAPID_LEXICON.md` file
 
@@ -240,6 +253,83 @@ All four documents use the **same chapter structure** (0-20):
 1. Send them to User Manual
 2. If it's broken, check Lexicon
 3. If needs fixing, check Bible
+
+---
+
+## 💾 Database-Driven Documentation System
+
+Both Lexicon and Teacher are backed by a unified `documentation_entries` table. The markdown files are auto-generated exports.
+
+### Table Structure: `documentation_entries`
+
+```ruby
+# Unified table for both Lexicon and Teacher entries
+create_table :documentation_entries do |t|
+  t.integer :chapter_number, null: false  # 0-20
+  t.string :chapter_name, null: false
+  t.string :section_number               # e.g., "19.1", "19.11A" (optional)
+  t.string :title, null: false
+  t.string :entry_type, null: false      # Discriminator field
+  t.text :description
+
+  # Teacher-specific fields
+  t.string :difficulty                   # beginner, intermediate, advanced
+  t.text :summary
+  t.text :code_example
+  t.text :common_mistakes
+  t.text :testing_strategy
+  t.text :related_rules
+
+  t.timestamps
+end
+```
+
+### Entry Types
+
+**Lexicon Types** (knowledge/bugs):
+- `bug` - Bug discoveries and fixes
+- `architecture` - System design decisions
+- `test` - Testing approaches and strategies
+- `performance` - Performance optimizations
+- `dev_note` - Development notes and gotchas
+- `common_issue` - Frequently encountered problems
+
+**Teacher Types** (implementation patterns):
+- `component` - React component patterns
+- `feature` - Feature implementation guides
+- `util` - Utility functions and helpers
+- `hook` - React hooks and custom hooks
+- `integration` - Third-party integrations (Xero, OneDrive, etc.)
+- `optimization` - Code optimization patterns
+
+### ActiveRecord Scopes
+
+```ruby
+# app/models/documentation_entry.rb
+scope :lexicon_entries, -> { where(entry_type: LEXICON_TYPES) }
+scope :teacher_entries, -> { where(entry_type: TEACHER_TYPES) }
+```
+
+### Export Commands
+
+```bash
+# Export Lexicon to markdown
+bin/rails trapid:export_lexicon
+
+# Export Teacher to markdown
+bin/rails trapid:export_teacher
+
+# Both are run automatically when entries are created/updated via UI
+```
+
+### Why Database-Driven?
+
+1. **Scalability**: Both Lexicon and Teacher can grow infinitely without file size limits
+2. **Searchability**: Database queries are faster than grepping markdown files
+3. **UI Management**: Non-technical users can add entries via Trapid app
+4. **Version Control**: Markdown exports are still committed to Git for diffs
+5. **Single Source of Truth**: Database is authoritative, markdown is generated
+6. **Structured Data**: Enforced schema prevents inconsistent formatting
 
 ---
 
