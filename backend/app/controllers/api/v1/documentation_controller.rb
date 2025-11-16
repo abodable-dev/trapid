@@ -35,33 +35,6 @@ module Api
             audience: 'End Users',
             path: 'TRAPID_USER_MANUAL.md',
             chapters: 19
-          },
-          {
-            id: 'chapter-guide',
-            name: 'Chapter Guide',
-            description: 'Quick feature → chapter lookup',
-            icon: '📋',
-            audience: 'Everyone',
-            path: '00_INDEX/CHAPTER_GUIDE.md',
-            chapters: nil
-          },
-          {
-            id: 'continuation',
-            name: 'Continuation Instructions',
-            description: 'Progress tracker and workflow for completing Trinity documentation',
-            icon: '📍',
-            audience: 'Developers',
-            path: '00_INDEX/CONTINUATION_INSTRUCTIONS.md',
-            chapters: nil
-          },
-          {
-            id: 'table-standards',
-            name: 'Table Standards',
-            description: 'Complete inventory & upgrade plan for all tables (47+ tables)',
-            icon: '📊',
-            audience: 'Developers',
-            path: 'TABLE_STANDARDS.md',
-            chapters: nil
           }
         ]
 
@@ -81,14 +54,6 @@ module Api
                       Rails.root.join('TRAPID_DOCS', 'TRAPID_LEXICON.md')
                     when 'user-manual'
                       Rails.root.join('TRAPID_DOCS', 'TRAPID_USER_MANUAL.md')
-                    when 'chapter-guide'
-                      Rails.root.join('TRAPID_DOCS', '00_INDEX', 'CHAPTER_GUIDE.md')
-                    when 'continuation'
-                      Rails.root.join('TRAPID_DOCS', '00_INDEX', 'CONTINUATION_INSTRUCTIONS.md')
-                    when 'table-standards'
-                      Rails.root.join('TRAPID_DOCS', 'TABLE_STANDARDS.md')
-                    when 'readme'
-                      Rails.root.join('TRAPID_DOCS', '00_INDEX', 'README.md')
                     else
                       return render json: { success: false, error: 'Documentation not found' }, status: :not_found
                     end
