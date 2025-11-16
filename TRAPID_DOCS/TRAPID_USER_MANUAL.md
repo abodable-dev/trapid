@@ -641,7 +641,253 @@ After 24 hours of inactivity:
 │ 📕 LEXICON (BUGS):     Chapter 2 (Developers)  │
 └─────────────────────────────────────────────────┘
 
-**Content TBD** - To be populated with company configuration instructions
+## What are Company Settings?
+
+Company Settings control global configuration like working days, timezone, company details, and user management. These settings affect scheduling, time displays, and access permissions across the entire application.
+
+**Who can access:** Admins and Product Owners only
+
+---
+
+## Getting Started
+
+### Step 1: Access Settings
+
+1. Click your **profile icon** (top-right)
+2. Select **"Settings"** from dropdown
+3. Go to **"Company"** tab (left sidebar)
+
+You'll see two sub-tabs:
+- **Company Info** - Company details, timezone, working days
+- **Holidays** - Public holidays by region
+
+---
+
+### Step 2: Update Company Details
+
+In the **Company Info** tab:
+
+1. **Company Name** - Your business name
+2. **ABN** - Australian Business Number (for Xero integration)
+3. **Email** - Company contact email
+4. **Phone** - Main phone number
+5. **Address** - Company address
+
+Click **"Save"** when done.
+
+---
+
+### Step 3: Set Your Timezone
+
+**Important:** Timezone affects ALL date displays and schedule calculations.
+
+1. Find **"Timezone"** dropdown
+2. Select your region:
+   - **Australia/Brisbane** - QLD (no daylight saving)
+   - **Australia/Sydney** - NSW, ACT (daylight saving)
+   - **Australia/Melbourne** - VIC (daylight saving)
+   - **Australia/Adelaide** - SA (daylight saving)
+   - **Australia/Perth** - WA (no daylight saving)
+   - Plus 7 other Australian/NZ timezones
+3. Click **"Save"**
+
+**Result:** All dates and times now display in your selected timezone.
+
+---
+
+### Step 4: Configure Working Days
+
+**Important:** Working days determine when tasks can be scheduled in the Gantt chart.
+
+1. In **Company Info** tab, find **"Working Days"** section
+2. Check boxes for days your crew works:
+   - **Default:** Monday-Friday + Sunday
+   - **Construction note:** Many crews work Sundays, skip Saturdays
+3. Click **"Save"**
+
+**Result:** Schedule Master won't schedule tasks on unchecked days (unless manually overridden with locks).
+
+---
+
+## Managing Users
+
+### Add a New User
+
+1. Click **profile icon** → **"Settings"**
+2. Go to **"Users"** tab
+3. Click **"Add User"** button
+4. Fill in:
+   - **Name** - Full name
+   - **Email** - Login email (must be unique)
+   - **Password** - Temporary password (12+ characters, mixed case, digit, special char)
+   - **Role** - Permission level (see below)
+   - **Assignable Role** - Task category (what tasks they see)
+5. Click **"Save"**
+
+**Password requirements:**
+- Minimum 12 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one digit
+- At least one special character (@$!%*?&)
+
+Example: `MyPassword123!`
+
+---
+
+### User Roles (Permissions)
+
+| Role | Permissions |
+|------|-------------|
+| **Admin** | Full access to all features |
+| **Product Owner** | Full access + backlog management |
+| **Estimator** | Create/edit estimates, schedules, quotes |
+| **Supervisor** | Complete tasks, checklists (field work) |
+| **Builder** | View/update assigned tasks |
+| **User** | View-only access |
+
+---
+
+### Assignable Roles (Task Filtering)
+
+**Separate from permission roles!** This controls which tasks a user sees:
+
+| Assignable Role | Sees These Tasks |
+|-----------------|------------------|
+| **Admin** | All tasks |
+| **Sales** | Sales-related tasks |
+| **Site** | On-site construction tasks |
+| **Supervisor** | Supervisor check-in tasks |
+| **Builder** | Builder/contractor tasks |
+| **Estimator** | Estimating/quoting tasks |
+| **None** | No task assignment |
+
+**Example:** User can be **Admin** (permission) + **Site** (sees site tasks).
+
+---
+
+### Edit a User
+
+1. Go to **Settings** → **"Users"** tab
+2. Find user in list
+3. Click on any field to edit inline:
+   - Name
+   - Email
+   - Role
+   - Assignable Role
+4. Press **Enter** or click outside field to save
+
+---
+
+### Reset User Password
+
+**Note:** Email delivery not yet implemented. You must communicate new password manually.
+
+1. Go to **Settings** → **"Users"** tab
+2. Click user's **three-dot menu** (⋮)
+3. Select **"Reset Password"**
+4. Copy the temporary password shown
+5. Communicate password to user via phone/Slack
+
+**User must change password on next login.**
+
+---
+
+### Delete a User
+
+1. Go to **Settings** → **"Users"** tab
+2. Click user's **three-dot menu** (⋮)
+3. Select **"Delete User"**
+4. Confirm deletion
+
+**Warning:** This cannot be undone. User's login will be disabled immediately.
+
+---
+
+## Public Holidays
+
+### View Holidays
+
+1. Go to **Settings** → **"Company"** → **"Holidays"** tab
+2. See calendar of upcoming holidays by region:
+   - QLD, NSW, VIC, SA, WA, TAS, NT, ACT
+3. Filter by region using dropdown
+
+**Purpose:** Schedule Master skips these dates when calculating task dates.
+
+---
+
+### Add Custom Holiday
+
+If your region has a local holiday not in the system:
+
+1. Go to **"Holidays"** tab
+2. Click **"Add Holiday"** button
+3. Fill in:
+   - **Name** - "Local Show Day"
+   - **Date** - Select from calendar
+   - **Region** - Your state (QLD, NSW, etc.)
+4. Click **"Save"**
+
+**Result:** Tasks won't be scheduled on this date for jobs in that region.
+
+---
+
+## Troubleshooting
+
+**Issue: Dates showing in wrong timezone**
+
+**Cause:** Timezone setting doesn't match your location.
+
+**Solution:**
+- Go to **Settings** → **"Company"** → **"Company Info"**
+- Update **Timezone** to your region
+- Click **"Save"**
+- Refresh browser
+
+---
+
+**Issue: Tasks being scheduled on weekends**
+
+**Cause:** Working days include Saturday/Sunday.
+
+**Solution:**
+- Go to **Settings** → **"Company"** → **"Company Info"**
+- Uncheck **Saturday** and/or **Sunday** in Working Days
+- Click **"Save"**
+- Re-run Gantt cascade (tasks will reschedule to working days)
+
+---
+
+**Issue: Can't create new user - password validation error**
+
+**Cause:** Password doesn't meet complexity requirements.
+
+**Solution:**
+Ensure password has:
+- At least 12 characters
+- Uppercase + lowercase + digit + special character
+- Example: `Construction2025!`
+
+---
+
+**Issue: User can't access Settings page**
+
+**Cause:** User role is not Admin or Product Owner.
+
+**Solution:**
+- Only Admins and Product Owners can access Settings
+- Go to **Settings** → **"Users"**
+- Find user and change **Role** to **Admin**
+- User must log out and back in to see Settings
+
+---
+
+## Related Topics
+
+- **Chapter 9: Gantt & Schedule Master** - How working days affect scheduling
+- **Chapter 11: Weather & Public Holidays** - Regional holidays integration
+- **Chapter 1: Authentication & Users** - Login and user accounts
 
 ---
 

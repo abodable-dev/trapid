@@ -666,9 +666,377 @@ end
 │ 📘 USER MANUAL (HOW): Chapter 2                │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-16 09:01 AEST
+**Last Updated:** 2025-11-16
 
-**Content TBD** - To be populated when working on Admin features
+---
+
+## Bug Hunter & Known Issues
+
+### Issue: Timezone Violations in Gantt Cascade (RESOLVED)
+**Status:** 🟢 RESOLVED (multiple commits in Nov 2025)
+**Severity:** Critical
+**Component:** GanttCascadeService, CompanySetting
+
+**Scenario:**
+- Company timezone set to "Australia/Brisbane"
+- User in Sydney (different timezone) creates Gantt schedule
+- Tasks scheduled using browser timezone instead of company timezone
+- Result: Off-by-one day errors when Sydney midnight ≠ Brisbane midnight
+
+**Root Cause:**
+Frontend components using `new Date()` and `Date.toLocaleDateString()` without explicit timezone parameter.
+
+**Fix Applied:**
+1. Created `/Users/rob/Projects/trapid/frontend/src/utils/timezoneUtils.js` with `formatDate()`, `formatDateTime()` using `Intl.DateTimeFormat` with company timezone
+2. Updated all Gantt components to import and use timezone utilities
+3. Backend enforces `CompanySetting.instance.today` instead of `Date.today`
+
+**Verification:**
+Run Bug Hunter test "working-days-enforcement" (Chapter 9) to verify timezone compliance.
+
+**See:** Bible RULE #2.2, RULE #2.3
+
+---
+
+### Issue: Working Days Migration Default (RESOLVED)
+**Status:** 🟢 RESOLVED
+**Severity:** Medium
+**Component:** CompanySetting migration
+
+**Scenario:**
+- Initial migration for `company_settings.working_days` defaulted all days to `true`
+- Resulted in Saturday being working day (uncommon in construction)
+- Users had to manually uncheck Saturday in Settings
+
+**Fix Applied:**
+Updated migration and model default:
+
+```ruby
+# db/migrate/..._add_working_days_to_company_settings.rb
+add_column :company_settings, :working_days, :jsonb, default: {
+  "monday" => true,
+  "tuesday" => true,
+  "wednesday" => true,
+  "thursday" => true,
+  "friday" => true,
+  "saturday" => false,   # Changed from true
+  "sunday" => true
+}
+```
+
+**See:** Bible RULE #2.9
+
+---
+
+### Issue: Password Reset Email Not Implemented
+**Status:** 🔴 INCOMPLETE FEATURE
+**Severity:** Low
+**Component:** UsersController
+
+**Scenario:**
+- Admin creates new user in Users page
+- User receives no email with temporary password or reset link
+- Admin must manually communicate password to user
+
+**Current State:**
+`reset_password` endpoint exists but email delivery commented out:
+
+```ruby
+# app/controllers/api/v1/users_controller.rb
+def reset_password
+  token = @user.generate_reset_token
+  # TODO: Send email with reset link
+  # UserMailer.password_reset(@user, token).deliver_later
+  render json: { message: "Password reset initiated", token: token }
+end
+```
+
+**Workaround:**
+Admin communicates initial password via phone/Slack.
+
+**Proper Fix:**
+1. Uncomment and implement `UserMailer.password_reset`
+2. Configure ActionMailer with SendGrid/Mailgun
+3. Create email template with reset link
+4. Add password reset page in frontend
+
+**See:** N/A (feature gap)
+
+---
+
+### Issue: No Audit Trail for Settings Changes
+**Status:** 🔴 INCOMPLETE FEATURE
+**Severity:** Medium
+**Component:** CompanySettingsController
+
+**Scenario:**
+- Admin changes working days from Mon-Fri to Mon-Sun
+- No record of who made the change or when
+- No ability to revert to previous configuration
+
+**Current State:**
+Settings updated via PATCH `/api/v1/company_settings` with no audit logging.
+
+**Proper Fix:**
+1. Create `SettingsAudit` model:
+   - `setting_name` (string)
+   - `old_value` (jsonb)
+   - `new_value` (jsonb)
+   - `changed_by` (User FK)
+   - `changed_at` (datetime)
+2. Add `after_save` callback to CompanySetting
+3. Display audit log in Settings UI
+
+**Why Important:**
+- Construction companies need compliance audit trails
+- Timezone changes affect historical data interpretation
+- Working days changes impact project timelines retroactively
+
+**See:** N/A (feature gap)
+
+---
+
+## Architecture & Design Decisions
+
+### Why Singleton Pattern for CompanySetting?
+
+**Decision:** Use singleton pattern with `first_or_create!` for global configuration.
+
+**Rationale:**
+- Only one company per deployment (single-tenant architecture)
+- Avoids complex "current company" context passing
+- Fast lookups (always record ID = 1, no query needed after first load)
+- Simpler codebase (no multi-tenancy complexity)
+
+**Trade-off:**
+- Not suitable for multi-tenant SaaS (would need Company model + belongs_to)
+- Harder to support white-label deployments
+
+**Alternative considered (rejected):**
+Multi-tenant with Company model. Rejected because:
+- Trapid targets single-company deployments (installed on-premise or dedicated cloud)
+- Multi-tenancy adds 30%+ complexity for no current benefit
+- Every query would need `where(company_id: current_company.id)`
+
+**Implementation:**
+See Bible RULE #2.1
+
+---
+
+### Why JSONB for Working Days?
+
+**Decision:** Store working days as JSONB hash, not 7 boolean columns.
+
+**Rationale:**
+- Flexible (can add metadata like "half_day: true" for specific days)
+- Indexed via GIN for fast queries
+- Single column easier to update atomically
+- Matches Rails' preference for structured data in JSON
+
+**Trade-off:**
+- Slightly more complex queries (can't do `WHERE monday = true`)
+- JSONB requires PostgreSQL (not portable to MySQL/SQLite)
+
+**Alternative considered (rejected):**
+7 boolean columns (`monday_working`, `tuesday_working`, etc.). Rejected because:
+- Inflexible schema (adding "half_day" flag requires migration)
+- 7 columns vs 1 column (messier schema)
+- Update requires 7 separate statements vs 1 JSONB update
+
+**Implementation:**
+See Bible RULE #2.4
+
+---
+
+### Why Two Role Enums (role vs assignable_role)?
+
+**Decision:** Separate `role` (permissions) from `assignable_role` (task categorization).
+
+**Rationale:**
+- Permission system independent of task routing
+- User can be admin (full access) + site (sees site tasks)
+- Prevents permission escalation ("assign me to admin tasks" doesn't grant admin permissions)
+
+**Example:**
+```ruby
+user = User.find(123)
+user.role               # => "estimator" (permission level)
+user.assignable_role    # => "site" (task category)
+
+# Can create estimates (permission):
+user.can_edit_schedule? # => true (estimator can)
+
+# Sees site tasks (category):
+tasks = ScheduleTask.where(assignable_role: "site")
+```
+
+**Trade-off:**
+- Slightly confusing (two "roles")
+- UI must explain difference clearly
+
+**Alternative considered (rejected):**
+Single role field. Rejected because:
+- Mixing permissions and task routing causes security issues
+- Can't support "admin who sees site tasks" use case
+
+**Implementation:**
+See Bible RULE #2.5, RULE #2.6
+
+---
+
+### Why 12 Timezone Options Only?
+
+**Decision:** Limit timezone dropdown to 12 Australian/NZ timezones.
+
+**Rationale:**
+- Trapid targets Australian/NZ construction market (for now)
+- Prevents accidental selection of wrong timezone (e.g., "America/New_York")
+- Simpler UX (12 options vs 400+ IANA timezones)
+- Can expand list if deploying internationally
+
+**Trade-off:**
+- Not suitable for international deployments (requires code change)
+- Hardcoded list (not database-driven)
+
+**Alternative considered (rejected):**
+All IANA timezones. Rejected because:
+- Overwhelming dropdown (400+ options)
+- High risk of misconfiguration
+- Most options irrelevant to target market
+
+**Implementation:**
+See Bible RULE #2.8
+
+---
+
+### Why Password Complexity Requirements?
+
+**Decision:** Enforce 12-character minimum, mixed case, digit, special character.
+
+**Rationale:**
+- Aligns with NIST SP 800-63B guidelines
+- Prevents common weak passwords ("password123", "admin")
+- Construction industry handles sensitive financial data
+
+**Exception:**
+OAuth users skip password validation (they don't use passwords).
+
+**Trade-off:**
+- User friction (some users prefer simple passwords)
+- Support burden (password reset requests)
+
+**Alternative considered (rejected):**
+8-character minimum, no complexity. Rejected because:
+- Too easy to brute force (billions of combinations vs trillions)
+- Industry standard is moving toward 12+ characters
+- Financial data protection requires strong auth
+
+**Implementation:**
+See Bible RULE #2.7
+
+---
+
+## Test Catalog
+
+### Timezone Tests
+
+**Test:** `timezone-consistency`
+**What it tests:** Backend and frontend use same timezone for date formatting
+**How to run:** Via Bug Hunter Tests UI → "Timezone Consistency"
+**Expected result:** Dates formatted identically in API response and UI display
+
+---
+
+**Test:** `working-days-enforcement`
+**What it tests:** Schedule cascade respects company working days
+**How to run:** Via Bug Hunter Tests UI → "Working Days Enforcement" (Chapter 9)
+**Expected result:** Unlocked tasks never scheduled on non-working days
+
+---
+
+### User Management Tests
+
+**Test:** `password-complexity`
+**What it tests:** User creation fails with weak passwords
+**How to run:** Via Bug Hunter Tests UI → "Password Complexity"
+**Expected result:**
+- "password" → Validation error ❌
+- "Password1!" → Validation error (too short) ❌
+- "Password123!" → Success ✅
+
+---
+
+**Test:** `role-permissions`
+**What it tests:** Permission methods return correct boolean for each role
+**How to run:** Via Bug Hunter Tests UI → "Role Permissions"
+**Expected result:**
+- Admin: `can_create_templates?` = true
+- User: `can_create_templates?` = false
+- Estimator: `can_edit_schedule?` = true
+
+---
+
+## Known Gaps & Future Work
+
+### 1. No User Invitation System
+
+**Status:** 🔴 NOT IMPLEMENTED
+**Priority:** Medium
+
+**What's needed:**
+- "Invite User" button in Users page
+- Email with signup link + temporary token
+- User self-registration with token verification
+- Password set during signup (not admin-generated)
+
+**Workaround:**
+Admin creates user manually, communicates password offline.
+
+---
+
+### 2. No Granular Permissions
+
+**Status:** 🔴 NOT IMPLEMENTED
+**Priority:** Low
+
+**Current State:**
+All admins have full access (no resource-level permissions).
+
+**What's needed:**
+- Permission model with granular rights ("can_delete_estimates", "can_view_financials")
+- Role-permission mapping
+- UI for assigning permissions to roles
+
+**Workaround:**
+Use role enum for coarse-grained permissions.
+
+---
+
+### 3. No Multi-Timezone Support
+
+**Status:** 🔴 LIMITATION
+**Priority:** Low
+
+**Current State:**
+One global timezone for entire company.
+
+**What's needed (if supporting distributed teams):**
+- Per-user timezone preference
+- Display times in user's timezone, store in UTC
+- "Company time" vs "My time" toggle in UI
+
+**Workaround:**
+All users must work in company timezone.
+
+---
+
+## Summary
+
+Chapter 2 Lexicon documents:
+- **4 known issues** (2 resolved, 2 incomplete features)
+- **5 architecture decisions** (singleton, JSONB working days, dual role enums, timezone limits, password complexity)
+- **4 test cases** for Bug Hunter verification
+- **3 known gaps** requiring future work
 
 ---
 

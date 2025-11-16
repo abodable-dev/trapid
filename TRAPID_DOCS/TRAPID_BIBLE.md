@@ -954,22 +954,682 @@ end
 │ 📘 USER MANUAL (HOW): Chapter 2                │
 └─────────────────────────────────────────────────┘
 
-**User Context:** Company settings, configuration
-**Technical Rules:** Settings model, configuration management
+**Last Updated:** 2025-11-16
 
-## RULE #2.1: Company Settings Pattern
+---
 
-✅ **ALWAYS read from company_settings table**
-❌ **NEVER hardcode configuration values**
+## Overview
 
-**Example:**
+This chapter defines rules for **System Administration**, including company settings, user management, timezone handling, working days configuration, and permission systems. These settings affect scheduling, pricing, integrations, and all time-based calculations across the application.
+
+**Related Chapters:**
+- Chapter 9: Gantt & Schedule Master (working days enforcement)
+- Chapter 11: Weather & Public Holidays (business day calculations)
+- Chapter 1: Authentication & Users (user roles and permissions)
+
+---
+
+## RULE #2.1: Company Settings Singleton Pattern
+
+**CompanySetting MUST use singleton pattern with first_or_create initialization.**
+
+### Implementation
+
+✅ **MUST implement as singleton:**
+
 ```ruby
-# ❌ WRONG
-working_days = { monday: true, tuesday: true }
-
-# ✅ CORRECT
-working_days = @company_settings.working_days
+# app/models/company_setting.rb
+class CompanySetting < ApplicationRecord
+  def self.instance
+    first_or_create!(
+      company_name: "Trapid Construction",
+      timezone: "Australia/Brisbane",
+      working_days: {
+        "monday" => true,
+        "tuesday" => true,
+        "wednesday" => true,
+        "thursday" => true,
+        "friday" => true,
+        "saturday" => false,
+        "sunday" => true  # Note: Sunday = true by default
+      }
+    )
+  end
+end
 ```
+
+### Usage Pattern
+
+✅ **MUST access via instance method:**
+
+```ruby
+# In controllers, services, models:
+settings = CompanySetting.instance
+
+# Access fields:
+timezone = settings.timezone
+working_days = settings.working_days
+company_name = settings.company_name
+```
+
+❌ **NEVER:**
+- Create multiple CompanySetting records (singleton = one record only)
+- Hardcode configuration values instead of reading from settings
+- Use `CompanySetting.first` (use `CompanySetting.instance`)
+- Call `CompanySetting.create` manually (use `instance` method)
+
+**Why:**
+- Singleton pattern ensures consistent configuration across application
+- `first_or_create!` initializes with defaults if database empty
+- Centralized configuration prevents scattered hardcoded values
+- Easy to update settings without code changes
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/models/company_setting.rb`
+
+---
+
+## RULE #2.2: Timezone Handling - Backend Time Calculations
+
+**All time-based calculations MUST use company timezone, not UTC or server timezone.**
+
+### Timezone Methods
+
+✅ **MUST use CompanySetting timezone methods:**
+
+```ruby
+# app/models/company_setting.rb
+def today
+  Time.use_zone(timezone) { Time.zone.today }
+end
+
+def now
+  Time.use_zone(timezone) { Time.zone.now }
+end
+
+# Usage in services/models:
+settings = CompanySetting.instance
+current_date = settings.today  # NOT Date.today!
+current_time = settings.now    # NOT Time.now!
+```
+
+### Working with Timestamps
+
+✅ **MUST use Time.use_zone context:**
+
+```ruby
+# When calculating dates for a job:
+settings = CompanySetting.instance
+
+Time.use_zone(settings.timezone) do
+  job_start = Time.zone.parse("2025-01-15 08:00:00")
+  job_end = job_start + 5.days
+
+  # All calculations within this block use company timezone
+end
+```
+
+❌ **NEVER:**
+- Use `Date.today` or `Time.now` without timezone context
+- Store dates/times in UTC without timezone conversion
+- Assume server timezone matches company timezone
+- Use JavaScript `new Date()` for date calculations (see RULE #2.3)
+
+**Why:**
+- Construction companies operate in specific regions/timezones
+- Midnight in Brisbane ≠ midnight in UTC (causes off-by-one day errors)
+- Schedule calculations must align with business hours
+- International deployments require timezone awareness
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/models/company_setting.rb` (lines 40-48)
+
+---
+
+## RULE #2.3: Timezone Handling - Frontend Time Display
+
+**Frontend MUST use Intl.DateTimeFormat with company timezone, NOT browser timezone.**
+
+### Correct Pattern
+
+✅ **MUST use Intl API with explicit timezone:**
+
+```javascript
+// frontend/src/utils/timezoneUtils.js
+import { companySettings } from '../contexts/CompanySettingsContext';
+
+export const formatDate = (dateString) => {
+  const timezone = companySettings.timezone; // e.g., "Australia/Brisbane"
+
+  const formatter = new Intl.DateTimeFormat('en-AU', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  return formatter.format(new Date(dateString));
+};
+
+export const formatDateTime = (dateString) => {
+  const timezone = companySettings.timezone;
+
+  const formatter = new Intl.DateTimeFormat('en-AU', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  return formatter.format(new Date(dateString));
+};
+```
+
+### Usage in Components
+
+✅ **MUST import and use timezone utilities:**
+
+```jsx
+// GanttChart.jsx
+import { formatDate, formatDateTime } from '../utils/timezoneUtils';
+
+const TaskRow = ({ task }) => (
+  <div>
+    <span>Start: {formatDate(task.planned_start_date)}</span>
+    <span>End: {formatDate(task.planned_end_date)}</span>
+  </div>
+);
+```
+
+❌ **NEVER:**
+- Use `Date.toLocaleDateString()` without timeZone parameter (uses browser timezone!)
+- Use `Date.toLocaleString()` without explicit timezone
+- Use date libraries without timezone configuration (moment.js, date-fns)
+- Assume user's browser timezone matches company timezone
+
+**Why:**
+- User in Sydney (AEDT) viewing Brisbane (AEST) job must see Brisbane times
+- Browser timezone detection causes data corruption in international deployments
+- Gantt chart dates must align with backend calculations
+- Prevents off-by-one day errors in date pickers
+
+**File Reference:** `/Users/rob/Projects/trapid/frontend/src/utils/timezoneUtils.js` (290 lines)
+
+---
+
+## RULE #2.4: Working Days Configuration & Business Day Calculations
+
+**Working days MUST be stored as JSONB and used in all schedule/cascade calculations.**
+
+### Schema
+
+```ruby
+# db/schema.rb
+create_table :company_settings do |t|
+  t.jsonb :working_days, default: {
+    "monday" => true,
+    "tuesday" => true,
+    "wednesday" => true,
+    "thursday" => true,
+    "friday" => true,
+    "saturday" => false,
+    "sunday" => true  # Default includes Sunday (construction industry)
+  }
+end
+```
+
+### Business Day Logic
+
+✅ **MUST implement working_day? and business_day? methods:**
+
+```ruby
+# app/models/company_setting.rb
+def working_day?(date)
+  day_name = date.strftime('%A').downcase  # "monday", "tuesday", etc.
+  working_days[day_name] == true
+end
+
+def business_day?(date)
+  # Business day = working day AND not a public holiday
+  working_day?(date) && !PublicHoliday.on_date(date).exists?
+end
+```
+
+### Usage in Schedule Cascade
+
+✅ **MUST use in date calculations:**
+
+```ruby
+# app/services/schedule/cascade_calculator.rb
+def next_business_day(date)
+  settings = CompanySetting.instance
+  current = date + 1.day
+
+  while !settings.business_day?(current)
+    current += 1.day
+  end
+
+  current
+end
+
+def add_business_days(start_date, days_to_add)
+  settings = CompanySetting.instance
+  current = start_date
+  days_added = 0
+
+  while days_added < days_to_add
+    current += 1.day
+    days_added += 1 if settings.business_day?(current)
+  end
+
+  current
+end
+```
+
+❌ **NEVER:**
+- Hardcode working days as Monday-Friday only (some industries work Sundays, skip Saturdays)
+- Use Rails' `business_day?` method (doesn't respect company settings)
+- Calculate task dates without checking working_days
+- Allow cascade to schedule tasks on non-working days (exception: locked tasks)
+
+**Why:**
+- Construction industry often works Sundays, skips Saturdays
+- Regional variations (some states have different working patterns)
+- Gantt cascade must align with actual crew availability
+- Prevents scheduling conflicts
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/models/company_setting.rb` (lines 50-62)
+
+---
+
+## RULE #2.5: User Roles & Permission System
+
+**Users MUST have exactly one system role from enum, with role-based permission checks.**
+
+### System Roles
+
+```ruby
+# app/models/user.rb
+enum role: {
+  user: 0,           # Basic access (view-only for most features)
+  admin: 1,          # Full system access
+  product_owner: 2,  # Full access + product backlog management
+  estimator: 3,      # Estimate/quote creation and editing
+  supervisor: 4,     # Field supervisor (task completion, checklists)
+  builder: 5         # Builder/contractor (task viewing, updates)
+}
+```
+
+### Permission Methods
+
+✅ **MUST implement permission helper methods:**
+
+```ruby
+# app/models/user.rb
+def can_create_templates?
+  admin? || product_owner?
+end
+
+def can_edit_schedule?
+  admin? || product_owner? || estimator?
+end
+
+def can_view_supervisor_tasks?
+  supervisor? || admin? || product_owner?
+end
+
+def can_view_builder_tasks?
+  builder? || admin? || product_owner?
+end
+
+def can_manage_users?
+  admin? || product_owner?
+end
+```
+
+### Controller Authorization
+
+✅ **MUST check permissions in controllers:**
+
+```ruby
+# app/controllers/api/v1/schedule_templates_controller.rb
+before_action :require_template_permissions, only: [:create, :update, :destroy]
+
+def require_template_permissions
+  unless current_user.can_create_templates?
+    render json: { error: "Insufficient permissions" }, status: :forbidden
+  end
+end
+```
+
+❌ **NEVER:**
+- Allow users to change their own role (admin-only operation)
+- Grant permissions based on string matching role names
+- Skip permission checks in controllers ("I'll handle it in the UI")
+- Use role checking in frontend only (backend MUST validate)
+
+**Why:**
+- Role-based access control prevents unauthorized actions
+- Permission methods centralize authorization logic
+- Enum roles are database-efficient and type-safe
+- Security in depth (backend + frontend checks)
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/models/user.rb` (lines 15-25, 70-95)
+
+---
+
+## RULE #2.6: Assignable Roles for Task Assignment
+
+**Tasks MUST use separate assignable_role enum for assignment categories, independent of system role.**
+
+### Assignable Roles
+
+```ruby
+# app/models/user.rb
+enum assignable_role: {
+  admin: 0,
+  sales: 1,
+  site: 2,
+  supervisor: 3,
+  builder: 4,
+  estimator: 5,
+  none: 6
+}, _prefix: :assignable
+```
+
+### Why Separate Enum?
+
+✅ **MUST use assignable_role for task filtering:**
+
+```ruby
+# app/controllers/api/v1/schedule_tasks_controller.rb
+def my_tasks
+  # Filter by assignable_role, not system role
+  tasks = ScheduleTask.where(assignable_role: current_user.assignable_role)
+  render json: tasks
+end
+```
+
+❌ **NEVER:**
+- Confuse system role (permissions) with assignable_role (task filtering)
+- Use system role for task assignment
+- Allow users with assignable_role: none to be assigned tasks
+- Hardcode role names in task queries
+
+**Why:**
+- System role = permissions (what you CAN do)
+- Assignable role = categorization (what tasks you SEE)
+- User can be admin (permission) + site (task category) simultaneously
+- Prevents permission escalation via task assignment
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/models/user.rb` (lines 27-35)
+
+---
+
+## RULE #2.7: Password Complexity Requirements
+
+**User passwords MUST meet complexity requirements, except for OAuth users.**
+
+### Validation
+
+✅ **MUST validate password complexity:**
+
+```ruby
+# app/models/user.rb
+validates :password, presence: true, if: :password_required?
+validates :password, length: { minimum: 12 }, if: :password_required?
+validate :password_complexity, if: :password_required?
+
+def password_complexity
+  return if password.blank?
+
+  rules = []
+  rules << "must include at least one uppercase letter" unless password.match?(/[A-Z]/)
+  rules << "must include at least one lowercase letter" unless password.match?(/[a-z]/)
+  rules << "must include at least one digit" unless password.match?(/\d/)
+  rules << "must include at least one special character" unless password.match?(/[@$!%*?&]/)
+
+  if rules.any?
+    errors.add(:password, rules.join(", "))
+  end
+end
+
+def password_required?
+  !oauth_uid.present?  # OAuth users skip password validation
+end
+```
+
+### OAuth Exception
+
+✅ **MUST generate random password for OAuth users:**
+
+```ruby
+# app/services/oauth_user_creator.rb
+def create_from_oauth(oauth_data)
+  User.create!(
+    email: oauth_data[:email],
+    name: oauth_data[:name],
+    oauth_uid: oauth_data[:uid],
+    oauth_provider: oauth_data[:provider],
+    password: SecureRandom.urlsafe_base64(32),  # Random, unused password
+    role: :user
+  )
+end
+```
+
+❌ **NEVER:**
+- Allow passwords shorter than 12 characters
+- Allow passwords without uppercase, lowercase, digit, and special character
+- Require OAuth users to set passwords (they don't use them)
+- Store passwords in plain text (use bcrypt via has_secure_password)
+
+**Why:**
+- Prevents weak passwords ("password123")
+- Reduces risk of brute force attacks
+- Aligns with NIST password guidelines
+- OAuth users don't use passwords (skip validation)
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/models/user.rb` (lines 40-65)
+
+---
+
+## RULE #2.8: Timezone Options Limitation
+
+**Frontend timezone dropdown MUST only show 12 supported Australian/NZ timezones.**
+
+### Supported Timezones
+
+✅ **MUST use this exact list:**
+
+```javascript
+// frontend/src/components/settings/CompanySettingsTab.jsx
+const TIMEZONE_OPTIONS = [
+  'Australia/Sydney',     // NSW, VIC, TAS
+  'Australia/Melbourne',  // VIC
+  'Australia/Brisbane',   // QLD (no DST)
+  'Australia/Adelaide',   // SA
+  'Australia/Perth',      // WA
+  'Australia/Darwin',     // NT (no DST)
+  'Australia/Hobart',     // TAS
+  'Australia/Canberra',   // ACT
+  'Australia/Lord_Howe',  // Lord Howe Island
+  'Pacific/Auckland',     // NZ
+  'Pacific/Chatham',      // Chatham Islands
+  'Australia/Eucla'       // WA (rare)
+];
+```
+
+### Dropdown Implementation
+
+✅ **MUST use select with these options:**
+
+```jsx
+<select
+  value={settings.timezone}
+  onChange={(e) => updateTimezone(e.target.value)}
+  className="form-select"
+>
+  {TIMEZONE_OPTIONS.map(tz => (
+    <option key={tz} value={tz}>{tz}</option>
+  ))}
+</select>
+```
+
+❌ **NEVER:**
+- Allow free-text timezone entry (validation nightmare)
+- Show all 400+ IANA timezones (overwhelming, unnecessary)
+- Use timezone abbreviations (AEST, AEDT - ambiguous)
+- Default to UTC (construction companies operate in specific regions)
+
+**Why:**
+- Trapid targets Australian/NZ construction market
+- 12 timezones cover entire deployment region
+- IANA timezone names handle DST automatically
+- Prevents invalid timezone selection
+
+**File Reference:** `/Users/rob/Projects/trapid/frontend/src/components/settings/CompanySettingsTab.jsx` (lines 45-60)
+
+---
+
+## RULE #2.9: Working Days UI - Sunday Default True
+
+**Working days configuration MUST default Sunday to TRUE for construction industry.**
+
+### Default Configuration
+
+✅ **MUST initialize with Sunday = true:**
+
+```ruby
+# app/models/company_setting.rb
+DEFAULT_WORKING_DAYS = {
+  "monday" => true,
+  "tuesday" => true,
+  "wednesday" => true,
+  "thursday" => true,
+  "friday" => true,
+  "saturday" => false,   # Most crews don't work Saturdays
+  "sunday" => true       # Sunday work common in construction
+}.freeze
+```
+
+### UI Representation
+
+✅ **MUST show checkboxes for all 7 days:**
+
+```jsx
+// CompanySettingsTab.jsx
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+{DAYS.map(day => (
+  <label key={day} className="flex items-center gap-2">
+    <input
+      type="checkbox"
+      checked={settings.working_days[day] || false}
+      onChange={(e) => updateWorkingDay(day, e.target.checked)}
+    />
+    <span className="capitalize">{day}</span>
+  </label>
+))}
+```
+
+❌ **NEVER:**
+- Hardcode Monday-Friday as only working days
+- Hide Sunday checkbox (some companies DO work Sundays)
+- Default all days to true (Saturday rarely worked)
+- Prevent users from customizing working days
+
+**Why:**
+- Construction industry often works Sundays to meet deadlines
+- Saturday premium rates discourage weekend work
+- Regional variations (some states/companies have different patterns)
+- Schedule cascade must reflect actual crew availability
+
+**File Reference:** `/Users/rob/Projects/trapid/frontend/src/components/settings/CompanySettingsTab.jsx` (lines 120-145)
+
+---
+
+## Protected Code Patterns
+
+### 1. CompanySetting Instance Method
+
+**File:** `/Users/rob/Projects/trapid/backend/app/models/company_setting.rb`
+
+**DO NOT modify singleton pattern:**
+
+```ruby
+def self.instance
+  first_or_create!(
+    company_name: "Trapid Construction",
+    timezone: "Australia/Brisbane",
+    working_days: DEFAULT_WORKING_DAYS
+  )
+end
+```
+
+**Reason:** Changing this breaks initialization across entire application. All services depend on `instance` method.
+
+---
+
+### 2. Timezone Context Manager
+
+**File:** `/Users/rob/Projects/trapid/backend/app/models/company_setting.rb`
+
+**DO NOT remove Time.use_zone wrappers:**
+
+```ruby
+def today
+  Time.use_zone(timezone) { Time.zone.today }
+end
+
+def now
+  Time.use_zone(timezone) { Time.zone.now }
+end
+```
+
+**Reason:** These methods are called hundreds of times across services. Removing timezone context causes off-by-one day errors globally.
+
+---
+
+### 3. Password Complexity Validation
+
+**File:** `/Users/rob/Projects/trapid/backend/app/models/user.rb`
+
+**DO NOT weaken password requirements:**
+
+```ruby
+def password_complexity
+  rules = []
+  rules << "must include at least one uppercase letter" unless password.match?(/[A-Z]/)
+  rules << "must include at least one lowercase letter" unless password.match?(/[a-z]/)
+  rules << "must include at least one digit" unless password.match?(/\d/)
+  rules << "must include at least one special character" unless password.match?(/[@$!%*?&]/)
+
+  if rules.any?
+    errors.add(:password, rules.join(", "))
+  end
+end
+```
+
+**Reason:** Security requirement. Weakening password rules exposes application to brute force attacks.
+
+---
+
+## Summary
+
+Chapter 2 establishes 9 rules covering:
+
+1. **Singleton pattern** - One global CompanySetting record
+2. **Backend timezone** - All calculations use company timezone
+3. **Frontend timezone** - Intl API with explicit timezone, not browser timezone
+4. **Working days** - JSONB configuration used in schedule calculations
+5. **System roles** - Enum-based permissions with helper methods
+6. **Assignable roles** - Separate enum for task categorization
+7. **Password complexity** - 12 chars minimum, mixed case, digit, special char
+8. **Timezone options** - 12 Australian/NZ timezones only
+9. **Sunday default** - Working days include Sunday for construction industry
+
+These rules ensure consistent configuration, secure user management, and timezone-aware calculations across the entire application.
 
 ---
 
