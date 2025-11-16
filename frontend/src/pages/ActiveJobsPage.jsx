@@ -7,11 +7,16 @@ import {
   ArrowTopRightOnSquareIcon,
   DocumentArrowUpIcon,
   ChevronDownIcon,
+  ChevronUpIcon,
+  MagnifyingGlassIcon,
+  EyeIcon,
+  Bars3Icon,
+  FunnelIcon,
 } from '@heroicons/react/24/outline'
-import { Menu } from '@headlessui/react'
 import { useNavigate } from 'react-router-dom'
 import NewJobModal from '../components/jobs/NewJobModal'
 import CsvImportJobModal from '../components/jobs/CsvImportJobModal'
+import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
 
 export default function ActiveJobsPage() {
   const navigate = useNavigate()
@@ -22,11 +27,85 @@ export default function ActiveJobsPage() {
   const [editValue, setEditValue] = useState('')
   const [showNewJobModal, setShowNewJobModal] = useState(false)
   const [showCsvImportModal, setShowCsvImportModal] = useState(false)
+  const [showColumnModal, setShowColumnModal] = useState(false)
+
+  // Search and filters
+  const [searchQuery, setSearchQuery] = useState('')
+  const [columnFilters, setColumnFilters] = useState({})
+
+  // Column state with localStorage persistence
+  const [columnOrder, setColumnOrder] = useState(() => {
+    const saved = localStorage.getItem('activeJobsTableState_columnOrder')
+    return saved ? JSON.parse(saved) : ['number', 'title', 'contract_value', 'live_profit', 'profit_percentage', 'stage', 'actions']
+  })
+
+  const [columnWidths, setColumnWidths] = useState(() => {
+    const saved = localStorage.getItem('activeJobsTableState_columnWidths')
+    return saved ? JSON.parse(saved) : {
+      number: 80,
+      title: 300,
+      contract_value: 150,
+      live_profit: 150,
+      profit_percentage: 120,
+      stage: 150,
+      actions: 120
+    }
+  })
+
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    const saved = localStorage.getItem('activeJobsTableState_visibleColumns')
+    return saved ? JSON.parse(saved) : {
+      number: true,
+      title: true,
+      contract_value: true,
+      live_profit: true,
+      profit_percentage: true,
+      stage: true,
+      actions: true
+    }
+  })
+
+  // Column resize state
+  const [resizingColumn, setResizingColumn] = useState(null)
+  const [resizeStartX, setResizeStartX] = useState(0)
+  const [resizeStartWidth, setResizeStartWidth] = useState(0)
+
+  // Column reorder state
+  const [draggedColumn, setDraggedColumn] = useState(null)
+
+  // Sort state
+  const [sortBy, setSortBy] = useState('title')
+  const [sortDirection, setSortDirection] = useState('asc')
 
   useEffect(() => {
-    console.log('🔴 ActiveJobsPage LOADED - NEW VERSION WITH GRADIENT FIX')
+    console.log('🔴 ActiveJobsPage LOADED - FULL ADVANCED TABLE VERSION')
     loadJobs()
   }, [])
+
+  // Persist state to localStorage
+  useEffect(() => {
+    localStorage.setItem('activeJobsTableState_columnOrder', JSON.stringify(columnOrder))
+  }, [columnOrder])
+
+  useEffect(() => {
+    localStorage.setItem('activeJobsTableState_columnWidths', JSON.stringify(columnWidths))
+  }, [columnWidths])
+
+  useEffect(() => {
+    localStorage.setItem('activeJobsTableState_visibleColumns', JSON.stringify(visibleColumns))
+  }, [visibleColumns])
+
+  // Column resize handlers
+  useEffect(() => {
+    if (resizingColumn) {
+      window.addEventListener('mousemove', handleResizeMove)
+      window.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove)
+        window.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [resizingColumn, resizeStartX, resizeStartWidth])
 
   const loadJobs = async () => {
     try {
@@ -80,30 +159,389 @@ export default function ActiveJobsPage() {
 
   const handleCreateJob = async (jobData) => {
     try {
-      // Extract createOneDriveFolders from jobData
       const { createOneDriveFolders, ...constructionData } = jobData
 
       const response = await api.post('/api/v1/constructions', {
         construction: constructionData,
         create_onedrive_folders: createOneDriveFolders,
-        template_id: null  // Use default template
+        template_id: null
       })
 
-      // Refresh the jobs list
       await loadJobs()
 
-      // Show appropriate success message
       if (createOneDriveFolders) {
         alert('Job created successfully! OneDrive folders are being created in the background.')
       }
 
-      // Navigate to the setup page if we have an ID
       if (response.construction && response.construction.id) {
         navigate(`/jobs/${response.construction.id}/setup`)
       }
     } catch (err) {
       console.error('Failed to create job:', err)
       throw err
+    }
+  }
+
+  // Column visibility toggle
+  const toggleColumn = (columnKey) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey]
+    }))
+  }
+
+  // Column filter handler
+  const handleColumnFilterChange = (columnKey, value) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnKey]: value
+    }))
+  }
+
+  // Sort handler
+  const handleSort = (columnKey) => {
+    if (sortBy === columnKey) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(columnKey)
+      setSortDirection('asc')
+    }
+  }
+
+  // Column resize handlers
+  const handleResizeStart = (e, columnKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingColumn(columnKey)
+    setResizeStartX(e.clientX)
+    setResizeStartWidth(columnWidths[columnKey])
+  }
+
+  const handleResizeMove = (e) => {
+    if (!resizingColumn) return
+    const diff = e.clientX - resizeStartX
+    const newWidth = Math.max(100, resizeStartWidth + diff)
+    setColumnWidths(prev => ({
+      ...prev,
+      [resizingColumn]: newWidth
+    }))
+  }
+
+  const handleResizeEnd = () => {
+    setResizingColumn(null)
+  }
+
+  // Column reorder handlers
+  const handleDragStart = (e, columnKey) => {
+    setDraggedColumn(columnKey)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e, targetColumnKey) => {
+    e.preventDefault()
+
+    if (!draggedColumn || draggedColumn === targetColumnKey) {
+      setDraggedColumn(null)
+      return
+    }
+
+    const draggedIndex = columnOrder.indexOf(draggedColumn)
+    const targetIndex = columnOrder.indexOf(targetColumnKey)
+
+    const newOrder = [...columnOrder]
+    newOrder.splice(draggedIndex, 1)
+    newOrder.splice(targetIndex, 0, draggedColumn)
+
+    setColumnOrder(newOrder)
+    setDraggedColumn(null)
+  }
+
+  // Get sort value
+  const getSortValue = (job, columnKey) => {
+    switch (columnKey) {
+      case 'number':
+        return job.id || 0
+      case 'title':
+        return job.title?.toLowerCase() || ''
+      case 'contract_value':
+        return parseFloat(job.contract_value) || 0
+      case 'live_profit':
+        return parseFloat(job.live_profit) || 0
+      case 'profit_percentage':
+        return parseFloat(job.profit_percentage) || 0
+      case 'stage':
+        return job.stage?.toLowerCase() || ''
+      default:
+        return ''
+    }
+  }
+
+  // Apply filters and search
+  const applyFilters = (items) => {
+    let filtered = items
+
+    // Global search
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(job =>
+        job.title?.toLowerCase().includes(query) ||
+        job.stage?.toLowerCase().includes(query) ||
+        job.id?.toString().includes(query)
+      )
+    }
+
+    // Column filters
+    if (Object.keys(columnFilters).length > 0) {
+      filtered = filtered.filter(job => {
+        return Object.entries(columnFilters).every(([key, filterValue]) => {
+          if (!filterValue || filterValue.trim() === '') return true
+
+          const lowerFilter = filterValue.toLowerCase()
+
+          switch (key) {
+            case 'title':
+              return job.title?.toLowerCase().includes(lowerFilter)
+            case 'contract_value':
+              return job.contract_value?.toString().includes(lowerFilter)
+            case 'live_profit':
+              return job.live_profit?.toString().includes(lowerFilter)
+            case 'profit_percentage':
+              return job.profit_percentage?.toString().includes(lowerFilter)
+            case 'stage':
+              return job.stage?.toLowerCase().includes(lowerFilter)
+            default:
+              return true
+          }
+        })
+      })
+    }
+
+    return filtered
+  }
+
+  const filteredJobs = applyFilters(jobs).sort((a, b) => {
+    const aVal = getSortValue(a, sortBy)
+    const bVal = getSortValue(b, sortBy)
+
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
+  // Column configuration
+  const columnsConfig = {
+    number: { key: 'number', label: '#', searchable: false, sortable: true, hideable: false },
+    title: { key: 'title', label: 'Job Title', searchable: true, sortable: true, hideable: true, filterType: 'search' },
+    contract_value: { key: 'contract_value', label: 'Contract Value', searchable: true, sortable: true, hideable: true, filterType: 'search' },
+    live_profit: { key: 'live_profit', label: 'Live Profit', searchable: true, sortable: true, hideable: true, filterType: 'search' },
+    profit_percentage: { key: 'profit_percentage', label: 'Profit %', searchable: true, sortable: true, hideable: true, filterType: 'search' },
+    stage: { key: 'stage', label: 'Stage', searchable: true, sortable: true, hideable: true, filterType: 'search' },
+    actions: { key: 'actions', label: 'Actions', searchable: false, sortable: false, hideable: false }
+  }
+
+  const columns = columnOrder.map(key => columnsConfig[key])
+
+  // Render table cell
+  const renderCell = (job, index, columnKey) => {
+    if (!visibleColumns[columnKey]) return null
+
+    const width = columnWidths[columnKey]
+    const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
+
+    switch (columnKey) {
+      case 'number':
+        return (
+          <td key="number" style={cellStyle} className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+            {index + 1}
+          </td>
+        )
+
+      case 'title':
+        return (
+          <td key="title" style={cellStyle} className="px-3 py-4">
+            {editingCell?.jobId === job.id && editingCell?.field === 'title' ? (
+              <input
+                type="text"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={handleCellBlur}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                className="w-full px-2 py-1 text-sm border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigate(`/jobs/${job.id}`)}
+                  className="text-sm font-medium text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 truncate max-w-md"
+                  title={job.title}
+                >
+                  {job.title || 'Untitled Job'}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleCellClick(job.id, 'title', job.title)
+                  }}
+                  className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-1.5 py-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                  title="Edit title"
+                >
+                  Edit
+                </button>
+              </div>
+            )}
+          </td>
+        )
+
+      case 'contract_value':
+        return (
+          <td key="contract_value" style={cellStyle} className="px-3 py-4 whitespace-nowrap text-right text-sm">
+            {editingCell?.jobId === job.id && editingCell?.field === 'contract_value' ? (
+              <input
+                type="number"
+                step="0.01"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onFocus={(e) => e.target.select()}
+                onBlur={handleCellBlur}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                className="w-full px-2 py-1 text-sm text-right border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            ) : (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleCellClick(job.id, 'contract_value', job.contract_value)
+                }}
+                className="text-gray-900 dark:text-white cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md"
+                title="Click to edit"
+              >
+                {job.contract_value ? formatCurrency(job.contract_value, false) : '-'}
+              </div>
+            )}
+          </td>
+        )
+
+      case 'live_profit':
+        return (
+          <td key="live_profit" style={cellStyle} className="px-3 py-4 whitespace-nowrap text-right text-sm">
+            {editingCell?.jobId === job.id && editingCell?.field === 'live_profit' ? (
+              <input
+                type="number"
+                step="0.01"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onFocus={(e) => e.target.select()}
+                onBlur={handleCellBlur}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                className="w-full px-2 py-1 text-sm text-right border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            ) : (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleCellClick(job.id, 'live_profit', job.live_profit)
+                }}
+                className={`cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md font-medium ${
+                  job.live_profit >= 0
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-red-600 dark:text-red-400'
+                }`}
+                title="Click to edit"
+              >
+                {job.live_profit ? formatCurrency(job.live_profit, false) : '-'}
+              </div>
+            )}
+          </td>
+        )
+
+      case 'profit_percentage':
+        return (
+          <td key="profit_percentage" style={cellStyle} className="px-3 py-4 whitespace-nowrap text-right text-sm">
+            {editingCell?.jobId === job.id && editingCell?.field === 'profit_percentage' ? (
+              <input
+                type="number"
+                step="0.01"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onFocus={(e) => e.target.select()}
+                onBlur={handleCellBlur}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                className="w-full px-2 py-1 text-sm text-right border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            ) : (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleCellClick(job.id, 'profit_percentage', job.profit_percentage)
+                }}
+                className={`cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md font-medium ${
+                  job.profit_percentage >= 0
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-red-600 dark:text-red-400'
+                }`}
+                title="Click to edit"
+              >
+                {job.profit_percentage ? formatPercentage(job.profit_percentage, 2) : '-'}
+              </div>
+            )}
+          </td>
+        )
+
+      case 'stage':
+        return (
+          <td key="stage" style={cellStyle} className="px-3 py-4 whitespace-nowrap text-sm">
+            {editingCell?.jobId === job.id && editingCell?.field === 'stage' ? (
+              <input
+                type="text"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={handleCellBlur}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                className="w-full px-2 py-1 text-sm border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            ) : (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleCellClick(job.id, 'stage', job.stage)
+                }}
+                className="cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md inline-block"
+                title="Click to edit"
+              >
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+                  {job.stage || 'Not Set'}
+                </span>
+              </div>
+            )}
+          </td>
+        )
+
+      case 'actions':
+        return (
+          <td key="actions" style={cellStyle} className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <button
+              onClick={() => navigate(`/jobs/${job.id}`)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              title="View job details"
+            >
+              View
+              <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+            </button>
+          </td>
+        )
+
+      default:
+        return null
     }
   }
 
@@ -132,37 +570,65 @@ export default function ActiveJobsPage() {
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-4">
         <div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <BriefcaseIcon className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
-                <div>
-                  <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                    Active Jobs <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(constructions)</span>
-                  </h1>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                    {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'}
-                  </p>
-                </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <BriefcaseIcon className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                  Active Jobs <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(constructions)</span>
+                </h1>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                  {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'}
+                </p>
               </div>
-              <div className="flex gap-x-2">
-                <button
-                  onClick={() => setShowNewJobModal(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none shadow-lg shadow-indigo-500/30 transition-all"
-                >
-                  <PlusIcon className="h-5 w-5 mr-2" />
-                  New Job
-                </button>
-                <button
-                  onClick={() => setShowCsvImportModal(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none shadow-lg shadow-green-500/30 transition-all"
-                >
-                  <DocumentArrowUpIcon className="h-5 w-5 mr-2" />
-                  Import CSV
-                </button>
-              </div>
+            </div>
+            <div className="flex gap-x-2">
+              <button
+                onClick={() => setShowNewJobModal(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none shadow-lg shadow-indigo-500/30 transition-all"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                New Job
+              </button>
+              <button
+                onClick={() => setShowCsvImportModal(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none shadow-lg shadow-green-500/30 transition-all"
+              >
+                <DocumentArrowUpIcon className="h-5 w-5 mr-2" />
+                Import CSV
+              </button>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Search and Controls Bar */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search jobs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowColumnModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+            >
+              <EyeIcon className="h-5 w-5" />
+              Columns
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Scroll container for table */}
       <div className="flex-1 overflow-hidden bg-white dark:bg-gray-900">
@@ -174,206 +640,74 @@ export default function ActiveJobsPage() {
             {/* Table header with gradient background and sticky positioning */}
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
               <tr>
-                <th style={{ minWidth: '50px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  #
-                </th>
-                <th style={{ minWidth: '300px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Job Title
-                </th>
-                <th style={{ minWidth: '150px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Contract Value
-                </th>
-                <th style={{ minWidth: '150px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Live Profit
-                </th>
-                <th style={{ minWidth: '120px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Profit %
-                </th>
-                <th style={{ minWidth: '150px' }} className="px-3 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Stage
-                </th>
-                <th style={{ minWidth: '120px' }} className="relative px-3 py-3 border-r border-gray-200 dark:border-gray-700">
-                  <span className="sr-only">Actions</span>
-                </th>
+                {columns.map((column) => {
+                  if (!visibleColumns[column.key]) return null
+                  const width = columnWidths[column.key]
+                  const isSortable = column.sortable
+                  const isSorted = sortBy === column.key
+                  return (
+                    <th
+                      key={column.key}
+                      style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                      className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 ${column.key === 'actions' ? 'text-right' : column.key === 'contract_value' || column.key === 'live_profit' || column.key === 'profit_percentage' ? 'text-right' : 'text-left'} ${draggedColumn === column.key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                      draggable={column.key !== 'number' && column.key !== 'actions'}
+                      onDragStart={(e) => handleDragStart(e, column.key)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, column.key)}
+                    >
+                      <div
+                        className={`flex items-center gap-2 ${column.key === 'contract_value' || column.key === 'live_profit' || column.key === 'profit_percentage' ? 'justify-end' : ''} ${isSortable ? 'cursor-pointer' : column.key !== 'number' && column.key !== 'actions' ? 'cursor-move' : ''}`}
+                        onClick={() => isSortable && handleSort(column.key)}
+                      >
+                        {column.key !== 'number' && column.key !== 'actions' && (
+                          <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                        )}
+                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{column.label}</span>
+                        {isSortable && isSorted && (
+                          sortDirection === 'asc' ?
+                            <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                            <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                        )}
+                      </div>
+                      {column.searchable && (
+                        <input
+                          type="text"
+                          placeholder="Search..."
+                          value={columnFilters[column.key] || ''}
+                          onChange={(e) => handleColumnFilterChange(column.key, e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                        />
+                      )}
+                      {/* Resize handle */}
+                      {column.key !== 'actions' && (
+                        <div
+                          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                          onMouseDown={(e) => handleResizeStart(e, column.key)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {jobs.length === 0 ? (
+              {filteredJobs.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                    No active jobs found. Click "New Job" to create one.
+                  <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="px-3 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    {searchQuery || Object.keys(columnFilters).length > 0
+                      ? 'No jobs found matching your filters'
+                      : 'No active jobs found. Click "New Job" to create one.'}
                   </td>
                 </tr>
               ) : (
-                jobs.map((job, index) => (
+                filteredJobs.map((job, index) => (
                   <tr
                     key={job.id}
                     className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                   >
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {index + 1}
-                      </td>
-
-                      <td className="px-3 py-4">
-                        {editingCell?.jobId === job.id && editingCell?.field === 'title' ? (
-                          <input
-                            type="text"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={handleCellBlur}
-                            onKeyDown={handleKeyDown}
-                            autoFocus
-                            className="w-full px-2 py-1 text-sm border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                          />
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => navigate(`/jobs/${job.id}`)}
-                              className="text-sm font-medium text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 truncate max-w-md"
-                              title={job.title}
-                            >
-                              {job.title || 'Untitled Job'}
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleCellClick(job.id, 'title', job.title)
-                              }}
-                              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-1.5 py-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                              title="Edit title"
-                            >
-                              Edit
-                            </button>
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-3 py-4 whitespace-nowrap text-right text-sm">
-                        {editingCell?.jobId === job.id && editingCell?.field === 'contract_value' ? (
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onFocus={(e) => e.target.select()}
-                            onBlur={handleCellBlur}
-                            onKeyDown={handleKeyDown}
-                            autoFocus
-                            className="w-full px-2 py-1 text-sm text-right border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                          />
-                        ) : (
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCellClick(job.id, 'contract_value', job.contract_value)
-                            }}
-                            className="text-gray-900 dark:text-white cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md"
-                            title="Click to edit"
-                          >
-                            {job.contract_value ? formatCurrency(job.contract_value, false) : '-'}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-3 py-4 whitespace-nowrap text-right text-sm">
-                        {editingCell?.jobId === job.id && editingCell?.field === 'live_profit' ? (
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onFocus={(e) => e.target.select()}
-                            onBlur={handleCellBlur}
-                            onKeyDown={handleKeyDown}
-                            autoFocus
-                            className="w-full px-2 py-1 text-sm text-right border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                          />
-                        ) : (
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCellClick(job.id, 'live_profit', job.live_profit)
-                            }}
-                            className={`cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md font-medium ${
-                              job.live_profit >= 0
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-red-600 dark:text-red-400'
-                            }`}
-                            title="Click to edit"
-                          >
-                            {job.live_profit ? formatCurrency(job.live_profit, false) : '-'}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-3 py-4 whitespace-nowrap text-right text-sm">
-                        {editingCell?.jobId === job.id && editingCell?.field === 'profit_percentage' ? (
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onFocus={(e) => e.target.select()}
-                            onBlur={handleCellBlur}
-                            onKeyDown={handleKeyDown}
-                            autoFocus
-                            className="w-full px-2 py-1 text-sm text-right border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                          />
-                        ) : (
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCellClick(job.id, 'profit_percentage', job.profit_percentage)
-                            }}
-                            className={`cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md font-medium ${
-                              job.profit_percentage >= 0
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-red-600 dark:text-red-400'
-                            }`}
-                            title="Click to edit"
-                          >
-                            {job.profit_percentage ? formatPercentage(job.profit_percentage, 2) : '-'}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-3 py-4 whitespace-nowrap text-sm">
-                        {editingCell?.jobId === job.id && editingCell?.field === 'stage' ? (
-                          <input
-                            type="text"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={handleCellBlur}
-                            onKeyDown={handleKeyDown}
-                            autoFocus
-                            className="w-full px-2 py-1 text-sm border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                          />
-                        ) : (
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCellClick(job.id, 'stage', job.stage)
-                            }}
-                            className="cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md inline-block"
-                            title="Click to edit"
-                          >
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
-                              {job.stage || 'Not Set'}
-                            </span>
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => navigate(`/jobs/${job.id}`)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                          title="View job details"
-                        >
-                          View
-                          <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-                        </button>
-                      </td>
+                    {columns.map((column) => renderCell(job, index, column.key))}
                   </tr>
                 ))
               )}
@@ -397,6 +731,15 @@ export default function ActiveJobsPage() {
           setShowCsvImportModal(false)
           loadJobs()
         }}
+      />
+
+      {/* Column Visibility Modal */}
+      <ColumnVisibilityModal
+        isOpen={showColumnModal}
+        onClose={() => setShowColumnModal(false)}
+        columns={columns}
+        visibleColumns={visibleColumns}
+        onToggleColumn={toggleColumn}
       />
     </div>
   )

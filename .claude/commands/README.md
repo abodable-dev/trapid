@@ -31,16 +31,24 @@ Type `/` followed by the command name in Claude Code. For example:
 
 ## Agent Shortcuts
 
-These commands map to the 6 specialized agents:
+These commands map to the 6 specialized agents. **Each shortcut automatically saves execution history to the Lexicon** so Claude learns your usage patterns.
 
-| Shortcut | Agent | Focus Area |
-|----------|-------|-----------|
-| `/backend` | backend-developer | Rails API, database, background jobs |
-| `/frontend` | frontend-developer | React, Tailwind, UI/UX |
-| `/bug-hunter` | production-bug-hunter | Heroku logs, error diagnosis |
-| `/deploy` | deploy-manager | Staging deployment, git subtree |
-| `/plan` | planning-collaborator | Features, architecture, docs |
-| `/gantt` | gantt-bug-hunter | Gantt Bible compliance, visual tests |
+| Shortcut | Agent | Focus Area | Auto-Saves to Lexicon |
+|----------|-------|-----------|----------------------|
+| `/backend` | backend-developer | Rails API, database, background jobs | ✅ Chapter 20 |
+| `/frontend` | frontend-developer | React, Tailwind, UI/UX | ✅ Chapter 20 |
+| `/bug-hunter` | production-bug-hunter | Heroku logs, error diagnosis | ✅ Chapter 20 |
+| `/deploy` | deploy-manager | Staging deployment, git subtree | ✅ Chapter 20 |
+| `/plan` | planning-collaborator | Features, architecture, docs | ✅ Chapter 20 |
+| `/gantt` | gantt-bug-hunter | Gantt Bible compliance, visual tests | ✅ Chapter 20 |
+
+### How Shortcuts Work
+
+1. **Type shortcut** (e.g., `/gantt` or just `gantt`)
+2. **Agent executes** its specialized tasks
+3. **Auto-saves to Lexicon** - Creates entry in `documented_bugs` table (Chapter 20)
+4. **Exports to markdown** - Updates `/TRAPID_DOCS/TRAPID_LEXICON.md`
+5. **Claude learns** - Future sessions can reference this execution history
 
 ## Common Workflows
 

@@ -240,12 +240,6 @@ export default function Dashboard() {
               <BookOpenIcon className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="truncate">The Bible</span>
             </Link>
-            <Link
-              to="/agents/tasks"
-              className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition shadow-sm"
-            >
-              <span className="truncate">🤖 Agents</span>
-            </Link>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
-import { RocketLaunchIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import { RocketLaunchIcon, ArrowDownTrayIcon, CpuChipIcon } from '@heroicons/react/24/outline'
 import AccountsLayout from '../components/layout/AccountsLayout'
 import { api } from '../api'
 import XeroConnection from '../components/settings/XeroConnection'
@@ -418,6 +418,31 @@ export default function SettingsPage() {
           {/* Agents Tab */}
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
+              {/* Instructions Center Card */}
+              <div className="mb-8 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 p-6 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
+                      <CpuChipIcon className="h-7 w-7 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">
+                        Agent Shortcuts
+                      </h3>
+                      <p className="mt-1 text-sm text-blue-100">
+                        Give instructions to all 6 agents, run them individually or together, and save to Lexicon
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    to="/agents/tasks"
+                    className="flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-50 transition-all"
+                  >
+                    🤖 Open Agent Shortcuts
+                  </Link>
+                </div>
+              </div>
+
               <AgentStatus />
             </div>
           </TabPanel>

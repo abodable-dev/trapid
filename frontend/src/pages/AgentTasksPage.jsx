@@ -304,7 +304,7 @@ export default function AgentTasksPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            Claude Code Instructions Center
+            Agent Shortcuts
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
             Give instructions to Claude Code agents. Edit tasks, run agents individually or all at once, then save to update the Lexicon.
