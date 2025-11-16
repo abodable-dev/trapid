@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { BookOpenIcon, MagnifyingGlassIcon, PlusIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import { BookOpenIcon, MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import KnowledgeEntryModal from '../components/KnowledgeEntryModal'
 import MarkdownRenderer from '../components/MarkdownRenderer'
@@ -310,6 +310,43 @@ export default function DocumentationPage() {
             ) : (
               /* Document Content */
               <div className="space-y-6">
+                {/* Link to Knowledge Database (when viewing Bible) */}
+                {selectedDoc?.id === 'bible' && (
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                          <span className="text-2xl">📕</span>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">
+                            {searchParams.get('chapter')
+                              ? `View Knowledge Database for Chapter ${searchParams.get('chapter')}`
+                              : 'View Knowledge Database (Lexicon)'
+                            }
+                          </h3>
+                          <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
+                            {searchParams.get('chapter')
+                              ? 'See bug history, architecture notes, and implementation details for this chapter'
+                              : 'Browse bug history, architecture notes, and implementation details by chapter'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const chapter = searchParams.get('chapter')
+                          setSearchParams(chapter ? { doc: 'lexicon', chapter } : { doc: 'lexicon' })
+                        }}
+                        className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                      >
+                        <BookOpenIcon className="h-4 w-4" />
+                        {searchParams.get('chapter') ? 'View Chapter Database' : 'View Lexicon'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                   {loading ? (
                     <div className="flex items-center justify-center py-12">
