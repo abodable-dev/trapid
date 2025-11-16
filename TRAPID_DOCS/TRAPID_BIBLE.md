@@ -8950,7 +8950,695 @@ XERO_WEBHOOK_KEY=your_webhook_signing_key
 │ 📘 USER MANUAL (HOW): Chapter 16               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## Overview
+
+This chapter defines rules for **Payments & Financials**, covering payment recording, invoice matching, Xero synchronization, payment status tracking, and financial reporting. The system tracks payments against purchase orders with automatic status updates and budget variance analysis.
+
+**Key Features:**
+- Payment recording and tracking
+- Xero invoice fuzzy matching (6-strategy algorithm)
+- Automatic payment status calculation
+- Budget variance tracking
+- Financial dashboard with KPIs
+- Payment synchronization to Xero
+
+**Key Files:**
+- Models: `backend/app/models/payment.rb`, `purchase_order.rb` (payment fields)
+- Controllers: `backend/app/controllers/api/v1/payments_controller.rb`
+- Services: `backend/app/services/xero_payment_sync_service.rb`, `invoice_matching_service.rb`
+- Frontend: `frontend/src/components/purchase-orders/PaymentsList.jsx`, `NewPaymentModal.jsx`
+
+**Related Chapters:**
+- Chapter 8: Purchase Orders (payment association)
+- Chapter 15: Xero Accounting Integration (sync infrastructure)
+- Chapter 4: Price Books & Suppliers (supplier payment tracking)
+
+---
+
+## RULE #16.1: Payment Model Structure
+
+**Payment MUST track amount, date, method, reference, and Xero sync status.**
+
+### Implementation
+
+✅ **MUST include core fields:**
+
+```ruby
+# app/models/payment.rb
+class Payment < ApplicationRecord
+  belongs_to :purchase_order
+  belongs_to :created_by, class_name: 'User', foreign_key: 'created_by_id'
+
+  validates :amount, presence: true, numericality: { greater_than: 0 }
+  validates :payment_date, presence: true
+  validates :payment_method, inclusion: {
+    in: %w[bank_transfer check credit_card cash eft other],
+    allow_nil: true
+  }
+
+  scope :by_purchase_order, ->(po_id) { where(purchase_order_id: po_id).order(payment_date: :desc) }
+  scope :synced_to_xero, -> { where.not(xero_payment_id: nil) }
+  scope :sync_failed, -> { where.not(xero_sync_error: nil) }
+
+  after_save :update_purchase_order_payment_status
+  after_destroy :update_purchase_order_payment_status
+end
+```
+
+### Database Schema
+
+✅ **MUST use DECIMAL(15,2) for precision:**
+
+```ruby
+# db/migrate/20251112213631_create_payments.rb
+create_table :payments do |t|
+  t.references :purchase_order, null: false, foreign_key: true
+  t.decimal :amount, precision: 15, scale: 2, null: false
+  t.date :payment_date, null: false
+  t.string :payment_method
+  t.string :reference_number
+  t.text :notes
+  t.string :xero_payment_id
+  t.datetime :xero_synced_at
+  t.text :xero_sync_error
+  t.references :created_by, foreign_key: { to_table: :users }
+  t.timestamps
+end
+
+add_index :payments, :payment_date
+add_index :payments, [:purchase_order_id, :payment_date]
+add_index :payments, :xero_payment_id
+```
+
+**Files:**
+- `backend/app/models/payment.rb`
+- `backend/db/migrate/20251112213631_create_payments.rb`
+
+---
+
+## RULE #16.2: Automatic Payment Status Updates
+
+**PurchaseOrder payment_status MUST update automatically when payments are recorded or deleted.**
+
+### Callback Implementation
+
+✅ **MUST trigger on payment save/destroy:**
+
+```ruby
+# app/models/payment.rb
+after_save :update_purchase_order_payment_status
+after_destroy :update_purchase_order_payment_status
+
+private
+
+def update_purchase_order_payment_status
+  po = purchase_order
+  total_paid = po.payments.sum(:amount)
+
+  po.update!(
+    xero_amount_paid: total_paid,
+    xero_complete: total_paid >= po.total,
+    xero_still_to_be_paid: [po.total - total_paid, 0].max
+  )
+
+  # Update payment_status enum
+  po.update_payment_status_from_payments!
+end
+```
+
+### Status Enum
+
+✅ **MUST define payment status states:**
+
+```ruby
+# app/models/purchase_order.rb
+enum payment_status: {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}
+
+def update_payment_status_from_payments!
+  total_paid = payments.sum(:amount)
+  percentage = (total_paid / total) * 100
+
+  new_status = if percentage >= 95 && percentage <= 105
+    'complete'
+  elsif percentage > 105
+    'manual_review'
+  elsif total_paid > 0
+    'part_payment'
+  else
+    'pending'
+  end
+
+  update!(payment_status: new_status)
+end
+```
+
+**Files:**
+- `backend/app/models/payment.rb:30-42`
+- `backend/app/models/purchase_order.rb` (payment status logic)
+
+---
+
+## RULE #16.3: Xero Invoice Fuzzy Matching
+
+**InvoiceMatchingService MUST use 6-strategy fuzzy matching to link Xero invoices to POs.**
+
+### Matching Strategies
+
+✅ **MUST implement matching hierarchy:**
+
+```ruby
+# app/services/invoice_matching_service.rb
+class InvoiceMatchingService
+  def match_invoice_to_po(xero_invoice, po_id_hint: nil)
+    # Strategy 1: Explicit PO ID provided
+    return PurchaseOrder.find(po_id_hint) if po_id_hint.present?
+
+    po_number = extract_po_number(xero_invoice)
+
+    # Strategy 2: Reference field (most reliable)
+    if xero_invoice['Reference'].present?
+      po = match_by_reference(xero_invoice['Reference'])
+      return po if po
+    end
+
+    # Strategy 3: InvoiceNumber field
+    if xero_invoice['InvoiceNumber'].present?
+      po = match_by_invoice_number(xero_invoice['InvoiceNumber'])
+      return po if po
+    end
+
+    # Strategy 4: LineItems description
+    po = match_by_line_items(xero_invoice['LineItems'])
+    return po if po
+
+    # Strategy 5: Normalized PO number (handles zero-padding)
+    po = match_by_normalized_po_number(po_number)
+    return po if po
+
+    # Strategy 6: Supplier + amount fallback
+    match_by_supplier_and_amount(
+      xero_invoice['Contact']['Name'],
+      xero_invoice['Total'],
+      tolerance: 0.10
+    )
+  end
+
+  private
+
+  def extract_po_number(xero_invoice)
+    text = [
+      xero_invoice['Reference'],
+      xero_invoice['InvoiceNumber'],
+      xero_invoice['LineItems']&.map { |li| li['Description'] }&.join(' ')
+    ].compact.join(' ')
+
+    # Patterns: PO-123, P.O. 123, P/O 123, Purchase Order 123
+    if text =~ /\b(?:PO|P\.O\.|P\/O|Purchase Order)\s*[:-]?\s*(\d+)/i
+      $1.to_i
+    end
+  end
+
+  def match_by_normalized_po_number(po_number)
+    return nil unless po_number
+
+    # Try exact match
+    po = PurchaseOrder.find_by(po_number: po_number)
+    return po if po
+
+    # Try normalized (strip leading zeros)
+    normalized = po_number.to_s.gsub(/^0+/, '')
+    PurchaseOrder.where("CAST(po_number AS TEXT) LIKE ?", "%#{normalized}").first
+  end
+end
+```
+
+### Apply Invoice
+
+✅ **MUST update PO with invoice data:**
+
+```ruby
+# app/models/purchase_order.rb
+def apply_invoice!(invoice_amount:, invoice_date:, invoice_reference:)
+  update!(
+    invoiced_amount: invoice_amount,
+    invoice_date: invoice_date,
+    invoice_reference: invoice_reference,
+    payment_status: determine_payment_status(invoice_amount)
+  )
+end
+
+def determine_payment_status(invoice_amount)
+  percentage = (invoice_amount / total) * 100
+
+  if percentage >= 95 && percentage <= 105
+    'complete'
+  elsif percentage > 105 && (invoice_amount - total) > 1.00
+    'manual_review' # Overage >$1 needs review
+  elsif percentage < 95
+    'part_payment'
+  else
+    'pending'
+  end
+end
+```
+
+**Files:**
+- `backend/app/services/invoice_matching_service.rb`
+- `backend/app/models/purchase_order.rb:167-184`
+
+---
+
+## RULE #16.4: Xero Payment Sync
+
+**XeroPaymentSyncService MUST sync Trapid payments to Xero with error handling.**
+
+### Sync Implementation
+
+✅ **MUST validate and sync:**
+
+```ruby
+# app/services/xero_payment_sync_service.rb
+class XeroPaymentSyncService
+  def self.sync_payment(payment)
+    new(payment).sync
+  end
+
+  def initialize(payment)
+    @payment = payment
+    @po = payment.purchase_order
+  end
+
+  def sync
+    validate_xero_invoice!
+
+    payload = build_payment_payload
+    response = xero_client.create_payment(payload)
+
+    @payment.mark_synced!(response['PaymentID'])
+    { success: true, xero_payment_id: response['PaymentID'] }
+  rescue => e
+    @payment.mark_sync_failed!(e.message)
+    { success: false, error: e.message }
+  end
+
+  private
+
+  def validate_xero_invoice!
+    raise "PO must have xero_invoice_id before syncing payments" unless @po.xero_invoice_id.present?
+  end
+
+  def build_payment_payload
+    {
+      Invoice: { InvoiceID: @po.xero_invoice_id },
+      Account: { Code: bank_account_code },
+      Date: @payment.payment_date.strftime('%Y-%m-%d'),
+      Amount: @payment.amount.to_f,
+      Reference: @payment.reference_number || "Payment for PO #{@po.po_number}"
+    }
+  end
+
+  def xero_client
+    @xero_client ||= XeroApiClient.new
+  end
+
+  def bank_account_code
+    '091' # Default bank account code
+  end
+end
+
+# app/models/payment.rb
+def mark_synced!(xero_id)
+  update!(
+    xero_payment_id: xero_id,
+    xero_synced_at: Time.current,
+    xero_sync_error: nil
+  )
+end
+
+def mark_sync_failed!(error_message)
+  update!(xero_sync_error: error_message)
+end
+
+def synced_to_xero?
+  xero_payment_id.present?
+end
+
+def sync_error?
+  xero_sync_error.present?
+end
+```
+
+**Files:**
+- `backend/app/services/xero_payment_sync_service.rb`
+- `backend/app/models/payment.rb:24-46`
+
+---
+
+## RULE #16.5: Payment Method Enum
+
+**Payment method MUST be one of 6 valid types: bank_transfer, check, credit_card, cash, eft, other.**
+
+### Validation
+
+✅ **MUST restrict to valid methods:**
+
+```ruby
+# app/models/payment.rb
+PAYMENT_METHODS = %w[bank_transfer check credit_card cash eft other].freeze
+
+validates :payment_method, inclusion: {
+  in: PAYMENT_METHODS,
+  allow_nil: true,
+  message: "%{value} is not a valid payment method"
+}
+
+def payment_method_label
+  return 'Not Specified' if payment_method.blank?
+
+  case payment_method
+  when 'bank_transfer' then 'Bank Transfer'
+  when 'check' then 'Check'
+  when 'credit_card' then 'Credit Card'
+  when 'cash' then 'Cash'
+  when 'eft' then 'EFT'
+  when 'other' then 'Other'
+  end
+end
+```
+
+### Frontend Dropdown
+
+✅ **MUST provide method selector:**
+
+```javascript
+// frontend/src/components/purchase-orders/NewPaymentModal.jsx
+const PAYMENT_METHODS = [
+  { value: 'bank_transfer', label: 'Bank Transfer' },
+  { value: 'eft', label: 'EFT' },
+  { value: 'check', label: 'Check' },
+  { value: 'credit_card', label: 'Credit Card' },
+  { value: 'cash', label: 'Cash' },
+  { value: 'other', label: 'Other' }
+];
+
+<select
+  value={formData.payment_method}
+  onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+  className="w-full px-3 py-2 border rounded-md"
+>
+  <option value="">Select method...</option>
+  {PAYMENT_METHODS.map(method => (
+    <option key={method.value} value={method.value}>
+      {method.label}
+    </option>
+  ))}
+</select>
+```
+
+**Files:**
+- `backend/app/models/payment.rb:10-13`
+- `frontend/src/components/purchase-orders/NewPaymentModal.jsx:14-21`
+
+---
+
+## RULE #16.6: Financial Precision with DECIMAL(15,2)
+
+**All financial amounts MUST use DECIMAL(15,2) for precision - never FLOAT or INTEGER.**
+
+### Schema Enforcement
+
+✅ **MUST use DECIMAL type:**
+
+```ruby
+# Payments table
+t.decimal :amount, precision: 15, scale: 2, null: false
+
+# Purchase orders table
+t.decimal :total, precision: 15, scale: 2, default: 0.0
+t.decimal :invoiced_amount, precision: 15, scale: 2, default: 0.0
+t.decimal :xero_amount_paid, precision: 15, scale: 2, default: 0.0
+t.decimal :xero_still_to_be_paid, precision: 15, scale: 2, default: 0.0
+t.decimal :amount_still_to_be_invoiced, precision: 15, scale: 2, default: 0.0
+t.decimal :budget, precision: 15, scale: 2
+```
+
+### Validation
+
+✅ **MUST validate precision:**
+
+```ruby
+# app/models/payment.rb
+validates :amount, numericality: {
+  greater_than: 0,
+  less_than_or_equal_to: 999_999_999_999.99
+}
+
+# app/models/purchase_order.rb
+validates :total, :invoiced_amount, :xero_amount_paid,
+  numericality: { greater_than_or_equal_to: 0 }
+```
+
+❌ **NEVER use FLOAT:**
+- Causes rounding errors in currency calculations
+- Example: `0.1 + 0.2 = 0.30000000000000004` (FLOAT)
+- DECIMAL: `0.10 + 0.20 = 0.30` (exact)
+
+**Files:**
+- `backend/db/schema.rb` (all financial columns)
+- `backend/app/models/payment.rb:7-9`
+
+---
+
+## RULE #16.7: Payment Status Badge Display
+
+**Frontend MUST display payment_status with color-coded badges and icons.**
+
+### Badge Component
+
+✅ **MUST use semantic colors:**
+
+```javascript
+// frontend/src/components/purchase-orders/PaymentStatusBadge.jsx
+const STATUS_CONFIG = {
+  pending: {
+    label: 'Pending',
+    color: 'gray',
+    icon: HourglassIcon
+  },
+  part_payment: {
+    label: 'Partial Payment',
+    color: 'yellow',
+    icon: CircleDotIcon
+  },
+  complete: {
+    label: 'Paid',
+    color: 'green',
+    icon: CheckCircleIcon
+  },
+  manual_review: {
+    label: 'Needs Review',
+    color: 'red',
+    icon: ExclamationTriangleIcon
+  }
+};
+
+export function PaymentStatusBadge({ status }) {
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+  const Icon = config.icon;
+
+  return (
+    <Badge variant={config.color}>
+      <Icon className="w-4 h-4 mr-1" />
+      {config.label}
+    </Badge>
+  );
+}
+```
+
+**Files:**
+- `frontend/src/components/purchase-orders/PaymentStatusBadge.jsx`
+
+---
+
+## RULE #16.8: Payment Summary Calculation
+
+**Payments controller MUST return summary data with total_paid, po_total, and remaining.**
+
+### API Response
+
+✅ **MUST include summary:**
+
+```ruby
+# app/controllers/api/v1/payments_controller.rb
+def index
+  @purchase_order = PurchaseOrder.find(params[:purchase_order_id])
+  @payments = @purchase_order.payments.order(payment_date: :desc)
+
+  total_paid = @payments.sum(:amount)
+  remaining = [@purchase_order.total - total_paid, 0].max
+
+  render json: {
+    success: true,
+    payments: @payments.as_json(include: [:created_by]),
+    summary: {
+      total_paid: total_paid,
+      po_total: @purchase_order.total,
+      remaining: remaining,
+      payment_status: @purchase_order.payment_status
+    }
+  }
+end
+```
+
+### Frontend Display
+
+✅ **MUST show summary prominently:**
+
+```javascript
+// frontend/src/components/purchase-orders/PaymentsList.jsx
+<div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-4">
+  <div className="grid grid-cols-3 gap-4 text-center">
+    <div>
+      <p className="text-sm text-gray-600 dark:text-gray-400">PO Total</p>
+      <p className="text-xl font-bold">${summary.po_total.toFixed(2)}</p>
+    </div>
+    <div>
+      <p className="text-sm text-gray-600 dark:text-gray-400">Total Paid</p>
+      <p className="text-xl font-bold text-green-600">${summary.total_paid.toFixed(2)}</p>
+    </div>
+    <div>
+      <p className="text-sm text-gray-600 dark:text-gray-400">Remaining</p>
+      <p className="text-xl font-bold text-red-600">${summary.remaining.toFixed(2)}</p>
+    </div>
+  </div>
+</div>
+```
+
+**Files:**
+- `backend/app/controllers/api/v1/payments_controller.rb:4-20`
+- `frontend/src/components/purchase-orders/PaymentsList.jsx:62-78`
+
+---
+
+## RULE #16.9: Budget Variance Tracking
+
+**PurchaseOrder MUST track budget variance fields for cost analysis.**
+
+### Variance Fields
+
+✅ **MUST calculate variances:**
+
+```ruby
+# app/models/purchase_order.rb
+# Schema fields:
+# - budget (decimal 15,2) - Planned budget
+# - diff_po_with_allowance_versus_budget - PO total vs budget
+# - xero_budget_diff - Actual paid vs budget
+
+def update_budget_variances!
+  return unless budget.present?
+
+  # PO vs Budget
+  po_variance = total - budget
+  update!(diff_po_with_allowance_versus_budget: po_variance)
+
+  # Actual vs Budget
+  actual_variance = xero_amount_paid - budget
+  update!(xero_budget_diff: actual_variance)
+end
+
+def over_budget?
+  budget.present? && total > budget
+end
+
+def budget_utilization_percentage
+  return 0 unless budget.present? && budget > 0
+  (total / budget * 100).round(2)
+end
+```
+
+### Frontend Display
+
+✅ **MUST highlight overages:**
+
+```javascript
+// frontend/src/pages/PurchaseOrderDetailPage.jsx
+{po.budget && (
+  <div className={cn(
+    "p-4 rounded-lg",
+    po.total > po.budget ? "bg-red-50 dark:bg-red-900/20" : "bg-green-50 dark:bg-green-900/20"
+  )}>
+    <p className="text-sm font-medium">Budget: ${po.budget.toFixed(2)}</p>
+    <p className="text-sm">Actual: ${po.total.toFixed(2)}</p>
+    <p className={cn(
+      "text-sm font-bold",
+      po.total > po.budget ? "text-red-600" : "text-green-600"
+    )}>
+      Variance: ${(po.total - po.budget).toFixed(2)}
+    </p>
+  </div>
+)}
+```
+
+**Files:**
+- `backend/app/models/purchase_order.rb` (variance methods)
+- `backend/db/migrate/20251105010955_add_payment_tracking_to_purchase_orders.rb`
+
+---
+
+## RULE #16.10: Cascade Delete Payments
+
+**Payments MUST be deleted when PurchaseOrder is deleted to maintain data integrity.**
+
+### Foreign Key Constraint
+
+✅ **MUST set dependent: :destroy:**
+
+```ruby
+# app/models/purchase_order.rb
+has_many :payments, dependent: :destroy
+
+# Migration
+add_foreign_key :payments, :purchase_orders, on_delete: :cascade
+```
+
+❌ **NEVER orphan payments:**
+- Deleting PO without deleting payments breaks referential integrity
+- Payment without PO is meaningless
+- Use `dependent: :destroy` not `dependent: :nullify`
+
+**Files:**
+- `backend/app/models/purchase_order.rb:23`
+- `backend/db/migrate/20251112213631_create_payments.rb:11`
+
+---
+
+## API Endpoints Reference
+
+### Payments
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/v1/purchase_orders/:po_id/payments` | List payments with summary |
+| POST | `/api/v1/purchase_orders/:po_id/payments` | Record new payment |
+| GET | `/api/v1/payments/:id` | Get single payment |
+| PATCH | `/api/v1/payments/:id` | Update payment |
+| DELETE | `/api/v1/payments/:id` | Delete payment |
+| POST | `/api/v1/payments/:id/sync_to_xero` | Manual Xero sync |
+
+### Xero Invoice Matching
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/v1/xero/match_invoice` | Match Xero invoice to PO |
+| GET | `/api/v1/xero/invoices` | Get Xero invoices |
 
 ---
 
