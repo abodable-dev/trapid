@@ -55,7 +55,7 @@
 
 ## Current Progress
 
-### ✅ Completed Chapters (14 chapters)
+### ✅ Completed Chapters (15 chapters)
 1. **Chapter 1:** Authentication & Users (Bible + Lexicon + User Manual - completed in previous session)
 2. **Chapter 2:** System Administration (Bible + Lexicon + User Manual - ✅ COMPLETED THIS SESSION - commit 7d4a026)
 3. **Chapter 3:** Contacts & Relationships (Bible + Lexicon + User Manual - completed in previous session)
@@ -69,11 +69,11 @@
 11. **Chapter 11:** Weather & Public Holidays (Bible + Lexicon + User Manual - ✅ COMPLETED THIS SESSION - commit ae7406f)
 12. **Chapter 12:** OneDrive Integration (Bible + Lexicon + User Manual - completed in previous session)
 13. **Chapter 13:** Outlook/Email Integration (Bible + Lexicon + User Manual - ✅ COMPLETED THIS SESSION - commit d835630)
-14. **Chapter 15:** Xero Accounting Integration (Bible + Lexicon + User Manual - completed in previous session)
+14. **Chapter 14:** Chat & Communications (Bible + Lexicon + User Manual - ✅ COMPLETED THIS SESSION - commit f370350)
+15. **Chapter 15:** Xero Accounting Integration (Bible + Lexicon + User Manual - completed in previous session)
 
-### ⏳ Remaining Chapters (5 chapters)
+### ⏳ Remaining Chapters (4 chapters)
 - Chapter 0: Overview (partially complete with system-wide rules)
-- Chapter 14: Chat & Communications
 - Chapter 16: Payments & Financials
 - Chapter 17: Workflows & Automation
 - Chapter 18: Custom Tables & Formulas
