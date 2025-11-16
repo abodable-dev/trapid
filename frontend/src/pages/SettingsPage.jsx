@@ -1,28 +1,39 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { RocketLaunchIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import AccountsLayout from '../components/layout/AccountsLayout'
 import { api } from '../api'
-import XeroConnection from '../components/settings/XeroConnection'
-import OneDriveConnection from '../components/settings/OneDriveConnection'
-import OutlookConnection from '../components/settings/OutlookConnection'
-import TwilioConfiguration from '../components/settings/TwilioConfiguration'
-import FolderTemplatesTab from '../components/settings/FolderTemplatesTab'
-import ScheduleMasterTabs from '../components/schedule-master/ScheduleMasterTabs'
-import XeroFieldMappingTab from '../components/settings/XeroFieldMappingTab'
-import TablesTab from '../components/settings/TablesTab'
-import SchemaPage from './SchemaPage'
-import DocumentationCategoriesTab from '../components/settings/DocumentationCategoriesTab'
-import RolesAndGroupsTab from '../components/settings/RolesAndGroupsTab'
-import ContactRolesManagement from '../components/settings/ContactRolesManagement'
-import SupervisorChecklistTab from '../components/settings/SupervisorChecklistTab'
-import WorkflowAdminPage from './WorkflowAdminPage'
-import PublicHolidaysPage from './PublicHolidaysPage'
-import GitBranchVisualization from '../components/settings/GitBranchVisualization'
-import CompanySettingsTab from '../components/settings/CompanySettingsTab'
-import AgentStatus from '../components/settings/AgentStatus'
-import AgentShortcutsTab from '../components/settings/AgentShortcutsTab'
+
+// Lazy load tab components to reduce initial bundle size
+const XeroConnection = lazy(() => import('../components/settings/XeroConnection'))
+const OneDriveConnection = lazy(() => import('../components/settings/OneDriveConnection'))
+const OutlookConnection = lazy(() => import('../components/settings/OutlookConnection'))
+const TwilioConfiguration = lazy(() => import('../components/settings/TwilioConfiguration'))
+const FolderTemplatesTab = lazy(() => import('../components/settings/FolderTemplatesTab'))
+const ScheduleMasterTabs = lazy(() => import('../components/schedule-master/ScheduleMasterTabs'))
+const XeroFieldMappingTab = lazy(() => import('../components/settings/XeroFieldMappingTab'))
+const TablesTab = lazy(() => import('../components/settings/TablesTab'))
+const SchemaPage = lazy(() => import('./SchemaPage'))
+const DocumentationCategoriesTab = lazy(() => import('../components/settings/DocumentationCategoriesTab'))
+const RolesAndGroupsTab = lazy(() => import('../components/settings/RolesAndGroupsTab'))
+const ContactRolesManagement = lazy(() => import('../components/settings/ContactRolesManagement'))
+const SupervisorChecklistTab = lazy(() => import('../components/settings/SupervisorChecklistTab'))
+const WorkflowAdminPage = lazy(() => import('./WorkflowAdminPage'))
+const PublicHolidaysPage = lazy(() => import('./PublicHolidaysPage'))
+const GitBranchVisualization = lazy(() => import('../components/settings/GitBranchVisualization'))
+const CompanySettingsTab = lazy(() => import('../components/settings/CompanySettingsTab'))
+const AgentStatus = lazy(() => import('../components/settings/AgentStatus'))
+const AgentShortcutsTab = lazy(() => import('../components/settings/AgentShortcutsTab'))
+
+// Loading fallback component for lazy-loaded tabs
+function TabLoadingFallback() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-gray-500 dark:text-gray-400">Loading...</div>
+    </div>
+  )
+}
 
 export default function SettingsPage() {
   const navigate = useNavigate()
@@ -336,7 +347,9 @@ export default function SettingsPage() {
         <TabPanels>
           {/* Company Settings Tab */}
           <TabPanel>
-            <CompanySettingsTab />
+            <Suspense fallback={<TabLoadingFallback />}>
+              <CompanySettingsTab />
+            </Suspense>
           </TabPanel>
 
           {/* Integrations Tab */}
@@ -350,10 +363,12 @@ export default function SettingsPage() {
               </div>
 
               <div className="md:col-span-2 space-y-6">
-                <XeroConnection />
-                <OneDriveConnection />
-                <OutlookConnection />
-                <TwilioConfiguration />
+                <Suspense fallback={<TabLoadingFallback />}>
+                  <XeroConnection />
+                  <OneDriveConnection />
+                  <OutlookConnection />
+                  <TwilioConfiguration />
+                </Suspense>
               </div>
             </div>
           </TabPanel>
@@ -361,83 +376,111 @@ export default function SettingsPage() {
           {/* Users Tab */}
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <RolesAndGroupsTab />
+              <Suspense fallback={<TabLoadingFallback />}>
+                <RolesAndGroupsTab />
+              </Suspense>
             </div>
           </TabPanel>
 
           {/* Contact Roles Tab */}
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <ContactRolesManagement />
+              <Suspense fallback={<TabLoadingFallback />}>
+                <ContactRolesManagement />
+              </Suspense>
             </div>
           </TabPanel>
 
           {/* Workflows Tab */}
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <WorkflowAdminPage />
+              <Suspense fallback={<TabLoadingFallback />}>
+                <WorkflowAdminPage />
+              </Suspense>
             </div>
           </TabPanel>
 
           {/* Folder Templates Tab */}
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <FolderTemplatesTab />
+              <Suspense fallback={<TabLoadingFallback />}>
+                <FolderTemplatesTab />
+              </Suspense>
             </div>
           </TabPanel>
 
           {/* Schedule Master Tab with nested sub-tabs */}
           <TabPanel>
-            <ScheduleMasterTabs />
+            <Suspense fallback={<TabLoadingFallback />}>
+              <ScheduleMasterTabs />
+            </Suspense>
           </TabPanel>
 
           {/* Documentation Categories Tab */}
           <TabPanel>
-            <DocumentationCategoriesTab />
+            <Suspense fallback={<TabLoadingFallback />}>
+              <DocumentationCategoriesTab />
+            </Suspense>
           </TabPanel>
 
           {/* Supervisor Checklist Tab */}
           <TabPanel>
-            <SupervisorChecklistTab />
+            <Suspense fallback={<TabLoadingFallback />}>
+              <SupervisorChecklistTab />
+            </Suspense>
           </TabPanel>
 
           {/* Public Holidays Tab */}
           <TabPanel>
-            <PublicHolidaysPage />
+            <Suspense fallback={<TabLoadingFallback />}>
+              <PublicHolidaysPage />
+            </Suspense>
           </TabPanel>
 
           {/* Xero Tab */}
           <TabPanel>
-            <XeroFieldMappingTab />
+            <Suspense fallback={<TabLoadingFallback />}>
+              <XeroFieldMappingTab />
+            </Suspense>
           </TabPanel>
 
           {/* Tables Tab */}
           <TabPanel>
-            <TablesTab />
+            <Suspense fallback={<TabLoadingFallback />}>
+              <TablesTab />
+            </Suspense>
           </TabPanel>
 
           {/* Schema Tab */}
           <TabPanel>
-            <SchemaPage />
+            <Suspense fallback={<TabLoadingFallback />}>
+              <SchemaPage />
+            </Suspense>
           </TabPanel>
 
           {/* Git Branches Tab */}
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <GitBranchVisualization />
+              <Suspense fallback={<TabLoadingFallback />}>
+                <GitBranchVisualization />
+              </Suspense>
             </div>
           </TabPanel>
 
           {/* Agents Tab */}
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
-              <AgentStatus />
+              <Suspense fallback={<TabLoadingFallback />}>
+                <AgentStatus />
+              </Suspense>
             </div>
           </TabPanel>
 
           {/* Claude Shortcuts Tab */}
           <TabPanel>
-            <AgentShortcutsTab />
+            <Suspense fallback={<TabLoadingFallback />}>
+              <AgentShortcutsTab />
+            </Suspense>
           </TabPanel>
 
           {/* Deployment Tab */}

@@ -36,12 +36,13 @@ export default function ActiveJobsPage() {
   // Column state with localStorage persistence
   const [columnOrder, setColumnOrder] = useState(() => {
     const saved = localStorage.getItem('activeJobsTableState_columnOrder')
-    return saved ? JSON.parse(saved) : ['number', 'title', 'contract_value', 'live_profit', 'profit_percentage', 'stage', 'actions']
+    return saved ? JSON.parse(saved) : ['checkbox', 'number', 'title', 'contract_value', 'live_profit', 'profit_percentage', 'stage', 'actions']
   })
 
   const [columnWidths, setColumnWidths] = useState(() => {
     const saved = localStorage.getItem('activeJobsTableState_columnWidths')
     return saved ? JSON.parse(saved) : {
+      checkbox: 50,
       number: 80,
       title: 300,
       contract_value: 150,
@@ -55,6 +56,7 @@ export default function ActiveJobsPage() {
   const [visibleColumns, setVisibleColumns] = useState(() => {
     const saved = localStorage.getItem('activeJobsTableState_visibleColumns')
     return saved ? JSON.parse(saved) : {
+      checkbox: true,
       number: true,
       title: true,
       contract_value: true,
@@ -76,6 +78,9 @@ export default function ActiveJobsPage() {
   // Sort state
   const [sortBy, setSortBy] = useState('title')
   const [sortDirection, setSortDirection] = useState('asc')
+
+  // Row selection state
+  const [selectedItems, setSelectedItems] = useState(new Set())
 
   useEffect(() => {
     console.log('🔴 ActiveJobsPage LOADED - FULL ADVANCED TABLE VERSION')
@@ -180,6 +185,24 @@ export default function ActiveJobsPage() {
       console.error('Failed to create job:', err)
       throw err
     }
+  }
+
+  // Row selection handlers
+  const handleSelectItem = (jobId) => {
+    const newSet = new Set(selectedItems)
+    if (newSet.has(jobId)) {
+      newSet.delete(jobId)
+    } else {
+      newSet.add(jobId)
+    }
+    setSelectedItems(newSet)
+  }
+
+  const handleSelectAll = () => {
+    const newSet = selectedItems.size === filteredJobs.length
+      ? new Set()
+      : new Set(filteredJobs.map(job => job.id))
+    setSelectedItems(newSet)
   }
 
   // Column visibility toggle
@@ -335,6 +358,7 @@ export default function ActiveJobsPage() {
 
   // Column configuration
   const columnsConfig = {
+    checkbox: { key: 'checkbox', label: 'Select', searchable: false, sortable: false, hideable: false },
     number: { key: 'number', label: '#', searchable: false, sortable: true, hideable: false },
     title: { key: 'title', label: 'Job Title', searchable: true, sortable: true, hideable: true, filterType: 'search' },
     contract_value: { key: 'contract_value', label: 'Contract Value', searchable: true, sortable: true, hideable: true, filterType: 'search' },
@@ -354,6 +378,18 @@ export default function ActiveJobsPage() {
     const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
 
     switch (columnKey) {
+      case 'checkbox':
+        return (
+          <td key="checkbox" style={cellStyle} className="px-3 py-4 border-r border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={selectedItems.has(job.id)}
+              onChange={() => handleSelectItem(job.id)}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+          </td>
+        )
+
       case 'number':
         return (
           <td key="number" style={cellStyle} className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -645,21 +681,40 @@ export default function ActiveJobsPage() {
                   const width = columnWidths[column.key]
                   const isSortable = column.sortable
                   const isSorted = sortBy === column.key
+
+                  // Special case for checkbox column
+                  if (column.key === 'checkbox') {
+                    return (
+                      <th
+                        key={column.key}
+                        style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                        className="px-3 py-2 border-r border-gray-200 dark:border-gray-700"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={filteredJobs.length > 0 && selectedItems.size === filteredJobs.length}
+                          onChange={handleSelectAll}
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                      </th>
+                    )
+                  }
+
                   return (
                     <th
                       key={column.key}
                       style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
                       className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 ${column.key === 'actions' ? 'text-right' : column.key === 'contract_value' || column.key === 'live_profit' || column.key === 'profit_percentage' ? 'text-right' : 'text-left'} ${draggedColumn === column.key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
-                      draggable={column.key !== 'number' && column.key !== 'actions'}
+                      draggable={column.key !== 'number' && column.key !== 'actions' && column.key !== 'checkbox'}
                       onDragStart={(e) => handleDragStart(e, column.key)}
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, column.key)}
                     >
                       <div
-                        className={`flex items-center gap-2 ${column.key === 'contract_value' || column.key === 'live_profit' || column.key === 'profit_percentage' ? 'justify-end' : ''} ${isSortable ? 'cursor-pointer' : column.key !== 'number' && column.key !== 'actions' ? 'cursor-move' : ''}`}
+                        className={`flex items-center gap-2 ${column.key === 'contract_value' || column.key === 'live_profit' || column.key === 'profit_percentage' ? 'justify-end' : ''} ${isSortable ? 'cursor-pointer' : column.key !== 'number' && column.key !== 'actions' && column.key !== 'checkbox' ? 'cursor-move' : ''}`}
                         onClick={() => isSortable && handleSort(column.key)}
                       >
-                        {column.key !== 'number' && column.key !== 'actions' && (
+                        {column.key !== 'number' && column.key !== 'actions' && column.key !== 'checkbox' && (
                           <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
                         )}
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{column.label}</span>
@@ -680,7 +735,7 @@ export default function ActiveJobsPage() {
                         />
                       )}
                       {/* Resize handle */}
-                      {column.key !== 'actions' && (
+                      {column.key !== 'actions' && column.key !== 'checkbox' && (
                         <div
                           className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
                           onMouseDown={(e) => handleResizeStart(e, column.key)}

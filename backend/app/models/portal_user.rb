@@ -17,7 +17,7 @@ class PortalUser < ApplicationRecord
   validates :portal_type, presence: true, inclusion: { in: PORTAL_TYPES }
   validates :password, length: { minimum: 12 },
                        format: {
-                         with: /\A(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/,
+                         with: /\A(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+\z/,
                          message: "must include at least one lowercase letter, one uppercase letter, one digit, and one special character"
                        },
                        if: :password_digest_changed?

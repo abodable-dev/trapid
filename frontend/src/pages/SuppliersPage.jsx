@@ -39,6 +39,7 @@ export default function SuppliersPage() {
   const [visibleColumns, setVisibleColumns] = useState(() => {
     const saved = localStorage.getItem('suppliers_table_visibleColumns')
     return saved ? JSON.parse(saved) : {
+      checkbox: true,
       supplier: true,
       rating: true,
       items: true,
@@ -52,6 +53,7 @@ export default function SuppliersPage() {
   const [columnWidths, setColumnWidths] = useState(() => {
     const saved = localStorage.getItem('suppliers_table_columnWidths')
     return saved ? JSON.parse(saved) : {
+      checkbox: 50,
       supplier: 200,
       rating: 100,
       items: 100,
@@ -64,7 +66,7 @@ export default function SuppliersPage() {
   // Column order state with localStorage persistence
   const [columnOrder, setColumnOrder] = useState(() => {
     const saved = localStorage.getItem('suppliers_table_columnOrder')
-    return saved ? JSON.parse(saved) : ['supplier', 'rating', 'items', 'contact', 'status', 'actions']
+    return saved ? JSON.parse(saved) : ['checkbox', 'supplier', 'rating', 'items', 'contact', 'status', 'actions']
   })
 
   // Column resize state
@@ -82,8 +84,12 @@ export default function SuppliersPage() {
   const [sortBy, setSortBy] = useState('supplier')
   const [sortDirection, setSortDirection] = useState('asc')
 
+  // Row selection state
+  const [selectedItems, setSelectedItems] = useState(new Set())
+
   // Define all available columns
   const availableColumns = [
+    { key: 'checkbox', label: 'Select', searchable: false },
     { key: 'supplier', label: 'Supplier Name', searchable: true, filterType: 'search' },
     { key: 'rating', label: 'Rating', searchable: false },
     { key: 'items', label: 'Items Count', searchable: false },
@@ -321,6 +327,24 @@ export default function SuppliersPage() {
       alert('Failed to unlink supplier')
       console.error(err)
     }
+  }
+
+  // Row selection handlers
+  const handleSelectItem = (supplierId) => {
+    const newSet = new Set(selectedItems)
+    if (newSet.has(supplierId)) {
+      newSet.delete(supplierId)
+    } else {
+      newSet.add(supplierId)
+    }
+    setSelectedItems(newSet)
+  }
+
+  const handleSelectAll = () => {
+    const newSet = selectedItems.size === filteredSuppliers.length
+      ? new Set()
+      : new Set(filteredSuppliers.map(supplier => supplier.id))
+    setSelectedItems(newSet)
   }
 
   // Apply filters and sorting
@@ -580,8 +604,26 @@ export default function SuppliersPage() {
                   if (!column) return null
 
                   const width = columnWidths[columnKey]
-                  const isSortable = columnKey !== 'actions'
+                  const isSortable = columnKey !== 'actions' && columnKey !== 'checkbox'
                   const isSorted = sortBy === columnKey
+
+                  // Special case for checkbox column
+                  if (columnKey === 'checkbox') {
+                    return (
+                      <th
+                        key={columnKey}
+                        style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                        className="px-3 py-2 border-r border-gray-200 dark:border-gray-700"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={filteredSuppliers.length > 0 && selectedItems.size === filteredSuppliers.length}
+                          onChange={handleSelectAll}
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                      </th>
+                    )
+                  }
 
                   return (
                     <th
@@ -590,7 +632,7 @@ export default function SuppliersPage() {
                       className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 ${
                         columnKey === 'actions' ? 'text-right' : 'text-left'
                       } ${draggedColumn === columnKey ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
-                      draggable
+                      draggable={columnKey !== 'checkbox'}
                       onDragStart={(e) => handleDragStart(e, columnKey)}
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, columnKey)}
@@ -602,7 +644,9 @@ export default function SuppliersPage() {
                         onClick={() => isSortable && handleSort(columnKey)}
                       >
                         {/* Drag handle */}
-                        <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                        {columnKey !== 'checkbox' && (
+                          <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                        )}
 
                         {/* Column label */}
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -644,7 +688,7 @@ export default function SuppliersPage() {
                       )}
 
                       {/* Resize handle */}
-                      {columnKey !== 'actions' && (
+                      {columnKey !== 'actions' && columnKey !== 'checkbox' && (
                         <div
                           className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
                           onMouseDown={(e) => handleResizeStart(e, columnKey)}
@@ -666,6 +710,18 @@ export default function SuppliersPage() {
                     const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
 
                     switch (columnKey) {
+                      case 'checkbox':
+                        return (
+                          <td key={columnKey} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={selectedItems.has(supplier.id)}
+                              onChange={() => handleSelectItem(supplier.id)}
+                              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                          </td>
+                        )
+
                       case 'supplier':
                         return (
                           <td key={columnKey} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">

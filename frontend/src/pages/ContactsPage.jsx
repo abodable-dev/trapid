@@ -51,6 +51,7 @@ export default function ContactsPage() {
 
   // Bulk selection state
   const [selectedContacts, setSelectedContacts] = useState(new Set())
+  const [selectedSuppliers, setSelectedSuppliers] = useState(new Set())
   const [openDropdownId, setOpenDropdownId] = useState(null)
   const [bulkContactType, setBulkContactType] = useState('')
   const [updating, setUpdating] = useState(false)
@@ -510,6 +511,25 @@ export default function ContactsPage() {
       })
     } finally {
       setUpdating(false)
+    }
+  }
+
+  // Supplier selection handlers
+  const handleSelectSupplier = (supplierId, checked) => {
+    const newSelected = new Set(selectedSuppliers)
+    if (checked) {
+      newSelected.add(supplierId)
+    } else {
+      newSelected.delete(supplierId)
+    }
+    setSelectedSuppliers(newSelected)
+  }
+
+  const handleSelectAllSuppliers = (checked) => {
+    if (checked) {
+      setSelectedSuppliers(new Set(filteredSuppliers.map(s => s.id)))
+    } else {
+      setSelectedSuppliers(new Set())
     }
   }
 
@@ -1447,6 +1467,14 @@ export default function ContactsPage() {
                 <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
                   <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
                     <tr>
+                      <th style={{ minWidth: '50px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left">
+                        <input
+                          type="checkbox"
+                          checked={selectedSuppliers.size === filteredSuppliers.length && filteredSuppliers.length > 0}
+                          onChange={(e) => handleSelectAllSuppliers(e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
+                        />
+                      </th>
                       {visibleClientColumns.supplier && (
                         <th style={{ minWidth: '200px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Supplier
@@ -1486,7 +1514,19 @@ export default function ContactsPage() {
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {filteredSuppliers.map((supplier) => (
-                      <tr key={supplier.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150">
+                      <tr key={supplier.id} className={`transition-colors duration-150 ${
+                        selectedSuppliers.has(supplier.id)
+                          ? 'bg-indigo-50 dark:bg-indigo-900/20'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                      }`}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedSuppliers.has(supplier.id)}
+                            onChange={(e) => handleSelectSupplier(supplier.id, e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
+                          />
+                        </td>
                         {visibleClientColumns.supplier && (
                           <td className="px-6 py-4 whitespace-nowrap">
                             <Link
