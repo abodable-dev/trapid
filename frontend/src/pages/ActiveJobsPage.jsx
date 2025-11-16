@@ -24,6 +24,7 @@ export default function ActiveJobsPage() {
   const [showCsvImportModal, setShowCsvImportModal] = useState(false)
 
   useEffect(() => {
+    console.log('🔴 ActiveJobsPage LOADED - NEW VERSION WITH GRADIENT FIX')
     loadJobs()
   }, [])
 
