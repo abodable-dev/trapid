@@ -519,7 +519,7 @@ export default function DocumentationPage() {
   // If Bible is selected and table view mode is active, render full-width table
   if (selectedDoc?.id === 'bible' && bibleViewMode === 'table') {
     return (
-      <div className="h-screen flex flex-col overflow-hidden">
+      <div className="fixed inset-0 top-16 flex flex-col overflow-hidden bg-white dark:bg-gray-900" style={{ left: '18rem', bottom: '40px' }}>
         {/* Document Tabs */}
         <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0">
           <div className="flex space-x-1 px-4">
@@ -587,14 +587,14 @@ export default function DocumentationPage() {
             <BibleTableView content={content} />
           </div>
         </div>
-      </>
+      </div>
     )
   }
 
   // If Lexicon is selected and table view mode is active, render full-width table
   if (selectedDoc?.id === 'lexicon' && lexiconViewMode === 'table') {
     return (
-      <div className="h-screen flex flex-col overflow-hidden">
+      <div className="fixed inset-0 top-16 flex flex-col overflow-hidden bg-white dark:bg-gray-900" style={{ left: '18rem', bottom: '40px' }}>
         {/* Document Tabs */}
         <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0">
           <div className="flex space-x-1 px-4">

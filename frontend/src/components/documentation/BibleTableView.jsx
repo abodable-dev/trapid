@@ -239,10 +239,13 @@ export default function BibleTableView({ content }) {
   // Initialize scrollbar on mount and content change
   useEffect(() => {
     const container = scrollContainerRef.current
-    if (!container) return
+    if (!container) {
+      console.log('📊 Bible: No scroll container ref')
+      return
+    }
 
     const updateScrollbar = () => {
-      const { scrollHeight, clientHeight, scrollWidth } = container
+      const { scrollHeight, clientHeight, scrollWidth, clientWidth } = container
 
       // Update vertical scrollbar
       if (scrollHeight <= clientHeight) {
@@ -253,8 +256,33 @@ export default function BibleTableView({ content }) {
       }
 
       // Update horizontal scroll width
-      console.log('📊 Bible table scrollWidth:', scrollWidth, 'clientWidth:', container.clientWidth)
+      console.log('📊 Bible table dimensions:', {
+        scrollWidth,
+        clientWidth,
+        offsetWidth: container.offsetWidth,
+        needsHorizontalScroll: scrollWidth > clientWidth,
+        overflow: scrollWidth - clientWidth
+      })
       setTableScrollWidth(scrollWidth)
+
+      // Log sticky scrollbar info after a tick
+      setTimeout(() => {
+        if (stickyScrollbarRef.current) {
+          console.log('📊 Bible sticky scrollbar:', {
+            container: {
+              height: stickyScrollbarRef.current.offsetHeight,
+              width: stickyScrollbarRef.current.offsetWidth,
+              scrollWidth: stickyScrollbarRef.current.scrollWidth,
+              visible: stickyScrollbarRef.current.offsetHeight > 0,
+              backgroundColor: window.getComputedStyle(stickyScrollbarRef.current).backgroundColor
+            },
+            innerDiv: stickyScrollbarRef.current.firstChild ? {
+              width: stickyScrollbarRef.current.firstChild.style.width,
+              height: stickyScrollbarRef.current.firstChild.style.height
+            } : null
+          })
+        }
+      }, 100)
     }
 
     updateScrollbar()
@@ -509,6 +537,34 @@ export default function BibleTableView({ content }) {
         .dark .bible-table-scroll::-webkit-scrollbar-thumb:active {
           background: #D1D5DB !important;
         }
+
+        /* Sticky horizontal scrollbar styling */
+        .sticky-horizontal-scroll::-webkit-scrollbar {
+          -webkit-appearance: none !important;
+          height: 14px !important;
+        }
+        .sticky-horizontal-scroll::-webkit-scrollbar-track {
+          background: #E5E7EB !important;
+          border-radius: 0 !important;
+        }
+        .sticky-horizontal-scroll::-webkit-scrollbar-thumb {
+          background: #6B7280 !important;
+          border-radius: 4px !important;
+          border: 2px solid #E5E7EB !important;
+        }
+        .sticky-horizontal-scroll::-webkit-scrollbar-thumb:hover {
+          background: #4B5563 !important;
+        }
+        .dark .sticky-horizontal-scroll::-webkit-scrollbar-track {
+          background: #374151 !important;
+        }
+        .dark .sticky-horizontal-scroll::-webkit-scrollbar-thumb {
+          background: #9CA3AF !important;
+          border-color: #374151 !important;
+        }
+        .dark .sticky-horizontal-scroll::-webkit-scrollbar-thumb:hover {
+          background: #D1D5DB !important;
+        }
       `}</style>
       <div className="h-full flex flex-col overflow-hidden bg-white dark:bg-gray-900">
         {/* Bulk Action Bar */}
@@ -743,32 +799,21 @@ export default function BibleTableView({ content }) {
             No rules found matching your filters
           </div>
         )}
-
-        {/* Custom Scrollbar Indicator - Inside scroll container */}
-        {scrollbarThumbHeight > 0 && (
-          <div className="absolute right-0 top-0 bottom-0 w-3 bg-gray-200 dark:bg-gray-700 pointer-events-none z-30">
-            <div
-              className="absolute right-0 w-full bg-gray-400 dark:bg-gray-500 rounded-full transition-all duration-150"
-              style={{
-                height: `${scrollbarThumbHeight}px`,
-                top: `${scrollbarThumbTop}px`
-              }}
-            />
-          </div>
-        )}
         </div>
 
         {/* Sticky Horizontal Scrollbar - Always visible at bottom of table */}
         <div
           ref={stickyScrollbarRef}
           onScroll={handleStickyScroll}
-          className="overflow-x-auto overflow-y-hidden h-6 bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-600"
+          className="sticky-horizontal-scroll overflow-x-scroll overflow-y-hidden border-t-2 border-gray-400 dark:border-gray-500 flex-shrink-0"
           style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#9CA3AF #F3F4F6'
+            height: '20px',
+            scrollbarWidth: 'auto',
+            scrollbarColor: '#6B7280 #E5E7EB',
+            backgroundColor: '#F3F4F6'
           }}
         >
-          <div style={{ width: `${tableScrollWidth}px`, height: '1px' }} />
+          <div style={{ width: `${Math.max(tableScrollWidth, 100)}px`, height: '100%' }} />
         </div>
       </div>
       </div>

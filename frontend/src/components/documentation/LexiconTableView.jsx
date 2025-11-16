@@ -534,7 +534,37 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
+    <>
+      <style>{`
+        /* Lexicon sticky horizontal scrollbar styling */
+        .lexicon-sticky-scroll::-webkit-scrollbar {
+          -webkit-appearance: none !important;
+          height: 14px !important;
+        }
+        .lexicon-sticky-scroll::-webkit-scrollbar-track {
+          background: #E5E7EB !important;
+          border-radius: 0 !important;
+        }
+        .lexicon-sticky-scroll::-webkit-scrollbar-thumb {
+          background: #6B7280 !important;
+          border-radius: 4px !important;
+          border: 2px solid #E5E7EB !important;
+        }
+        .lexicon-sticky-scroll::-webkit-scrollbar-thumb:hover {
+          background: #4B5563 !important;
+        }
+        .dark .lexicon-sticky-scroll::-webkit-scrollbar-track {
+          background: #374151 !important;
+        }
+        .dark .lexicon-sticky-scroll::-webkit-scrollbar-thumb {
+          background: #9CA3AF !important;
+          border-color: #374151 !important;
+        }
+        .dark .lexicon-sticky-scroll::-webkit-scrollbar-thumb:hover {
+          background: #D1D5DB !important;
+        }
+      `}</style>
+      <div className="h-full flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
       {/* Bulk Action Bar (RULE #19.1 - shown when rows selected) */}
       {selectedRows.size > 0 && (
         <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-200 dark:border-indigo-800">
@@ -900,27 +930,18 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
         <div
           ref={stickyScrollbarRef}
           onScroll={handleStickyScroll}
-          className="overflow-x-auto overflow-y-hidden h-6 bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-600"
+          className="lexicon-sticky-scroll overflow-x-scroll overflow-y-hidden border-t-2 border-gray-400 dark:border-gray-500 flex-shrink-0"
           style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#9CA3AF #F3F4F6'
+            height: '20px',
+            scrollbarWidth: 'auto',
+            scrollbarColor: '#6B7280 #E5E7EB',
+            backgroundColor: '#F3F4F6'
           }}
-          onLoad={() => console.log('📊 Lexicon sticky scrollbar mounted, width:', tableScrollWidth)}
         >
-          <div
-            style={{ width: `${tableScrollWidth}px`, height: '1px' }}
-            ref={(el) => {
-              if (el) {
-                console.log('📊 Lexicon scrollbar inner div:', {
-                  width: el.style.width,
-                  parentWidth: el.parentElement?.offsetWidth,
-                  parentScrollWidth: el.parentElement?.scrollWidth
-                })
-              }
-            }}
-          />
+          <div style={{ width: `${Math.max(tableScrollWidth, 100)}px`, height: '100%' }} />
         </div>
       </div>
     </div>
+    </>
   )
 }
