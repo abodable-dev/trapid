@@ -32,7 +32,7 @@ const diagLog = (emoji, msg) => {
   }
 }
 
-export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, onUpdateTask }) {
+export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, cascadeDepthRef, onUpdateTask }) {
   const ganttContainer = useRef(null)
   const clickTimeout = useRef(null)
   const highlightTimeout = useRef(null) // Timeout to auto-clear highlighting after 10 seconds
@@ -75,6 +75,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
   const [canUndo, setCanUndo] = useState(false) // Track if undo is available
   const [canRedo, setCanRedo] = useState(false) // Track if redo is available
   const [cascadeModal, setCascadeModal] = useState(null) // { movedTask, unlockedSuccessors, blockedSuccessors, originalStart }
+  const [dragTooltip, setDragTooltip] = useState(null) // { date, position: { x, y } }
 
   // PERFORMANCE: Create debounced localStorage setter (500ms delay)
   const debouncedSaveToStorage = useMemo(() => createDebouncedStorageSetter(500), [])
@@ -341,13 +342,6 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
       clearTimeout(renderTimeout.current)
     }
     renderTimeout.current = setTimeout(() => {
-      // PERFORMANCE: Skip render during active drag to prevent flickering
-      if (isDragging.current) {
-        console.log('⏸️ Skipping render - drag in progress (reduces flicker)')
-        renderTimeout.current = null
-        return
-      }
-
       // ANTI-FLICKER: Skip render if suppression is active
       if (suppressRender.current) {
         console.log('⏸️ Skipping render - render suppression active (drag completion)')
@@ -656,9 +650,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
       undo: true
     })
 
-    // Add delay to tooltip so dragging can start before tooltip appears
-    gantt.config.tooltip_timeout = 1000 // Show tooltip after 1 second of hovering (allows dragging first)
-    gantt.config.tooltip_hide_timeout = 3000 // Hide after 3 seconds
+    // Disable Gantt's built-in tooltip completely - we use our own custom drag tooltip
+    gantt.config.tooltip_timeout = 999999 // Effectively disable by making timeout very long
+    gantt.config.tooltip_hide_timeout = 0 // Hide immediately if it does appear
 
     // Configure the lightbox (task editor modal)
     gantt.config.lightbox.sections = [
@@ -1405,9 +1399,81 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
           diagLog('🟢', `DRAG START - Task ${id}`)
           isDragging.current = true // Mark that we're dragging
           task.$originalStart = new Date(task.start_date)
+
+          // Mouse position not available in onBeforeTaskDrag - will be set in onTaskDrag
         }
       }
       return true // Allow drag to start
+    })
+
+    // Show custom tooltip during drag
+    // Track mouse position globally for tooltip (gantt.getState().mouse_position doesn't work)
+    let lastMouseX = 0
+    let lastMouseY = 0
+    const handleMouseMove = (e) => {
+      lastMouseX = e.clientX
+      lastMouseY = e.clientY
+    }
+    document.addEventListener('mousemove', handleMouseMove)
+
+    // Show custom tooltip during drag
+    gantt.attachEvent('onTaskDrag', (id, mode, task, original) => {
+      if (mode === 'move') {
+        // Use tracked mouse position since gantt.getState().mouse_position doesn't work
+        if (task.start_date && task.$originalStart) {
+          // Format the NEW date (where we're dropping)
+          const newDate = new Date(task.start_date)
+          const newDay = newDate.getDate()
+          const newDateFormatted = newDate.toLocaleDateString('en-AU', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          })
+
+          // Format the ORIGINAL date (where we're moving from)
+          const originalDate = new Date(task.$originalStart)
+          const originalDateFormatted = originalDate.toLocaleDateString('en-AU', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric'
+          })
+
+          // Get predecessors (tasks this depends on)
+          // Convert id to number for comparison (Gantt uses numeric IDs)
+          const numericId = parseInt(id, 10)
+          const predecessorLinks = gantt.getLinks().filter(link => link.target == numericId)
+          const predecessorNames = predecessorLinks.map(link => {
+            try {
+              const predTask = gantt.getTask(link.source)
+              return predTask ? predTask.text : 'Unknown'
+            } catch (e) {
+              return 'Unknown'
+            }
+          })
+
+          // Get successors (tasks that depend on this)
+          const successorLinks = gantt.getLinks().filter(link => link.source == numericId)
+          const successorNames = successorLinks.map(link => {
+            try {
+              const succTask = gantt.getTask(link.target)
+              return succTask ? succTask.text : 'Unknown'
+            } catch (e) {
+              return 'Unknown'
+            }
+          })
+
+          setDragTooltip({
+            newDay: newDay.toString(), // Just the day number (e.g., "28")
+            newDate: newDateFormatted,
+            originalDate: originalDateFormatted,
+            duration: task.duration || 0,
+            predecessors: predecessorNames,
+            successors: successorNames,
+            position: { x: lastMouseX + 15, y: lastMouseY + 15 }
+          })
+        }
+      }
     })
 
     diagLog('📋', 'onBeforeTaskDrag handler attached')
@@ -1418,6 +1484,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
       diagLog('🔴', `DRAG END - Task ${id}, Duration: ${dragDuration}ms`)
       console.log('🚨🚨🚨 onAfterTaskDrag FIRED - Task:', id, 'Mode:', mode, 'Event:', event)
       console.log('🎯 onAfterTaskDrag fired:', { id, mode })
+
+      // Clear tooltip when drag ends
+      setDragTooltip(null)
 
       // CRITICAL: Set drag lock IMMEDIATELY to prevent cascade API calls from auto-scheduling
       // Auto-scheduling plugin will recalculate dependent tasks and fire onAfterTaskUpdate
@@ -1523,6 +1592,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
 
           // Show conflict modal
           const links = task.$target || []
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+
           const blockingPredecessors = links.map(linkId => {
             const link = gantt.getLink(linkId)
             const predTask = gantt.getTask(link.source)
@@ -1535,11 +1607,15 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
             }
           })
 
+          // Check if the constraint is "today" (no predecessors or today is more restrictive)
+          const isTodayConstraint = earliestStart && earliestStart.getTime() === today.getTime() && links.length === 0
+
           setDragConflict({
             task: task,
             originalStart: earliestStart,
             newStart: newStart,
-            blockingPredecessors: blockingPredecessors
+            blockingPredecessors: blockingPredecessors,
+            isTodayConstraint: isTodayConstraint
           })
 
           // Clean up temporary property
@@ -2151,6 +2227,9 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
       // Defer both isDragging and suppressRender reset to prevent shake
       requestAnimationFrame(() => {
         isDragging.current = false
+
+        // Hide drag tooltip
+        setDragTooltip(null)
 
         // Release render suppression after a longer delay to ensure smooth completion
         setTimeout(() => {
@@ -3403,9 +3482,16 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
     // Build columns array based on columnOrder and visibility
     const columns = []
     columnOrder.forEach(columnKey => {
-      // For checkbox columns, also check if showCheckboxes is true
-      const isCheckboxColumn = ['confirm', 'supplierConfirm', 'start', 'complete', 'lock'].includes(columnKey)
-      if (visibleColumns[columnKey] && columnDefinitions[columnKey]) {
+      // Lock column is always shown (even when checkboxes are hidden or column is set to invisible)
+      const isLockColumn = columnKey === 'lock'
+      // Other checkbox columns respect the showCheckboxes setting
+      const isCheckboxColumn = ['confirm', 'supplierConfirm', 'start', 'complete'].includes(columnKey)
+
+      // Lock column is ALWAYS shown, regardless of visibility settings
+      if (isLockColumn && columnDefinitions[columnKey]) {
+        columns.push(columnDefinitions[columnKey])
+      } else if (visibleColumns[columnKey] && columnDefinitions[columnKey]) {
+        // Other columns respect visibility and checkbox settings
         if (!isCheckboxColumn || showCheckboxes) {
           columns.push(columnDefinitions[columnKey])
         }
@@ -3525,13 +3611,19 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
     const links = task.$target || [] // Links where this task is the target
     console.log('   Found', links.length, 'predecessor links')
 
-    if (links.length === 0) {
-      // No predecessors, can start anytime
-      console.log('   ✓ No predecessors - can start anytime')
-      return null
-    }
+    // RULE: Tasks cannot be scheduled before today
+    // Get today's date at midnight in the company timezone
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
-    let earliestStart = null
+    let earliestStart = today
+    console.log('   📅 Minimum start date: Today (', today.toDateString(), ')')
+
+    if (links.length === 0) {
+      // No predecessors, but still can't start before today
+      console.log('   ✓ No predecessors - earliest start is today')
+      return earliestStart
+    }
 
     links.forEach(linkId => {
       const link = gantt.getLink(linkId)
@@ -3771,24 +3863,36 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
       `${t.id}:${t.name}:${t.duration}:${t.start_date}:${t.manually_positioned}:${JSON.stringify(t.predecessor_ids)}`
     ).join('|')
 
-    if (lastTasksSignature.current === currentSignature) {
+    const signatureChanged = lastTasksSignature.current !== currentSignature
+
+    if (!signatureChanged) {
       console.log('⏸️ Skipping reload - task data unchanged (only reference changed)')
       return
     }
 
     lastTasksSignature.current = currentSignature
 
-    // CRITICAL: Prevent data reload while actively dragging to avoid render loops
-    if (isDragging.current) {
-      console.log('⏸️ Skipping data reload - drag operation in progress')
-      return
-    }
-
     // CRITICAL: Prevent cascading reloads if already loading data
-    if (isLoadingData.current) {
+    // HOWEVER: If the signature changed, we MUST reload to show cascade updates
+    // This allows backend cascade updates to display even during drag lock
+    if (isLoadingData.current && !signatureChanged) {
       diagLog('⏸️', 'Skipping data reload - already loading data (CASCADE PREVENTED)')
       console.log('⏸️ Skipping data reload - already loading data')
       return
+    }
+
+    // ANTI-SHAKE: Throttle signature-based reloads during cascade operations
+    // If cascades are in progress (depth > 0), defer the reload until cascades complete
+    // This prevents multiple reloads from each cascade batch update
+    const cascadeDepth = cascadeDepthRef?.current || 0
+    if (signatureChanged && cascadeDepth > 0) {
+      console.log(`⏸️ Signature changed but cascade depth = ${cascadeDepth} - deferring reload until cascades complete`)
+      return
+    }
+
+    // If signature changed during loading, allow reload (cascade updates must display)
+    if (isLoadingData.current && signatureChanged) {
+      console.log('✅ Signature changed during load - proceeding with reload to show cascade updates')
     }
 
     diagLog('🔄', `Starting Gantt reload - ${validTasks.length} tasks`)
@@ -5419,68 +5523,84 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
                 Cannot Move Task Earlier
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                This task is blocked by predecessor dependencies
+                {dragConflict.isTodayConstraint
+                  ? 'Tasks cannot be scheduled before today'
+                  : 'This task is blocked by predecessor dependencies'
+                }
               </p>
             </div>
 
             {/* Content */}
             <div className="px-6 py-4">
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                You're trying to move <strong>{dragConflict.task.text}</strong> to{' '}
-                <strong>{dragConflict.newStart.toLocaleDateString()}</strong>, but it has predecessor
-                dependencies that require it to start no earlier than{' '}
-                <strong>{dragConflict.originalStart.toLocaleDateString()}</strong>.
-              </p>
+              {dragConflict.isTodayConstraint ? (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
+                    Schedule Constraint:
+                  </h4>
+                  <p className="text-sm text-blue-800 dark:text-blue-400">
+                    You're trying to move <strong>{dragConflict.task.text}</strong> to{' '}
+                    <strong>{dragConflict.newStart.toLocaleDateString()}</strong>, but tasks cannot be
+                    scheduled before today (<strong>{dragConflict.originalStart.toLocaleDateString()}</strong>).
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                    You're trying to move <strong>{dragConflict.task.text}</strong> to{' '}
+                    <strong>{dragConflict.newStart.toLocaleDateString()}</strong>, but it has predecessor
+                    dependencies that require it to start no earlier than{' '}
+                    <strong>{dragConflict.originalStart.toLocaleDateString()}</strong>.
+                  </p>
 
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
-                <h4 className="text-sm font-medium text-yellow-900 dark:text-yellow-300 mb-2">
-                  Blocking Dependencies:
-                </h4>
-                <ul className="space-y-2">
-                  {dragConflict.blockingPredecessors.map((pred, idx) => (
-                    <li key={idx} className="text-sm text-yellow-800 dark:text-yellow-400 flex items-center gap-2">
-                      <span className="font-mono bg-yellow-200 dark:bg-yellow-900 px-2 py-0.5 rounded">
-                        {pred.taskName}
-                      </span>
-                      <span className="text-xs">
-                        ({pred.type}{pred.lag > 0 ? `+${pred.lag}` : pred.lag < 0 ? pred.lag : ''})
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                What would you like to do?
-              </p>
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+                    <h4 className="text-sm font-medium text-yellow-900 dark:text-yellow-300 mb-2">
+                      Blocking Dependencies:
+                    </h4>
+                    <ul className="space-y-2">
+                      {dragConflict.blockingPredecessors.map((pred, idx) => (
+                        <li key={idx} className="text-sm text-yellow-800 dark:text-yellow-400 flex items-center gap-2">
+                          <span className="font-mono bg-yellow-200 dark:bg-yellow-900 px-2 py-0.5 rounded">
+                            {pred.taskName}
+                          </span>
+                          <span className="text-xs">
+                            ({pred.type}{pred.lag > 0 ? `+${pred.lag}` : pred.lag < 0 ? pred.lag : ''})
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              )}
 
               <div className="space-y-2">
-                <button
-                  onClick={() => {
-                    // Remove all blocking dependencies and allow the move
-                    dragConflict.blockingPredecessors.forEach(pred => {
-                      gantt.deleteLink(pred.linkId)
-                    })
+                {!dragConflict.isTodayConstraint && (
+                  <button
+                    onClick={() => {
+                      // Remove all blocking dependencies and allow the move
+                      dragConflict.blockingPredecessors.forEach(pred => {
+                        gantt.deleteLink(pred.linkId)
+                      })
 
-                    // Update task position
-                    const task = dragConflict.task
-                    task.start_date = dragConflict.newStart
-                    gantt.updateTask(task.id)
+                      // Update task position
+                      const task = dragConflict.task
+                      task.start_date = dragConflict.newStart
+                      gantt.updateTask(task.id)
 
-                    // Save to backend
-                    onUpdateTaskRef.current(task.id, {
-                      predecessor_ids: [], // Remove all predecessors
-                      start_date: dragConflict.newStart.toISOString().split('T')[0]
-                    })
+                      // Save to backend
+                      onUpdateTaskRef.current(task.id, {
+                        predecessor_ids: [], // Remove all predecessors
+                        start_date: dragConflict.newStart.toISOString().split('T')[0]
+                      })
 
-                    // Close modal
-                    setDragConflict(null)
-                  }}
-                  className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                  Remove {dragConflict.blockingPredecessors.length} Dependency{dragConflict.blockingPredecessors.length > 1 ? 'ies' : ''} and Move Task
-                </button>
+                      // Close modal
+                      setDragConflict(null)
+                    }}
+                    className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                    Remove {dragConflict.blockingPredecessors.length} Dependency{dragConflict.blockingPredecessors.length > 1 ? 'ies' : ''} and Move Task
+                  </button>
+                )}
 
                 <button
                   onClick={() => {
@@ -5489,7 +5609,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
                   }}
                   className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-sm font-medium rounded-lg"
                 >
-                  Cancel - Keep Dependencies and Original Position
+                  {dragConflict.isTodayConstraint ? 'OK' : 'Cancel - Keep Dependencies and Original Position'}
                 </button>
               </div>
             </div>
@@ -5654,6 +5774,58 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, on
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Drag Tooltip */}
+      {dragTooltip && (
+        <div
+          className="fixed pointer-events-none"
+          style={{
+            left: `${dragTooltip.position.x}px`,
+            top: `${dragTooltip.position.y}px`,
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#2563eb',
+              color: 'white',
+              padding: '1.25rem',
+              borderRadius: '0.5rem',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              border: '2px solid #60a5fa',
+            }}
+          >
+            {/* Prominent day number */}
+            <div style={{ fontSize: '3rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '0.5rem' }}>
+              {dragTooltip.newDay}
+            </div>
+            {/* Full new date */}
+            <div style={{ fontSize: '1rem', fontWeight: '600', textAlign: 'center', color: '#dbeafe', marginBottom: '0.75rem' }}>
+              {dragTooltip.newDate}
+            </div>
+            {/* From original date */}
+            <div style={{ fontSize: '0.875rem', color: '#bfdbfe', textAlign: 'center', borderTop: '1px solid #93c5fd', paddingTop: '0.5rem', marginBottom: '0.5rem' }}>
+              From: {dragTooltip.originalDate}
+            </div>
+            {/* Duration */}
+            <div style={{ fontSize: '0.875rem', color: '#bfdbfe', textAlign: 'center', borderTop: '1px solid #93c5fd', paddingTop: '0.5rem', marginBottom: '0.5rem' }}>
+              Duration: {dragTooltip.duration} {dragTooltip.duration === 1 ? 'day' : 'days'}
+            </div>
+            {/* Predecessors */}
+            {dragTooltip.predecessors && dragTooltip.predecessors.length > 0 && (
+              <div style={{ fontSize: '0.75rem', color: '#bfdbfe', textAlign: 'center', borderTop: '1px solid #93c5fd', paddingTop: '0.5rem', marginBottom: '0.5rem' }}>
+                Depends on: {dragTooltip.predecessors.join(', ')}
+              </div>
+            )}
+            {/* Successors */}
+            {dragTooltip.successors && dragTooltip.successors.length > 0 && (
+              <div style={{ fontSize: '0.75rem', color: '#bfdbfe', textAlign: 'center', borderTop: '1px solid #93c5fd', paddingTop: '0.5rem' }}>
+                Blocks: {dragTooltip.successors.join(', ')}
+              </div>
+            )}
           </div>
         </div>
       )}

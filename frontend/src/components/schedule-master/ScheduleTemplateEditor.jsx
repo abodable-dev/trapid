@@ -141,6 +141,16 @@ export default function ScheduleTemplateEditor() {
   // Track pending updates to prevent duplicate API calls
   const pendingUpdatesRef = useRef(new Map()) // Map of "rowId:field" -> value
 
+  // Track when we're applying backend cascade updates (prevents handleUpdateRow calls during batch apply)
+  const isApplyingCascadeRef = useRef(false)
+  const cascadeDepthRef = useRef(0) // Track nested cascade depth to know when ALL cascades complete
+  const cascadeDepthTimeouts = useRef([]) // Track pending setTimeout calls to release cascade depth
+
+  // Request deduplication queue - consolidate rapid API calls to same task
+  const updateQueueRef = useRef(new Map()) // Map of rowId -> { updates, options, timeout }
+  const DEDUP_WINDOW_MS = 50 // Consolidate user updates within 50ms window
+  const CASCADE_DEDUP_WINDOW_MS = 800 // Consolidate cascade updates within 800ms window (longer than cascade timeout)
+
   // Column resize state
   const [resizingColumn, setResizingColumn] = useState(null)
   const [resizeStartX, setResizeStartX] = useState(0)
@@ -965,12 +975,32 @@ export default function ScheduleTemplateEditor() {
 
     console.log(`📦 Applying ${cascadeUpdatesRef.current.size} batched cascade updates`)
 
+    // CRITICAL: Update pending values map to prevent infinite loops
+    // When we apply batched cascades, we need to update pendingUpdatesRef
+    // so that subsequent handleUpdateRow calls know these values are already applied
+    cascadeUpdatesRef.current.forEach((response, rowId) => {
+      console.log(`🔍 Cascade response for row ${rowId}:`, response)
+      // Update pending map with the new values from the cascade response
+      if (response.start_date !== undefined) {
+        const key = `${rowId}:start_date`
+        console.log(`🔧 Updating pending map: ${key} = ${response.start_date}`)
+        pendingUpdatesRef.current.set(key, response.start_date)
+      }
+      if (response.duration !== undefined) {
+        const key = `${rowId}:duration`
+        pendingUpdatesRef.current.set(key, response.duration)
+      }
+    })
+
     setRows(prevRows => {
       let updated = [...prevRows]
       cascadeUpdatesRef.current.forEach((response, rowId) => {
         const index = updated.findIndex(r => r && r.id === rowId)
         if (index !== -1) {
+          console.log(`🔍 Updating row ${rowId} in state: current start_date=${updated[index].start_date} → new start_date=${response.start_date}`)
           updated[index] = response
+        } else {
+          console.warn(`⚠️ Row ${rowId} not found in state`)
         }
       })
       return updated
@@ -980,7 +1010,8 @@ export default function ScheduleTemplateEditor() {
     cascadeUpdatesRef.current.clear()
   }, [])
 
-  const handleUpdateRow = async (rowId, updates, options = {}) => {
+  // Actual update function that makes API calls
+  const handleUpdateRowImmediate = async (rowId, updates, options = {}) => {
     try {
       console.log('🐛 ScheduleTemplateEditor: handleUpdateRow called')
       console.log('  - Row ID:', rowId)
@@ -1031,6 +1062,19 @@ export default function ScheduleTemplateEditor() {
           }
 
           console.log(`🔍 DEBUG - State check: ${currentValue} vs ${newValue} → changed=${valueChanged}`)
+
+          // CRITICAL: Clear pending value if current state already matches it
+          // This prevents infinite loops where pending values persist after state updates
+          if (pendingValue !== undefined && !valueChanged) {
+            const pendingMatchesState = Array.isArray(currentValue)
+              ? JSON.stringify(currentValue) === JSON.stringify(pendingValue)
+              : currentValue === pendingValue
+
+            if (pendingMatchesState) {
+              console.log(`🧹 Clearing verified pending: ${pendingKey} (state matches pending)`)
+              pendingUpdatesRef.current.delete(pendingKey)
+            }
+          }
 
           if (valueChanged) {
             // ATOMIC: Set pending IMMEDIATELY when field needs updating
@@ -1094,6 +1138,15 @@ export default function ScheduleTemplateEditor() {
         // Backend handled cascading - apply ALL tasks in one batch
         console.log(`🔄 Backend cascaded to ${response.cascaded_tasks.length} dependent tasks - applying batch update`)
 
+        // CRITICAL: Clear frontend batch queue - backend has already calculated everything!
+        // This prevents stale queued updates from being applied after backend's correct values
+        if (cascadeBatchTimeoutRef.current) {
+          console.log('🧹 Clearing frontend cascade batch queue - backend handled it')
+          clearTimeout(cascadeBatchTimeoutRef.current)
+          cascadeBatchTimeoutRef.current = null
+        }
+        cascadeUpdatesRef.current.clear()
+
         // BUG HUNTER: Track cascade event
         bugHunter.trackCascade(rowId, response.cascaded_tasks.map(t => t.id))
 
@@ -1101,6 +1154,37 @@ export default function ScheduleTemplateEditor() {
 
         // BUG HUNTER: Track state update
         bugHunter.trackStateUpdate(`Backend cascade update for task ${rowId}`, allAffectedTasks.map(t => t.id))
+
+        // CRITICAL: Reset cascade depth to 1 for new cascade operation
+        // If user drags again before previous cascade completes, we want to start fresh
+        // This prevents depth counter from accumulating across rapid consecutive drags
+
+        // Cancel all pending cascade depth release timeouts
+        cascadeDepthTimeouts.current.forEach(timeoutId => clearTimeout(timeoutId))
+        cascadeDepthTimeouts.current = []
+
+        const previousDepth = cascadeDepthRef.current
+        cascadeDepthRef.current = 1
+        isApplyingCascadeRef.current = true
+        if (previousDepth > 0) {
+          console.log(`🔄 Resetting cascade depth from ${previousDepth} to 1 (new drag started)`)
+        }
+        console.log(`🔒 Cascade depth: ${cascadeDepthRef.current} - blocking handleUpdateRow`)
+
+        // CRITICAL: Update pending values map to prevent infinite loops
+        // When backend applies cascade updates, update pendingUpdatesRef so subsequent
+        // handleUpdateRow calls know these values are already applied
+        allAffectedTasks.forEach(task => {
+          if (task.start_date !== undefined) {
+            const key = `${task.id}:start_date`
+            console.log(`🔧 Backend batch - Updating pending map: ${key} = ${task.start_date}`)
+            pendingUpdatesRef.current.set(key, task.start_date)
+          }
+          if (task.duration !== undefined) {
+            const key = `${task.id}:duration`
+            pendingUpdatesRef.current.set(key, task.duration)
+          }
+        })
 
         // Update all affected tasks in a single state update (no flicker!)
         setRows(prevRows => {
@@ -1113,6 +1197,33 @@ export default function ScheduleTemplateEditor() {
           })
           return updatedRows
         })
+
+        // Decrement cascade depth after React has updated the DOM AND Gantt has fired all events
+        // Use 750ms to ensure ALL Gantt's onAfterTaskUpdate events complete before releasing flag
+        // CRITICAL: This must be long enough for Gantt to finish processing all cascade events
+        // Including nested cascades that spawn more cascades and multiple event waves
+        const timeoutId = setTimeout(() => {
+          cascadeDepthRef.current--
+          console.log(`🔓 Cascade depth: ${cascadeDepthRef.current}`)
+
+          // Only release blocking flag when ALL cascades complete (depth = 0)
+          if (cascadeDepthRef.current === 0) {
+            isApplyingCascadeRef.current = false
+            console.log('✅ ALL cascades complete - handleUpdateRow re-enabled')
+
+            // ANTI-SHAKE FIX: Trigger a state update to allow Gantt reload now that cascades are done
+            // This ensures all cascade updates are displayed in one final reload
+            setRows(prevRows => [...prevRows])
+          } else {
+            console.log('⏳ Waiting for nested cascades to complete...')
+          }
+
+          // Remove this timeout from the tracking array
+          cascadeDepthTimeouts.current = cascadeDepthTimeouts.current.filter(id => id !== timeoutId)
+        }, 750)
+
+        // Track this timeout so it can be cancelled if user drags again
+        cascadeDepthTimeouts.current.push(timeoutId)
 
         console.log('✅ Applied batch update for', allAffectedTasks.length, 'tasks')
 
@@ -1169,21 +1280,62 @@ export default function ScheduleTemplateEditor() {
       return mainTask
     } catch (err) {
       console.error('❌ Failed to update row:', err)
+
+      // Clear pending values on error so they can be retried
+      Object.keys(updates).forEach(key => {
+        const pendingKey = `${rowId}:${key}`
+        console.log(`🧹 Clearing pending (error): ${pendingKey}`)
+        pendingUpdatesRef.current.delete(pendingKey)
+      })
+
       // Revert optimistic update on error (without loading spinner)
       await loadTemplateRows(selectedTemplate.id, false)
       showToast('Failed to update row', 'error')
       throw err
-    } finally {
-      // ANTI-LOOP: Delay clearing pending updates to allow state updates and Gantt reloads to complete
-      // If we clear immediately, the Gantt reload will trigger handleUpdateRow again with empty pending tracker
-      setTimeout(() => {
-        Object.keys(updates).forEach(key => {
-          const pendingKey = `${rowId}:${key}`
-          console.log(`🧹 Clearing pending: ${pendingKey}`)
-          pendingUpdatesRef.current.delete(pendingKey)
-        })
-      }, 2000) // Clear after 2 seconds (allows batch updates and Gantt reloads to complete)
     }
+  }
+
+  // Deduplication wrapper - consolidates rapid updates to same task
+  const handleUpdateRow = (rowId, updates, options = {}) => {
+    // Detect if this is a cascade update (start_date-only change)
+    const isCascadeUpdate = updates.start_date !== undefined &&
+                           updates.predecessor_ids === undefined &&
+                           updates.duration === undefined
+
+    // Use longer window for cascade updates to catch all waves
+    const dedupWindow = isCascadeUpdate ? CASCADE_DEDUP_WINDOW_MS : DEDUP_WINDOW_MS
+
+    // Get existing queue entry for this task
+    const existing = updateQueueRef.current.get(rowId)
+
+    if (existing) {
+      console.log(`🔄 Deduplicating ${isCascadeUpdate ? 'CASCADE' : 'USER'} update for task ${rowId} - merging with queued update`)
+      console.log(`   Existing updates:`, existing.updates)
+      console.log(`   New updates:`, updates)
+    }
+
+    // Merge updates
+    const mergedUpdates = existing ? { ...existing.updates, ...updates } : { ...updates }
+    const mergedOptions = existing ? { ...existing.options, ...options } : { ...options }
+
+    if (existing) {
+      console.log(`   Merged updates:`, mergedUpdates)
+    }
+
+    // Clear existing timeout
+    if (existing?.timeout) {
+      clearTimeout(existing.timeout)
+    }
+
+    // Set new timeout to flush after dedup window
+    const timeout = setTimeout(() => {
+      console.log(`⚡ Flushing deduplicated ${isCascadeUpdate ? 'CASCADE' : 'USER'} update for task ${rowId}`)
+      updateQueueRef.current.delete(rowId)
+      handleUpdateRowImmediate(rowId, mergedUpdates, mergedOptions)
+    }, dedupWindow)
+
+    // Store in queue
+    updateQueueRef.current.set(rowId, { updates: mergedUpdates, options: mergedOptions, timeout })
   }
 
   const handleDeleteRow = async (rowId) => {
@@ -2387,7 +2539,15 @@ export default function ScheduleTemplateEditor() {
           onClose={handleCloseGantt}
           tasks={rows}
           templateId={selectedTemplate?.id}
+          cascadeDepthRef={cascadeDepthRef}
           onUpdateTask={async (taskId, updates, options) => {
+            // CRITICAL: Skip if we're applying backend cascade updates
+            // This prevents infinite loop from onAfterTaskUpdate events during batch state update
+            if (isApplyingCascadeRef.current) {
+              console.log('⏸️ Skipping handleUpdateRow - applying backend cascade batch')
+              return
+            }
+
             // Find the row and update it
             const rowIndex = rows.findIndex(r => r.id === taskId)
             if (rowIndex !== -1) {
