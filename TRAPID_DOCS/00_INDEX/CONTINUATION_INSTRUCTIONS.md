@@ -123,7 +123,40 @@
 
 ---
 
-### Lexicon (TRAPID_LEXICON.md) - COMPREHENSIVE
+### Lexicon (TRAPID_LEXICON.md) - DATABASE-DRIVEN, AUTO-GENERATED
+
+**🔴 CRITICAL: Lexicon is now DATABASE-PRIMARY (as of 2025-11-16)**
+
+**Single Source of Truth:** `documented_bugs` database table
+**Markdown File:** Auto-generated export (Git snapshot only)
+
+**How to Update Lexicon:**
+1. **Edit in UI:** Go to Documentation page → Click "📕 TRAPID Lexicon" → Add/edit/delete entries
+2. **Export to markdown:** Run `rake trapid:export_lexicon` in backend
+3. **Commit both:** Commit database changes AND markdown file together
+
+**Why Database-Primary?**
+- ✅ Live editing via UI (no manual markdown editing)
+- ✅ Filtering by chapter, type, status, severity
+- ✅ CRUD operations (create, update, delete)
+- ✅ Searchable and queryable
+- ✅ Structured data with JSONB metadata
+- 📄 Markdown exists for Git version control only
+
+**Export Command:**
+```bash
+cd backend
+bin/rails trapid:export_lexicon
+```
+
+**Files:**
+- Database table: `documented_bugs` (primary)
+- Export script: `backend/lib/tasks/lexicon.rake`
+- Markdown file: `TRAPID_DOCS/TRAPID_LEXICON.md` (generated)
+
+---
+
+### Lexicon Format - COMPREHENSIVE
 **Purpose:** Bug history, architecture decisions, knowledge
 **Quality Level:** HIGH - This is valuable institutional knowledge
 **Format:**
@@ -277,17 +310,29 @@ Return comprehensive findings organized by sections."
 
 ---
 
-### Step 3: Write Lexicon (Comprehensive)
+### Step 3: Write Lexicon (Database-Driven)
 
-1. Read current chapter in TRAPID_LEXICON.md to see structure
-2. Document:
-   - Known bugs/issues from research (or infer potential issues)
-   - Architecture decisions (why this approach?)
-   - Test catalog (from spec files if exist)
-   - Performance notes
-   - Development workflow
+**🔴 CRITICAL: Add entries via Documentation page UI, NOT markdown file**
 
-**Time estimate:** 15-20 minutes per chapter
+1. **Go to Documentation page:** http://localhost:5173/documentation
+2. **Click "📕 TRAPID Lexicon"** to open database view
+3. **Add new entries using the UI:**
+   - Click "+ Add Entry" button
+   - Fill in fields (chapter, title, description, etc.)
+   - Select knowledge_type: bug / architecture / test / performance / dev_note / common_issue
+   - Set status: active / resolved / monitoring / by_design
+   - Click "Save"
+4. **Export to markdown:** Run `rake trapid:export_lexicon` in backend
+5. **Commit both:** Database migration AND markdown file
+
+**Entry Types to Add:**
+- Known bugs/issues from research (or infer potential issues)
+- Architecture decisions (why this approach?)
+- Test catalog (from spec files if exist)
+- Performance notes
+- Development workflow
+
+**Time estimate:** 15-20 minutes per chapter (UI + export)
 
 ---
 
