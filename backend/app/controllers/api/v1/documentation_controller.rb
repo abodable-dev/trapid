@@ -19,6 +19,15 @@ module Api
             chapters: 19
           },
           {
+            id: 'implementation-patterns',
+            name: 'Implementation Patterns',
+            description: 'Code examples and implementation guides',
+            icon: '🔧',
+            audience: 'Developers',
+            path: 'IMPLEMENTATION_PATTERNS.md',
+            chapters: 2
+          },
+          {
             id: 'lexicon',
             name: 'TRAPID Lexicon',
             description: 'Bug history and knowledge base',
@@ -49,11 +58,13 @@ module Api
 
         file_path = case doc_id
                     when 'bible'
-                      Rails.root.join('TRAPID_DOCS', 'TRAPID_BIBLE.md')
+                      Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_BIBLE.md')
+                    when 'implementation-patterns'
+                      Rails.root.join('..', 'TRAPID_DOCS', 'IMPLEMENTATION_PATTERNS.md')
                     when 'lexicon'
-                      Rails.root.join('TRAPID_DOCS', 'TRAPID_LEXICON.md')
+                      Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_LEXICON.md')
                     when 'user-manual'
-                      Rails.root.join('TRAPID_DOCS', 'TRAPID_USER_MANUAL.md')
+                      Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_USER_MANUAL.md')
                     else
                       return render json: { success: false, error: 'Documentation not found' }, status: :not_found
                     end
@@ -92,10 +103,10 @@ module Api
         end
 
         results = []
-        docs_path = Rails.root.join('TRAPID_DOCS')
+        docs_path = Rails.root.join('..', 'TRAPID_DOCS')
 
-        # Search in Trinity files
-        ['TRAPID_BIBLE.md', 'TRAPID_LEXICON.md', 'TRAPID_USER_MANUAL.md'].each do |filename|
+        # Search in Trinity+1 files
+        ['TRAPID_BIBLE.md', 'IMPLEMENTATION_PATTERNS.md', 'TRAPID_LEXICON.md', 'TRAPID_USER_MANUAL.md'].each do |filename|
           file_path = docs_path.join(filename)
           next unless File.exist?(file_path)
 
