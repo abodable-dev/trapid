@@ -263,13 +263,13 @@ export default function AgentTasksPage() {
 
         if (completedTasks.length > 0) {
           // Create a knowledge entry for this agent's completed tasks
-          await api.post('/documented_bugs', {
-            documented_bug: {
+          await api.post('/documentation_entries', {
+            documentation_entry: {
               chapter_number: 20, // Chapter 20 = Agent System
               chapter_name: 'Agent System & Automation',
               component: agent.name,
-              bug_title: `Tasks completed by ${agent.name}`,
-              knowledge_type: 'dev_note',
+              title: `Tasks completed by ${agent.name}`,
+              entry_type: 'dev_note',
               description: `Completed ${completedTasks.length} tasks`,
               details: completedTasks.map(t => t.description).join('\n'),
               metadata: {

@@ -14,7 +14,6 @@ import MarkdownRenderer from '../components/MarkdownRenderer'
 import KnowledgeEntryModal from '../components/KnowledgeEntryModal'
 import LoadingSkeleton from '../components/documentation/LoadingSkeleton'
 import Breadcrumb from '../components/documentation/Breadcrumb'
-import KeyboardShortcutsHelp from '../components/documentation/KeyboardShortcutsHelp'
 import LexiconTableView from '../components/documentation/LexiconTableView'
 import BibleTableView from '../components/documentation/BibleTableView'
 import TeacherTableView from '../components/documentation/TeacherTableView'
@@ -183,14 +182,15 @@ export default function DocumentationPage() {
       if (filters.severity !== 'all') params.append('severity', filters.severity)
       if (searchQuery) params.append('search', searchQuery)
 
-      // Load entries
-      const entriesResponse = await api.get(`/api/v1/documented_bugs?${params}`)
+      // Load entries (using new documentation_entries endpoint with category filter)
+      params.append('category', 'lexicon')
+      const entriesResponse = await api.get(`/api/v1/documentation_entries?${params}`)
       if (entriesResponse.success) {
         setEntries(entriesResponse.data)
       }
 
       // Load stats
-      const statsResponse = await api.get('/api/v1/documented_bugs/stats')
+      const statsResponse = await api.get('/api/v1/documentation_entries/stats')
       if (statsResponse.success) {
         setStats(statsResponse.data)
       }
@@ -214,7 +214,7 @@ export default function DocumentationPage() {
   const handleEntrySelect = async (entry) => {
     // Fetch full entry details
     try {
-      const response = await api.get(`/api/v1/documented_bugs/${entry.id}`)
+      const response = await api.get(`/api/v1/documentation_entries/${entry.id}`)
       if (response.success) {
         setSelectedEntry(response.data)
       }
@@ -236,10 +236,10 @@ export default function DocumentationPage() {
   }
 
   const handleDeleteEntry = async (entry) => {
-    if (!confirm(`Delete "${entry.bug_title}"?`)) return
+    if (!confirm(`Delete "${entry.title}"?`)) return
 
     try {
-      await api.delete(`/api/v1/documented_bugs/${entry.id}`)
+      await api.delete(`/api/v1/documentation_entries/${entry.id}`)
       loadLexiconData()
       setSelectedEntry(null)
     } catch (error) {
@@ -251,12 +251,12 @@ export default function DocumentationPage() {
   const handleSaveEntry = async (formData, entryId) => {
     try {
       if (entryId) {
-        await api.put(`/api/v1/documented_bugs/${entryId}`, {
-          documented_bug: formData
+        await api.put(`/api/v1/documentation_entries/${entryId}`, {
+          documentation_entry: formData
         })
       } else {
-        await api.post('/api/v1/documented_bugs', {
-          documented_bug: formData
+        await api.post('/api/v1/documentation_entries', {
+          documentation_entry: formData
         })
       }
 
@@ -271,7 +271,7 @@ export default function DocumentationPage() {
 
   const handleExportLexicon = async () => {
     try {
-      const response = await api.post('/api/v1/documented_bugs/export_to_markdown')
+      const response = await api.post('/api/v1/documentation_entries/export_lexicon')
 
       if (response.success) {
         alert(`✅ ${response.message}\n\nExported ${response.total_entries} entries to:\n${response.file_path}`)
@@ -445,7 +445,7 @@ export default function DocumentationPage() {
           label: `Chapter ${selectedEntry.chapter_number}`,
           icon: '📂'
         })
-        breadcrumbItems.push({ label: selectedEntry.bug_title })
+        breadcrumbItems.push({ label: selectedEntry.title })
       }
     }
 
@@ -519,9 +519,9 @@ export default function DocumentationPage() {
   // If Bible is selected and table view mode is active, render full-width table
   if (selectedDoc?.id === 'bible' && bibleViewMode === 'table') {
     return (
-      <>
+      <div className="h-screen flex flex-col overflow-hidden">
         {/* Document Tabs */}
-        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0">
           <div className="flex space-x-1 px-4">
             {docs.map((doc) => {
               const isActive = selectedDoc?.id === doc.id
@@ -545,9 +545,9 @@ export default function DocumentationPage() {
           </div>
         </div>
 
-        <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+        <div className="flex-1 min-h-0 flex flex-col bg-white dark:bg-gray-900">
           {/* Header */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
               📖 TRAPID Bible - Table View
             </h1>
@@ -583,13 +583,10 @@ export default function DocumentationPage() {
           </div>
 
           {/* Table View */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 min-h-0">
             <BibleTableView content={content} />
           </div>
         </div>
-
-        {/* Keyboard Shortcuts Help */}
-        <KeyboardShortcutsHelp />
       </>
     )
   }
@@ -597,9 +594,9 @@ export default function DocumentationPage() {
   // If Lexicon is selected and table view mode is active, render full-width table
   if (selectedDoc?.id === 'lexicon' && lexiconViewMode === 'table') {
     return (
-      <>
+      <div className="h-screen flex flex-col overflow-hidden">
         {/* Document Tabs */}
-        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0">
           <div className="flex space-x-1 px-4">
             {docs.map((doc) => {
               const isActive = selectedDoc?.id === doc.id
@@ -623,9 +620,9 @@ export default function DocumentationPage() {
           </div>
         </div>
 
-        <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+        <div className="flex-1 min-h-0 flex flex-col bg-white dark:bg-gray-900">
           {/* Header */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
               📕 TRAPID Lexicon - Table View
             </h1>
@@ -677,7 +674,7 @@ export default function DocumentationPage() {
           </div>
 
           {/* Table View */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 min-h-0">
             <LexiconTableView
               entries={entries}
               onEdit={handleEditEntry}
@@ -699,10 +696,7 @@ export default function DocumentationPage() {
           chapterName={editingEntry?.chapter_name || 'Overview'}
           entry={editingEntry}
         />
-
-        {/* Keyboard Shortcuts Help */}
-        <KeyboardShortcutsHelp />
-      </>
+      </div>
     )
   }
 
@@ -777,9 +771,6 @@ export default function DocumentationPage() {
             <TeacherTableView content={content} />
           </div>
         </div>
-
-        {/* Keyboard Shortcuts Help */}
-        <KeyboardShortcutsHelp />
       </>
     )
   }
@@ -855,9 +846,6 @@ export default function DocumentationPage() {
             <UserManualTableView content={content} />
           </div>
         </div>
-
-        {/* Keyboard Shortcuts Help */}
-        <KeyboardShortcutsHelp />
       </>
     )
   }
@@ -910,9 +898,6 @@ export default function DocumentationPage() {
         chapterName={editingEntry?.chapter_name || 'Overview'}
         entry={editingEntry}
       />
-
-      {/* Keyboard Shortcuts Help */}
-      <KeyboardShortcutsHelp />
     </>
   )
 }

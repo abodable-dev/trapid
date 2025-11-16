@@ -10,10 +10,11 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_15_015942) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_16_211635) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
+  enable_extension "pg_trgm"
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -43,6 +44,36 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_015942) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "agent_definitions", force: :cascade do |t|
+    t.string "agent_id", null: false
+    t.string "name", null: false
+    t.string "agent_type", null: false
+    t.string "focus", null: false
+    t.string "model", default: "sonnet"
+    t.text "purpose"
+    t.text "capabilities"
+    t.text "when_to_use"
+    t.text "tools_available"
+    t.text "success_criteria"
+    t.text "example_invocations"
+    t.text "important_notes"
+    t.integer "total_runs", default: 0
+    t.integer "successful_runs", default: 0
+    t.integer "failed_runs", default: 0
+    t.datetime "last_run_at"
+    t.string "last_status"
+    t.text "last_message"
+    t.jsonb "last_run_details", default: {}
+    t.jsonb "metadata", default: {}
+    t.boolean "active", default: true
+    t.integer "priority", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_agent_definitions_on_active"
+    t.index ["agent_id"], name: "index_agent_definitions_on_agent_id", unique: true
+    t.index ["agent_type"], name: "index_agent_definitions_on_agent_type"
+  end
+
   create_table "bug_hunter_test_runs", force: :cascade do |t|
     t.string "test_id", null: false
     t.string "status", null: false
@@ -51,6 +82,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_015942) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "template_id"
+    t.text "console_output"
     t.index ["created_at"], name: "index_bug_hunter_test_runs_on_created_at"
     t.index ["test_id"], name: "index_bug_hunter_test_runs_on_test_id"
   end
@@ -389,6 +421,48 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_015942) do
     t.index ["name"], name: "index_documentation_categories_on_name", unique: true
   end
 
+  create_table "documentation_entries", force: :cascade do |t|
+    t.integer "chapter_number", null: false
+    t.string "chapter_name", null: false
+    t.string "component"
+    t.string "title", null: false
+    t.string "status", default: "open"
+    t.string "severity", default: "medium"
+    t.date "first_reported"
+    t.date "last_occurred"
+    t.date "fixed_date"
+    t.text "scenario"
+    t.text "root_cause"
+    t.text "solution"
+    t.text "prevention"
+    t.jsonb "metadata", default: {}
+    t.text "search_text"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "entry_type", default: "bug", null: false
+    t.text "description"
+    t.text "details"
+    t.text "examples"
+    t.text "recommendations"
+    t.string "rule_reference"
+    t.string "section_number"
+    t.string "difficulty"
+    t.text "summary"
+    t.text "code_example"
+    t.text "common_mistakes"
+    t.text "testing_strategy"
+    t.text "related_rules"
+    t.index ["chapter_number", "entry_type"], name: "index_documentation_entries_on_chapter_number_and_entry_type"
+    t.index ["chapter_number", "section_number"], name: "idx_on_chapter_number_section_number_9d7330bbf5"
+    t.index ["chapter_number", "status"], name: "index_documentation_entries_on_chapter_number_and_status"
+    t.index ["chapter_number"], name: "index_documentation_entries_on_chapter_number"
+    t.index ["entry_type"], name: "index_documentation_entries_on_entry_type"
+    t.index ["search_text"], name: "index_documentation_entries_on_search_text", opclass: :gin_trgm_ops, using: :gin
+    t.index ["section_number"], name: "index_documentation_entries_on_section_number"
+    t.index ["severity"], name: "index_documentation_entries_on_severity"
+    t.index ["status"], name: "index_documentation_entries_on_status"
+  end
+
   create_table "emails", force: :cascade do |t|
     t.bigint "construction_id", null: false
     t.string "from_email"
@@ -504,6 +578,37 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_015942) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_grok_plans_on_user_id"
+  end
+
+  create_table "implementation_patterns", force: :cascade do |t|
+    t.integer "chapter_number", null: false
+    t.string "chapter_name", null: false
+    t.string "section_number", null: false
+    t.string "pattern_title", null: false
+    t.string "bible_rule_reference"
+    t.text "quick_start"
+    t.text "full_implementation"
+    t.text "architecture"
+    t.text "common_mistakes"
+    t.text "testing"
+    t.text "migration_guide"
+    t.text "integration"
+    t.text "notes"
+    t.jsonb "code_examples", default: []
+    t.jsonb "metadata", default: {}
+    t.text "search_text"
+    t.string "complexity", default: "medium"
+    t.string "languages", default: [], array: true
+    t.string "tags", default: [], array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chapter_number", "section_number"], name: "index_implementation_patterns_on_chapter_and_section", unique: true
+    t.index ["chapter_number"], name: "index_implementation_patterns_on_chapter_number"
+    t.index ["complexity"], name: "index_implementation_patterns_on_complexity"
+    t.index ["languages"], name: "index_implementation_patterns_on_languages", using: :gin
+    t.index ["search_text"], name: "index_implementation_patterns_on_search_text", opclass: :gin_trgm_ops, using: :gin
+    t.index ["section_number"], name: "index_implementation_patterns_on_section_number"
+    t.index ["tags"], name: "index_implementation_patterns_on_tags", using: :gin
   end
 
   create_table "import_sessions", force: :cascade do |t|
@@ -946,6 +1051,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_015942) do
     t.index ["source"], name: "index_rain_logs_on_source"
   end
 
+  create_table "sam_quick_est_items", force: :cascade do |t|
+    t.string "item_code", null: false
+    t.string "item_name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "claude_estimate", precision: 10, scale: 2
+    t.index ["item_code"], name: "index_sam_quick_est_items_on_item_code", unique: true
+  end
+
   create_table "schedule_task_checklist_items", force: :cascade do |t|
     t.bigint "schedule_task_id", null: false
     t.string "name", null: false
@@ -1360,6 +1474,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_015942) do
     t.index ["project_task_id"], name: "index_task_updates_on_project_task_id"
     t.index ["update_date"], name: "index_task_updates_on_update_date"
     t.index ["user_id"], name: "index_task_updates_on_user_id"
+  end
+
+  create_table "teaching_patterns", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "unreal_variables", force: :cascade do |t|
+    t.string "variable_name"
+    t.decimal "claude_value", precision: 10, scale: 2
+    t.boolean "is_active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "user_9_30_upload_4b12581f", force: :cascade do |t|

@@ -380,11 +380,8 @@ export default function AppLayout({ children }) {
         "transition-all duration-300",
         sidebarCollapsed ? "lg:pl-16" : "lg:pl-72"
       )}>
-        {/* Top bar - hidden when sidebar is collapsed on desktop */}
-        <div className={classNames(
-          "sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900 dark:shadow-none transition-all duration-300",
-          sidebarCollapsed ? "lg:hidden" : ""
-        )}>
+        {/* Top bar - always visible with help button */}
+        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900 dark:shadow-none transition-all duration-300">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
@@ -398,31 +395,44 @@ export default function AppLayout({ children }) {
           <div aria-hidden="true" className="h-6 w-px bg-gray-200 lg:hidden dark:bg-white/10" />
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="flex flex-1 items-center justify-end gap-x-4 lg:gap-x-6">
-              {/* Chat Icon */}
-              <Link to="/chat" className="relative -m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-white">
-                <span className="sr-only">Chat</span>
-                <ChatBubbleLeftRightIcon aria-hidden="true" className="size-6" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </Link>
+            <div className={classNames(
+              "flex flex-1 items-center gap-x-4 lg:gap-x-6",
+              sidebarCollapsed ? "justify-end" : "justify-end"
+            )}>
+              {/* Only show these icons when sidebar is NOT collapsed */}
+              {!sidebarCollapsed && (
+                <>
+                  {/* Chat Icon */}
+                  <Link to="/chat" className="relative -m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-white">
+                    <span className="sr-only">Chat</span>
+                    <ChatBubbleLeftRightIcon aria-hidden="true" className="size-6" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </Link>
 
-              {/* Training Icon */}
-              <Link to="/training" className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-white" title="Training Sessions">
-                <span className="sr-only">Training Sessions</span>
-                <AcademicCapIcon aria-hidden="true" className="size-6" />
-              </Link>
+                  {/* Training Icon */}
+                  <Link to="/training" className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-white" title="Training Sessions">
+                    <span className="sr-only">Training Sessions</span>
+                    <AcademicCapIcon aria-hidden="true" className="size-6" />
+                  </Link>
 
-              <button type="button" className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-white">
-                <span className="sr-only">View notifications</span>
-                <BellIcon aria-hidden="true" className="size-6" />
-              </button>
+                  <button type="button" className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:hover:text-white">
+                    <span className="sr-only">View notifications</span>
+                    <BellIcon aria-hidden="true" className="size-6" />
+                  </button>
+                </>
+              )}
 
-              {/* Separator */}
-              <div aria-hidden="true" className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200 dark:lg:bg-white/10" />
+              {/* Help Button - always visible */}
+              <FloatingHelpButton inline={true} />
+
+              {/* Separator - only when sidebar not collapsed */}
+              {!sidebarCollapsed && (
+                <div aria-hidden="true" className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200 dark:lg:bg-white/10" />
+              )}
 
               {/* Profile dropdown */}
               <Menu as="div" className="relative">
@@ -503,9 +513,6 @@ export default function AppLayout({ children }) {
             {children}
           </div>
         </main>
-
-        {/* Floating Help Button */}
-        <FloatingHelpButton />
       </div>
     </div>
   )

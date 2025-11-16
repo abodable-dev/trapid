@@ -22,7 +22,7 @@ export default function EntryDetails({ entry, onEdit, onDelete }) {
             <div className="flex items-center gap-2 mb-2">
               <span className="text-2xl">{entry.type_display?.split(' ')[0] || '📝'}</span>
               <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                {entry.bug_title}
+                {entry.title}
               </h1>
             </div>
 

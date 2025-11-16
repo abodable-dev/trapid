@@ -40,7 +40,7 @@ namespace :trapid do
     content << ''
     content << '## 💾 Database-Driven Lexicon'
     content << ''
-    content << '**IMPORTANT:** This file is auto-generated from the `documented_bugs` database table.'
+    content << '**IMPORTANT:** This file is auto-generated from the `documentation_entries` database table.'
     content << ''
     content << '**To edit entries:**'
     content << '1. Go to Documentation page in Trapid'
@@ -55,10 +55,11 @@ namespace :trapid do
     content << '## Table of Contents'
     content << ''
 
-    # Get all chapters
-    chapters = DocumentedBug.select(:chapter_number, :chapter_name)
-                            .distinct
-                            .order(:chapter_number)
+    # Get all chapters (only from Lexicon entries)
+    chapters = DocumentationEntry.lexicon_entries
+                                 .select(:chapter_number, :chapter_name)
+                                 .distinct
+                                 .order(:chapter_number)
 
     chapters.each do |chapter|
       content << "- [Chapter #{chapter.chapter_number}: #{chapter.chapter_name}](#chapter-#{chapter.chapter_number}-#{chapter.chapter_name.downcase.gsub(/[^a-z0-9]+/, '-')})"
@@ -85,18 +86,18 @@ namespace :trapid do
       content << '---'
       content << ''
 
-      # Get entries for this chapter
-      entries = DocumentedBug.where(chapter_number: chapter.chapter_number)
-                             .order(:knowledge_type, :created_at)
+      # Get Lexicon entries for this chapter only
+      entries = DocumentationEntry.lexicon_entries
+                                  .where(chapter_number: chapter.chapter_number)
+                                  .order(:entry_type, :created_at)
 
-      # Group by knowledge_type
-      bugs = entries.where(knowledge_type: 'bug')
-      architecture = entries.where(knowledge_type: 'architecture')
-      tests = entries.where(knowledge_type: 'test')
-      performance = entries.where(knowledge_type: 'performance')
-      dev_notes = entries.where(knowledge_type: 'dev_note')
-      common_issues = entries.where(knowledge_type: 'common_issue')
-      terminology = entries.where(knowledge_type: 'terminology')
+      # Group by entry_type
+      bugs = entries.where(entry_type: 'bug')
+      architecture = entries.where(entry_type: 'architecture')
+      tests = entries.where(entry_type: 'test')
+      performance = entries.where(entry_type: 'performance')
+      dev_notes = entries.where(entry_type: 'dev_note')
+      common_issues = entries.where(entry_type: 'common_issue')
 
       # Bug Hunter section
       if bugs.any?
@@ -112,7 +113,7 @@ namespace :trapid do
                         else '⚡'
                         end
 
-          content << "### #{status_emoji} #{bug.bug_title}"
+          content << "### #{status_emoji} #{bug.title}"
           content << ''
           content << "**Status:** #{status_emoji} #{bug.status&.upcase || 'UNKNOWN'}"
           content << "**First Reported:** #{bug.first_reported || 'Unknown'}"
@@ -169,7 +170,7 @@ namespace :trapid do
         content << ''
 
         architecture.each_with_index do |arch, index|
-          content << "### #{index + 1}. #{arch.bug_title}"
+          content << "### #{index + 1}. #{arch.title}"
           content << ''
 
           if arch.rule_reference.present?
@@ -217,7 +218,7 @@ namespace :trapid do
         content << ''
 
         tests.each do |test|
-          content << "### #{test.bug_title}"
+          content << "### #{test.title}"
           content << ''
 
           if test.description.present?
@@ -242,7 +243,7 @@ namespace :trapid do
         content << ''
 
         performance.each do |perf|
-          content << "### #{perf.bug_title}"
+          content << "### #{perf.title}"
           content << ''
           content << perf.description if perf.description.present?
           content << ''
@@ -259,7 +260,7 @@ namespace :trapid do
         content << ''
 
         dev_notes.each do |note|
-          content << "### #{note.bug_title}"
+          content << "### #{note.title}"
           content << ''
 
           if note.description.present?
@@ -283,7 +284,7 @@ namespace :trapid do
         content << ''
 
         common_issues.each do |issue|
-          content << "### #{issue.bug_title}"
+          content << "### #{issue.title}"
           content << ''
           content << issue.description if issue.description.present?
           content << ''
@@ -292,41 +293,6 @@ namespace :trapid do
         end
       end
 
-      # Terminology section
-      if terminology.any?
-        content << '## 📖 Terminology'
-        content << ''
-
-        terminology.each do |term|
-          content << "### #{term.bug_title}"
-          content << ''
-
-          if term.description.present?
-            content << "**Definition:** #{term.description}"
-            content << ''
-          end
-
-          if term.details.present?
-            content << "**Details:**"
-            content << term.details
-            content << ''
-          end
-
-          if term.examples.present?
-            content << "**Examples:**"
-            content << term.examples
-            content << ''
-          end
-
-          if term.rule_reference.present?
-            content << "**Related Rule:** Bible #{term.rule_reference}"
-            content << ''
-          end
-
-          content << '---'
-          content << ''
-        end
-      end
 
       # Related chapters
       content << '## 📚 Related Chapters'
@@ -348,7 +314,7 @@ namespace :trapid do
     file_path = Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_LEXICON.md')
     File.write(file_path, content.join("\n"))
 
-    total_entries = DocumentedBug.count
+    total_entries = DocumentationEntry.lexicon_entries.count
     puts "✅ Exported #{total_entries} entries across #{chapters.count} chapters"
     puts "📄 File: #{file_path}"
     puts ''
@@ -356,5 +322,201 @@ namespace :trapid do
     puts '  1. Review the generated file'
     puts '  2. Commit to git: git add TRAPID_DOCS/TRAPID_LEXICON.md'
     puts '  3. Git commit message: "docs: Update Lexicon from database export"'
+  end
+
+  desc 'Export Teacher database to TRAPID_TEACHER.md'
+  task export_teacher: :environment do
+    puts '🔧 Exporting Teacher database to markdown...'
+
+    # Build markdown content
+    content = []
+
+    # Header
+    content << '# TRAPID TEACHER - Implementation Patterns & Code Examples'
+    content << ''
+    content << '**Version:** 1.0.0'
+    content << "**Last Updated:** #{Time.current.strftime('%Y-%m-%d %H:%M %Z')}"
+    content << '**Authority Level:** Reference (HOW to implement Bible rules)'
+    content << '**Audience:** Claude Code + Human Developers'
+    content << ''
+    content << '---'
+    content << ''
+    content << '## 🔴 CRITICAL: Read This First'
+    content << ''
+    content << '### This Document is "The Teacher"'
+    content << ''
+    content << 'This file contains **code examples and step-by-step guides** for implementing Trapid features.'
+    content << ''
+    content << '**This Teacher Contains HOW-TO ONLY:**'
+    content << '- 🧩 Component patterns (full code examples)'
+    content << '- ✨ Feature implementation guides (step-by-step)'
+    content << '- 🔧 Utility functions (reusable code)'
+    content << '- 🪝 Hook patterns (React/Rails hooks)'
+    content << '- 🔌 Integration guides (Xero, OneDrive, etc.)'
+    content << '- ⚡ Optimization techniques (performance improvements)'
+    content << ''
+    content << '**For RULES (MUST/NEVER/ALWAYS):**'
+    content << '- 📖 See [TRAPID_BIBLE.md](TRAPID_BIBLE.md)'
+    content << ''
+    content << '**For BUG HISTORY & KNOWLEDGE:**'
+    content << '- 📕 See [TRAPID_LEXICON.md](TRAPID_LEXICON.md)'
+    content << ''
+    content << '**For USER GUIDES (how to use features):**'
+    content << '- 📘 See [TRAPID_USER_MANUAL.md](TRAPID_USER_MANUAL.md)'
+    content << ''
+    content << '---'
+    content << ''
+    content << '## 💾 Database-Driven Teacher'
+    content << ''
+    content << '**IMPORTANT:** This file is auto-generated from the `documentation_entries` database table.'
+    content << ''
+    content << '**To edit entries:**'
+    content << '1. Go to Documentation page in Trapid'
+    content << '2. Click "🔧 TRAPID Teacher"'
+    content << '3. Use the UI to add/edit/delete teaching patterns'
+    content << '4. Run `rake trapid:export_teacher` to update this file'
+    content << ''
+    content << '**Single Source of Truth:** Database (not this file)'
+    content << ''
+    content << '---'
+    content << ''
+    content << '## Table of Contents'
+    content << ''
+
+    # Get all chapters (only from Teacher entries)
+    chapters = DocumentationEntry.teacher_entries
+                                 .select(:chapter_number, :chapter_name)
+                                 .distinct
+                                 .order(:chapter_number)
+
+    chapters.each do |chapter|
+      content << "- [Chapter #{chapter.chapter_number}: #{chapter.chapter_name}](#chapter-#{chapter.chapter_number}-#{chapter.chapter_name.downcase.gsub(/[^a-z0-9]+/, '-')})"
+    end
+
+    content << ''
+    content << '---'
+    content << ''
+
+    # Generate content for each chapter
+    chapters.each do |chapter|
+      content << ''
+      content << "# Chapter #{chapter.chapter_number}: #{chapter.chapter_name}"
+      content << ''
+      content << '┌─────────────────────────────────────────────────┐'
+      content << "│ 📖 BIBLE (RULES):     Chapter #{chapter.chapter_number.to_s.rjust(2)}               │"
+      content << "│ 📕 LEXICON (BUGS):    Chapter #{chapter.chapter_number.to_s.rjust(2)}               │"
+      content << '└─────────────────────────────────────────────────┘'
+      content << ''
+      content << '**Audience:** Claude Code + Human Developers'
+      content << '**Purpose:** Code examples, implementation patterns, and step-by-step guides'
+      content << "**Last Updated:** #{Time.current.strftime('%Y-%m-%d')}"
+      content << ''
+      content << '---'
+      content << ''
+
+      # Get Teacher entries for this chapter
+      entries = DocumentationEntry.teacher_entries
+                                  .where(chapter_number: chapter.chapter_number)
+                                  .order(:section_number, :created_at)
+
+      entries.each do |entry|
+        # Section header
+        section_prefix = entry.section_number.present? ? "§#{entry.section_number}: " : ""
+        content << "## #{section_prefix}#{entry.title}"
+        content << ''
+
+        # Type and difficulty badges
+        badges = []
+        badges << "#{entry.type_emoji} #{entry.entry_type.titleize}"
+        badges << "#{entry.difficulty_emoji} #{entry.difficulty&.capitalize}" if entry.difficulty.present?
+        content << badges.join(' | ')
+        content << ''
+
+        # Related rules
+        if entry.related_rules.present?
+          content << "**📖 Related Bible Rules:** #{entry.related_rules}"
+          content << ''
+        end
+
+        # Summary
+        if entry.summary.present?
+          content << '### Quick Summary'
+          content << entry.summary
+          content << ''
+        end
+
+        # Step-by-step guide (using details field)
+        if entry.details.present?
+          content << '### Step-by-Step Guide'
+          content << entry.details
+          content << ''
+        end
+
+        # Code example
+        if entry.code_example.present?
+          content << '### Code Example'
+          content << '```jsx'
+          content << entry.code_example
+          content << '```'
+          content << ''
+        end
+
+        # Common mistakes
+        if entry.common_mistakes.present?
+          content << '### ⚠️ Common Mistakes'
+          content << entry.common_mistakes
+          content << ''
+        end
+
+        # Testing strategy
+        if entry.testing_strategy.present?
+          content << '### 🧪 Testing Strategy'
+          content << entry.testing_strategy
+          content << ''
+        end
+
+        # Additional universal fields
+        if entry.description.present?
+          content << '### Description'
+          content << entry.description
+          content << ''
+        end
+
+        if entry.examples.present?
+          content << '### Examples'
+          content << entry.examples
+          content << ''
+        end
+
+        if entry.recommendations.present?
+          content << '### Recommendations'
+          content << entry.recommendations
+          content << ''
+        end
+
+        content << '---'
+        content << ''
+      end
+    end
+
+    # Footer
+    content << ''
+    content << "**Last Generated:** #{Time.current.strftime('%Y-%m-%d %H:%M %Z')}"
+    content << '**Generated By:** `rake trapid:export_teacher`'
+    content << '**Maintained By:** Development Team via Database UI'
+    content << '**Review Schedule:** After adding new patterns or updating examples'
+
+    # Write to file
+    file_path = Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_TEACHER.md')
+    File.write(file_path, content.join("\n"))
+
+    total_entries = DocumentationEntry.teacher_entries.count
+    puts "✅ Exported #{total_entries} teaching patterns across #{chapters.count} chapters"
+    puts "📄 File: #{file_path}"
+    puts ''
+    puts '💡 Next steps:'
+    puts '  1. Review the generated file'
+    puts '  2. Commit to git: git add TRAPID_DOCS/TRAPID_TEACHER.md'
+    puts '  3. Git commit message: "docs: Update Teacher from database export"'
   end
 end

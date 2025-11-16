@@ -37,7 +37,7 @@ export default function EntryList({ entries, selectedEntry, onSelectEntry, searc
         <span className="text-base flex-shrink-0">{entry.type_display?.split(' ')[0] || '📝'}</span>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
-            {entry.bug_title}
+            {entry.title}
           </div>
           <div className="flex items-center gap-2 mt-1 text-xs">
             {entry.severity_display && (

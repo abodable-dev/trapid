@@ -396,19 +396,19 @@ export default function AgentShortcutsTab() {
     try {
       localStorage.setItem('claudeCommands', JSON.stringify(commands))
 
-      await api.post('/api/v1/documented_bugs', {
-        documented_bug: {
+      await api.post('/api/v1/documentation_entries', {
+        documentation_entry: {
           chapter_number: 20,
           chapter_name: 'Agent System & Automation',
           component: 'Claude Code Commands',
-          bug_title: 'Claude Code Commands Configuration',
-          knowledge_type: 'dev_note',
+          title: 'Claude Code Commands Configuration',
+          entry_type: 'dev_note',
           description: `${commands.length} commands configured for Claude Code`,
           details: commands.map(c => `- **${c.command}**: ${c.shortcut}`).join('\n')
         }
       })
 
-      await api.post('/api/v1/documented_bugs/export_to_markdown')
+      await api.post('/api/v1/documentation_entries/export_lexicon')
 
       setExportStatus({ type: 'success', message: 'Commands saved to Lexicon!' })
       setIsEditingCommands(false)
@@ -427,19 +427,19 @@ export default function AgentShortcutsTab() {
     try {
       localStorage.setItem('claudeSlang', JSON.stringify(slang))
 
-      await api.post('/api/v1/documented_bugs', {
-        documented_bug: {
+      await api.post('/api/v1/documentation_entries', {
+        documentation_entry: {
           chapter_number: 20,
           chapter_name: 'Agent System & Automation',
           component: 'Claude Code Slang',
-          bug_title: 'Claude Code Slang Configuration',
-          knowledge_type: 'dev_note',
+          title: 'Claude Code Slang Configuration',
+          entry_type: 'dev_note',
           description: `${slang.length} slang shortcuts configured for Claude Code`,
           details: slang.map(s => `- **${s.shortcut}**: ${s.meaning}`).join('\n')
         }
       })
 
-      await api.post('/api/v1/documented_bugs/export_to_markdown')
+      await api.post('/api/v1/documentation_entries/export_lexicon')
 
       setExportStatus({ type: 'success', message: 'Slang saved to Lexicon!' })
       setIsEditingSlang(false)

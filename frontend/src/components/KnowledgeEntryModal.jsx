@@ -31,8 +31,8 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
   const [formData, setFormData] = useState({
     chapter_number: chapterNumber || 0,
     chapter_name: chapterName || '',
-    knowledge_type: 'bug',
-    bug_title: '',
+    entry_type: 'bug',
+    title: '',
     component: '',
     description: '',
     details: '',
@@ -60,8 +60,8 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
       setFormData({
         chapter_number: entry.chapter_number,
         chapter_name: entry.chapter_name,
-        knowledge_type: entry.knowledge_type,
-        bug_title: entry.bug_title,
+        entry_type: entry.entry_type,
+        title: entry.title,
         component: entry.component || '',
         description: entry.description || '',
         details: entry.details || '',
@@ -82,8 +82,8 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
       setFormData({
         chapter_number: chapterNumber || 0,
         chapter_name: chapterName || '',
-        knowledge_type: 'bug',
-        bug_title: '',
+        entry_type: 'bug',
+        title: '',
         component: '',
         description: '',
         details: '',
@@ -123,7 +123,7 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
     }
   }
 
-  const isBug = formData.knowledge_type === 'bug'
+  const isBug = formData.entry_type === 'bug'
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -184,8 +184,8 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
                       Knowledge Type
                     </label>
                     <select
-                      value={formData.knowledge_type}
-                      onChange={(e) => handleChange('knowledge_type', e.target.value)}
+                      value={formData.entry_type}
+                      onChange={(e) => handleChange('entry_type', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                       required
                     >
@@ -204,8 +204,8 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
                     </label>
                     <input
                       type="text"
-                      value={formData.bug_title}
-                      onChange={(e) => handleChange('bug_title', e.target.value)}
+                      value={formData.title}
+                      onChange={(e) => handleChange('title', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                       placeholder="Brief title describing this entry"
                       required

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import {
   MagnifyingGlassIcon,
@@ -115,6 +115,11 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
   // Column reordering state
   const [draggedColumn, setDraggedColumn] = useState(null)
 
+  // Sticky horizontal scrollbar state
+  const [tableScrollWidth, setTableScrollWidth] = useState(0)
+  const scrollContainerRef = useRef(null)
+  const stickyScrollbarRef = useRef(null)
+
   // Load table state from localStorage on mount (RULE #19.5B)
   useEffect(() => {
     const savedState = localStorage.getItem('lexiconTableViewState')
@@ -176,6 +181,57 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
       }
     }
   }, [resizingColumn, resizeStartX, resizeStartWidth])
+
+  // Scroll handlers for sticky horizontal scrollbar
+  const handleScroll = (e) => {
+    const container = e.target
+    const { scrollLeft, scrollTop } = container
+
+    // Sync horizontal sticky scrollbar
+    if (stickyScrollbarRef.current) {
+      stickyScrollbarRef.current.scrollLeft = scrollLeft
+    }
+
+    // Log scroll position occasionally (every 100px)
+    if (Math.floor(scrollLeft / 100) !== Math.floor((scrollLeft - 1) / 100)) {
+      console.log('📊 Lexicon scroll:', { scrollLeft, scrollTop })
+    }
+  }
+
+  const handleStickyScroll = (e) => {
+    const scrollLeft = e.target.scrollLeft
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = scrollLeft
+      console.log('📊 Lexicon sticky scrollbar scrolled to:', scrollLeft)
+    }
+  }
+
+  // Track table scroll width for sticky scrollbar
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) {
+      console.log('📊 Lexicon: No scroll container ref')
+      return
+    }
+
+    const updateScrollbar = () => {
+      const { scrollWidth, clientWidth, offsetWidth } = container
+      console.log('📊 Lexicon table dimensions:', {
+        scrollWidth,
+        clientWidth,
+        offsetWidth,
+        needsHorizontalScroll: scrollWidth > clientWidth,
+        overflow: scrollWidth - clientWidth
+      })
+      setTableScrollWidth(scrollWidth)
+    }
+
+    updateScrollbar()
+    const resizeObserver = new ResizeObserver(updateScrollbar)
+    resizeObserver.observe(container)
+
+    return () => resizeObserver.disconnect()
+  }, [filteredAndSorted, columnWidths])
 
   // Column reordering handlers (RULE #19.5)
   const handleDragStart = (e, columnKey) => {
@@ -258,7 +314,7 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
     if (search) {
       const query = search.toLowerCase()
       result = result.filter(e =>
-        e.bug_title?.toLowerCase().includes(query) ||
+        e.title?.toLowerCase().includes(query) ||
         e.component?.toLowerCase().includes(query) ||
         e.scenario?.toLowerCase().includes(query) ||
         e.root_cause?.toLowerCase().includes(query) ||
@@ -276,10 +332,10 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
           result = result.filter(e => e.chapter_number === parseInt(value))
           break
         case 'type':
-          result = result.filter(e => e.knowledge_type === value)
+          result = result.filter(e => e.entry_type === value)
           break
         case 'title':
-          result = result.filter(e => e.bug_title?.toLowerCase().includes(value.toLowerCase()))
+          result = result.filter(e => e.title?.toLowerCase().includes(value.toLowerCase()))
           break
         case 'component':
           result = result.filter(e => e.component?.toLowerCase().includes(value.toLowerCase()))
@@ -298,7 +354,7 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
       result = result.filter(e => e.chapter_number === parseInt(filters.chapter))
     }
     if (filters.type !== 'all') {
-      result = result.filter(e => e.knowledge_type === filters.type)
+      result = result.filter(e => e.entry_type === filters.type)
     }
     if (filters.status !== 'all') {
       result = result.filter(e => e.status === filters.status)
@@ -317,8 +373,8 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
           bVal = b.chapter_number
           break
         case 'title':
-          aVal = a.bug_title || ''
-          bVal = b.bug_title || ''
+          aVal = a.title || ''
+          bVal = b.title || ''
           break
         case 'status':
           aVal = a.status || ''
@@ -334,8 +390,8 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
           bVal = b.component || ''
           break
         case 'type':
-          aVal = a.knowledge_type || ''
-          bVal = b.knowledge_type || ''
+          aVal = a.entry_type || ''
+          bVal = b.entry_type || ''
           break
         default:
           return 0
@@ -424,16 +480,16 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
       case 'type':
         return (
           <>
-            {entry.knowledge_type === 'bug' && '🐛'}
-            {entry.knowledge_type === 'architecture' && '🏛️'}
-            {entry.knowledge_type === 'test' && '📊'}
-            {entry.knowledge_type === 'note' && '🎓'}
-            <span className="ml-1 text-xs">{entry.knowledge_type}</span>
+            {entry.entry_type === 'bug' && '🐛'}
+            {entry.entry_type === 'architecture' && '🏛️'}
+            {entry.entry_type === 'test' && '📊'}
+            {entry.entry_type === 'note' && '🎓'}
+            <span className="ml-1 text-xs">{entry.entry_type}</span>
           </>
         )
 
       case 'title':
-        return <div className="max-w-md truncate font-medium">{entry.bug_title}</div>
+        return <div className="max-w-md truncate font-medium">{entry.title}</div>
 
       case 'component':
         return entry.component || '-'
@@ -478,7 +534,7 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+    <div className="h-full flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
       {/* Bulk Action Bar (RULE #19.1 - shown when rows selected) */}
       {selectedRows.size > 0 && (
         <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-200 dark:border-indigo-800">
@@ -506,7 +562,7 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
       )}
 
       {/* Header with Search, Filters, and Column Visibility (RULE #19.20, #19.10) */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-4">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-4 flex-shrink-0">
         {/* Search Box with Clear Button (RULE #19.20) */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
@@ -629,13 +685,20 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
         </div>
       </div>
 
-      {/* Table with Sticky Gradient Headers (RULE #19.2) */}
-      <div className="flex-1 overflow-auto" style={{
-        scrollbarWidth: 'thin',
-        scrollbarColor: '#9CA3AF #E5E7EB'
-      }}>
-        <table className="w-full border-collapse">
-          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
+      {/* Table Container with Sticky Scrollbar - using flex layout */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {/* Table with Sticky Gradient Headers (RULE #19.2) */}
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-scroll overflow-x-auto relative bg-white dark:bg-gray-900"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#9CA3AF #E5E7EB'
+          }}
+        >
+          <table className="w-full border-collapse">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
             <tr>
               {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
                 const column = COLUMNS.find(c => c.key === colKey)
@@ -831,6 +894,32 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
             No entries found matching your filters
           </div>
         )}
+      </div>
+
+        {/* Sticky Horizontal Scrollbar - Always visible at bottom of table */}
+        <div
+          ref={stickyScrollbarRef}
+          onScroll={handleStickyScroll}
+          className="overflow-x-auto overflow-y-hidden h-6 bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-600"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#9CA3AF #F3F4F6'
+          }}
+          onLoad={() => console.log('📊 Lexicon sticky scrollbar mounted, width:', tableScrollWidth)}
+        >
+          <div
+            style={{ width: `${tableScrollWidth}px`, height: '1px' }}
+            ref={(el) => {
+              if (el) {
+                console.log('📊 Lexicon scrollbar inner div:', {
+                  width: el.style.width,
+                  parentWidth: el.parentElement?.offsetWidth,
+                  parentScrollWidth: el.parentElement?.scrollWidth
+                })
+              }
+            }}
+          />
+        </div>
       </div>
     </div>
   )

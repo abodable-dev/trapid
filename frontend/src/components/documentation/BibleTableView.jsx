@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import {
   MagnifyingGlassIcon,
@@ -140,38 +140,121 @@ export default function BibleTableView({ content }) {
   // Custom scrollbar state
   const [scrollbarThumbHeight, setScrollbarThumbHeight] = useState(0)
   const [scrollbarThumbTop, setScrollbarThumbTop] = useState(0)
-  const scrollContainerRef = React.useRef(null)
+  const [tableScrollWidth, setTableScrollWidth] = useState(0)
+  const scrollContainerRef = useRef(null)
+  const stickyScrollbarRef = useRef(null)
 
   // Update custom scrollbar on scroll
   const handleScroll = (e) => {
     const container = e.target
-    const { scrollTop, scrollHeight, clientHeight } = container
+    const { scrollTop, scrollHeight, clientHeight, scrollLeft } = container
 
+    // Sync vertical scrollbar
     if (scrollHeight <= clientHeight) {
       setScrollbarThumbHeight(0)
-      return
+    } else {
+      const thumbHeight = (clientHeight / scrollHeight) * clientHeight
+      const thumbTop = (scrollTop / scrollHeight) * clientHeight
+      setScrollbarThumbHeight(thumbHeight)
+      setScrollbarThumbTop(thumbTop)
     }
 
-    const thumbHeight = (clientHeight / scrollHeight) * clientHeight
-    const thumbTop = (scrollTop / scrollHeight) * clientHeight
-
-    setScrollbarThumbHeight(thumbHeight)
-    setScrollbarThumbTop(thumbTop)
+    // Sync horizontal sticky scrollbar
+    if (stickyScrollbarRef.current) {
+      stickyScrollbarRef.current.scrollLeft = scrollLeft
+    }
   }
 
+  // Handle sticky scrollbar scroll
+  const handleStickyScroll = (e) => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = e.target.scrollLeft
+    }
+  }
+
+  // Parse rules from markdown content
+  const rules = useMemo(() => parseRulesFromMarkdown(content), [content])
+
+  // Filter and sort rules
+  const filteredAndSorted = useMemo(() => {
+    let result = [...rules]
+
+    // Apply search
+    if (search) {
+      const query = search.toLowerCase()
+      result = result.filter(r =>
+        r.ruleNumber?.toLowerCase().includes(query) ||
+        r.title?.toLowerCase().includes(query) ||
+        r.chapterName?.toLowerCase().includes(query) ||
+        r.content?.toLowerCase().includes(query)
+      )
+    }
+
+    // Apply inline column filters
+    Object.entries(columnFilters).forEach(([key, value]) => {
+      if (!value) return
+
+      switch (key) {
+        case 'rule':
+          result = result.filter(r => r.ruleNumber?.toLowerCase().includes(value.toLowerCase()))
+          break
+        case 'chapter':
+          result = result.filter(r => r.chapter === parseInt(value))
+          break
+        case 'title':
+          result = result.filter(r => r.title?.toLowerCase().includes(value.toLowerCase()))
+          break
+      }
+    })
+
+    // Sort
+    result.sort((a, b) => {
+      let aVal, bVal
+
+      switch (sortBy) {
+        case 'rule':
+          aVal = a.ruleNumber || ''
+          bVal = b.ruleNumber || ''
+          break
+        case 'chapter':
+          aVal = a.chapter
+          bVal = b.chapter
+          break
+        case 'title':
+          aVal = a.title || ''
+          bVal = b.title || ''
+          break
+        default:
+          return 0
+      }
+
+      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1
+      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1
+      return 0
+    })
+
+    return result
+  }, [rules, search, columnFilters, sortBy, sortDir])
+
   // Initialize scrollbar on mount and content change
-  React.useEffect(() => {
+  useEffect(() => {
     const container = scrollContainerRef.current
     if (!container) return
 
     const updateScrollbar = () => {
-      const { scrollHeight, clientHeight } = container
+      const { scrollHeight, clientHeight, scrollWidth } = container
+
+      // Update vertical scrollbar
       if (scrollHeight <= clientHeight) {
         setScrollbarThumbHeight(0)
-        return
+      } else {
+        const thumbHeight = (clientHeight / scrollHeight) * clientHeight
+        setScrollbarThumbHeight(thumbHeight)
       }
-      const thumbHeight = (clientHeight / scrollHeight) * clientHeight
-      setScrollbarThumbHeight(thumbHeight)
+
+      // Update horizontal scroll width
+      console.log('📊 Bible table scrollWidth:', scrollWidth, 'clientWidth:', container.clientWidth)
+      setTableScrollWidth(scrollWidth)
     }
 
     updateScrollbar()
@@ -179,10 +262,7 @@ export default function BibleTableView({ content }) {
     resizeObserver.observe(container)
 
     return () => resizeObserver.disconnect()
-  }, [filteredAndSorted])
-
-  // Parse rules from markdown content
-  const rules = useMemo(() => parseRulesFromMarkdown(content), [content])
+  }, [filteredAndSorted, columnWidths])
 
   // Load table state from localStorage on mount
   useEffect(() => {
@@ -307,67 +387,6 @@ export default function BibleTableView({ content }) {
       [columnKey]: value
     }))
   }
-
-  // Filter and sort rules
-  const filteredAndSorted = useMemo(() => {
-    let result = [...rules]
-
-    // Apply search
-    if (search) {
-      const query = search.toLowerCase()
-      result = result.filter(r =>
-        r.ruleNumber?.toLowerCase().includes(query) ||
-        r.title?.toLowerCase().includes(query) ||
-        r.chapterName?.toLowerCase().includes(query) ||
-        r.content?.toLowerCase().includes(query)
-      )
-    }
-
-    // Apply inline column filters
-    Object.entries(columnFilters).forEach(([key, value]) => {
-      if (!value) return
-
-      switch (key) {
-        case 'rule':
-          result = result.filter(r => r.ruleNumber?.toLowerCase().includes(value.toLowerCase()))
-          break
-        case 'chapter':
-          result = result.filter(r => r.chapter === parseInt(value))
-          break
-        case 'title':
-          result = result.filter(r => r.title?.toLowerCase().includes(value.toLowerCase()))
-          break
-      }
-    })
-
-    // Sort
-    result.sort((a, b) => {
-      let aVal, bVal
-
-      switch (sortBy) {
-        case 'rule':
-          aVal = a.ruleNumber || ''
-          bVal = b.ruleNumber || ''
-          break
-        case 'chapter':
-          aVal = a.chapter
-          bVal = b.chapter
-          break
-        case 'title':
-          aVal = a.title || ''
-          bVal = b.title || ''
-          break
-        default:
-          return 0
-      }
-
-      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1
-      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1
-      return 0
-    })
-
-    return result
-  }, [rules, search, columnFilters, sortBy, sortDir])
 
   const handleSort = (column) => {
     if (sortBy === column) {
@@ -579,11 +598,11 @@ export default function BibleTableView({ content }) {
       </div>
 
       {/* Table with Custom Scrollbar */}
-      <div className="flex-1 relative min-h-0">
+      <div className="flex-1 min-h-0 flex flex-col">
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="bible-table-scroll h-full overflow-y-scroll overflow-x-auto relative bg-white dark:bg-gray-900"
+          className="bible-table-scroll flex-1 overflow-y-scroll overflow-x-auto relative bg-white dark:bg-gray-900"
         >
         <table className="w-full border-collapse">
           <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-20">
@@ -724,6 +743,33 @@ export default function BibleTableView({ content }) {
             No rules found matching your filters
           </div>
         )}
+
+        {/* Custom Scrollbar Indicator - Inside scroll container */}
+        {scrollbarThumbHeight > 0 && (
+          <div className="absolute right-0 top-0 bottom-0 w-3 bg-gray-200 dark:bg-gray-700 pointer-events-none z-30">
+            <div
+              className="absolute right-0 w-full bg-gray-400 dark:bg-gray-500 rounded-full transition-all duration-150"
+              style={{
+                height: `${scrollbarThumbHeight}px`,
+                top: `${scrollbarThumbTop}px`
+              }}
+            />
+          </div>
+        )}
+        </div>
+
+        {/* Sticky Horizontal Scrollbar - Always visible at bottom of table */}
+        <div
+          ref={stickyScrollbarRef}
+          onScroll={handleStickyScroll}
+          className="overflow-x-auto overflow-y-hidden h-6 bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-600"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#9CA3AF #F3F4F6'
+          }}
+        >
+          <div style={{ width: `${tableScrollWidth}px`, height: '1px' }} />
+        </div>
       </div>
       </div>
     </>
