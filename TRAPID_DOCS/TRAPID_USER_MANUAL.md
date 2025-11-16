@@ -3252,7 +3252,135 @@ Create OneDrive folders when you create the job, not later. This ensures all doc
 │ 📕 LEXICON (BUGS):     Chapter 13 (Developers) │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+## What is Email Integration?
+
+Email Integration connects your Microsoft Outlook inbox to Trapid, automatically importing job-related emails and matching them to the correct construction projects. **Note:** Currently inbound-only (Outlook → Trapid). You cannot send emails from Trapid yet.
+
+**Benefits:**
+- Centralized email history per job
+- Automatic job matching (no manual filing)
+- Complete audit trail of client communication
+
+---
+
+## Getting Started
+
+### Step 1: Connect Outlook
+
+1. Go to **Settings** → **Integrations**
+2. Find **"Outlook"** card
+3. Click **"Connect to Outlook"**
+4. Sign in with your Microsoft account
+5. Click **"Accept"** to grant permissions
+
+**Permissions requested:**
+- Read your email (Mail.Read)
+- Read mailbox settings (MailboxSettings.Read)
+
+**Result:** Outlook connected. Token refreshes automatically.
+
+---
+
+### Step 2: Import Emails for a Job
+
+1. Open a **Job**
+2. Go to **"Emails"** tab
+3. Click **"Import from Outlook"** button
+4. Choose import method:
+   - **Search Query** - Enter keywords (e.g., "foundation inspection")
+   - **Folder** - Select inbox, sent, or custom folder
+5. Click **"Preview"** to see matching emails
+6. Click **"Import"** to save to job
+
+**Auto-Matching:**
+System automatically matches emails to jobs using:
+- Job reference in subject (#123 or JOB-123)
+- Job reference in email body
+- Sender email matches contact
+- Address mentioned in email
+
+---
+
+## Common Tasks
+
+### View Emails for a Job
+
+1. Open **Job**
+2. Go to **"Emails"** tab
+3. See list of all emails:
+   - Sender, subject, date
+   - Preview snippet
+   - Attachment indicator (if any)
+
+**Note:** Attachment metadata shown but files not downloadable yet (coming soon).
+
+---
+
+### Manually Assign Email to Job
+
+If auto-matching failed:
+
+1. Go to **Settings** → **Emails** (unassigned emails list)
+2. Find email in list
+3. Click **"Assign to Job"** dropdown
+4. Select correct job
+5. Click **"Save"**
+
+**Result:** Email now appears in that job's Emails tab.
+
+---
+
+### Search Emails Across All Jobs
+
+1. Go to **Settings** → **Emails**
+2. Use search box to find emails by:
+   - Sender email
+   - Subject keywords
+   - Date range
+
+**Tip:** Use advanced search for multi-job email history review.
+
+---
+
+## Troubleshooting
+
+**Issue: Outlook connection failed**
+
+**Cause:** OAuth permissions not granted or token expired.
+
+**Solution:**
+- Go to **Settings** → **Integrations** → **Outlook**
+- Click **"Disconnect"**
+- Click **"Connect to Outlook"** again
+- Ensure you accept ALL permissions
+
+---
+
+**Issue: Email imported but not matched to job**
+
+**Cause:** No job reference found, sender unknown, address not recognized.
+
+**Solution:**
+- Manually assign email to job (see "Manually Assign Email to Job" above)
+- OR add job reference (#123) to subject line before importing
+
+---
+
+**Issue: Can't send emails from Trapid**
+
+**Cause:** Outbound sending not yet implemented.
+
+**Solution:**
+- Send emails manually from Outlook as usual
+- Then import them into Trapid to keep history
+- Feature coming in future update
+
+---
+
+## Related Topics
+
+- **Chapter 5: Jobs & Construction Management** - Job email history
+- **Chapter 3: Contacts & Relationships** - Contact email matching
 
 ---
 

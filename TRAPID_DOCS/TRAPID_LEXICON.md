@@ -6282,7 +6282,147 @@ end
 │ 📘 USER MANUAL (HOW): Chapter 13               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+---
+
+## Bug Hunter & Known Issues
+
+### Issue: Attachment Metadata Without Storage
+**Status:** 🔴 INCOMPLETE FEATURE
+**Severity:** Medium
+**Component:** Email model
+
+**Scenario:**
+- Email imported with `has_attachments: true`, `attachment_count: 3`
+- User expects to download attachments
+- **Actual:** No attachment files stored, metadata only
+
+**Current State:**
+Email model tracks attachments exist but doesn't download/store files.
+
+**Proper Fix:**
+1. Add `attachments` association (ActiveStorage or Cloudinary)
+2. Download attachments during import via Graph API
+3. Display attachment list in email detail view
+4. Add download endpoints
+
+**See:** Bible RULE #13.6
+
+---
+
+### Issue: Outbound Email Not Implemented
+**Status:** 🔴 INCOMPLETE FEATURE
+**Severity:** High
+**Component:** Email system
+
+**Current:** Inbound only (Outlook → Trapid)
+**Missing:** Outbound sending (Trapid → Customer)
+
+**Workaround:**
+Users send emails manually from Outlook, then import them into Trapid.
+
+**See:** Bible RULE #13.6
+
+---
+
+## Architecture & Design Decisions
+
+### Why Singleton OAuth Credential?
+
+**Decision:** One organization-wide Outlook credential (not per-user).
+
+**Rationale:**
+- Shared inbox model (all emails visible to all users)
+- Single-tenant architecture
+- Simpler token management (one refresh flow)
+
+**Trade-off:**
+- Can't support per-user Outlook connections
+- All users see same emails
+
+**Implementation:**
+See Bible RULE #13.1
+
+---
+
+### Why Four-Strategy Email Matching?
+
+**Decision:** Cascading priority: job ref in subject → body → sender → address.
+
+**Rationale:**
+- Job reference most specific, least false positives
+- Sender email handles ongoing correspondence
+- Address matching catches forwarded emails
+- Priority order minimizes mismatches
+
+**Example:**
+Email with subject "Re: #JOB-123 Foundation query" → matches job 123 (strategy 1, highest confidence)
+
+**Implementation:**
+See Bible RULE #13.2
+
+---
+
+### Why Inbound-Only Architecture?
+
+**Decision:** No outbound email sending in current version.
+
+**Rationale:**
+- Reduces OAuth scope requirements (no Mail.Send needed)
+- Simpler implementation (no email templates required)
+- Focus on email capture first, sending later
+
+**Trade-off:**
+- Users must manually send from Outlook
+- No automated notifications (quote sent, job update)
+
+**Future:** Outbound via ActionMailer + SendGrid/Mailgun
+
+**Implementation:**
+See Bible RULE #13.6
+
+---
+
+## Test Catalog
+
+**Test:** `outlook-oauth-flow`
+**What it tests:** OAuth connection, token exchange, token refresh
+**How to run:** Via Bug Hunter Tests UI → "Outlook OAuth Flow"
+**Expected result:** Valid access token with 60-minute expiration
+
+---
+
+**Test:** `email-job-matching`
+**What it tests:** 4-strategy matching accuracy
+**How to run:** Via Bug Hunter Tests UI → "Email Job Matching"
+**Expected result:** All 4 strategies tested, priority order verified
+
+---
+
+## Known Gaps
+
+### 1. No Attachment Storage (INCOMPLETE)
+**Priority:** High
+**What's needed:** ActiveStorage integration, download endpoints
+
+### 2. No Outbound Sending (INCOMPLETE)
+**Priority:** High
+**What's needed:** ActionMailer setup, email templates, sending UI
+
+### 3. No Email Threading UI (INCOMPLETE)
+**Priority:** Medium
+**What's needed:** Conversation grouping, threaded display
+
+---
+
+## Summary
+
+Chapter 13 Lexicon documents:
+- **2 known issues** (attachment metadata only, no outbound)
+- **3 architecture decisions** (singleton credential, 4-strategy matching, inbound-only)
+- **2 test cases** for verification
+- **3 known gaps** requiring future work
 
 ---
 

@@ -7356,7 +7356,522 @@ Trapid Jobs/
 │ 📘 USER MANUAL (HOW): Chapter 13               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+---
+
+## Overview
+
+This chapter defines rules for **Outlook/Email Integration**, focusing on inbound email ingestion, OAuth authentication, auto-matching to jobs, and email storage. The system currently supports **one-way email import** (Outlook → Trapid) with automatic job association via intelligent parsing.
+
+**Current State:** Inbound email capture implemented. Outbound sending NOT implemented.
+
+**Related Chapters:**
+- Chapter 5: Jobs & Construction Management (email association)
+- Chapter 3: Contacts & Relationships (sender matching)
+
+---
+
+## RULE #13.1: Organization-Wide Singleton OAuth Credential
+
+**Outlook credentials MUST use singleton pattern - one credential per organization.**
+
+### Implementation
+
+✅ **MUST implement as singleton:**
+
+```ruby
+# app/models/organization_outlook_credential.rb
+class OrganizationOutlookCredential < ApplicationRecord
+  encrypts :access_token, :refresh_token
+
+  def self.current
+    first_or_create!
+  end
+
+  def needs_refresh?
+    expires_at.nil? || Time.current >= expires_at - 5.minutes
+  end
+end
+```
+
+### Token Refresh
+
+✅ **MUST auto-refresh tokens before expiration:**
+
+```ruby
+# app/services/outlook_service.rb
+def ensure_valid_token
+  credential = OrganizationOutlookCredential.current
+
+  if credential.needs_refresh?
+    refresh_access_token(credential)
+  end
+
+  credential.access_token
+end
+
+def refresh_access_token(credential)
+  response = HTTParty.post("https://login.microsoftonline.com/#{tenant}/oauth2/v2.0/token", {
+    body: {
+      client_id: ENV['OUTLOOK_CLIENT_ID'],
+      client_secret: ENV['OUTLOOK_CLIENT_SECRET'],
+      refresh_token: credential.refresh_token,
+      grant_type: 'refresh_token'
+    }
+  })
+
+  credential.update!(
+    access_token: response['access_token'],
+    refresh_token: response['refresh_token'],
+    expires_at: Time.current + response['expires_in'].seconds
+  )
+end
+```
+
+❌ **NEVER:**
+- Store multiple Outlook credentials (one organization = one credential)
+- Store tokens unencrypted
+- Let tokens expire without auto-refresh
+- Hardcode token expiration buffer (always use 5-minute safety margin)
+
+**Why:**
+- Single tenant architecture = one shared inbox
+- Auto-refresh prevents OAuth reauthorization interruptions
+- Encrypted tokens protect organization email access
+- 5-minute buffer prevents race conditions
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/models/organization_outlook_credential.rb`
+
+---
+
+## RULE #13.2: Four-Strategy Email-to-Job Matching
+
+**Emails MUST use cascading strategy to auto-match to constructions.**
+
+### Matching Strategies (Priority Order)
+
+✅ **MUST implement all 4 strategies:**
+
+```ruby
+# app/services/email_parser_service.rb
+def match_construction(email_data)
+  # Strategy 1: Job reference in subject (highest priority)
+  if email_data[:subject] =~ /#(\d+)/ || email_data[:subject] =~ /JOB-(\d+)/
+    construction = Construction.find_by(reference_number: $1)
+    return construction if construction
+  end
+
+  # Strategy 2: Job reference in body
+  if email_data[:body] =~ /#(\d+)/ || email_data[:body] =~ /JOB-(\d+)/
+    construction = Construction.find_by(reference_number: $1)
+    return construction if construction
+  end
+
+  # Strategy 3: Sender email matches contact
+  contact = Contact.find_by(email: email_data[:from])
+  if contact
+    # Return most recent active job for this contact
+    return contact.constructions.active.order(created_at: :desc).first
+  end
+
+  # Strategy 4: Address matching (fuzzy)
+  extract_addresses_from_email(email_data).each do |address|
+    construction = Construction.where("address ILIKE ?", "%#{address}%").first
+    return construction if construction
+  end
+
+  # No match found
+  nil
+end
+```
+
+### Auto-Assignment on Creation
+
+✅ **MUST auto-assign on email creation:**
+
+```ruby
+# app/controllers/api/v1/emails_controller.rb
+def create
+  email_data = parse_email_params(params)
+
+  matched_construction = EmailParserService.new.match_construction(email_data)
+
+  email = Email.create!(
+    construction: matched_construction,  # May be nil if no match
+    from_email: email_data[:from],
+    subject: email_data[:subject],
+    body_text: email_data[:body],
+    # ... other fields
+  )
+
+  render json: email
+end
+```
+
+❌ **NEVER:**
+- Skip matching strategies (must try all 4 in order)
+- Match to inactive/archived jobs
+- Auto-assign to wrong construction (false positive worse than nil)
+- Allow email creation without attempting match
+
+**Why:**
+- Job reference (#123 or JOB-123) is most reliable indicator
+- Contact-based matching handles ongoing correspondence
+- Address matching catches forwarded emails
+- Priority order prevents false positives
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/services/email_parser_service.rb`
+
+---
+
+## RULE #13.3: Microsoft Graph API Usage Pattern
+
+**Outlook API calls MUST use Microsoft Graph v1.0 with OData filters.**
+
+### API Client Pattern
+
+✅ **MUST use Graph API v1.0:**
+
+```ruby
+# app/services/outlook_service.rb
+GRAPH_API_BASE = "https://graph.microsoft.com/v1.0"
+
+def search_emails(query: nil, folder: 'inbox', max_results: 50)
+  token = ensure_valid_token
+
+  # Build OData filter
+  filter_parts = []
+  filter_parts << "receivedDateTime ge #{30.days.ago.iso8601}" if folder == 'inbox'
+  filter_parts << "(contains(subject,'#{query}') or contains(body/content,'#{query}'))" if query
+
+  params = {
+    '$filter' => filter_parts.join(' and '),
+    '$top' => max_results,
+    '$select' => 'id,subject,from,toRecipients,ccRecipients,receivedDateTime,hasAttachments,body',
+    '$orderby' => 'receivedDateTime desc'
+  }
+
+  response = HTTParty.get(
+    "#{GRAPH_API_BASE}/me/mailFolders/#{folder}/messages",
+    headers: { 'Authorization' => "Bearer #{token}" },
+    query: params
+  )
+
+  response.parsed_response['value']
+end
+```
+
+### Required OAuth Scopes
+
+✅ **MUST request these scopes:**
+
+```ruby
+# app/controllers/api/v1/outlook_controller.rb
+REQUIRED_SCOPES = [
+  'Mail.Read',              # Read emails
+  'MailboxSettings.Read',   # Read settings/folders
+  'offline_access'          # Refresh token support
+].freeze
+
+def auth_url
+  params = {
+    client_id: ENV['OUTLOOK_CLIENT_ID'],
+    redirect_uri: "#{ENV['FRONTEND_URL']}/settings/outlook/callback",
+    scope: REQUIRED_SCOPES.join(' '),
+    response_type: 'code',
+    response_mode: 'query'
+  }
+
+  "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?#{params.to_query}"
+end
+```
+
+❌ **NEVER:**
+- Use Outlook REST API v2.0 (deprecated, use Graph API)
+- Request more scopes than needed (principle of least privilege)
+- Skip $select parameter (bandwidth waste - emails can be large)
+- Use synchronous API calls without pagination
+
+**Why:**
+- Graph API v1.0 is stable, v2.0 deprecated
+- OData filters reduce bandwidth and processing
+- Minimal scopes reduce security risk
+- Pagination prevents memory issues with large mailboxes
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/services/outlook_service.rb`
+
+---
+
+## RULE #13.4: Email Threading Support via Message-ID
+
+**Emails MUST store message_id, in_reply_to, and references for conversation threading.**
+
+### Schema Requirements
+
+✅ **MUST include threading fields:**
+
+```ruby
+# db/schema.rb
+create_table :emails do |t|
+  t.string :message_id, null: false, index: { unique: true }
+  t.string :in_reply_to      # Message-ID of parent email
+  t.text :references         # Space-separated list of ancestor message IDs
+
+  # ... other fields
+end
+```
+
+### Threading Logic
+
+✅ **MUST populate threading fields:**
+
+```ruby
+# app/services/email_parser_service.rb
+def extract_threading_info(raw_email_headers)
+  {
+    message_id: raw_email_headers['Message-ID']&.value,
+    in_reply_to: raw_email_headers['In-Reply-To']&.value,
+    references: raw_email_headers['References']&.value
+  }
+end
+
+# Controller usage:
+email = Email.create!(
+  message_id: threading_info[:message_id],
+  in_reply_to: threading_info[:in_reply_to],
+  references: threading_info[:references],
+  # ... other fields
+)
+```
+
+### Conversation Grouping (Future)
+
+✅ **INTENDED pattern for UI threading:**
+
+```ruby
+# app/models/email.rb
+def conversation_root
+  return self if in_reply_to.blank?
+  Email.find_by(message_id: in_reply_to)
+end
+
+def conversation_thread
+  # Get all emails in this thread
+  root = conversation_root
+  Email.where("message_id = ? OR references LIKE ?", root.message_id, "%#{root.message_id}%")
+       .order(:received_at)
+end
+```
+
+❌ **NEVER:**
+- Allow duplicate message_id (unique constraint required)
+- Skip message_id extraction (breaks threading)
+- Store references as array (use text with space-separated values per RFC 2822)
+
+**Why:**
+- Message-ID is unique email identifier (RFC 5322)
+- In-Reply-To + References enable conversation threading
+- Threading improves UX for back-and-forth email exchanges
+- Prepares for future conversation view UI
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/db/migrate/20251111021525_create_emails.rb`
+
+---
+
+## RULE #13.5: Webhook Support for Email Services
+
+**Email webhook endpoint MUST accept payloads from SendGrid, Mailgun, etc.**
+
+### Webhook Endpoint
+
+✅ **MUST implement webhook receiver:**
+
+```ruby
+# app/controllers/api/v1/emails_controller.rb
+def webhook
+  # Parse incoming webhook payload (varies by service)
+  email_data = case request.headers['User-Agent']
+  when /SendGrid/
+    parse_sendgrid_webhook(params)
+  when /Mailgun/
+    parse_mailgun_webhook(params)
+  else
+    parse_generic_webhook(params)
+  end
+
+  # Use same matching logic as Outlook import
+  matched_construction = EmailParserService.new.match_construction(email_data)
+
+  email = Email.create!(
+    construction: matched_construction,
+    from_email: email_data[:from],
+    to_emails: email_data[:to],
+    subject: email_data[:subject],
+    body_text: email_data[:body_text],
+    body_html: email_data[:body_html],
+    received_at: email_data[:received_at] || Time.current,
+    message_id: email_data[:message_id] || SecureRandom.uuid
+  )
+
+  head :ok  # Return 200 to acknowledge receipt
+end
+```
+
+### Webhook Security
+
+✅ **SHOULD validate webhook authenticity:**
+
+```ruby
+# For SendGrid:
+def verify_sendgrid_signature
+  signature = request.headers['X-Twilio-Email-Event-Webhook-Signature']
+  timestamp = request.headers['X-Twilio-Email-Event-Webhook-Timestamp']
+
+  # Verify signature matches expected value
+  expected = OpenSSL::HMAC.hexdigest(
+    'SHA256',
+    ENV['SENDGRID_WEBHOOK_SECRET'],
+    timestamp + request.raw_post
+  )
+
+  signature == expected
+end
+```
+
+❌ **NEVER:**
+- Return error status for webhook (email providers will retry, causing duplicates)
+- Skip duplicate detection (check message_id uniqueness)
+- Process webhook synchronously (use background job for heavy parsing)
+
+**Why:**
+- Webhooks enable email capture without OAuth
+- Real-time email ingestion (no polling delay)
+- Supports multiple email service providers
+- Reduces API quota usage vs polling
+
+**File Reference:** `/Users/rob/Projects/trapid/backend/app/controllers/api/v1/emails_controller.rb` (lines 83-103)
+
+---
+
+## RULE #13.6: Inbound-Only Architecture (Current Limitation)
+
+**INCOMPLETE FEATURE: Outbound email sending NOT implemented.**
+
+### Current Capabilities
+
+✅ **IMPLEMENTED:**
+- Outlook OAuth connection
+- Email import from Outlook folders
+- Auto-matching to jobs
+- Email storage and display
+- Webhook ingestion
+
+❌ **NOT IMPLEMENTED:**
+- Email composition UI
+- Sending emails from Trapid
+- Email templates (quote sent, job update, etc.)
+- Attachment download/storage
+- Calendar integration
+
+### Future Outbound Pattern (When Implemented)
+
+```ruby
+# Proposed pattern (NOT YET IMPLEMENTED):
+# app/mailers/job_mailer.rb
+class JobMailer < ApplicationMailer
+  def quote_sent(construction_id, contact_id)
+    @construction = Construction.find(construction_id)
+    @contact = Contact.find(contact_id)
+
+    mail(
+      to: @contact.email,
+      subject: "Quote for #{@construction.name}",
+      from: ENV['OUTBOUND_EMAIL_ADDRESS']
+    )
+  end
+end
+
+# Usage:
+JobMailer.quote_sent(job.id, contact.id).deliver_later
+```
+
+❌ **DON'T:**
+- Attempt to send emails via Outlook (requires Mail.Send scope not currently requested)
+- Implement outbound without email templates
+- Send emails without tracking (must create Email record)
+
+**Why:**
+- Inbound-only reduces OAuth scope requirements
+- Outbound requires different architecture (ActionMailer + SMTP or Graph API send)
+- Email templates need design and content approval
+- Attachment handling requires file storage integration
+
+**File Reference:** N/A (feature not implemented)
+
+---
+
+## Protected Code Patterns
+
+### 1. Token Refresh Logic
+
+**File:** `/Users/rob/Projects/trapid/backend/app/services/outlook_service.rb`
+
+**DO NOT modify auto-refresh timing:**
+
+```ruby
+def needs_refresh?
+  expires_at.nil? || Time.current >= expires_at - 5.minutes
+end
+```
+
+**Reason:** 5-minute buffer prevents race conditions where token expires mid-request.
+
+---
+
+### 2. Email Matching Strategy Order
+
+**File:** `/Users/rob/Projects/trapid/backend/app/services/email_parser_service.rb`
+
+**DO NOT change strategy priority:**
+
+1. Job reference in subject (most specific)
+2. Job reference in body
+3. Sender email contact match
+4. Address fuzzy match (least specific)
+
+**Reason:** Priority order minimizes false positives. Changing order causes incorrect job associations.
+
+---
+
+### 3. Singleton Credential Pattern
+
+**File:** `/Users/rob/Projects/trapid/backend/app/models/organization_outlook_credential.rb`
+
+**DO NOT create multiple credentials:**
+
+```ruby
+def self.current
+  first_or_create!
+end
+```
+
+**Reason:** Single-tenant architecture. Multiple credentials break OAuth flow and cause token conflicts.
+
+---
+
+## Summary
+
+Chapter 13 establishes 6 rules covering:
+
+1. **Singleton OAuth credential** - Organization-wide token with auto-refresh
+2. **Four-strategy matching** - Job ref in subject/body, sender contact, address fuzzy match
+3. **Graph API usage** - v1.0 endpoint, OData filters, minimal scopes
+4. **Email threading** - Message-ID, In-Reply-To, References for conversation support
+5. **Webhook support** - Inbound email capture from SendGrid, Mailgun, etc.
+6. **Inbound-only limitation** - No outbound sending (documented gap)
+
+These rules ensure reliable email ingestion, secure OAuth management, and accurate job association while documenting known limitations for future development.
 
 ---
 
