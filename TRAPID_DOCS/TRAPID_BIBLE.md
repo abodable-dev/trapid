@@ -10994,12 +10994,53 @@ This chapter defines ALL UI/UX patterns for Trapid. Every interactive element MU
 
 ✅ **MUST use this hierarchy:**
 1. **DataTable.jsx** - For simple data tables (read-only, basic sorting)
-2. **Custom table implementations** - For advanced features (column reordering, resizing, inline filters)
+2. **Table** - All other tables with full feature set
 
 ❌ **NEVER:**
 - Mix patterns within same table
 - Create new table components without review
 - Use raw HTML tables without following standards
+- Create "basic" custom tables (use DataTable.jsx instead)
+
+### Decision Process: Creating a New Table
+
+**🔴 CRITICAL: Before implementing ANY new table, Claude Code MUST ask the user:**
+
+```
+I'm about to create a table for [PAGE/FEATURE NAME].
+
+Please choose which type of table to implement:
+
+**Option 1: DataTable.jsx** (Read-Only)
+- ✅ Read-only data display
+- ✅ Basic sorting only
+- ✅ No inline editing
+- ✅ No column customization needed
+- ⚡ Quick to implement (~5-10 min)
+- Example: PublicHolidaysPage
+
+**Option 2: Table** (Editable / Full Features)
+- ✅ Inline editing capability
+- ✅ Column resizing
+- ✅ Column reordering
+- ✅ Inline column filters
+- ✅ Global search
+- ✅ Column visibility toggle
+- ✅ State persistence (localStorage)
+- ⚡ More work to implement (~30-60 min)
+- Example: ContactsPage, ActiveJobsPage, UsersPage
+
+Which should I use? (1 or 2)
+```
+
+**After user responds:**
+- If **Option 1 (DataTable):** Implement using DataTable component
+- If **Option 2 (Table):** Implement ALL required features from the checklist below
+
+❌ **NEVER:**
+- Implement a table without asking first
+- Choose on behalf of the user
+- Create a "basic" custom table (use DataTable instead)
 
 ### When to Use DataTable Component
 
@@ -11010,13 +11051,13 @@ This chapter defines ALL UI/UX patterns for Trapid. Every interactive element MU
 - No column resizing required
 - No inline column filters needed
 
-**Example:** UsersPage, simple lists, report views
+**Example:** Simple lists, report views, read-only data
 
-### When to Use Custom Table Implementation
+### Table Standard (NOT "Advanced" - This IS The Standard)
 
-✅ **REQUIRED features for ALL custom tables:**
+✅ **REQUIRED features for ALL tables (except DataTable.jsx):**
 
-**If you build a custom table (not using DataTable.jsx), it MUST have ALL of these:**
+**If you build a table (not using DataTable.jsx), it MUST have ALL of these:**
 - ✅ Column resizing (drag handles on headers)
 - ✅ Column reordering (drag-and-drop headers)
 - ✅ Inline column filters (filter icon in each header)
@@ -11027,12 +11068,12 @@ This chapter defines ALL UI/UX patterns for Trapid. Every interactive element MU
 - ✅ Sticky headers with gradient background
 - ✅ Scrollbar styling
 
-**No exceptions.** Custom tables are for complex data - they must have ALL advanced features.
+**No exceptions.** There are NO "basic tables" - only DataTable.jsx or full-featured tables.
 
-**Example:** ContactsPage, POTable, PriceBooksPage, SuppliersPage
+**Example:** ContactsPage, POTable, PriceBooksPage, SuppliersPage, ActiveJobsPage
 
-**Tables needing upgrade to full compliance:**
-- ActiveJobsPage (has inline editing, missing search/resize/reorder/filters)
+**Tables that violate this rule:**
+- NONE - All tables now comply or use DataTable.jsx
 
 ---
 

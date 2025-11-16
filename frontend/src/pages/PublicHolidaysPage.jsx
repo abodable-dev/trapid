@@ -7,6 +7,7 @@ import {
   CalendarIcon
 } from '@heroicons/react/24/outline'
 import Toast from '../components/Toast'
+import DataTable from '../components/DataTable'
 
 export default function PublicHolidaysPage() {
   const [holidays, setHolidays] = useState([])
@@ -121,6 +122,58 @@ export default function PublicHolidaysPage() {
     })
   }
 
+  // Define columns for DataTable
+  const columns = [
+    {
+      key: 'name',
+      label: 'Holiday Name',
+      sortable: true,
+      render: (holiday) => (
+        <span className="text-sm font-medium text-gray-900 dark:text-white">
+          {holiday.name}
+        </span>
+      )
+    },
+    {
+      key: 'date',
+      label: 'Date',
+      sortable: true,
+      getValue: (holiday) => new Date(holiday.date + 'T00:00:00'),
+      render: (holiday) => (
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          {formatDate(holiday.date)}
+        </span>
+      )
+    },
+    {
+      key: 'region',
+      label: 'Region',
+      sortable: true,
+      render: (holiday) => (
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          {holiday.region}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      label: '',
+      sortable: false,
+      align: 'right',
+      render: (holiday) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            handleDeleteHoliday(holiday)
+          }}
+          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+        >
+          <TrashIcon className="h-5 w-5" />
+        </button>
+      )
+    }
+  ]
+
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6">
       {/* Header */}
@@ -186,73 +239,21 @@ export default function PublicHolidaysPage() {
         </div>
       )}
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        </div>
-      )}
-
-      {/* Holidays List */}
-      {!loading && (
-        <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-auto" style={{
-          scrollbarWidth: 'thin',
-          scrollbarColor: '#9CA3AF #E5E7EB'
-        }}>
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Holiday Name
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Date
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Region
-                </th>
-                <th scope="col" className="relative px-6 py-3">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {holidays.length === 0 ? (
-                <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center">
-                    <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                      No public holidays found for {selectedYear} in {selectedRegion}
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                holidays.map((holiday) => (
-                  <tr key={holiday.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                      {holiday.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(holiday.date)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {holiday.region}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleDeleteHoliday(holiday)}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        <TrashIcon className="h-5 w-5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* Holidays Table */}
+      <DataTable
+        data={holidays}
+        columns={columns}
+        loading={loading}
+        emptyStateTitle="No public holidays found"
+        emptyStateDescription={`No public holidays found for ${selectedYear} in ${selectedRegion}`}
+        emptyStateAction={{
+          label: 'Add Holiday',
+          onClick: () => setShowAddModal(true)
+        }}
+        defaultSortKey="date"
+        defaultSortDirection="asc"
+        className="-mx-4 sm:-mx-6 lg:-mx-8"
+      />
 
       {/* Add Holiday Modal */}
       {showAddModal && (

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { PlusIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import POTable from '../components/purchase-orders/POTable'
 
 export default function PurchaseOrdersPage() {
   const [purchaseOrders, setPurchaseOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -97,11 +98,46 @@ export default function PurchaseOrdersPage() {
         </div>
       </div>
 
+      {/* Global Search */}
+      <div className="mt-6 mb-4">
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search purchase orders..."
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+          {searchQuery && (
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <span className="sr-only">Clear search</span>
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+        {searchQuery && (
+          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Searching: "{searchQuery}"
+          </div>
+        )}
+      </div>
+
       {/* Purchase Orders Table */}
-      <div className="mt-6">
+      <div className="mt-2">
         <POTable
           purchaseOrders={purchaseOrders}
           onDelete={handleDelete}
+          searchQuery={searchQuery}
         />
       </div>
     </div>
