@@ -76,19 +76,19 @@ module Api
 
         file_path = case doc_id
                     when 'bible'
-                      Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_BIBLE.md')
+                      Rails.root.join('TRAPID_DOCS', 'TRAPID_BIBLE.md')
                     when 'lexicon'
-                      Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_LEXICON.md')
+                      Rails.root.join('TRAPID_DOCS', 'TRAPID_LEXICON.md')
                     when 'user-manual'
-                      Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_USER_MANUAL.md')
+                      Rails.root.join('TRAPID_DOCS', 'TRAPID_USER_MANUAL.md')
                     when 'chapter-guide'
-                      Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'CHAPTER_GUIDE.md')
+                      Rails.root.join('TRAPID_DOCS', '00_INDEX', 'CHAPTER_GUIDE.md')
                     when 'continuation'
-                      Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'CONTINUATION_INSTRUCTIONS.md')
+                      Rails.root.join('TRAPID_DOCS', '00_INDEX', 'CONTINUATION_INSTRUCTIONS.md')
                     when 'table-standards'
-                      Rails.root.join('..', 'TRAPID_DOCS', 'TABLE_STANDARDS.md')
+                      Rails.root.join('TRAPID_DOCS', 'TABLE_STANDARDS.md')
                     when 'readme'
-                      Rails.root.join('..', 'TRAPID_DOCS', '00_INDEX', 'README.md')
+                      Rails.root.join('TRAPID_DOCS', '00_INDEX', 'README.md')
                     else
                       return render json: { success: false, error: 'Documentation not found' }, status: :not_found
                     end
@@ -127,7 +127,7 @@ module Api
         end
 
         results = []
-        docs_path = Rails.root.join('..', 'TRAPID_DOCS')
+        docs_path = Rails.root.join('TRAPID_DOCS')
 
         # Search in Trinity files
         ['TRAPID_BIBLE.md', 'TRAPID_LEXICON.md', 'TRAPID_USER_MANUAL.md'].each do |filename|
