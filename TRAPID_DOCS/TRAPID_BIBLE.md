@@ -73,13 +73,14 @@ This file is the **absolute authority** for all Trapid development where chapter
 # Chapter 0: Overview & System-Wide Rules
 
 ┌─────────────────────────────────────────────────┐
+│ 📍 IMPLEMENTATION: Chapter 0                    │
 │ 📕 LEXICON (BUGS):    Chapter 0                │
 │ 📘 USER MANUAL (HOW): Chapter 0                │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
 **Authority:** ABSOLUTE
-**Last Updated:** 2025-11-16 09:01 AEST
+**Last Updated:** 2025-11-17 10:45 AEST
 
 ## RULE #0: Documentation Maintenance
 
@@ -617,7 +618,7 @@ This map shows how chapters relate to each other. When working on a feature, con
 
 # Chapter 1: Authentication & Users
 
-┌─────────────────────────────────────────────────┐
+┌──────────────────────────────────��──────────────┐
 │ 📕 LEXICON (BUGS):    Chapter 1                │
 │ 📘 USER MANUAL (HOW): Chapter 1                │
 └─────────────────────────────────────────────────┘
@@ -11885,6 +11886,56 @@ className={`${
 </td>
 ```
 
+### Checkbox Size Requirements (CRITICAL)
+
+**🔴 RULE: Checkboxes MUST be as small as possible while remaining visible**
+
+✅ **REQUIRED checkbox styling:**
+- **NO explicit height/width classes on checkbox inputs**
+- Checkboxes render at browser default size (~16px typically)
+- Use Tailwind's `rounded` class for slight border radius
+- NEVER use `h-4 w-4`, `h-5 w-5`, or any explicit size classes
+- Checkboxes MUST always be visible (cannot be hidden)
+- Selection column MUST remain first column and always visible
+
+**Why this matters:**
+- Minimizes horizontal space usage in tables
+- Maintains consistency across all browsers
+- Provides optimal space efficiency while maintaining usability
+- Browser defaults are designed for accessibility
+
+```jsx
+// ✅ CORRECT - No size classes
+<input
+  type="checkbox"
+  className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+/>
+
+// ❌ WRONG - Explicit size classes
+<input
+  type="checkbox"
+  className="h-4 w-4 rounded border-gray-300"
+/>
+
+// ❌ WRONG - Large size classes
+<input
+  type="checkbox"
+  className="h-5 w-5 rounded border-gray-300"
+/>
+```
+
+✅ **MUST maintain:**
+- Checkboxes always visible (selection column cannot be hidden via column visibility toggle)
+- Selection column always first position (cannot be reordered)
+- Minimal column width (`w-8` ≈ 32px) to maximize table space
+- Centered alignment (`text-center`) for proper visual balance
+
+❌ **NEVER:**
+- Add `h-` or `w-` Tailwind classes to checkbox inputs
+- Hide the selection column
+- Make selection column moveable or reorderable
+- Use oversized checkboxes that waste horizontal space
+
 ### Selection State Management
 
 ✅ **MUST use Set for tracking selections:**
@@ -13728,6 +13779,153 @@ import BackButton from '../components/common/BackButton'
 
 ---
 
+## RULE #19.30: Touch Target Sizes & Click Areas
+
+**WCAG 2.1 AAA compliant interactive element sizing for accessibility and mobile usability.**
+
+### Minimum Touch Target Requirements
+
+✅ **MUST ensure all interactive elements meet minimum sizes:**
+
+- **Primary target size:** 44px × 44px minimum for all interactive elements
+- **Checkbox/radio visual size:** Can be smaller (16px × 16px) if surrounded by adequate padding
+- **Button minimum:** 44px × 44px (including padding)
+- **Icon buttons:** 44px × 44px click area (icon can be smaller, e.g., 20px × 20px with 12px padding)
+
+### Implementation Pattern for Small Visual Elements
+
+```jsx
+// ❌ BAD: Small checkbox without adequate click area
+<input
+  type="checkbox"
+  className="h-4 w-4"  // Only 16px × 16px total
+/>
+
+// ✅ GOOD: Small visual checkbox with expanded click area via padding
+<label className="inline-flex items-center cursor-pointer p-3">  {/* 44px+ click area */}
+  <input
+    type="checkbox"
+    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+  />
+</label>
+
+// ✅ GOOD: Table row checkbox with adequate padding
+<td className="px-6 py-4">  {/* Padding creates 44px+ click area */}
+  <input
+    type="checkbox"
+    className="h-4 w-4"
+  />
+</td>
+```
+
+### Icon Button Pattern
+
+```jsx
+// ❌ BAD: Icon button without adequate size
+<button className="p-1">  {/* Only ~24px total */}
+  <TrashIcon className="h-5 w-5" />
+</button>
+
+// ✅ GOOD: Icon button with adequate padding
+<button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">  {/* ~44px total */}
+  <TrashIcon className="h-5 w-5" />
+</button>
+
+// ✅ BETTER: Explicit sizing with Tailwind
+<button className="h-11 w-11 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+  <TrashIcon className="h-5 w-5" />
+</button>
+```
+
+### Table Checkbox Pattern
+
+```jsx
+// Row selection checkbox with adequate click area
+<td className="px-6 py-4 whitespace-nowrap">
+  <input
+    type="checkbox"
+    checked={selectedRows.includes(row.id)}
+    onChange={() => handleRowSelect(row.id)}
+    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-2"
+  />
+</td>
+
+// Header "select all" checkbox with adequate click area
+<th scope="col" className="px-6 py-3">
+  <input
+    type="checkbox"
+    checked={allSelected}
+    onChange={handleSelectAll}
+    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-2"
+  />
+</th>
+```
+
+### Link and Text Button Pattern
+
+```jsx
+// ✅ Inline link with adequate line-height
+<a
+  href="/contacts/123"
+  className="text-indigo-600 hover:text-indigo-800 py-2 inline-block"  {/* py-2 expands click area */}
+>
+  View Contact
+</a>
+
+// ✅ Text button with padding
+<button className="px-4 py-2 text-sm font-medium">  {/* Adequate height */}
+  Cancel
+</button>
+```
+
+### Testing Touch Targets
+
+✅ **MUST verify:**
+1. All interactive elements have at least 44px × 44px click area
+2. Spacing between adjacent interactive elements is adequate (8px+ recommended)
+3. Touch targets work on mobile devices (not just mouse)
+4. Visual feedback on hover/active states within the click area
+
+### Common Tailwind Size Classes
+
+```jsx
+// Padding values that create 44px+ click areas:
+p-3   // 12px padding → 24px total (needs ~20px content = 44px)
+p-4   // 16px padding → 32px total (needs ~12px content = 44px)
+px-6 py-4  // Common table cell padding (creates 44px+ height)
+
+// Button sizing:
+className="h-11 w-11"  // 44px × 44px
+className="h-12 w-12"  // 48px × 48px (comfortable)
+className="px-4 py-2.5"  // Typically creates 44px+ height
+```
+
+### Why This Rule Exists
+
+**Problem:**
+- Small touch targets (< 44px) are difficult to tap on mobile devices
+- Frustrating user experience for users with motor impairments
+- WCAG 2.1 Level AAA requires 44px × 44px targets
+- Accidental taps on adjacent elements
+
+**Solution:**
+- Use adequate padding to expand click areas even when visual elements are small
+- Ensures mobile usability and accessibility compliance
+- Reduces user frustration and error rates
+
+### Special Cases
+
+✅ **Inline text links:** May be shorter than 44px in height if line-height provides adequate spacing
+✅ **Dense data tables:** Checkboxes can use cell padding for click area expansion
+✅ **Toolbar icon buttons:** MUST use padding to reach 44px minimum
+
+❌ **NEVER:**
+- Create interactive elements smaller than 44px × 44px without compensating padding
+- Place interactive elements closer than 8px without adequate spacing
+- Assume mouse users only (mobile is critical)
+
+---
+
 ## Protected Code Patterns (Chapter 19 - All Sections)
 
 ### DataTable Component Structure
@@ -13778,13 +13976,14 @@ import BackButton from '../components/common/BackButton'
 
 The Agent System provides specialized AI agents for development tasks. Each agent has specific capabilities, tracks run history, and is stored in the `agent_definitions` database table.
 
-**6 Active Agents:**
+**7 Active Agents:**
 1. **backend-developer** - Rails API development
 2. **frontend-developer** - React + Vite frontend
 3. **production-bug-hunter** - General bug diagnosis
 4. **deploy-manager** - Git + Heroku deployment
 5. **planning-collaborator** - Architecture planning
 6. **gantt-bug-hunter** - Gantt-specific diagnostics
+7. **ui-compliance-auditor** - RULE #19 table compliance auditing
 
 **Database-Primary:** Agent definitions stored in database, managed via API.
 
@@ -14143,6 +14342,112 @@ const baseCommands = [
 3. If not found, update baseCommands array
 4. Ensure agent file has matching shortcuts
 5. Deploy changes
+
+---
+
+## RULE #20.9: Creating New Agents - Complete Checklist
+
+**When creating a new agent, ALL of the following files MUST be updated.**
+
+✅ **MUST UPDATE (4 files):**
+
+1. **Database Seed File** - `backend/db/seeds/agent_definitions.rb`
+   - Add new agent definition to the `agents` array
+   - Include all required fields: agent_id, name, agent_type, focus, model, purpose, capabilities, when_to_use, tools_available, success_criteria, example_invocations, important_notes, priority
+   - Run seed: `bin/rails runner "load 'db/seeds/agent_definitions.rb'"`
+
+2. **Agents Controller Default List** - `backend/app/controllers/api/v1/agents_controller.rb`
+   - Add agent to the fallback list in `status` method (lines 15-22)
+   - Add line: `'agent-id': default_agent_stats,`
+
+3. **Run History JSON** - `.claude/agents/run-history.json`
+   - Add agent to the `agents` object with default stats:
+   ```json
+   "agent-id": {
+     "total_runs": 0,
+     "successful_runs": 0,
+     "failed_runs": 0,
+     "last_run": null,
+     "last_status": null,
+     "last_message": null,
+     "runs": []
+   }
+   ```
+
+4. **Frontend Agent Status Component** - `frontend/src/components/settings/AgentStatus.jsx`
+   - Add icon to `getAgentIcon()` function (line ~130)
+   - Add display name to `getAgentDisplayName()` function (line ~143)
+   - Add description to `getAgentDescription()` function (line ~156)
+
+❌ **NEVER:**
+- Create an agent in only one location
+- Skip updating run-history.json
+- Forget to add to the controllers fallback list
+- Miss updating the frontend component
+
+**Post-Creation Checklist:**
+- [ ] Agent appears in Settings → Agents table (7 agents visible)
+- [ ] Agent has icon, name, and description
+- [ ] API returns agent in `/api/v1/agents/status`
+- [ ] Database has agent definition record
+- [ ] Agent shortcuts added to AgentShortcutsTab.jsx (see RULE #20.8)
+
+**Example: Adding "ui-compliance-auditor"**
+
+```ruby
+# 1. backend/db/seeds/agent_definitions.rb
+{
+  agent_id: 'ui-compliance-auditor',
+  name: 'UI Compliance Auditor',
+  agent_type: 'diagnostic',
+  focus: 'Table UI Compliance & RULE #19 Standards',
+  model: 'sonnet',
+  purpose: 'Audits UI components for RULE #19 compliance...',
+  # ... other fields
+}
+```
+
+```ruby
+# 2. backend/app/controllers/api/v1/agents_controller.rb
+agents: {
+  'backend-developer': default_agent_stats,
+  # ... other agents
+  'ui-compliance-auditor': default_agent_stats
+}
+```
+
+```json
+// 3. .claude/agents/run-history.json
+{
+  "agents": {
+    "ui-compliance-auditor": {
+      "total_runs": 0,
+      "successful_runs": 0,
+      "failed_runs": 0,
+      "last_run": null,
+      "last_status": null,
+      "last_message": null,
+      "runs": []
+    }
+  }
+}
+```
+
+```javascript
+// 4. frontend/src/components/settings/AgentStatus.jsx
+const getAgentIcon = (agentName) => {
+  const icons = {
+    'ui-compliance-auditor': '✅',
+    // ... other agents
+  };
+};
+```
+
+**Why All 4 Files Matter:**
+- **Seed file**: Database source of truth for agent metadata
+- **Controller**: Fallback when run-history.json doesn't exist yet
+- **run-history.json**: Active tracking file read by API
+- **Frontend component**: UI display logic (icons, names, descriptions)
 
 ---
 
