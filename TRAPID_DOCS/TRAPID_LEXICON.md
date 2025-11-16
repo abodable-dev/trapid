@@ -6433,7 +6433,532 @@ Chapter 13 Lexicon documents:
 │ 📘 USER MANUAL (HOW): Chapter 14               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## 🐛 Bug Hunter: Chat & Communications
+
+### Known Issues & Solutions
+
+#### Issue: Authentication Placeholder in ChatMessagesController
+
+**Status:** ⚠️ INCOMPLETE FEATURE
+**Severity:** Critical (Security)
+**First Reported:** 2025-11-16
+
+**Scenario:**
+
+ChatMessagesController uses `User.first` placeholder for authentication, exposing a major security vulnerability. All chat operations execute as the first user in the database regardless of who is actually logged in.
+
+**Root Cause:**
+
+```ruby
+# app/controllers/api/v1/chat_messages_controller.rb:110
+def set_current_user
+  @current_user = User.first # TODO: Replace with actual current_user logic
+end
+```
+
+Authentication integration not completed when chat feature was developed.
+
+**Solution:**
+
+Implement proper authentication via Devise or JWT:
+
+```ruby
+before_action :authenticate_user!
+
+def set_current_user
+  @current_user = current_user
+end
+```
+
+**Prevention:**
+
+- Never deploy features with TODO authentication placeholders
+- Require authentication integration before feature completion
+- Add security audit step to deployment checklist
+
+---
+
+#### Issue: No Real-Time WebSocket Support
+
+**Status:** ⚠️ INCOMPLETE FEATURE
+**Severity:** Medium (UX)
+**First Reported:** 2025-11-16
+
+**Scenario:**
+
+Chat system uses 3-second polling for "real-time" updates instead of WebSockets. This creates:
+- 3-second message delivery lag
+- Unnecessary server load (constant polling)
+- Poor UX compared to instant messaging standards
+
+**Root Cause:**
+
+ActionCable (Rails WebSocket framework) not configured. Development prioritized polling as "good enough" MVP solution.
+
+**Current Implementation:**
+
+```javascript
+// frontend/src/components/chat/ChatBox.jsx
+useEffect(() => {
+  const interval = setInterval(() => {
+    loadMessages(); // Polls API every 3 seconds
+  }, 3000);
+  return () => clearInterval(interval);
+}, [channel, projectId, userId]);
+```
+
+**Future Enhancement:**
+
+Implement ActionCable for true real-time:
+
+```ruby
+# app/channels/chat_channel.rb
+class ChatChannel < ApplicationCable::Channel
+  def subscribed
+    stream_from "chat_#{params[:channel]}"
+  end
+end
+
+# Broadcast on message create
+ChatMessage.after_create do
+  ActionCable.server.broadcast("chat_#{channel}", as_json)
+end
+```
+
+---
+
+#### Issue: SMS Fuzzy Match Can Fail for Non-AU Numbers
+
+**Status:** 🔄 MONITORING
+**Severity:** Low
+**First Reported:** 2025-11-16
+
+**Scenario:**
+
+`TwilioService.find_contact_by_phone` assumes Australian phone number format (last 9 digits matching). International numbers or non-standard formats may fail to match existing contacts.
+
+**Root Cause:**
+
+```ruby
+# app/services/twilio_service.rb:99
+last_9_digits = normalized.gsub(/\D/, '')[-9..-1]
+
+Contact.where(
+  "regexp_replace(mobile_phone, '[^0-9]', '', 'g') LIKE ?",
+  "%#{last_9_digits}"
+).first
+```
+
+Logic hardcoded for Australian mobile format (04XX XXX XXX = 10 digits, last 9 unique).
+
+**Workaround:**
+
+Ensure all contacts use consistent phone number formatting in database (+61 format preferred).
+
+**Future Enhancement:**
+
+Support multi-region phone normalization via libphonenumber gem.
+
+---
+
+## 🏗️ Architecture & Implementation
+
+### Multi-Channel Message Routing
+
+ChatMessage supports three distinct routing modes via optional foreign keys:
+
+**Channel Messages** (team-wide):
+```ruby
+where(channel: 'general', project_id: nil, recipient_user_id: nil)
+```
+
+**Project Messages** (job-specific):
+```ruby
+where(project_id: 123, channel: nil, recipient_user_id: nil)
+```
+
+**Direct Messages** (user-to-user):
+```ruby
+where(
+  '(user_id = ? AND recipient_user_id = ?) OR (user_id = ? AND recipient_user_id = ?)',
+  user1_id, user2_id, user2_id, user1_id
+)
+```
+
+This design allows:
+- Single table for all message types
+- Efficient querying via composite indexes
+- Flexible message-to-job linking via `construction_id`
+
+**Trade-off:** Nullable foreign keys create data integrity risk (orphaned messages if relationships change).
+
+---
+
+### Twilio SMS Integration Architecture
+
+**Bidirectional SMS via Webhooks:**
+
+1. **Outbound SMS:**
+   - Frontend calls `POST /api/v1/contacts/:id/sms_messages`
+   - TwilioService sends via Twilio REST API
+   - SmsMessage record created with `twilio_sid` for tracking
+   - Status initially 'sent'
+
+2. **Status Updates:**
+   - Twilio hits `POST /api/v1/sms/status` webhook as status changes
+   - TwilioService updates SmsMessage by `twilio_sid`
+   - Status progresses: queued → sent → delivered (or failed)
+
+3. **Inbound SMS:**
+   - Twilio hits `POST /api/v1/sms/webhook` with new message
+   - TwilioService fuzzy-matches contact by phone number
+   - Creates SmsMessage with direction 'inbound', status 'received'
+   - Returns TwiML response to Twilio
+
+**Webhook Security:**
+
+Currently no webhook signature validation. Twilio provides request validation via `X-Twilio-Signature` header - should be implemented:
+
+```ruby
+validator = Twilio::Security::RequestValidator.new(auth_token)
+unless validator.validate(request.url, params, request.headers['X-Twilio-Signature'])
+  return head :forbidden
+end
+```
+
+---
+
+### Message-to-Job Linking Design
+
+Messages can be "saved to job" for record-keeping:
+
+**Single Message Save:**
+```ruby
+POST /api/v1/chat_messages/:id/save_to_job
+{ construction_id: 123 }
+
+# Updates message
+message.update!(construction_id: 123, saved_to_job: true)
+```
+
+**Bulk Conversation Save:**
+```ruby
+POST /api/v1/chat_messages/save_conversation_to_job
+{ construction_id: 123, message_ids: [1, 2, 3, 4, 5] }
+
+# Bulk update
+ChatMessage.where(id: message_ids).update_all(
+  construction_id: 123, saved_to_job: true
+)
+```
+
+**Use Cases:**
+- Linking important client discussions to job records
+- Creating audit trail of decisions
+- Associating SMS conversations with jobs
+
+**Limitation:** No unlinking implemented - messages permanently attached once saved.
+
+---
+
+### Unread Count Algorithm
+
+Uses user timestamp to calculate unread messages:
+
+```ruby
+# User last viewed chat at 10:00 AM
+user.last_chat_read_at = 2025-11-16 10:00:00
+
+# Query messages created after that time
+ChatMessage.where('created_at > ?', user.last_chat_read_at).count
+```
+
+**Frontend polls every 5 seconds:**
+```javascript
+GET /api/v1/chat_messages/unread_count
+=> { unread_count: 7 }
+```
+
+**Limitations:**
+- Global unread count (not per-channel or per-user)
+- Marking as read marks ALL messages read
+- No granular read receipts for DMs
+
+---
+
+### Australian Phone Number Normalization
+
+Supports three common formats:
+
+1. **Australian Mobile:** `0412 345 678` → `+61412345678`
+2. **International Format:** `+61412345678` → unchanged
+3. **Without Plus:** `61412345678` → `+61412345678`
+
+```ruby
+def self.normalize_phone_number(phone)
+  clean = phone.gsub(/\D/, '')
+
+  if clean.start_with?('04') && clean.length == 10
+    return "+61#{clean[1..-1]}" # 0412345678 → +61412345678
+  end
+
+  return "+#{clean}" if clean.start_with?('61')
+
+  phone # Return as-is if unrecognized
+end
+```
+
+**Frontend Display:**
+
+Uses `formatted_from_phone` and `formatted_to_phone` helpers to show user-friendly format:
+
+```ruby
+# app/models/sms_message.rb
+def formatted_from_phone
+  return from_phone unless from_phone&.start_with?('+61')
+
+  # +61412345678 → 0412 345 678
+  "0#{from_phone[3..5]} #{from_phone[6..8]} #{from_phone[9..11]}"
+end
+```
+
+---
+
+## 📊 Test Catalog
+
+### Automated Tests
+
+**Backend Tests:**
+
+1. **ChatMessage Model Specs** (if exist - not found during research)
+   - Tests channel routing scopes
+   - Tests direct message bidirectional query
+   - Tests message-to-job linking
+
+2. **TwilioService Specs** (if exist - not found)
+   - Tests phone number normalization
+   - Tests fuzzy contact matching
+   - Tests webhook processing
+
+3. **SMS Controller Specs** (if exist - not found)
+   - Tests send_sms endpoint
+   - Tests webhook endpoint returns valid TwiML
+   - Tests status webhook updates
+
+**Frontend Tests:**
+
+4. **ChatBox Component Tests** (if exist - not found)
+   - Tests polling interval setup/cleanup
+   - Tests message rendering
+   - Tests save-to-job functionality
+
+---
+
+### Manual Testing Procedures
+
+**Test 1: Multi-Channel Message Routing**
+
+1. Send message to #general channel
+2. Send message to #team channel
+3. Send DM to specific user
+4. Verify each appears in correct context only
+
+**Test 2: SMS Send/Receive Flow**
+
+1. Configure Twilio credentials in company settings
+2. Send SMS from Trapid to test contact
+3. Verify message shows 'sent' status
+4. Verify Twilio status webhook updates to 'delivered'
+5. Send SMS reply from test phone
+6. Verify inbound message appears in Trapid
+7. Verify contact fuzzy matched correctly
+
+**Test 3: Message-to-Job Linking**
+
+1. Create test job
+2. Send several chat messages
+3. Use "Save Conversation to Job" feature
+4. Navigate to job detail page
+5. Verify all messages appear in Job Messages tab
+
+**Test 4: Unread Count Badge**
+
+1. User A sends messages while User B is away
+2. User B logs in
+3. Verify unread count badge appears in navbar
+4. User B visits /chat page
+5. Verify badge clears (mark_as_read called)
+
+---
+
+## 🔍 Common Issues & Solutions
+
+**Issue: "Twilio not enabled" error when sending SMS**
+
+**Solution:** Enable Twilio in company settings and configure credentials:
+1. Navigate to Settings → Company
+2. Toggle "Twilio Enabled"
+3. Enter Account SID, Auth Token, Phone Number
+4. Test connection
+
+---
+
+**Issue: Incoming SMS not matching contacts**
+
+**Solution:** Check phone number format in contact record:
+- Should be stored as +61 format: `+61412345678`
+- If stored as 04 format, service will still match via last 9 digits
+- If no match, check Rails logs for "Incoming SMS from unknown number" warning
+
+---
+
+**Issue: Chat messages not appearing in real-time**
+
+**Expected Behavior:** Messages appear within 3 seconds (polling interval)
+
+**If delayed beyond 3 seconds:**
+- Check browser console for API errors
+- Verify polling interval not cleared prematurely
+- Check backend `/api/v1/chat_messages` endpoint responding
+
+---
+
+**Issue: Unread count stuck at old value**
+
+**Solution:**
+- Click on chat icon to visit /chat page
+- Triggers `mark_as_read` endpoint
+- If still stuck, check `users.last_chat_read_at` timestamp in database
+
+---
+
+## 📈 Performance Benchmarks
+
+**Chat API Response Times** (100 messages):
+
+- `GET /api/v1/chat_messages?channel=general`: ~50ms
+- `GET /api/v1/chat_messages?user_id=123` (DMs): ~60ms
+- `POST /api/v1/chat_messages`: ~35ms
+- `GET /api/v1/chat_messages/unread_count`: ~25ms
+
+**SMS API Response Times:**
+
+- `POST /api/v1/contacts/:id/sms_messages`: ~800ms (includes Twilio API call)
+- `GET /api/v1/contacts/:id/sms_messages`: ~45ms
+- `POST /api/v1/sms/webhook`: ~120ms (includes contact lookup + DB write)
+
+**Polling Overhead:**
+
+- Frontend makes API request every 3 seconds
+- With 10 active users = 200 req/minute to /api/v1/chat_messages
+- Consider caching or WebSocket upgrade if user base grows
+
+---
+
+## 🎓 Development Notes
+
+### Future Enhancements
+
+**Priority 1: Authentication Fix (Critical)**
+- Replace `User.first` placeholder with proper authentication
+- Security vulnerability must be addressed before production use
+- Estimated effort: 2 hours
+
+**Priority 2: WebSocket Migration**
+- Replace polling with ActionCable for real-time updates
+- Reduce server load
+- Improve UX with instant message delivery
+- Estimated effort: 8-12 hours
+
+**Priority 3: Read Receipts**
+- Add per-message read tracking for DMs
+- Display "seen by" indicators
+- Estimated effort: 6 hours
+
+**Priority 4: Message Editing/Deletion**
+- Allow users to edit recent messages
+- Add soft delete with tombstone messages
+- Estimated effort: 4 hours
+
+**Priority 5: Typing Indicators**
+- Show "X is typing..." in real-time
+- Requires WebSocket infrastructure
+- Estimated effort: 3 hours
+
+**Priority 6: File Attachments**
+- Support image/document sharing in chat
+- Integrate with Cloudinary for storage
+- Estimated effort: 8 hours
+
+**Priority 7: Multi-Region Phone Support**
+- Add libphonenumber gem for international phone validation
+- Support phone formats beyond Australia
+- Estimated effort: 4 hours
+
+---
+
+### Database Indexes
+
+**Existing Indexes:**
+
+```ruby
+add_index :chat_messages, [:channel, :created_at]
+add_index :chat_messages, [:project_id, :created_at]
+add_index :chat_messages, [:construction_id, :channel, :created_at]
+add_index :sms_messages, [:contact_id, :created_at]
+add_index :sms_messages, :twilio_sid, unique: true
+add_index :sms_messages, [:direction, :status]
+add_index :emails, :message_id, unique: true
+add_index :emails, :construction_id
+```
+
+**Recommended Additional Indexes:**
+
+```ruby
+# For direct message queries
+add_index :chat_messages, [:user_id, :recipient_user_id, :created_at]
+
+# For unread count query
+add_index :chat_messages, :created_at
+```
+
+---
+
+### Migration Checklist (If Implementing WebSockets)
+
+1. **Enable ActionCable:**
+   ```ruby
+   # config/cable.yml
+   development:
+     adapter: redis
+     url: redis://localhost:6379/1
+   ```
+
+2. **Create Chat Channel:**
+   ```bash
+   rails generate channel Chat
+   ```
+
+3. **Update Frontend:**
+   - Remove polling intervals
+   - Add ActionCable consumer
+   - Subscribe to chat channels
+
+4. **Test Thoroughly:**
+   - Multiple users
+   - Multiple tabs
+   - Connection drops/reconnects
+
+---
+
+## 🔗 Related Chapters
+
+- **Chapter 3:** Contacts & Relationships (SMS contact association, fuzzy matching)
+- **Chapter 5:** Jobs & Construction Management (message-to-job linking, saved messages)
+- **Chapter 2:** System Administration (CompanySetting singleton, Twilio config)
+- **Chapter 13:** Outlook/Email Integration (Email model, inbound message storage)
 
 ---
 

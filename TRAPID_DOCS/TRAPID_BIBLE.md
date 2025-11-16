@@ -7882,7 +7882,742 @@ These rules ensure reliable email ingestion, secure OAuth management, and accura
 │ 📘 USER MANUAL (HOW): Chapter 14               │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## Overview
+
+This chapter defines rules for **Chat & Communications**, covering internal team chat, direct messaging, SMS integration via Twilio, and email storage. The system supports multi-channel communication with job/construction linking capabilities.
+
+**Key Features:**
+- Team channels (#general, #team, #support)
+- Direct user-to-user messaging
+- SMS sending/receiving via Twilio
+- Message-to-job linking
+- Email ingestion and storage
+
+**Key Files:**
+- Models: `backend/app/models/chat_message.rb`, `sms_message.rb`, `email.rb`
+- Controllers: `backend/app/controllers/api/v1/chat_messages_controller.rb`, `sms_messages_controller.rb`
+- Services: `backend/app/services/twilio_service.rb`
+- Frontend: `frontend/src/pages/ChatPage.jsx`, `frontend/src/components/chat/ChatBox.jsx`
+
+**Related Chapters:**
+- Chapter 5: Jobs & Construction Management (message linking)
+- Chapter 3: Contacts & Relationships (SMS contact association)
+
+---
+
+## RULE #14.1: ChatMessage Multi-Channel Architecture
+
+**ChatMessage MUST support three distinct channel types: team channels, project messages, and direct messages.**
+
+### Implementation
+
+✅ **MUST define channel types:**
+
+```ruby
+# app/models/chat_message.rb
+class ChatMessage < ApplicationRecord
+  belongs_to :user
+  belongs_to :project, optional: true
+  belongs_to :recipient_user, class_name: 'User', optional: true
+  belongs_to :construction, optional: true
+
+  validates :content, presence: true
+
+  # Channel messages (team-wide)
+  scope :in_channel, ->(channel) {
+    where(channel: channel, project_id: nil, recipient_user_id: nil)
+      .order(created_at: :asc)
+  }
+
+  # Project/job messages
+  scope :for_project, ->(project_id) {
+    where(project_id: project_id).order(created_at: :asc)
+  }
+
+  # Direct messages between users
+  scope :between_users, ->(user1_id, user2_id) {
+    where(
+      '(user_id = ? AND recipient_user_id = ?) OR (user_id = ? AND recipient_user_id = ?)',
+      user1_id, user2_id, user2_id, user1_id
+    ).order(created_at: :asc)
+  }
+
+  # General channel (default)
+  scope :general, -> {
+    where(channel: 'general', project_id: nil, recipient_user_id: nil)
+      .order(created_at: :asc)
+  }
+end
+```
+
+### Channel Logic
+
+✅ **MUST route messages correctly:**
+
+```ruby
+# app/controllers/api/v1/chat_messages_controller.rb
+def index
+  if params[:user_id].present?
+    # Direct message query
+    @messages = ChatMessage.between_users(@current_user.id, params[:user_id])
+  elsif params[:project_id].present?
+    # Project message query
+    @messages = ChatMessage.for_project(params[:project_id])
+  else
+    # Channel query (default: general)
+    channel = params[:channel] || 'general'
+    @messages = ChatMessage.in_channel(channel)
+  end
+
+  @messages = @messages.recent(100)
+  render json: @messages.as_json(include_user: true)
+end
+```
+
+**Files:**
+- `backend/app/models/chat_message.rb`
+- `backend/app/controllers/api/v1/chat_messages_controller.rb`
+- `backend/db/migrate/20251111013321_create_chat_messages.rb`
+
+---
+
+## RULE #14.2: Message-to-Job Linking
+
+**ChatMessage and SmsMessage MUST support linking to Construction (jobs) for record-keeping.**
+
+### Implementation
+
+✅ **MUST provide save-to-job endpoints:**
+
+```ruby
+# app/controllers/api/v1/chat_messages_controller.rb
+def save_to_job
+  @message = ChatMessage.find(params[:id])
+  construction = Construction.find(params[:construction_id])
+
+  @message.update!(
+    construction_id: construction.id,
+    saved_to_job: true
+  )
+
+  render json: { message: 'Message saved to job', chat_message: @message }
+end
+
+def save_conversation_to_job
+  construction = Construction.find(params[:construction_id])
+  message_ids = params[:message_ids]
+
+  ChatMessage.where(id: message_ids).update_all(
+    construction_id: construction.id,
+    saved_to_job: true
+  )
+
+  render json: {
+    message: "#{message_ids.length} messages saved to job",
+    construction_id: construction.id
+  }
+end
+```
+
+### Database Schema
+
+✅ **MUST include construction_id foreign key:**
+
+```ruby
+# db/migrate/20251111021538_add_construction_to_chat_messages.rb
+add_reference :chat_messages, :construction, foreign_key: true
+add_column :chat_messages, :saved_to_job, :boolean, default: false
+add_index :chat_messages, [:construction_id, :channel, :created_at]
+```
+
+### Frontend Integration
+
+✅ **MUST allow bulk conversation saving:**
+
+```javascript
+// frontend/src/components/chat/ChatBox.jsx
+const saveConversationToJob = async () => {
+  const messageIds = messages.map(m => m.id);
+
+  await fetch('/api/v1/chat_messages/save_conversation_to_job', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      construction_id: selectedConstruction,
+      message_ids: messageIds
+    })
+  });
+};
+```
+
+**Files:**
+- `backend/app/controllers/api/v1/chat_messages_controller.rb:67-93`
+- `backend/app/models/chat_message.rb`
+- `frontend/src/components/chat/ChatBox.jsx`
+
+---
+
+## RULE #14.3: SMS Twilio Integration
+
+**SMS MUST use Twilio for sending/receiving with webhook support and status tracking.**
+
+### TwilioService Architecture
+
+✅ **MUST centralize Twilio operations:**
+
+```ruby
+# app/services/twilio_service.rb
+class TwilioService
+  def self.send_sms(to:, body:, contact:, user: nil)
+    settings = CompanySetting.current
+    raise 'Twilio not enabled' unless settings.twilio_enabled
+
+    client = Twilio::REST::Client.new(
+      settings.twilio_account_sid,
+      settings.twilio_auth_token
+    )
+
+    normalized_to = normalize_phone_number(to)
+
+    twilio_message = client.messages.create(
+      from: settings.twilio_phone_number,
+      to: normalized_to,
+      body: body
+    )
+
+    sms = SmsMessage.create!(
+      contact: contact,
+      user: user,
+      from_phone: settings.twilio_phone_number,
+      to_phone: normalized_to,
+      body: body,
+      direction: 'outbound',
+      status: 'sent',
+      twilio_sid: twilio_message.sid,
+      sent_at: Time.current
+    )
+
+    { success: true, sms: sms, twilio_message: twilio_message }
+  rescue Twilio::REST::RestError => e
+    { success: false, error: e.message }
+  end
+end
+```
+
+### Webhook Processing
+
+✅ **MUST handle incoming SMS webhooks:**
+
+```ruby
+# app/controllers/api/v1/sms_messages_controller.rb
+def webhook
+  from_phone = params['From']
+  body = params['Body']
+  message_sid = params['MessageSid']
+
+  result = TwilioService.process_incoming_sms(params)
+
+  # Return TwiML response
+  response = Twilio::TwiML::MessagingResponse.new do |r|
+    r.message(body: 'Message received') if result[:success]
+  end
+
+  render xml: response.to_s
+end
+```
+
+### Phone Number Normalization
+
+✅ **MUST support Australian phone formats:**
+
+```ruby
+# app/services/twilio_service.rb
+def self.normalize_phone_number(phone)
+  clean = phone.gsub(/\D/, '') # Remove non-digits
+
+  # Australian mobile starting with 04
+  if clean.start_with?('04') && clean.length == 10
+    return "+61#{clean[1..-1]}" # Convert to +61
+  end
+
+  # Already international format
+  return "+#{clean}" if clean.start_with?('61')
+
+  phone # Return as-is if unrecognized
+end
+```
+
+**Files:**
+- `backend/app/services/twilio_service.rb`
+- `backend/app/controllers/api/v1/sms_messages_controller.rb`
+- `backend/app/models/sms_message.rb`
+
+---
+
+## RULE #14.4: SMS Status Tracking
+
+**SmsMessage MUST track delivery status via Twilio webhooks with enum states.**
+
+### Status Enum
+
+✅ **MUST define status states:**
+
+```ruby
+# app/models/sms_message.rb
+class SmsMessage < ApplicationRecord
+  belongs_to :contact
+  belongs_to :user, optional: true # null for inbound messages
+
+  validates :from_phone, :to_phone, :body, :direction, presence: true
+  validates :direction, inclusion: { in: %w[inbound outbound] }
+
+  scope :inbound, -> { where(direction: 'inbound') }
+  scope :outbound, -> { where(direction: 'outbound') }
+  scope :recent, -> { order(created_at: :desc) }
+
+  # Status helpers
+  def delivered?
+    status == 'delivered'
+  end
+
+  def failed?
+    status == 'failed'
+  end
+
+  def inbound?
+    direction == 'inbound'
+  end
+
+  def outbound?
+    direction == 'outbound'
+  end
+end
+```
+
+### Status Updates
+
+✅ **MUST accept Twilio status webhooks:**
+
+```ruby
+# app/controllers/api/v1/sms_messages_controller.rb
+def status_webhook
+  message_sid = params['MessageSid']
+  status = params['MessageStatus'] # queued, sent, delivered, failed
+
+  TwilioService.update_message_status(message_sid, status)
+
+  head :ok
+end
+
+# app/services/twilio_service.rb
+def self.update_message_status(message_sid, status)
+  sms = SmsMessage.find_by(twilio_sid: message_sid)
+  return unless sms
+
+  sms.update!(status: status)
+end
+```
+
+### Frontend Display
+
+✅ **MUST show status icons:**
+
+```javascript
+// frontend/src/components/contacts/SmsConversation.jsx
+const getStatusIcon = (message) => {
+  if (message.direction === 'inbound') return null;
+
+  switch (message.status) {
+    case 'delivered': return <CheckIcon className="text-green-500" />;
+    case 'sent': return <CheckIcon className="text-blue-500" />;
+    case 'failed': return <XMarkIcon className="text-red-500" />;
+    case 'queued': return <ClockIcon className="text-gray-400" />;
+    default: return null;
+  }
+};
+```
+
+**Files:**
+- `backend/app/models/sms_message.rb`
+- `backend/app/services/twilio_service.rb:78-82`
+- `frontend/src/components/contacts/SmsConversation.jsx:92-104`
+
+---
+
+## RULE #14.5: Unread Message Tracking
+
+**User model MUST track last_chat_read_at to enable unread count badges.**
+
+### User Model Extension
+
+✅ **MUST add read timestamp:**
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  has_many :chat_messages
+
+  # Timestamp when user last viewed chat
+  # Used to calculate unread count
+  # Migration: add_column :users, :last_chat_read_at, :datetime
+end
+```
+
+### Unread Count API
+
+✅ **MUST provide unread count endpoint:**
+
+```ruby
+# app/controllers/api/v1/chat_messages_controller.rb
+def unread_count
+  if @current_user.last_chat_read_at.present?
+    count = ChatMessage.where('created_at > ?', @current_user.last_chat_read_at).count
+  else
+    count = ChatMessage.count
+  end
+
+  render json: { unread_count: count }
+end
+
+def mark_as_read
+  @current_user.update!(last_chat_read_at: Time.current)
+  render json: { message: 'Messages marked as read' }
+end
+```
+
+### Frontend Badge
+
+✅ **MUST poll for unread count:**
+
+```javascript
+// frontend/src/components/AppLayout.jsx
+useEffect(() => {
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/v1/chat_messages/unread_count');
+      const data = await response.json();
+      setUnreadCount(data.unread_count);
+    } catch (error) {
+      console.error('Failed to fetch unread count:', error);
+    }
+  };
+
+  fetchUnreadCount();
+  const interval = setInterval(fetchUnreadCount, 5000); // Poll every 5 seconds
+
+  return () => clearInterval(interval);
+}, []);
+```
+
+**Files:**
+- `backend/app/models/user.rb`
+- `backend/app/controllers/api/v1/chat_messages_controller.rb:49-64`
+- `frontend/src/components/AppLayout.jsx` (unread badge logic)
+
+---
+
+## RULE #14.6: Message Polling (No WebSockets)
+
+**Frontend MUST use polling for real-time updates; WebSockets NOT implemented.**
+
+### Polling Implementation
+
+✅ **MUST poll at 3-second intervals:**
+
+```javascript
+// frontend/src/components/chat/ChatBox.jsx
+useEffect(() => {
+  loadMessages();
+
+  const interval = setInterval(() => {
+    loadMessages();
+  }, 3000); // Poll every 3 seconds
+
+  return () => clearInterval(interval);
+}, [channel, projectId, userId]);
+
+const loadMessages = async () => {
+  let url = '/api/v1/chat_messages';
+
+  if (userId) {
+    url += `?user_id=${userId}`;
+  } else if (projectId) {
+    url += `?project_id=${projectId}`;
+  } else {
+    url += `?channel=${channel}`;
+  }
+
+  const response = await fetch(url);
+  const data = await response.json();
+  setMessages(data);
+};
+```
+
+### SMS Polling
+
+✅ **MUST poll SMS messages:**
+
+```javascript
+// frontend/src/components/communications/SmsTab.jsx
+useEffect(() => {
+  loadMessages();
+
+  const interval = setInterval(() => {
+    loadMessages();
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [contactId, jobId]);
+```
+
+❌ **NEVER use WebSockets:**
+- WebSocket infrastructure not implemented
+- ActionCable not configured
+- All real-time updates via polling
+
+**Files:**
+- `frontend/src/components/chat/ChatBox.jsx:29-40`
+- `frontend/src/components/communications/SmsTab.jsx`
+- `frontend/src/components/messages/JobMessagesTab.jsx`
+
+---
+
+## RULE #14.7: Contact-SMS Fuzzy Matching
+
+**Incoming SMS MUST match contacts via phone number fuzzy lookup (last 9 digits for AU).**
+
+### Fuzzy Match Logic
+
+✅ **MUST support partial phone matches:**
+
+```ruby
+# app/services/twilio_service.rb
+def self.find_contact_by_phone(phone_number)
+  normalized = normalize_phone_number(phone_number)
+
+  # Try exact match first
+  contact = Contact.find_by(mobile_phone: normalized)
+  return contact if contact
+
+  # Try partial match (last 9 digits for AU)
+  # 0412 345 678 → 412345678
+  last_9_digits = normalized.gsub(/\D/, '')[-9..-1]
+
+  Contact.where(
+    "regexp_replace(mobile_phone, '[^0-9]', '', 'g') LIKE ?",
+    "%#{last_9_digits}"
+  ).first
+end
+
+def self.process_incoming_sms(params)
+  from_phone = params['From']
+  body = params['Body']
+  message_sid = params['MessageSid']
+
+  contact = find_contact_by_phone(from_phone)
+
+  unless contact
+    Rails.logger.warn "Incoming SMS from unknown number: #{from_phone}"
+    return { success: false, error: 'Contact not found' }
+  end
+
+  sms = SmsMessage.create!(
+    contact: contact,
+    from_phone: from_phone,
+    to_phone: params['To'],
+    body: body,
+    direction: 'inbound',
+    status: 'received',
+    twilio_sid: message_sid,
+    received_at: Time.current
+  )
+
+  { success: true, sms: sms, contact: contact }
+end
+```
+
+**Why Last 9 Digits:**
+- Australian mobile numbers: 04XX XXX XXX (10 digits)
+- Different formats: +61, 04, 61, etc.
+- Last 9 digits unique to subscriber
+
+**Files:**
+- `backend/app/services/twilio_service.rb:84-115`
+
+---
+
+## RULE #14.8: Message Deletion Authorization
+
+**ChatMessage deletion MUST only allow users to delete their own messages.**
+
+### Authorization Check
+
+✅ **MUST verify ownership:**
+
+```ruby
+# app/controllers/api/v1/chat_messages_controller.rb
+def destroy
+  @message = ChatMessage.find(params[:id])
+
+  # Authorization: only creator can delete
+  unless @message.user_id == @current_user.id
+    return render json: { error: 'Unauthorized' }, status: :forbidden
+  end
+
+  @message.destroy
+  render json: { message: 'Message deleted' }
+end
+```
+
+❌ **NEVER allow:**
+- Admins deleting other users' messages (not implemented)
+- Bulk message deletion without ownership check
+- Deletion of messages saved to jobs without audit trail
+
+**Files:**
+- `backend/app/controllers/api/v1/chat_messages_controller.rb:44-47`
+
+---
+
+## RULE #14.9: Email Ingestion Storage
+
+**Email model MUST store inbound emails from Outlook with optional Construction linking.**
+
+### Email Model
+
+✅ **MUST store email metadata:**
+
+```ruby
+# app/models/email.rb
+class Email < ApplicationRecord
+  belongs_to :construction, optional: true
+  belongs_to :user, optional: true
+
+  validates :from_email, :subject, :body, presence: true
+  validates :message_id, uniqueness: true, allow_nil: true
+
+  scope :recent, -> { order(received_at: :desc) }
+  scope :for_construction, ->(construction_id) {
+    where(construction_id: construction_id).order(received_at: :desc)
+  }
+  scope :unassigned, -> { where(construction_id: nil) }
+  scope :with_attachments, -> { where(has_attachments: true) }
+
+  def formatted_received_at
+    return 'N/A' unless received_at
+    received_at.strftime('%b %d, %Y %I:%M %p')
+  end
+
+  def short_subject
+    return 'No Subject' if subject.blank?
+    subject.length > 50 ? "#{subject[0..47]}..." : subject
+  end
+end
+```
+
+### Schema
+
+✅ **MUST include fields:**
+
+```ruby
+# db/schema.rb (emails table)
+create_table :emails do |t|
+  t.references :construction, foreign_key: true, null: true
+  t.references :user, foreign_key: true, null: true
+  t.string :from_email, null: false
+  t.json :to_emails, default: []
+  t.json :cc_emails, default: []
+  t.json :bcc_emails, default: []
+  t.string :subject
+  t.text :body
+  t.datetime :received_at
+  t.string :message_id # Microsoft Graph message ID
+  t.boolean :has_attachments, default: false
+  t.timestamps
+end
+
+add_index :emails, :message_id, unique: true
+add_index :emails, :construction_id
+```
+
+**Note:** Email sending NOT implemented (inbound only).
+
+**Files:**
+- `backend/app/models/email.rb`
+- `backend/db/schema.rb` (emails table)
+
+---
+
+## RULE #14.10: Authentication Placeholder - CRITICAL TODO
+
+**ChatMessages controller currently uses placeholder authentication - MUST be replaced with proper auth.**
+
+### Current Placeholder
+
+⚠️ **CRITICAL SECURITY ISSUE:**
+
+```ruby
+# app/controllers/api/v1/chat_messages_controller.rb (Line 110)
+def set_current_user
+  @current_user = User.first # TODO: Replace with actual current_user logic
+end
+```
+
+### Required Fix
+
+✅ **MUST implement proper authentication:**
+
+```ruby
+# app/controllers/api/v1/chat_messages_controller.rb
+before_action :authenticate_user!
+
+def set_current_user
+  @current_user = current_user # From Devise or JWT auth
+end
+```
+
+❌ **NEVER use in production:**
+- `User.first` placeholder
+- Hardcoded user IDs
+- Session-less chat without auth
+
+**Status:** Placeholder exists, proper auth NOT implemented.
+
+**Files:**
+- `backend/app/controllers/api/v1/chat_messages_controller.rb:110`
+
+---
+
+## API Endpoints Reference
+
+### Chat Messages
+
+| Method | Endpoint | Query Params | Purpose |
+|--------|----------|--------------|---------|
+| GET | `/api/v1/chat_messages` | `channel`, `project_id`, `user_id` | Fetch messages |
+| POST | `/api/v1/chat_messages` | - | Create message |
+| DELETE | `/api/v1/chat_messages/:id` | - | Delete own message |
+| GET | `/api/v1/chat_messages/unread_count` | - | Get unread count |
+| POST | `/api/v1/chat_messages/mark_as_read` | - | Mark all as read |
+| POST | `/api/v1/chat_messages/:id/save_to_job` | `construction_id` | Link message to job |
+| POST | `/api/v1/chat_messages/save_conversation_to_job` | `construction_id`, `message_ids[]` | Bulk link to job |
+
+### SMS Messages
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/v1/contacts/:id/sms_messages` | Get SMS for contact |
+| POST | `/api/v1/contacts/:id/sms_messages` | Send SMS |
+| POST | `/api/v1/sms/webhook` | Twilio incoming webhook |
+| POST | `/api/v1/sms/status` | Twilio status webhook |
+
+### Emails
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/v1/constructions/:id/emails` | Get emails for job |
 
 ---
 

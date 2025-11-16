@@ -3391,7 +3391,166 @@ If auto-matching failed:
 │ 📕 LEXICON (BUGS):     Chapter 14 (Developers) │
 └─────────────────────────────────────────────────┘
 
-**Content TBD**
+**Last Updated:** 2025-11-16
+
+## What is Team Chat & SMS?
+
+Trapid's communication tools help your team stay connected and keep records of important conversations. The system includes team chat channels, direct messaging between staff members, and SMS texting with contacts.
+
+**Key Features:**
+- **Team Channels** - Group discussions (#general, #team, #support)
+- **Direct Messages** - Private conversations with team members
+- **SMS Integration** - Send and receive text messages with suppliers and customers
+- **Job Linking** - Attach conversations to specific jobs for record-keeping
+
+All messages are searchable and can be saved to job records for reference.
+
+---
+
+## Getting Started
+
+### Accessing Team Chat
+
+1. Click the **chat icon** in the top navigation bar
+2. Choose a channel from the sidebar:
+   - **#general** - Company-wide announcements
+   - **#team** - Internal team discussions
+   - **#support** - Help and troubleshooting
+3. Or click **Direct Messages** to message a specific team member
+4. Type your message and press **Enter** to send
+
+**Tip:** Messages update automatically every 3 seconds - no need to refresh!
+
+### Sending an SMS to a Contact
+
+1. Navigate to **Contacts** and select a contact
+2. Click the **SMS** tab
+3. Enter your message in the text box
+4. Verify the phone number is correct
+5. Click **Send SMS**
+6. Watch for delivery status: ✓ Sent → ✓ Delivered
+
+**Note:** SMS requires Twilio integration to be enabled by your administrator.
+
+### Saving a Conversation to a Job
+
+1. Open a chat conversation (channel or direct message)
+2. Click **Save to Job** button
+3. Select the job from the dropdown
+4. Choose either:
+   - **Save Single Message** - Save just one message
+   - **Save Entire Conversation** - Save all visible messages
+5. Click **Confirm**
+
+**Saved messages appear in the job's Messages tab for future reference.**
+
+---
+
+## Common Tasks
+
+### Checking for New Messages
+
+**Unread Badge:** A red number appears on the chat icon in the navigation bar when you have new messages.
+
+**To mark as read:**
+1. Click the chat icon
+2. The badge clears automatically when you view the chat page
+
+### Viewing Messages for a Specific Job
+
+1. Open the job detail page
+2. Click the **Messages** tab
+3. View all conversations saved to this job
+4. Use the search box to find specific messages
+
+### Replying to an Incoming SMS
+
+When a contact sends you an SMS:
+
+1. You'll see the message in the contact's SMS tab
+2. Messages are marked with direction:
+   - **Balloon on left** - Incoming from contact
+   - **Balloon on right** - Sent by you
+3. Type your reply in the text box
+4. Click **Send SMS**
+
+**Tip:** Incoming messages automatically match to the contact's record by phone number.
+
+### Searching Chat History
+
+1. Navigate to a job's Messages tab or the main Chat page
+2. Use the search box at the top
+3. Search by:
+   - Keyword (searches message content)
+   - User name
+   - Date range
+4. Results appear as you type
+
+---
+
+## Troubleshooting
+
+### "Twilio not enabled" Error When Sending SMS
+
+**Problem:** You see an error when trying to send an SMS.
+
+**Solution:** Your administrator needs to enable Twilio integration:
+1. Go to **Settings → Company**
+2. Enable Twilio
+3. Enter Twilio credentials (Account SID, Auth Token, Phone Number)
+
+**Contact your system administrator if you don't have access.**
+
+---
+
+### SMS Shows "Failed" Status
+
+**Problem:** Your SMS shows a red ✗ icon instead of delivered.
+
+**Possible Causes:**
+- Invalid phone number format
+- Contact's phone is off or out of service
+- Twilio account out of credits
+
+**Solution:**
+1. Check the phone number is correct
+2. Verify the number includes area code
+3. Contact your administrator to check Twilio account status
+
+---
+
+### Messages Not Appearing Immediately
+
+**Problem:** You sent a message but it doesn't appear right away.
+
+**Expected Behavior:** Messages appear within 3 seconds (auto-refresh interval).
+
+**If delayed beyond 3 seconds:**
+1. Check your internet connection
+2. Refresh the page manually (F5)
+3. Contact support if the issue persists
+
+---
+
+### Can't Find a Saved Conversation
+
+**Problem:** You saved messages to a job but can't find them.
+
+**Solution:**
+1. Go to the job detail page
+2. Click **Messages** tab (not Communications or Email)
+3. Use search to filter by keyword or date
+4. Verify you selected the correct job when saving
+
+**Note:** Messages are permanently linked once saved - they cannot be unlinked.
+
+---
+
+## Related Topics
+
+- **Chapter 5:** Jobs & Construction Management (viewing job messages)
+- **Chapter 3:** Contacts & Relationships (SMS contact association)
+- **Chapter 2:** System Administration (Twilio configuration)
 
 ---
 
