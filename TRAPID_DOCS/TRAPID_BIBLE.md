@@ -12487,6 +12487,198 @@ When a table has Edit/Save/Reset functionality (for inline editing mode):
 - Consistent with toolbar layout pattern
 - Better use of screen space
 
+### Inline Bulk Actions Pattern (Alternative to Separate Row)
+
+**🔴 CRITICAL: Two valid patterns for bulk actions**
+
+The standard pattern (RULE #19.9) shows bulk actions in a **separate row below the toolbar**. However, for tables with limited bulk operations and where screen space is critical, you MAY use an **inline bulk actions pattern** instead.
+
+✅ **When to use inline bulk actions:**
+- Table has limited bulk operations (1-3 actions max)
+- Toolbar already has Edit/Save/Reset buttons
+- Screen space is constrained
+- Bulk actions are simple (delete, clear selection)
+- User needs all controls in one horizontal row
+
+✅ **REQUIRED inline pattern:**
+
+```jsx
+{/* Table Toolbar - Inline Bulk Actions Variant */}
+<div className="mb-4 flex items-center justify-between gap-4" style={{ minHeight: '44px' }}>
+  {/* LEFT SIDE: Global Search - extends to first button */}
+  <div className="flex-1">
+    <div className="relative">
+      <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+      <input
+        type="text"
+        placeholder="Search..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+      />
+    </div>
+  </div>
+
+  {/* RIGHT SIDE: Action buttons (aligned right, specific order) */}
+  <div className="flex items-center gap-2">
+    {/* 1. Bulk Actions (CONDITIONAL - only when items selected) */}
+    {selectedItems.size > 0 && (
+      <>
+        <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+          {selectedItems.size} selected
+        </span>
+        <button
+          onClick={handleBulkDelete}
+          className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm whitespace-nowrap"
+        >
+          Delete Selected
+        </button>
+        <button
+          onClick={() => setSelectedItems(new Set())}
+          className="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm whitespace-nowrap"
+        >
+          Clear Selection
+        </button>
+      </>
+    )}
+
+    {/* 2. Edit/Save/Reset buttons (if inline editing feature exists) */}
+    {!isEditing ? (
+      <button
+        onClick={() => setIsEditing(true)}
+        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
+      >
+        <PlusIcon className="w-4 h-4" />
+        Edit Commands
+      </button>
+    ) : (
+      <>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 flex items-center gap-2"
+        >
+          {saving ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <DocumentTextIcon className="w-4 h-4" />}
+          Save to Lexicon
+        </button>
+        <button
+          onClick={handleCancel}
+          disabled={saving}
+          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleAddNew}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
+        >
+          <PlusIcon className="w-4 h-4" />
+          Add New
+        </button>
+        <button
+          onClick={handleReset}
+          className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition flex items-center gap-2"
+        >
+          <ArrowPathIcon className="w-4 h-4" />
+          Reset
+        </button>
+      </>
+    )}
+
+    {/* 3. Column Visibility Toggle (ALWAYS include) */}
+    <button
+      onClick={() => setShowColumnSelector(!showColumnSelector)}
+      className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+      title="Toggle columns"
+    >
+      <EyeIcon className="h-5 w-5" />
+    </button>
+
+    {/* 4. Export Button (if applicable) */}
+    <button
+      onClick={handleExport}
+      className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+      title="Export data"
+    >
+      <ArrowDownTrayIcon className="h-5 w-5" />
+    </button>
+
+    {/* 5. Import Button (if applicable) */}
+    <button
+      onClick={handleImport}
+      className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+      title="Import data"
+    >
+      <ArrowUpTrayIcon className="h-5 w-5" />
+    </button>
+  </div>
+</div>
+```
+
+**Inline button order (when bulk actions AND edit mode present):**
+1. **Bulk Actions** (CONDITIONAL - only when `selectedItems.size > 0`)
+   - Selection count label
+   - Delete Selected button (red)
+   - Clear Selection button (gray)
+2. **Edit/Save/Reset buttons** (conditional on edit mode)
+3. Column Visibility Toggle (ALWAYS REQUIRED)
+4. Export Button (if applicable)
+5. Import Button (if applicable)
+6. Additional Toggles/Filters (if applicable)
+
+**Example layouts:**
+
+**When NOT editing, no selection:**
+```
+[Global Search]        [Edit Commands] [Column] [Export] [Import]
+```
+
+**When NOT editing, 3 items selected:**
+```
+[Global Search]        [3 selected] [Delete Selected] [Clear] [Edit Commands] [Column] [Export] [Import]
+```
+
+**When editing, no selection:**
+```
+[Global Search]        [Save] [Cancel] [Add New] [Reset] [Column] [Export] [Import]
+```
+
+**When editing, 3 items selected:**
+```
+[Global Search]        [3 selected] [Delete] [Clear] [Save] [Cancel] [Add New] [Reset] [Column] [Export] [Import]
+```
+
+✅ **MUST for inline bulk actions:**
+- Add `style={{ minHeight: '44px' }}` to toolbar div for vertical alignment
+- Use `whitespace-nowrap` on bulk action buttons to prevent wrapping
+- Use `text-sm` class for bulk action buttons (slightly smaller than primary buttons)
+- Conditionally render bulk actions BEFORE Edit/Save buttons
+- Bulk actions appear/disappear smoothly without layout shift
+
+❌ **NEVER use inline pattern when:**
+- Table has 4+ bulk operations (use separate row instead)
+- Bulk operations are complex (batch edit, bulk assign, etc.)
+- Toolbar would become too crowded
+- Mobile usability would be compromised
+
+**Trade-offs:**
+- ✅ **Pro:** Saves vertical space, all controls in one row
+- ✅ **Pro:** Faster access to bulk actions (no separate row)
+- ❌ **Con:** Can become crowded with many buttons
+- ❌ **Con:** Less visual separation between bulk/normal actions
+
+**Choose separate row pattern when:**
+- You have many bulk actions
+- You want clear visual separation
+- You have complex bulk operations
+- Example: RULE #19.9 standard pattern
+
+**Choose inline pattern when:**
+- Limited bulk actions (1-3 max)
+- Screen space is critical
+- Toolbar already has Edit/Save buttons
+- Example: AgentShortcutsTab (commands/slang tables)
+
 ### Examples in Codebase
 
 **Files that follow this pattern:**

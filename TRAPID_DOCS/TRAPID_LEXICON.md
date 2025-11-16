@@ -1,7 +1,7 @@
 # TRAPID LEXICON - Bug History & Knowledge Base
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-16 23:02 AEST
+**Last Updated:** 2025-11-17 00:00 AEST
 **Authority Level:** Reference (supplements Bible)
 **Audience:** Claude Code + Human Developers
 
@@ -77,7 +77,7 @@ This file is the **knowledge base** for all Trapid development.
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -119,7 +119,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -269,7 +269,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -297,7 +297,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -592,7 +592,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -720,7 +720,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -831,7 +831,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -961,7 +961,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -989,7 +989,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1089,7 +1089,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1137,7 +1137,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1165,7 +1165,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1193,7 +1193,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1221,7 +1221,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1249,7 +1249,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1277,7 +1277,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1305,7 +1305,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1333,7 +1333,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1361,7 +1361,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1389,7 +1389,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1621,6 +1621,131 @@ _Links to related chapters will be added as cross-references are identified._
 
 ---
 
+### 5. HeadlessUI + Heroicons Architecture Decision
+
+**Decision:** **Decision:** Use HeadlessUI for component composition + Heroicons for consistent icons
+
+**Rationale:**
+- Composability: HeadlessUI provides unstyled, accessible components styled with TailwindCSS
+- Accessibility Built-in: ARIA attributes handled automatically
+- Icon Consistency: Heroicons (24-outline style) across all 200+ icon usages
+- Package Integration: Both officially maintained by Tailwind Labs
+
+**Evidence:**
+- 20+ component files import HeadlessUI (Tab, Dialog, Menu, etc.)
+- All icons from `@heroicons/react/24/outline`
+- Packages: `@headlessui/react: ^2.2.9`, `@heroicons/react: ^2.2.0`
+
+**Protected Pattern:** HeadlessUI patterns must be preserved in all modals/dropdowns
+
+
+---
+
+### 6. TailwindCSS Styling Strategy (No CSS-in-JS)
+
+**Decision:** **Decision:** Pure TailwindCSS with dark mode via `dark:` prefix (no CSS-in-JS)
+
+**Rationale:**
+- Performance: No runtime style generation (compiled at build time)
+- Type Safety: ClassName strings catch typos at development time
+- Dark Mode Built-In: Tailwind's `dark:` prefix requires no additional libraries
+- Predictable Output: CSS generated once, not recalculated per component
+
+**Evidence:**
+- 5,920+ `dark:` prefixed classes throughout codebase
+- Zero CSS-in-JS libraries (no styled-components, emotion)
+- Minimal tailwind.config.js (no custom plugins)
+
+**Protected Pattern:** No CSS-in-JS conversions planned
+
+
+---
+
+### 7. ContactsPage as Gold Standard Reference
+
+**Decision:** **Decision:** ContactsPage.jsx designated as primary reference implementation
+
+**Rationale - Feature Complete:**
+- Sticky headers ✅
+- Column resize with drag handles ✅
+- Column reorder (drag-drop) ✅
+- Inline column filters ✅
+- Search with clear button ✅
+- Multi-level sort ✅
+- localStorage persistence ✅
+- Dark mode support ✅
+- Row actions ✅
+- Empty states with action buttons ✅
+
+**File:** `frontend/src/pages/ContactsPage.jsx` (372 lines)
+
+**Use As Reference For:**
+- Column state management patterns
+- URL-based tab sync
+- Table feature implementation
+
+
+---
+
+### 8. Dark Mode Implementation Strategy
+
+**Decision:** **Decision:** CSS-first dark mode using `prefers-color-scheme` media query
+
+**Rationale:**
+- No JavaScript Overhead: Applied via CSS, not JS state
+- Respects User Preferences: Automatically responds to OS dark mode
+- Manual Toggle Possible: Can be enhanced later if needed
+- Accessibility Compliant: Respects `prefers-color-scheme` WCAG requirement
+
+**Evidence:**
+- Tailwind config uses default dark mode strategy (media query)
+- 5,920+ dark mode class usages
+- Consistent pattern: `bg-white dark:bg-gray-800`, `text-gray-900 dark:text-white`
+- COLOR_SYSTEM.md documents standardized dark colors
+
+**Protected Pattern:** All dark mode classes must be preserved
+
+
+---
+
+### 9. Chapter 19 Table Compliance Implementation
+
+**Related Rule:** Bible Bible Chapter 19 (RULES #19.2, #19.3, #19.5B, #19.7, #19.8, #19.9, #19.11A, #19.13, #19.14, #19.16)
+
+**Decision:** Implemented full Chapter 19 table compliance for Claude Code shortcuts management, including column reordering, visual drag indicators, and proper event separation.
+
+**Details:**
+**Features Implemented:**
+
+1. **Column Reordering** - HTML5 drag-and-drop API with state management
+2. **Visual Drag Indicators** - Bars3Icon (≡) on all draggable columns
+3. **Toolbar Layout** - Search left, bulk actions + edit buttons right
+4. **Event Separation** - Drag handle does not trigger sorting
+5. **Vertical Alignment** - Fixed with minHeight: 44px
+
+**Technical Implementation:**
+- Added columnOrderCommands/columnOrderSlang state arrays
+- Added draggingColumnCommands/draggingColumnSlang state
+- Implemented onDragStart, onDragOver, onDrop, onDragEnd handlers
+- Separated drag handle (Bars3Icon) from sortable area
+- Added e.stopPropagation() to prevent event conflicts
+
+**Files Modified:**
+- frontend/src/components/settings/AgentShortcutsTab.jsx (lines 14, 35-36, 49-50, 633-660, 823-850)
+
+**Trade-offs:**
+**Trade-offs:**
+- State complexity: Dual table state requires separate variables
+- Column persistence: Currently in-memory only (could add localStorage)
+- Performance: Drag-drop re-renders entire header (acceptable for small tables)
+
+**Future Enhancements:**
+- Add localStorage persistence for column order
+- Add keyboard shortcuts for column reordering
+- Add column order reset button
+
+---
+
 ## 📊 Test Catalog
 
 ### UI Testing Infrastructure State
@@ -1713,7 +1838,7 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-16
+**Last Updated:** 2025-11-17
 
 ---
 
@@ -1898,6 +2023,25 @@ Developer updates .md file but forgets to update database, causing drift.
 
 ---
 
+### Claude Code Slang Configuration
+
+12 slang shortcuts configured for Claude Code
+
+- **sm**: Schedule Master
+- **po**: Purchase Order
+- **est**: Estimate
+- **inv**: Invoice
+- **sup**: Supplier
+- **con**: Contact
+- **pb**: Price Book
+- **wf**: Workflow
+- **gantt**: Gantt Chart
+- **sched**: Schedule
+- **ub**: Update Bible
+- **task**: Is the Actual PArt that has a duration on the Gantt
+
+---
+
 ## 📚 Related Chapters
 
 _Links to related chapters will be added as cross-references are identified._
@@ -1905,7 +2049,7 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-**Last Generated:** 2025-11-16 23:02 AEST
+**Last Generated:** 2025-11-17 00:00 AEST
 **Generated By:** `rake trapid:export_lexicon`
 **Maintained By:** Development Team via Database UI
 **Review Schedule:** After each bug fix or knowledge entry
