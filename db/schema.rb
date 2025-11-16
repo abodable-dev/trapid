@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_15_224533) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_16_092718) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -42,6 +42,36 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_15_224533) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "agent_definitions", force: :cascade do |t|
+    t.string "agent_id", null: false
+    t.string "name", null: false
+    t.string "agent_type", null: false
+    t.string "focus", null: false
+    t.string "model", default: "sonnet"
+    t.text "purpose"
+    t.text "capabilities"
+    t.text "when_to_use"
+    t.text "tools_available"
+    t.text "success_criteria"
+    t.text "example_invocations"
+    t.text "important_notes"
+    t.integer "total_runs", default: 0
+    t.integer "successful_runs", default: 0
+    t.integer "failed_runs", default: 0
+    t.datetime "last_run_at"
+    t.string "last_status"
+    t.text "last_message"
+    t.jsonb "last_run_details", default: {}
+    t.jsonb "metadata", default: {}
+    t.boolean "active", default: true
+    t.integer "priority", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_agent_definitions_on_active"
+    t.index ["agent_id"], name: "index_agent_definitions_on_agent_id", unique: true
+    t.index ["agent_type"], name: "index_agent_definitions_on_agent_type"
   end
 
   create_table "bug_hunter_test_runs", force: :cascade do |t|

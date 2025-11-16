@@ -303,6 +303,13 @@ Rails.application.routes.draw do
         end
       end
 
+      # Agent Definitions (Chapter 20)
+      resources :agent_definitions, param: :agent_id do
+        member do
+          post :record_run
+        end
+      end
+
       # Supervisor Checklist Templates (Global)
       resources :supervisor_checklist_templates do
         collection do
