@@ -17,7 +17,6 @@ import {
   XCircleIcon,
   KeyIcon,
   PhoneIcon,
-  AdjustmentsHorizontalIcon,
   EyeIcon,
   EyeSlashIcon
 } from '@heroicons/react/24/outline'
@@ -678,7 +677,7 @@ export default function UserManagementTab() {
             onClick={() => setShowColumnSettings(!showColumnSettings)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium shadow-sm"
           >
-            <AdjustmentsHorizontalIcon className="h-5 w-5" />
+            <EyeIcon className="h-5 w-5" />
             Columns
           </button>
 

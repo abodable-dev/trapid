@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import {
@@ -8,8 +8,11 @@ import {
   XCircleIcon,
   ArrowPathIcon,
   UserPlusIcon,
-  AdjustmentsHorizontalIcon,
-  PencilIcon
+  EyeIcon,
+  PencilIcon,
+  Bars3Icon,
+  ChevronUpIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
 import EditSupplierModal from '../components/suppliers/EditSupplierModal'
@@ -32,24 +35,61 @@ export default function SuppliersPage() {
   const [editingSupplier, setEditingSupplier] = useState(null)
   const [toast, setToast] = useState(null)
 
-  // Column visibility state
-  const [visibleColumns, setVisibleColumns] = useState({
-    supplier: true,
-    rating: true,
-    items: true,
-    contact: true,
-    status: true,
-    actions: true
+  // Column visibility state with localStorage persistence
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    const saved = localStorage.getItem('suppliers_table_visibleColumns')
+    return saved ? JSON.parse(saved) : {
+      supplier: true,
+      rating: true,
+      items: true,
+      contact: true,
+      status: true,
+      actions: true
+    }
   })
+
+  // Column widths state with localStorage persistence
+  const [columnWidths, setColumnWidths] = useState(() => {
+    const saved = localStorage.getItem('suppliers_table_columnWidths')
+    return saved ? JSON.parse(saved) : {
+      supplier: 200,
+      rating: 100,
+      items: 100,
+      contact: 250,
+      status: 150,
+      actions: 150
+    }
+  })
+
+  // Column order state with localStorage persistence
+  const [columnOrder, setColumnOrder] = useState(() => {
+    const saved = localStorage.getItem('suppliers_table_columnOrder')
+    return saved ? JSON.parse(saved) : ['supplier', 'rating', 'items', 'contact', 'status', 'actions']
+  })
+
+  // Column resize state
+  const [resizingColumn, setResizingColumn] = useState(null)
+  const [resizeStartX, setResizeStartX] = useState(0)
+  const [resizeStartWidth, setResizeStartWidth] = useState(0)
+
+  // Column reorder state
+  const [draggedColumn, setDraggedColumn] = useState(null)
+
+  // Column filter state
+  const [columnFilters, setColumnFilters] = useState({})
+
+  // Sort state
+  const [sortBy, setSortBy] = useState('supplier')
+  const [sortDirection, setSortDirection] = useState('asc')
 
   // Define all available columns
   const availableColumns = [
-    { key: 'supplier', label: 'Supplier Name' },
-    { key: 'rating', label: 'Rating' },
-    { key: 'items', label: 'Items Count' },
-    { key: 'contact', label: 'Supplier Details' },
-    { key: 'status', label: 'Status' },
-    { key: 'actions', label: 'Actions' }
+    { key: 'supplier', label: 'Supplier Name', searchable: true, filterType: 'search' },
+    { key: 'rating', label: 'Rating', searchable: false },
+    { key: 'items', label: 'Items Count', searchable: false },
+    { key: 'contact', label: 'Supplier Details', searchable: true, filterType: 'search' },
+    { key: 'status', label: 'Status', searchable: true, filterType: 'dropdown' },
+    { key: 'actions', label: 'Actions', searchable: false }
   ]
 
   const toggleColumn = (columnKey) => {
@@ -57,6 +97,104 @@ export default function SuppliersPage() {
       ...prev,
       [columnKey]: !prev[columnKey]
     }))
+  }
+
+  // Persist column widths to localStorage
+  useEffect(() => {
+    localStorage.setItem('suppliers_table_columnWidths', JSON.stringify(columnWidths))
+  }, [columnWidths])
+
+  // Persist column order to localStorage
+  useEffect(() => {
+    localStorage.setItem('suppliers_table_columnOrder', JSON.stringify(columnOrder))
+  }, [columnOrder])
+
+  // Persist column visibility to localStorage
+  useEffect(() => {
+    localStorage.setItem('suppliers_table_visibleColumns', JSON.stringify(visibleColumns))
+  }, [visibleColumns])
+
+  // Column resize handlers
+  const handleResizeStart = (e, columnKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingColumn(columnKey)
+    setResizeStartX(e.clientX)
+    setResizeStartWidth(columnWidths[columnKey])
+  }
+
+  const handleResizeMove = (e) => {
+    if (!resizingColumn) return
+    const diff = e.clientX - resizeStartX
+    const newWidth = Math.max(100, resizeStartWidth + diff)
+    setColumnWidths(prev => ({
+      ...prev,
+      [resizingColumn]: newWidth
+    }))
+  }
+
+  const handleResizeEnd = () => {
+    setResizingColumn(null)
+  }
+
+  // Add mouse move and mouse up listeners for column resizing
+  useEffect(() => {
+    if (resizingColumn) {
+      window.addEventListener('mousemove', handleResizeMove)
+      window.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        window.removeEventListener('mousemove', handleResizeMove)
+        window.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [resizingColumn, resizeStartX, resizeStartWidth])
+
+  // Drag and drop handlers for column reordering
+  const handleDragStart = (e, columnKey) => {
+    setDraggedColumn(columnKey)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e, targetColumnKey) => {
+    e.preventDefault()
+
+    if (!draggedColumn || draggedColumn === targetColumnKey) {
+      setDraggedColumn(null)
+      return
+    }
+
+    const draggedIndex = columnOrder.indexOf(draggedColumn)
+    const targetIndex = columnOrder.indexOf(targetColumnKey)
+
+    const newOrder = [...columnOrder]
+    newOrder.splice(draggedIndex, 1)
+    newOrder.splice(targetIndex, 0, draggedColumn)
+
+    setColumnOrder(newOrder)
+    setDraggedColumn(null)
+  }
+
+  // Column filter handler
+  const handleColumnFilterChange = (columnKey, value) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnKey]: value
+    }))
+  }
+
+  // Sort handler
+  const handleSort = (columnKey) => {
+    if (sortBy === columnKey) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(columnKey)
+      setSortDirection('asc')
+    }
   }
 
   useEffect(() => {
@@ -185,9 +323,74 @@ export default function SuppliersPage() {
     }
   }
 
-  const filteredSuppliers = suppliers.filter(s =>
-    s.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Apply filters and sorting
+  const filteredSuppliers = suppliers
+    .filter(s => {
+      // Global search
+      if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false
+      }
+
+      // Column filters
+      if (Object.keys(columnFilters).length > 0) {
+        return Object.entries(columnFilters).every(([key, filterValue]) => {
+          if (!filterValue || filterValue.trim() === '') return true
+
+          const lowerFilter = filterValue.toLowerCase()
+
+          switch (key) {
+            case 'supplier':
+              return s.name?.toLowerCase().includes(lowerFilter)
+            case 'contact':
+              return s.contact?.full_name?.toLowerCase().includes(lowerFilter) ||
+                     s.contact_emails?.some(email => email.toLowerCase().includes(lowerFilter)) ||
+                     s.contact_phones?.some(phone => phone.toLowerCase().includes(lowerFilter))
+            case 'status':
+              if (filterValue === 'verified') return s.is_verified
+              if (filterValue === 'needs_review') return s.contact_id && !s.is_verified
+              if (filterValue === 'unmatched') return !s.contact_id
+              return true
+            default:
+              return true
+          }
+        })
+      }
+
+      return true
+    })
+    .sort((a, b) => {
+      let aVal, bVal
+
+      switch (sortBy) {
+        case 'supplier':
+          aVal = a.name?.toLowerCase() || ''
+          bVal = b.name?.toLowerCase() || ''
+          break
+        case 'rating':
+          aVal = a.rating || 0
+          bVal = b.rating || 0
+          break
+        case 'items':
+          aVal = a.pricebook_items?.length || 0
+          bVal = b.pricebook_items?.length || 0
+          break
+        case 'contact':
+          aVal = a.contact?.full_name?.toLowerCase() || ''
+          bVal = b.contact?.full_name?.toLowerCase() || ''
+          break
+        case 'status':
+          // Sort by verification status: verified > needs_review > unmatched
+          aVal = a.is_verified ? 2 : (a.contact_id ? 1 : 0)
+          bVal = b.is_verified ? 2 : (b.contact_id ? 1 : 0)
+          break
+        default:
+          return 0
+      }
+
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
+      return 0
+    })
 
   const stats = {
     total: suppliers.length,
@@ -325,7 +528,7 @@ export default function SuppliersPage() {
             onClick={() => setShowColumnModal(true)}
             className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
           >
-            <AdjustmentsHorizontalIcon className="h-5 w-5" />
+            <EyeIcon className="h-5 w-5" />
             Columns
           </button>
 
@@ -370,148 +573,222 @@ export default function SuppliersPage() {
           <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
               <tr>
-                {visibleColumns.supplier && (
-                  <th style={{ minWidth: '200px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Supplier
-                  </th>
-                )}
-                {visibleColumns.rating && (
-                  <th style={{ minWidth: '100px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Rating
-                  </th>
-                )}
-                {visibleColumns.items && (
-                  <th style={{ minWidth: '100px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Items
-                  </th>
-                )}
-                {visibleColumns.contact && (
-                  <th style={{ minWidth: '250px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Supplier Details
-                  </th>
-                )}
-                {visibleColumns.status && (
-                  <th style={{ minWidth: '150px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                )}
-                {visibleColumns.actions && (
-                  <th style={{ minWidth: '150px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
-                  </th>
-                )}
+                {columnOrder.map((columnKey) => {
+                  if (!visibleColumns[columnKey]) return null
+
+                  const column = availableColumns.find(col => col.key === columnKey)
+                  if (!column) return null
+
+                  const width = columnWidths[columnKey]
+                  const isSortable = columnKey !== 'actions'
+                  const isSorted = sortBy === columnKey
+
+                  return (
+                    <th
+                      key={columnKey}
+                      style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+                      className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 ${
+                        columnKey === 'actions' ? 'text-right' : 'text-left'
+                      } ${draggedColumn === columnKey ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, columnKey)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, columnKey)}
+                    >
+                      <div
+                        className={`flex items-center gap-2 ${isSortable ? 'cursor-pointer' : 'cursor-move'} ${
+                          columnKey === 'actions' ? 'justify-end' : ''
+                        }`}
+                        onClick={() => isSortable && handleSort(columnKey)}
+                      >
+                        {/* Drag handle */}
+                        <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+
+                        {/* Column label */}
+                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          {column.label}
+                        </span>
+
+                        {/* Sort indicators */}
+                        {isSortable && isSorted && (
+                          sortDirection === 'asc' ?
+                            <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                            <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                        )}
+                      </div>
+
+                      {/* Inline filter (search input or dropdown) */}
+                      {column.searchable && (
+                        column.filterType === 'dropdown' && columnKey === 'status' ? (
+                          <select
+                            value={columnFilters[columnKey] || ''}
+                            onChange={(e) => handleColumnFilterChange(columnKey, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                          >
+                            <option value="">All Statuses</option>
+                            <option value="verified">Verified</option>
+                            <option value="needs_review">Needs Review</option>
+                            <option value="unmatched">Unmatched</option>
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            placeholder="Search..."
+                            value={columnFilters[columnKey] || ''}
+                            onChange={(e) => handleColumnFilterChange(columnKey, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                          />
+                        )
+                      )}
+
+                      {/* Resize handle */}
+                      {columnKey !== 'actions' && (
+                        <div
+                          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                          onMouseDown={(e) => handleResizeStart(e, columnKey)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredSuppliers.map((supplier) => (
                 <tr key={supplier.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150">
-                  {visibleColumns.supplier && (
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Link
-                        to={`/suppliers/${supplier.id}`}
-                        className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
-                      >
-                        {supplier.name}
-                      </Link>
-                    </td>
-                  )}
-                  {visibleColumns.rating && (
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm text-gray-900 dark:text-white">
-                          {supplier.rating || 0}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">/ 5</span>
-                      </div>
-                    </td>
-                  )}
-                  {visibleColumns.items && (
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900 dark:text-white">
-                        {supplier.pricebook_items?.length || 0}
-                      </span>
-                    </td>
-                  )}
-                  {visibleColumns.contact && (
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        {supplier.contact ? (
-                          <span className="text-sm text-gray-900 dark:text-white font-medium">
-                            {supplier.contact.full_name}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-500 dark:text-gray-400">No contact</span>
-                        )}
+                  {columnOrder.map((columnKey) => {
+                    if (!visibleColumns[columnKey]) return null
 
-                        {/* Email addresses */}
-                        {supplier.contact_emails && supplier.contact_emails.length > 0 && (
-                          <div className="space-y-0.5">
-                            {supplier.contact_emails.map((email, idx) => (
-                              <div key={idx} className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-xs">
-                                {email}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                    const width = columnWidths[columnKey]
+                    const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
 
-                        {/* Phone numbers */}
-                        {supplier.contact_phones && supplier.contact_phones.length > 0 && (
-                          <div className="space-y-0.5">
-                            {supplier.contact_phones.map((phone, idx) => (
-                              <div key={idx} className="text-xs text-gray-600 dark:text-gray-400">
-                                {phone}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  )}
-                  {visibleColumns.status && (
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getMatchBadge(supplier)}
-                    </td>
-                  )}
-                  {visibleColumns.actions && (
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEditSupplier(supplier)}
-                          className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
-                          title="Edit supplier"
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
-                        {!supplier.contact_id && (
-                          <button
-                            onClick={() => {
-                              setSelectedSupplier(supplier)
-                              setShowLinkModal(true)
-                            }}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                          >
-                            Link
-                          </button>
-                        )}
-                        {supplier.contact_id && !supplier.is_verified && (
-                          <button
-                            onClick={() => verifyMatch(supplier.id)}
-                            className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
-                          >
-                            Verify
-                          </button>
-                        )}
-                        {supplier.contact_id && (
-                          <button
-                            onClick={() => unlinkSupplier(supplier.id)}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                          >
-                            Unlink
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  )}
+                    switch (columnKey) {
+                      case 'supplier':
+                        return (
+                          <td key={columnKey} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                            <Link
+                              to={`/suppliers/${supplier.id}`}
+                              className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                            >
+                              {supplier.name}
+                            </Link>
+                          </td>
+                        )
+
+                      case 'rating':
+                        return (
+                          <td key={columnKey} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              <span className="text-sm text-gray-900 dark:text-white">
+                                {supplier.rating || 0}
+                              </span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">/ 5</span>
+                            </div>
+                          </td>
+                        )
+
+                      case 'items':
+                        return (
+                          <td key={columnKey} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                            <span className="text-sm text-gray-900 dark:text-white">
+                              {supplier.pricebook_items?.length || 0}
+                            </span>
+                          </td>
+                        )
+
+                      case 'contact':
+                        return (
+                          <td key={columnKey} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700">
+                            <div className="space-y-1">
+                              {supplier.contact ? (
+                                <span className="text-sm text-gray-900 dark:text-white font-medium">
+                                  {supplier.contact.full_name}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-gray-500 dark:text-gray-400">No contact</span>
+                              )}
+
+                              {/* Email addresses */}
+                              {supplier.contact_emails && supplier.contact_emails.length > 0 && (
+                                <div className="space-y-0.5">
+                                  {supplier.contact_emails.map((email, idx) => (
+                                    <div key={idx} className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                                      {email}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Phone numbers */}
+                              {supplier.contact_phones && supplier.contact_phones.length > 0 && (
+                                <div className="space-y-0.5">
+                                  {supplier.contact_phones.map((phone, idx) => (
+                                    <div key={idx} className="text-xs text-gray-600 dark:text-gray-400">
+                                      {phone}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        )
+
+                      case 'status':
+                        return (
+                          <td key={columnKey} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 whitespace-nowrap">
+                            {getMatchBadge(supplier)}
+                          </td>
+                        )
+
+                      case 'actions':
+                        return (
+                          <td key={columnKey} style={cellStyle} className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 text-right text-sm font-medium">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleEditSupplier(supplier)}
+                                className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
+                                title="Edit supplier"
+                              >
+                                <PencilIcon className="h-4 w-4" />
+                              </button>
+                              {!supplier.contact_id && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedSupplier(supplier)
+                                    setShowLinkModal(true)
+                                  }}
+                                  className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                >
+                                  Link
+                                </button>
+                              )}
+                              {supplier.contact_id && !supplier.is_verified && (
+                                <button
+                                  onClick={() => verifyMatch(supplier.id)}
+                                  className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                                >
+                                  Verify
+                                </button>
+                              )}
+                              {supplier.contact_id && (
+                                <button
+                                  onClick={() => unlinkSupplier(supplier.id)}
+                                  className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                >
+                                  Unlink
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )
+
+                      default:
+                        return null
+                    }
+                  })}
                 </tr>
               ))}
             </tbody>

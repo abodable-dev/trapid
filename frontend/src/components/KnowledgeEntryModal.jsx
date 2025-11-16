@@ -9,6 +9,7 @@ const KNOWLEDGE_TYPES = [
   { value: 'performance', label: '📈 Performance', emoji: '📈' },
   { value: 'dev_note', label: '🎓 Dev Note', emoji: '🎓' },
   { value: 'common_issue', label: '🔍 Common Issue', emoji: '🔍' },
+  { value: 'terminology', label: '📖 Terminology', emoji: '📖' },
 ]
 
 const STATUSES = [
@@ -37,6 +38,7 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
     details: '',
     examples: '',
     recommendations: '',
+    rule_reference: '',
     // Bug-specific fields
     status: 'open',
     severity: 'medium',
@@ -65,6 +67,7 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
         details: entry.details || '',
         examples: entry.examples || '',
         recommendations: entry.recommendations || '',
+        rule_reference: entry.rule_reference || '',
         status: entry.status || 'open',
         severity: entry.severity || 'medium',
         first_reported: entry.first_reported || '',
@@ -86,6 +89,7 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
         details: '',
         examples: '',
         recommendations: '',
+        rule_reference: '',
         status: 'open',
         severity: 'medium',
         first_reported: '',
@@ -220,6 +224,23 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
                       placeholder="e.g., XeroContactSync, EstimateToPOService"
                     />
+                  </div>
+
+                  {/* Rule Reference */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Related Bible Rule (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.rule_reference}
+                      onChange={(e) => handleChange('rule_reference', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="e.g., RULE #9.3, RULE #2.1"
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Link this entry to a specific Bible rule for audit tracking
+                    </p>
                   </div>
 
                   {/* Bug-specific fields */}

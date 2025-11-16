@@ -14,7 +14,7 @@ import {
   Bars3Icon,
   AdjustmentsHorizontalIcon,
   BuildingStorefrontIcon,
-  Cog6ToothIcon,
+  EyeIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline'
@@ -1307,7 +1307,7 @@ export default function PriceBooksPage() {
                   onClick={() => setShowColumnSettings(!showColumnSettings)}
                   className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <Cog6ToothIcon className="h-4 w-4 mr-2" />
+                  <EyeIcon className="h-4 w-4 mr-2" />
                   Columns
                 </button>
               </div>
@@ -1610,7 +1610,7 @@ export default function PriceBooksPage() {
       }}>
         <div className="w-full h-full">
           <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
               <tr>
                 {getSortedColumns().map(([key, config]) => {
                   if (!config.visible) return null

@@ -1,5 +1,5 @@
 export default function FilterSection({ filters, onFilterChange, stats }) {
-  const chapters = Array.from({ length: 19 }, (_, i) => i)
+  const chapters = Array.from({ length: 21 }, (_, i) => i)
 
   const typeOptions = [
     { value: 'all', label: 'All Types', icon: '📚', count: stats?.total_bugs || 0 },
@@ -8,7 +8,8 @@ export default function FilterSection({ filters, onFilterChange, stats }) {
     { value: 'test', label: 'Tests', icon: '📊', count: stats?.by_type?.test || 0 },
     { value: 'performance', label: 'Performance', icon: '📈', count: stats?.by_type?.performance || 0 },
     { value: 'dev_note', label: 'Dev Notes', icon: '🎓', count: stats?.by_type?.dev_note || 0 },
-    { value: 'common_issue', label: 'Common Issues', icon: '🔍', count: stats?.by_type?.common_issue || 0 }
+    { value: 'common_issue', label: 'Common Issues', icon: '🔍', count: stats?.by_type?.common_issue || 0 },
+    { value: 'terminology', label: 'Terminology', icon: '📖', count: stats?.by_type?.terminology || 0 }
   ]
 
   const statusOptions = [

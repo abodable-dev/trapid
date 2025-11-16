@@ -265,12 +265,13 @@ export default function DataTable({
       )}
 
       {/* Table */}
-      <div className="mt-8 flow-root">
-        <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-            <table className="relative min-w-full divide-y divide-gray-300 dark:divide-white/15">
-              {/* Table Header */}
-              <thead>
+      <div className="mt-8 flex-1 overflow-auto bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#9CA3AF #E5E7EB'
+      }}>
+        <table className="min-w-full divide-y divide-gray-300 dark:divide-white/15">
+          {/* Table Header */}
+          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
                 <tr>
                   {columns.map((column) => {
                     const isSorted = sortConfig.key === column.key
@@ -308,10 +309,10 @@ export default function DataTable({
                                 </div>
                               )}
                               {isAsc && (
-                                <ChevronUpIcon className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+                                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                               )}
                               {isDesc && (
-                                <ChevronDownIcon className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+                                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                               )}
                             </span>
                           )}
@@ -364,8 +365,6 @@ export default function DataTable({
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
       </div>
     </div>
   )

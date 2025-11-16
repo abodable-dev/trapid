@@ -9,7 +9,6 @@ import {
   PencilIcon,
   TrashIcon,
   MagnifyingGlassIcon,
-  AdjustmentsHorizontalIcon,
   Bars3Icon,
   ChevronUpIcon,
   ChevronDownIcon
@@ -358,7 +357,7 @@ export default function POTable({ purchaseOrders, onDelete }) {
         {/* Column Visibility Dropdown */}
         <Menu as="div" className="relative inline-block text-left">
           <MenuButton className="inline-flex items-center gap-x-2 rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600">
-            <AdjustmentsHorizontalIcon className="h-5 w-5" />
+            <EyeIcon className="h-5 w-5" />
             Columns
           </MenuButton>
 
@@ -403,7 +402,10 @@ export default function POTable({ purchaseOrders, onDelete }) {
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto border-l border-r border-b border-gray-200 dark:border-gray-700 rounded-lg">
+      <div className="overflow-x-auto border-l border-r border-b border-gray-200 dark:border-gray-700 rounded-lg" style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#9CA3AF #E5E7EB'
+      }}>
         <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
           <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
             <tr>

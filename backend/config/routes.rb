@@ -300,6 +300,7 @@ Rails.application.routes.draw do
       resources :documented_bugs do
         collection do
           get :stats
+          post :export_to_markdown
         end
       end
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { PlusIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 
 // Layout Components
@@ -253,6 +253,21 @@ export default function DocumentationPage() {
     }
   }
 
+  const handleExportLexicon = async () => {
+    try {
+      const response = await api.post('/api/v1/documented_bugs/export_to_markdown')
+
+      if (response.success) {
+        alert(`✅ ${response.message}\n\nExported ${response.total_entries} entries to:\n${response.file_path}`)
+      } else {
+        alert('❌ Export failed. Please check the console for details.')
+      }
+    } catch (error) {
+      console.error('Failed to export lexicon:', error)
+      alert('❌ Export failed. Please check the console for details.')
+    }
+  }
+
   // Parse chapters from markdown content
   const parseChapters = () => {
     if (!content) return []
@@ -324,13 +339,23 @@ export default function DocumentationPage() {
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Knowledge Base
             </h2>
-            <button
-              onClick={handleAddEntry}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              <PlusIcon className="w-4 h-4" />
-              Add Entry
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportLexicon}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-600 text-white text-xs font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                title="Export Lexicon to TRAPID_LEXICON.md"
+              >
+                <ArrowDownTrayIcon className="w-4 h-4" />
+                Export
+              </button>
+              <button
+                onClick={handleAddEntry}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Add Entry
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-hidden">
@@ -356,6 +381,7 @@ export default function DocumentationPage() {
         onSelectChapter={handleChapterSelect}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        fullContent={content}
       />
     )
   }

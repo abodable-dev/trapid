@@ -28,7 +28,7 @@ import {
   CalculatorIcon,
   EyeSlashIcon,
   Bars3Icon,
-  AdjustmentsHorizontalIcon,
+  EyeIcon,
 } from '@heroicons/react/24/outline'
 
 export default function TablePage() {
@@ -547,7 +547,7 @@ export default function TablePage() {
               onClick={() => setShowColumnSettings(true)}
               className="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
             >
-              <AdjustmentsHorizontalIcon className="h-4 w-4" />
+              <EyeIcon className="h-4 w-4" />
               Columns
             </button>
             <button
