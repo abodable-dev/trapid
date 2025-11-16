@@ -16,7 +16,7 @@ module Api
             icon: '📖',
             audience: 'Developers',
             path: 'TRAPID_BIBLE.md',
-            chapters: 19
+            chapters: 20
           },
           {
             id: 'teacher',
@@ -25,7 +25,7 @@ module Api
             icon: '🔧',
             audience: 'Developers',
             path: 'TRAPID_TEACHER.md',
-            chapters: 2
+            chapters: 20
           },
           {
             id: 'lexicon',
@@ -34,7 +34,7 @@ module Api
             icon: '📕',
             audience: 'Developers',
             path: 'TRAPID_LEXICON.md',
-            chapters: 19
+            chapters: 20
           },
           {
             id: 'user-manual',
@@ -43,7 +43,7 @@ module Api
             icon: '📘',
             audience: 'End Users',
             path: 'TRAPID_USER_MANUAL.md',
-            chapters: 19
+            chapters: 20
           }
         ]
 
