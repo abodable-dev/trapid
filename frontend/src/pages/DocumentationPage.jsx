@@ -12,6 +12,9 @@ import EntryList from '../components/documentation/EntryList'
 import EntryDetails from '../components/documentation/EntryDetails'
 import MarkdownRenderer from '../components/MarkdownRenderer'
 import KnowledgeEntryModal from '../components/KnowledgeEntryModal'
+import LoadingSkeleton from '../components/documentation/LoadingSkeleton'
+import Breadcrumb from '../components/documentation/Breadcrumb'
+import KeyboardShortcutsHelp from '../components/documentation/KeyboardShortcutsHelp'
 
 export default function DocumentationPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -39,6 +42,7 @@ export default function DocumentationPage() {
   // Modal
   const [showModal, setShowModal] = useState(false)
   const [editingEntry, setEditingEntry] = useState(null)
+  const [showHelp, setShowHelp] = useState(false)
 
   // Load docs list on mount
   useEffect(() => {
@@ -73,6 +77,58 @@ export default function DocumentationPage() {
       loadLexiconData()
     }
   }, [filters, searchQuery])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if user is typing in an input/textarea
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        // Allow Escape to clear focus
+        if (e.key === 'Escape') {
+          e.target.blur()
+          setSearchQuery('')
+        }
+        return
+      }
+
+      // / - Focus search
+      if (e.key === '/') {
+        e.preventDefault()
+        const searchInput = document.querySelector('input[type="text"]')
+        searchInput?.focus()
+      }
+
+      // Escape - Clear selection and search
+      if (e.key === 'Escape') {
+        setSelectedEntry(null)
+        setSearchQuery('')
+      }
+
+      // For Lexicon entries
+      if (selectedDoc?.id === 'lexicon' && entries?.length > 0) {
+        const currentIndex = selectedEntry
+          ? entries.findIndex(e => e.id === selectedEntry.id)
+          : -1
+
+        // j or ArrowDown - Next entry
+        if (e.key === 'j' || e.key === 'ArrowDown') {
+          e.preventDefault()
+          const nextIndex = Math.min(currentIndex + 1, entries.length - 1)
+          handleEntrySelect(entries[nextIndex])
+        }
+
+        // k or ArrowUp - Previous entry
+        if (e.key === 'k' || e.key === 'ArrowUp') {
+          e.preventDefault()
+          const prevIndex = Math.max(currentIndex - 1, 0)
+          handleEntrySelect(entries[prevIndex])
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedDoc, entries, selectedEntry, searchQuery])
 
   const loadDocs = async () => {
     try {
@@ -139,8 +195,18 @@ export default function DocumentationPage() {
     setFilters(prev => ({ ...prev, [key]: value }))
   }
 
-  const handleEntrySelect = (entry) => {
-    setSelectedEntry(entry)
+  const handleEntrySelect = async (entry) => {
+    // Fetch full entry details
+    try {
+      const response = await api.get(`/api/v1/documented_bugs/${entry.id}`)
+      if (response.success) {
+        setSelectedEntry(response.data)
+      }
+    } catch (error) {
+      console.error('Failed to load entry details:', error)
+      // Fallback to list data if detail fetch fails
+      setSelectedEntry(entry)
+    }
   }
 
   const handleAddEntry = () => {
@@ -223,9 +289,12 @@ export default function DocumentationPage() {
   }
 
   const handleChapterSelect = (chapter) => {
-    // Scroll to chapter in content
-    // This is a simplified version - you'd implement smooth scrolling to the heading
-    console.log('Selected chapter:', chapter)
+    // Jump to chapter heading in the rendered markdown
+    const headingId = `chapter-${chapter.number}`
+    const element = document.getElementById(headingId)
+    if (element) {
+      element.scrollIntoView({ behavior: 'instant', block: 'start' })
+    }
   }
 
   // Render based on selected document
@@ -293,36 +362,55 @@ export default function DocumentationPage() {
 
   const renderRightPanel = () => {
     if (loading) {
-      return (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-gray-500 dark:text-gray-400">Loading...</div>
-        </div>
-      )
+      return <LoadingSkeleton type="content" />
+    }
+
+    // Build breadcrumb
+    const breadcrumbItems = []
+    if (selectedDoc) {
+      breadcrumbItems.push({ icon: selectedDoc.icon, label: selectedDoc.name })
+
+      if (selectedDoc.id === 'lexicon' && selectedEntry) {
+        breadcrumbItems.push({
+          label: `Chapter ${selectedEntry.chapter_number}`,
+          icon: '📂'
+        })
+        breadcrumbItems.push({ label: selectedEntry.bug_title })
+      }
     }
 
     if (selectedDoc?.id === 'lexicon') {
       return (
-        <EntryDetails
-          entry={selectedEntry}
-          onEdit={handleEditEntry}
-          onDelete={handleDeleteEntry}
-        />
+        <div className="h-full flex flex-col">
+          {breadcrumbItems.length > 0 && <Breadcrumb items={breadcrumbItems} />}
+          <div className="flex-1 overflow-hidden">
+            <EntryDetails
+              entry={selectedEntry}
+              onEdit={handleEditEntry}
+              onDelete={handleDeleteEntry}
+            />
+          </div>
+        </div>
       )
     }
 
     // For Bible, Manual, etc. - show markdown
     return (
-      <div className="h-full overflow-y-auto p-6">
-        {content ? (
-          <div className="max-w-none">
-            <MarkdownRenderer content={content} />
-          </div>
-        ) : (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            <div className="text-4xl mb-4">📖</div>
-            <div className="text-lg font-medium">Select a document to view</div>
-          </div>
-        )}
+      <div className="h-full flex flex-col">
+        {breadcrumbItems.length > 0 && <Breadcrumb items={breadcrumbItems} />}
+        <div className="flex-1 overflow-y-auto p-6">
+          {content ? (
+            <div className="max-w-none">
+              <MarkdownRenderer content={content} />
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              <div className="text-4xl mb-4">📖</div>
+              <div className="text-lg font-medium">Select a document to view</div>
+              <div className="text-sm mt-2">Choose a document from the left panel</div>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
@@ -349,6 +437,9 @@ export default function DocumentationPage() {
         chapterName={editingEntry?.chapter_name || 'Overview'}
         entry={editingEntry}
       />
+
+      {/* Keyboard Shortcuts Help */}
+      <KeyboardShortcutsHelp />
     </>
   )
 }
