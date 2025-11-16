@@ -207,7 +207,7 @@ module Api
       end
 
       def check_can_edit_templates
-        unless @current_user.can_create_templates?
+        unless @current_user&.can_create_templates?
           render json: { error: 'Unauthorized' }, status: :forbidden
         end
       end
