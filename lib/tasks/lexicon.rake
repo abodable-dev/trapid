@@ -1,6 +1,69 @@
 # frozen_string_literal: true
 
 namespace :trapid do
+  desc 'Import documentation entries from JSON file'
+  task import_docs: :environment do
+    puts '📥 Importing documentation entries from JSON...'
+
+    json_path = Rails.root.join('tmp', 'documentation_entries.json')
+    unless File.exist?(json_path)
+      puts '❌ File not found: tmp/documentation_entries.json'
+      puts 'Run: bin/rails trapid:export_docs first'
+      exit 1
+    end
+
+    data = JSON.parse(File.read(json_path))
+
+    puts "Found #{data.length} entries to import"
+    imported = 0
+    skipped = 0
+
+    data.each do |attrs|
+      # Remove id and timestamps to let Rails handle them
+      attrs.delete('id')
+      created_at = attrs.delete('created_at')
+      updated_at = attrs.delete('updated_at')
+
+      entry = DocumentationEntry.find_or_initialize_by(
+        chapter_number: attrs['chapter_number'],
+        section_number: attrs['section_number']
+      )
+
+      if entry.persisted?
+        skipped += 1
+        next
+      end
+
+      entry.assign_attributes(attrs)
+      entry.created_at = created_at if created_at
+      entry.updated_at = updated_at if updated_at
+
+      if entry.save
+        imported += 1
+      else
+        puts "❌ Failed to import: #{entry.title} - #{entry.errors.full_messages.join(', ')}"
+      end
+    end
+
+    puts "✅ Import complete!"
+    puts "   Imported: #{imported}"
+    puts "   Skipped (duplicates): #{skipped}"
+    puts "   Total in database: #{DocumentationEntry.count}"
+  end
+
+  desc 'Export documentation entries to JSON file'
+  task export_docs: :environment do
+    puts '📤 Exporting documentation entries to JSON...'
+
+    data = DocumentationEntry.all.map(&:attributes)
+
+    json_path = Rails.root.join('tmp', 'documentation_entries.json')
+    File.write(json_path, JSON.pretty_generate(data))
+
+    puts "✅ Export complete: tmp/documentation_entries.json"
+    puts "   Total entries: #{data.length}"
+  end
+
   desc 'Export Lexicon database to TRAPID_LEXICON.md'
   task export_lexicon: :environment do
     puts '📕 Exporting Lexicon database to markdown...'
