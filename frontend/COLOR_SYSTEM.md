@@ -1,5 +1,13 @@
 # Trapid Color System
 
+**Authority:** Implementation Reference (supplements [TRAPID_BIBLE.md Chapter 19](../TRAPID_DOCS/TRAPID_BIBLE.md#chapter-19))
+
+**📖 For RULES:** See [TRAPID_BIBLE.md Chapter 19](../TRAPID_DOCS/TRAPID_BIBLE.md#chapter-19) - UI/UX Standards & Patterns (ABSOLUTE authority)
+
+**This document:** Provides implementation details and code examples for the color standards defined in Bible Chapter 19.
+
+---
+
 This document outlines the standardized color system used throughout the Trapid frontend application. All color usage should follow these patterns for consistency and vibrant UI/UX.
 
 ## Philosophy

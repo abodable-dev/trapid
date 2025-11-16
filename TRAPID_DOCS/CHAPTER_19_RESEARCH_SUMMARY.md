@@ -1,3 +1,8 @@
+---
+**Last Updated:** 2025-11-16 22:45 AEST
+**Status:** Working Document (Chapter 19 Research)
+---
+
 # Chapter 19 Research Summary - Quick Reference
 
 **Date:** 2025-11-16
