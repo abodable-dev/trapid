@@ -107,17 +107,27 @@ export default function AgentTasksPage() {
         const agentsData = response.data.data
         setAgents(agentsData)
 
-        // Initialize with default instructions
-        const initialTasks = {}
-        agentsData.forEach(agent => {
-          const instructions = defaultInstructions[agent.agent_id] || []
-          initialTasks[agent.agent_id] = instructions.map((desc, idx) => ({
-            id: Date.now() + idx,
-            description: desc,
-            completed: false
-          }))
-        })
-        setAgentTasks(initialTasks)
+        // Check localStorage first for saved tasks
+        const savedTasks = localStorage.getItem('agentTasks')
+
+        if (savedTasks) {
+          // Load from localStorage
+          setAgentTasks(JSON.parse(savedTasks))
+        } else {
+          // Initialize with default instructions
+          const initialTasks = {}
+          agentsData.forEach(agent => {
+            const instructions = defaultInstructions[agent.agent_id] || []
+            initialTasks[agent.agent_id] = instructions.map((desc, idx) => ({
+              id: Date.now() + idx,
+              description: desc,
+              completed: false
+            }))
+          })
+          setAgentTasks(initialTasks)
+          // Save to localStorage
+          localStorage.setItem('agentTasks', JSON.stringify(initialTasks))
+        }
       }
     } catch (error) {
       console.error('Failed to load agents:', error)
@@ -127,42 +137,68 @@ export default function AgentTasksPage() {
   }
 
   const addTask = (agentId) => {
-    setAgentTasks(prev => ({
-      ...prev,
+    const newTasks = {
+      ...agentTasks,
       [agentId]: [
-        ...prev[agentId],
+        ...agentTasks[agentId],
         {
           id: Date.now(),
           description: '',
           completed: false
         }
       ]
-    }))
+    }
+    setAgentTasks(newTasks)
+    localStorage.setItem('agentTasks', JSON.stringify(newTasks))
   }
 
   const updateTask = (agentId, taskId, description) => {
-    setAgentTasks(prev => ({
-      ...prev,
-      [agentId]: prev[agentId].map(task =>
+    const newTasks = {
+      ...agentTasks,
+      [agentId]: agentTasks[agentId].map(task =>
         task.id === taskId ? { ...task, description } : task
       )
-    }))
+    }
+    setAgentTasks(newTasks)
+    localStorage.setItem('agentTasks', JSON.stringify(newTasks))
   }
 
   const toggleTask = (agentId, taskId) => {
-    setAgentTasks(prev => ({
-      ...prev,
-      [agentId]: prev[agentId].map(task =>
+    const newTasks = {
+      ...agentTasks,
+      [agentId]: agentTasks[agentId].map(task =>
         task.id === taskId ? { ...task, completed: !task.completed } : task
       )
-    }))
+    }
+    setAgentTasks(newTasks)
+    localStorage.setItem('agentTasks', JSON.stringify(newTasks))
   }
 
   const deleteTask = (agentId, taskId) => {
-    setAgentTasks(prev => ({
-      ...prev,
-      [agentId]: prev[agentId].filter(task => task.id !== taskId)
-    }))
+    const newTasks = {
+      ...agentTasks,
+      [agentId]: agentTasks[agentId].filter(task => task.id !== taskId)
+    }
+    setAgentTasks(newTasks)
+    localStorage.setItem('agentTasks', JSON.stringify(newTasks))
+  }
+
+  const resetToDefaults = () => {
+    if (!confirm('Reset all shortcuts to default values? This will delete your custom shortcuts.')) {
+      return
+    }
+
+    const initialTasks = {}
+    agents.forEach(agent => {
+      const instructions = defaultInstructions[agent.agent_id] || []
+      initialTasks[agent.agent_id] = instructions.map((desc, idx) => ({
+        id: Date.now() + idx,
+        description: desc,
+        completed: false
+      }))
+    })
+    setAgentTasks(initialTasks)
+    localStorage.setItem('agentTasks', JSON.stringify(initialTasks))
   }
 
   const runAgent = async (agentId) => {
@@ -307,11 +343,19 @@ export default function AgentTasksPage() {
             Agent Shortcuts
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
-            Give instructions to Claude Code agents. Edit tasks, run agents individually or all at once, then save to update the Lexicon.
+            Edit shortcut instructions for each agent. All changes are saved automatically to your browser.
           </p>
-          <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
-            💡 <strong>Tip:</strong> Type <code className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">/all-agents</code> or <code className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">all agents</code> in Claude Code to run all agents in parallel
-          </p>
+          <div className="flex items-center gap-4 mt-3">
+            <p className="text-sm text-slate-500 dark:text-slate-500">
+              💡 <strong>Tip:</strong> Type <code className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">/gantt</code>, <code className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded">/deploy</code>, etc. in Claude Code
+            </p>
+            <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Auto-saved
+            </span>
+          </div>
         </div>
 
         {/* Action Bar */}
@@ -330,8 +374,8 @@ export default function AgentTasksPage() {
           <button
             onClick={saveAndExportToLexicon}
             disabled={saving || runningAgents.size > 0}
-            className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg
-                     hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg
+            className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-600 text-white rounded-lg
+                     hover:from-green-700 hover:to-green-700 transition-all shadow-lg
                      disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {saving ? (
@@ -340,6 +384,15 @@ export default function AgentTasksPage() {
               <DocumentTextIcon className="w-5 h-5" />
             )}
             Save & Update Lexicon
+          </button>
+
+          <button
+            onClick={resetToDefaults}
+            className="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700
+                     transition-all shadow-lg flex items-center gap-2"
+          >
+            <ArrowPathIcon className="w-5 h-5" />
+            Reset to Defaults
           </button>
         </div>
 

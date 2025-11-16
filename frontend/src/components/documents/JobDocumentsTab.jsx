@@ -468,7 +468,7 @@ function OneDriveView({
       )}
 
       {/* Header with OneDrive status */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+      <div className="bg-gradient-to-r from-green-50 to-green-50 dark:from-green-900/20 dark:to-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2">

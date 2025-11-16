@@ -214,7 +214,7 @@ export default function CascadeDependenciesModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <ExclamationTriangleIcon className="h-6 w-6 text-amber-500" />
+            <ExclamationTriangleIcon className="h-6 w-6 text-yellow-500" />
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 Cascade Dependencies?
@@ -240,9 +240,9 @@ export default function CascadeDependenciesModal({
         {/* Task Lists */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
           {/* All Affected Dependencies */}
-          <div className="bg-amber-50 dark:bg-amber-900/10 border-2 border-amber-200 dark:border-amber-800 rounded-lg p-4">
+          <div className="bg-yellow-50 dark:bg-yellow-900/10 border-2 border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
             <h4 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-              <ExclamationTriangleIcon className="h-5 w-5 text-amber-500" />
+              <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500" />
               Affected Dependencies
             </h4>
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
@@ -401,7 +401,7 @@ export default function CascadeDependenciesModal({
                               </span>
                             )}
                             {task.dependencies_broken && (
-                              <span className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">
+                              <span className="text-xs px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded">
                                 Currently Broken - Will Restore
                               </span>
                             )}
@@ -418,9 +418,9 @@ export default function CascadeDependenciesModal({
                       {blockedInfo && blockedInfo.lockedSuccessors.length > 0 && (
                         <div className="ml-8 mt-2 space-y-2 relative">
                           {/* Dependency connector line */}
-                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-amber-300 dark:bg-amber-600" style={{ left: '-4px' }}></div>
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-yellow-300 dark:bg-yellow-600" style={{ left: '-4px' }}></div>
 
-                          <p className="text-xs text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1">
+                          <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-2 flex items-center gap-1">
                             <span>⚠️</span>
                             <span>These locked dependencies conflict with cascading:</span>
                           </p>
@@ -453,8 +453,8 @@ export default function CascadeDependenciesModal({
                                 className={`flex items-start gap-2 p-2 rounded-lg border-2 ${lockColor} hover:shadow-md transition-shadow relative`}
                               >
                                 {/* Arrow connector */}
-                                <div className="absolute -left-8 top-1/2 w-4 h-0.5 bg-amber-300 dark:bg-amber-600" style={{ transform: 'translateY(-50%)' }}>
-                                  <div className="absolute right-0 top-1/2 w-0 h-0 border-l-4 border-t-2 border-b-2 border-amber-300 dark:border-amber-600 border-t-transparent border-b-transparent" style={{ transform: 'translateY(-50%)' }}></div>
+                                <div className="absolute -left-8 top-1/2 w-4 h-0.5 bg-yellow-300 dark:bg-yellow-600" style={{ transform: 'translateY(-50%)' }}>
+                                  <div className="absolute right-0 top-1/2 w-0 h-0 border-l-4 border-t-2 border-b-2 border-yellow-300 dark:border-yellow-600 border-t-transparent border-b-transparent" style={{ transform: 'translateY(-50%)' }}></div>
                                 </div>
 
                                 <input
@@ -498,7 +498,7 @@ export default function CascadeDependenciesModal({
                                         type="checkbox"
                                         checked={!isKept}
                                         onChange={() => handleUnlockTask(lockedTask)}
-                                        className="h-3 w-3 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+                                        className="h-3 w-3 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
                                         title={!isKept ? `Checked - Task IS ${lockReason} (locked and will stay stationary)` : `Unchecked - Will remove ${lockReason} status to allow cascading`}
                                       />
                                       <span className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
@@ -554,7 +554,7 @@ export default function CascadeDependenciesModal({
                 <li>{selectedCount} task{selectedCount !== 1 ? 's' : ''} will cascade to maintain dependencies</li>
               )}
               {unlockedSuccessors.length - selectedCount > 0 && (
-                <li className="text-amber-600 dark:text-amber-400">
+                <li className="text-yellow-600 dark:text-yellow-400">
                   {unlockedSuccessors.length - selectedCount} unselected task{unlockedSuccessors.length - selectedCount !== 1 ? 's' : ''} will have dependencies broken
                 </li>
               )}

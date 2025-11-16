@@ -102,7 +102,7 @@ export default function GanttBugHunterModal({ isOpen, onClose }) {
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <div className="flex items-center gap-3">
-              <BookOpenIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+              <BookOpenIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Gantt Bug Hunter - Bug Tracking & Knowledge Base
               </h2>
@@ -119,7 +119,7 @@ export default function GanttBugHunterModal({ isOpen, onClose }) {
           <div className="px-6 py-4 overflow-y-auto max-h-[calc(90vh-80px)]">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                 <span className="ml-3 text-gray-600 dark:text-gray-400">Loading Gantt Bug Hunter...</span>
               </div>
             ) : (
@@ -138,7 +138,7 @@ export default function GanttBugHunterModal({ isOpen, onClose }) {
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               Close
             </button>

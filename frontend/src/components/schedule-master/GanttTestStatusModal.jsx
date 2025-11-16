@@ -586,9 +586,9 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
         {/* Modal */}
         <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-gray-800 dark:to-gray-800">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-teal-50 dark:from-gray-800 dark:to-gray-800">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-600 rounded-lg">
+              <div className="p-2 bg-green-600 rounded-lg">
                 <PlayIcon className="h-6 w-6 text-white" />
               </div>
               <div>

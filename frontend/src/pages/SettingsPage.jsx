@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
-import { RocketLaunchIcon, ArrowDownTrayIcon, CpuChipIcon } from '@heroicons/react/24/outline'
+import { RocketLaunchIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import AccountsLayout from '../components/layout/AccountsLayout'
 import { api } from '../api'
 import XeroConnection from '../components/settings/XeroConnection'
@@ -22,13 +22,14 @@ import PublicHolidaysPage from './PublicHolidaysPage'
 import GitBranchVisualization from '../components/settings/GitBranchVisualization'
 import CompanySettingsTab from '../components/settings/CompanySettingsTab'
 import AgentStatus from '../components/settings/AgentStatus'
+import AgentShortcutsTab from '../components/settings/AgentShortcutsTab'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
   // Map tab names to indices
-  const tabs = ['company', 'integrations', 'users', 'contact-roles', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'git', 'agents', 'deployment']
+  const tabs = ['company', 'integrations', 'users', 'contact-roles', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'git', 'agents', 'claude-shortcuts', 'deployment']
 
   // Get initial tab index from URL query parameter
   const getInitialTabIndex = () => {
@@ -315,6 +316,18 @@ export default function SettingsPage() {
                 }`
               }
             >
+              Claude Shortcuts
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
               Deployment
             </Tab>
           </TabList>
@@ -418,33 +431,13 @@ export default function SettingsPage() {
           {/* Agents Tab */}
           <TabPanel>
             <div className="px-4 sm:px-6 lg:px-8 py-10">
-              {/* Instructions Center Card */}
-              <div className="mb-8 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
-                      <CpuChipIcon className="h-7 w-7 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">
-                        Agent Shortcuts
-                      </h3>
-                      <p className="mt-1 text-sm text-blue-100">
-                        Give instructions to all 6 agents, run them individually or together, and save to Lexicon
-                      </p>
-                    </div>
-                  </div>
-                  <Link
-                    to="/agents/tasks"
-                    className="flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-blue-600 shadow-sm hover:bg-blue-50 transition-all"
-                  >
-                    🤖 Open Agent Shortcuts
-                  </Link>
-                </div>
-              </div>
-
               <AgentStatus />
             </div>
+          </TabPanel>
+
+          {/* Claude Shortcuts Tab */}
+          <TabPanel>
+            <AgentShortcutsTab />
           </TabPanel>
 
           {/* Deployment Tab */}
@@ -466,7 +459,7 @@ export default function SettingsPage() {
                       <dd className="mt-1 text-base/6 font-semibold text-gray-900 dark:text-white">Pull from Local</dd>
                     </div>
                     <div className="flex-none self-end px-6 pt-4">
-                      <ArrowDownTrayIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                      <ArrowDownTrayIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
                     </div>
                     <div className="mt-6 flex w-full flex-none gap-x-4 border-t border-gray-900/5 dark:border-white/10 px-6 pt-6">
                       <dt className="flex-none">
@@ -515,7 +508,7 @@ export default function SettingsPage() {
                       <button
                         onClick={handlePullFromLocal}
                         disabled={isPullingData}
-                        className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-2 rounded-md bg-green-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isPullingData ? (
                           <>

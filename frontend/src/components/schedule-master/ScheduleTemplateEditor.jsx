@@ -1902,7 +1902,7 @@ export default function ScheduleTemplateEditor() {
                       handleCopyTestStatus()
                       setShowCopyDropdown(false)
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                    className="block w-full text-left px-4 py-2 text-sm text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20"
                     role="menuitem"
                   >
                     <PlayIcon className="inline h-4 w-4 mr-2" />

@@ -301,8 +301,8 @@ export default function JobSetupPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
-                <div className="rounded-lg bg-amber-100 dark:bg-amber-900/30 p-3">
-                  <ArrowDownTrayIcon className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                <div className="rounded-lg bg-yellow-100 dark:bg-yellow-900/30 p-3">
+                  <ArrowDownTrayIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
                 </div>
               </div>
               <div className="flex-1 min-w-0">
@@ -340,13 +340,13 @@ export default function JobSetupPage() {
                   className={`rounded-lg p-3 ${
                     estimates.length === 0
                       ? 'bg-gray-100 dark:bg-gray-700/30'
-                      : 'bg-emerald-100 dark:bg-emerald-900/30'
+                      : 'bg-green-100 dark:bg-green-900/30'
                   }`}
                 >
                   {estimates.length === 0 ? (
                     <LockClosedIcon className="h-6 w-6 text-gray-400 dark:text-gray-600" />
                   ) : (
-                    <ShoppingCartIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                    <ShoppingCartIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
                   )}
                 </div>
               </div>

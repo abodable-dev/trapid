@@ -476,8 +476,8 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                       {/* Lead Source */}
                       <div className="group">
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          <div className="rounded-lg bg-amber-100 dark:bg-amber-900/30 p-2">
-                            <LightBulbIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                          <div className="rounded-lg bg-yellow-100 dark:bg-yellow-900/30 p-2">
+                            <LightBulbIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
                           </div>
                           Lead Source
                         </label>
@@ -525,8 +525,8 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                       {/* Contract Value */}
                       <div className="group">
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          <div className="rounded-lg bg-emerald-100 dark:bg-emerald-900/30 p-2">
-                            <CurrencyDollarIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <div className="rounded-lg bg-green-100 dark:bg-green-900/30 p-2">
+                            <CurrencyDollarIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
                           </div>
                           Contract Value
                         </label>
@@ -582,8 +582,8 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                       {/* Site Supervisor */}
                       <div className="group">
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          <div className="rounded-lg bg-amber-100 dark:bg-amber-900/30 p-2">
-                            <UserCircleIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                          <div className="rounded-lg bg-yellow-100 dark:bg-yellow-900/30 p-2">
+                            <UserCircleIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
                           </div>
                           Site Supervisor <span className="text-red-500">*</span>
                         </label>
@@ -705,8 +705,8 @@ export default function NewJobModal({ isOpen, onClose, onSuccess }) {
                       {/* Documents Available */}
                       <div className="group">
                         <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                          <div className="rounded-lg bg-emerald-100 dark:bg-emerald-900/30 p-2">
-                            <DocumentTextIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <div className="rounded-lg bg-green-100 dark:bg-green-900/30 p-2">
+                            <DocumentTextIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
                           </div>
                           Documents Available
                         </label>

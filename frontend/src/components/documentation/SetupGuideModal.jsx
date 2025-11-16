@@ -178,10 +178,10 @@ export default function SetupGuideModal({ isOpen, onClose }) {
                               </div>
                             </div>
 
-                            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-6 border border-emerald-200 dark:border-emerald-800">
+                            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
                               <div className="flex items-start gap-4">
-                                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
-                                  <ShoppingCartIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                                  <ShoppingCartIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
                                 </div>
                                 <div>
                                   <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
@@ -293,7 +293,7 @@ export default function SetupGuideModal({ isOpen, onClose }) {
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
-                                  <ShoppingCartIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                                  <ShoppingCartIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
                                   <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                                     Generate Purchase Orders
                                   </h4>
@@ -363,10 +363,10 @@ export default function SetupGuideModal({ isOpen, onClose }) {
                               </p>
                             </div>
 
-                            <div className="bg-white dark:bg-gray-900/50 rounded-lg p-5 border border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
+                            <div className="bg-white dark:bg-gray-900/50 rounded-lg p-5 border border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700 transition-colors">
                               <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
-                                  <CpuChipIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                                <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                                  <CpuChipIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
                                 </div>
                                 <h4 className="font-semibold text-gray-900 dark:text-white">Unreal Engine API</h4>
                               </div>
@@ -389,10 +389,10 @@ export default function SetupGuideModal({ isOpen, onClose }) {
                               </p>
                             </div>
 
-                            <div className="bg-white dark:bg-gray-900/50 rounded-lg p-5 border border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-700 transition-colors">
+                            <div className="bg-white dark:bg-gray-900/50 rounded-lg p-5 border border-gray-200 dark:border-gray-700 hover:border-yellow-300 dark:hover:border-yellow-700 transition-colors">
                               <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-                                  <DocumentTextIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                                <div className="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-900/40 flex items-center justify-center">
+                                  <DocumentTextIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                                 </div>
                                 <h4 className="font-semibold text-gray-900 dark:text-white">Document Management</h4>
                               </div>
@@ -430,7 +430,7 @@ export default function SetupGuideModal({ isOpen, onClose }) {
                       {step === 4 && (
                         <div className="space-y-6">
                           <div className="text-center">
-                            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 mb-6">
+                            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-teal-600 mb-6">
                               <CheckCircleIcon className="h-10 w-10 text-white" />
                             </div>
                             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
@@ -481,7 +481,7 @@ export default function SetupGuideModal({ isOpen, onClose }) {
 
                           <div className="bg-white dark:bg-gray-900/50 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                             <div className="flex items-start gap-4">
-                              <LightBulbIcon className="h-6 w-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-1" />
+                              <LightBulbIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-1" />
                               <div>
                                 <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
                                   Need Help?
@@ -537,7 +537,7 @@ export default function SetupGuideModal({ isOpen, onClose }) {
                         <button
                           type="button"
                           onClick={handleClose}
-                          className="inline-flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg transition-all shadow-lg shadow-emerald-500/30"
+                          className="inline-flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 rounded-lg transition-all shadow-lg shadow-green-500/30"
                         >
                           <CheckCircleIcon className="h-4 w-4" />
                           Get Started

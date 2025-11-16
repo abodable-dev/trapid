@@ -909,7 +909,7 @@ export default function PriceBookItemDetailPage() {
                   )}
 
                   {item.requires_photo && !item.image_url && !item.image_file_id && (
-                    <div className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-700">
+                    <div className="text-xs text-yellow-600 dark:text-yellow-400 flex items-start gap-1 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-700">
                       <ExclamationTriangleIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
                       <span>This item requires a photo but none has been uploaded yet.</span>
                     </div>

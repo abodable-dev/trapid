@@ -5693,7 +5693,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
                   setShowPositionDialog(false)
                   setPositionDialogTask(null)
                 }}
-                className="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg"
+                className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-lg"
               >
                 Keep at Current Position (Locked/Brown)
               </button>

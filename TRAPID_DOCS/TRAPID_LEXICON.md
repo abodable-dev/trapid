@@ -1,7 +1,7 @@
 # TRAPID LEXICON - Bug History & Knowledge Base
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-16 21:05 AEST
+**Last Updated:** 2025-11-16 21:31 AEST
 **Authority Level:** Reference (supplements Bible)
 **Audience:** Claude Code + Human Developers
 
@@ -1393,11 +1393,394 @@ _Links to related chapters will be added as cross-references are identified._
 
 ---
 
+## 🐛 Bug Hunter
+
+### ⚡ Search Boxes Missing Clear Buttons (73 components)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** High
+
+#### Summary
+**Impact:** 73 search boxes across codebase
+**Severity:** HIGH - UX regression
+**Rule Violation:** RULE #19.20 (Search Functionality Standards)
+
+**Problem:** Search inputs lack clear button (X icon) to quickly reset search
+
+**Automation:** YES - Script can add clear button to all search boxes (30-40 min)
+
+**Affected Pages:** ContactsPage, PriceBooksPage, SuppliersPage, PurchaseOrdersPage, +40 more
+
+
+---
+
+### ⚡ Modals Missing Close Buttons (58 components)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** High
+
+#### Summary
+**Impact:** 58 modals across codebase
+**Severity:** HIGH - Accessibility issue
+**Rule Violation:** RULE #19.22 (Modal Rules)
+**Current State:** 78 modals have close button, 58 do not
+
+**Problem:** Modals lack visible close button in top-right corner
+
+**Automation:** YES - Template can be applied to all modals (20-30 min)
+
+**Affected Modals:** NewJobModal, EditJobModal, PurchaseOrderModal, +50 more
+
+
+---
+
+### ⚡ Empty States Missing Action Buttons (66 components)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** High
+
+#### Summary
+**Impact:** 66 empty states
+**Severity:** HIGH - UX conversion issue
+**Rule Violation:** RULE #19.27 (Empty State Rules)
+**Current State:** 14 with action buttons, 66 without
+
+**Problem:** Empty states show message but no call-to-action button
+
+**Automation:** PARTIAL - Manual work required (1-2 hours total)
+
+
+---
+
+### ⚡ Table Headers Not Sticky (36 tables)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** High
+
+#### Summary
+**Impact:** 36 tables
+**Severity:** HIGH - Scrolling UX
+**Rule Violation:** RULE #19.2 (Sticky Headers)
+**Current State:** 18 with sticky headers, 36 without
+
+**Problem:** Headers scroll out of view in large tables
+
+**Automation:** YES - Add `sticky top-0 z-10` to thead (15-20 min)
+
+
+---
+
+### ⚡ Inline Column Filters Missing (44 tables)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+**Impact:** 44 tables
+**Severity:** MEDIUM - Feature completeness
+**Rule Violation:** RULE #19.3 (Table Standards)
+
+**Problem:** No filter inputs in column headers for power users
+
+**Automation:** NO - Manual work (3-5 hours)
+
+**Affected Pages:** PriceBooksPage (2 tables), SuppliersPage, JobDetailPage (3 tables), ContactDetailPage (3 tables)
+
+
+---
+
+### ⚡ Icon Buttons Missing aria-label (50 components)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+**Impact:** ~50 icon buttons
+**Severity:** MEDIUM - Screen reader support
+**Rule Violation:** RULE #19.12 (Accessibility)
+
+**Problem:** Icon-only buttons have no label for screen readers
+
+**Automation:** PARTIAL - Requires semantic label for each button (1-2 hours)
+
+
+---
+
+### ⚡ Search Results Count Not Displayed (53 components)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+**Impact:** 53 search boxes
+**Severity:** MEDIUM - User feedback/clarity
+**Rule Violation:** RULE #19.20 (Search Standards)
+
+**Problem:** No count of results shown when user searches
+
+**Automation:** YES - Template addition (30 min)
+
+
+---
+
+## 🏛️ Architecture
+
+### Design Decisions & Rationale
+
+### 1. HeadlessUI + Heroicons Architecture Decision
+
+**Decision:** **Decision:** Use HeadlessUI for component composition + Heroicons for consistent icons
+
+**Rationale:**
+- Composability: HeadlessUI provides unstyled, accessible components styled with TailwindCSS
+- Accessibility Built-in: ARIA attributes handled automatically
+- Icon Consistency: Heroicons (24-outline style) across all 200+ icon usages
+- Package Integration: Both officially maintained by Tailwind Labs
+
+**Evidence:**
+- 20+ component files import HeadlessUI (Tab, Dialog, Menu, etc.)
+- All icons from `@heroicons/react/24/outline`
+- Packages: `@headlessui/react: ^2.2.9`, `@heroicons/react: ^2.2.0`
+
+**Protected Pattern:** HeadlessUI patterns must be preserved in all modals/dropdowns
+
+
+---
+
+### 2. TailwindCSS Styling Strategy (No CSS-in-JS)
+
+**Decision:** **Decision:** Pure TailwindCSS with dark mode via `dark:` prefix (no CSS-in-JS)
+
+**Rationale:**
+- Performance: No runtime style generation (compiled at build time)
+- Type Safety: ClassName strings catch typos at development time
+- Dark Mode Built-In: Tailwind's `dark:` prefix requires no additional libraries
+- Predictable Output: CSS generated once, not recalculated per component
+
+**Evidence:**
+- 5,920+ `dark:` prefixed classes throughout codebase
+- Zero CSS-in-JS libraries (no styled-components, emotion)
+- Minimal tailwind.config.js (no custom plugins)
+
+**Protected Pattern:** No CSS-in-JS conversions planned
+
+
+---
+
+### 3. ContactsPage as Gold Standard Reference
+
+**Decision:** **Decision:** ContactsPage.jsx designated as primary reference implementation
+
+**Rationale - Feature Complete:**
+- Sticky headers ✅
+- Column resize with drag handles ✅
+- Column reorder (drag-drop) ✅
+- Inline column filters ✅
+- Search with clear button ✅
+- Multi-level sort ✅
+- localStorage persistence ✅
+- Dark mode support ✅
+- Row actions ✅
+- Empty states with action buttons ✅
+
+**File:** `frontend/src/pages/ContactsPage.jsx` (372 lines)
+
+**Use As Reference For:**
+- Column state management patterns
+- URL-based tab sync
+- Table feature implementation
+
+
+---
+
+### 4. Dark Mode Implementation Strategy
+
+**Decision:** **Decision:** CSS-first dark mode using `prefers-color-scheme` media query
+
+**Rationale:**
+- No JavaScript Overhead: Applied via CSS, not JS state
+- Respects User Preferences: Automatically responds to OS dark mode
+- Manual Toggle Possible: Can be enhanced later if needed
+- Accessibility Compliant: Respects `prefers-color-scheme` WCAG requirement
+
+**Evidence:**
+- Tailwind config uses default dark mode strategy (media query)
+- 5,920+ dark mode class usages
+- Consistent pattern: `bg-white dark:bg-gray-800`, `text-gray-900 dark:text-white`
+- COLOR_SYSTEM.md documents standardized dark colors
+
+**Protected Pattern:** All dark mode classes must be preserved
+
+
+---
+
+### 5. HeadlessUI + Heroicons Architecture Decision
+
+**Decision:** **Decision:** Use HeadlessUI for component composition + Heroicons for consistent icons
+
+**Rationale:**
+- Composability: HeadlessUI provides unstyled, accessible components styled with TailwindCSS
+- Accessibility Built-in: ARIA attributes handled automatically
+- Icon Consistency: Heroicons (24-outline style) across all 200+ icon usages
+- Package Integration: Both officially maintained by Tailwind Labs
+
+**Evidence:**
+- 20+ component files import HeadlessUI (Tab, Dialog, Menu, etc.)
+- All icons from `@heroicons/react/24/outline`
+- Packages: `@headlessui/react: ^2.2.9`, `@heroicons/react: ^2.2.0`
+
+**Protected Pattern:** HeadlessUI patterns must be preserved in all modals/dropdowns
+
+
+---
+
+### 6. TailwindCSS Styling Strategy (No CSS-in-JS)
+
+**Decision:** **Decision:** Pure TailwindCSS with dark mode via `dark:` prefix (no CSS-in-JS)
+
+**Rationale:**
+- Performance: No runtime style generation (compiled at build time)
+- Type Safety: ClassName strings catch typos at development time
+- Dark Mode Built-In: Tailwind's `dark:` prefix requires no additional libraries
+- Predictable Output: CSS generated once, not recalculated per component
+
+**Evidence:**
+- 5,920+ `dark:` prefixed classes throughout codebase
+- Zero CSS-in-JS libraries (no styled-components, emotion)
+- Minimal tailwind.config.js (no custom plugins)
+
+**Protected Pattern:** No CSS-in-JS conversions planned
+
+
+---
+
+### 7. ContactsPage as Gold Standard Reference
+
+**Decision:** **Decision:** ContactsPage.jsx designated as primary reference implementation
+
+**Rationale - Feature Complete:**
+- Sticky headers ✅
+- Column resize with drag handles ✅
+- Column reorder (drag-drop) ✅
+- Inline column filters ✅
+- Search with clear button ✅
+- Multi-level sort ✅
+- localStorage persistence ✅
+- Dark mode support ✅
+- Row actions ✅
+- Empty states with action buttons ✅
+
+**File:** `frontend/src/pages/ContactsPage.jsx` (372 lines)
+
+**Use As Reference For:**
+- Column state management patterns
+- URL-based tab sync
+- Table feature implementation
+
+
+---
+
+### 8. Dark Mode Implementation Strategy
+
+**Decision:** **Decision:** CSS-first dark mode using `prefers-color-scheme` media query
+
+**Rationale:**
+- No JavaScript Overhead: Applied via CSS, not JS state
+- Respects User Preferences: Automatically responds to OS dark mode
+- Manual Toggle Possible: Can be enhanced later if needed
+- Accessibility Compliant: Respects `prefers-color-scheme` WCAG requirement
+
+**Evidence:**
+- Tailwind config uses default dark mode strategy (media query)
+- 5,920+ dark mode class usages
+- Consistent pattern: `bg-white dark:bg-gray-800`, `text-gray-900 dark:text-white`
+- COLOR_SYSTEM.md documents standardized dark colors
+
+**Protected Pattern:** All dark mode classes must be preserved
+
+
+---
+
+## 📊 Test Catalog
+
+### UI Testing Infrastructure State
+
+**Current State:**
+
+✅ **E2E Tests:**
+- Framework: Playwright v1.56.1
+- Tests: 1 Gantt cascade test with bug-hunter diagnostics
+- Location: `frontend/tests/e2e/gantt-cascade.spec.js`
+- Features: API monitoring, state tracking, console log monitoring, screenshots
+
+✅ **Unit Test Setup:**
+- Framework: Vitest v4.0.8
+- Configuration: Exists but no tests written
+
+**Missing Tests:**
+❌ Visual regression tests (Percy, BackstopJS)
+❌ Accessibility tests (axe-core, jest-axe)
+❌ UI component unit tests (Vitest unused)
+❌ Browser compatibility (only Chromium)
+❌ Responsive/mobile tests
+❌ Dark mode screenshot tests
+❌ Performance tests (Lighthouse)
+
+**High Value Quick Wins:**
+1. Dark mode rendering (screenshot tests)
+2. Accessibility scan (axe-core automated)
+3. Responsive layouts (viewport testing)
+4. Color contrast (automated a11y check)
+5. Search clear button functionality
+6. Modal close button functionality
+
+
+---
+
 ## 🎓 Developer Notes
 
 ### Chapter Documentation Pending
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+### UI/UX Enhancement Roadmap
+
+**Priority Matrix:**
+
+**Quick Wins (1-2 hours total):**
+- ✅ Fix deprecated color classes: amber→yellow, emerald→green (COMPLETED 2025-11-16)
+- [ ] Add clear buttons to 73 search boxes (30-40 min, automatable)
+- [ ] Add close buttons to 58 modals (20-30 min, automatable)
+- [ ] Add sticky headers to 36 tables (15-20 min, automatable)
+
+**High Impact (3-5 hours):**
+- [ ] Add action buttons to 66 empty states (1-2 hours, manual)
+- [ ] Add inline filters to 44 tables (3-5 hours, manual)
+- [ ] Add aria-labels to 50 icon buttons (1-2 hours, manual)
+- [ ] Add search result counts to 53 search boxes (30 min, automatable)
+
+**Medium Impact (5-10 hours):**
+- [ ] Badge icon enhancement (95 badges, 2-3 hours)
+- [ ] URL state sync for 20 tab components (2 hours)
+- [ ] Loading spinners for 12 pages (1 hour)
+- [ ] Button hierarchy audit (100 buttons, 3 hours)
+
+**Future Enhancements:**
+- [ ] Storybook integration (component showcase)
+- [ ] Accessibility scanning (axe-core in CI/CD)
+- [ ] Performance optimization (memoization audit)
+- [ ] Responsive design system documentation
+- [ ] Design tokens export (Figma integration)
+
 
 ---
 
@@ -1541,7 +1924,7 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-**Last Generated:** 2025-11-16 21:05 AEST
+**Last Generated:** 2025-11-16 21:31 AEST
 **Generated By:** `rake trapid:export_lexicon`
 **Maintained By:** Development Team via Database UI
 **Review Schedule:** After each bug fix or knowledge entry

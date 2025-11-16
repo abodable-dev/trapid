@@ -421,10 +421,10 @@ export default function DocumentationTab() {
         hover: 'hover:border-purple-300 dark:hover:border-purple-700',
       },
       emerald: {
-        bg: 'bg-emerald-100 dark:bg-emerald-900/20',
-        text: 'text-emerald-600 dark:text-emerald-400',
-        border: 'border-emerald-200 dark:border-emerald-800',
-        hover: 'hover:border-emerald-300 dark:hover:border-emerald-700',
+        bg: 'bg-green-100 dark:bg-green-900/20',
+        text: 'text-green-600 dark:text-green-400',
+        border: 'border-green-200 dark:border-green-800',
+        hover: 'hover:border-green-300 dark:hover:border-green-700',
       },
       cyan: {
         bg: 'bg-cyan-100 dark:bg-cyan-900/20',
@@ -433,10 +433,10 @@ export default function DocumentationTab() {
         hover: 'hover:border-cyan-300 dark:hover:border-cyan-700',
       },
       amber: {
-        bg: 'bg-amber-100 dark:bg-amber-900/20',
-        text: 'text-amber-600 dark:text-amber-400',
-        border: 'border-amber-200 dark:border-amber-800',
-        hover: 'hover:border-amber-300 dark:hover:border-amber-700',
+        bg: 'bg-yellow-100 dark:bg-yellow-900/20',
+        text: 'text-yellow-600 dark:text-yellow-400',
+        border: 'border-yellow-200 dark:border-yellow-800',
+        hover: 'hover:border-yellow-300 dark:hover:border-yellow-700',
       },
       rose: {
         bg: 'bg-rose-100 dark:bg-rose-900/20',

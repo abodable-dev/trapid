@@ -33,7 +33,7 @@ function getActivityColor(type) {
     case 'po_approved':
       return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
     case 'po_updated':
-      return 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20'
+      return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20'
     case 'po_cancelled':
       return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
     default:

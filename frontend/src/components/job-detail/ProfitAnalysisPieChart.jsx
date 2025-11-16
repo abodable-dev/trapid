@@ -4,13 +4,13 @@ import { formatCurrency } from '../../utils/formatters'
 const COLORS = {
   costs: '#ef4444',      // red-500
   profit: '#22c55e',     // green-500
-  pending: '#f59e0b',    // amber-500
+  pending: '#f59e0b',    // yellow-500
 }
 
 const DARK_COLORS = {
   costs: '#f87171',      // red-400
   profit: '#4ade80',     // green-400
-  pending: '#fbbf24',    // amber-400
+  pending: '#fbbf24',    // yellow-400
 }
 
 export default function ProfitAnalysisPieChart({ job, isDark = false }) {
@@ -148,7 +148,7 @@ export default function ProfitAnalysisPieChart({ job, isDark = false }) {
         </div>
         <div className="text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pending</p>
-          <p className="text-sm font-bold text-amber-600 dark:text-amber-400">
+          <p className="text-sm font-bold text-yellow-600 dark:text-yellow-400">
             {formatCurrency(pending, false)}
           </p>
         </div>
