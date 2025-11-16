@@ -27,7 +27,7 @@ module Api
             path: 'TRAPID_TEACHER.md',
             chapters: 20,
             has_database: true,
-            api_path: '/api/v1/implementation_patterns'
+            api_path: '/api/v1/documentation_entries?category=teacher'
           },
           {
             id: 'lexicon',
@@ -38,7 +38,7 @@ module Api
             path: 'TRAPID_LEXICON.md',
             chapters: 20,
             has_database: true,
-            api_path: '/api/v1/documented_bugs'
+            api_path: '/api/v1/documentation_entries?category=lexicon'
           },
           {
             id: 'user-manual',
