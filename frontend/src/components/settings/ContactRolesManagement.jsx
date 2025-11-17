@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { PlusIcon, PencilIcon, TrashIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
+import TrinityTableView from '../documentation/TrinityTableView'
 
 const CONTACT_TYPES = [
   { value: 'customer', label: 'Customer', tabLabel: 'Customer' },
@@ -26,7 +27,24 @@ export default function ContactRolesManagement() {
   const fetchRoles = async () => {
     try {
       const response = await api.get('/api/v1/contact_roles')
-      setRoles(response)
+      // Transform roles to Trinity format
+      const trinityRoles = response.map((role, index) => ({
+        id: role.id,
+        category: 'contact_roles',
+        chapter_number: 0,
+        chapter_name: 'Contact Roles',
+        section_number: String(index + 1),
+        title: role.name,
+        entry_type: (!role.contact_types || role.contact_types.length === 0)
+          ? 'universal'
+          : role.contact_types.join(', '),
+        description: (!role.contact_types || role.contact_types.length === 0)
+          ? 'Universal (All Types)'
+          : role.contact_types.map(t => CONTACT_TYPES.find(ct => ct.value === t)?.label).join(', '),
+        status: role.active ? 'active' : 'inactive',
+        _original: role // Keep original for operations
+      }))
+      setRoles(trinityRoles)
     } catch (error) {
       console.error('Failed to fetch contact roles:', error)
     } finally {
@@ -45,7 +63,26 @@ export default function ContactRolesManagement() {
           active: true
         }
       })
-      setRoles([...roles, response])
+
+      // Transform new role to Trinity format
+      const trinityRole = {
+        id: response.id,
+        category: 'contact_roles',
+        chapter_number: 0,
+        chapter_name: 'Contact Roles',
+        section_number: String(roles.length + 1),
+        title: response.name,
+        entry_type: (!response.contact_types || response.contact_types.length === 0)
+          ? 'universal'
+          : response.contact_types.join(', '),
+        description: (!response.contact_types || response.contact_types.length === 0)
+          ? 'Universal (All Types)'
+          : response.contact_types.map(t => CONTACT_TYPES.find(ct => ct.value === t)?.label).join(', '),
+        status: response.active ? 'active' : 'inactive',
+        _original: response
+      }
+
+      setRoles([...roles, trinityRole])
       setNewRole('')
       setNewRoleTypes([])
       setShowAddForm(false)
@@ -117,229 +154,57 @@ export default function ContactRolesManagement() {
   // Roles with empty contact_types array appear in ALL tabs (universal roles)
   const getFilteredRoles = (contactTypeValue) => {
     return roles.filter(role => {
+      const original = role._original
       // Show role if it has no types (universal) OR includes this specific type
-      return (!role.contact_types || role.contact_types.length === 0) ||
-             (role.contact_types && role.contact_types.includes(contactTypeValue))
+      return (!original.contact_types || original.contact_types.length === 0) ||
+             (original.contact_types && original.contact_types.includes(contactTypeValue))
     })
+  }
+
+  const handleEdit = (entry) => {
+    // TODO: Open edit modal
+    console.log('Edit role:', entry._original)
+  }
+
+  const handleDelete = async (entry) => {
+    const role = entry._original
+    if (!confirm(`Are you sure you want to delete ${role.name}? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      await api.delete(`/api/v1/contact_roles/${role.id}`)
+      setRoles(roles.filter(r => r.id !== role.id))
+    } catch (error) {
+      console.error('Failed to delete role:', error)
+      alert('Failed to delete role')
+    }
   }
 
   // Render a table for a specific contact type
   const renderRolesTable = (contactTypeValue) => {
     const filteredRoles = getFilteredRoles(contactTypeValue)
-    const currentType = CONTACT_TYPES.find(t => t.value === contactTypeValue)
+
+    // Custom action button for adding roles (Chapter 20: h-[42px] alignment)
+    const addRoleButton = (
+      <button
+        onClick={handleOpenAddForm}
+        className="inline-flex items-center gap-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
+      >
+        <PlusIcon className="h-5 w-5" />
+        Add Role
+      </button>
+    )
 
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              {currentType.label} Roles
-            </h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Roles shown here are available for {currentType.label.toLowerCase()} contacts. Universal roles (with no types assigned) appear in all tabs.
-            </p>
-          </div>
-          {!showAddForm && (
-            <button
-              onClick={handleOpenAddForm}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg"
-            >
-              <PlusIcon className="h-4 w-4" />
-              Add Role
-            </button>
-          )}
-        </div>
-
-        {/* Add new role form */}
-        {showAddForm && (
-          <div className="bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              New Role
-            </label>
-            <div className="flex flex-col gap-3">
-              <input
-                type="text"
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddRole()}
-                placeholder="e.g., Project Manager"
-                className="flex-1 px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                autoFocus
-              />
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                <div className="font-medium mb-1">Available for:</div>
-                <div className="space-y-1">
-                  {CONTACT_TYPES.map(type => (
-                    <label key={type.value} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newRoleTypes.includes(type.value)}
-                        onChange={(e) => {
-                          const newTypes = e.target.checked
-                            ? [...newRoleTypes, type.value]
-                            : newRoleTypes.filter(t => t !== type.value)
-                          setNewRoleTypes(newTypes)
-                        }}
-                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <span>{type.label}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="mt-1 text-gray-500 dark:text-gray-500 italic">
-                  {newRoleTypes.length === 0 && '(None selected = Universal role for all types)'}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleAddRole}
-                  className="inline-flex items-center gap-1 px-3 py-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded"
-                >
-                  <CheckIcon className="h-4 w-4" />
-                  Add
-                </button>
-                <button
-                  onClick={handleCancelAddForm}
-                  className="inline-flex items-center gap-1 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
-                >
-                  <XMarkIcon className="h-4 w-4" />
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Roles table */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Role Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredRoles.length === 0 ? (
-                <tr>
-                  <td colSpan="3" className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                    No roles defined yet. Add your first {currentType.label.toLowerCase()} role to get started.
-                  </td>
-                </tr>
-              ) : (
-                filteredRoles.map((role) => (
-                  <tr key={role.id} className={!role.active ? 'opacity-50' : ''}>
-                    <td className="px-6 py-4">
-                      {editingRole?.id === role.id ? (
-                        <div className="space-y-2">
-                          <input
-                            type="text"
-                            value={editingRole.name}
-                            onChange={(e) => setEditingRole({ ...editingRole, name: e.target.value })}
-                            onKeyPress={(e) => e.key === 'Enter' && handleUpdateRole(editingRole)}
-                            className="w-full px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            autoFocus
-                          />
-                          <div className="text-xs text-gray-600 dark:text-gray-400">
-                            <div className="font-medium mb-1">Available for:</div>
-                            <div className="space-y-1">
-                              {CONTACT_TYPES.filter(t => t.value !== '').map(type => (
-                                <label key={type.value} className="flex items-center gap-2 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={editingRole.contact_types?.includes(type.value) || false}
-                                    onChange={(e) => {
-                                      const currentTypes = editingRole.contact_types || []
-                                      const newTypes = e.target.checked
-                                        ? [...currentTypes, type.value]
-                                        : currentTypes.filter(t => t !== type.value)
-                                      setEditingRole({ ...editingRole, contact_types: newTypes })
-                                    }}
-                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                  />
-                                  <span>{type.label}</span>
-                                </label>
-                              ))}
-                            </div>
-                            <div className="mt-1 text-gray-500 dark:text-gray-500 italic">
-                              {(!editingRole.contact_types || editingRole.contact_types.length === 0) && '(None selected = Universal role for all types)'}
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {role.name}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {(!role.contact_types || role.contact_types.length === 0)
-                              ? 'Universal (All Types)'
-                              : role.contact_types.map(t => CONTACT_TYPES.find(ct => ct.value === t)?.label).join(', ')
-                            }
-                          </div>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => handleToggleActive(role)}
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          role.active
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                        }`}
-                      >
-                        {role.active ? 'Active' : 'Inactive'}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        {editingRole?.id === role.id ? (
-                          <>
-                            <button
-                              onClick={() => handleUpdateRole(editingRole)}
-                              className="text-green-600 hover:text-green-700 dark:text-green-400"
-                            >
-                              <CheckIcon className="h-5 w-5" />
-                            </button>
-                            <button
-                              onClick={() => setEditingRole(null)}
-                              className="text-gray-600 hover:text-gray-700 dark:text-gray-400"
-                            >
-                              <XMarkIcon className="h-5 w-5" />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => setEditingRole({ ...role })}
-                              className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
-                            >
-                              <PencilIcon className="h-5 w-5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteRole(role.id)}
-                              className="text-red-600 hover:text-red-700 dark:text-red-400"
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="h-full flex flex-col">
+        <TrinityTableView
+          entries={filteredRoles}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          category="contact_roles"
+          customActions={addRoleButton}
+        />
       </div>
     )
   }
@@ -404,6 +269,69 @@ export default function ContactRolesManagement() {
           </TabPanel>
         ))}
       </TabPanels>
+
+      {/* Add Role Form */}
+      {showAddForm && (
+        <div className="mt-6 p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add New Role</h3>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Role Name
+              </label>
+              <input
+                type="text"
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+                placeholder="Enter role name..."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Contact Types (leave empty for universal role)
+              </label>
+              <div className="space-y-2">
+                {CONTACT_TYPES.map((type) => (
+                  <label key={type.value} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={newRoleTypes.includes(type.value)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setNewRoleTypes([...newRoleTypes, type.value])
+                        } else {
+                          setNewRoleTypes(newRoleTypes.filter(t => t !== type.value))
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{type.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={handleAddRole}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Add Role
+              </button>
+              <button
+                onClick={handleCancelAddForm}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg">
         <p className="text-sm text-blue-800 dark:text-blue-200">

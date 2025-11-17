@@ -131,6 +131,7 @@ export default function BibleTableView({ entries, onEdit, onDelete, stats }) {
   const [selectedRule, setSelectedRule] = useState(null) // Rule selected for modal view
   const [editingRule, setEditingRule] = useState(null) // Rule being edited
   const [editFormData, setEditFormData] = useState(null) // Edit form data
+  const [showDeleteButton, setShowDeleteButton] = useState(false) // Show delete only after edit clicked
 
   // Chapter 19 compliance: Column state management
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
@@ -955,44 +956,9 @@ export default function BibleTableView({ entries, onEdit, onDelete, stats }) {
         }
       `}</style>
       <div className="h-full flex flex-col overflow-hidden bg-white dark:bg-gray-900">
-        {/* Bulk Action Bar */}
-      {selectedRows.size > 0 && (
-        <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-200 dark:border-indigo-800">
-          <div className="flex items-center justify-between">
-            <div className="text-sm font-medium text-indigo-900 dark:text-indigo-200">
-              {selectedRows.size} {selectedRows.size === 1 ? 'rule' : 'rules'} selected
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  // Get first selected rule for editing
-                  const selectedRuleIds = Array.from(selectedRows)
-                  if (selectedRuleIds.length === 1) {
-                    const rule = rules.find(r => r.id === selectedRuleIds[0])
-                    if (rule) handleEditClick({ stopPropagation: () => {} }, rule)
-                  } else {
-                    alert('Bulk edit multiple rules coming soon! For now, select only 1 rule to edit.')
-                  }
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                <PencilIcon className="h-4 w-4" />
-                Edit Selected
-              </button>
-              <button
-                onClick={() => setSelectedRows(new Set())}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              >
-                Clear Selection
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header with Search and Column Visibility */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-4">
-        {/* Search Box */}
+        {/* Search Box and Action Buttons */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -1001,7 +967,7 @@ export default function BibleTableView({ entries, onEdit, onDelete, stats }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search rules, chapters, content..."
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent h-[42px]"
             />
             {search && (
               <button
@@ -1015,7 +981,7 @@ export default function BibleTableView({ entries, onEdit, onDelete, stats }) {
 
           {/* Column Visibility Toggle */}
           <Menu as="div" className="relative inline-block text-left">
-            <MenuButton className="inline-flex items-center gap-x-2 rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600">
+            <MenuButton className="inline-flex items-center gap-x-2 rounded-lg bg-white dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 h-[42px]">
               <EyeIcon className="h-5 w-5" />
               Columns
             </MenuButton>
@@ -1045,6 +1011,89 @@ export default function BibleTableView({ entries, onEdit, onDelete, stats }) {
               </div>
             </MenuItems>
           </Menu>
+
+          {/* Bulk Action Buttons - Only shown when rows selected */}
+          {selectedRows.size > 0 && (
+            <>
+              <button
+                onClick={() => {
+                  // Get first selected rule for editing
+                  const selectedRuleIds = Array.from(selectedRows)
+                  if (selectedRuleIds.length === 1) {
+                    const rule = rules.find(r => r.id === selectedRuleIds[0])
+                    if (rule) {
+                      handleEditClick({ stopPropagation: () => {} }, rule)
+                      setShowDeleteButton(true) // Show delete after edit clicked
+                    }
+                  } else {
+                    alert('Bulk edit multiple rules coming soon! For now, select only 1 rule to edit.')
+                  }
+                }}
+                className="inline-flex items-center gap-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
+              >
+                <PencilIcon className="h-4 w-4" />
+                Edit
+              </button>
+              {showDeleteButton && (
+                <button
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete ${selectedRows.size} ${selectedRows.size === 1 ? 'entry' : 'entries'}?`)) {
+                      const selectedRuleIds = Array.from(selectedRows)
+                      selectedRuleIds.forEach(id => {
+                        fetch(`http://localhost:3000/api/v1/trinity/${id}`, {
+                          method: 'DELETE'
+                        }).catch(error => console.error('Error deleting rule:', error))
+                      })
+                      setSelectedRows(new Set())
+                      setShowDeleteButton(false)
+                      alert('Entries deleted successfully!')
+                      window.location.reload()
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 px-4 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                  Delete
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  const selectedRuleIds = Array.from(selectedRows)
+                  const selectedRules = rules.filter(r => selectedRuleIds.includes(r.id))
+                  const csvContent = [
+                    ['Chapter', 'Rule Number', 'Type', 'Title', 'Description'].join(','),
+                    ...selectedRules.map(r => [
+                      r.chapter,
+                      r.ruleNumber,
+                      r.ruleType,
+                      `"${r.title?.replace(/"/g, '""')}"`,
+                      `"${getCleanRuleContent(r.description)?.replace(/"/g, '""')}"`
+                    ].join(','))
+                  ].join('\n')
+
+                  const blob = new Blob([csvContent], { type: 'text/csv' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `bible-export-${new Date().toISOString().split('T')[0]}.csv`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}
+                className="inline-flex items-center gap-2 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
+              >
+                Export
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedRows(new Set())
+                  setShowDeleteButton(false)
+                }}
+                className="inline-flex items-center gap-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors h-[42px]"
+              >
+                Clear Selection
+              </button>
+            </>
+          )}
         </div>
 
         {/* Active Filters Display */}
