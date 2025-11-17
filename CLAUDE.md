@@ -2,14 +2,39 @@
 
 ## 🔴 READ THESE FIRST
 
-Before doing ANY work on this project:
+Before doing ANY work on this project, **fetch documentation from the live database APIs**:
 
-1. **[TRAPID_BIBLE.md](TRAPID_DOCS/TRAPID_BIBLE.md)** - ABSOLUTE AUTHORITY (all RULES)
-2. **[TRAPID_TEACHER.md](TRAPID_DOCS/TRAPID_TEACHER.md)** - Developer's cookbook (HOW to implement)
-3. **[TRAPID_LEXICON.md](TRAPID_DOCS/TRAPID_LEXICON.md)** - Bug history, architecture decisions, knowledge base
-4. **[TRAPID_USER_MANUAL.md](TRAPID_DOCS/TRAPID_USER_MANUAL.md)** - End-user guides (for reference)
+### 📖 Bible (RULES) - ABSOLUTE AUTHORITY
+**API:** `https://trapid-backend-447058022b51.herokuapp.com/api/v1/bible_rules`
+- Fetch all Bible rules from database
+- Always up-to-date, no export needed
+- Contains: MUST/NEVER/ALWAYS rules, protected patterns, config values
 
-**Chapter Guide:** [CHAPTER_GUIDE.md](TRAPID_DOCS/00_INDEX/CHAPTER_GUIDE.md) - Quick lookup for features → chapters
+### 🔧 Teacher (HOW-TO) - Implementation Patterns
+**API:** `https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=teacher`
+- Fetch all Teacher entries from database
+- Full code examples, step-by-step guides
+- Entry types: component, feature, util, hook, integration, optimization
+
+### 📕 Lexicon (KNOWLEDGE) - Bug History & Architecture
+**API:** `https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=lexicon`
+- Fetch all Lexicon entries from database
+- Bug discoveries, architecture decisions, performance notes
+- Entry types: bug, architecture, test, performance, dev_note, common_issue
+
+### 📘 User Manual (END-USER GUIDES)
+**File:** [TRAPID_USER_MANUAL.md](TRAPID_DOCS/TRAPID_USER_MANUAL.md) - (Still markdown-based)
+
+### ⚡ Quick Lookup
+**Chapter Guide:** [CHAPTER_GUIDE.md](TRAPID_DOCS/00_INDEX/CHAPTER_GUIDE.md) - Features → chapters
+
+---
+
+## 🚨 IMPORTANT: Always Use Database APIs
+
+**DO NOT read markdown files** (`TRAPID_BIBLE.md`, `TRAPID_TEACHER.md`, `TRAPID_LEXICON.md`) - they are auto-generated exports that may be stale.
+
+**ALWAYS fetch from APIs** to get real-time, up-to-date documentation from the database.
 
 ---
 
@@ -154,37 +179,43 @@ const MyTable = () => (
 
 ---
 
-## 🎯 When to Use Each Document
+## 🎯 When to Use Each Documentation Source
 
 ### Scenario 1: Creating a New Table Component
 
-1. **Read Bible first** → RULE #19.1 says "ask user which table type"
-2. **Ask user** → Get their choice (DataTable vs Advanced)
-3. **Read Trapid Teacher** → §19.1 shows full code example
-4. **Check Lexicon** → Look for known bugs with tables (Chapter 19)
-5. **Implement** → Follow Bible rules + Trapid Teacher examples
+1. **Fetch Bible rules** → `GET /api/v1/bible_rules` filtered by chapter 19
+2. **Read RULE #19.1** → Says "ask user which table type"
+3. **Ask user** → Get their choice (DataTable vs Advanced)
+4. **Fetch Teacher entries** → `GET /api/v1/documentation_entries?category=teacher&chapter=19`
+5. **Read §19.1** → Shows full code example
+6. **Check Lexicon** → `GET /api/v1/documentation_entries?category=lexicon&chapter=19` for known table bugs
+7. **Implement** → Follow Bible rules + Teacher examples
 
 ### Scenario 2: Fixing a Gantt Bug
 
-1. **Check Lexicon first** → Chapter 9 for known Gantt bugs
-2. **Read bug entry** → Understand root cause and past solutions
-3. **Check Bible** → Chapter 9 protected code patterns
-4. **Fix bug** → Follow Bible rules, learn from Lexicon
-5. **Update Lexicon** → Add new bug entry via UI, export to .md
+1. **Fetch Lexicon entries** → `GET /api/v1/documentation_entries?category=lexicon&chapter=9`
+2. **Search for similar bug** → Filter by title/description
+3. **Read bug entry** → Understand root cause and past solutions
+4. **Fetch Bible rules** → `GET /api/v1/bible_rules` filtered by chapter 9
+5. **Check protected patterns** → Review RULE #9.3, etc.
+6. **Fix bug** → Follow Bible rules, learn from Lexicon
+7. **Update Lexicon** → Add new bug entry via Trapid UI
 
 ### Scenario 3: User Asks "How do I create a job?"
 
-1. **Send them to User Manual** → Chapter 5
-2. **If it doesn't work** → Check Lexicon Chapter 5 for known issues
-3. **If need to fix code** → Read Bible Chapter 5 rules
+1. **Send them to User Manual** → Chapter 5 (still markdown-based)
+2. **If it doesn't work** → Fetch Lexicon: `GET /api/v1/documentation_entries?category=lexicon&chapter=5`
+3. **If need to fix code** → Fetch Bible: `GET /api/v1/bible_rules` filtered by chapter 5
 
 ### Scenario 4: Adding New Xero Webhook
 
-1. **Read Bible Chapter 15** → Xero integration rules
-2. **Read Trapid Teacher §15.X** → Webhook handler code examples
-3. **Check Lexicon Chapter 15** → Known webhook issues
-4. **Implement** → Follow Bible rules + patterns
-5. **Test** → Follow testing strategy from Implementation Patterns
+1. **Fetch Bible rules** → `GET /api/v1/bible_rules` filtered by chapter 15
+2. **Review Xero integration rules** → RULE #15.X
+3. **Fetch Teacher entries** → `GET /api/v1/documentation_entries?category=teacher&chapter=15`
+4. **Read webhook handler examples** → §15.X
+5. **Check Lexicon** → `GET /api/v1/documentation_entries?category=lexicon&chapter=15` for known webhook issues
+6. **Implement** → Follow Bible rules + Teacher patterns
+7. **Test** → Follow testing strategy from Teacher
 
 ---
 
@@ -241,27 +272,27 @@ All four documents use the **same chapter structure** (0-20):
 ## ⚡ Quick Reference
 
 **"I'm fixing a bug"**
-1. Check Lexicon (has it been seen before?)
-2. Check Bible (are there protected patterns?)
+1. Fetch Lexicon: `GET /api/v1/documentation_entries?category=lexicon` (has it been seen before?)
+2. Fetch Bible: `GET /api/v1/bible_rules` (are there protected patterns?)
 3. Fix code following Bible rules
-4. Update Lexicon via UI + export
+4. Update Lexicon via Trapid UI (database auto-updates)
 
 **"I'm creating a new component"**
-1. Read Bible chapter for rules
-2. Read Trapid Teacher for code examples
-3. Check Lexicon for known issues
+1. Fetch Bible rules for relevant chapter: `GET /api/v1/bible_rules`
+2. Fetch Teacher entries: `GET /api/v1/documentation_entries?category=teacher`
+3. Fetch Lexicon: `GET /api/v1/documentation_entries?category=lexicon` for known issues
 4. Implement following all three
 
 **"I'm optimizing performance"**
-1. Check Lexicon for past optimizations
-2. Check Bible for protected code warnings
-3. Follow Trapid Teacher for best practices
-4. Document optimization in Lexicon
+1. Fetch Lexicon: `GET /api/v1/documentation_entries?category=lexicon&entry_type=performance`
+2. Fetch Bible: `GET /api/v1/bible_rules` for protected code warnings
+3. Fetch Teacher: `GET /api/v1/documentation_entries?category=teacher&entry_type=optimization`
+4. Document optimization via Trapid UI
 
 **"User can't use a feature"**
-1. Send them to User Manual
-2. If it's broken, check Lexicon
-3. If needs fixing, check Bible
+1. Send them to User Manual (still markdown-based)
+2. If it's broken, fetch Lexicon: `GET /api/v1/documentation_entries?category=lexicon`
+3. If needs fixing, fetch Bible: `GET /api/v1/bible_rules`
 
 ---
 
