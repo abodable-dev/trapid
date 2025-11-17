@@ -11,7 +11,7 @@ module Api
       #   ?chapter=3
       #   ?section=19.1
       #   ?type=bug|architecture|component|feature|etc
-      #   ?category=lexicon|teacher (filters by lexicon vs teacher types)
+      #   ?category=bible|lexicon|teacher (filters by category)
       #   ?status=open (only for bugs)
       #   ?severity=critical (only for bugs)
       #   ?difficulty=beginner|intermediate|advanced (only for teacher)
@@ -19,8 +19,10 @@ module Api
       def index
         @entries = DocumentationEntry.all
 
-        # Filter by category (lexicon vs teacher)
-        if params[:category] == 'lexicon'
+        # Filter by category
+        if params[:category] == 'bible'
+          @entries = @entries.bible_entries
+        elsif params[:category] == 'lexicon'
           @entries = @entries.lexicon_entries
         elsif params[:category] == 'teacher'
           @entries = @entries.teacher_entries
@@ -99,9 +101,11 @@ module Api
       def stats
         stats = {
           total_entries: DocumentationEntry.count,
+          bible_count: DocumentationEntry.bible_entries.count,
           lexicon_count: DocumentationEntry.lexicon_entries.count,
           teacher_count: DocumentationEntry.teacher_entries.count,
           by_type: DocumentationEntry.group(:entry_type).count,
+          by_category: DocumentationEntry.group(:category).count,
           by_status: DocumentationEntry.group(:status).count,
           by_severity: DocumentationEntry.group(:severity).count,
           by_difficulty: DocumentationEntry.group(:difficulty).count,
@@ -110,6 +114,7 @@ module Api
               chapter_number: num,
               chapter_name: name,
               total_count: count,
+              bible_count: DocumentationEntry.by_chapter(num).bible_entries.count,
               lexicon_count: DocumentationEntry.by_chapter(num).lexicon_entries.count,
               teacher_count: DocumentationEntry.by_chapter(num).teacher_entries.count,
               open_bugs_count: DocumentationEntry.by_chapter(num).open_bugs.count,
@@ -177,6 +182,7 @@ module Api
 
       def entry_params
         params.require(:documentation_entry).permit(
+          :category,
           :chapter_number,
           :chapter_name,
           :section_number,
@@ -213,14 +219,17 @@ module Api
       def entry_json(entry, detailed: false)
         base = {
           id: entry.id,
+          category: entry.category,
           chapter_number: entry.chapter_number,
           chapter_name: entry.chapter_name,
           section_number: entry.section_number,
           section_display: entry.section_display,
+          full_title: entry.full_title,
           component: entry.component,
           title: entry.title,
           entry_type: entry.entry_type,
           type_display: entry.type_display,
+          type_emoji: entry.type_emoji,
           # Lexicon fields
           status: entry.status,
           status_display: entry.status_display,
@@ -234,6 +243,7 @@ module Api
           difficulty_display: entry.difficulty_display,
           summary: entry.summary,
           # Meta
+          bible_entry: entry.bible_entry?,
           lexicon_entry: entry.lexicon_entry?,
           teacher_entry: entry.teacher_entry?
         }
