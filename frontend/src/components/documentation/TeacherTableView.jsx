@@ -6,31 +6,32 @@ import {
   EyeIcon,
   Bars3Icon,
   ChevronUpIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline'
 
 const CHAPTER_NAMES = {
-  0: 'Overview & System-Wide Patterns',
-  1: 'Authentication & Users',
-  2: 'System Administration',
-  3: 'Contacts & Relationships',
-  4: 'Price Books & Suppliers',
-  5: 'Jobs & Construction Management',
-  6: 'Estimates & Quoting',
-  7: 'AI Plan Review',
-  8: 'Purchase Orders',
-  9: 'Gantt & Schedule Master',
-  10: 'Project Tasks & Checklists',
-  11: 'Weather & Public Holidays',
-  12: 'OneDrive Integration',
-  13: 'Outlook/Email Integration',
-  14: 'Chat & Communications',
-  15: 'Xero Accounting Integration',
-  16: 'Payments & Financials',
-  17: 'Workflows & Automation',
-  18: 'Custom Tables & Formulas',
-  19: 'UI/UX Standards & Patterns',
-  20: 'Agent System & Automation'
+  1: 'Overview & System-Wide Rules',
+  2: 'Authentication & Users',
+  3: 'System Administration',
+  4: 'Contacts & Relationships',
+  5: 'Price Books & Suppliers',
+  6: 'Jobs & Construction Management',
+  7: 'Estimates & Quoting',
+  8: 'AI Plan Review',
+  9: 'Purchase Orders',
+  10: 'Gantt & Schedule Master',
+  11: 'Project Tasks & Checklists',
+  12: 'Weather & Public Holidays',
+  13: 'OneDrive Integration',
+  14: 'Outlook/Email Integration',
+  15: 'Chat & Communications',
+  16: 'Xero Accounting Integration',
+  17: 'Payments & Financials',
+  18: 'Workflows & Automation',
+  19: 'Custom Tables & Formulas',
+  20: 'UI/UX Standards & Patterns',
+  21: 'Agent System & Automation'
 }
 
 // Extract "Related To" category from section title - categorize by PRIMARY subject
@@ -183,7 +184,7 @@ const parseSectionsFromMarkdown = (content) => {
 const COLUMNS = [
   { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
   { key: 'section', label: 'Section §', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150 },
-  { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 400 },
+  { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200, tooltip: 'Chapter number and name' },
   { key: 'relatedTo', label: 'Related To', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200 },
   { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 600 },
   { key: 'content', label: 'Content', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 1200 }
@@ -714,12 +715,23 @@ export default function TeacherTableView({ content }) {
               <div className="text-sm font-medium text-indigo-900 dark:text-indigo-200">
                 {selectedRows.size} {selectedRows.size === 1 ? 'section' : 'sections'} selected
               </div>
-              <button
-                onClick={() => setSelectedRows(new Set())}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              >
-                Clear Selection
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    alert('Teacher edit functionality coming soon! This will allow you to edit selected sections.')
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                  Edit Selected
+                </button>
+                <button
+                  onClick={() => setSelectedRows(new Set())}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Clear Selection
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -41,29 +41,32 @@ Specialized agent for diagnosing and fixing bugs in the Gantt Chart and Schedule
 
 **CRITICAL: Follow this exact order (RULE #9.1)**
 
-### 1. Read the Gantt Bible (MANDATORY)
+### 1. Fetch the Gantt Bible (MANDATORY)
 
 ```bash
-# ALWAYS read this first
-/Users/rob/Projects/trapid/TRAPID_DOCS/TRAPID_BIBLE.md
+# ALWAYS fetch from the live API first
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=bible&chapter_number=9'
 ```
 
-**Then navigate to Chapter 9** for Gantt-specific rules.
+**This returns all Chapter 9 Bible rules** from the database (always up-to-date).
+
+**Note:** Do NOT read `TRAPID_BIBLE.md` - it's an auto-generated export that may be stale. Always use the API.
 
 Wait for user confirmation (👍) before proceeding.
 
 ### 2. Static Code Analysis
 
 Verify compliance with:
-- **All 13 RULES** from TRAPID_BIBLE.md Chapter 9
-- **3 Protected Code Patterns**:
+- **All RULES** from Bible API (Chapter 9)
+- **Protected Code Patterns** listed in Bible rules
+- Example patterns to check:
   1. `gantt.batchUpdate()` wrapper pattern
   2. Cascade calculation order
   3. `refreshData()` calls after updates
 
 Check for violations:
 - Search for direct `gantt.updateTask()` calls outside `batchUpdate()`
-- Verify cascade order: end_date → start_date → duration
+- Verify cascade order as specified in Bible rules
 - Confirm `refreshData()` is called after all updates
 
 ### 3. Check Test Recency (Smart Decision)
@@ -160,9 +163,12 @@ Structure report as:
 
 ## Knowledge Base
 
-Always reference:
-- **TRAPID_BIBLE.md Chapter 9** - The 13 RULES (absolute authority)
-- **TRAPID_LEXICON.md Chapter 9** - Bug history and patterns
+Always fetch from APIs:
+- **Bible API** - `?category=bible&chapter_number=9` - The RULES (absolute authority)
+- **Lexicon API** - `?category=lexicon&chapter_number=9` - Bug history and patterns
+- **Teacher API** - `?category=teacher&chapter_number=9` - Implementation patterns
+
+**Note:** Markdown files (`TRAPID_BIBLE.md`, `TRAPID_LEXICON.md`) are auto-generated exports. Always use the APIs for latest data.
 
 ## Shortcuts
 

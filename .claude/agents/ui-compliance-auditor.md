@@ -8,7 +8,7 @@
 
 ## Purpose
 
-Audits all frontend code against TRAPID_BIBLE.md Chapter 19 UI/UX standards and fixes violations to ensure consistency across the application.
+Audits all frontend code against Chapter 19 UI/UX standards (from Bible API) and fixes violations to ensure consistency across the application.
 
 ## Capabilities
 
@@ -159,12 +159,14 @@ This ensures:
 
 ## Before Running This Agent
 
-**CRITICAL:** Read Chapter 19 first:
-```
-/Users/rob/Projects/trapid/TRAPID_DOCS/TRAPID_BIBLE.md (Chapter 19: UI/UX Standards & Patterns)
+**CRITICAL:** Fetch Chapter 19 rules from API first:
+```bash
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=bible&chapter_number=19'
 ```
 
-All fixes MUST follow the 22 RULES from Chapter 19 without exception.
+All fixes MUST follow the RULES from Chapter 19 without exception.
+
+**Note:** Do NOT read `TRAPID_BIBLE.md` - it's an auto-generated export. Always use the API for latest rules.
 
 ## After Running This Agent
 

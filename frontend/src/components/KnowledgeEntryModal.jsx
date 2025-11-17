@@ -29,6 +29,7 @@ const SEVERITIES = [
 
 export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNumber, chapterName, entry = null }) {
   const [formData, setFormData] = useState({
+    category: 'lexicon',
     chapter_number: chapterNumber || 0,
     chapter_name: chapterName || '',
     entry_type: 'bug',
@@ -58,6 +59,7 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
   useEffect(() => {
     if (entry) {
       setFormData({
+        category: entry.category || 'lexicon',
         chapter_number: entry.chapter_number,
         chapter_name: entry.chapter_name,
         entry_type: entry.entry_type,
@@ -80,6 +82,7 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
       })
     } else {
       setFormData({
+        category: 'lexicon',
         chapter_number: chapterNumber || 0,
         chapter_name: chapterName || '',
         entry_type: 'bug',

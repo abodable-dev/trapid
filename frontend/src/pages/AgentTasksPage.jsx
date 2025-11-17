@@ -265,6 +265,7 @@ export default function AgentTasksPage() {
           // Create a knowledge entry for this agent's completed tasks
           await api.post('/api/v1/documentation_entries', {
             documentation_entry: {
+              category: 'lexicon',
               chapter_number: 20, // Chapter 20 = Agent System
               chapter_name: 'Agent System & Automation',
               title: `Tasks completed by ${agent.name}`,

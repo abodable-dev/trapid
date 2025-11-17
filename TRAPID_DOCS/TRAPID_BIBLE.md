@@ -1,7 +1,7 @@
 # TRAPID BIBLE - Development Rules
 
 **Version:** 2.0.0
-**Last Updated:** 2025-11-17 11:28 AEST
+**Last Updated:** 2025-11-17 13:26 AEST
 **Authority Level:** ABSOLUTE
 **Audience:** Claude Code + Human Developers
 **Source of Truth:** Database table `bible_rules` (this file is auto-generated)
@@ -45,9 +45,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch0 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #0.1: Mandatory Chapter Reading Before Component Creation
+
+✅ MUST
 
 ✅ MUST
 
@@ -71,9 +73,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch1 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #1.1: JWT Token Handling
+
+✅ MUST
 
 ✅ MUST
 
@@ -97,6 +101,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #1.2: Password Security Requirements
+
+✅ MUST
 
 ✅ MUST
 
@@ -124,6 +130,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Use predefined roles: `user`, `admin`, `product_owner`, `estimator`, `supervisor`, `builder`
 - Check permissions via User model methods (`can_create_templates?`, `can_edit_schedule?`)
@@ -144,6 +152,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #1.4: Rate Limiting on Auth Endpoints
+
+✅ MUST
 
 ✅ MUST
 
@@ -168,6 +178,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Use OmniAuth gem for all OAuth providers
 - Store `provider`, `uid`, `oauth_token`, `oauth_expires_at` on User
@@ -189,6 +201,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #1.6: Password Reset Flow
+
+✅ MUST
 
 ✅ MUST
 
@@ -217,6 +231,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Use separate `portal_users` table (NOT users table)
 - Associate portal users with `Contact` record
@@ -238,6 +254,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #1.8: Login Activity Tracking
+
+✅ MUST
 
 ✅ MUST
 
@@ -267,9 +285,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch2 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #2.1: Company Settings Singleton Pattern
+
+✅ MUST
 
 ✅ MUST
 
@@ -294,6 +314,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST use CompanySetting timezone methods:**
 
 ✅ **MUST use Time.use_zone context:**
@@ -312,6 +334,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #2.3: Timezone Handling - Frontend Time Display
+
+✅ MUST
 
 ✅ MUST
 
@@ -336,6 +360,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST implement working_day? and business_day? methods:**
 
 ✅ **MUST use in date calculations:**
@@ -354,6 +380,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #2.5: User Roles & Permission System
+
+✅ MUST
 
 ✅ MUST
 
@@ -378,6 +406,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST use assignable_role for task filtering:**
 
 ❌ **NEVER:**
@@ -394,6 +424,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #2.7: Password Complexity Requirements
+
+✅ MUST
 
 ✅ MUST
 
@@ -418,6 +450,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST use this exact list:**
 
 ✅ **MUST use select with these options:**
@@ -436,6 +470,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #2.9: Working Days UI - Sunday Default True
+
+✅ MUST
 
 ✅ MUST
 
@@ -464,9 +500,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch3 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #3.1: Contact Types are Multi-Select Arrays
+
+✅ MUST
 
 ✅ MUST
 
@@ -494,6 +532,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Create reverse relationship after creating forward relationship
 - Update reverse relationship when forward is updated
@@ -516,6 +556,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #3.3: Xero Sync Uses Priority-Based Fuzzy Matching
+
+✅ MUST
 
 ✅ MUST
 
@@ -548,6 +590,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Check for linked suppliers via `contact.suppliers` association
 - Check if suppliers have purchase orders: `suppliers.joins(:purchase_orders).distinct`
@@ -570,6 +614,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #3.5: Contact Merge MUST Consolidate All Related Records
+
+✅ MUST
 
 ✅ MUST
 
@@ -600,6 +646,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Minimum 12 characters
 - At least one uppercase, lowercase, digit, and special character
@@ -626,6 +674,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Validate `is_primary` uniqueness scoped to `contact_id` in before_save callback
 - Automatically unmark other primaries when setting new primary
@@ -645,6 +695,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #3.8: Contact Activity Logging MUST Track All Significant Changes
+
+✅ MUST
 
 ✅ MUST
 
@@ -676,9 +728,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch4 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #4.1: Price Changes MUST Create Price History Automatically
+
+✅ MUST
 
 ✅ MUST
 
@@ -706,6 +760,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Use unique index: `(pricebook_item_id, supplier_id, new_price, created_at)`
 - Add custom validation preventing entries within 5 seconds
@@ -725,6 +781,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #4.3: SmartPoLookupService - 6-Strategy Cascading Fallback
+
+✅ MUST
 
 ✅ MUST
 
@@ -748,6 +806,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #4.4: Supplier Matching - Normalized Name Comparison with Business Suffix Removal
+
+✅ MUST
 
 ✅ MUST
 
@@ -775,6 +835,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Use rolling 6-month window of prices
 - Calculate CV = (Standard Deviation / Mean) × 100
@@ -796,6 +858,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #4.6: Risk Scoring - Multi-Factor Weighted Calculation (0-100 Scale)
+
+✅ MUST
 
 ✅ MUST
 
@@ -823,6 +887,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Wrap all updates in `ActiveRecord::Base.transaction`
 - Batch create price histories in single insert
@@ -844,6 +910,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #4.8: OneDrive Image Proxy - Cache Control with 1-Hour Expiry
+
+✅ MUST
 
 ✅ MUST
 
@@ -875,9 +943,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch5 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #5.1: Construction MUST Have At Least One Contact
+
+✅ MUST
 
 ✅ MUST
 
@@ -903,6 +973,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Calculate `live_profit = contract_value - sum(all_purchase_orders.total)`
 - Recalculate `profit_percentage = (live_profit / contract_value) * 100`
@@ -922,6 +994,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #5.3: Task Dependencies - No Circular References
+
+✅ MUST
 
 ✅ MUST
 
@@ -947,6 +1021,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Set `actual_start_date = Date.current` when status → `in_progress` (if nil)
 - Set `actual_end_date = Date.current` when status → `complete`
@@ -966,6 +1042,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #5.5: Task Spawning - Status-Based Child Task Creation
+
+✅ MUST
 
 ✅ MUST
 
@@ -990,6 +1068,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #5.6: Schedule Cascade - Dependency-Based Date Propagation
+
+✅ MUST
 
 ✅ MUST
 
@@ -1018,6 +1098,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Use `CreateJobFoldersJob` background job
 - Track status: `not_requested` → `pending` → `processing` → `completed` / `failed`
@@ -1040,6 +1122,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #5.8: Schedule Template Instantiation - All-or-Nothing Transaction
+
+✅ MUST
 
 ✅ MUST
 
@@ -1070,9 +1154,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch6 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #6.1: Fuzzy Job Matching - Three-Tier Confidence Thresholds
+
+✅ MUST
 
 ✅ MUST
 
@@ -1101,6 +1187,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Hash API keys with SHA256 before storage
 - Validate incoming keys by hashing and comparing digests
@@ -1122,6 +1210,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #6.3: Estimate Import - Validate Before Auto-Matching
+
+✅ MUST
 
 ✅ MUST
 
@@ -1149,6 +1239,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Wrap entire conversion in `ActiveRecord::Base.transaction`
 - Rollback if any PO creation fails
@@ -1170,6 +1262,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #6.5: AI Plan Review - Async Processing Required
+
+✅ MUST
 
 ✅ MUST
 
@@ -1197,6 +1291,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Normalize categories to lowercase before grouping
 - Map common variations: "plumbing" = "plumber" = "plumb"
@@ -1218,6 +1314,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #6.7: Estimate Status State Machine - Strict Transitions
+
+✅ MUST
 
 ✅ MUST
 
@@ -1249,9 +1347,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch7 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #7.1: Estimate Must Be Matched to Construction
+
+✅ MUST
 
 ✅ MUST
 
@@ -1275,6 +1375,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST search folders:**
 
 ❌ **NEVER:**
@@ -1290,6 +1392,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #7.3: PDF File Size Limit
+
+✅ MUST
 
 ✅ MUST
 
@@ -1314,6 +1418,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Return 202 Accepted immediately with review_id
 - Enqueue AiReviewJob with estimate_id
@@ -1333,6 +1439,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #7.5: Claude API Model and Prompt Structure
+
+✅ MUST
 
 ✅ MUST
 
@@ -1360,6 +1468,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST categorize as:**
 
 ✅ **MUST use fuzzy matching:**
@@ -1380,6 +1490,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #7.7: Confidence Score Calculation
+
+✅ MUST
 
 ✅ MUST
 
@@ -1405,6 +1517,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #7.8: Error Handling and Status Updates
+
+✅ MUST
 
 ✅ MUST
 
@@ -1434,6 +1548,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST check:**
 - Query for existing review with `status: processing`
 - Return 422 error if found
@@ -1458,9 +1574,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch8 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #8.1: PO Number Generation - Race Condition Protection
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -1479,6 +1597,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER skip status steps**
 
 ✅ **ALWAYS validate transitions**
@@ -1491,6 +1611,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #8.3: Payment Status Calculation
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -1509,6 +1631,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER randomly select supplier**
 
 ✅ **ALWAYS use SmartPoLookupService priority cascade**
@@ -1521,6 +1645,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #8.5: Line Items - Totals Calculation
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -1539,6 +1665,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER link without unlinking previous**
 
 ✅ **ALWAYS use transaction for task linking**
@@ -1551,6 +1679,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #8.7: Price Drift Monitoring
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -1573,9 +1703,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch9 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #9.1: Predecessor ID Conversion
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -1594,6 +1726,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER reset isLoadingData in drag handler**
 
 ✅ **ALWAYS reset in useEffect with 1000ms timeout**
@@ -1606,6 +1740,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #9.3: Company Settings - Working Days & Timezone
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -1624,6 +1760,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER cascade to locked tasks**
 
 ✅ **ALWAYS check all 5 locks before cascade**
@@ -1636,6 +1774,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #9.5: Task Heights Configuration
+
+✅ MUST
 
 ✅ MUST
 
@@ -1654,6 +1794,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER enable:** `gantt.config.auto_scheduling = true`
 
 ✅ **ALWAYS set:** `gantt.config.auto_scheduling = false`
@@ -1666,6 +1808,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #9.7: API Pattern - Single Update + Cascade Response
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -1684,6 +1828,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST use all 7 useRef flags correctly:**
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §9.8](TRAPID_TEACHER.md#98-)
@@ -1694,6 +1840,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #9.9: Predecessor Format
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -1721,6 +1869,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER call gantt.render() directly**
 
 ✅ **ALWAYS use debounced render:**
@@ -1733,6 +1883,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #9.12: Column Documentation - CC_UPDATE Table
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -1755,9 +1907,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch10 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #10.1: Task Status Lifecycle & Automatic Date Updates
+
+✅ MUST
 
 ✅ MUST
 
@@ -1779,6 +1933,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST validate:**
 
 ❌ **NEVER:**
@@ -1795,6 +1951,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #10.3: Automatic Task Spawning from Templates
+
+✅ MUST
 
 ✅ MUST
 
@@ -1819,6 +1977,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST copy templates to instances during job instantiation:**
 
 ❌ **NEVER:**
@@ -1835,6 +1995,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #10.5: Response Type Validation & Photo Upload
+
+✅ MUST
 
 ✅ MUST
 
@@ -1859,6 +2021,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST implement via callback:**
 
 ✅ **MUST show checkbox in task form:**
@@ -1880,6 +2044,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST include in task serialization:**
 
 ✅ **MUST show status badges:**
@@ -1898,6 +2064,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #10.8: Sequence Order for Task Display
+
+✅ MUST
 
 ✅ MUST
 
@@ -1931,6 +2099,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST validate:**
 
 ❌ **NEVER:**
@@ -1947,6 +2117,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #10.11: Tags System for Flexible Categorization
+
+✅ MUST
 
 ✅ MUST
 
@@ -1975,9 +2147,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch11 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #11.1: Unique Holidays Per Region
+
+✅ MUST
 
 ✅ MUST
 
@@ -2002,6 +2176,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Enforce uniqueness at database level: `UNIQUE(construction_id, date)`
 - Check for existing log before auto-creation
@@ -2020,6 +2196,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #11.3: Rainfall Severity Auto-Calculation
+
+✅ MUST
 
 ✅ MUST
 
@@ -2049,6 +2227,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Validate presence: `validates :notes, presence: true, if: :source_manual?`
 - Display notes in UI for audit trail
@@ -2067,6 +2247,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #11.5: Weather API - Historical Data Only
+
+✅ MUST
 
 ✅ MUST
 
@@ -2091,6 +2273,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST follow priority:**
 
 ❌ **NEVER:**
@@ -2106,6 +2290,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #11.7: Gantt Integration - Working Day Calculation
+
+✅ MUST
 
 ✅ MUST
 
@@ -2129,6 +2315,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #11.8: Weather API Response Storage
+
+✅ MUST
 
 ✅ MUST
 
@@ -2158,9 +2346,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch12 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #12.1: Organization-Wide Authentication
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -2179,6 +2369,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER hardcode folder names**
 
 ✅ **ALWAYS respect template customizations**
@@ -2191,6 +2383,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #12.3: Root Folder Management
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -2209,6 +2403,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER rely solely on OneDrive for image display**
 
 ✅ **ALWAYS upload to Cloudinary after OneDrive upload**
@@ -2221,6 +2417,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #12.5: File Upload Chunking
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -2243,9 +2441,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch13 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #13.1: Organization-Wide Singleton OAuth Credential
+
+✅ MUST
 
 ✅ MUST
 
@@ -2270,6 +2470,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST implement all 4 strategies:**
 
 ✅ **MUST auto-assign on email creation:**
@@ -2288,6 +2490,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #13.3: Microsoft Graph API Usage Pattern
+
+✅ MUST
 
 ✅ MUST
 
@@ -2312,6 +2516,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST include threading fields:**
 
 ✅ **MUST populate threading fields:**
@@ -2329,6 +2535,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #13.5: Webhook Support for Email Services
+
+✅ MUST
 
 ✅ MUST
 
@@ -2363,9 +2571,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch14 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #14.1: ChatMessage Multi-Channel Architecture
+
+✅ MUST
 
 ✅ MUST
 
@@ -2381,6 +2591,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #14.2: Message-to-Job Linking
+
+✅ MUST
 
 ✅ MUST
 
@@ -2401,6 +2613,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST centralize Twilio operations:**
 
 ✅ **MUST handle incoming SMS webhooks:**
@@ -2415,6 +2629,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #14.4: SMS Status Tracking
+
+✅ MUST
 
 ✅ MUST
 
@@ -2435,6 +2651,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST add read timestamp:**
 
 ✅ **MUST provide unread count endpoint:**
@@ -2449,6 +2667,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #14.6: Message Polling (No WebSockets)
+
+✅ MUST
 
 ✅ MUST
 
@@ -2472,6 +2692,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST support partial phone matches:**
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §14.7](TRAPID_TEACHER.md#147-)
@@ -2482,6 +2704,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #14.8: Message Deletion Authorization
+
+✅ MUST
 
 ✅ MUST
 
@@ -2503,6 +2727,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST store email metadata:**
 
 ✅ **MUST include fields:**
@@ -2515,6 +2741,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #14.10: Authentication Placeholder - CRITICAL TODO
+
+✅ MUST
 
 ✅ MUST
 
@@ -2540,9 +2768,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch15 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #15.1: OAuth Token Management
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -2558,6 +2788,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #15.2: Two-Way Contact Sync
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -2578,6 +2810,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER sync payments without invoice match**
 
 ✅ **ALWAYS validate invoice total vs PO total**
@@ -2595,6 +2829,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER process webhooks without signature verification**
 
 ✅ **ALWAYS use `XERO_WEBHOOK_KEY` from environment**
@@ -2607,6 +2843,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #15.5: Rate Limiting & Error Handling
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -2627,6 +2865,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER hardcode tax codes**
 
 ✅ **ALWAYS fetch from Xero and cache locally**
@@ -2639,6 +2879,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #15.7: Background Job Processing
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -2656,6 +2898,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #15.8: Payment Sync Workflow
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -2678,9 +2922,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch16 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #16.1: Payment Model Structure
+
+✅ MUST
 
 ✅ MUST
 
@@ -2699,6 +2945,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST trigger on payment save/destroy:**
 
 ✅ **MUST define payment status states:**
@@ -2711,6 +2959,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #16.3: Xero Invoice Fuzzy Matching
+
+✅ MUST
 
 ✅ MUST
 
@@ -2729,6 +2979,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST validate and sync:**
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §16.4](TRAPID_TEACHER.md#164-)
@@ -2739,6 +2991,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #16.5: Payment Method Enum
+
+✅ MUST
 
 ✅ MUST
 
@@ -2754,6 +3008,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #16.6: Financial Precision with DECIMAL(15,2)
+
+✅ MUST
 
 ✅ MUST
 
@@ -2777,6 +3033,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST use semantic colors:**
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §16.7](TRAPID_TEACHER.md#167-)
@@ -2787,6 +3045,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #16.8: Payment Summary Calculation
+
+✅ MUST
 
 ✅ MUST
 
@@ -2805,6 +3065,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST calculate variances:**
 
 ✅ **MUST highlight overages:**
@@ -2817,6 +3079,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #16.10: Cascade Delete Payments
+
+✅ MUST
 
 ✅ MUST
 
@@ -2842,9 +3106,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch17 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #17.1: Solid Queue Background Job System
+
+✅ MUST
 
 ✅ MUST
 
@@ -2863,6 +3129,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST implement state machine:**
 
 ✅ **MUST auto-advance on step completion:**
@@ -2875,6 +3143,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #17.3: Idempotent Background Jobs
+
+✅ MUST
 
 ✅ MUST
 
@@ -2893,6 +3163,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST implement price application:**
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §17.4](TRAPID_TEACHER.md#174-)
@@ -2903,6 +3175,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #17.5: Model Callback Automation
+
+✅ MUST
 
 ✅ MUST
 
@@ -2923,6 +3197,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST provide status visibility:**
 
 ✅ **MUST show percentage:**
@@ -2938,6 +3214,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST batch and throttle:**
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §17.7](TRAPID_TEACHER.md#177-)
@@ -2948,6 +3226,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #17.8: Workflow Metadata Storage
+
+✅ MUST
 
 ✅ MUST
 
@@ -2970,9 +3250,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch18 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #18.1: Dynamic Table Creation Pattern
+
+✅ MUST
 
 ✅ MUST
 
@@ -2996,6 +3278,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST map column types correctly:**
 
 ✅ **MUST use TableBuilder for physical schema changes:**
@@ -3008,6 +3292,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #18.3: Formula Evaluation System
+
+✅ MUST
 
 ✅ MUST
 
@@ -3028,6 +3314,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST create associations dynamically:**
 
 ✅ **MUST batch-load related records:**
@@ -3042,6 +3330,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #18.5: Record CRUD with Formula Calculation
+
+✅ MUST
 
 ✅ MUST
 
@@ -3060,6 +3350,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST validate before deletion:**
 
 ✅ **MUST drop database table:**
@@ -3075,6 +3367,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST enforce validation rules:**
 
 ✅ **MUST validate record data before save:**
@@ -3087,6 +3381,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #18.8: Foreign Key Constraints
+
+✅ MUST
 
 ✅ MUST
 
@@ -3109,9 +3405,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch19 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 11:26 AEST
+**Last Updated:** 2025-11-17 13:24 AEST
 
 ## RULE #19.1: Standard Table Component Usage
+
+✅ MUST
 
 ✅ MUST
 
@@ -3133,6 +3431,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.2](TRAPID_TEACHER.md#192-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
@@ -3141,6 +3441,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.3: Column Search/Filter Requirements (REQUIRED)
+
+✅ MUST
 
 ✅ MUST
 
@@ -3155,6 +3457,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.4](TRAPID_TEACHER.md#194-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
@@ -3166,10 +3470,7 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
-❌ **NEVER:**
-- Put entire header in one onClick handler
-- Make drag handle sortable
-- Forget `e.stopPropagation()` on drag handle
+✅ MUST
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.5](TRAPID_TEACHER.md#195-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
@@ -3178,7 +3479,9 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
-## RULE #19.5A: Column Visibility Toggle (REQUIRED)
+## RULE #19.37: Column Visibility Toggle (REQUIRED)
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -3194,7 +3497,9 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
-## RULE #19.5B: Column Width Persistence (REQUIRED)
+## RULE #19.38: Column Width Persistence (REQUIRED)
+
+✅ MUST
 
 ✅ MUST
 
@@ -3206,6 +3511,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.6: Scroll Behavior Standards
+
+✅ MUST
 
 ✅ MUST
 
@@ -3234,6 +3541,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST set widths consistently:**
 - `<th>`: `style={{ width: `${width}px`, minWidth: `${width}px` }}`
 - `<td>`: `style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}`
@@ -3249,6 +3558,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.8](TRAPID_TEACHER.md#198-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
@@ -3257,6 +3568,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.9: Row Interaction Standards
+
+✅ MUST
 
 ✅ MUST
 
@@ -3283,6 +3596,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.10](TRAPID_TEACHER.md#1910-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
@@ -3294,6 +3609,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.11](TRAPID_TEACHER.md#1911-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
@@ -3301,7 +3618,9 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
-## RULE #19.11A: Table Toolbar Layout Standards (REQUIRED)
+## RULE #19.39: Table Toolbar Layout Standards (REQUIRED)
+
+❌ NEVER
 
 ❌ NEVER
 
@@ -3322,6 +3641,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST differentiate:**
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.12](TRAPID_TEACHER.md#1912-)
@@ -3332,6 +3653,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.13: State Persistence Standards
+
+✅ MUST
 
 ✅ MUST
 
@@ -3353,6 +3676,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST support:**
 - Primary/secondary sort
 - 3-state cycle: asc → desc → none
@@ -3368,6 +3693,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER:**
 - Use light-mode-only colors
 - Use pure white/black (use gray-50/gray-900)
@@ -3380,6 +3707,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.16: Performance Standards
+
+✅ MUST
 
 ✅ MUST
 
@@ -3403,6 +3732,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST support:**
 - Tab through interactive elements
 - Enter/Space to trigger actions
@@ -3422,6 +3753,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST verify:**
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.18](TRAPID_TEACHER.md#1918-)
@@ -3432,6 +3765,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.19: URL State Management
+
+✅ MUST
 
 ✅ MUST
 
@@ -3457,6 +3792,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.20](TRAPID_TEACHER.md#1920-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
@@ -3465,6 +3802,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.21: Form Standards
+
+✅ MUST
 
 ✅ MUST
 
@@ -3485,6 +3824,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST include:**
 - Close button (top-right)
 - Dark mode support
@@ -3497,6 +3838,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.23: Toast Notification Standards
+
+✅ MUST
 
 ✅ MUST
 
@@ -3523,6 +3866,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.24](TRAPID_TEACHER.md#1924-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
@@ -3531,6 +3876,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.25: Button & Action Standards
+
+✅ MUST
 
 ✅ MUST
 
@@ -3545,6 +3892,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.26](TRAPID_TEACHER.md#1926-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
@@ -3553,6 +3902,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.27: Empty State Standards
+
+✅ MUST
 
 ✅ MUST
 
@@ -3569,6 +3920,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.28](TRAPID_TEACHER.md#1928-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
@@ -3577,6 +3930,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.29: Chapter 19 Documentation Maintenance (REQUIRED)
+
+✅ MUST
 
 ✅ MUST
 
@@ -3605,6 +3960,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ❌ NEVER
 
+❌ NEVER
+
 ❌ **NEVER:**
 - Create interactive elements < 44px without compensating padding
 - Place elements closer than 8px
@@ -3618,6 +3975,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.31: Data-Dense Table Layout Pattern
+
+✅ MUST
 
 ✅ MUST
 
@@ -3641,6 +4000,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST use zebra striping for wide tables (> 7 columns):**
 - Alternating row colors for horizontal tracking
 - Sufficient contrast in both light and dark modes
@@ -3659,6 +4020,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.33: Sticky Horizontal Scrollbar Pattern
+
+✅ MUST
 
 ✅ MUST
 
@@ -3703,30 +4066,9 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
-### Code Example
-
-```
-   .container::-webkit-scrollbar:horizontal {
-     display: none !important;
-     height: 0 !important;
-   }
-   
-
----
-
-   style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-   
-
----
-
-   const table = container.querySelector('table')
-   const actualTableWidth = table ? table.offsetWidth : scrollWidth
-   
-```
-
----
-
 ## RULE #19.34: Modern Table Header Aesthetics
+
+✅ MUST
 
 ✅ MUST
 
@@ -3752,6 +4094,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST add complete border framing for full-width tables:**
 - Left and right borders on `<table>` element
 - Consistent border colors in light and dark modes
@@ -3770,6 +4114,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #19.36: Expand/Collapse Row Details Pattern
+
+✅ MUST
 
 ✅ MUST
 
@@ -3800,9 +4146,11 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch20 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 10:57 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #20.1: Agent Definitions Are Database-Driven
+
+✅ MUST
 
 ✅ MUST
 
@@ -3830,6 +4178,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Check if agent exists and is active
 - Record run start timestamp
@@ -3851,6 +4201,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #20.3: Run History Tracking
+
+✅ MUST
 
 ✅ MUST
 
@@ -3878,6 +4230,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Assign agent_type: `development`, `diagnostic`, `deployment`, or `planning`
 - Define clear focus area (e.g., "Rails API Backend Development")
@@ -3899,6 +4253,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #20.5: Agent Priority and Display Order
+
+✅ MUST
 
 ✅ MUST
 
@@ -3924,6 +4280,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST:**
 - Support `run {agent-id}` (e.g., `run backend-developer`)
 - Support shortened versions (e.g., `backend dev`, `gantt`)
@@ -3943,6 +4301,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #20.7: Recently Run Check (Smart Testing)
+
+✅ MUST
 
 ✅ MUST
 
@@ -3966,6 +4326,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 ---
 
 ## RULE #20.8: Shortcut Clarity - AgentShortcutsTab Updates
+
+✅ MUST
 
 ✅ MUST
 
@@ -3994,6 +4356,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ✅ MUST
 
+✅ MUST
+
 ✅ **MUST UPDATE (4 files):**
 
 ❌ **NEVER:**
@@ -4004,6 +4368,8 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §20.9](TRAPID_TEACHER.md#209-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
 
 ---
 

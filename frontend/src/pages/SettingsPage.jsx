@@ -137,10 +137,10 @@ export default function SettingsPage() {
     <AccountsLayout>
       <TabGroup selectedIndex={selectedIndex} onChange={handleTabChange}>
         <div className="px-4 sm:px-6 lg:px-8 py-6">
-          <TabList className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 max-w-2xl">
+          <TabList className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 w-full overflow-x-auto">
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -152,7 +152,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -164,7 +164,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -176,7 +176,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -188,7 +188,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -200,7 +200,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -212,7 +212,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -224,7 +224,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -236,7 +236,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -248,7 +248,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -260,7 +260,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -272,7 +272,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -284,7 +284,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -296,7 +296,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -308,7 +308,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -320,7 +320,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -332,7 +332,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
@@ -344,7 +344,7 @@ export default function SettingsPage() {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
                 ${
                   selected
                     ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'

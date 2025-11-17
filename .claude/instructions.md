@@ -1,96 +1,96 @@
 # Project Instructions for Claude Code
 
-## 🚨 CRITICAL: Gantt & Schedule Master Development
+## 🚨 CRITICAL: Read Documentation from Database APIs
 
-### Before Working on ANY Gantt/Schedule Code
+### Unified Documentation System
 
-**You MUST read the Gantt Bible at the start of EVERY session:**
+This project uses a **database-backed documentation system** with three categories:
 
-1. **Read:** `/Users/rob/Projects/trapid/GANTT_SCHEDULE_RULES.md`
-2. **Follow:** ALL rules without exception
-3. **Never:** Modify Protected Code Patterns
-4. **Update:** Bible when discovering new rules
-5. **Update:** Lexicon when fixing bugs
+1. **📖 Bible (RULES)** - MUST/NEVER/ALWAYS directives
+2. **📕 Lexicon (KNOWLEDGE)** - Bug history, architecture decisions
+3. **🔧 Teacher (HOW-TO)** - Implementation patterns and code examples
 
-### The Two-Document System
+**IMPORTANT:** All documentation lives in the `documentation_entries` table. Markdown files are auto-generated exports that may be stale.
 
-This project uses exactly TWO documentation files for Gantt:
+### Before Working on ANY Feature
 
-1. **📖 GANTT_SCHEDULE_RULES.md** - "The Bible" (RULES ONLY)
-   - Contains: MUST/NEVER/ALWAYS directives
-   - Contains: Protected code patterns
-   - Contains: Configuration values that must match
-   - Size: ~18KB (667 lines of pure rules)
+**You MUST fetch documentation from the live API:**
 
-2. **📕 GANTT_BUGS_AND_FIXES.md** - "Bug Hunter Lexicon" (KNOWLEDGE ONLY)
-   - Contains: Bug history (BUG-001, BUG-002, etc.)
-   - Contains: How things work (architecture explanations)
-   - Contains: Why we chose certain patterns
-   - Contains: Investigation timelines and learnings
-
-### When to Read the Bible
-
-**ALWAYS read the Bible when:**
-- User mentions: "Gantt", "Schedule Master", "cascade", "dependencies"
-- Working on files: `DHtmlxGanttView.jsx`, `schedule_cascade_service.rb`
-- User reports a bug in drag/drop or task scheduling
-- Modifying any code in `frontend/src/components/schedule-master/`
-- Modifying any code in `backend/app/services/schedule_cascade_service.rb`
-
-### Identifying Gantt-Related Work
-
-**These keywords trigger Bible reading requirement:**
-- gantt, schedule, cascade, predecessor, dependency
-- drag, flicker, lock, working days, task height
-- isLoadingData, isDragging, useRef flags
-- Company Settings (in context of schedule)
-
-### What You CANNOT Do (Without Reading Bible First)
-
-❌ **NEVER:**
-- Modify `DHtmlxGanttView.jsx` without reading Bible
-- Change timeout values (500ms, 5000ms) without reading Bible
-- Modify `schedule_cascade_service.rb` without reading Bible
-- "Optimize" or "simplify" Gantt code without reading Bible
-- Change useRef flag timing without reading Bible
-- Modify Protected Code Patterns
-
-### Documentation Maintenance Rules
-
-**When you discover a new rule (MUST/NEVER/ALWAYS):**
-1. Add to Bible (GANTT_SCHEDULE_RULES.md)
-2. Update version number
-3. Update timestamp
-4. Sync to frontend/public/
-
-**When you fix a bug:**
-1. Document in Lexicon (GANTT_BUGS_AND_FIXES.md) as BUG-XXX
-2. If bug creates a new RULE → Also add to Bible
-3. Update timestamp
-4. Sync to frontend/public/
-
-### File Sync (CRITICAL)
-
-After editing Bible or Lexicon, ALWAYS run:
 ```bash
-cp /Users/rob/Projects/trapid/GANTT_SCHEDULE_RULES.md \
-   /Users/rob/Projects/trapid/frontend/public/GANTT_SCHEDULE_RULES.md
+# Get Bible rules for a chapter (e.g., Chapter 9 for Gantt)
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=bible&chapter_number=9'
 
-cp /Users/rob/Projects/trapid/GANTT_BUGS_AND_FIXES.md \
-   /Users/rob/Projects/trapid/frontend/public/GANTT_BUGS_AND_FIXES.md
+# Get Lexicon entries (bug history) for a chapter
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=lexicon&chapter_number=9'
+
+# Get Teacher entries (implementation patterns) for a chapter
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=teacher&chapter_number=9'
 ```
 
-### Quick Reference: Rules vs Knowledge
+### When to Fetch Documentation
 
-**RULE (goes in Bible):**
+**ALWAYS fetch Bible rules when:**
+- User mentions a feature (Gantt, Xero, OneDrive, etc.)
+- Working on files related to a specific chapter
+- User reports a bug
+- Adding new functionality
+- Modifying existing code
+
+**Common triggers by chapter:**
+- **Chapter 9 (Gantt):** "Gantt", "Schedule Master", "cascade", "dependencies", DHtmlxGanttView.jsx, schedule_cascade_service.rb
+- **Chapter 15 (Xero):** "Xero", "accounting", "invoice", xero_api_client.rb
+- **Chapter 19 (UI/UX):** "table", "modal", "form", "dark mode", UI components
+- **Chapter 20 (Agents):** "agent", "automation", .claude/agents/
+
+### What You CANNOT Do (Without Fetching Bible First)
+
+❌ **NEVER:**
+- Modify feature code without fetching Bible rules for that chapter
+- Change values or patterns mentioned in Bible rules
+- Skip reading Protected Code Patterns
+- "Optimize" or "simplify" code without checking Bible first
+
+### Documentation Update Process
+
+**When you discover a new rule:**
+1. Go to Trapid app → Documentation page
+2. Add entry via UI (stores in `documentation_entries` table)
+3. Run export: `bin/rails trapid:export_bible` (or export_lexicon, export_teacher)
+4. Commit the updated markdown file
+
+**When you fix a bug:**
+1. Add Lexicon entry via Trapid UI (entry_type: bug)
+2. If bug creates a new RULE → Also add Bible entry
+3. Run export: `bin/rails trapid:export_lexicon`
+4. Commit the updated markdown file
+
+### API Endpoints
+
+**Base URL:** `https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries`
+
+**Filter by category:** `?category=bible` (or lexicon, teacher)
+**Filter by chapter:** `&chapter_number=9`
+**Filter by entry type:** `&entry_type=bug` (for Lexicon) or `&entry_type=MUST` (for Bible)
+
+### Quick Reference: What Goes Where
+
+**Bible (RULES):**
+- Entry types: MUST, NEVER, ALWAYS, PROTECTED, CONFIG, rule
 - "You MUST do X"
 - "NEVER do Y"
 - "ALWAYS check Z before W"
 
-**KNOWLEDGE (goes in Lexicon):**
-- "This is how X works"
-- "We discovered Y after 8 iterations"
-- "Here's why we chose Z"
+**Lexicon (KNOWLEDGE):**
+- Entry types: bug, architecture, test, performance, dev_note, common_issue
+- Bug discoveries and fixes
+- Architecture decisions
+- Performance optimizations
+
+**Teacher (HOW-TO):**
+- Entry types: component, feature, util, hook, integration, optimization
+- Full code examples
+- Step-by-step implementation guides
+- Best practices
 
 ---
 

@@ -1,15 +1,28 @@
-# Export Lexicon to Markdown
+# Export Documentation to Markdown
 
-Export the Lexicon database to TRAPID_LEXICON.md file.
+Export the database-backed documentation to markdown files.
 
-**Process:**
-1. Run `bundle exec rake trapid:export_lexicon`
-2. Review generated file at `TRAPID_DOCS/TRAPID_LEXICON.md`
-3. Commit to git if needed
+**Unified Documentation System:**
+All documentation is stored in the `documentation_entries` table and can be exported to markdown.
+
+**Export Commands:**
+```bash
+# Export Bible (RULES)
+bin/rails trapid:export_bible
+# Creates: TRAPID_DOCS/TRAPID_BIBLE.md
+
+# Export Lexicon (KNOWLEDGE)
+bin/rails trapid:export_lexicon
+# Creates: TRAPID_DOCS/TRAPID_LEXICON.md
+
+# Export Teacher (HOW-TO)
+bin/rails trapid:export_teacher
+# Creates: TRAPID_DOCS/TRAPID_TEACHER.md
+```
 
 **Or use the UI:**
 - Go to Documentation page
-- Click "📕 TRAPID Lexicon"
+- Click the category tab (📖 Bible, 📕 Lexicon, or 🔧 Teacher)
 - Click "Export" button
 
-This exports all bug history, architecture decisions, tests, and terminology from the database to markdown format.
+**Note:** Exports are for git version control and offline reference. The database API is always the source of truth.

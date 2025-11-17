@@ -15,27 +15,27 @@ import {
 } from '@heroicons/react/24/outline'
 
 const CHAPTER_NAMES = {
-  0: 'System-Wide Knowledge',
-  1: 'Authentication & Users',
-  2: 'System Administration',
-  3: 'Contacts & Relationships',
-  4: 'Price Books & Suppliers',
-  5: 'Jobs & Construction Management',
-  6: 'Estimates & Quoting',
-  7: 'AI Plan Review',
-  8: 'Purchase Orders',
-  9: 'Gantt & Schedule Master',
-  10: 'Project Tasks & Checklists',
-  11: 'Weather & Public Holidays',
-  12: 'OneDrive Integration',
-  13: 'Outlook/Email Integration',
-  14: 'Chat & Communications',
-  15: 'Xero Accounting Integration',
-  16: 'Payments & Financials',
-  17: 'Workflows & Automation',
-  18: 'Custom Tables & Formulas',
-  19: 'UI/UX Standards & Patterns',
-  20: 'Agent System & Automation'
+  1: 'Overview & System-Wide Rules',
+  2: 'Authentication & Users',
+  3: 'System Administration',
+  4: 'Contacts & Relationships',
+  5: 'Price Books & Suppliers',
+  6: 'Jobs & Construction Management',
+  7: 'Estimates & Quoting',
+  8: 'AI Plan Review',
+  9: 'Purchase Orders',
+  10: 'Gantt & Schedule Master',
+  11: 'Project Tasks & Checklists',
+  12: 'Weather & Public Holidays',
+  13: 'OneDrive Integration',
+  14: 'Outlook/Email Integration',
+  15: 'Chat & Communications',
+  16: 'Xero Accounting Integration',
+  17: 'Payments & Financials',
+  18: 'Workflows & Automation',
+  19: 'Custom Tables & Formulas',
+  20: 'UI/UX Standards & Patterns',
+  21: 'Agent System & Automation'
 }
 
 const STATUS_COLORS = {
@@ -63,7 +63,7 @@ const SEVERITY_COLORS = {
 const COLUMNS = [
   { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
   { key: 'expand', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
-  { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 150 },
+  { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200, tooltip: 'Chapter number and name' },
   { key: 'type', label: 'Type', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120 },
   { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 300 },
   { key: 'component', label: 'Component', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 180 },
@@ -573,6 +573,15 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
               {selectedRows.size} {selectedRows.size === 1 ? 'entry' : 'entries'} selected
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  alert('Lexicon edit functionality coming soon! This will allow you to edit selected entries.')
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <PencilIcon className="w-4 h-4" />
+                Edit Selected
+              </button>
               <button
                 onClick={handleBulkDelete}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"

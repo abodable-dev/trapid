@@ -36,11 +36,12 @@ module Api
         @entries = @entries.by_difficulty(params[:difficulty]) if params[:difficulty].present?
         @entries = @entries.search(params[:search]) if params[:search].present?
 
-        @entries = @entries.recent.limit(100)
+        # Order by chapter and section (Bible needs all entries, not just recent 100)
+        @entries = @entries.ordered
 
         render json: {
           success: true,
-          data: @entries.map { |entry| entry_json(entry) },
+          data: @entries.map { |entry| entry_json(entry, detailed: true) },
           total: @entries.count
         }
       end

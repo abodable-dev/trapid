@@ -398,6 +398,7 @@ export default function AgentShortcutsTab() {
 
       await api.post('/api/v1/documentation_entries', {
         documentation_entry: {
+          category: 'lexicon',
           chapter_number: 20,
           chapter_name: 'Agent System & Automation',
           component: 'Claude Code Commands',
@@ -429,6 +430,7 @@ export default function AgentShortcutsTab() {
 
       await api.post('/api/v1/documentation_entries', {
         documentation_entry: {
+          category: 'lexicon',
           chapter_number: 20,
           chapter_name: 'Agent System & Automation',
           component: 'Claude Code Slang',

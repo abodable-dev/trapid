@@ -1,13 +1,16 @@
 # Work on Feature by Chapter
 
-Work on a specific feature by reading the relevant Bible chapter first.
+Work on a specific feature by fetching the relevant documentation from the unified API.
 
 **Before working on ANY feature:**
 1. Find chapter number from Chapter Guide
-2. Read Bible chapter (RULES)
-3. Read Lexicon chapter (bug history)
-4. Follow all rules without exception
-5. Proceed with work
+2. Fetch Bible rules (MUST/NEVER/ALWAYS) via API: `?category=bible&chapter_number=X`
+3. Fetch Lexicon entries (bug history) via API: `?category=lexicon&chapter_number=X`
+4. Fetch Teacher entries (implementation patterns) via API: `?category=teacher&chapter_number=X`
+5. Follow all rules without exception
+6. Proceed with work
+
+**API Base URL:** `https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries`
 
 **Common chapters:**
 - Chapter 9: Gantt & Schedule Master
@@ -16,3 +19,5 @@ Work on a specific feature by reading the relevant Bible chapter first.
 - Chapter 20: Agent System
 
 **Usage:** "Work on Chapter 9 (Gantt)" or "Read Chapter 15 rules"
+
+**Note:** All documentation is now database-backed. Always fetch from the API to get real-time, up-to-date information.
