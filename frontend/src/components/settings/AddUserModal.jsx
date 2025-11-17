@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
@@ -13,15 +13,25 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
   })
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState([])
+  const [roles, setRoles] = useState([])
 
-  const roles = [
-    { value: 'user', label: 'User', description: 'Basic access' },
-    { value: 'builder', label: 'Builder', description: 'Can view builder tasks' },
-    { value: 'supervisor', label: 'Supervisor', description: 'Can view supervisor tasks' },
-    { value: 'estimator', label: 'Estimator', description: 'Can edit schedules' },
-    { value: 'product_owner', label: 'Product Owner', description: 'Can create templates and edit schedules' },
-    { value: 'admin', label: 'Admin', description: 'Full system access' }
-  ]
+  // Fetch roles from API (RULE #1.13 - Single Source of Truth)
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await api.get('/roles')
+        setRoles(response.data || [])
+      } catch (error) {
+        console.error('Failed to fetch roles:', error)
+        // Fallback to default roles
+        setRoles([
+          { value: 'user', label: 'User' },
+          { value: 'admin', label: 'Admin' }
+        ])
+      }
+    }
+    fetchRoles()
+  }, [])
 
   const assignableRoles = [
     { value: '', label: 'None', description: 'No group assignment' },

@@ -1,7 +1,7 @@
 # TRAPID BIBLE - Development Rules
 
 **Version:** 2.0.0
-**Last Updated:** 2025-11-17 16:49 AEST
+**Last Updated:** 2025-11-17 21:47 AEST
 **Authority Level:** ABSOLUTE
 **Audience:** Claude Code + Human Developers
 **Source of Truth:** Database table `bible_rules` (this file is auto-generated)
@@ -45,7 +45,7 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch1 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-18 02:29 AEST
+**Last Updated:** 2025-11-18 07:42 AEST
 
 ## RULE #1.1: Documentation Maintenance
 
@@ -65,6 +65,179 @@ When to Update Bible:
 
 
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
+
+---
+
+## RULE #1.10: Section Numbers Must Be Unique Within Chapter + Category
+
+✅ Must
+
+✅ **MUST ensure section numbers are unique within each chapter + category combination:**
+- Each section number can only be used ONCE per chapter per category
+- Bible, Teacher, and Lexicon each have independent section numbering
+- Example: Bible RULE #21.10, Teacher §21.10, and Lexicon §21.10 can all coexist
+
+❌ **NEVER reuse section numbers within same chapter + category:**
+- Invalid: Two Bible entries both using RULE #21.10 (same chapter, same category)
+- Invalid: Two Teacher entries both using §0.2 (same chapter, same category)
+
+✅ **VALID - different categories can share section numbers:**
+- Bible RULE #21.10 AND Teacher §21.10 (different categories) ✅
+- Bible RULE #0.2 AND Teacher §0.2 (different categories) ✅
+
+**Why this matters:**
+- Each Trinity category has its own documentation structure
+- Section numbers reference entries within their own category
+- Database constraints should enforce uniqueness on (chapter_number, section_number, category)
+
+**How to implement:**
+- Add unique index: CREATE UNIQUE INDEX idx_trinity_unique_section ON trinity(chapter_number, section_number, category)
+- Model validation: validates :section_number, uniqueness: { scope: [:chapter_number, :category] }
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §0.4](TRAPID_TEACHER.md#04-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 0](TRAPID_LEXICON.md)
+
+
+---
+
+## RULE #1.11: Chapter Assignment - Where to Place New Rules
+
+✅ Must
+
+✅ **MUST place rules in the correct chapter:**
+
+**Chapter 1: System-Wide Rules**
+- Trinity documentation workflow and meta-rules
+- Trinity entry types and section numbering
+- Code quality standards
+- API response formats
+- Database migration rules
+- Documentation maintenance
+- General application patterns
+- Example: RULE #1.8 (Always Fetch Trinity Before Modifying Code)
+- Example: RULE #1.9 (Section Numbers Must Be Purely Numeric)
+
+**Chapters 2-21: Feature-Specific Rules**
+- Chapter 2: Authentication & Users
+- Chapter 3: System Administration
+- Chapter 4: Contacts & Relationships
+- Chapter 5: Price Books & Suppliers
+- Chapter 6: Jobs & Construction Management
+- Chapter 7: Estimates & Quoting
+- Chapter 8: AI Plan Review
+- Chapter 9: Purchase Orders
+- Chapter 10: Gantt & Schedule Master
+- Chapter 11: Project Tasks & Checklists
+- Chapter 12: Weather & Public Holidays
+- Chapter 13: OneDrive Integration
+- Chapter 14: Outlook/Email Integration
+- Chapter 15: Chat & Communications
+- Chapter 16: Xero Accounting Integration
+- Chapter 17: Payments & Financials
+- Chapter 18: Workflows & Automation
+- Chapter 19: Custom Tables & Formulas
+- Chapter 20: UI/UX Standards & Patterns
+- Chapter 21: Agent System & Automation
+
+❌ **NEVER:**
+- Create Chapter 0 (all system-wide rules go in Chapter 1)
+- Put feature-specific rules in Chapter 1
+- Create rules in wrong feature chapters (e.g., Gantt rules in Chapter 4)
+
+**How to decide:**
+1. Is this a system-wide rule or Trinity meta-rule? → Chapter 1
+2. Is this feature-specific? → Find matching chapter (2-21)
+3. Unsure? Ask which chapter it belongs in
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §1.11](TRAPID_TEACHER.md#111-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
+
+
+---
+
+## RULE #1.12: Never Guess - Always Ask
+
+❌ Never
+
+❌ **NEVER guess what the user wants:**
+- When user asks "anything else we should remove" → Ask specific clarifying questions
+- When user says "can we take this out" → Ask which specific parts they mean
+- When given vague requests → List options and ask user to choose
+- When uncertain about intent → Present alternatives and ask for confirmation
+
+✅ **ALWAYS ask explicitly:**
+- "Would you like me to remove X?"
+- "Do you mean A, B, or C?"
+- "Should I proceed with option 1 or option 2?"
+- "Which of these would you prefer?"
+
+**Why this matters:**
+User gave feedback "please dont guess" when Claude assumed user wanted to remove a line without asking first. Guessing wastes user time when Claude guesses wrong.
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §0.99](TRAPID_TEACHER.md#099-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 0](TRAPID_LEXICON.md)
+
+
+---
+
+## RULE #1.13: Single Source of Truth - Eliminate Data Duplication
+
+✅ Must
+
+✅ **MUST identify and eliminate multiple sources of truth:**
+
+**The Problem:**
+When the same data exists in multiple places, they inevitably drift out of sync, causing:
+- Conflicting information
+- Unclear which source is authoritative
+- Bugs when one source is updated but not others
+- Maintenance burden keeping everything synchronized
+
+**How to Identify:**
+Look for the same information stored in:
+- Database tables AND configuration files
+- Environment variables AND database records
+- Markdown files AND database tables
+- Frontend constants AND backend database
+- Multiple database tables with overlapping data
+
+**MUST Fix Pattern:**
+1. **Identify the single source of truth** (usually database)
+2. **Make other locations read from the source** (via API, query, import)
+3. **Remove duplication** - delete redundant copies
+4. **Document the authority** - which source is canonical
+
+**Example - General Pattern:**
+❌ **BAD (Multiple sources of truth):**
+- User roles in database AND hardcoded in frontend
+- Configuration in .env AND database settings table
+- Feature flags in code AND database
+
+✅ **GOOD (Single source of truth):**
+- Database is the ONLY source of truth
+- Frontend reads from API (not hardcoded)
+- Code imports from authoritative source
+
+**When duplication is acceptable:**
+- Performance caching (with clear expiry/invalidation)
+- Offline/backup copies (with sync mechanism)
+- Derived/computed data (with clear calculation source)
+
+**Document it:**
+Always add comment showing which source is authoritative:
+```javascript
+// Source of truth: database settings table
+// This component reads from API /api/v1/settings
+```
+
+❌ **NEVER:**
+- Create duplicate data without clear authority
+- Assume manual sync will stay consistent
+- Store same data in multiple writeable locations
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §1.13](TRAPID_TEACHER.md#113-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
+
 
 ---
 
@@ -232,6 +405,63 @@ bin/rails trapid:import_teacher
 - Use /trinity-sync-validator agent to verify sync
 - Trinity table is ALWAYS authoritative
 - Markdown exports are snapshots for git history
+
+
+---
+
+## RULE #1.8: Always Fetch Trinity Before Modifying Code
+
+🔄 Always
+
+✅ **ALWAYS fetch Trinity Bible/Lexicon/Teacher when:**
+- User mentions a feature name
+- Working on files related to a specific chapter
+- User reports a bug
+- Adding new functionality
+- Modifying existing code
+
+❌ **NEVER:**
+- Modify feature code without fetching Bible rules for that chapter
+- Change values or patterns mentioned in Bible rules
+- Skip reading Protected Code Patterns
+- "Optimize" or "simplify" code without checking Bible first
+
+**Chapter → Feature mapping:**
+- Chapter 7: Gantt Chart, Schedule Master, cascade, dependencies
+- Chapter 15: Xero, accounting, invoice sync
+- Chapter 19: Table Pattern, UI components, modals, forms
+- Chapter 20: UI/UX Standards & Patterns
+- Chapter 21: Agent System & Automation
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §0.1](TRAPID_TEACHER.md#01-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 0](TRAPID_LEXICON.md)
+
+
+---
+
+## RULE #1.9: Section Numbers Must Be Purely Numeric
+
+✅ Must
+
+✅ **MUST use only digits and dots in section numbers:**
+- Valid: 0.1, 19.11, 21.9
+- Valid: Single decimal point only (X.Y format)
+
+❌ **NEVER use letters or suffixes in section numbers:**
+- Invalid: 0.1A, 19.11A, 21.9a
+- Invalid: 0.1-beta, 19.11v2
+- Invalid: Any non-numeric characters
+
+**Why this matters:**
+Section numbers are used for sorting, filtering, and API queries. Adding letters breaks numeric sorting and makes API filtering unpredictable.
+
+**If you need to add content between existing sections:**
+- Option 1: Renumber subsequent sections (e.g., insert 19.6, renumber old 19.6 → 19.7, old 19.7 → 19.8)
+- Option 2: Use decimal increments (19.6, then 19.7, NOT 19.6A)
+- Option 3: Add as next available number and reorder manually
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §0.3](TRAPID_TEACHER.md#03-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 0](TRAPID_LEXICON.md)
 
 
 ---
@@ -3882,25 +4112,15 @@ bin/rails trapid:import_teacher
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch20 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 15:28 AEST
+**Last Updated:** 2025-11-17 20:54 AEST
 
-## RULE #20.1: Standard Table Component Usage
+## RULE #20.1: Checkbox Column Must Be First, Locked, Minimal Size
 
 ✅ Must
 
-✅ MUST
+The first column MUST be a checkbox for row selection with locked position and minimal size.
 
-✅ **MUST ask user before creating ANY table:**
-
-❌ **NEVER:**
-- Create table without asking user
-- Choose on behalf of user
-- Create "basic" custom table (use DataTable instead)
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.1](TRAPID_TEACHER.md#191-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
+Width: 32px (minimal size to fit checkbox). Padding: px-1 (minimal horizontal padding). Non-resizable (locked size). Non-reorderable (always first). Centered alignment (header and cells).
 
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
@@ -3928,27 +4148,6 @@ bin/rails trapid:import_teacher
 ✅ MUST
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.11](TRAPID_TEACHER.md#1911-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
-
-## RULE #20.11A: Table Toolbar Layout Standards (REQUIRED)
-
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER:**
-- Put search on right side
-- Use different button heights
-- Stack toolbar vertically
-- Add gap between search and first button
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.11A](TRAPID_TEACHER.md#1911a-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
@@ -4081,44 +4280,25 @@ bin/rails trapid:import_teacher
 
 ---
 
-## RULE #20.18: Testing Considerations
+## RULE #20.18: Table Container Must Have Visible Borders On All Sides
 
 ✅ Must
 
-✅ MUST
+Table container MUST have visible borders on all four sides (top, right, bottom, left).
 
-✅ **MUST verify:**
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.18](TRAPID_TEACHER.md#1918-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
+Full border on all four sides of table container. Border color: gray-200 (dark: gray-700). Horizontal margin (mx-4) to align with search bar above. Borders frame the entire table content including top and bottom. Creates a complete bordered box around the table.
 
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
-## RULE #20.19: URL State Management
+## RULE #20.19: Native Browser Scrollbars Styled With Blue Theme
 
 ✅ Must
 
-✅ MUST
+Native browser scrollbars MUST be styled with blue theme matching the header color.
 
-✅ **MUST sync URL for:**
-- Active tab selection (always)
-- Filter/search queries (optional, for sharing)
-- Pagination state
-- Sort state (optional)
-
-❌ **NEVER:**
-- Store tab state only in component
-- Break browser back button
-- Use push for every state change
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.19](TRAPID_TEACHER.md#1919-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
+Light mode: Track #E0E7FF (light blue), Thumb #2563EB (blue-600 matching header), Hover #1D4ED8. Dark mode: Track #1E293B (dark slate), Thumb #1E40AF (blue-800), Hover #1E3A8A. Removed sticky horizontal scrollbar due to duplicate display issue.
 
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
@@ -4175,47 +4355,25 @@ bin/rails trapid:import_teacher
 
 ---
 
-## RULE #20.22: Modal & Drawer Standards
+## RULE #20.22: Table headers MUST provide visual cursor feedback
 
 ✅ Must
 
-✅ MUST
+All interactive table header elements must display appropriate cursor styles to indicate their functionality.
 
-✅ **MUST include:**
-- Close button (top-right)
-- Dark mode support
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.22](TRAPID_TEACHER.md#1922-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
+Column headers that support resizing must show col-resize cursor. Drag handles (three-dot icons) must show grab cursor when hovering and grabbing when dragging. Sortable headers must show pointer cursor.
 
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
-## RULE #20.23: Toast Notification Standards
+## RULE #20.23: Table headers and content MUST use differentiated font sizes
 
 ✅ Must
 
-✅ MUST
+Table headers must use 18px bold font. Table rows must use 14px regular font. Both must use system font stack for native appearance.
 
-✅ **MUST use Toast for:**
-- Success confirmations
-- Error messages
-- Warning notifications
-- Info messages
-
-❌ **NEVER:**
-- Show technical errors to users
-- Use toasts for critical errors (use modal)
-- Stack multiple toasts
-- Show longer than 5 seconds
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.23](TRAPID_TEACHER.md#1923-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
+Header font: 18px bold weight for visual hierarchy and emphasis. Row font: 14px regular weight for optimal data density and readability. Font family must use system font stack: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif. Apply styles inline for maximum specificity.
 
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
@@ -4236,16 +4394,13 @@ bin/rails trapid:import_teacher
 
 ---
 
-## RULE #20.25: Button & Action Standards
+## RULE #20.25: Content and Title columns MUST be clickable to view full details
 
 ✅ Must
 
-✅ MUST
+Only the Content and Title columns should open a modal when clicked. Other columns (Type, Chapter, Section, Status, Severity, Actions, Select) must not trigger the modal.
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.25](TRAPID_TEACHER.md#1925-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
+Modal opens ONLY when clicking Content or Title cells - these are the columns with truncated data. Click handlers with stopPropagation prevent modal on other columns. Cursor pointer only appears on Content and Title columns. Select column checkboxes and Action buttons remain functional without opening modal.
 
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
@@ -4538,6 +4693,26 @@ bin/rails trapid:import_teacher
 
 ---
 
+## RULE #20.37: Column Visibility Toggle (REQUIRED)
+
+❌ Never
+
+❌ NEVER
+
+❌ **NEVER:**
+- Allow hiding ALL columns
+- Hide actions column
+- Forget localStorage persistence
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.5A](TRAPID_TEACHER.md#195a-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
 ## RULE #20.38: Cascading Filter Pattern
 
 ✅ Must
@@ -4582,6 +4757,21 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
+## RULE #20.39: Column Width Persistence (REQUIRED)
+
+✅ Must
+
+✅ MUST
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.5B](TRAPID_TEACHER.md#195b-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
 ## RULE #20.4: Column Resizing Standards
 
 ✅ Must
@@ -4597,6 +4787,65 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
+## RULE #20.40: Table Toolbar Layout Standards (REQUIRED)
+
+❌ Never
+
+❌ NEVER
+
+❌ **NEVER:**
+- Put search on right side
+- Use different button heights
+- Stack toolbar vertically
+- Add gap between search and first button
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.11A](TRAPID_TEACHER.md#1911a-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+## RULE #20.41: All Custom Action Buttons MUST Use h-[42px] Alignment
+
+🔄 Always
+
+ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MUST use h-[42px] for perfect toolbar alignment with search bar and Columns button
+
+
+---
+
+## RULE #20.42: No Actions Column - Use Inline Bulk Actions Instead
+
+❌ Never
+
+❌ NEVER
+
+❌ **NEVER:**
+- Add an Actions column to tables with Edit/Delete buttons per row
+- Place action buttons in the rightmost column
+- Duplicate edit/delete functionality in both row actions and bulk actions
+- Show Delete button immediately when rows are selected
+
+✅ **ALWAYS:**
+- Use inline bulk action buttons that appear when rows are selected
+- Position bulk actions next to Columns button (h-[42px] alignment)
+- Implement Delete-after-Edit safety pattern
+- Hide Delete button until Edit is clicked first
+
+**Rationale:**
+- Cleaner table layout without extra column
+- Prevents accidental deletions (safety pattern)
+- Encourages batch operations over individual row actions
+- Consistent button height alignment (h-[42px])
+
+**Reference:** TrinityTableView.jsx removed Actions column, added inline bulk buttons
+
+
+---
+
 ## RULE #20.5: Column Reordering Standards
 
 ❌ Never
@@ -4609,41 +4858,6 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 - Forget `e.stopPropagation()` on drag handle
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.5](TRAPID_TEACHER.md#195-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
-
-## RULE #20.5A: Column Visibility Toggle (REQUIRED)
-
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER:**
-- Allow hiding ALL columns
-- Hide actions column
-- Forget localStorage persistence
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.5A](TRAPID_TEACHER.md#195a-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
-
-## RULE #20.5B: Column Width Persistence (REQUIRED)
-
-✅ Must
-
-✅ MUST
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.5B](TRAPID_TEACHER.md#195b-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
@@ -4750,7 +4964,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch21 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 21:17 AEST
 
 ## RULE #21.1: Agent Definitions Are Database-Driven
 
@@ -4777,6 +4991,229 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 ---
 
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
+
+---
+
+## RULE #21.10: Production Bug Hunter Agent
+
+📚 Reference
+
+**Triggers:** /bug-hunter, bug hunter
+
+**What it does:**
+1. Checks Heroku production logs for errors and exceptions
+2. Searches Lexicon for similar bugs previously encountered
+3. Identifies root cause by analyzing stack traces
+4. Reproduces bug locally if possible
+5. Implements fix following Bible rules and patterns
+6. Runs diagnostic tests to verify fix works
+7. Documents bug and solution in Lexicon with bug_fix entry
+8. Provides deployment recommendation
+
+
+---
+
+## RULE #21.11: Planning Collaborator Agent
+
+📚 Reference
+
+**Triggers:** /plan, planning
+
+**What it does:**
+1. Analyzes feature request and breaks down into tasks
+2. Reads relevant Bible chapters for architecture guidance
+3. Searches Lexicon for similar features and patterns
+4. Identifies affected components (backend/frontend/database)
+5. Creates step-by-step implementation plan
+6. Estimates complexity and potential challenges
+7. Provides recommendations for testing strategy
+8. Suggests Bible chapter updates if new patterns emerge
+
+
+---
+
+## RULE #21.12: Trinity Sync Validator Agent
+
+📚 Reference
+
+**Triggers:** /trinity, trinity sync
+
+**What it does:**
+1. Compares Trinity Bible database records vs markdown files
+2. Checks Lexicon database vs markdown file consistency
+3. Identifies missing, duplicate, or outdated entries
+4. Validates chapter numbers and entry_types are correct
+5. Checks for orphaned records in database
+6. Runs export_bible and export_lexicon if needed
+7. Reports sync status and any discrepancies found
+
+
+---
+
+## RULE #21.13: Backend Developer Agent
+
+📚 Reference
+
+**Triggers:** /backend, backend dev
+
+**What it does:**
+1. Reads Trinity Bible chapters for backend architecture rules
+2. Searches Lexicon for known backend bugs and API patterns
+3. Analyzes Rails controllers, models, and database migrations
+4. Implements API endpoints following RESTful conventions
+5. Runs backend tests (RSpec) and fixes any failures
+6. Updates database schema and handles migrations
+7. Documents changes in Lexicon with dev_note entries
+
+
+---
+
+## RULE #21.14: Run All Agents in Parallel
+
+📚 Reference
+
+**Triggers:** /all-agents, /ag
+
+**What it does:**
+Launches Backend Developer, Frontend Developer, Production Bug Hunter, Gantt Bug Hunter, Deploy Manager, Planning Collaborator, Trinity Sync Validator, and UI Compliance Auditor **simultaneously**.
+
+Each agent runs independently and reports back with their findings. Use this for comprehensive project health checks and multi-area debugging.
+
+
+---
+
+## RULE #21.15: UI Compliance Auditor Agent
+
+📚 Reference
+
+**Triggers:** /ui-audit, ui compliance
+
+**What it does:**
+1. Reads Trinity Bible Chapter 20 (UI/UX Standards & Patterns rules)
+2. Reads Trinity Lexicon Chapter 20 (known UI/UX bugs and issues)
+3. Reads Trinity Teacher Chapter 20 (UI/UX implementation examples)
+4. Analyzes all Chapter 20 requirements across all three Trinity books
+5. Scans all React components in frontend/src/pages and /components
+6. Checks for standard table component usage and clear buttons
+7. Identifies violations, missing features, and non-compliant patterns
+8. Creates comprehensive TodoWrite list with specific actionable tasks
+9. Prioritizes tasks by severity (critical, high, medium, low)
+10. Provides step-by-step fix instructions for each violation
+11. Generates detailed compliance report with before/after examples
+12. Documents findings in Lexicon for future reference
+
+
+---
+
+## RULE #21.16: Frontend Developer Agent
+
+📚 Reference
+
+**Triggers:** /frontend, frontend dev
+
+**What it does:**
+1. Reads Trinity Bible RULE #19 (Table Pattern) and UI chapters
+2. Searches Lexicon for frontend component patterns and known UI bugs
+3. Analyzes React components and identifies compliance issues
+4. Implements/updates components following Table Pattern rules
+5. Ensures dark mode support and responsive design
+6. Runs npm build and fixes any ESLint/TypeScript errors
+7. Documents component changes and patterns in Lexicon
+
+
+---
+
+## RULE #21.17: Deploy Manager Agent
+
+📚 Reference
+
+**Triggers:** /deploy, deployment
+
+**What it does:**
+1. Runs full test suite (backend + frontend) to ensure stability
+2. Checks git status and creates clean commit if needed
+3. Uses git subtree to split backend directory for Heroku
+4. Pushes to Heroku with force flag to deploy backend
+5. Monitors Heroku logs during deployment
+6. Runs database migrations on production if needed
+7. Verifies deployment health with API health checks
+8. Reports deployment status and any issues encountered
+
+
+---
+
+## RULE #21.18: Gantt Bug Hunter Agent
+
+📚 Reference
+
+**Triggers:** /gantt, gantt bug hunter
+
+**What it does:**
+1. Reads Trinity Bible Chapter 7 (Gantt Chart rules)
+2. Searches Lexicon for Gantt-specific bugs and patterns
+3. Tests drag-and-drop functionality and cascade events
+4. Validates timezone handling (Brisbane/Australia/Brisbane)
+5. Checks working days enforcement and public holidays
+6. Tests lock state and concurrent editing scenarios
+7. Runs Gantt-specific diagnostic tests
+8. Documents any Gantt bugs found in Lexicon
+
+
+---
+
+## RULE #21.19: Modifying Existing Agents - Complete Checklist
+
+📖 Rule
+
+✅ MUST UPDATE (3 locations - Database is source of truth):
+
+**NEW APPROACH (Following RULE #1.13 - Single Source of Truth):**
+
+**1. Database (Trinity - ONLY source of truth)**
+```ruby
+# Update the agent in Trinity database
+Trinity.find_by(
+  category: 'teacher',
+  chapter_number: 21,
+  section_number: '21.15'
+).update!(
+  title: 'Updated Agent Name',
+  description: 'Full markdown content for agent...'
+)
+```
+
+**2. Export to .md file**
+```bash
+# Generate .claude/agents/*.md from database
+cd backend && bundle exec rake agents:export_definitions
+```
+
+**3. Trinity Bible (Agent behavior summary)**
+```ruby
+# Update high-level description in Bible
+Trinity.find_by(
+  category: 'bible',
+  chapter_number: 21,
+  title: 'Agent Name'
+).update!(
+  description: 'High-level what it does...'
+)
+```
+
+✅ **BENEFITS:**
+- Single source of truth (Trinity database)
+- .md files auto-generated from database
+- No manual sync needed
+- Frontend can read from API
+
+❌ **NEVER:**
+- Manually edit .claude/agents/*.md files
+- Keep agent data in multiple places
+- Update only one location
+
+**📖 Implementation:** See Teacher §21.19
+**📕 Bug History:** See Lexicon Chapter 21
+
 
 ---
 

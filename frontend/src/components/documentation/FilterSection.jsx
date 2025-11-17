@@ -1,31 +1,75 @@
-export default function FilterSection({ filters, onFilterChange, stats }) {
-  const chapters = Array.from({ length: 21 }, (_, i) => i)
+import { useState, useEffect } from 'react'
+import { api } from '../../api'
 
+export default function FilterSection({ filters, onFilterChange, stats }) {
+  const [constants, setConstants] = useState(null)
+  const chapters = Array.from({ length: 21 }, (_, i) => i + 1) // Changed from 0-20 to 1-21 (no Chapter 0)
+
+  // Fetch Trinity constants from API (RULE #1.13 - Single Source of Truth)
+  useEffect(() => {
+    const fetchConstants = async () => {
+      try {
+        const response = await api.get('/trinity/constants')
+        setConstants(response.data)
+      } catch (error) {
+        console.error('Failed to fetch Trinity constants:', error)
+      }
+    }
+    fetchConstants()
+  }, [])
+
+  // Icon mappings for UI presentation (not stored in DB - UI concern only)
+  const typeIcons = {
+    bug: '🐛',
+    architecture: '🏗️',
+    test: '📊',
+    performance: '📈',
+    dev_note: '🎓',
+    common_issue: '🔍',
+    terminology: '📖'
+  }
+
+  const statusIcons = {
+    open: '🔴',
+    fixed: '✅',
+    monitoring: '🔄',
+    by_design: '⚠️'
+  }
+
+  const severityIcons = {
+    critical: '🔴',
+    high: '🟠',
+    medium: '🟡',
+    low: '🟢'
+  }
+
+  // Build options from API constants + UI icons + stats counts
   const typeOptions = [
     { value: 'all', label: 'All Types', icon: '📚', count: stats?.total_bugs || 0 },
-    { value: 'bug', label: 'Bugs', icon: '🐛', count: stats?.by_type?.bug || 0 },
-    { value: 'architecture', label: 'Architecture', icon: '🏗️', count: stats?.by_type?.architecture || 0 },
-    { value: 'test', label: 'Tests', icon: '📊', count: stats?.by_type?.test || 0 },
-    { value: 'performance', label: 'Performance', icon: '📈', count: stats?.by_type?.performance || 0 },
-    { value: 'dev_note', label: 'Dev Notes', icon: '🎓', count: stats?.by_type?.dev_note || 0 },
-    { value: 'common_issue', label: 'Common Issues', icon: '🔍', count: stats?.by_type?.common_issue || 0 },
-    { value: 'terminology', label: 'Terminology', icon: '📖', count: stats?.by_type?.terminology || 0 }
+    ...(constants?.lexicon_types || []).map(type => ({
+      value: type,
+      label: type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+      icon: typeIcons[type] || '📝',
+      count: stats?.by_type?.[type] || 0
+    }))
   ]
 
   const statusOptions = [
     { value: 'all', label: 'All Status', icon: '⚡' },
-    { value: 'open', label: 'Active', icon: '🔴' },
-    { value: 'fixed', label: 'Resolved', icon: '✅' },
-    { value: 'monitoring', label: 'Monitoring', icon: '🔄' },
-    { value: 'by_design', label: 'By Design', icon: '⚠️' }
+    ...(constants?.statuses || []).map(status => ({
+      value: status,
+      label: status.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+      icon: statusIcons[status] || '⚪'
+    }))
   ]
 
   const severityOptions = [
     { value: 'all', label: 'All Severity', icon: '🔥' },
-    { value: 'critical', label: 'Critical', icon: '🔴' },
-    { value: 'high', label: 'High', icon: '🟠' },
-    { value: 'medium', label: 'Medium', icon: '🟡' },
-    { value: 'low', label: 'Low', icon: '🟢' }
+    ...(constants?.severities || []).map(severity => ({
+      value: severity,
+      label: severity.charAt(0).toUpperCase() + severity.slice(1),
+      icon: severityIcons[severity] || '⚪'
+    }))
   ]
 
   const FilterGroup = ({ title, options, filterKey, currentValue }) => (

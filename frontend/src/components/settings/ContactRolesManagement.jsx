@@ -4,13 +4,6 @@ import { PlusIcon, PencilIcon, TrashIcon, CheckIcon, XMarkIcon } from '@heroicon
 import { api } from '../../api'
 import TrinityTableView from '../documentation/TrinityTableView'
 
-const CONTACT_TYPES = [
-  { value: 'customer', label: 'Customer', tabLabel: 'Customer' },
-  { value: 'supplier', label: 'Supplier', tabLabel: 'Supplier' },
-  { value: 'sales', label: 'Sales', tabLabel: 'Sales' },
-  { value: 'land_agent', label: 'Land Agent', tabLabel: 'Land Agent' }
-]
-
 export default function ContactRolesManagement() {
   const [roles, setRoles] = useState([])
   const [loading, setLoading] = useState(true)
@@ -19,6 +12,25 @@ export default function ContactRolesManagement() {
   const [newRoleTypes, setNewRoleTypes] = useState([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedTabIndex, setSelectedTabIndex] = useState(0)
+  const [contactTypes, setContactTypes] = useState([])
+
+  // Fetch contact types from API (RULE #1.13 - Single Source of Truth)
+  useEffect(() => {
+    const fetchContactTypes = async () => {
+      try {
+        const response = await api.get('/contact_types')
+        setContactTypes(response.data || [])
+      } catch (error) {
+        console.error('Failed to fetch contact types:', error)
+        // Fallback to hardcoded types
+        setContactTypes([
+          { value: 'customer', label: 'Customer', tabLabel: 'Customer' },
+          { value: 'supplier', label: 'Supplier', tabLabel: 'Supplier' }
+        ])
+      }
+    }
+    fetchContactTypes()
+  }, [])
 
   useEffect(() => {
     fetchRoles()
@@ -40,7 +52,7 @@ export default function ContactRolesManagement() {
           : role.contact_types.join(', '),
         description: (!role.contact_types || role.contact_types.length === 0)
           ? 'Universal (All Types)'
-          : role.contact_types.map(t => CONTACT_TYPES.find(ct => ct.value === t)?.label).join(', '),
+          : role.contact_types.map(t => contactTypes.find(ct => ct.value === t)?.label).join(', '),
         status: role.active ? 'active' : 'inactive',
         _original: role // Keep original for operations
       }))
@@ -77,7 +89,7 @@ export default function ContactRolesManagement() {
           : response.contact_types.join(', '),
         description: (!response.contact_types || response.contact_types.length === 0)
           ? 'Universal (All Types)'
-          : response.contact_types.map(t => CONTACT_TYPES.find(ct => ct.value === t)?.label).join(', '),
+          : response.contact_types.map(t => contactTypes.find(ct => ct.value === t)?.label).join(', '),
         status: response.active ? 'active' : 'inactive',
         _original: response
       }
@@ -94,7 +106,7 @@ export default function ContactRolesManagement() {
 
   const handleOpenAddForm = () => {
     // Pre-select the current tab's contact type
-    const currentContactType = CONTACT_TYPES[selectedTabIndex].value
+    const currentContactType = contactTypes[selectedTabIndex]?.value
     setNewRoleTypes(currentContactType ? [currentContactType] : [])
     setShowAddForm(true)
   }
@@ -229,7 +241,7 @@ export default function ContactRolesManagement() {
       </div>
 
       <TabList className="flex space-x-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 mb-6">
-        {CONTACT_TYPES.map((type, index) => {
+        {contactTypes.map((type, index) => {
           const count = getFilteredRoles(type.value).length
           return (
             <Tab
@@ -263,7 +275,7 @@ export default function ContactRolesManagement() {
       </TabList>
 
       <TabPanels>
-        {CONTACT_TYPES.map((type) => (
+        {contactTypes.map((type) => (
           <TabPanel key={type.value || 'shared'}>
             {renderRolesTable(type.value)}
           </TabPanel>
@@ -295,7 +307,7 @@ export default function ContactRolesManagement() {
                 Contact Types (leave empty for universal role)
               </label>
               <div className="space-y-2">
-                {CONTACT_TYPES.map((type) => (
+                {contactTypes.map((type) => (
                   <label key={type.value} className="flex items-center gap-2">
                     <input
                       type="checkbox"

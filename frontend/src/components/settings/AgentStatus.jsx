@@ -98,7 +98,8 @@ export default function AgentStatus() {
   const fetchAgentStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/v1/agents/status');
+      // RULE #1.13 - Single Source of Truth: Fetch all agent data from API
+      const response = await fetch('/api/v1/agents');
       if (!response.ok) throw new Error('Failed to fetch agent status');
       const data = await response.json();
       setAgentData(data);
@@ -127,43 +128,18 @@ export default function AgentStatus() {
     return `${date}\nby ${currentUser || 'System'}`;
   };
 
-  const getAgentIcon = (agentName) => {
-    const icons = {
-      'backend-developer': '🔧',
-      'frontend-developer': '🎨',
-      'production-bug-hunter': '🔍',
-      'deploy-manager': '🚀',
-      'planning-collaborator': '📋',
-      'gantt-bug-hunter': '🐛',
-      'ui-compliance-auditor': '✅'
-    };
-    return icons[agentName] || '🤖';
+  // RULE #1.13 - Single Source of Truth: Data comes from API, not hardcoded
+  // These functions now just pass through the data from the agent object
+  const getAgentIcon = (agent) => {
+    return agent.icon || '🤖';
   };
 
-  const getAgentDisplayName = (agentName) => {
-    const names = {
-      'backend-developer': 'Backend Developer',
-      'frontend-developer': 'Frontend Developer',
-      'production-bug-hunter': 'Production Bug Hunter',
-      'deploy-manager': 'Deploy Manager',
-      'planning-collaborator': 'Planning Collaborator',
-      'gantt-bug-hunter': 'Gantt Bug Hunter',
-      'ui-compliance-auditor': 'UI Compliance Auditor'
-    };
-    return names[agentName] || agentName;
+  const getAgentDisplayName = (agent) => {
+    return agent.name || agent.agent_id;
   };
 
-  const getAgentDescription = (agentName) => {
-    const descriptions = {
-      'backend-developer': 'Handles backend development tasks, API endpoints, database migrations, and Rails code',
-      'frontend-developer': 'Manages React components, UI updates, styling, and frontend features',
-      'production-bug-hunter': 'Analyzes production logs, identifies bugs, and runs diagnostic tests',
-      'deploy-manager': 'Manages deployments to Heroku, handles migrations, and monitors deployment health',
-      'planning-collaborator': 'Assists with feature planning, architecture design, and project organization',
-      'gantt-bug-hunter': 'Tests Gantt chart functionality, validates timezone compliance, and checks cascade behavior',
-      'ui-compliance-auditor': 'Audits UI components for RULE #19 compliance and table standards'
-    };
-    return descriptions[agentName] || 'Specialized Claude Code agent';
+  const getAgentDescription = (agent) => {
+    return agent.description || agent.focus || 'Specialized Claude Code agent';
   };
 
   const getStatusBadge = (status) => {
@@ -224,15 +200,18 @@ export default function AgentStatus() {
     }));
   };
 
-  // Convert agents object to array
-  const agentsArray = agentData?.agents
-    ? Object.entries(agentData.agents).map(([name, stats]) => ({
-        id: name,
-        name,
-        displayName: getAgentDisplayName(name),
-        icon: getAgentIcon(name),
-        description: getAgentDescription(name),
-        ...stats
+  // Convert API response to array format
+  const agentsArray = agentData
+    ? agentData.map(agent => ({
+        id: agent.agent_id,
+        name: agent.name,
+        displayName: getAgentDisplayName(agent),
+        icon: getAgentIcon(agent),
+        description: getAgentDescription(agent),
+        last_run: agent.last_run_at,
+        status: agent.last_status,
+        total_runs: agent.total_runs || 0,
+        success_rate: agent.success_rate || 0
       }))
     : [];
 

@@ -227,15 +227,25 @@ export default function AgentShortcutsTab() {
     }
   }
 
-  const loadData = () => {
+  const loadData = async () => {
     try {
+      // Fetch agent shortcuts from API (RULE #1.13 - Single Source of Truth)
+      const agentResponse = await api.get('/agents/shortcuts')
+      const agentShortcuts = agentResponse.data || []
+
+      // Merge with non-agent commands from localStorage or defaults
       const savedCommands = localStorage.getItem('claudeCommands')
+      let customCommands = []
       if (savedCommands) {
-        setCommands(JSON.parse(savedCommands))
-      } else {
-        setCommands(defaultCommands)
-        localStorage.setItem('claudeCommands', JSON.stringify(defaultCommands))
+        const parsed = JSON.parse(savedCommands)
+        // Keep only custom commands (ID > 100)
+        customCommands = parsed.filter(c => c.id > 100)
       }
+
+      // Combine: agent shortcuts from API + custom commands from localStorage
+      const allCommands = [...agentShortcuts, ...customCommands]
+      setCommands(allCommands)
+      localStorage.setItem('claudeCommands', JSON.stringify(allCommands))
 
       const savedSlang = localStorage.getItem('claudeSlang')
       if (savedSlang) {
@@ -246,6 +256,7 @@ export default function AgentShortcutsTab() {
       }
     } catch (error) {
       console.error('Failed to load data:', error)
+      // Fallback to defaults if API fails
       setCommands(defaultCommands)
       setSlang(defaultSlang)
     } finally {

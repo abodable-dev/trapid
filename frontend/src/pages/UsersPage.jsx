@@ -28,6 +28,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState(null)
   const [editValues, setEditValues] = useState({})
   const [toast, setToast] = useState(null)
+  const [roles, setRoles] = useState([])
 
   // Column visibility state
   const [visibleColumns, setVisibleColumns] = useState({
@@ -49,14 +50,23 @@ export default function UsersPage() {
     { key: 'actions', label: 'Actions' }
   ]
 
-  const roles = [
-    { value: 'user', label: 'User' },
-    { value: 'builder', label: 'Builder' },
-    { value: 'supervisor', label: 'Supervisor' },
-    { value: 'estimator', label: 'Estimator' },
-    { value: 'product_owner', label: 'Product Owner' },
-    { value: 'admin', label: 'Admin' }
-  ]
+  // Fetch roles from API (RULE #1.13 - Single Source of Truth)
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await api.get('/roles')
+        setRoles(response.data || [])
+      } catch (error) {
+        console.error('Failed to fetch roles:', error)
+        // Fallback to default roles
+        setRoles([
+          { value: 'user', label: 'User' },
+          { value: 'admin', label: 'Admin' }
+        ])
+      }
+    }
+    fetchRoles()
+  }, [])
 
   const assignableRoles = [
     { value: '', label: 'None' },

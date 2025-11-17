@@ -1,7 +1,7 @@
 # TRAPID TEACHER - Implementation Patterns & Code Examples
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-17 15:41 AEST
+**Last Updated:** 2025-11-17 21:47 AEST
 **Authority Level:** Reference (HOW to implement Bible rules)
 **Audience:** Claude Code + Human Developers
 
@@ -48,20 +48,19 @@ This file contains **code examples and step-by-step guides** for implementing Tr
 
 ## Table of Contents
 
-- [Chapter 0: System-Wide Rules](#chapter-0-system-wide-rules)
-- [Chapter 1: Authentication & Users](#chapter-1-authentication-users)
 - [Chapter 1: Overview & System-Wide Rules](#chapter-1-overview-system-wide-rules)
+- [Chapter 2: Overview & System-Wide Rules](#chapter-2-overview-system-wide-rules)
 - [Chapter 2: Authentication & Users](#chapter-2-authentication-users)
 - [Chapter 3: Contacts & Relationships](#chapter-3-contacts-relationships)
 - [Chapter 3: System Administration](#chapter-3-system-administration)
-- [Chapter 4: Contacts & Relationships](#chapter-4-contacts-relationships)
 - [Chapter 4: Price Books & Suppliers](#chapter-4-price-books-suppliers)
+- [Chapter 4: Contacts & Relationships](#chapter-4-contacts-relationships)
 - [Chapter 5: Price Books & Suppliers](#chapter-5-price-books-suppliers)
 - [Chapter 6: Jobs & Construction Management](#chapter-6-jobs-construction-management)
 - [Chapter 7: Estimates & Quoting](#chapter-7-estimates-quoting)
 - [Chapter 8: AI Plan Review](#chapter-8-ai-plan-review)
-- [Chapter 9: Purchase Orders](#chapter-9-purchase-orders)
 - [Chapter 9: Gantt & Schedule Master](#chapter-9-gantt-schedule-master)
+- [Chapter 9: Purchase Orders](#chapter-9-purchase-orders)
 - [Chapter 10: Gantt & Schedule Master](#chapter-10-gantt-schedule-master)
 - [Chapter 11: Project Tasks & Checklists](#chapter-11-project-tasks-checklists)
 - [Chapter 12: Weather & Public Holidays](#chapter-12-weather-public-holidays)
@@ -80,964 +79,6 @@ This file contains **code examples and step-by-step guides** for implementing Tr
 ---
 
 
-# Chapter 0: System-Wide Rules
-
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  0               │
-│ 📕 LEXICON (BUGS):    Chapter  0               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
-**Last Updated:** 2025-11-17
-
----
-
-## §0.10: Automated Testing Setup - RSpec & Minitest
-
-✨ Feature | 🟡 Intermediate
-
-### Quick Summary
-Complete setup guide for automated testing infrastructure with RSpec, FactoryBot, and CI/CD
-
-### Step-by-Step Guide
-# 🤖 Automated Testing Setup Complete!
-
-Full automation has been set up for the Gantt cascade functionality. The bug-hunter agent can now run comprehensive tests without any manual intervention.
-
-## 🎯 What Was Set Up
-
-### 1. Playwright E2E Testing ✅
-- **Installed**: `@playwright/test` package
-- **Browser**: Chromium (141.0.7390.37) downloaded and ready
-- **Config**: [frontend/playwright.config.js](frontend/playwright.config.js)
-- **Test**: [frontend/tests/e2e/gantt-cascade.spec.js](frontend/tests/e2e/gantt-cascade.spec.js)
-
-### 2. Backend Testing ✅
-- **Test**: [backend/test/gantt_drag_test.rb](backend/test/gantt_drag_test.rb)
-- **Verifies**: Cascade logic, dependency calculations, task updates
-
-### 3. Test Runner Scripts ✅
-- **Main Runner**: [test/run_gantt_tests.sh](test/run_gantt_tests.sh)
-- **Bug-Hunter Script**: [test/bug_hunter_test.sh](test/bug_hunter_test.sh)
-- **Documentation**: [test/README.md](test/README.md)
-
-## 🚀 How Bug-Hunter Can Use It
-
-### Single Command - Full Test Suite
-
-```bash
-./test/bug_hunter_test.sh
-```
-
-This runs:
-1. ✅ Backend cascade test (Rails)
-2. ✅ Frontend E2E test (Playwright)
-3. ✅ Comprehensive verification
-4. ✅ Clear pass/fail results
-
-**Exit codes:**
-- `0` = All tests passed ✅
-- `1` = Tests failed ❌
-
-### Backend Only
-
-```bash
-cd backend
-rails runner test/gantt_drag_test.rb
-```
-
-### Frontend Only
-
-```bash
-cd frontend
-npm run test:gantt
-```
-
-**Requires**: Frontend dev server running (`npm run dev`)
-
-## 📋 NPM Scripts Added
-
-In `frontend/package.json`:
-
-```json
-{
-  "test:e2e": "playwright test",
-  "test:e2e:ui": "playwright test --ui",
-  "test:e2e:headed": "playwright test --headed",
-  "test:e2e:debug": "playwright test --debug",
-  "test:gantt": "playwright test gantt-cascade"
-}
-```
-
-## 🔧 Configuration Files
-
-### Created
-
-- ✅ `frontend/playwright.config.js` - Playwright configuration
-- ✅ `frontend/.env.test` - Test environment template
-- ✅ `frontend/tests/e2e/gantt-cascade.spec.js` - E2E test
-- ✅ `frontend/tests/e2e/auth.setup.js` - Auth helper
-- ✅ `test/run_gantt_tests.sh` - Main test runner
-- ✅ `test/bug_hunter_test.sh` - Bug-hunter entry point
-- ✅ `test/README.md` - Comprehensive documentation
-
-### Test Environment
-
-Create `frontend/.env.test.local` for custom settings:
-
-```env
-FRONTEND_URL=http://localhost:5173
-TEST_EMAIL=your_email@example.com
-TEST_PASSWORD=your_password
-```
-
-## 📊 What the Tests Verify
-
-### Backend Test Verifies:
-
-- ✅ Task 1 moves from day 4 → 9
-- ✅ Task 2 cascades from day 6 → 11
-- ✅ Task 3 cascades from day 6 → 11
-- ✅ All dependency types (FS, SS, FF, SF)
-- ✅ Lag values respected
-- ✅ Manually positioned tasks skipped
-
-### Frontend Test Verifies:
-
-- ✅ **No duplicate API calls** (infinite loop indicator)
-- ✅ **Backend cascade message** detected
-- ✅ **Single batch update** applied
-- ✅ **Single Gantt reload** (no flicker)
-- ✅ All affected tasks updated together
-
-## 🎬 Test Execution Flow
-
-```
-BUG-HUNTER SCRIPT
-    ↓
-BACKEND TEST (Rails)
-    → Simulates drag operation
-    → Verifies cascade calculations
-    → Returns exit code
-    ↓
-FRONTEND TEST (Playwright)
-    → Launches browser
-    → Logs in automatically
-    → Navigates to Gantt
-    → Simulates drag
-    → Monitors API calls
-    → Analyzes console logs
-    → Returns pass/fail
-    ↓
-COMPREHENSIVE REPORT
-    → Backend: PASSED/FAILED
-    → Frontend: PASSED/FAILED
-    → Exit code for automation
-```
-
-## 🐛 Bug-Hunter Integration Example
-
-```bash
-#!/bin/bash
-# Bug-hunter can run this in the task
-
-echo "🔍 Verifying Gantt cascade fix..."
-./test/bug_hunter_test.sh
-
-if [ $? -eq 0 ]; then
-  echo "✅ Fix confirmed! Ready to deploy."
-else
-  echo "❌ Fix needs more work. Running diagnostics..."
-  # ... additional debugging
-fi
-```
-
-## 📈 Test Output Example
-
-```
-🔍 BUG-HUNTER GANTT CASCADE VERIFICATION
-============================================================
-
-This script will verify:
-  ✅ Backend cascade logic is working
-  ✅ Frontend integration has no flicker
-  ✅ No infinite loops detected
-  ✅ Single batch updates working
-
-============================================================
-
-📋 TEST 1: Backend Cascade Logic
-✅ Task 2 cascaded correctly (11)
-✅ Task 3 cascaded correctly (11)
-✅ Backend cascade test PASSED
-
-📋 TEST 2: Frontend E2E Test (Playwright)
-🌐 API Calls: 1 total
-📦 Backend Cascade: ✅ Yes
-📦 Batch Update: ✅ Yes
-🔄 Gantt Reloads: 1
-✅ Frontend E2E test PASSED
-
-============================================================
-🎉 ALL TESTS PASSED!
-
-✅ Backend cascade logic: Working
-✅ Frontend integration: No flicker
-✅ No infinite loops detected
-✅ Single batch updates working
-============================================================
-```
-
-## 🛠️ Troubleshooting
-
-### "Frontend dev server not running"
-
-**Solution:**
-```bash
-cd frontend
-npm run dev
-```
-
-### "Cannot find email input"
-
-**Solution:** Update selectors in `gantt-cascade.spec.js` if login UI changed
-
-### "Test timeout"
-
-**Solution:** Increase timeout in `playwright.config.js`:
-```js
-timeout: 120 * 1000, // 2 minutes
-```
-
-## 📚 Additional Resources
-
-- [Playwright Documentation](https://playwright.dev)
-- [Test README](test/README.md)
-- [Gantt Schedule Rules](GANTT_SCHEDULE_RULES.md)
-
-## ✅ Next Steps
-
-1. **Run the test now**:
-   ```bash
-   ./test/bug_hunter_test.sh
-   ```
-
-2. **Integrate with CI/CD** (optional):
-   ```yaml
-   - name: Test Gantt Cascade
-     run: ./test/bug_hunter_test.sh
-   ```
-
-3. **Set up test credentials**:
-   ```bash
-   cp frontend/.env.test frontend/.env.test.local
-   # Edit .env.test.local with your credentials
-   ```
-
----
-
-**🎉 Full automation is ready! Bug-hunter can now verify Gantt fixes with a single command.**
-
-
-### Code Example
-```jsx
-```bash
-./test/bug_hunter_test.sh
-```
-
-```bash
-cd backend
-rails runner test/gantt_drag_test.rb
-```
-
-```bash
-cd frontend
-npm run test:gantt
-```
-
-```json
-{
-  "test:e2e": "playwright test",
-  "test:e2e:ui": "playwright test --ui",
-  "test:e2e:headed": "playwright test --headed",
-  "test:e2e:debug": "playwright test --debug",
-  "test:gantt": "playwright test gantt-cascade"
-}
-```
-
-```env
-FRONTEND_URL=http://localhost:5173
-TEST_EMAIL=your_email@example.com
-TEST_PASSWORD=your_password
-```
-
-```
-BUG-HUNTER SCRIPT
-    ↓
-BACKEND TEST (Rails)
-    → Simulates drag operation
-    → Verifies cascade calculations
-    → Returns exit code
-    ↓
-FRONTEND TEST (Playwright)
-    → Launches browser
-    → Logs in automatically
-    → Navigates to Gantt
-    → Simulates drag
-    → Monitors API calls
-    → Analyzes console logs
-    → Returns pass/fail
-    ↓
-COMPREHENSIVE REPORT
-    → Backend: PASSED/FAILED
-    → Frontend: PASSED/FAILED
-    → Exit code for automation
-```
-
-```bash
-#!/bin/bash
-# Bug-hunter can run this in the task
-
-echo "🔍 Verifying Gantt cascade fix..."
-./test/bug_hunter_test.sh
-
-if [ $? -eq 0 ]; then
-  echo "✅ Fix confirmed! Ready to deploy."
-else
-  echo "❌ Fix needs more work. Running diagnostics..."
-  # ... additional debugging
-fi
-```
-
-```
-🔍 BUG-HUNTER GANTT CASCADE VERIFICATION
-============================================================
-
-This script will verify:
-  ✅ Backend cascade logic is working
-  ✅ Frontend integration has no flicker
-  ✅ No infinite loops detected
-  ✅ Single batch updates working
-
-============================================================
-
-📋 TEST 1: Backend Cascade Logic
-✅ Task 2 cascaded correctly (11)
-✅ Task 3 cascaded correctly (11)
-✅ Backend cascade test PASSED
-
-📋 TEST 2: Frontend E2E Test (Playwright)
-🌐 API Calls: 1 total
-📦 Backend Cascade: ✅ Yes
-📦 Batch Update: ✅ Yes
-🔄 Gantt Reloads: 1
-✅ Frontend E2E test PASSED
-
-============================================================
-🎉 ALL TESTS PASSED!
-
-✅ Backend cascade logic: Working
-✅ Frontend integration: No flicker
-✅ No infinite loops detected
-✅ Single batch updates working
-============================================================
-```
-
-```bash
-cd frontend
-npm run dev
-```
-
-```js
-timeout: 120 * 1000, // 2 minutes
-```
-
-```bash
-   ./test/bug_hunter_test.sh
-   ```
-
-```yaml
-   - name: Test Gantt Cascade
-     run: ./test/bug_hunter_test.sh
-   ```
-
-```bash
-   cp frontend/.env.test frontend/.env.test.local
-   # Edit .env.test.local with your credentials
-   ```
-```
-
-### Examples
-```bash
-./test/bug_hunter_test.sh
-```
-
-```bash
-cd backend
-rails runner test/gantt_drag_test.rb
-```
-
-```bash
-cd frontend
-npm run test:gantt
-```
-
-```json
-{
-  "test:e2e": "playwright test",
-  "test:e2e:ui": "playwright test --ui",
-  "test:e2e:headed": "playwright test --headed",
-  "test:e2e:debug": "playwright test --debug",
-  "test:gantt": "playwright test gantt-cascade"
-}
-```
-
-```env
-FRONTEND_URL=http://localhost:5173
-TEST_EMAIL=your_email@example.com
-TEST_PASSWORD=your_password
-```
-
-```
-BUG-HUNTER SCRIPT
-    ↓
-BACKEND TEST (Rails)
-    → Simulates drag operation
-    → Verifies cascade calculations
-    → Returns exit code
-    ↓
-FRONTEND TEST (Playwright)
-    → Launches browser
-    → Logs in automatically
-    → Navigates to Gantt
-    → Simulates drag
-    → Monitors API calls
-    → Analyzes console logs
-    → Returns pass/fail
-    ↓
-COMPREHENSIVE REPORT
-    → Backend: PASSED/FAILED
-    → Frontend: PASSED/FAILED
-    → Exit code for automation
-```
-
-```bash
-#!/bin/bash
-# Bug-hunter can run this in the task
-
-echo "🔍 Verifying Gantt cascade fix..."
-./test/bug_hunter_test.sh
-
-if [ $? -eq 0 ]; then
-  echo "✅ Fix confirmed! Ready to deploy."
-else
-  echo "❌ Fix needs more work. Running diagnostics..."
-  # ... additional debugging
-fi
-```
-
-```
-🔍 BUG-HUNTER GANTT CASCADE VERIFICATION
-============================================================
-
-This script will verify:
-  ✅ Backend cascade logic is working
-  ✅ Frontend integration has no flicker
-  ✅ No infinite loops detected
-  ✅ Single batch updates working
-
-============================================================
-
-📋 TEST 1: Backend Cascade Logic
-✅ Task 2 cascaded correctly (11)
-✅ Task 3 cascaded correctly (11)
-✅ Backend cascade test PASSED
-
-📋 TEST 2: Frontend E2E Test (Playwright)
-🌐 API Calls: 1 total
-📦 Backend Cascade: ✅ Yes
-📦 Batch Update: ✅ Yes
-🔄 Gantt Reloads: 1
-✅ Frontend E2E test PASSED
-
-============================================================
-🎉 ALL TESTS PASSED!
-
-✅ Backend cascade logic: Working
-✅ Frontend integration: No flicker
-✅ No infinite loops detected
-✅ Single batch updates working
-============================================================
-```
-
-```bash
-cd frontend
-npm run dev
-```
-
-```js
-timeout: 120 * 1000, // 2 minutes
-```
-
-```bash
-   ./test/bug_hunter_test.sh
-   ```
-
-```yaml
-   - name: Test Gantt Cascade
-     run: ./test/bug_hunter_test.sh
-   ```
-
-```bash
-   cp frontend/.env.test frontend/.env.test.local
-   # Edit .env.test.local with your credentials
-   ```
-
----
-
-
-# Chapter 1: Authentication & Users
-
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  1               │
-│ 📕 LEXICON (BUGS):    Chapter  1               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
-**Last Updated:** 2025-11-17
-
----
-
-## §0.1: Lexicon Update Workflow - Database-Driven Documentation
-
-✨ Feature
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0 - Documentation Maintenance
-
-### Quick Summary
-Step-by-step workflow for updating Lexicon via database UI and exporting to markdown.
-
-### Step-by-Step Guide
-**Lexicon is database-driven** - Source of truth is `documentation_entries` table, NOT the .md file.
-
-**Update Workflow:**
-1. Go to Trapid app → Documentation page
-2. Click "📕 TRAPID Lexicon"
-3. Add/edit entries via UI (stores in documentation_entries table)
-4. Run: `bin/rails trapid:export_lexicon`
-5. Commit the updated TRAPID_LEXICON.md file
-
-**Export Command:**
-```bash
-cd backend
-bin/rails trapid:export_lexicon
-```
-
-**Git Workflow:**
-```bash
-git add TRAPID_DOCS/TRAPID_LEXICON.md
-git commit -m "docs: Update Lexicon from database export"
-```
-
-### Code Example
-```jsx
-# Example: Adding a bug entry via Rails console
-DocumentationEntry.create!(
-  chapter_number: 9,
-  chapter_name: 'Gantt & Schedule Master',
-  entry_type: 'bug',
-  title: 'Gantt Shaking During Cascade',
-  status: 'fixed',
-  severity: 'high',
-  first_reported: '2025-11-10',
-  fixed_date: '2025-11-11',
-  description: 'Visual shaking during dependency updates',
-  root_cause: 'isLoadingData not properly managing render locks',
-  solution: 'Added proper lock timing in cascade handler',
-  rule_reference: 'Chapter 9, RULE #9.2'
-)
-```
-
----
-
-## §0.2: Database Schema Reference - documentation_entries Table
-
-🔧 Util
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0
-
-### Quick Summary
-Complete field reference for documentation_entries table structure.
-
-### Step-by-Step Guide
-**Database Schema Fields:**
-
-**Core Fields:**
-- `chapter_number` - Which chapter (0-20)
-- `chapter_name` - Chapter title
-- `entry_type` - Type: bug, architecture, test, performance, dev_note, common_issue, component, feature, util, hook, integration, optimization
-- `title` - Entry title
-
-**Lexicon-Specific (bugs):**
-- `status` - For bugs: open, fixed, by_design, monitoring
-- `severity` - For bugs: low, medium, high, critical
-- `first_reported` - Date discovered (YYYY-MM-DD)
-- `fixed_date` - Date resolved (YYYY-MM-DD)
-
-**Teacher-Specific:**
-- `section_number` - Format: X.Y or X.YA (e.g., 19.1, 19.11A)
-- `difficulty` - beginner, intermediate, advanced
-- `summary` - Quick summary/description
-- `code_example` - Full code blocks
-- `common_mistakes` - What to avoid
-- `testing_strategy` - How to test
-- `related_rules` - Link to Bible rules
-
-**Universal Content Fields:**
-- `description` - Brief summary
-- `scenario` - How it manifests
-- `root_cause` - Technical explanation
-- `solution` - How to fix/implement
-- `prevention` - How to avoid
-- `component` - Specific component name
-- `details` - Step-by-step guides
-- `examples` - Examples
-- `recommendations` - Best practices
-- `rule_reference` - Link to Bible RULE
-
----
-
-## §0.3: API Endpoints Reference - Documentation System
-
-🔌 Integration
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0
-
-### Quick Summary
-REST API endpoints for managing documentation entries.
-
-### Step-by-Step Guide
-**Documentation Entries API:**
-
-`GET /api/v1/documentation_entries` - List entries
-  - Query params: chapter, type, status, severity, search, category (lexicon/teacher)
-  
-`POST /api/v1/documentation_entries` - Create entry
-  - Body: { documentation_entry: { chapter_number, title, entry_type, ... } }
-  
-`GET /api/v1/documentation_entries/:id` - Get single entry
-
-`PUT /api/v1/documentation_entries/:id` - Update entry
-  - Body: { documentation_entry: { ... } }
-
-`DELETE /api/v1/documentation_entries/:id` - Delete entry
-
-`GET /api/v1/documentation_entries/stats` - Get statistics
-
-`POST /api/v1/documentation_entries/export_lexicon` - Export Lexicon to markdown
-
-`POST /api/v1/documentation_entries/export_teacher` - Export Teacher to markdown
-
-**Legacy Routes (backwards compatible):**
-`/api/v1/documented_bugs/*` - Maps to documentation_entries controller
-
-### Code Example
-```jsx
-// Example: Creating a documentation entry via API
-const response = await api.post('/api/v1/documentation_entries', {
-  documentation_entry: {
-    chapter_number: 19,
-    chapter_name: 'UI/UX Standards & Patterns',
-    entry_type: 'component',
-    section_number: '19.1',
-    title: 'Table Component Selection Pattern',
-    summary: 'Decision tree for choosing table type',
-    related_rules: 'TRAPID_BIBLE.md RULE #19.1'
-  }
-})
-
-// Example: Exporting Lexicon
-await api.post('/api/v1/documentation_entries/export_lexicon')
-```
-
----
-
-## §0.4: Component Creation Enforcement Pattern
-
-🧩 Component
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0.1
-
-### Quick Summary
-Automated workflow Claude Code must follow before creating any new component.
-
-### Step-by-Step Guide
-**Enforcement Workflow:**
-
-**Step 1: Identify Component Type**
-Check filename pattern:
-- `*Table*.jsx` → Chapter 19 (UI/UX)
-- `*Modal*.jsx` → Chapter 19 (UI/UX)
-- `*Form*.jsx` → Chapter 19 (UI/UX)
-- `*Gantt*.jsx` → Chapter 9 (Gantt) + Chapter 19 (UI/UX)
-- `*Auth*.jsx` → Chapter 1 (Authentication)
-- `*Contact*.jsx` → Chapter 3 (Contacts)
-- See RULE #0.1 for full mapping table
-
-**Step 2: Read Required Chapters**
-Use Read tool to load:
-```
-Read: /Users/rob/Projects/trapid/TRAPID_DOCS/TRAPID_BIBLE.md
-  - offset: [chapter start]
-  - limit: [chapter length]
-```
-
-**Step 3: Follow ALL Rules**
-Parse chapter for:
-- MUST directives
-- NEVER directives
-- ALWAYS directives
-- User confirmation requirements
-
-**Step 4: Ask User When Required**
-Some rules require asking (e.g., RULE #19.1 table type)
-
-**Step 5: Create Component**
-Now write the file following all discovered rules
-
-### Code Example
-```jsx
-// Example: Creating LexiconTableView.jsx (CORRECT workflow)
-
-// 1. User requests: "Create a table view for Lexicon"
-// 2. Claude recognizes: filename contains "Table" → need Chapter 19
-// 3. Claude reads: TRAPID_BIBLE.md Chapter 19
-// 4. Claude sees: RULE #19.1 requires asking user for table type
-// 5. Claude asks: "Should I use:
-  1. DataTable.jsx (read-only)
-  2. Full advanced table?"
-// 6. User responds: "2"
-// 7. Claude creates: LexiconTableView.jsx with ALL Chapter 19 features
-
-// Component mapping reference:
-const COMPONENT_CHAPTER_MAP = {
-  table: [19],
-  modal: [19],
-  form: [19],
-  gantt: [9, 19],
-  auth: [1],
-  contact: [3],
-  pricebook: [4],
-  job: [5],
-  estimate: [6],
-  po: [8],
-  xero: [15]
-}
-```
-
-### ⚠️ Common Mistakes
-**Common Mistakes:**
-
-❌ Creating component immediately without reading Bible
-❌ Skipping user confirmation when rules require it
-❌ Reading only part of the chapter
-❌ Ignoring NEVER rules because they seem optional
-❌ Assuming best practices override Bible rules
-
-**Consequences:**
-- Non-compliant component
-- Requires refactoring
-- Wastes time and tokens
-- Violates RULE #0.1
-
----
-
-## §0.5: Bug Fix Documentation Workflow
-
-✨ Feature
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0 - Bug Fix Documentation
-
-### Quick Summary
-Complete workflow for documenting every bug fix in the Lexicon.
-
-### Step-by-Step Guide
-**🔴 CRITICAL: Every bug fix MUST be documented**
-
-**Complete Workflow:**
-
-**1. Fix the Bug**
-- Write the code fix
-- Test locally
-- Verify fix works
-
-**2. Update Lexicon via UI**
-Navigate to Trapid app:
-- Go to Documentation page
-- Click "📕 TRAPID Lexicon"
-- Click "Add Entry"
-- Fill in all fields (see field guide below)
-- Save
-
-**3. Export Lexicon**
-```bash
-cd backend
-bin/rails trapid:export_lexicon
-```
-
-**4. Update Bible (if needed)**
-Add new RULE if bug revealed:
-- Protected code pattern
-- Configuration requirement
-- Critical validation
-
-**5. Commit Everything**
-```bash
-git add [code files] TRAPID_DOCS/TRAPID_LEXICON.md
-git commit -m "fix: [bug description]
-
-- Fixed [issue]
-- Added Lexicon entry
-- See TRAPID_LEXICON.md Chapter X"
-```
-
-### Code Example
-```jsx
-# Example Lexicon Entry Fields (via UI)
-
-**Required:**
-chapter_number: 9
-chapter_name: "Gantt & Schedule Master"
-entry_type: "bug"
-title: "Gantt Shaking During Cascade"
-
-**Bug-Specific:**
-status: "fixed"
-severity: "high"
-first_reported: "2025-11-10"
-fixed_date: "2025-11-11"
-
-**Content:**
-description: "Visual shaking observed during dependency updates in Gantt chart"
-
-scenario: "When dragging a task with dependencies, the chart would visibly shake/flicker"
-
-root_cause: "isLoadingData lock not properly set during cascade operations, causing re-renders mid-update"
-
-solution: "Added proper isLoadingData.current = true at start of cascade, set to false after 300ms timeout to allow DOM to settle"
-
-prevention: "Always use isLoadingData lock for any batch Gantt updates. See RULE #9.2 for timing requirements"
-
-component: "DHtmlxGanttView.jsx"
-
-rule_reference: "Chapter 9, RULE #9.2"
-
-# After saving, export:
-# bin/rails trapid:export_lexicon
-```
-
-### 🧪 Testing Strategy
-**Testing the Documentation:**
-
-1. Verify entry appears in UI
-2. Check export generates correct markdown
-3. Confirm cross-references link properly
-4. Test search finds the entry
-5. Validate all fields populated
-
----
-
-## §0.6: Chapter Relationship Map - Feature Dependencies
-
-🔧 Util
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md Chapter 0 - Chapter Relationship Map
-
-### Quick Summary
-Understanding how chapters relate and depend on each other for complete context.
-
-### Step-by-Step Guide
-**Feature Dependencies Overview:**
-
-**Core Infrastructure (Used by ALL):**
-- Chapter 1: Authentication & Users
-- Chapter 2: System Administration (timezone, company settings)
-
-**Data & Content Management:**
-- Chapter 3: Contacts → Used by Ch 4 (suppliers), Ch 5 (clients), Ch 6 (quotes), Ch 8 (POs), Ch 14 (chat), Ch 15 (Xero)
-- Chapter 4: Price Books → Used by Ch 6 (estimate pricing), Ch 8 (PO pricing), Ch 17 (automation)
-- Chapter 18: Custom Tables → Standalone
-
-**Project Execution Flow:**
-1. Ch 6: Estimates & Quoting
-2. Ch 5: Jobs & Construction (central)
-3. Ch 8: Purchase Orders (from estimates)
-4. Ch 9: Gantt (visual timeline)
-5. Ch 10: Project Tasks
-6. Ch 11: Weather (affects schedule)
-
-**AI & Automation:**
-- Ch 7: AI Plan Review → Uses Ch 12 (OneDrive)
-- Ch 17: Workflows → Orchestrates Ch 4, Ch 12
-
-**Integrations:**
-- Ch 12: OneDrive → Used by Ch 5, Ch 7, Ch 17
-- Ch 13: Outlook → Links to Ch 5
-- Ch 14: Chat → For Ch 5, Ch 10
-- Ch 15: Xero → Syncs Ch 3, links Ch 8
-- Ch 16: Payments → Tracks Ch 8, reconciles Ch 15
-
-**UI/UX:**
-- Ch 19: UI/UX Standards → Applies to ALL frontend
-
-### Examples
-**Example 1: Creating a Job (Chapter 5)**
-Requires:
-- User (Ch 1)
-- Client contact (Ch 3)
-- Company timezone (Ch 2)
-
-May trigger:
-- OneDrive folders (Ch 12)
-- Gantt entry (Ch 9)
-- Tasks (Ch 10)
-- Chat channel (Ch 14)
-
-**Example 2: Generating Purchase Orders (Chapter 8)**
-Source: Estimate (Ch 6)
-Uses: Supplier contacts (Ch 3), Pricebook items (Ch 4)
-May create: Workflow approval (Ch 17), Xero bill (Ch 15), Payment tracking (Ch 16)
-
-**Example 3: Gantt Scheduling (Chapter 9)**
-Requires: Job (Ch 5), Tasks (Ch 10), Weather (Ch 11), Timezone (Ch 2)
-Affects: Task due dates (Ch 10), Workflow deadlines (Ch 17)
-
-### Recommendations
-**When Working on a Feature:**
-
-1. Identify primary chapter
-2. Check this map for dependencies
-3. Read ALL related chapters
-4. Consider cross-chapter impacts
-5. Test integration points
-
----
-
-## §1.10: Authentication & Contacts Quick Reference
-
-🔧 Util | 🟢 Beginner
-
-### Quick Summary
-Quick reference guide for authentication flows, contact CRUD operations, and common API patterns
-
-### Recommendations
-Original file archived at: AUTH_AND_CONTACTS_QUICK_REFERENCE.md (12.1 KB)
-
----
-
-
 # Chapter 1: Overview & System-Wide Rules
 
 ┌─────────────────────────────────────────────────┐
@@ -1051,11 +92,137 @@ Original file archived at: AUTH_AND_CONTACTS_QUICK_REFERENCE.md (12.1 KB)
 
 ---
 
-## §0.1: Lexicon Update Workflow - Database-Driven Documentation
+## §1.1: Trinity Documentation Update Workflow
 
 ✨ Feature
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0 - Documentation Maintenance
+**📖 Related Bible Rules:** See RULE #0.1 for mandatory chapter completion requirements
+
+### Quick Summary
+How to add and update Trinity documentation entries
+
+### Code Example
+```jsx
+# When you discover a new rule:
+1. Go to Trapid app → Documentation page
+2. Add entry via UI (stores in trinity table)
+3. Run export: bin/rails trapid:export_bible (or export_lexicon, export_teacher)
+4. Commit the updated markdown file
+
+# When you fix a bug:
+1. Add Lexicon entry via Trapid UI (entry_type: bug)
+2. If bug creates a new RULE → Also add Bible entry
+3. Run export: bin/rails trapid:export_lexicon
+4. Commit the updated markdown file
+```
+
+### 🧪 Testing Strategy
+Always verify entries appear in API after creation
+
+---
+
+## §1.2: Trinity Entry Types Quick Reference
+
+🧩 Component
+
+**📖 Related Bible Rules:** See Trinity model constants for full list of entry types
+
+### Quick Summary
+Guide to choosing the correct entry_type for Trinity records
+
+### Description
+**Bible (RULES):**
+Entry types: MUST, NEVER, ALWAYS, PROTECTED, CONFIG, rule, REFERENCE
+Examples:
+- "You MUST do X"
+- "NEVER do Y"
+- "ALWAYS check Z before W"
+
+**Lexicon (KNOWLEDGE):**
+Entry types: bug, architecture, test, performance, dev_note, common_issue
+Examples:
+- Bug discoveries and fixes
+- Architecture decisions
+- Performance optimizations
+
+**Teacher (HOW-TO):**
+Entry types: component, feature, util, hook, integration, optimization
+Examples:
+- Full code examples
+- Step-by-step implementation guides
+- Best practices
+
+---
+
+## §1.3: Dropdown MD Type - Markdown Documentation for Dropdowns
+
+📋 Dropdown Md
+
+### Description
+## 📋 Overview
+
+The **dropdown_md** entry type is for markdown documentation that should be displayed in dropdown menus or selection interfaces.
+
+## 🎯 When to Use
+
+Use `dropdown_md` when:
+- Creating agent definitions that should appear in dropdown lists
+- Building documentation that users select from menus
+- Generating content that needs to be indexed for quick access
+- Storing reference material accessed via UI dropdowns
+
+## 📝 Structure
+
+```ruby
+Trinity.create!(
+  category: 'teacher',
+  chapter_number: 21,
+  section_number: '21.10',
+  entry_type: 'dropdown_md',
+  title: 'Agent Name',
+  description: 'Full markdown content here...'
+)
+```
+
+## ✅ Good Examples
+
+- Agent definition files (.claude/agents/*.md)
+- Quick reference cards
+- Command documentation
+- API endpoint references
+
+## ❌ Don't Use For
+
+- Long-form documentation (use 'feature' or 'component')
+- Bug reports (use 'bug')
+- System rules (use 'MUST'/'NEVER'/etc.)
+
+## 🔗 Related
+
+- RULE #1.13: Single Source of Truth
+- Teacher entry types documentation
+
+---
+
+
+# Chapter 2: Overview & System-Wide Rules
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  2               │
+│ 📕 LEXICON (BUGS):    Chapter  2               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Code examples, implementation patterns, and step-by-step guides
+**Last Updated:** 2025-11-17
+
+---
+
+## §2.1: Lexicon Update Workflow - Database-Driven Documentation
+
+✨ Feature
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.1"}]
 
 ### Quick Summary
 Step-by-step workflow for updating Lexicon via database UI and exporting to markdown.
@@ -1103,372 +270,11 @@ DocumentationEntry.create!(
 
 ---
 
-## §0.2: Database Schema Reference - documentation_entries Table
-
-🔧 Util
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0
-
-### Quick Summary
-Complete field reference for documentation_entries table structure.
-
-### Step-by-Step Guide
-**Database Schema Fields:**
-
-**Core Fields:**
-- `chapter_number` - Which chapter (0-20)
-- `chapter_name` - Chapter title
-- `entry_type` - Type: bug, architecture, test, performance, dev_note, common_issue, component, feature, util, hook, integration, optimization
-- `title` - Entry title
-
-**Lexicon-Specific (bugs):**
-- `status` - For bugs: open, fixed, by_design, monitoring
-- `severity` - For bugs: low, medium, high, critical
-- `first_reported` - Date discovered (YYYY-MM-DD)
-- `fixed_date` - Date resolved (YYYY-MM-DD)
-
-**Teacher-Specific:**
-- `section_number` - Format: X.Y or X.YA (e.g., 19.1, 19.11A)
-- `difficulty` - beginner, intermediate, advanced
-- `summary` - Quick summary/description
-- `code_example` - Full code blocks
-- `common_mistakes` - What to avoid
-- `testing_strategy` - How to test
-- `related_rules` - Link to Bible rules
-
-**Universal Content Fields:**
-- `description` - Brief summary
-- `scenario` - How it manifests
-- `root_cause` - Technical explanation
-- `solution` - How to fix/implement
-- `prevention` - How to avoid
-- `component` - Specific component name
-- `details` - Step-by-step guides
-- `examples` - Examples
-- `recommendations` - Best practices
-- `rule_reference` - Link to Bible RULE
-
----
-
-## §0.3: API Endpoints Reference - Documentation System
-
-🔌 Integration
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0
-
-### Quick Summary
-REST API endpoints for managing documentation entries.
-
-### Step-by-Step Guide
-**Documentation Entries API:**
-
-`GET /api/v1/documentation_entries` - List entries
-  - Query params: chapter, type, status, severity, search, category (lexicon/teacher)
-  
-`POST /api/v1/documentation_entries` - Create entry
-  - Body: { documentation_entry: { chapter_number, title, entry_type, ... } }
-  
-`GET /api/v1/documentation_entries/:id` - Get single entry
-
-`PUT /api/v1/documentation_entries/:id` - Update entry
-  - Body: { documentation_entry: { ... } }
-
-`DELETE /api/v1/documentation_entries/:id` - Delete entry
-
-`GET /api/v1/documentation_entries/stats` - Get statistics
-
-`POST /api/v1/documentation_entries/export_lexicon` - Export Lexicon to markdown
-
-`POST /api/v1/documentation_entries/export_teacher` - Export Teacher to markdown
-
-**Legacy Routes (backwards compatible):**
-`/api/v1/documented_bugs/*` - Maps to documentation_entries controller
-
-### Code Example
-```jsx
-// Example: Creating a documentation entry via API
-const response = await api.post('/api/v1/documentation_entries', {
-  documentation_entry: {
-    chapter_number: 19,
-    chapter_name: 'UI/UX Standards & Patterns',
-    entry_type: 'component',
-    section_number: '19.1',
-    title: 'Table Component Selection Pattern',
-    summary: 'Decision tree for choosing table type',
-    related_rules: 'TRAPID_BIBLE.md RULE #19.1'
-  }
-})
-
-// Example: Exporting Lexicon
-await api.post('/api/v1/documentation_entries/export_lexicon')
-```
-
----
-
-## §0.4: Component Creation Enforcement Pattern
-
-🧩 Component
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0.1
-
-### Quick Summary
-Automated workflow Claude Code must follow before creating any new component.
-
-### Step-by-Step Guide
-**Enforcement Workflow:**
-
-**Step 1: Identify Component Type**
-Check filename pattern:
-- `*Table*.jsx` → Chapter 19 (UI/UX)
-- `*Modal*.jsx` → Chapter 19 (UI/UX)
-- `*Form*.jsx` → Chapter 19 (UI/UX)
-- `*Gantt*.jsx` → Chapter 9 (Gantt) + Chapter 19 (UI/UX)
-- `*Auth*.jsx` → Chapter 1 (Authentication)
-- `*Contact*.jsx` → Chapter 3 (Contacts)
-- See RULE #0.1 for full mapping table
-
-**Step 2: Read Required Chapters**
-Use Read tool to load:
-```
-Read: /Users/rob/Projects/trapid/TRAPID_DOCS/TRAPID_BIBLE.md
-  - offset: [chapter start]
-  - limit: [chapter length]
-```
-
-**Step 3: Follow ALL Rules**
-Parse chapter for:
-- MUST directives
-- NEVER directives
-- ALWAYS directives
-- User confirmation requirements
-
-**Step 4: Ask User When Required**
-Some rules require asking (e.g., RULE #19.1 table type)
-
-**Step 5: Create Component**
-Now write the file following all discovered rules
-
-### Code Example
-```jsx
-// Example: Creating LexiconTableView.jsx (CORRECT workflow)
-
-// 1. User requests: "Create a table view for Lexicon"
-// 2. Claude recognizes: filename contains "Table" → need Chapter 19
-// 3. Claude reads: TRAPID_BIBLE.md Chapter 19
-// 4. Claude sees: RULE #19.1 requires asking user for table type
-// 5. Claude asks: "Should I use:
-  1. DataTable.jsx (read-only)
-  2. Full advanced table?"
-// 6. User responds: "2"
-// 7. Claude creates: LexiconTableView.jsx with ALL Chapter 19 features
-
-// Component mapping reference:
-const COMPONENT_CHAPTER_MAP = {
-  table: [19],
-  modal: [19],
-  form: [19],
-  gantt: [9, 19],
-  auth: [1],
-  contact: [3],
-  pricebook: [4],
-  job: [5],
-  estimate: [6],
-  po: [8],
-  xero: [15]
-}
-```
-
-### ⚠️ Common Mistakes
-**Common Mistakes:**
-
-❌ Creating component immediately without reading Bible
-❌ Skipping user confirmation when rules require it
-❌ Reading only part of the chapter
-❌ Ignoring NEVER rules because they seem optional
-❌ Assuming best practices override Bible rules
-
-**Consequences:**
-- Non-compliant component
-- Requires refactoring
-- Wastes time and tokens
-- Violates RULE #0.1
-
----
-
-## §0.5: Bug Fix Documentation Workflow
-
-✨ Feature
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0 - Bug Fix Documentation
-
-### Quick Summary
-Complete workflow for documenting every bug fix in the Lexicon.
-
-### Step-by-Step Guide
-**🔴 CRITICAL: Every bug fix MUST be documented**
-
-**Complete Workflow:**
-
-**1. Fix the Bug**
-- Write the code fix
-- Test locally
-- Verify fix works
-
-**2. Update Lexicon via UI**
-Navigate to Trapid app:
-- Go to Documentation page
-- Click "📕 TRAPID Lexicon"
-- Click "Add Entry"
-- Fill in all fields (see field guide below)
-- Save
-
-**3. Export Lexicon**
-```bash
-cd backend
-bin/rails trapid:export_lexicon
-```
-
-**4. Update Bible (if needed)**
-Add new RULE if bug revealed:
-- Protected code pattern
-- Configuration requirement
-- Critical validation
-
-**5. Commit Everything**
-```bash
-git add [code files] TRAPID_DOCS/TRAPID_LEXICON.md
-git commit -m "fix: [bug description]
-
-- Fixed [issue]
-- Added Lexicon entry
-- See TRAPID_LEXICON.md Chapter X"
-```
-
-### Code Example
-```jsx
-# Example Lexicon Entry Fields (via UI)
-
-**Required:**
-chapter_number: 9
-chapter_name: "Gantt & Schedule Master"
-entry_type: "bug"
-title: "Gantt Shaking During Cascade"
-
-**Bug-Specific:**
-status: "fixed"
-severity: "high"
-first_reported: "2025-11-10"
-fixed_date: "2025-11-11"
-
-**Content:**
-description: "Visual shaking observed during dependency updates in Gantt chart"
-
-scenario: "When dragging a task with dependencies, the chart would visibly shake/flicker"
-
-root_cause: "isLoadingData lock not properly set during cascade operations, causing re-renders mid-update"
-
-solution: "Added proper isLoadingData.current = true at start of cascade, set to false after 300ms timeout to allow DOM to settle"
-
-prevention: "Always use isLoadingData lock for any batch Gantt updates. See RULE #9.2 for timing requirements"
-
-component: "DHtmlxGanttView.jsx"
-
-rule_reference: "Chapter 9, RULE #9.2"
-
-# After saving, export:
-# bin/rails trapid:export_lexicon
-```
-
-### 🧪 Testing Strategy
-**Testing the Documentation:**
-
-1. Verify entry appears in UI
-2. Check export generates correct markdown
-3. Confirm cross-references link properly
-4. Test search finds the entry
-5. Validate all fields populated
-
----
-
-## §0.6: Chapter Relationship Map - Feature Dependencies
-
-🔧 Util
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md Chapter 0 - Chapter Relationship Map
-
-### Quick Summary
-Understanding how chapters relate and depend on each other for complete context.
-
-### Step-by-Step Guide
-**Feature Dependencies Overview:**
-
-**Core Infrastructure (Used by ALL):**
-- Chapter 1: Authentication & Users
-- Chapter 2: System Administration (timezone, company settings)
-
-**Data & Content Management:**
-- Chapter 3: Contacts → Used by Ch 4 (suppliers), Ch 5 (clients), Ch 6 (quotes), Ch 8 (POs), Ch 14 (chat), Ch 15 (Xero)
-- Chapter 4: Price Books → Used by Ch 6 (estimate pricing), Ch 8 (PO pricing), Ch 17 (automation)
-- Chapter 18: Custom Tables → Standalone
-
-**Project Execution Flow:**
-1. Ch 6: Estimates & Quoting
-2. Ch 5: Jobs & Construction (central)
-3. Ch 8: Purchase Orders (from estimates)
-4. Ch 9: Gantt (visual timeline)
-5. Ch 10: Project Tasks
-6. Ch 11: Weather (affects schedule)
-
-**AI & Automation:**
-- Ch 7: AI Plan Review → Uses Ch 12 (OneDrive)
-- Ch 17: Workflows → Orchestrates Ch 4, Ch 12
-
-**Integrations:**
-- Ch 12: OneDrive → Used by Ch 5, Ch 7, Ch 17
-- Ch 13: Outlook → Links to Ch 5
-- Ch 14: Chat → For Ch 5, Ch 10
-- Ch 15: Xero → Syncs Ch 3, links Ch 8
-- Ch 16: Payments → Tracks Ch 8, reconciles Ch 15
-
-**UI/UX:**
-- Ch 19: UI/UX Standards → Applies to ALL frontend
-
-### Examples
-**Example 1: Creating a Job (Chapter 5)**
-Requires:
-- User (Ch 1)
-- Client contact (Ch 3)
-- Company timezone (Ch 2)
-
-May trigger:
-- OneDrive folders (Ch 12)
-- Gantt entry (Ch 9)
-- Tasks (Ch 10)
-- Chat channel (Ch 14)
-
-**Example 2: Generating Purchase Orders (Chapter 8)**
-Source: Estimate (Ch 6)
-Uses: Supplier contacts (Ch 3), Pricebook items (Ch 4)
-May create: Workflow approval (Ch 17), Xero bill (Ch 15), Payment tracking (Ch 16)
-
-**Example 3: Gantt Scheduling (Chapter 9)**
-Requires: Job (Ch 5), Tasks (Ch 10), Weather (Ch 11), Timezone (Ch 2)
-Affects: Task due dates (Ch 10), Workflow deadlines (Ch 17)
-
-### Recommendations
-**When Working on a Feature:**
-
-1. Identify primary chapter
-2. Check this map for dependencies
-3. Read ALL related chapters
-4. Consider cross-chapter impacts
-5. Test integration points
-
----
-
-## §1.10: Authentication & Contacts Quick Reference
+## §2.10: Authentication & Contacts Quick Reference
 
 🔧 Util | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.10"}]
 
 ### Quick Summary
 Quick reference guide for authentication flows, contact CRUD operations, and common API patterns
@@ -1478,25 +284,11 @@ Original file archived at: AUTH_AND_CONTACTS_QUICK_REFERENCE.md (12.1 KB)
 
 ---
 
-
-# Chapter 2: Authentication & Users
-
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  2               │
-│ 📕 LEXICON (BUGS):    Chapter  2               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
-**Last Updated:** 2025-11-17
-
----
-
-## §1.1: JWT Token Handling Implementation
+## §2.11: JWT Token Handling Implementation
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #1.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.1"}]
 
 ### Quick Summary
 Complete JWT authentication pattern using JsonWebToken service for encoding and decoding tokens.
@@ -1537,11 +329,11 @@ end
 
 ---
 
-## §1.2: Password Complexity Validation
+## §2.12: Password Complexity Validation
 
 🔧 Util | 🟢 Beginner
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #1.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.2"}]
 
 ### Quick Summary
 12-character minimum password with complexity rules using custom validation.
@@ -1581,11 +373,11 @@ end
 
 ---
 
-## §1.3: Role-Based Access Control
+## §2.13: Role-Based Access Control
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #1.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.3"}]
 
 ### Quick Summary
 Permission system using hardcoded roles and model-based permission methods.
@@ -1620,75 +412,11 @@ end
 
 ---
 
-## §1.4: Rate Limiting with Rack::Attack
-
-🔌 Integration | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #1.4
-
-### Quick Summary
-Configure rate limiting on auth endpoints using Rack::Attack middleware.
-
-### Code Example
-```jsx
-# config/initializers/rack_attack.rb
-Rack::Attack.throttle('auth/ip', limit: 5, period: 20.seconds) do |req|
-  req.ip if req.path.start_with?('/api/v1/auth/')
-end
-
-Rack::Attack.throttle('password_reset/email', limit: 3, period: 1.hour) do |req|
-  if req.path == '/api/v1/users/reset_password' && req.post?
-    req.params['email'].to_s.downcase.presence
-  end
-end
-
-Rack::Attack.throttle('general/ip', limit: 300, period: 5.minutes) do |req|
-  req.ip
-end
-
-```
-
----
-
-## §1.5: OAuth Integration with OmniAuth
-
-🔌 Integration | 🔴 Advanced
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #1.5
-
-### Quick Summary
-Microsoft Office 365 OAuth integration using OmniAuth gem.
-
-### Code Example
-```jsx
-# config/initializers/omniauth.rb
-Rails.application.config.middleware.use OmniAuth::Builder do
-  provider :microsoft_office365,
-    ENV['ONEDRIVE_CLIENT_ID'],
-    ENV['ONEDRIVE_CLIENT_SECRET'],
-    scope: 'openid profile email User.Read'
-end
-
-# app/models/user.rb
-def self.from_omniauth(auth)
-  where(provider: auth.provider, uid: auth.uid).first_or_create do |user|
-    user.email = auth.info.email
-    user.name = auth.info.name
-    user.password = SecureRandom.hex(16)
-    user.oauth_token = auth.credentials.token
-    user.oauth_expires_at = Time.at(auth.credentials.expires_at)
-  end
-end
-
-```
-
----
-
-## §1.6: Password Reset Flow with Secure Tokens
+## §2.14: Password Reset Flow with Secure Tokens
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #1.6
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.6"}]
 
 ### Quick Summary
 Secure password reset using hashed tokens with 2-hour expiration.
@@ -1726,11 +454,1166 @@ end
 
 ---
 
-## §1.7: Portal User Separation
+## §2.15: OAuth Integration with OmniAuth
+
+🔌 Integration | 🔴 Advanced
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.5"}]
+
+### Quick Summary
+Microsoft Office 365 OAuth integration using OmniAuth gem.
+
+### Code Example
+```jsx
+# config/initializers/omniauth.rb
+Rails.application.config.middleware.use OmniAuth::Builder do
+  provider :microsoft_office365,
+    ENV['ONEDRIVE_CLIENT_ID'],
+    ENV['ONEDRIVE_CLIENT_SECRET'],
+    scope: 'openid profile email User.Read'
+end
+
+# app/models/user.rb
+def self.from_omniauth(auth)
+  where(provider: auth.provider, uid: auth.uid).first_or_create do |user|
+    user.email = auth.info.email
+    user.name = auth.info.name
+    user.password = SecureRandom.hex(16)
+    user.oauth_token = auth.credentials.token
+    user.oauth_expires_at = Time.at(auth.credentials.expires_at)
+  end
+end
+
+```
+
+---
+
+## §2.16: Rate Limiting with Rack::Attack
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.4"}]
+
+### Quick Summary
+Configure rate limiting on auth endpoints using Rack::Attack middleware.
+
+### Code Example
+```jsx
+# config/initializers/rack_attack.rb
+Rack::Attack.throttle('auth/ip', limit: 5, period: 20.seconds) do |req|
+  req.ip if req.path.start_with?('/api/v1/auth/')
+end
+
+Rack::Attack.throttle('password_reset/email', limit: 3, period: 1.hour) do |req|
+  if req.path == '/api/v1/users/reset_password' && req.post?
+    req.params['email'].to_s.downcase.presence
+  end
+end
+
+Rack::Attack.throttle('general/ip', limit: 300, period: 5.minutes) do |req|
+  req.ip
+end
+
+```
+
+---
+
+## §2.2: Database Schema Reference - documentation_entries Table
+
+🔧 Util
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.2"}]
+
+### Quick Summary
+Complete field reference for documentation_entries table structure.
+
+### Step-by-Step Guide
+**Database Schema Fields:**
+
+**Core Fields:**
+- `chapter_number` - Which chapter (0-20)
+- `chapter_name` - Chapter title
+- `entry_type` - Type: bug, architecture, test, performance, dev_note, common_issue, component, feature, util, hook, integration, optimization
+- `title` - Entry title
+
+**Lexicon-Specific (bugs):**
+- `status` - For bugs: open, fixed, by_design, monitoring
+- `severity` - For bugs: low, medium, high, critical
+- `first_reported` - Date discovered (YYYY-MM-DD)
+- `fixed_date` - Date resolved (YYYY-MM-DD)
+
+**Teacher-Specific:**
+- `section_number` - Format: X.Y or X.YA (e.g., 19.1, 19.11A)
+- `difficulty` - beginner, intermediate, advanced
+- `summary` - Quick summary/description
+- `code_example` - Full code blocks
+- `common_mistakes` - What to avoid
+- `testing_strategy` - How to test
+- `related_rules` - Link to Bible rules
+
+**Universal Content Fields:**
+- `description` - Brief summary
+- `scenario` - How it manifests
+- `root_cause` - Technical explanation
+- `solution` - How to fix/implement
+- `prevention` - How to avoid
+- `component` - Specific component name
+- `details` - Step-by-step guides
+- `examples` - Examples
+- `recommendations` - Best practices
+- `rule_reference` - Link to Bible RULE
+
+---
+
+## §2.3: API Endpoints Reference - Documentation System
+
+🔌 Integration
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.3"}]
+
+### Quick Summary
+REST API endpoints for managing documentation entries.
+
+### Step-by-Step Guide
+**Documentation Entries API:**
+
+`GET /api/v1/documentation_entries` - List entries
+  - Query params: chapter, type, status, severity, search, category (lexicon/teacher)
+  
+`POST /api/v1/documentation_entries` - Create entry
+  - Body: { documentation_entry: { chapter_number, title, entry_type, ... } }
+  
+`GET /api/v1/documentation_entries/:id` - Get single entry
+
+`PUT /api/v1/documentation_entries/:id` - Update entry
+  - Body: { documentation_entry: { ... } }
+
+`DELETE /api/v1/documentation_entries/:id` - Delete entry
+
+`GET /api/v1/documentation_entries/stats` - Get statistics
+
+`POST /api/v1/documentation_entries/export_lexicon` - Export Lexicon to markdown
+
+`POST /api/v1/documentation_entries/export_teacher` - Export Teacher to markdown
+
+**Legacy Routes (backwards compatible):**
+`/api/v1/documented_bugs/*` - Maps to documentation_entries controller
+
+### Code Example
+```jsx
+// Example: Creating a documentation entry via API
+const response = await api.post('/api/v1/documentation_entries', {
+  documentation_entry: {
+    chapter_number: 19,
+    chapter_name: 'UI/UX Standards & Patterns',
+    entry_type: 'component',
+    section_number: '19.1',
+    title: 'Table Component Selection Pattern',
+    summary: 'Decision tree for choosing table type',
+    related_rules: 'TRAPID_BIBLE.md RULE #19.1'
+  }
+})
+
+// Example: Exporting Lexicon
+await api.post('/api/v1/documentation_entries/export_lexicon')
+```
+
+---
+
+## §2.4: Component Creation Enforcement Pattern
+
+🧩 Component
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.4"}]
+
+### Quick Summary
+Automated workflow Claude Code must follow before creating any new component.
+
+### Step-by-Step Guide
+**Enforcement Workflow:**
+
+**Step 1: Identify Component Type**
+Check filename pattern:
+- `*Table*.jsx` → Chapter 19 (UI/UX)
+- `*Modal*.jsx` → Chapter 19 (UI/UX)
+- `*Form*.jsx` → Chapter 19 (UI/UX)
+- `*Gantt*.jsx` → Chapter 9 (Gantt) + Chapter 19 (UI/UX)
+- `*Auth*.jsx` → Chapter 1 (Authentication)
+- `*Contact*.jsx` → Chapter 3 (Contacts)
+- See RULE #0.1 for full mapping table
+
+**Step 2: Read Required Chapters**
+Use Read tool to load:
+```
+Read: /Users/rob/Projects/trapid/TRAPID_DOCS/TRAPID_BIBLE.md
+  - offset: [chapter start]
+  - limit: [chapter length]
+```
+
+**Step 3: Follow ALL Rules**
+Parse chapter for:
+- MUST directives
+- NEVER directives
+- ALWAYS directives
+- User confirmation requirements
+
+**Step 4: Ask User When Required**
+Some rules require asking (e.g., RULE #19.1 table type)
+
+**Step 5: Create Component**
+Now write the file following all discovered rules
+
+### Code Example
+```jsx
+// Example: Creating LexiconTableView.jsx (CORRECT workflow)
+
+// 1. User requests: "Create a table view for Lexicon"
+// 2. Claude recognizes: filename contains "Table" → need Chapter 19
+// 3. Claude reads: TRAPID_BIBLE.md Chapter 19
+// 4. Claude sees: RULE #19.1 requires asking user for table type
+// 5. Claude asks: "Should I use:
+  1. DataTable.jsx (read-only)
+  2. Full advanced table?"
+// 6. User responds: "2"
+// 7. Claude creates: LexiconTableView.jsx with ALL Chapter 19 features
+
+// Component mapping reference:
+const COMPONENT_CHAPTER_MAP = {
+  table: [19],
+  modal: [19],
+  form: [19],
+  gantt: [9, 19],
+  auth: [1],
+  contact: [3],
+  pricebook: [4],
+  job: [5],
+  estimate: [6],
+  po: [8],
+  xero: [15]
+}
+```
+
+### ⚠️ Common Mistakes
+**Common Mistakes:**
+
+❌ Creating component immediately without reading Bible
+❌ Skipping user confirmation when rules require it
+❌ Reading only part of the chapter
+❌ Ignoring NEVER rules because they seem optional
+❌ Assuming best practices override Bible rules
+
+**Consequences:**
+- Non-compliant component
+- Requires refactoring
+- Wastes time and tokens
+- Violates RULE #0.1
+
+---
+
+## §2.5: Bug Fix Documentation Workflow
+
+✨ Feature
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.5"}]
+
+### Quick Summary
+Complete workflow for documenting every bug fix in the Lexicon.
+
+### Step-by-Step Guide
+**🔴 CRITICAL: Every bug fix MUST be documented**
+
+**Complete Workflow:**
+
+**1. Fix the Bug**
+- Write the code fix
+- Test locally
+- Verify fix works
+
+**2. Update Lexicon via UI**
+Navigate to Trapid app:
+- Go to Documentation page
+- Click "📕 TRAPID Lexicon"
+- Click "Add Entry"
+- Fill in all fields (see field guide below)
+- Save
+
+**3. Export Lexicon**
+```bash
+cd backend
+bin/rails trapid:export_lexicon
+```
+
+**4. Update Bible (if needed)**
+Add new RULE if bug revealed:
+- Protected code pattern
+- Configuration requirement
+- Critical validation
+
+**5. Commit Everything**
+```bash
+git add [code files] TRAPID_DOCS/TRAPID_LEXICON.md
+git commit -m "fix: [bug description]
+
+- Fixed [issue]
+- Added Lexicon entry
+- See TRAPID_LEXICON.md Chapter X"
+```
+
+### Code Example
+```jsx
+# Example Lexicon Entry Fields (via UI)
+
+**Required:**
+chapter_number: 9
+chapter_name: "Gantt & Schedule Master"
+entry_type: "bug"
+title: "Gantt Shaking During Cascade"
+
+**Bug-Specific:**
+status: "fixed"
+severity: "high"
+first_reported: "2025-11-10"
+fixed_date: "2025-11-11"
+
+**Content:**
+description: "Visual shaking observed during dependency updates in Gantt chart"
+
+scenario: "When dragging a task with dependencies, the chart would visibly shake/flicker"
+
+root_cause: "isLoadingData lock not properly set during cascade operations, causing re-renders mid-update"
+
+solution: "Added proper isLoadingData.current = true at start of cascade, set to false after 300ms timeout to allow DOM to settle"
+
+prevention: "Always use isLoadingData lock for any batch Gantt updates. See RULE #9.2 for timing requirements"
+
+component: "DHtmlxGanttView.jsx"
+
+rule_reference: "Chapter 9, RULE #9.2"
+
+# After saving, export:
+# bin/rails trapid:export_lexicon
+```
+
+### 🧪 Testing Strategy
+**Testing the Documentation:**
+
+1. Verify entry appears in UI
+2. Check export generates correct markdown
+3. Confirm cross-references link properly
+4. Test search finds the entry
+5. Validate all fields populated
+
+---
+
+## §2.6: Chapter Relationship Map - Feature Dependencies
+
+🔧 Util
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.6"}]
+
+### Quick Summary
+Understanding how chapters relate and depend on each other for complete context.
+
+### Step-by-Step Guide
+**Feature Dependencies Overview:**
+
+**Core Infrastructure (Used by ALL):**
+- Chapter 1: Authentication & Users
+- Chapter 2: System Administration (timezone, company settings)
+
+**Data & Content Management:**
+- Chapter 3: Contacts → Used by Ch 4 (suppliers), Ch 5 (clients), Ch 6 (quotes), Ch 8 (POs), Ch 14 (chat), Ch 15 (Xero)
+- Chapter 4: Price Books → Used by Ch 6 (estimate pricing), Ch 8 (PO pricing), Ch 17 (automation)
+- Chapter 18: Custom Tables → Standalone
+
+**Project Execution Flow:**
+1. Ch 6: Estimates & Quoting
+2. Ch 5: Jobs & Construction (central)
+3. Ch 8: Purchase Orders (from estimates)
+4. Ch 9: Gantt (visual timeline)
+5. Ch 10: Project Tasks
+6. Ch 11: Weather (affects schedule)
+
+**AI & Automation:**
+- Ch 7: AI Plan Review → Uses Ch 12 (OneDrive)
+- Ch 17: Workflows → Orchestrates Ch 4, Ch 12
+
+**Integrations:**
+- Ch 12: OneDrive → Used by Ch 5, Ch 7, Ch 17
+- Ch 13: Outlook → Links to Ch 5
+- Ch 14: Chat → For Ch 5, Ch 10
+- Ch 15: Xero → Syncs Ch 3, links Ch 8
+- Ch 16: Payments → Tracks Ch 8, reconciles Ch 15
+
+**UI/UX:**
+- Ch 19: UI/UX Standards → Applies to ALL frontend
+
+### Examples
+**Example 1: Creating a Job (Chapter 5)**
+Requires:
+- User (Ch 1)
+- Client contact (Ch 3)
+- Company timezone (Ch 2)
+
+May trigger:
+- OneDrive folders (Ch 12)
+- Gantt entry (Ch 9)
+- Tasks (Ch 10)
+- Chat channel (Ch 14)
+
+**Example 2: Generating Purchase Orders (Chapter 8)**
+Source: Estimate (Ch 6)
+Uses: Supplier contacts (Ch 3), Pricebook items (Ch 4)
+May create: Workflow approval (Ch 17), Xero bill (Ch 15), Payment tracking (Ch 16)
+
+**Example 3: Gantt Scheduling (Chapter 9)**
+Requires: Job (Ch 5), Tasks (Ch 10), Weather (Ch 11), Timezone (Ch 2)
+Affects: Task due dates (Ch 10), Workflow deadlines (Ch 17)
+
+### Recommendations
+**When Working on a Feature:**
+
+1. Identify primary chapter
+2. Check this map for dependencies
+3. Read ALL related chapters
+4. Consider cross-chapter impacts
+5. Test integration points
+
+---
+
+## §2.7: Portal User Separation
 
 ✨ Feature | 🔴 Advanced
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #1.7
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.7"}]
+
+### Quick Summary
+Isolated portal_users table with activity logging and account lockout.
+
+### Code Example
+```jsx
+# app/models/portal_user.rb
+class PortalUser < ApplicationRecord
+  belongs_to :contact
+  has_secure_password
+
+  enum portal_type: { supplier: 'supplier', customer: 'customer' }
+
+  def lock_account!
+    update!(locked_until: 30.minutes.from_now)
+  end
+
+  def record_failed_login!
+    increment!(:failed_login_attempts)
+    lock_account! if failed_login_attempts >= 5
+  end
+
+  def record_successful_login!
+    update!(
+      failed_login_attempts: 0,
+      locked_until: nil,
+      last_login_at: Time.current
+    )
+  end
+end
+
+# app/models/portal_access_log.rb
+def self.log(portal_user:, action:, ip:, user_agent:)
+  create!(
+    portal_user: portal_user,
+    action_type: action,
+    ip_address: ip,
+    user_agent: user_agent,
+    occurred_at: Time.current
+  )
+end
+
+```
+
+---
+
+
+# Chapter 2: Authentication & Users
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  2               │
+│ 📕 LEXICON (BUGS):    Chapter  2               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Code examples, implementation patterns, and step-by-step guides
+**Last Updated:** 2025-11-17
+
+---
+
+## §2.1: Lexicon Update Workflow - Database-Driven Documentation
+
+✨ Feature
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.1"}]
+
+### Quick Summary
+Step-by-step workflow for updating Lexicon via database UI and exporting to markdown.
+
+### Step-by-Step Guide
+**Lexicon is database-driven** - Source of truth is `documentation_entries` table, NOT the .md file.
+
+**Update Workflow:**
+1. Go to Trapid app → Documentation page
+2. Click "📕 TRAPID Lexicon"
+3. Add/edit entries via UI (stores in documentation_entries table)
+4. Run: `bin/rails trapid:export_lexicon`
+5. Commit the updated TRAPID_LEXICON.md file
+
+**Export Command:**
+```bash
+cd backend
+bin/rails trapid:export_lexicon
+```
+
+**Git Workflow:**
+```bash
+git add TRAPID_DOCS/TRAPID_LEXICON.md
+git commit -m "docs: Update Lexicon from database export"
+```
+
+### Code Example
+```jsx
+# Example: Adding a bug entry via Rails console
+DocumentationEntry.create!(
+  chapter_number: 9,
+  chapter_name: 'Gantt & Schedule Master',
+  entry_type: 'bug',
+  title: 'Gantt Shaking During Cascade',
+  status: 'fixed',
+  severity: 'high',
+  first_reported: '2025-11-10',
+  fixed_date: '2025-11-11',
+  description: 'Visual shaking during dependency updates',
+  root_cause: 'isLoadingData not properly managing render locks',
+  solution: 'Added proper lock timing in cascade handler',
+  rule_reference: 'Chapter 9, RULE #9.2'
+)
+```
+
+---
+
+## §2.10: Authentication & Contacts Quick Reference
+
+🔧 Util | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.10"}]
+
+### Quick Summary
+Quick reference guide for authentication flows, contact CRUD operations, and common API patterns
+
+### Recommendations
+Original file archived at: AUTH_AND_CONTACTS_QUICK_REFERENCE.md (12.1 KB)
+
+---
+
+## §2.11: JWT Token Handling Implementation
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.1"}]
+
+### Quick Summary
+Complete JWT authentication pattern using JsonWebToken service for encoding and decoding tokens.
+
+### Code Example
+```jsx
+# backend/app/services/json_web_token.rb
+class JsonWebToken
+  SECRET_KEY = Rails.application.secrets.secret_key_base.to_s
+
+  def self.encode(payload, exp = 24.hours.from_now)
+    payload[:exp] = exp.to_i
+    JWT.encode(payload, SECRET_KEY)
+  end
+
+  def self.decode(token)
+    decoded = JWT.decode(token, SECRET_KEY)[0]
+    HashWithIndifferentAccess.new decoded
+  rescue JWT::DecodeError, JWT::ExpiredSignature
+    nil
+  end
+end
+
+# ApplicationController authorization
+before_action :authorize_request
+
+def authorize_request
+  header = request.headers['Authorization']
+  header = header.split(' ').last if header
+
+  decoded = JsonWebToken.decode(header)
+  @current_user = User.find(decoded[:user_id]) if decoded
+rescue ActiveRecord::RecordNotFound, JWT::DecodeError
+  render json: { error: 'Unauthorized' }, status: :unauthorized
+end
+
+```
+
+---
+
+## §2.12: Password Complexity Validation
+
+🔧 Util | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.2"}]
+
+### Quick Summary
+12-character minimum password with complexity rules using custom validation.
+
+### Code Example
+```jsx
+# app/models/user.rb
+has_secure_password
+
+validates :password, length: { minimum: 12 }, if: :password_required?
+validate :password_complexity, if: :password_required?
+
+private
+
+def password_complexity
+  return unless password.present?
+
+  rules = [
+    [/[A-Z]/, 'uppercase letter'],
+    [/[a-z]/, 'lowercase letter'],
+    [/[0-9]/, 'number'],
+    [/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'special character']
+  ]
+
+  rules.each do |regex, description|
+    unless password.match?(regex)
+      errors.add(:password, "must include at least one #{description}")
+    end
+  end
+end
+
+def password_required?
+  password_digest.nil? || password.present?
+end
+
+```
+
+---
+
+## §2.13: Role-Based Access Control
+
+✨ Feature | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.3"}]
+
+### Quick Summary
+Permission system using hardcoded roles and model-based permission methods.
+
+### Code Example
+```jsx
+# app/models/user.rb
+ROLES = %w[user admin product_owner estimator supervisor builder].freeze
+
+def admin?
+  role == 'admin'
+end
+
+def can_create_templates?
+  admin? || product_owner?
+end
+
+def can_edit_schedule?
+  admin? || product_owner? || estimator?
+end
+
+# Controller usage:
+before_action :check_can_edit_templates
+
+def check_can_edit_templates
+  unless @current_user.can_create_templates?
+    render json: { error: 'Unauthorized' }, status: :forbidden
+  end
+end
+
+```
+
+---
+
+## §2.14: Password Reset Flow with Secure Tokens
+
+✨ Feature | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.6"}]
+
+### Quick Summary
+Secure password reset using hashed tokens with 2-hour expiration.
+
+### Code Example
+```jsx
+# Generate reset token
+def reset_password
+  token = SecureRandom.urlsafe_base64(32)
+  @user.update!(
+    reset_password_token: Digest::SHA256.hexdigest(token),
+    reset_password_sent_at: Time.current
+  )
+  # Send token via email (not API response)
+end
+
+# Validate and update password
+def update_password_with_token
+  hashed_token = Digest::SHA256.hexdigest(params[:token])
+  user = User.find_by(reset_password_token: hashed_token)
+
+  if user && user.reset_password_sent_at > 2.hours.ago
+    user.update!(
+      password: params[:password],
+      reset_password_token: nil,
+      reset_password_sent_at: nil
+    )
+    render json: { message: 'Password updated' }
+  else
+    render json: { error: 'Token expired' }, status: :unprocessable_entity
+  end
+end
+
+```
+
+---
+
+## §2.15: OAuth Integration with OmniAuth
+
+🔌 Integration | 🔴 Advanced
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.5"}]
+
+### Quick Summary
+Microsoft Office 365 OAuth integration using OmniAuth gem.
+
+### Code Example
+```jsx
+# config/initializers/omniauth.rb
+Rails.application.config.middleware.use OmniAuth::Builder do
+  provider :microsoft_office365,
+    ENV['ONEDRIVE_CLIENT_ID'],
+    ENV['ONEDRIVE_CLIENT_SECRET'],
+    scope: 'openid profile email User.Read'
+end
+
+# app/models/user.rb
+def self.from_omniauth(auth)
+  where(provider: auth.provider, uid: auth.uid).first_or_create do |user|
+    user.email = auth.info.email
+    user.name = auth.info.name
+    user.password = SecureRandom.hex(16)
+    user.oauth_token = auth.credentials.token
+    user.oauth_expires_at = Time.at(auth.credentials.expires_at)
+  end
+end
+
+```
+
+---
+
+## §2.16: Rate Limiting with Rack::Attack
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.4"}]
+
+### Quick Summary
+Configure rate limiting on auth endpoints using Rack::Attack middleware.
+
+### Code Example
+```jsx
+# config/initializers/rack_attack.rb
+Rack::Attack.throttle('auth/ip', limit: 5, period: 20.seconds) do |req|
+  req.ip if req.path.start_with?('/api/v1/auth/')
+end
+
+Rack::Attack.throttle('password_reset/email', limit: 3, period: 1.hour) do |req|
+  if req.path == '/api/v1/users/reset_password' && req.post?
+    req.params['email'].to_s.downcase.presence
+  end
+end
+
+Rack::Attack.throttle('general/ip', limit: 300, period: 5.minutes) do |req|
+  req.ip
+end
+
+```
+
+---
+
+## §2.2: Database Schema Reference - documentation_entries Table
+
+🔧 Util
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.2"}]
+
+### Quick Summary
+Complete field reference for documentation_entries table structure.
+
+### Step-by-Step Guide
+**Database Schema Fields:**
+
+**Core Fields:**
+- `chapter_number` - Which chapter (0-20)
+- `chapter_name` - Chapter title
+- `entry_type` - Type: bug, architecture, test, performance, dev_note, common_issue, component, feature, util, hook, integration, optimization
+- `title` - Entry title
+
+**Lexicon-Specific (bugs):**
+- `status` - For bugs: open, fixed, by_design, monitoring
+- `severity` - For bugs: low, medium, high, critical
+- `first_reported` - Date discovered (YYYY-MM-DD)
+- `fixed_date` - Date resolved (YYYY-MM-DD)
+
+**Teacher-Specific:**
+- `section_number` - Format: X.Y or X.YA (e.g., 19.1, 19.11A)
+- `difficulty` - beginner, intermediate, advanced
+- `summary` - Quick summary/description
+- `code_example` - Full code blocks
+- `common_mistakes` - What to avoid
+- `testing_strategy` - How to test
+- `related_rules` - Link to Bible rules
+
+**Universal Content Fields:**
+- `description` - Brief summary
+- `scenario` - How it manifests
+- `root_cause` - Technical explanation
+- `solution` - How to fix/implement
+- `prevention` - How to avoid
+- `component` - Specific component name
+- `details` - Step-by-step guides
+- `examples` - Examples
+- `recommendations` - Best practices
+- `rule_reference` - Link to Bible RULE
+
+---
+
+## §2.3: API Endpoints Reference - Documentation System
+
+🔌 Integration
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.3"}]
+
+### Quick Summary
+REST API endpoints for managing documentation entries.
+
+### Step-by-Step Guide
+**Documentation Entries API:**
+
+`GET /api/v1/documentation_entries` - List entries
+  - Query params: chapter, type, status, severity, search, category (lexicon/teacher)
+  
+`POST /api/v1/documentation_entries` - Create entry
+  - Body: { documentation_entry: { chapter_number, title, entry_type, ... } }
+  
+`GET /api/v1/documentation_entries/:id` - Get single entry
+
+`PUT /api/v1/documentation_entries/:id` - Update entry
+  - Body: { documentation_entry: { ... } }
+
+`DELETE /api/v1/documentation_entries/:id` - Delete entry
+
+`GET /api/v1/documentation_entries/stats` - Get statistics
+
+`POST /api/v1/documentation_entries/export_lexicon` - Export Lexicon to markdown
+
+`POST /api/v1/documentation_entries/export_teacher` - Export Teacher to markdown
+
+**Legacy Routes (backwards compatible):**
+`/api/v1/documented_bugs/*` - Maps to documentation_entries controller
+
+### Code Example
+```jsx
+// Example: Creating a documentation entry via API
+const response = await api.post('/api/v1/documentation_entries', {
+  documentation_entry: {
+    chapter_number: 19,
+    chapter_name: 'UI/UX Standards & Patterns',
+    entry_type: 'component',
+    section_number: '19.1',
+    title: 'Table Component Selection Pattern',
+    summary: 'Decision tree for choosing table type',
+    related_rules: 'TRAPID_BIBLE.md RULE #19.1'
+  }
+})
+
+// Example: Exporting Lexicon
+await api.post('/api/v1/documentation_entries/export_lexicon')
+```
+
+---
+
+## §2.4: Component Creation Enforcement Pattern
+
+🧩 Component
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.4"}]
+
+### Quick Summary
+Automated workflow Claude Code must follow before creating any new component.
+
+### Step-by-Step Guide
+**Enforcement Workflow:**
+
+**Step 1: Identify Component Type**
+Check filename pattern:
+- `*Table*.jsx` → Chapter 19 (UI/UX)
+- `*Modal*.jsx` → Chapter 19 (UI/UX)
+- `*Form*.jsx` → Chapter 19 (UI/UX)
+- `*Gantt*.jsx` → Chapter 9 (Gantt) + Chapter 19 (UI/UX)
+- `*Auth*.jsx` → Chapter 1 (Authentication)
+- `*Contact*.jsx` → Chapter 3 (Contacts)
+- See RULE #0.1 for full mapping table
+
+**Step 2: Read Required Chapters**
+Use Read tool to load:
+```
+Read: /Users/rob/Projects/trapid/TRAPID_DOCS/TRAPID_BIBLE.md
+  - offset: [chapter start]
+  - limit: [chapter length]
+```
+
+**Step 3: Follow ALL Rules**
+Parse chapter for:
+- MUST directives
+- NEVER directives
+- ALWAYS directives
+- User confirmation requirements
+
+**Step 4: Ask User When Required**
+Some rules require asking (e.g., RULE #19.1 table type)
+
+**Step 5: Create Component**
+Now write the file following all discovered rules
+
+### Code Example
+```jsx
+// Example: Creating LexiconTableView.jsx (CORRECT workflow)
+
+// 1. User requests: "Create a table view for Lexicon"
+// 2. Claude recognizes: filename contains "Table" → need Chapter 19
+// 3. Claude reads: TRAPID_BIBLE.md Chapter 19
+// 4. Claude sees: RULE #19.1 requires asking user for table type
+// 5. Claude asks: "Should I use:
+  1. DataTable.jsx (read-only)
+  2. Full advanced table?"
+// 6. User responds: "2"
+// 7. Claude creates: LexiconTableView.jsx with ALL Chapter 19 features
+
+// Component mapping reference:
+const COMPONENT_CHAPTER_MAP = {
+  table: [19],
+  modal: [19],
+  form: [19],
+  gantt: [9, 19],
+  auth: [1],
+  contact: [3],
+  pricebook: [4],
+  job: [5],
+  estimate: [6],
+  po: [8],
+  xero: [15]
+}
+```
+
+### ⚠️ Common Mistakes
+**Common Mistakes:**
+
+❌ Creating component immediately without reading Bible
+❌ Skipping user confirmation when rules require it
+❌ Reading only part of the chapter
+❌ Ignoring NEVER rules because they seem optional
+❌ Assuming best practices override Bible rules
+
+**Consequences:**
+- Non-compliant component
+- Requires refactoring
+- Wastes time and tokens
+- Violates RULE #0.1
+
+---
+
+## §2.5: Bug Fix Documentation Workflow
+
+✨ Feature
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.5"}]
+
+### Quick Summary
+Complete workflow for documenting every bug fix in the Lexicon.
+
+### Step-by-Step Guide
+**🔴 CRITICAL: Every bug fix MUST be documented**
+
+**Complete Workflow:**
+
+**1. Fix the Bug**
+- Write the code fix
+- Test locally
+- Verify fix works
+
+**2. Update Lexicon via UI**
+Navigate to Trapid app:
+- Go to Documentation page
+- Click "📕 TRAPID Lexicon"
+- Click "Add Entry"
+- Fill in all fields (see field guide below)
+- Save
+
+**3. Export Lexicon**
+```bash
+cd backend
+bin/rails trapid:export_lexicon
+```
+
+**4. Update Bible (if needed)**
+Add new RULE if bug revealed:
+- Protected code pattern
+- Configuration requirement
+- Critical validation
+
+**5. Commit Everything**
+```bash
+git add [code files] TRAPID_DOCS/TRAPID_LEXICON.md
+git commit -m "fix: [bug description]
+
+- Fixed [issue]
+- Added Lexicon entry
+- See TRAPID_LEXICON.md Chapter X"
+```
+
+### Code Example
+```jsx
+# Example Lexicon Entry Fields (via UI)
+
+**Required:**
+chapter_number: 9
+chapter_name: "Gantt & Schedule Master"
+entry_type: "bug"
+title: "Gantt Shaking During Cascade"
+
+**Bug-Specific:**
+status: "fixed"
+severity: "high"
+first_reported: "2025-11-10"
+fixed_date: "2025-11-11"
+
+**Content:**
+description: "Visual shaking observed during dependency updates in Gantt chart"
+
+scenario: "When dragging a task with dependencies, the chart would visibly shake/flicker"
+
+root_cause: "isLoadingData lock not properly set during cascade operations, causing re-renders mid-update"
+
+solution: "Added proper isLoadingData.current = true at start of cascade, set to false after 300ms timeout to allow DOM to settle"
+
+prevention: "Always use isLoadingData lock for any batch Gantt updates. See RULE #9.2 for timing requirements"
+
+component: "DHtmlxGanttView.jsx"
+
+rule_reference: "Chapter 9, RULE #9.2"
+
+# After saving, export:
+# bin/rails trapid:export_lexicon
+```
+
+### 🧪 Testing Strategy
+**Testing the Documentation:**
+
+1. Verify entry appears in UI
+2. Check export generates correct markdown
+3. Confirm cross-references link properly
+4. Test search finds the entry
+5. Validate all fields populated
+
+---
+
+## §2.6: Chapter Relationship Map - Feature Dependencies
+
+🔧 Util
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.6"}]
+
+### Quick Summary
+Understanding how chapters relate and depend on each other for complete context.
+
+### Step-by-Step Guide
+**Feature Dependencies Overview:**
+
+**Core Infrastructure (Used by ALL):**
+- Chapter 1: Authentication & Users
+- Chapter 2: System Administration (timezone, company settings)
+
+**Data & Content Management:**
+- Chapter 3: Contacts → Used by Ch 4 (suppliers), Ch 5 (clients), Ch 6 (quotes), Ch 8 (POs), Ch 14 (chat), Ch 15 (Xero)
+- Chapter 4: Price Books → Used by Ch 6 (estimate pricing), Ch 8 (PO pricing), Ch 17 (automation)
+- Chapter 18: Custom Tables → Standalone
+
+**Project Execution Flow:**
+1. Ch 6: Estimates & Quoting
+2. Ch 5: Jobs & Construction (central)
+3. Ch 8: Purchase Orders (from estimates)
+4. Ch 9: Gantt (visual timeline)
+5. Ch 10: Project Tasks
+6. Ch 11: Weather (affects schedule)
+
+**AI & Automation:**
+- Ch 7: AI Plan Review → Uses Ch 12 (OneDrive)
+- Ch 17: Workflows → Orchestrates Ch 4, Ch 12
+
+**Integrations:**
+- Ch 12: OneDrive → Used by Ch 5, Ch 7, Ch 17
+- Ch 13: Outlook → Links to Ch 5
+- Ch 14: Chat → For Ch 5, Ch 10
+- Ch 15: Xero → Syncs Ch 3, links Ch 8
+- Ch 16: Payments → Tracks Ch 8, reconciles Ch 15
+
+**UI/UX:**
+- Ch 19: UI/UX Standards → Applies to ALL frontend
+
+### Examples
+**Example 1: Creating a Job (Chapter 5)**
+Requires:
+- User (Ch 1)
+- Client contact (Ch 3)
+- Company timezone (Ch 2)
+
+May trigger:
+- OneDrive folders (Ch 12)
+- Gantt entry (Ch 9)
+- Tasks (Ch 10)
+- Chat channel (Ch 14)
+
+**Example 2: Generating Purchase Orders (Chapter 8)**
+Source: Estimate (Ch 6)
+Uses: Supplier contacts (Ch 3), Pricebook items (Ch 4)
+May create: Workflow approval (Ch 17), Xero bill (Ch 15), Payment tracking (Ch 16)
+
+**Example 3: Gantt Scheduling (Chapter 9)**
+Requires: Job (Ch 5), Tasks (Ch 10), Weather (Ch 11), Timezone (Ch 2)
+Affects: Task due dates (Ch 10), Workflow deadlines (Ch 17)
+
+### Recommendations
+**When Working on a Feature:**
+
+1. Identify primary chapter
+2. Check this map for dependencies
+3. Read ALL related chapters
+4. Consider cross-chapter impacts
+5. Test integration points
+
+---
+
+## §2.7: Portal User Separation
+
+✨ Feature | 🔴 Advanced
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§2.7"}]
 
 ### Quick Summary
 Isolated portal_users table with activity logging and account lockout.
@@ -1791,11 +1674,11 @@ end
 
 ---
 
-## §2.1: Company Settings Singleton Pattern
+## §3.1: Company Settings Singleton Pattern
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.1"}]
 
 ### Code Example
 ```jsx
@@ -1831,376 +1714,11 @@ company_name = settings.company_name
 
 ---
 
-## §2.2: Timezone Handling - Backend Time Calculations
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.2
-
-### Code Example
-```jsx
-# app/models/company_setting.rb
-def today
-  Time.use_zone(timezone) { Time.zone.today }
-end
-
-def now
-  Time.use_zone(timezone) { Time.zone.now }
-end
-
-# Usage in services/models:
-settings = CompanySetting.instance
-current_date = settings.today  # NOT Date.today!
-current_time = settings.now    # NOT Time.now!
-
-# ---
-
-# When calculating dates for a job:
-settings = CompanySetting.instance
-
-Time.use_zone(settings.timezone) do
-  job_start = Time.zone.parse("2025-01-15 08:00:00")
-  job_end = job_start + 5.days
-
-  # All calculations within this block use company timezone
-end
-```
-
----
-
-## §2.3: Timezone Handling - Frontend Time Display
-
-🔌 Integration | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.3
-
-### Code Example
-```jsx
-// frontend/src/utils/timezoneUtils.js
-import { companySettings } from '../contexts/CompanySettingsContext';
-
-export const formatDate = (dateString) => {
-  const timezone = companySettings.timezone; // e.g., "Australia/Brisbane"
-
-  const formatter = new Intl.DateTimeFormat('en-AU', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-
-  return formatter.format(new Date(dateString));
-};
-
-export const formatDateTime = (dateString) => {
-  const timezone = companySettings.timezone;
-
-  const formatter = new Intl.DateTimeFormat('en-AU', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-
-  return formatter.format(new Date(dateString));
-};
-
-# ---
-
-// GanttChart.jsx
-import { formatDate, formatDateTime } from '../utils/timezoneUtils';
-
-const TaskRow = ({ task }) => (
-  <div>
-    <span>Start: {formatDate(task.planned_start_date)}</span>
-    <span>End: {formatDate(task.planned_end_date)}</span>
-  </div>
-);
-```
-
----
-
-## §2.4: Working Days Configuration & Business Day Calculations
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.4
-
-### Code Example
-```jsx
-# db/schema.rb
-create_table :company_settings do |t|
-  t.jsonb :working_days, default: {
-    "monday" => true,
-    "tuesday" => true,
-    "wednesday" => true,
-    "thursday" => true,
-    "friday" => true,
-    "saturday" => false,
-    "sunday" => true  # Default includes Sunday (construction industry)
-  }
-end
-
-# ---
-
-# app/models/company_setting.rb
-def working_day?(date)
-  day_name = date.strftime('%A').downcase  # "monday", "tuesday", etc.
-  working_days[day_name] == true
-end
-
-def business_day?(date)
-  # Business day = working day AND not a public holiday
-  working_day?(date) && !PublicHoliday.on_date(date).exists?
-end
-
-# ---
-
-# app/services/schedule/cascade_calculator.rb
-def next_business_day(date)
-  settings = CompanySetting.instance
-  current = date + 1.day
-
-  while !settings.business_day?(current)
-    current += 1.day
-  end
-
-  current
-end
-
-def add_business_days(start_date, days_to_add)
-  settings = CompanySetting.instance
-  current = start_date
-  days_added = 0
-
-  while days_added < days_to_add
-    current += 1.day
-    days_added += 1 if settings.business_day?(current)
-  end
-
-  current
-end
-```
-
----
-
-## §2.5: User Roles & Permission System
-
-🧩 Component | 🟢 Beginner
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.5
-
-### Code Example
-```jsx
-# app/models/user.rb
-enum role: {
-  user: 0,           # Basic access (view-only for most features)
-  admin: 1,          # Full system access
-  product_owner: 2,  # Full access + product backlog management
-  estimator: 3,      # Estimate/quote creation and editing
-  supervisor: 4,     # Field supervisor (task completion, checklists)
-  builder: 5         # Builder/contractor (task viewing, updates)
-}
-
-# ---
-
-# app/models/user.rb
-def can_create_templates?
-  admin? || product_owner?
-end
-
-def can_edit_schedule?
-  admin? || product_owner? || estimator?
-end
-
-def can_view_supervisor_tasks?
-  supervisor? || admin? || product_owner?
-end
-
-def can_view_builder_tasks?
-  builder? || admin? || product_owner?
-end
-
-def can_manage_users?
-  admin? || product_owner?
-end
-
-# ---
-
-# app/controllers/api/v1/schedule_templates_controller.rb
-before_action :require_template_permissions, only: [:create, :update, :destroy]
-
-def require_template_permissions
-  unless current_user.can_create_templates?
-    render json: { error: "Insufficient permissions" }, status: :forbidden
-  end
-end
-```
-
----
-
-## §2.6: Assignable Roles for Task Assignment
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.6
-
-### Code Example
-```jsx
-# app/models/user.rb
-enum assignable_role: {
-  admin: 0,
-  sales: 1,
-  site: 2,
-  supervisor: 3,
-  builder: 4,
-  estimator: 5,
-  none: 6
-}, _prefix: :assignable
-
-# ---
-
-# app/controllers/api/v1/schedule_tasks_controller.rb
-def my_tasks
-  # Filter by assignable_role, not system role
-  tasks = ScheduleTask.where(assignable_role: current_user.assignable_role)
-  render json: tasks
-end
-```
-
----
-
-## §2.7: Password Complexity Requirements
-
-🔌 Integration | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.7
-
-### Code Example
-```jsx
-# app/models/user.rb
-validates :password, presence: true, if: :password_required?
-validates :password, length: { minimum: 12 }, if: :password_required?
-validate :password_complexity, if: :password_required?
-
-def password_complexity
-  return if password.blank?
-
-  rules = []
-  rules << "must include at least one uppercase letter" unless password.match?(/[A-Z]/)
-  rules << "must include at least one lowercase letter" unless password.match?(/[a-z]/)
-  rules << "must include at least one digit" unless password.match?(/\d/)
-  rules << "must include at least one special character" unless password.match?(/[@$!%*?&]/)
-
-  if rules.any?
-    errors.add(:password, rules.join(", "))
-  end
-end
-
-def password_required?
-  !oauth_uid.present?  # OAuth users skip password validation
-end
-
-# ---
-
-# app/services/oauth_user_creator.rb
-def create_from_oauth(oauth_data)
-  User.create!(
-    email: oauth_data[:email],
-    name: oauth_data[:name],
-    oauth_uid: oauth_data[:uid],
-    oauth_provider: oauth_data[:provider],
-    password: SecureRandom.urlsafe_base64(32),  # Random, unused password
-    role: :user
-  )
-end
-```
-
----
-
-## §2.8: Timezone Options Limitation
-
-🧩 Component | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.8
-
-### Code Example
-```jsx
-// frontend/src/components/settings/CompanySettingsTab.jsx
-const TIMEZONE_OPTIONS = [
-  'Australia/Sydney',     // NSW, VIC, TAS
-  'Australia/Melbourne',  // VIC
-  'Australia/Brisbane',   // QLD (no DST)
-  'Australia/Adelaide',   // SA
-  'Australia/Perth',      // WA
-  'Australia/Darwin',     // NT (no DST)
-  'Australia/Hobart',     // TAS
-  'Australia/Canberra',   // ACT
-  'Australia/Lord_Howe',  // Lord Howe Island
-  'Pacific/Auckland',     // NZ
-  'Pacific/Chatham',      // Chatham Islands
-  'Australia/Eucla'       // WA (rare)
-];
-
-# ---
-
-<select
-  value={settings.timezone}
-  onChange={(e) => updateTimezone(e.target.value)}
-  className="form-select"
->
-  {TIMEZONE_OPTIONS.map(tz => (
-    <option key={tz} value={tz}>{tz}</option>
-  ))}
-</select>
-```
-
----
-
-## §2.9: Working Days UI - Sunday Default True
-
-🧩 Component | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.9
-
-### Code Example
-```jsx
-# app/models/company_setting.rb
-DEFAULT_WORKING_DAYS = {
-  "monday" => true,
-  "tuesday" => true,
-  "wednesday" => true,
-  "thursday" => true,
-  "friday" => true,
-  "saturday" => false,   # Most crews don't work Saturdays
-  "sunday" => true       # Sunday work common in construction
-}.freeze
-
-# ---
-
-// CompanySettingsTab.jsx
-const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
-{DAYS.map(day => (
-  <label key={day} className="flex items-center gap-2">
-    <input
-      type="checkbox"
-      checked={settings.working_days[day] || false}
-      onChange={(e) => updateWorkingDay(day, e.target.checked)}
-    />
-    <span className="capitalize">{day}</span>
-  </label>
-))}
-```
-
----
-
 ## §3.15: Contact Detail Page - Complete Integration Guide
 
 ✨ Feature | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.15"}]
 
 ### Quick Summary
 Step-by-step guide for integrating contact persons, addresses, and Xero fields into ContactDetailPage
@@ -3559,9 +3077,48 @@ const handleContactAddressesUpdate = async (updatedAddresses) => {
 
 ---
 
+## §3.2: Timezone Handling - Backend Time Calculations
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.2"}]
+
+### Code Example
+```jsx
+# app/models/company_setting.rb
+def today
+  Time.use_zone(timezone) { Time.zone.today }
+end
+
+def now
+  Time.use_zone(timezone) { Time.zone.now }
+end
+
+# Usage in services/models:
+settings = CompanySetting.instance
+current_date = settings.today  # NOT Date.today!
+current_time = settings.now    # NOT Time.now!
+
+# ---
+
+# When calculating dates for a job:
+settings = CompanySetting.instance
+
+Time.use_zone(settings.timezone) do
+  job_start = Time.zone.parse("2025-01-15 08:00:00")
+  job_end = job_start + 5.days
+
+  # All calculations within this block use company timezone
+end
+```
+
+---
+
 ## §3.20: Timezone Migration Implementation Guide
 
 ✨ Feature | 🔴 Advanced
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.20"}]
 
 ### Quick Summary
 Step-by-step guide for implementing timezone support across backend and frontend with UTC storage
@@ -3575,11 +3132,343 @@ Original file archived at: TIMEZONE_MIGRATION_GUIDE.md (10.4 KB)
 
 ✨ Feature | 🟡 Intermediate
 
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.21"}]
+
 ### Quick Summary
 Testing strategies for timezone-aware features including edge cases and DST transitions
 
 ### Recommendations
 Original file archived at: TIMEZONE_TESTING_GUIDE.md (10.8 KB)
+
+---
+
+## §3.3: Timezone Handling - Frontend Time Display
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.3"}]
+
+### Code Example
+```jsx
+// frontend/src/utils/timezoneUtils.js
+import { companySettings } from '../contexts/CompanySettingsContext';
+
+export const formatDate = (dateString) => {
+  const timezone = companySettings.timezone; // e.g., "Australia/Brisbane"
+
+  const formatter = new Intl.DateTimeFormat('en-AU', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  return formatter.format(new Date(dateString));
+};
+
+export const formatDateTime = (dateString) => {
+  const timezone = companySettings.timezone;
+
+  const formatter = new Intl.DateTimeFormat('en-AU', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  return formatter.format(new Date(dateString));
+};
+
+# ---
+
+// GanttChart.jsx
+import { formatDate, formatDateTime } from '../utils/timezoneUtils';
+
+const TaskRow = ({ task }) => (
+  <div>
+    <span>Start: {formatDate(task.planned_start_date)}</span>
+    <span>End: {formatDate(task.planned_end_date)}</span>
+  </div>
+);
+```
+
+---
+
+## §3.4: Working Days Configuration & Business Day Calculations
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.4"}]
+
+### Code Example
+```jsx
+# db/schema.rb
+create_table :company_settings do |t|
+  t.jsonb :working_days, default: {
+    "monday" => true,
+    "tuesday" => true,
+    "wednesday" => true,
+    "thursday" => true,
+    "friday" => true,
+    "saturday" => false,
+    "sunday" => true  # Default includes Sunday (construction industry)
+  }
+end
+
+# ---
+
+# app/models/company_setting.rb
+def working_day?(date)
+  day_name = date.strftime('%A').downcase  # "monday", "tuesday", etc.
+  working_days[day_name] == true
+end
+
+def business_day?(date)
+  # Business day = working day AND not a public holiday
+  working_day?(date) && !PublicHoliday.on_date(date).exists?
+end
+
+# ---
+
+# app/services/schedule/cascade_calculator.rb
+def next_business_day(date)
+  settings = CompanySetting.instance
+  current = date + 1.day
+
+  while !settings.business_day?(current)
+    current += 1.day
+  end
+
+  current
+end
+
+def add_business_days(start_date, days_to_add)
+  settings = CompanySetting.instance
+  current = start_date
+  days_added = 0
+
+  while days_added < days_to_add
+    current += 1.day
+    days_added += 1 if settings.business_day?(current)
+  end
+
+  current
+end
+```
+
+---
+
+## §3.5: User Roles & Permission System
+
+🧩 Component | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.5"}]
+
+### Code Example
+```jsx
+# app/models/user.rb
+enum role: {
+  user: 0,           # Basic access (view-only for most features)
+  admin: 1,          # Full system access
+  product_owner: 2,  # Full access + product backlog management
+  estimator: 3,      # Estimate/quote creation and editing
+  supervisor: 4,     # Field supervisor (task completion, checklists)
+  builder: 5         # Builder/contractor (task viewing, updates)
+}
+
+# ---
+
+# app/models/user.rb
+def can_create_templates?
+  admin? || product_owner?
+end
+
+def can_edit_schedule?
+  admin? || product_owner? || estimator?
+end
+
+def can_view_supervisor_tasks?
+  supervisor? || admin? || product_owner?
+end
+
+def can_view_builder_tasks?
+  builder? || admin? || product_owner?
+end
+
+def can_manage_users?
+  admin? || product_owner?
+end
+
+# ---
+
+# app/controllers/api/v1/schedule_templates_controller.rb
+before_action :require_template_permissions, only: [:create, :update, :destroy]
+
+def require_template_permissions
+  unless current_user.can_create_templates?
+    render json: { error: "Insufficient permissions" }, status: :forbidden
+  end
+end
+```
+
+---
+
+## §3.6: Assignable Roles for Task Assignment
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.6"}]
+
+### Code Example
+```jsx
+# app/models/user.rb
+enum assignable_role: {
+  admin: 0,
+  sales: 1,
+  site: 2,
+  supervisor: 3,
+  builder: 4,
+  estimator: 5,
+  none: 6
+}, _prefix: :assignable
+
+# ---
+
+# app/controllers/api/v1/schedule_tasks_controller.rb
+def my_tasks
+  # Filter by assignable_role, not system role
+  tasks = ScheduleTask.where(assignable_role: current_user.assignable_role)
+  render json: tasks
+end
+```
+
+---
+
+## §3.7: Password Complexity Requirements
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.7"}]
+
+### Code Example
+```jsx
+# app/models/user.rb
+validates :password, presence: true, if: :password_required?
+validates :password, length: { minimum: 12 }, if: :password_required?
+validate :password_complexity, if: :password_required?
+
+def password_complexity
+  return if password.blank?
+
+  rules = []
+  rules << "must include at least one uppercase letter" unless password.match?(/[A-Z]/)
+  rules << "must include at least one lowercase letter" unless password.match?(/[a-z]/)
+  rules << "must include at least one digit" unless password.match?(/\d/)
+  rules << "must include at least one special character" unless password.match?(/[@$!%*?&]/)
+
+  if rules.any?
+    errors.add(:password, rules.join(", "))
+  end
+end
+
+def password_required?
+  !oauth_uid.present?  # OAuth users skip password validation
+end
+
+# ---
+
+# app/services/oauth_user_creator.rb
+def create_from_oauth(oauth_data)
+  User.create!(
+    email: oauth_data[:email],
+    name: oauth_data[:name],
+    oauth_uid: oauth_data[:uid],
+    oauth_provider: oauth_data[:provider],
+    password: SecureRandom.urlsafe_base64(32),  # Random, unused password
+    role: :user
+  )
+end
+```
+
+---
+
+## §3.8: Timezone Options Limitation
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.8"}]
+
+### Code Example
+```jsx
+// frontend/src/components/settings/CompanySettingsTab.jsx
+const TIMEZONE_OPTIONS = [
+  'Australia/Sydney',     // NSW, VIC, TAS
+  'Australia/Melbourne',  // VIC
+  'Australia/Brisbane',   // QLD (no DST)
+  'Australia/Adelaide',   // SA
+  'Australia/Perth',      // WA
+  'Australia/Darwin',     // NT (no DST)
+  'Australia/Hobart',     // TAS
+  'Australia/Canberra',   // ACT
+  'Australia/Lord_Howe',  // Lord Howe Island
+  'Pacific/Auckland',     // NZ
+  'Pacific/Chatham',      // Chatham Islands
+  'Australia/Eucla'       // WA (rare)
+];
+
+# ---
+
+<select
+  value={settings.timezone}
+  onChange={(e) => updateTimezone(e.target.value)}
+  className="form-select"
+>
+  {TIMEZONE_OPTIONS.map(tz => (
+    <option key={tz} value={tz}>{tz}</option>
+  ))}
+</select>
+```
+
+---
+
+## §3.9: Working Days UI - Sunday Default True
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.9"}]
+
+### Code Example
+```jsx
+# app/models/company_setting.rb
+DEFAULT_WORKING_DAYS = {
+  "monday" => true,
+  "tuesday" => true,
+  "wednesday" => true,
+  "thursday" => true,
+  "friday" => true,
+  "saturday" => false,   # Most crews don't work Saturdays
+  "sunday" => true       # Sunday work common in construction
+}.freeze
+
+# ---
+
+// CompanySettingsTab.jsx
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+{DAYS.map(day => (
+  <label key={day} className="flex items-center gap-2">
+    <input
+      type="checkbox"
+      checked={settings.working_days[day] || false}
+      onChange={(e) => updateWorkingDay(day, e.target.checked)}
+    />
+    <span className="capitalize">{day}</span>
+  </label>
+))}
+```
 
 ---
 
@@ -3597,11 +3486,11 @@ Original file archived at: TIMEZONE_TESTING_GUIDE.md (10.8 KB)
 
 ---
 
-## §2.1: Company Settings Singleton Pattern
+## §3.1: Company Settings Singleton Pattern
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.1"}]
 
 ### Code Example
 ```jsx
@@ -3637,376 +3526,11 @@ company_name = settings.company_name
 
 ---
 
-## §2.2: Timezone Handling - Backend Time Calculations
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.2
-
-### Code Example
-```jsx
-# app/models/company_setting.rb
-def today
-  Time.use_zone(timezone) { Time.zone.today }
-end
-
-def now
-  Time.use_zone(timezone) { Time.zone.now }
-end
-
-# Usage in services/models:
-settings = CompanySetting.instance
-current_date = settings.today  # NOT Date.today!
-current_time = settings.now    # NOT Time.now!
-
-# ---
-
-# When calculating dates for a job:
-settings = CompanySetting.instance
-
-Time.use_zone(settings.timezone) do
-  job_start = Time.zone.parse("2025-01-15 08:00:00")
-  job_end = job_start + 5.days
-
-  # All calculations within this block use company timezone
-end
-```
-
----
-
-## §2.3: Timezone Handling - Frontend Time Display
-
-🔌 Integration | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.3
-
-### Code Example
-```jsx
-// frontend/src/utils/timezoneUtils.js
-import { companySettings } from '../contexts/CompanySettingsContext';
-
-export const formatDate = (dateString) => {
-  const timezone = companySettings.timezone; // e.g., "Australia/Brisbane"
-
-  const formatter = new Intl.DateTimeFormat('en-AU', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-
-  return formatter.format(new Date(dateString));
-};
-
-export const formatDateTime = (dateString) => {
-  const timezone = companySettings.timezone;
-
-  const formatter = new Intl.DateTimeFormat('en-AU', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-
-  return formatter.format(new Date(dateString));
-};
-
-# ---
-
-// GanttChart.jsx
-import { formatDate, formatDateTime } from '../utils/timezoneUtils';
-
-const TaskRow = ({ task }) => (
-  <div>
-    <span>Start: {formatDate(task.planned_start_date)}</span>
-    <span>End: {formatDate(task.planned_end_date)}</span>
-  </div>
-);
-```
-
----
-
-## §2.4: Working Days Configuration & Business Day Calculations
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.4
-
-### Code Example
-```jsx
-# db/schema.rb
-create_table :company_settings do |t|
-  t.jsonb :working_days, default: {
-    "monday" => true,
-    "tuesday" => true,
-    "wednesday" => true,
-    "thursday" => true,
-    "friday" => true,
-    "saturday" => false,
-    "sunday" => true  # Default includes Sunday (construction industry)
-  }
-end
-
-# ---
-
-# app/models/company_setting.rb
-def working_day?(date)
-  day_name = date.strftime('%A').downcase  # "monday", "tuesday", etc.
-  working_days[day_name] == true
-end
-
-def business_day?(date)
-  # Business day = working day AND not a public holiday
-  working_day?(date) && !PublicHoliday.on_date(date).exists?
-end
-
-# ---
-
-# app/services/schedule/cascade_calculator.rb
-def next_business_day(date)
-  settings = CompanySetting.instance
-  current = date + 1.day
-
-  while !settings.business_day?(current)
-    current += 1.day
-  end
-
-  current
-end
-
-def add_business_days(start_date, days_to_add)
-  settings = CompanySetting.instance
-  current = start_date
-  days_added = 0
-
-  while days_added < days_to_add
-    current += 1.day
-    days_added += 1 if settings.business_day?(current)
-  end
-
-  current
-end
-```
-
----
-
-## §2.5: User Roles & Permission System
-
-🧩 Component | 🟢 Beginner
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.5
-
-### Code Example
-```jsx
-# app/models/user.rb
-enum role: {
-  user: 0,           # Basic access (view-only for most features)
-  admin: 1,          # Full system access
-  product_owner: 2,  # Full access + product backlog management
-  estimator: 3,      # Estimate/quote creation and editing
-  supervisor: 4,     # Field supervisor (task completion, checklists)
-  builder: 5         # Builder/contractor (task viewing, updates)
-}
-
-# ---
-
-# app/models/user.rb
-def can_create_templates?
-  admin? || product_owner?
-end
-
-def can_edit_schedule?
-  admin? || product_owner? || estimator?
-end
-
-def can_view_supervisor_tasks?
-  supervisor? || admin? || product_owner?
-end
-
-def can_view_builder_tasks?
-  builder? || admin? || product_owner?
-end
-
-def can_manage_users?
-  admin? || product_owner?
-end
-
-# ---
-
-# app/controllers/api/v1/schedule_templates_controller.rb
-before_action :require_template_permissions, only: [:create, :update, :destroy]
-
-def require_template_permissions
-  unless current_user.can_create_templates?
-    render json: { error: "Insufficient permissions" }, status: :forbidden
-  end
-end
-```
-
----
-
-## §2.6: Assignable Roles for Task Assignment
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.6
-
-### Code Example
-```jsx
-# app/models/user.rb
-enum assignable_role: {
-  admin: 0,
-  sales: 1,
-  site: 2,
-  supervisor: 3,
-  builder: 4,
-  estimator: 5,
-  none: 6
-}, _prefix: :assignable
-
-# ---
-
-# app/controllers/api/v1/schedule_tasks_controller.rb
-def my_tasks
-  # Filter by assignable_role, not system role
-  tasks = ScheduleTask.where(assignable_role: current_user.assignable_role)
-  render json: tasks
-end
-```
-
----
-
-## §2.7: Password Complexity Requirements
-
-🔌 Integration | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.7
-
-### Code Example
-```jsx
-# app/models/user.rb
-validates :password, presence: true, if: :password_required?
-validates :password, length: { minimum: 12 }, if: :password_required?
-validate :password_complexity, if: :password_required?
-
-def password_complexity
-  return if password.blank?
-
-  rules = []
-  rules << "must include at least one uppercase letter" unless password.match?(/[A-Z]/)
-  rules << "must include at least one lowercase letter" unless password.match?(/[a-z]/)
-  rules << "must include at least one digit" unless password.match?(/\d/)
-  rules << "must include at least one special character" unless password.match?(/[@$!%*?&]/)
-
-  if rules.any?
-    errors.add(:password, rules.join(", "))
-  end
-end
-
-def password_required?
-  !oauth_uid.present?  # OAuth users skip password validation
-end
-
-# ---
-
-# app/services/oauth_user_creator.rb
-def create_from_oauth(oauth_data)
-  User.create!(
-    email: oauth_data[:email],
-    name: oauth_data[:name],
-    oauth_uid: oauth_data[:uid],
-    oauth_provider: oauth_data[:provider],
-    password: SecureRandom.urlsafe_base64(32),  # Random, unused password
-    role: :user
-  )
-end
-```
-
----
-
-## §2.8: Timezone Options Limitation
-
-🧩 Component | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.8
-
-### Code Example
-```jsx
-// frontend/src/components/settings/CompanySettingsTab.jsx
-const TIMEZONE_OPTIONS = [
-  'Australia/Sydney',     // NSW, VIC, TAS
-  'Australia/Melbourne',  // VIC
-  'Australia/Brisbane',   // QLD (no DST)
-  'Australia/Adelaide',   // SA
-  'Australia/Perth',      // WA
-  'Australia/Darwin',     // NT (no DST)
-  'Australia/Hobart',     // TAS
-  'Australia/Canberra',   // ACT
-  'Australia/Lord_Howe',  // Lord Howe Island
-  'Pacific/Auckland',     // NZ
-  'Pacific/Chatham',      // Chatham Islands
-  'Australia/Eucla'       // WA (rare)
-];
-
-# ---
-
-<select
-  value={settings.timezone}
-  onChange={(e) => updateTimezone(e.target.value)}
-  className="form-select"
->
-  {TIMEZONE_OPTIONS.map(tz => (
-    <option key={tz} value={tz}>{tz}</option>
-  ))}
-</select>
-```
-
----
-
-## §2.9: Working Days UI - Sunday Default True
-
-🧩 Component | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.9
-
-### Code Example
-```jsx
-# app/models/company_setting.rb
-DEFAULT_WORKING_DAYS = {
-  "monday" => true,
-  "tuesday" => true,
-  "wednesday" => true,
-  "thursday" => true,
-  "friday" => true,
-  "saturday" => false,   # Most crews don't work Saturdays
-  "sunday" => true       # Sunday work common in construction
-}.freeze
-
-# ---
-
-// CompanySettingsTab.jsx
-const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
-{DAYS.map(day => (
-  <label key={day} className="flex items-center gap-2">
-    <input
-      type="checkbox"
-      checked={settings.working_days[day] || false}
-      onChange={(e) => updateWorkingDay(day, e.target.checked)}
-    />
-    <span className="capitalize">{day}</span>
-  </label>
-))}
-```
-
----
-
 ## §3.15: Contact Detail Page - Complete Integration Guide
 
 ✨ Feature | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.15"}]
 
 ### Quick Summary
 Step-by-step guide for integrating contact persons, addresses, and Xero fields into ContactDetailPage
@@ -5365,9 +4889,48 @@ const handleContactAddressesUpdate = async (updatedAddresses) => {
 
 ---
 
+## §3.2: Timezone Handling - Backend Time Calculations
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.2"}]
+
+### Code Example
+```jsx
+# app/models/company_setting.rb
+def today
+  Time.use_zone(timezone) { Time.zone.today }
+end
+
+def now
+  Time.use_zone(timezone) { Time.zone.now }
+end
+
+# Usage in services/models:
+settings = CompanySetting.instance
+current_date = settings.today  # NOT Date.today!
+current_time = settings.now    # NOT Time.now!
+
+# ---
+
+# When calculating dates for a job:
+settings = CompanySetting.instance
+
+Time.use_zone(settings.timezone) do
+  job_start = Time.zone.parse("2025-01-15 08:00:00")
+  job_end = job_start + 5.days
+
+  # All calculations within this block use company timezone
+end
+```
+
+---
+
 ## §3.20: Timezone Migration Implementation Guide
 
 ✨ Feature | 🔴 Advanced
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.20"}]
 
 ### Quick Summary
 Step-by-step guide for implementing timezone support across backend and frontend with UTC storage
@@ -5381,6 +4944,8 @@ Original file archived at: TIMEZONE_MIGRATION_GUIDE.md (10.4 KB)
 
 ✨ Feature | 🟡 Intermediate
 
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.21"}]
+
 ### Quick Summary
 Testing strategies for timezone-aware features including edge cases and DST transitions
 
@@ -5389,1397 +4954,332 @@ Original file archived at: TIMEZONE_TESTING_GUIDE.md (10.8 KB)
 
 ---
 
+## §3.3: Timezone Handling - Frontend Time Display
 
-# Chapter 4: Contacts & Relationships
+🔌 Integration | 🟡 Intermediate
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  4               │
-│ 📕 LEXICON (BUGS):    Chapter  4               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
-**Last Updated:** 2025-11-17
-
----
-
-## §3.1: Contact Types are Multi-Select Arrays
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.1
-
-### Quick Summary
-- Use `contact_types` as PostgreSQL array column - Allow multiple types: `['customer', 'supplier']` for hybrid contacts - Set `primary_contact_type` automatically if blank (first type in array) - Vali
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.3"}]
 
 ### Code Example
 ```jsx
-# app/models/contact.rb
-CONTACT_TYPES = ['customer', 'supplier', 'sales', 'land_agent'].freeze
+// frontend/src/utils/timezoneUtils.js
+import { companySettings } from '../contexts/CompanySettingsContext';
 
-validates :primary_contact_type, inclusion: { in: CONTACT_TYPES }, allow_nil: true
-validate :contact_types_must_be_valid
+export const formatDate = (dateString) => {
+  const timezone = companySettings.timezone; // e.g., "Australia/Brisbane"
 
-before_save :set_primary_contact_type_if_blank
+  const formatter = new Intl.DateTimeFormat('en-AU', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
 
-def is_supplier?
-  contact_types&.include?('supplier')
-end
+  return formatter.format(new Date(dateString));
+};
 
-private
+export const formatDateTime = (dateString) => {
+  const timezone = companySettings.timezone;
 
-def contact_types_must_be_valid
-  return if contact_types.blank?
-  invalid_types = contact_types - CONTACT_TYPES
-  if invalid_types.any?
-    errors.add(:contact_types, "contains invalid types: #{invalid_types.join(', ')}")
-  end
+  const formatter = new Intl.DateTimeFormat('en-AU', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  return formatter.format(new Date(dateString));
+};
+
+# ---
+
+// GanttChart.jsx
+import { formatDate, formatDateTime } from '../utils/timezoneUtils';
+
+const TaskRow = ({ task }) => (
+  <div>
+    <span>Start: {formatDate(task.planned_start_date)}</span>
+    <span>End: {formatDate(task.planned_end_date)}</span>
+  </div>
+);
+```
+
+---
+
+## §3.4: Working Days Configuration & Business Day Calculations
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.4"}]
+
+### Code Example
+```jsx
+# db/schema.rb
+create_table :company_settings do |t|
+  t.jsonb :working_days, default: {
+    "monday" => true,
+    "tuesday" => true,
+    "wednesday" => true,
+    "thursday" => true,
+    "friday" => true,
+    "saturday" => false,
+    "sunday" => true  # Default includes Sunday (construction industry)
+  }
 end
 
 # ---
 
-# Find all suppliers
-Contact.where("'supplier' = ANY(contact_types)")
+# app/models/company_setting.rb
+def working_day?(date)
+  day_name = date.strftime('%A').downcase  # "monday", "tuesday", etc.
+  working_days[day_name] == true
+end
 
-# Find contacts that are BOTH customer AND supplier
-Contact.where("contact_types @> ARRAY['customer', 'supplier']::varchar[]")
+def business_day?(date)
+  # Business day = working day AND not a public holiday
+  working_day?(date) && !PublicHoliday.on_date(date).exists?
+end
 
-# Filter by type in controller
-case params[:type]
-when 'customers'
-  @contacts = @contacts.where("'customer' = ANY(contact_types)")
-when 'suppliers'
-  @contacts = @contacts.where("'supplier' = ANY(contact_types)")
-when 'both'
-  @contacts = @contacts.where("contact_types @> ARRAY['customer', 'supplier']::varchar[]")
+# ---
+
+# app/services/schedule/cascade_calculator.rb
+def next_business_day(date)
+  settings = CompanySetting.instance
+  current = date + 1.day
+
+  while !settings.business_day?(current)
+    current += 1.day
+  end
+
+  current
+end
+
+def add_business_days(start_date, days_to_add)
+  settings = CompanySetting.instance
+  current = start_date
+  days_added = 0
+
+  while days_added < days_to_add
+    current += 1.day
+    days_added += 1 if settings.business_day?(current)
+  end
+
+  current
 end
 ```
 
 ---
 
-## §3.2: Bidirectional Relationships Require Reverse Sync
+## §3.5: User Roles & Permission System
 
-🔧 Util | 🟡 Intermediate
+🧩 Component | 🟢 Beginner
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.2
-
-### Quick Summary
-- Create reverse relationship after creating forward relationship - Update reverse relationship when forward is updated - Delete reverse relationship when forward is deleted - Use Thread-local flags t
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.5"}]
 
 ### Code Example
 ```jsx
-# app/models/contact_relationship.rb
-RELATIONSHIP_TYPES = [
-  'previous_client', 'parent_company', 'subsidiary', 'partner',
-  'referral', 'supplier_alternate', 'related_project', 'family_member', 'other'
-].freeze
+# app/models/user.rb
+enum role: {
+  user: 0,           # Basic access (view-only for most features)
+  admin: 1,          # Full system access
+  product_owner: 2,  # Full access + product backlog management
+  estimator: 3,      # Estimate/quote creation and editing
+  supervisor: 4,     # Field supervisor (task completion, checklists)
+  builder: 5         # Builder/contractor (task viewing, updates)
+}
 
-validates :relationship_type, inclusion: { in: RELATIONSHIP_TYPES }
-validate :cannot_relate_to_self
-validate :unique_relationship_pair
+# ---
 
-after_create :create_reverse_relationship
-after_update :update_reverse_relationship
-after_destroy :destroy_reverse_relationship
-
-private
-
-def create_reverse_relationship
-  return if Thread.current[:creating_reverse_relationship]
-
-  Thread.current[:creating_reverse_relationship] = true
-
-  ContactRelationship.create!(
-    source_contact_id: related_contact_id,
-    related_contact_id: source_contact_id,
-    relationship_type: relationship_type,
-    notes: notes
-  )
-ensure
-  Thread.current[:creating_reverse_relationship] = false
+# app/models/user.rb
+def can_create_templates?
+  admin? || product_owner?
 end
 
-def cannot_relate_to_self
-  if source_contact_id == related_contact_id
-    errors.add(:base, "Cannot create relationship to same contact")
-  end
+def can_edit_schedule?
+  admin? || product_owner? || estimator?
 end
 
-def unique_relationship_pair
-  existing = ContactRelationship.where(
-    source_contact_id: source_contact_id,
-    related_contact_id: related_contact_id
-  ).where.not(id: id)
+def can_view_supervisor_tasks?
+  supervisor? || admin? || product_owner?
+end
 
-  if existing.exists?
-    errors.add(:base, "Relationship already exists")
+def can_view_builder_tasks?
+  builder? || admin? || product_owner?
+end
+
+def can_manage_users?
+  admin? || product_owner?
+end
+
+# ---
+
+# app/controllers/api/v1/schedule_templates_controller.rb
+before_action :require_template_permissions, only: [:create, :update, :destroy]
+
+def require_template_permissions
+  unless current_user.can_create_templates?
+    render json: { error: "Insufficient permissions" }, status: :forbidden
   end
 end
 ```
 
 ---
 
-## §3.3: Xero Sync Uses Priority-Based Fuzzy Matching
+## §3.6: Assignable Roles for Task Assignment
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.6"}]
+
+### Code Example
+```jsx
+# app/models/user.rb
+enum assignable_role: {
+  admin: 0,
+  sales: 1,
+  site: 2,
+  supervisor: 3,
+  builder: 4,
+  estimator: 5,
+  none: 6
+}, _prefix: :assignable
+
+# ---
+
+# app/controllers/api/v1/schedule_tasks_controller.rb
+def my_tasks
+  # Filter by assignable_role, not system role
+  tasks = ScheduleTask.where(assignable_role: current_user.assignable_role)
+  render json: tasks
+end
+```
+
+---
+
+## §3.7: Password Complexity Requirements
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.3
-
-### Quick Summary
--
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.7"}]
 
 ### Code Example
 ```jsx
-# app/services/xero_contact_sync_service.rb
-def match_contact(xero_contact)
-  # Priority 1: Exact xero_id match
-  if xero_contact.contact_id.present?
-    match = Contact.find_by(xero_id: xero_contact.contact_id)
-    return { contact: match, match_type: 'xero_id' } if match
+# app/models/user.rb
+validates :password, presence: true, if: :password_required?
+validates :password, length: { minimum: 12 }, if: :password_required?
+validate :password_complexity, if: :password_required?
+
+def password_complexity
+  return if password.blank?
+
+  rules = []
+  rules << "must include at least one uppercase letter" unless password.match?(/[A-Z]/)
+  rules << "must include at least one lowercase letter" unless password.match?(/[a-z]/)
+  rules << "must include at least one digit" unless password.match?(/\d/)
+  rules << "must include at least one special character" unless password.match?(/[@$!%*?&]/)
+
+  if rules.any?
+    errors.add(:password, rules.join(", "))
   end
+end
 
-  # Priority 2: Tax number match (ABN/ACN)
-  if xero_contact.tax_number.present?
-    normalized_tax = xero_contact.tax_number.gsub(/\D/, '')
-    if normalized_tax.length == 11
-      match = Contact.where("regexp_replace(tax_number, '[^0-9]', '', 'g') = ?", normalized_tax).first
-      return { contact: match, match_type: 'tax_number' } if match
-    end
-  end
+def password_required?
+  !oauth_uid.present?  # OAuth users skip password validation
+end
 
-  # Priority 3: Email match
-  if xero_contact.email_address.present?
-    match = Contact.find_by('LOWER(email) = ?', xero_contact.email_address.downcase)
-    return { contact: match, match_type: 'email' } if match
-  end
+# ---
 
-  # Priority 4: Fuzzy name match (>85% similarity)
-  if xero_contact.name.present?
-    contact_names = Contact.pluck(:full_name, :id).to_h
-    fuzzy_matcher = FuzzyMatch.new(contact_names.keys)
-    matched_name = fuzzy_matcher.find(xero_contact.name, threshold: 0.85)
-
-    if matched_name
-      match = Contact.find(contact_names[matched_name])
-      return { contact: match, match_type: 'fuzzy_name' }
-    end
-  end
-
-  { contact: nil, match_type: 'no_match' }
+# app/services/oauth_user_creator.rb
+def create_from_oauth(oauth_data)
+  User.create!(
+    email: oauth_data[:email],
+    name: oauth_data[:name],
+    oauth_uid: oauth_data[:uid],
+    oauth_provider: oauth_data[:provider],
+    password: SecureRandom.urlsafe_base64(32),  # Random, unused password
+    role: :user
+  )
 end
 ```
 
 ---
 
-## §3.4: Contact Deletion MUST Check Purchase Order Dependencies
+## §3.8: Timezone Options Limitation
 
-🔧 Util | 🟡 Intermediate
+🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.4
-
-### Quick Summary
-- Check for linked suppliers via `contact.suppliers` association - Check if suppliers have purchase orders: `suppliers.joins(:purchase_orders).distinct` - Block deletion if ANY purchase orders exist -
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.8"}]
 
 ### Code Example
 ```jsx
-# app/controllers/api/v1/contacts_controller.rb
-def destroy
-  # Check for linked suppliers with purchase orders
-  if @contact.suppliers.any?
-    suppliers_with_pos = @contact.suppliers.joins(:purchase_orders).distinct
+// frontend/src/components/settings/CompanySettingsTab.jsx
+const TIMEZONE_OPTIONS = [
+  'Australia/Sydney',     // NSW, VIC, TAS
+  'Australia/Melbourne',  // VIC
+  'Australia/Brisbane',   // QLD (no DST)
+  'Australia/Adelaide',   // SA
+  'Australia/Perth',      // WA
+  'Australia/Darwin',     // NT (no DST)
+  'Australia/Hobart',     // TAS
+  'Australia/Canberra',   // ACT
+  'Australia/Lord_Howe',  // Lord Howe Island
+  'Pacific/Auckland',     // NZ
+  'Pacific/Chatham',      // Chatham Islands
+  'Australia/Eucla'       // WA (rare)
+];
 
-    if suppliers_with_pos.any?
-      # Check for paid/invoiced POs
-      paid_pos = PurchaseOrder
-        .where(supplier_id: suppliers_with_pos.pluck(:id))
-        .where("status IN (?) OR amount_paid > 0 OR amount_invoiced > 0",
-               ['paid', 'partially_paid', 'invoiced'])
+# ---
 
-      if paid_pos.exists?
-        return render json: {
-          success: false,
-          error: "Cannot delete contact with suppliers that have paid or invoiced purchase orders"
-        }, status: :unprocessable_entity
-      end
-    end
-  end
-
-  @contact.destroy
-end
+<select
+  value={settings.timezone}
+  onChange={(e) => updateTimezone(e.target.value)}
+  className="form-select"
+>
+  {TIMEZONE_OPTIONS.map(tz => (
+    <option key={tz} value={tz}>{tz}</option>
+  ))}
+</select>
 ```
 
 ---
 
-## §3.6: Portal Users MUST Have Secure Password Requirements
+## §3.9: Working Days UI - Sunday Default True
 
-🔧 Util | 🟡 Intermediate
+🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.6
-
-### Quick Summary
-- Minimum 12 characters - At least one uppercase, lowercase, digit, and special character - Lock account after 5 failed login attempts - Lockout duration: 30 minutes - Reset failed attempts counter on
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§3.9"}]
 
 ### Code Example
 ```jsx
-# app/models/portal_user.rb
-PASSWORD_REGEX = /\A
-  (?=.*[a-z])           # At least one lowercase
-  (?=.*[A-Z])           # At least one uppercase
-  (?=.*\d)              # At least one digit
-  (?=.*[!@#$%^&*()_+\-=\[\]{}|;:,.<>?])  # At least one special char
-  .{12,}                # At least 12 characters
-\z/x
-
-validates :password, length: { minimum: 12 }, format: PASSWORD_REGEX, on: :create
-```
-
----
-
-## §4.20: Price Book Import from Excel/CSV
-
-✨ Feature | 🟡 Intermediate
-
-### Quick Summary
-Import supplier price books from spreadsheets with automatic supplier matching and price history creation
-
-### Step-by-Step Guide
-# Price Book Import Guide
-
-This guide explains how to import clean price book data (suppliers, items, and price history) into the system.
-
-## Overview
-
-The import script will:
-1. **Clear existing data** - Delete all current suppliers, price book items, and price history
-2. **Import suppliers** - Load supplier data with contact information and ratings
-3. **Import price book items** - Load items and link them to suppliers by name
-4. **Import price history** - Load historical price changes linked to items and suppliers
-
-## CSV File Formats
-
-### 1. Suppliers CSV (`suppliers.csv`)
-
-**Required columns:**
-- `name` - Supplier name (must be unique)
-- `contact_person` - Contact name
-- `email` - Email address
-- `phone` - Phone number
-- `address` - Physical address
-- `rating` - Rating (0-5)
-- `response_rate` - Response rate percentage (0-100)
-- `avg_response_time` - Average response time in hours
-- `notes` - Additional notes
-- `is_active` - Active status (true/false)
-
-**Example:**
-```csv
-name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
-TL Supply,John Smith,john@tlsupply.com.au,1300 123 456,123 Trade St Sydney,4,85.5,24,Reliable electrical supplier,true
-Bunnings,Trade Desk,trade@bunnings.com.au,1300 BUNNINGS,456 Builder Ave,5,95.0,12,Hardware store,true
-```
-
-### 2. Price Book Items CSV (`pricebook_items.csv`)
-
-**Required columns:**
-- `item_code` - Unique item code
-- `item_name` - Item description
-- `category` - Category (e.g., Electrical, Plumbing)
-- `unit_of_measure` - Unit (e.g., Each, Linear Metre, m²)
-- `current_price` - Current price (decimal)
-- `supplier_name` - Supplier name (must match name in suppliers.csv)
-- `brand` - Brand name
-- `notes` - Additional notes
-- `is_active` - Active status (true/false)
-- `needs_pricing_review` - Needs review flag (true/false)
-- `price_last_updated_at` - Last price update date (YYYY-MM-DD)
-
-**Example:**
-```csv
-item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
-DPP,Wiring Double Power Point,Electrical,Each,51.00,TL Supply,Clipsal,,true,false,2024-01-15
-SPP,Wiring Single Power Point,Electrical,Each,50.00,TL Supply,Clipsal,,true,false,2024-01-15
-TIMBER-90x45,Pine Framing Timber 90x45mm,Carpentry,Linear Metre,8.50,Bunnings,Treated Pine,,true,false,2024-02-01
-```
-
-### 3. Price History CSV (`price_history.csv`) - Optional
-
-**Required columns:**
-- `item_code` - Item code (must match item_code in pricebook_items.csv)
-- `old_price` - Previous price
-- `new_price` - New price
-- `change_reason` - Reason for change (e.g., price_increase, supplier_change)
-- `supplier_name` - Supplier name (must match name in suppliers.csv)
-- `quote_reference` - Quote reference number
-- `created_at` - Date of change (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)
-
-**Example:**
-```csv
-item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
-DPP,48.00,51.00,price_increase,TL Supply,Q-2024-001,2024-01-15
-DPP,51.00,53.00,price_increase,TL Supply,Q-2024-045,2024-03-20
-TIMBER-90x45,7.50,8.50,material_cost_increase,Bunnings,Q-2024-023,2024-02-01
-```
-
-## How to Use
-
-### Step 1: Generate Templates (Optional)
-
-To generate sample CSV templates:
-
-```bash
-bundle exec rails pricebook:generate_templates
-```
-
-This creates three template files in `backend/tmp/`:
-- `suppliers_template.csv`
-- `pricebook_items_template.csv`
-- `price_history_template.csv`
-
-### Step 2: Prepare Your CSV Files
-
-Place your CSV files in `backend/tmp/`:
-- `backend/tmp/suppliers.csv`
-- `backend/tmp/pricebook_items.csv`
-- `backend/tmp/price_history.csv` (optional)
-
-### Step 3: Run the Import Locally
-
-```bash
-cd backend
-bundle exec rails pricebook:import_clean
-```
-
-### Step 4: Run the Import on Production (Heroku)
-
-First, upload your CSV files to the Heroku dyno:
-
-```bash
-# Create a temporary directory on Heroku
-heroku run bash --app trapid-backend
-mkdir -p tmp
-exit
-
-# Copy CSV files to Heroku (you'll need to use a different method)
-# Option 1: Add files to git temporarily and deploy
-# Option 2: Use Heroku's data import feature
-# Option 3: Store files in S3 and download them in the task
-```
-
-**Recommended approach for production:**
-
-1. Store CSV files in a secure location (S3, Google Drive, etc.)
-2. Download them to the Heroku dyno's tmp directory
-3. Run the import task
-
-Or manually copy/paste the content:
-
-```bash
-heroku run bash --app trapid-backend
-
-# In the Heroku shell:
-cat > tmp/suppliers.csv << 'EOF'
-name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
-[paste your suppliers data here]
-EOF
-
-cat > tmp/pricebook_items.csv << 'EOF'
-item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
-[paste your items data here]
-EOF
-
-cat > tmp/price_history.csv << 'EOF'
-item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
-[paste your history data here]
-EOF
-
-# Run the import
-bundle exec rails pricebook:import_clean
-
-# Exit the shell
-exit
-```
-
-## Important Notes
-
-1. **Data will be deleted**: The script deletes ALL existing suppliers, price book items, and price history before importing
-2. **Supplier names must match**: The `supplier_name` in price book items and price history must exactly match the `name` in suppliers.csv
-3. **Item codes must match**: The `item_code` in price history must exactly match the `item_code` in pricebook_items.csv
-4. **Price history is optional**: If you don't have price history, the script will skip it
-5. **Backup first**: Always backup your production data before running this on production
-
-## Troubleshooting
-
-**Error: "Suppliers file not found"**
-- Make sure the CSV file is in `backend/tmp/suppliers.csv`
-- Or set the environment variable: `SUPPLIERS_CSV=/path/to/file.csv`
-
-**Error: "Validation failed"**
-- Check that required fields are filled in
-- Ensure item_code and supplier name are unique
-- Verify supplier names match exactly between files
-
-**Price history not importing**
-- Check that item_code values match exactly with pricebook_items.csv
-- Verify supplier_name values match exactly with suppliers.csv
-- Check date format is YYYY-MM-DD or YYYY-MM-DD HH:MM:SS
-
-## Example Import Output
-
-```
-============================================================
-PRICE BOOK CLEAN IMPORT
-============================================================
-
-Step 1: Clearing existing data...
-  ✓ Deleted 0 price history records
-  ✓ Deleted 10 pricebook items
-  ✓ Deleted 3 suppliers
-
-Step 2: Importing suppliers...
-  ✓ Imported 5 suppliers
-
-Step 3: Importing price book items...
-  ✓ Imported 150 price book items
-
-Step 4: Importing price history...
-  ✓ Imported 45 price history records
-
-============================================================
-IMPORT COMPLETE
-============================================================
-Suppliers: 5
-Price Book Items: 150
-Price History: 45
-
-Data successfully imported and linked!
-```
-
-
-### Code Example
-```jsx
-```csv
-name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
-TL Supply,John Smith,john@tlsupply.com.au,1300 123 456,123 Trade St Sydney,4,85.5,24,Reliable electrical supplier,true
-Bunnings,Trade Desk,trade@bunnings.com.au,1300 BUNNINGS,456 Builder Ave,5,95.0,12,Hardware store,true
-```
-
-```csv
-item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
-DPP,Wiring Double Power Point,Electrical,Each,51.00,TL Supply,Clipsal,,true,false,2024-01-15
-SPP,Wiring Single Power Point,Electrical,Each,50.00,TL Supply,Clipsal,,true,false,2024-01-15
-TIMBER-90x45,Pine Framing Timber 90x45mm,Carpentry,Linear Metre,8.50,Bunnings,Treated Pine,,true,false,2024-02-01
-```
-
-```csv
-item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
-DPP,48.00,51.00,price_increase,TL Supply,Q-2024-001,2024-01-15
-DPP,51.00,53.00,price_increase,TL Supply,Q-2024-045,2024-03-20
-TIMBER-90x45,7.50,8.50,material_cost_increase,Bunnings,Q-2024-023,2024-02-01
-```
-
-```bash
-bundle exec rails pricebook:generate_templates
-```
-
-```bash
-cd backend
-bundle exec rails pricebook:import_clean
-```
-
-```bash
-# Create a temporary directory on Heroku
-heroku run bash --app trapid-backend
-mkdir -p tmp
-exit
-
-# Copy CSV files to Heroku (you'll need to use a different method)
-# Option 1: Add files to git temporarily and deploy
-# Option 2: Use Heroku's data import feature
-# Option 3: Store files in S3 and download them in the task
-```
-
-```bash
-heroku run bash --app trapid-backend
-
-# In the Heroku shell:
-cat > tmp/suppliers.csv << 'EOF'
-name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
-[paste your suppliers data here]
-EOF
-
-cat > tmp/pricebook_items.csv << 'EOF'
-item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
-[paste your items data here]
-EOF
-
-cat > tmp/price_history.csv << 'EOF'
-item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
-[paste your history data here]
-EOF
-
-# Run the import
-bundle exec rails pricebook:import_clean
-
-# Exit the shell
-exit
-```
-
-```
-============================================================
-PRICE BOOK CLEAN IMPORT
-============================================================
-
-Step 1: Clearing existing data...
-  ✓ Deleted 0 price history records
-  ✓ Deleted 10 pricebook items
-  ✓ Deleted 3 suppliers
-
-Step 2: Importing suppliers...
-  ✓ Imported 5 suppliers
-
-Step 3: Importing price book items...
-  ✓ Imported 150 price book items
-
-Step 4: Importing price history...
-  ✓ Imported 45 price history records
-
-============================================================
-IMPORT COMPLETE
-============================================================
-Suppliers: 5
-Price Book Items: 150
-Price History: 45
-
-Data successfully imported and linked!
-```
-```
-
-### Examples
-```csv
-name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
-TL Supply,John Smith,john@tlsupply.com.au,1300 123 456,123 Trade St Sydney,4,85.5,24,Reliable electrical supplier,true
-Bunnings,Trade Desk,trade@bunnings.com.au,1300 BUNNINGS,456 Builder Ave,5,95.0,12,Hardware store,true
-```
-
-```csv
-item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
-DPP,Wiring Double Power Point,Electrical,Each,51.00,TL Supply,Clipsal,,true,false,2024-01-15
-SPP,Wiring Single Power Point,Electrical,Each,50.00,TL Supply,Clipsal,,true,false,2024-01-15
-TIMBER-90x45,Pine Framing Timber 90x45mm,Carpentry,Linear Metre,8.50,Bunnings,Treated Pine,,true,false,2024-02-01
-```
-
-```csv
-item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
-DPP,48.00,51.00,price_increase,TL Supply,Q-2024-001,2024-01-15
-DPP,51.00,53.00,price_increase,TL Supply,Q-2024-045,2024-03-20
-TIMBER-90x45,7.50,8.50,material_cost_increase,Bunnings,Q-2024-023,2024-02-01
-```
-
-```bash
-bundle exec rails pricebook:generate_templates
-```
-
-```bash
-cd backend
-bundle exec rails pricebook:import_clean
-```
-
-```bash
-# Create a temporary directory on Heroku
-heroku run bash --app trapid-backend
-mkdir -p tmp
-exit
-
-# Copy CSV files to Heroku (you'll need to use a different method)
-# Option 1: Add files to git temporarily and deploy
-# Option 2: Use Heroku's data import feature
-# Option 3: Store files in S3 and download them in the task
-```
-
-```bash
-heroku run bash --app trapid-backend
-
-# In the Heroku shell:
-cat > tmp/suppliers.csv << 'EOF'
-name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
-[paste your suppliers data here]
-EOF
-
-cat > tmp/pricebook_items.csv << 'EOF'
-item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
-[paste your items data here]
-EOF
-
-cat > tmp/price_history.csv << 'EOF'
-item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
-[paste your history data here]
-EOF
-
-# Run the import
-bundle exec rails pricebook:import_clean
-
-# Exit the shell
-exit
-```
-
-```
-============================================================
-PRICE BOOK CLEAN IMPORT
-============================================================
-
-Step 1: Clearing existing data...
-  ✓ Deleted 0 price history records
-  ✓ Deleted 10 pricebook items
-  ✓ Deleted 3 suppliers
-
-Step 2: Importing suppliers...
-  ✓ Imported 5 suppliers
-
-Step 3: Importing price book items...
-  ✓ Imported 150 price book items
-
-Step 4: Importing price history...
-  ✓ Imported 45 price history records
-
-============================================================
-IMPORT COMPLETE
-============================================================
-Suppliers: 5
-Price Book Items: 150
-Price History: 45
-
-Data successfully imported and linked!
-```
-
----
-
-## §4.21: Price History Export/Import System
-
-✨ Feature | 🟡 Intermediate
-
-### Quick Summary
-Bulk export and import of price history data for backup and migration purposes
-
-### Step-by-Step Guide
-# Price History Export/Import Feature
-
-## Overview
-
-This feature allows users to export and import price history data for pricebook items in Excel format. Users can filter by supplier and/or category when exporting, edit the exported data in Excel, and re-import the changes.
-
-## Files Created
-
-### Services
-- `/app/services/price_history_export_service.rb` - Generates Excel files with price history data
-- `/app/services/price_history_import_service.rb` - Parses Excel files and updates price history records
-
-### Controller Updates
-- `/app/controllers/api/v1/pricebook_items_controller.rb` - Added two new endpoints:
-  - `export_price_history` (GET)
-  - `import_price_history` (POST)
-
-### Routes
-- `/config/routes.rb` - Added routes for the new endpoints
-
-## API Endpoints
-
-### Export Price History
-
-**Endpoint:** `GET /api/v1/pricebook/export_price_history`
-
-**Query Parameters:**
-- `supplier_id` (optional) - Filter by supplier ID
-- `category` (optional) - Filter by category name
-
-**Example Requests:**
-```bash
-# Export all price history
-curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
-  -o price_history.xlsx
-
-# Export for specific supplier
-curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
-  -o price_history_supplier_1.xlsx
-
-# Export for specific category
-curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
-  -o price_history_electrical.xlsx
-
-# Export for supplier AND category
-curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1&category=ELECTRICAL" \
-  -o price_history_supplier_1_electrical.xlsx
-```
-
-**Response:**
-- Success: Downloads Excel file (.xlsx)
-- Error: JSON with error messages
-
-### Import Price History
-
-**Endpoint:** `POST /api/v1/pricebook/import_price_history`
-
-**Parameters:**
-- `file` (required) - The Excel file to import (multipart/form-data)
-
-**Example Request:**
-```bash
-curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
-  -F "file=@/path/to/price_history.xlsx"
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "stats": {
-    "total_rows": 100,
-    "processed": 100,
-    "created": 50,
-    "updated": 45,
-    "skipped": 3,
-    "errors": 2
-  },
-  "warnings": [
-    "Row 10: Item ID 999 not found - skipping",
-    "Created new supplier: New Supplier Name"
-  ]
-}
-```
-
-## Excel File Format
-
-The exported Excel file contains the following columns:
-
-| Column Name | Description | Required for Import | Editable |
-|------------|-------------|---------------------|----------|
-| Item ID | Database ID of pricebook item | Yes | No |
-| Item Code | Item code/SKU | No | No |
-| Item Name | Item name | No | No |
-| Category | Item category | No | No |
-| Unit of Measure | Item UoM | No | No |
-| Current Price | Current price of item | No | No |
-| Default Supplier | Default supplier name | No | No |
-| Price History ID | Database ID of price history record | No* | No |
-| Historical Price | The price for this history entry | Yes | Yes |
-| Previous Price | Previous price before this change | No | Yes |
-| Price Date | When this record was created | No | No |
-| Date Effective | When this price became effective | No | Yes |
-| Supplier | Supplier for this price | No | Yes |
-| LGA | Local government area | No | Yes |
-| Change Reason | Reason for price change | No | Yes |
-| Quote Reference | Reference number for quote | No | Yes |
-| Notes | Item notes | No | No |
-
-*Note: Price History ID is only required when updating existing records. Leave blank for new entries.
-
-## Valid LGA Values
-
-The following LGA values are accepted (case-insensitive):
-- Toowoomba Regional Council
-- Lockyer Valley Regional Council
-- City of Gold Coast
-- Brisbane City Council
-- Sunshine Coast Regional Council
-- Redland City Council
-- Scenic Rim Regional Council
-
-## Import Behavior
-
-### Creating New Price History Records
-1. Leave "Price History ID" column empty
-2. Provide "Item ID" and "Historical Price" (required)
-3. All other fields are optional
-
-### Updating Existing Price History Records
-1. Include the "Price History ID" value from export
-2. Update any editable fields
-3. The import will update the existing record
-
-### Supplier Handling
-- If supplier name exists in database, it will be linked
-- If supplier name doesn't exist, a new supplier will be created
-- Invalid supplier names will be ignored with a warning
-
-### Error Handling
-- The import uses database transactions (all-or-nothing)
-- If any critical error occurs, all changes are rolled back
-- Row-level errors are collected and returned in the response
-- Non-critical issues generate warnings but don't stop the import
-
-## Use Cases
-
-### Use Case 1: Export supplier-specific prices
-1. User filters pricebook by supplier "ACME Supplies"
-2. User clicks "Export to Excel" button
-3. System generates `price_history_ACME_Supplies_20250106.xlsx`
-4. File contains all items and their price history for ACME
-
-### Use Case 2: Bulk update historical prices
-1. User exports price history
-2. User opens Excel and updates several "Historical Price" values
-3. User saves the file
-4. User uploads the file back to the system
-5. System updates price_history table with new values
-
-### Use Case 3: Add new price records
-1. User exports current price history
-2. User duplicates a row and changes:
-   - Clears "Price History ID"
-   - Updates "Historical Price" to new value
-   - Updates "Date Effective" to new date
-   - Updates "Supplier" if needed
-3. User uploads the file
-4. System creates new price history record
-
-### Use Case 4: Regional pricing updates
-1. User exports price history for category "PLUMBING"
-2. User adds LGA values to records (e.g., "Brisbane City Council")
-3. User updates prices for specific regions
-4. User uploads the file
-5. System records regional pricing variations
-
-## Testing Instructions
-
-### Manual Testing Steps
-
-1. **Start Rails Server**
-   ```bash
-   cd backend
-   bin/rails server
-   ```
-
-2. **Test Export (No Filters)**
-   ```bash
-   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
-     -o test_export_all.xlsx
-
-   # Verify file was downloaded
-   ls -lh test_export_all.xlsx
-   ```
-
-3. **Test Export (With Supplier Filter)**
-   ```bash
-   # First, get a supplier ID
-   curl -X GET "http://localhost:3000/api/v1/suppliers" | jq '.[0].id'
-
-   # Then export for that supplier
-   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
-     -o test_export_supplier.xlsx
-   ```
-
-4. **Test Export (With Category Filter)**
-   ```bash
-   # Get available categories
-   curl -X GET "http://localhost:3000/api/v1/pricebook" | jq '.filters.categories'
-
-   # Export for a category
-   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
-     -o test_export_category.xlsx
-   ```
-
-5. **Test Import**
-   ```bash
-   # Edit the exported file in Excel (change some prices)
-   # Then import it back
-   curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
-     -F "file=@test_export_all.xlsx"
-   ```
-
-6. **Verify Changes**
-   ```bash
-   # Check a specific item's price history
-   curl -X GET "http://localhost:3000/api/v1/pricebook/1/history" | jq '.'
-   ```
-
-### Rails Console Testing
-
-```ruby
-# Start console
-bin/rails console
-
-# Test export service
-service = PriceHistoryExportService.new(supplier_id: 1)
-result = service.export
-puts result[:success] ? "Export successful" : result[:errors]
-
-# Test import service (requires a file)
-# First create a test file by running export via curl
-service = PriceHistoryImportService.new('/path/to/test_export.xlsx')
-result = service.import
-puts result
-```
-
-## Implementation Details
-
-### PriceHistoryExportService
-
-**Key Features:**
-- Filters items by supplier and/or category
-- Includes all price history records for each item
-- Items without price history are included with empty history fields
-- Excel file has styled headers and formatted currency/date columns
-- Auto-fit column widths for readability
-- Filename includes filters and date for easy organization
-
-**Performance Considerations:**
-- Uses `includes()` to eager-load associations (prevents N+1 queries)
-- Processes items in memory (suitable for up to ~10,000 items)
-- For larger datasets, consider pagination or background job processing
-
-### PriceHistoryImportService
-
-**Key Features:**
-- Validates file format (CSV, XLS, XLSX)
-- Required column validation
-- Row-by-row processing with error collection
-- Database transaction for atomicity
-- Automatic supplier creation
-- LGA validation against allowed values
-- Flexible date parsing
-- Currency parsing (handles $, commas)
-
-**Validation Rules:**
-- Item ID must exist in database
-- Historical Price must be provided
-- LGA must be in allowed list (if provided)
-- Supplier is created if doesn't exist
-- Dates are parsed flexibly
-
-**Error Recovery:**
-- Transaction rollback on critical errors
-- Row-level errors don't stop other rows
-- Detailed error messages with row numbers
-- Warning messages for non-critical issues
-
-## Frontend Integration
-
-To integrate this feature in the React frontend:
-
-### Export Button
-
-```javascript
-const exportPriceHistory = async (supplierId, category) => {
-  const params = new URLSearchParams();
-  if (supplierId) params.append('supplier_id', supplierId);
-  if (category) params.append('category', category);
-
-  const response = await fetch(
-    `/api/v1/pricebook/export_price_history?${params}`,
-    {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    }
-  );
-
-  if (response.ok) {
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `price_history_${Date.now()}.xlsx`;
-    a.click();
-  } else {
-    const error = await response.json();
-    console.error('Export failed:', error);
-  }
-};
-```
-
-### Import Button
-
-```javascript
-const importPriceHistory = async (file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  const response = await fetch('/api/v1/pricebook/import_price_history', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    },
-    body: formData
-  });
-
-  const result = await response.json();
-
-  if (result.success) {
-    console.log('Import successful:', result.stats);
-    // Show success notification
-    // Refresh pricebook data
-  } else {
-    console.error('Import failed:', result.errors);
-    // Show error notification
-  }
-};
-```
-
-## Security Considerations
-
-1. **Authentication**: Endpoints should require authentication (add auth middleware)
-2. **Authorization**: Users should only export/import data they have access to
-3. **File Size Limits**: Rails has default 10MB upload limit (adjust if needed)
-4. **SQL Injection**: Using parameterized queries throughout
-5. **XSS Prevention**: Data is validated and sanitized on import
-
-## Future Enhancements
-
-1. **Background Processing**: For large exports/imports, use Solid Queue
-2. **Progress Tracking**: Show real-time import progress
-3. **Validation Preview**: Show import preview before committing changes
-4. **Diff View**: Show what will change before importing
-5. **Export Templates**: Pre-filtered export templates for common use cases
-6. **Scheduled Exports**: Automatically export and email price history reports
-7. **Audit Trail**: Track who exported/imported and when
-8. **Undo Import**: Ability to rollback an import operation
-
-## Troubleshooting
-
-### Error: "No items found for the selected filters"
-- Check that items exist with the specified supplier/category
-- Verify supplier_id is correct
-- Check category name matches exactly (case-sensitive)
-
-### Error: "Failed to parse spreadsheet"
-- Ensure file is valid Excel (.xlsx, .xls) or CSV format
-- Check file is not corrupted
-- Verify file size is under limit
-
-### Error: "Missing required columns"
-- Excel file must have headers in first row
-- Required columns: "Item ID", "Historical Price"
-- Check for typos in column headers
-
-### Import creates duplicate suppliers
-- This is expected behavior if supplier name doesn't match exactly
-- Supplier matching is case-insensitive but must match exactly
-- Check for extra spaces or special characters
-
-### Price history not visible after import
-- Refresh the pricebook page
-- Check that date_effective is set correctly
-- Verify item_id matches an existing item
-
-## Support
-
-For issues or questions, contact the development team or create an issue in the project repository.
-
-
-### Code Example
-```jsx
-```bash
-# Export all price history
-curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
-  -o price_history.xlsx
-
-# Export for specific supplier
-curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
-  -o price_history_supplier_1.xlsx
-
-# Export for specific category
-curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
-  -o price_history_electrical.xlsx
-
-# Export for supplier AND category
-curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1&category=ELECTRICAL" \
-  -o price_history_supplier_1_electrical.xlsx
-```
-
-```bash
-curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
-  -F "file=@/path/to/price_history.xlsx"
-```
-
-```json
-{
-  "success": true,
-  "stats": {
-    "total_rows": 100,
-    "processed": 100,
-    "created": 50,
-    "updated": 45,
-    "skipped": 3,
-    "errors": 2
-  },
-  "warnings": [
-    "Row 10: Item ID 999 not found - skipping",
-    "Created new supplier: New Supplier Name"
-  ]
-}
-```
-
-```bash
-   cd backend
-   bin/rails server
-   ```
-
-```bash
-   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
-     -o test_export_all.xlsx
-
-   # Verify file was downloaded
-   ls -lh test_export_all.xlsx
-   ```
-
-```bash
-   # First, get a supplier ID
-   curl -X GET "http://localhost:3000/api/v1/suppliers" | jq '.[0].id'
-
-   # Then export for that supplier
-   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
-     -o test_export_supplier.xlsx
-   ```
-
-```bash
-   # Get available categories
-   curl -X GET "http://localhost:3000/api/v1/pricebook" | jq '.filters.categories'
-
-   # Export for a category
-   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
-     -o test_export_category.xlsx
-   ```
-
-```bash
-   # Edit the exported file in Excel (change some prices)
-   # Then import it back
-   curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
-     -F "file=@test_export_all.xlsx"
-   ```
-
-```bash
-   # Check a specific item's price history
-   curl -X GET "http://localhost:3000/api/v1/pricebook/1/history" | jq '.'
-   ```
-
-```ruby
-# Start console
-bin/rails console
-
-# Test export service
-service = PriceHistoryExportService.new(supplier_id: 1)
-result = service.export
-puts result[:success] ? "Export successful" : result[:errors]
-
-# Test import service (requires a file)
-# First create a test file by running export via curl
-service = PriceHistoryImportService.new('/path/to/test_export.xlsx')
-result = service.import
-puts result
-```
-
-```javascript
-const exportPriceHistory = async (supplierId, category) => {
-  const params = new URLSearchParams();
-  if (supplierId) params.append('supplier_id', supplierId);
-  if (category) params.append('category', category);
-
-  const response = await fetch(
-    `/api/v1/pricebook/export_price_history?${params}`,
-    {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    }
-  );
-
-  if (response.ok) {
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `price_history_${Date.now()}.xlsx`;
-    a.click();
-  } else {
-    const error = await response.json();
-    console.error('Export failed:', error);
-  }
-};
-```
-
-```javascript
-const importPriceHistory = async (file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  const response = await fetch('/api/v1/pricebook/import_price_history', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    },
-    body: formData
-  });
-
-  const result = await response.json();
-
-  if (result.success) {
-    console.log('Import successful:', result.stats);
-    // Show success notification
-    // Refresh pricebook data
-  } else {
-    console.error('Import failed:', result.errors);
-    // Show error notification
-  }
-};
-```
-```
-
-### Examples
-```bash
-# Export all price history
-curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
-  -o price_history.xlsx
-
-# Export for specific supplier
-curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
-  -o price_history_supplier_1.xlsx
-
-# Export for specific category
-curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
-  -o price_history_electrical.xlsx
-
-# Export for supplier AND category
-curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1&category=ELECTRICAL" \
-  -o price_history_supplier_1_electrical.xlsx
-```
-
-```bash
-curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
-  -F "file=@/path/to/price_history.xlsx"
-```
-
-```json
-{
-  "success": true,
-  "stats": {
-    "total_rows": 100,
-    "processed": 100,
-    "created": 50,
-    "updated": 45,
-    "skipped": 3,
-    "errors": 2
-  },
-  "warnings": [
-    "Row 10: Item ID 999 not found - skipping",
-    "Created new supplier: New Supplier Name"
-  ]
-}
-```
-
-```bash
-   cd backend
-   bin/rails server
-   ```
-
-```bash
-   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
-     -o test_export_all.xlsx
-
-   # Verify file was downloaded
-   ls -lh test_export_all.xlsx
-   ```
-
-```bash
-   # First, get a supplier ID
-   curl -X GET "http://localhost:3000/api/v1/suppliers" | jq '.[0].id'
-
-   # Then export for that supplier
-   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
-     -o test_export_supplier.xlsx
-   ```
-
-```bash
-   # Get available categories
-   curl -X GET "http://localhost:3000/api/v1/pricebook" | jq '.filters.categories'
-
-   # Export for a category
-   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
-     -o test_export_category.xlsx
-   ```
-
-```bash
-   # Edit the exported file in Excel (change some prices)
-   # Then import it back
-   curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
-     -F "file=@test_export_all.xlsx"
-   ```
-
-```bash
-   # Check a specific item's price history
-   curl -X GET "http://localhost:3000/api/v1/pricebook/1/history" | jq '.'
-   ```
-
-```ruby
-# Start console
-bin/rails console
-
-# Test export service
-service = PriceHistoryExportService.new(supplier_id: 1)
-result = service.export
-puts result[:success] ? "Export successful" : result[:errors]
-
-# Test import service (requires a file)
-# First create a test file by running export via curl
-service = PriceHistoryImportService.new('/path/to/test_export.xlsx')
-result = service.import
-puts result
-```
-
-```javascript
-const exportPriceHistory = async (supplierId, category) => {
-  const params = new URLSearchParams();
-  if (supplierId) params.append('supplier_id', supplierId);
-  if (category) params.append('category', category);
-
-  const response = await fetch(
-    `/api/v1/pricebook/export_price_history?${params}`,
-    {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    }
-  );
-
-  if (response.ok) {
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `price_history_${Date.now()}.xlsx`;
-    a.click();
-  } else {
-    const error = await response.json();
-    console.error('Export failed:', error);
-  }
-};
-```
-
-```javascript
-const importPriceHistory = async (file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  const response = await fetch('/api/v1/pricebook/import_price_history', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    },
-    body: formData
-  });
-
-  const result = await response.json();
-
-  if (result.success) {
-    console.log('Import successful:', result.stats);
-    // Show success notification
-    // Refresh pricebook data
-  } else {
-    console.error('Import failed:', result.errors);
-    // Show error notification
-  }
-};
+# app/models/company_setting.rb
+DEFAULT_WORKING_DAYS = {
+  "monday" => true,
+  "tuesday" => true,
+  "wednesday" => true,
+  "thursday" => true,
+  "friday" => true,
+  "saturday" => false,   # Most crews don't work Saturdays
+  "sunday" => true       # Sunday work common in construction
+}.freeze
+
+# ---
+
+// CompanySettingsTab.jsx
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+{DAYS.map(day => (
+  <label key={day} className="flex items-center gap-2">
+    <input
+      type="checkbox"
+      checked={settings.working_days[day] || false}
+      onChange={(e) => updateWorkingDay(day, e.target.checked)}
+    />
+    <span className="capitalize">{day}</span>
+  </label>
+))}
 ```
 
 ---
@@ -6798,11 +5298,11 @@ const importPriceHistory = async (file) => {
 
 ---
 
-## §3.1: Contact Types are Multi-Select Arrays
+## §4.1: Contact Types are Multi-Select Arrays
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.1"}]
 
 ### Quick Summary
 - Use `contact_types` as PostgreSQL array column - Allow multiple types: `['customer', 'supplier']` for hybrid contacts - Set `primary_contact_type` automatically if blank (first type in array) - Vali
@@ -6852,11 +5352,11 @@ end
 
 ---
 
-## §3.2: Bidirectional Relationships Require Reverse Sync
+## §4.2: Bidirectional Relationships Require Reverse Sync
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.2"}]
 
 ### Quick Summary
 - Create reverse relationship after creating forward relationship - Update reverse relationship when forward is updated - Delete reverse relationship when forward is deleted - Use Thread-local flags t
@@ -6914,125 +5414,11 @@ end
 
 ---
 
-## §3.3: Xero Sync Uses Priority-Based Fuzzy Matching
-
-🔌 Integration | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.3
-
-### Quick Summary
--
-
-### Code Example
-```jsx
-# app/services/xero_contact_sync_service.rb
-def match_contact(xero_contact)
-  # Priority 1: Exact xero_id match
-  if xero_contact.contact_id.present?
-    match = Contact.find_by(xero_id: xero_contact.contact_id)
-    return { contact: match, match_type: 'xero_id' } if match
-  end
-
-  # Priority 2: Tax number match (ABN/ACN)
-  if xero_contact.tax_number.present?
-    normalized_tax = xero_contact.tax_number.gsub(/\D/, '')
-    if normalized_tax.length == 11
-      match = Contact.where("regexp_replace(tax_number, '[^0-9]', '', 'g') = ?", normalized_tax).first
-      return { contact: match, match_type: 'tax_number' } if match
-    end
-  end
-
-  # Priority 3: Email match
-  if xero_contact.email_address.present?
-    match = Contact.find_by('LOWER(email) = ?', xero_contact.email_address.downcase)
-    return { contact: match, match_type: 'email' } if match
-  end
-
-  # Priority 4: Fuzzy name match (>85% similarity)
-  if xero_contact.name.present?
-    contact_names = Contact.pluck(:full_name, :id).to_h
-    fuzzy_matcher = FuzzyMatch.new(contact_names.keys)
-    matched_name = fuzzy_matcher.find(xero_contact.name, threshold: 0.85)
-
-    if matched_name
-      match = Contact.find(contact_names[matched_name])
-      return { contact: match, match_type: 'fuzzy_name' }
-    end
-  end
-
-  { contact: nil, match_type: 'no_match' }
-end
-```
-
----
-
-## §3.4: Contact Deletion MUST Check Purchase Order Dependencies
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.4
-
-### Quick Summary
-- Check for linked suppliers via `contact.suppliers` association - Check if suppliers have purchase orders: `suppliers.joins(:purchase_orders).distinct` - Block deletion if ANY purchase orders exist -
-
-### Code Example
-```jsx
-# app/controllers/api/v1/contacts_controller.rb
-def destroy
-  # Check for linked suppliers with purchase orders
-  if @contact.suppliers.any?
-    suppliers_with_pos = @contact.suppliers.joins(:purchase_orders).distinct
-
-    if suppliers_with_pos.any?
-      # Check for paid/invoiced POs
-      paid_pos = PurchaseOrder
-        .where(supplier_id: suppliers_with_pos.pluck(:id))
-        .where("status IN (?) OR amount_paid > 0 OR amount_invoiced > 0",
-               ['paid', 'partially_paid', 'invoiced'])
-
-      if paid_pos.exists?
-        return render json: {
-          success: false,
-          error: "Cannot delete contact with suppliers that have paid or invoiced purchase orders"
-        }, status: :unprocessable_entity
-      end
-    end
-  end
-
-  @contact.destroy
-end
-```
-
----
-
-## §3.6: Portal Users MUST Have Secure Password Requirements
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.6
-
-### Quick Summary
-- Minimum 12 characters - At least one uppercase, lowercase, digit, and special character - Lock account after 5 failed login attempts - Lockout duration: 30 minutes - Reset failed attempts counter on
-
-### Code Example
-```jsx
-# app/models/portal_user.rb
-PASSWORD_REGEX = /\A
-  (?=.*[a-z])           # At least one lowercase
-  (?=.*[A-Z])           # At least one uppercase
-  (?=.*\d)              # At least one digit
-  (?=.*[!@#$%^&*()_+\-=\[\]{}|;:,.<>?])  # At least one special char
-  .{12,}                # At least 12 characters
-\z/x
-
-validates :password, length: { minimum: 12 }, format: PASSWORD_REGEX, on: :create
-```
-
----
-
 ## §4.20: Price Book Import from Excel/CSV
 
 ✨ Feature | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.20"}]
 
 ### Quick Summary
 Import supplier price books from spreadsheets with automatic supplier matching and price history creation
@@ -7451,6 +5837,8 @@ Data successfully imported and linked!
 ## §4.21: Price History Export/Import System
 
 ✨ Feature | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.21"}]
 
 ### Quick Summary
 Bulk export and import of price history data for backup and migration purposes
@@ -8179,6 +6567,1521 @@ const importPriceHistory = async (file) => {
 
 ---
 
+## §4.3: Xero Sync Uses Priority-Based Fuzzy Matching
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.3"}]
+
+### Quick Summary
+-
+
+### Code Example
+```jsx
+# app/services/xero_contact_sync_service.rb
+def match_contact(xero_contact)
+  # Priority 1: Exact xero_id match
+  if xero_contact.contact_id.present?
+    match = Contact.find_by(xero_id: xero_contact.contact_id)
+    return { contact: match, match_type: 'xero_id' } if match
+  end
+
+  # Priority 2: Tax number match (ABN/ACN)
+  if xero_contact.tax_number.present?
+    normalized_tax = xero_contact.tax_number.gsub(/\D/, '')
+    if normalized_tax.length == 11
+      match = Contact.where("regexp_replace(tax_number, '[^0-9]', '', 'g') = ?", normalized_tax).first
+      return { contact: match, match_type: 'tax_number' } if match
+    end
+  end
+
+  # Priority 3: Email match
+  if xero_contact.email_address.present?
+    match = Contact.find_by('LOWER(email) = ?', xero_contact.email_address.downcase)
+    return { contact: match, match_type: 'email' } if match
+  end
+
+  # Priority 4: Fuzzy name match (>85% similarity)
+  if xero_contact.name.present?
+    contact_names = Contact.pluck(:full_name, :id).to_h
+    fuzzy_matcher = FuzzyMatch.new(contact_names.keys)
+    matched_name = fuzzy_matcher.find(xero_contact.name, threshold: 0.85)
+
+    if matched_name
+      match = Contact.find(contact_names[matched_name])
+      return { contact: match, match_type: 'fuzzy_name' }
+    end
+  end
+
+  { contact: nil, match_type: 'no_match' }
+end
+```
+
+---
+
+## §4.4: Contact Deletion MUST Check Purchase Order Dependencies
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.4"}]
+
+### Quick Summary
+- Check for linked suppliers via `contact.suppliers` association - Check if suppliers have purchase orders: `suppliers.joins(:purchase_orders).distinct` - Block deletion if ANY purchase orders exist -
+
+### Code Example
+```jsx
+# app/controllers/api/v1/contacts_controller.rb
+def destroy
+  # Check for linked suppliers with purchase orders
+  if @contact.suppliers.any?
+    suppliers_with_pos = @contact.suppliers.joins(:purchase_orders).distinct
+
+    if suppliers_with_pos.any?
+      # Check for paid/invoiced POs
+      paid_pos = PurchaseOrder
+        .where(supplier_id: suppliers_with_pos.pluck(:id))
+        .where("status IN (?) OR amount_paid > 0 OR amount_invoiced > 0",
+               ['paid', 'partially_paid', 'invoiced'])
+
+      if paid_pos.exists?
+        return render json: {
+          success: false,
+          error: "Cannot delete contact with suppliers that have paid or invoiced purchase orders"
+        }, status: :unprocessable_entity
+      end
+    end
+  end
+
+  @contact.destroy
+end
+```
+
+---
+
+## §4.6: Portal Users MUST Have Secure Password Requirements
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.6"}]
+
+### Quick Summary
+- Minimum 12 characters - At least one uppercase, lowercase, digit, and special character - Lock account after 5 failed login attempts - Lockout duration: 30 minutes - Reset failed attempts counter on
+
+### Code Example
+```jsx
+# app/models/portal_user.rb
+PASSWORD_REGEX = /\A
+  (?=.*[a-z])           # At least one lowercase
+  (?=.*[A-Z])           # At least one uppercase
+  (?=.*\d)              # At least one digit
+  (?=.*[!@#$%^&*()_+\-=\[\]{}|;:,.<>?])  # At least one special char
+  .{12,}                # At least 12 characters
+\z/x
+
+validates :password, length: { minimum: 12 }, format: PASSWORD_REGEX, on: :create
+```
+
+---
+
+
+# Chapter 4: Contacts & Relationships
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  4               │
+│ 📕 LEXICON (BUGS):    Chapter  4               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Code examples, implementation patterns, and step-by-step guides
+**Last Updated:** 2025-11-17
+
+---
+
+## §4.1: Contact Types are Multi-Select Arrays
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.1"}]
+
+### Quick Summary
+- Use `contact_types` as PostgreSQL array column - Allow multiple types: `['customer', 'supplier']` for hybrid contacts - Set `primary_contact_type` automatically if blank (first type in array) - Vali
+
+### Code Example
+```jsx
+# app/models/contact.rb
+CONTACT_TYPES = ['customer', 'supplier', 'sales', 'land_agent'].freeze
+
+validates :primary_contact_type, inclusion: { in: CONTACT_TYPES }, allow_nil: true
+validate :contact_types_must_be_valid
+
+before_save :set_primary_contact_type_if_blank
+
+def is_supplier?
+  contact_types&.include?('supplier')
+end
+
+private
+
+def contact_types_must_be_valid
+  return if contact_types.blank?
+  invalid_types = contact_types - CONTACT_TYPES
+  if invalid_types.any?
+    errors.add(:contact_types, "contains invalid types: #{invalid_types.join(', ')}")
+  end
+end
+
+# ---
+
+# Find all suppliers
+Contact.where("'supplier' = ANY(contact_types)")
+
+# Find contacts that are BOTH customer AND supplier
+Contact.where("contact_types @> ARRAY['customer', 'supplier']::varchar[]")
+
+# Filter by type in controller
+case params[:type]
+when 'customers'
+  @contacts = @contacts.where("'customer' = ANY(contact_types)")
+when 'suppliers'
+  @contacts = @contacts.where("'supplier' = ANY(contact_types)")
+when 'both'
+  @contacts = @contacts.where("contact_types @> ARRAY['customer', 'supplier']::varchar[]")
+end
+```
+
+---
+
+## §4.2: Bidirectional Relationships Require Reverse Sync
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.2"}]
+
+### Quick Summary
+- Create reverse relationship after creating forward relationship - Update reverse relationship when forward is updated - Delete reverse relationship when forward is deleted - Use Thread-local flags t
+
+### Code Example
+```jsx
+# app/models/contact_relationship.rb
+RELATIONSHIP_TYPES = [
+  'previous_client', 'parent_company', 'subsidiary', 'partner',
+  'referral', 'supplier_alternate', 'related_project', 'family_member', 'other'
+].freeze
+
+validates :relationship_type, inclusion: { in: RELATIONSHIP_TYPES }
+validate :cannot_relate_to_self
+validate :unique_relationship_pair
+
+after_create :create_reverse_relationship
+after_update :update_reverse_relationship
+after_destroy :destroy_reverse_relationship
+
+private
+
+def create_reverse_relationship
+  return if Thread.current[:creating_reverse_relationship]
+
+  Thread.current[:creating_reverse_relationship] = true
+
+  ContactRelationship.create!(
+    source_contact_id: related_contact_id,
+    related_contact_id: source_contact_id,
+    relationship_type: relationship_type,
+    notes: notes
+  )
+ensure
+  Thread.current[:creating_reverse_relationship] = false
+end
+
+def cannot_relate_to_self
+  if source_contact_id == related_contact_id
+    errors.add(:base, "Cannot create relationship to same contact")
+  end
+end
+
+def unique_relationship_pair
+  existing = ContactRelationship.where(
+    source_contact_id: source_contact_id,
+    related_contact_id: related_contact_id
+  ).where.not(id: id)
+
+  if existing.exists?
+    errors.add(:base, "Relationship already exists")
+  end
+end
+```
+
+---
+
+## §4.20: Price Book Import from Excel/CSV
+
+✨ Feature | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.20"}]
+
+### Quick Summary
+Import supplier price books from spreadsheets with automatic supplier matching and price history creation
+
+### Step-by-Step Guide
+# Price Book Import Guide
+
+This guide explains how to import clean price book data (suppliers, items, and price history) into the system.
+
+## Overview
+
+The import script will:
+1. **Clear existing data** - Delete all current suppliers, price book items, and price history
+2. **Import suppliers** - Load supplier data with contact information and ratings
+3. **Import price book items** - Load items and link them to suppliers by name
+4. **Import price history** - Load historical price changes linked to items and suppliers
+
+## CSV File Formats
+
+### 1. Suppliers CSV (`suppliers.csv`)
+
+**Required columns:**
+- `name` - Supplier name (must be unique)
+- `contact_person` - Contact name
+- `email` - Email address
+- `phone` - Phone number
+- `address` - Physical address
+- `rating` - Rating (0-5)
+- `response_rate` - Response rate percentage (0-100)
+- `avg_response_time` - Average response time in hours
+- `notes` - Additional notes
+- `is_active` - Active status (true/false)
+
+**Example:**
+```csv
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+TL Supply,John Smith,john@tlsupply.com.au,1300 123 456,123 Trade St Sydney,4,85.5,24,Reliable electrical supplier,true
+Bunnings,Trade Desk,trade@bunnings.com.au,1300 BUNNINGS,456 Builder Ave,5,95.0,12,Hardware store,true
+```
+
+### 2. Price Book Items CSV (`pricebook_items.csv`)
+
+**Required columns:**
+- `item_code` - Unique item code
+- `item_name` - Item description
+- `category` - Category (e.g., Electrical, Plumbing)
+- `unit_of_measure` - Unit (e.g., Each, Linear Metre, m²)
+- `current_price` - Current price (decimal)
+- `supplier_name` - Supplier name (must match name in suppliers.csv)
+- `brand` - Brand name
+- `notes` - Additional notes
+- `is_active` - Active status (true/false)
+- `needs_pricing_review` - Needs review flag (true/false)
+- `price_last_updated_at` - Last price update date (YYYY-MM-DD)
+
+**Example:**
+```csv
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+DPP,Wiring Double Power Point,Electrical,Each,51.00,TL Supply,Clipsal,,true,false,2024-01-15
+SPP,Wiring Single Power Point,Electrical,Each,50.00,TL Supply,Clipsal,,true,false,2024-01-15
+TIMBER-90x45,Pine Framing Timber 90x45mm,Carpentry,Linear Metre,8.50,Bunnings,Treated Pine,,true,false,2024-02-01
+```
+
+### 3. Price History CSV (`price_history.csv`) - Optional
+
+**Required columns:**
+- `item_code` - Item code (must match item_code in pricebook_items.csv)
+- `old_price` - Previous price
+- `new_price` - New price
+- `change_reason` - Reason for change (e.g., price_increase, supplier_change)
+- `supplier_name` - Supplier name (must match name in suppliers.csv)
+- `quote_reference` - Quote reference number
+- `created_at` - Date of change (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)
+
+**Example:**
+```csv
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+DPP,48.00,51.00,price_increase,TL Supply,Q-2024-001,2024-01-15
+DPP,51.00,53.00,price_increase,TL Supply,Q-2024-045,2024-03-20
+TIMBER-90x45,7.50,8.50,material_cost_increase,Bunnings,Q-2024-023,2024-02-01
+```
+
+## How to Use
+
+### Step 1: Generate Templates (Optional)
+
+To generate sample CSV templates:
+
+```bash
+bundle exec rails pricebook:generate_templates
+```
+
+This creates three template files in `backend/tmp/`:
+- `suppliers_template.csv`
+- `pricebook_items_template.csv`
+- `price_history_template.csv`
+
+### Step 2: Prepare Your CSV Files
+
+Place your CSV files in `backend/tmp/`:
+- `backend/tmp/suppliers.csv`
+- `backend/tmp/pricebook_items.csv`
+- `backend/tmp/price_history.csv` (optional)
+
+### Step 3: Run the Import Locally
+
+```bash
+cd backend
+bundle exec rails pricebook:import_clean
+```
+
+### Step 4: Run the Import on Production (Heroku)
+
+First, upload your CSV files to the Heroku dyno:
+
+```bash
+# Create a temporary directory on Heroku
+heroku run bash --app trapid-backend
+mkdir -p tmp
+exit
+
+# Copy CSV files to Heroku (you'll need to use a different method)
+# Option 1: Add files to git temporarily and deploy
+# Option 2: Use Heroku's data import feature
+# Option 3: Store files in S3 and download them in the task
+```
+
+**Recommended approach for production:**
+
+1. Store CSV files in a secure location (S3, Google Drive, etc.)
+2. Download them to the Heroku dyno's tmp directory
+3. Run the import task
+
+Or manually copy/paste the content:
+
+```bash
+heroku run bash --app trapid-backend
+
+# In the Heroku shell:
+cat > tmp/suppliers.csv << 'EOF'
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+[paste your suppliers data here]
+EOF
+
+cat > tmp/pricebook_items.csv << 'EOF'
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+[paste your items data here]
+EOF
+
+cat > tmp/price_history.csv << 'EOF'
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+[paste your history data here]
+EOF
+
+# Run the import
+bundle exec rails pricebook:import_clean
+
+# Exit the shell
+exit
+```
+
+## Important Notes
+
+1. **Data will be deleted**: The script deletes ALL existing suppliers, price book items, and price history before importing
+2. **Supplier names must match**: The `supplier_name` in price book items and price history must exactly match the `name` in suppliers.csv
+3. **Item codes must match**: The `item_code` in price history must exactly match the `item_code` in pricebook_items.csv
+4. **Price history is optional**: If you don't have price history, the script will skip it
+5. **Backup first**: Always backup your production data before running this on production
+
+## Troubleshooting
+
+**Error: "Suppliers file not found"**
+- Make sure the CSV file is in `backend/tmp/suppliers.csv`
+- Or set the environment variable: `SUPPLIERS_CSV=/path/to/file.csv`
+
+**Error: "Validation failed"**
+- Check that required fields are filled in
+- Ensure item_code and supplier name are unique
+- Verify supplier names match exactly between files
+
+**Price history not importing**
+- Check that item_code values match exactly with pricebook_items.csv
+- Verify supplier_name values match exactly with suppliers.csv
+- Check date format is YYYY-MM-DD or YYYY-MM-DD HH:MM:SS
+
+## Example Import Output
+
+```
+============================================================
+PRICE BOOK CLEAN IMPORT
+============================================================
+
+Step 1: Clearing existing data...
+  ✓ Deleted 0 price history records
+  ✓ Deleted 10 pricebook items
+  ✓ Deleted 3 suppliers
+
+Step 2: Importing suppliers...
+  ✓ Imported 5 suppliers
+
+Step 3: Importing price book items...
+  ✓ Imported 150 price book items
+
+Step 4: Importing price history...
+  ✓ Imported 45 price history records
+
+============================================================
+IMPORT COMPLETE
+============================================================
+Suppliers: 5
+Price Book Items: 150
+Price History: 45
+
+Data successfully imported and linked!
+```
+
+
+### Code Example
+```jsx
+```csv
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+TL Supply,John Smith,john@tlsupply.com.au,1300 123 456,123 Trade St Sydney,4,85.5,24,Reliable electrical supplier,true
+Bunnings,Trade Desk,trade@bunnings.com.au,1300 BUNNINGS,456 Builder Ave,5,95.0,12,Hardware store,true
+```
+
+```csv
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+DPP,Wiring Double Power Point,Electrical,Each,51.00,TL Supply,Clipsal,,true,false,2024-01-15
+SPP,Wiring Single Power Point,Electrical,Each,50.00,TL Supply,Clipsal,,true,false,2024-01-15
+TIMBER-90x45,Pine Framing Timber 90x45mm,Carpentry,Linear Metre,8.50,Bunnings,Treated Pine,,true,false,2024-02-01
+```
+
+```csv
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+DPP,48.00,51.00,price_increase,TL Supply,Q-2024-001,2024-01-15
+DPP,51.00,53.00,price_increase,TL Supply,Q-2024-045,2024-03-20
+TIMBER-90x45,7.50,8.50,material_cost_increase,Bunnings,Q-2024-023,2024-02-01
+```
+
+```bash
+bundle exec rails pricebook:generate_templates
+```
+
+```bash
+cd backend
+bundle exec rails pricebook:import_clean
+```
+
+```bash
+# Create a temporary directory on Heroku
+heroku run bash --app trapid-backend
+mkdir -p tmp
+exit
+
+# Copy CSV files to Heroku (you'll need to use a different method)
+# Option 1: Add files to git temporarily and deploy
+# Option 2: Use Heroku's data import feature
+# Option 3: Store files in S3 and download them in the task
+```
+
+```bash
+heroku run bash --app trapid-backend
+
+# In the Heroku shell:
+cat > tmp/suppliers.csv << 'EOF'
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+[paste your suppliers data here]
+EOF
+
+cat > tmp/pricebook_items.csv << 'EOF'
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+[paste your items data here]
+EOF
+
+cat > tmp/price_history.csv << 'EOF'
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+[paste your history data here]
+EOF
+
+# Run the import
+bundle exec rails pricebook:import_clean
+
+# Exit the shell
+exit
+```
+
+```
+============================================================
+PRICE BOOK CLEAN IMPORT
+============================================================
+
+Step 1: Clearing existing data...
+  ✓ Deleted 0 price history records
+  ✓ Deleted 10 pricebook items
+  ✓ Deleted 3 suppliers
+
+Step 2: Importing suppliers...
+  ✓ Imported 5 suppliers
+
+Step 3: Importing price book items...
+  ✓ Imported 150 price book items
+
+Step 4: Importing price history...
+  ✓ Imported 45 price history records
+
+============================================================
+IMPORT COMPLETE
+============================================================
+Suppliers: 5
+Price Book Items: 150
+Price History: 45
+
+Data successfully imported and linked!
+```
+```
+
+### Examples
+```csv
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+TL Supply,John Smith,john@tlsupply.com.au,1300 123 456,123 Trade St Sydney,4,85.5,24,Reliable electrical supplier,true
+Bunnings,Trade Desk,trade@bunnings.com.au,1300 BUNNINGS,456 Builder Ave,5,95.0,12,Hardware store,true
+```
+
+```csv
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+DPP,Wiring Double Power Point,Electrical,Each,51.00,TL Supply,Clipsal,,true,false,2024-01-15
+SPP,Wiring Single Power Point,Electrical,Each,50.00,TL Supply,Clipsal,,true,false,2024-01-15
+TIMBER-90x45,Pine Framing Timber 90x45mm,Carpentry,Linear Metre,8.50,Bunnings,Treated Pine,,true,false,2024-02-01
+```
+
+```csv
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+DPP,48.00,51.00,price_increase,TL Supply,Q-2024-001,2024-01-15
+DPP,51.00,53.00,price_increase,TL Supply,Q-2024-045,2024-03-20
+TIMBER-90x45,7.50,8.50,material_cost_increase,Bunnings,Q-2024-023,2024-02-01
+```
+
+```bash
+bundle exec rails pricebook:generate_templates
+```
+
+```bash
+cd backend
+bundle exec rails pricebook:import_clean
+```
+
+```bash
+# Create a temporary directory on Heroku
+heroku run bash --app trapid-backend
+mkdir -p tmp
+exit
+
+# Copy CSV files to Heroku (you'll need to use a different method)
+# Option 1: Add files to git temporarily and deploy
+# Option 2: Use Heroku's data import feature
+# Option 3: Store files in S3 and download them in the task
+```
+
+```bash
+heroku run bash --app trapid-backend
+
+# In the Heroku shell:
+cat > tmp/suppliers.csv << 'EOF'
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+[paste your suppliers data here]
+EOF
+
+cat > tmp/pricebook_items.csv << 'EOF'
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+[paste your items data here]
+EOF
+
+cat > tmp/price_history.csv << 'EOF'
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+[paste your history data here]
+EOF
+
+# Run the import
+bundle exec rails pricebook:import_clean
+
+# Exit the shell
+exit
+```
+
+```
+============================================================
+PRICE BOOK CLEAN IMPORT
+============================================================
+
+Step 1: Clearing existing data...
+  ✓ Deleted 0 price history records
+  ✓ Deleted 10 pricebook items
+  ✓ Deleted 3 suppliers
+
+Step 2: Importing suppliers...
+  ✓ Imported 5 suppliers
+
+Step 3: Importing price book items...
+  ✓ Imported 150 price book items
+
+Step 4: Importing price history...
+  ✓ Imported 45 price history records
+
+============================================================
+IMPORT COMPLETE
+============================================================
+Suppliers: 5
+Price Book Items: 150
+Price History: 45
+
+Data successfully imported and linked!
+```
+
+---
+
+## §4.21: Price History Export/Import System
+
+✨ Feature | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.21"}]
+
+### Quick Summary
+Bulk export and import of price history data for backup and migration purposes
+
+### Step-by-Step Guide
+# Price History Export/Import Feature
+
+## Overview
+
+This feature allows users to export and import price history data for pricebook items in Excel format. Users can filter by supplier and/or category when exporting, edit the exported data in Excel, and re-import the changes.
+
+## Files Created
+
+### Services
+- `/app/services/price_history_export_service.rb` - Generates Excel files with price history data
+- `/app/services/price_history_import_service.rb` - Parses Excel files and updates price history records
+
+### Controller Updates
+- `/app/controllers/api/v1/pricebook_items_controller.rb` - Added two new endpoints:
+  - `export_price_history` (GET)
+  - `import_price_history` (POST)
+
+### Routes
+- `/config/routes.rb` - Added routes for the new endpoints
+
+## API Endpoints
+
+### Export Price History
+
+**Endpoint:** `GET /api/v1/pricebook/export_price_history`
+
+**Query Parameters:**
+- `supplier_id` (optional) - Filter by supplier ID
+- `category` (optional) - Filter by category name
+
+**Example Requests:**
+```bash
+# Export all price history
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+  -o price_history.xlsx
+
+# Export for specific supplier
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+  -o price_history_supplier_1.xlsx
+
+# Export for specific category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+  -o price_history_electrical.xlsx
+
+# Export for supplier AND category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1&category=ELECTRICAL" \
+  -o price_history_supplier_1_electrical.xlsx
+```
+
+**Response:**
+- Success: Downloads Excel file (.xlsx)
+- Error: JSON with error messages
+
+### Import Price History
+
+**Endpoint:** `POST /api/v1/pricebook/import_price_history`
+
+**Parameters:**
+- `file` (required) - The Excel file to import (multipart/form-data)
+
+**Example Request:**
+```bash
+curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+  -F "file=@/path/to/price_history.xlsx"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "stats": {
+    "total_rows": 100,
+    "processed": 100,
+    "created": 50,
+    "updated": 45,
+    "skipped": 3,
+    "errors": 2
+  },
+  "warnings": [
+    "Row 10: Item ID 999 not found - skipping",
+    "Created new supplier: New Supplier Name"
+  ]
+}
+```
+
+## Excel File Format
+
+The exported Excel file contains the following columns:
+
+| Column Name | Description | Required for Import | Editable |
+|------------|-------------|---------------------|----------|
+| Item ID | Database ID of pricebook item | Yes | No |
+| Item Code | Item code/SKU | No | No |
+| Item Name | Item name | No | No |
+| Category | Item category | No | No |
+| Unit of Measure | Item UoM | No | No |
+| Current Price | Current price of item | No | No |
+| Default Supplier | Default supplier name | No | No |
+| Price History ID | Database ID of price history record | No* | No |
+| Historical Price | The price for this history entry | Yes | Yes |
+| Previous Price | Previous price before this change | No | Yes |
+| Price Date | When this record was created | No | No |
+| Date Effective | When this price became effective | No | Yes |
+| Supplier | Supplier for this price | No | Yes |
+| LGA | Local government area | No | Yes |
+| Change Reason | Reason for price change | No | Yes |
+| Quote Reference | Reference number for quote | No | Yes |
+| Notes | Item notes | No | No |
+
+*Note: Price History ID is only required when updating existing records. Leave blank for new entries.
+
+## Valid LGA Values
+
+The following LGA values are accepted (case-insensitive):
+- Toowoomba Regional Council
+- Lockyer Valley Regional Council
+- City of Gold Coast
+- Brisbane City Council
+- Sunshine Coast Regional Council
+- Redland City Council
+- Scenic Rim Regional Council
+
+## Import Behavior
+
+### Creating New Price History Records
+1. Leave "Price History ID" column empty
+2. Provide "Item ID" and "Historical Price" (required)
+3. All other fields are optional
+
+### Updating Existing Price History Records
+1. Include the "Price History ID" value from export
+2. Update any editable fields
+3. The import will update the existing record
+
+### Supplier Handling
+- If supplier name exists in database, it will be linked
+- If supplier name doesn't exist, a new supplier will be created
+- Invalid supplier names will be ignored with a warning
+
+### Error Handling
+- The import uses database transactions (all-or-nothing)
+- If any critical error occurs, all changes are rolled back
+- Row-level errors are collected and returned in the response
+- Non-critical issues generate warnings but don't stop the import
+
+## Use Cases
+
+### Use Case 1: Export supplier-specific prices
+1. User filters pricebook by supplier "ACME Supplies"
+2. User clicks "Export to Excel" button
+3. System generates `price_history_ACME_Supplies_20250106.xlsx`
+4. File contains all items and their price history for ACME
+
+### Use Case 2: Bulk update historical prices
+1. User exports price history
+2. User opens Excel and updates several "Historical Price" values
+3. User saves the file
+4. User uploads the file back to the system
+5. System updates price_history table with new values
+
+### Use Case 3: Add new price records
+1. User exports current price history
+2. User duplicates a row and changes:
+   - Clears "Price History ID"
+   - Updates "Historical Price" to new value
+   - Updates "Date Effective" to new date
+   - Updates "Supplier" if needed
+3. User uploads the file
+4. System creates new price history record
+
+### Use Case 4: Regional pricing updates
+1. User exports price history for category "PLUMBING"
+2. User adds LGA values to records (e.g., "Brisbane City Council")
+3. User updates prices for specific regions
+4. User uploads the file
+5. System records regional pricing variations
+
+## Testing Instructions
+
+### Manual Testing Steps
+
+1. **Start Rails Server**
+   ```bash
+   cd backend
+   bin/rails server
+   ```
+
+2. **Test Export (No Filters)**
+   ```bash
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+     -o test_export_all.xlsx
+
+   # Verify file was downloaded
+   ls -lh test_export_all.xlsx
+   ```
+
+3. **Test Export (With Supplier Filter)**
+   ```bash
+   # First, get a supplier ID
+   curl -X GET "http://localhost:3000/api/v1/suppliers" | jq '.[0].id'
+
+   # Then export for that supplier
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+     -o test_export_supplier.xlsx
+   ```
+
+4. **Test Export (With Category Filter)**
+   ```bash
+   # Get available categories
+   curl -X GET "http://localhost:3000/api/v1/pricebook" | jq '.filters.categories'
+
+   # Export for a category
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+     -o test_export_category.xlsx
+   ```
+
+5. **Test Import**
+   ```bash
+   # Edit the exported file in Excel (change some prices)
+   # Then import it back
+   curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+     -F "file=@test_export_all.xlsx"
+   ```
+
+6. **Verify Changes**
+   ```bash
+   # Check a specific item's price history
+   curl -X GET "http://localhost:3000/api/v1/pricebook/1/history" | jq '.'
+   ```
+
+### Rails Console Testing
+
+```ruby
+# Start console
+bin/rails console
+
+# Test export service
+service = PriceHistoryExportService.new(supplier_id: 1)
+result = service.export
+puts result[:success] ? "Export successful" : result[:errors]
+
+# Test import service (requires a file)
+# First create a test file by running export via curl
+service = PriceHistoryImportService.new('/path/to/test_export.xlsx')
+result = service.import
+puts result
+```
+
+## Implementation Details
+
+### PriceHistoryExportService
+
+**Key Features:**
+- Filters items by supplier and/or category
+- Includes all price history records for each item
+- Items without price history are included with empty history fields
+- Excel file has styled headers and formatted currency/date columns
+- Auto-fit column widths for readability
+- Filename includes filters and date for easy organization
+
+**Performance Considerations:**
+- Uses `includes()` to eager-load associations (prevents N+1 queries)
+- Processes items in memory (suitable for up to ~10,000 items)
+- For larger datasets, consider pagination or background job processing
+
+### PriceHistoryImportService
+
+**Key Features:**
+- Validates file format (CSV, XLS, XLSX)
+- Required column validation
+- Row-by-row processing with error collection
+- Database transaction for atomicity
+- Automatic supplier creation
+- LGA validation against allowed values
+- Flexible date parsing
+- Currency parsing (handles $, commas)
+
+**Validation Rules:**
+- Item ID must exist in database
+- Historical Price must be provided
+- LGA must be in allowed list (if provided)
+- Supplier is created if doesn't exist
+- Dates are parsed flexibly
+
+**Error Recovery:**
+- Transaction rollback on critical errors
+- Row-level errors don't stop other rows
+- Detailed error messages with row numbers
+- Warning messages for non-critical issues
+
+## Frontend Integration
+
+To integrate this feature in the React frontend:
+
+### Export Button
+
+```javascript
+const exportPriceHistory = async (supplierId, category) => {
+  const params = new URLSearchParams();
+  if (supplierId) params.append('supplier_id', supplierId);
+  if (category) params.append('category', category);
+
+  const response = await fetch(
+    `/api/v1/pricebook/export_price_history?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  );
+
+  if (response.ok) {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `price_history_${Date.now()}.xlsx`;
+    a.click();
+  } else {
+    const error = await response.json();
+    console.error('Export failed:', error);
+  }
+};
+```
+
+### Import Button
+
+```javascript
+const importPriceHistory = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/v1/pricebook/import_price_history', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  const result = await response.json();
+
+  if (result.success) {
+    console.log('Import successful:', result.stats);
+    // Show success notification
+    // Refresh pricebook data
+  } else {
+    console.error('Import failed:', result.errors);
+    // Show error notification
+  }
+};
+```
+
+## Security Considerations
+
+1. **Authentication**: Endpoints should require authentication (add auth middleware)
+2. **Authorization**: Users should only export/import data they have access to
+3. **File Size Limits**: Rails has default 10MB upload limit (adjust if needed)
+4. **SQL Injection**: Using parameterized queries throughout
+5. **XSS Prevention**: Data is validated and sanitized on import
+
+## Future Enhancements
+
+1. **Background Processing**: For large exports/imports, use Solid Queue
+2. **Progress Tracking**: Show real-time import progress
+3. **Validation Preview**: Show import preview before committing changes
+4. **Diff View**: Show what will change before importing
+5. **Export Templates**: Pre-filtered export templates for common use cases
+6. **Scheduled Exports**: Automatically export and email price history reports
+7. **Audit Trail**: Track who exported/imported and when
+8. **Undo Import**: Ability to rollback an import operation
+
+## Troubleshooting
+
+### Error: "No items found for the selected filters"
+- Check that items exist with the specified supplier/category
+- Verify supplier_id is correct
+- Check category name matches exactly (case-sensitive)
+
+### Error: "Failed to parse spreadsheet"
+- Ensure file is valid Excel (.xlsx, .xls) or CSV format
+- Check file is not corrupted
+- Verify file size is under limit
+
+### Error: "Missing required columns"
+- Excel file must have headers in first row
+- Required columns: "Item ID", "Historical Price"
+- Check for typos in column headers
+
+### Import creates duplicate suppliers
+- This is expected behavior if supplier name doesn't match exactly
+- Supplier matching is case-insensitive but must match exactly
+- Check for extra spaces or special characters
+
+### Price history not visible after import
+- Refresh the pricebook page
+- Check that date_effective is set correctly
+- Verify item_id matches an existing item
+
+## Support
+
+For issues or questions, contact the development team or create an issue in the project repository.
+
+
+### Code Example
+```jsx
+```bash
+# Export all price history
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+  -o price_history.xlsx
+
+# Export for specific supplier
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+  -o price_history_supplier_1.xlsx
+
+# Export for specific category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+  -o price_history_electrical.xlsx
+
+# Export for supplier AND category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1&category=ELECTRICAL" \
+  -o price_history_supplier_1_electrical.xlsx
+```
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+  -F "file=@/path/to/price_history.xlsx"
+```
+
+```json
+{
+  "success": true,
+  "stats": {
+    "total_rows": 100,
+    "processed": 100,
+    "created": 50,
+    "updated": 45,
+    "skipped": 3,
+    "errors": 2
+  },
+  "warnings": [
+    "Row 10: Item ID 999 not found - skipping",
+    "Created new supplier: New Supplier Name"
+  ]
+}
+```
+
+```bash
+   cd backend
+   bin/rails server
+   ```
+
+```bash
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+     -o test_export_all.xlsx
+
+   # Verify file was downloaded
+   ls -lh test_export_all.xlsx
+   ```
+
+```bash
+   # First, get a supplier ID
+   curl -X GET "http://localhost:3000/api/v1/suppliers" | jq '.[0].id'
+
+   # Then export for that supplier
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+     -o test_export_supplier.xlsx
+   ```
+
+```bash
+   # Get available categories
+   curl -X GET "http://localhost:3000/api/v1/pricebook" | jq '.filters.categories'
+
+   # Export for a category
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+     -o test_export_category.xlsx
+   ```
+
+```bash
+   # Edit the exported file in Excel (change some prices)
+   # Then import it back
+   curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+     -F "file=@test_export_all.xlsx"
+   ```
+
+```bash
+   # Check a specific item's price history
+   curl -X GET "http://localhost:3000/api/v1/pricebook/1/history" | jq '.'
+   ```
+
+```ruby
+# Start console
+bin/rails console
+
+# Test export service
+service = PriceHistoryExportService.new(supplier_id: 1)
+result = service.export
+puts result[:success] ? "Export successful" : result[:errors]
+
+# Test import service (requires a file)
+# First create a test file by running export via curl
+service = PriceHistoryImportService.new('/path/to/test_export.xlsx')
+result = service.import
+puts result
+```
+
+```javascript
+const exportPriceHistory = async (supplierId, category) => {
+  const params = new URLSearchParams();
+  if (supplierId) params.append('supplier_id', supplierId);
+  if (category) params.append('category', category);
+
+  const response = await fetch(
+    `/api/v1/pricebook/export_price_history?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  );
+
+  if (response.ok) {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `price_history_${Date.now()}.xlsx`;
+    a.click();
+  } else {
+    const error = await response.json();
+    console.error('Export failed:', error);
+  }
+};
+```
+
+```javascript
+const importPriceHistory = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/v1/pricebook/import_price_history', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  const result = await response.json();
+
+  if (result.success) {
+    console.log('Import successful:', result.stats);
+    // Show success notification
+    // Refresh pricebook data
+  } else {
+    console.error('Import failed:', result.errors);
+    // Show error notification
+  }
+};
+```
+```
+
+### Examples
+```bash
+# Export all price history
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+  -o price_history.xlsx
+
+# Export for specific supplier
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+  -o price_history_supplier_1.xlsx
+
+# Export for specific category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+  -o price_history_electrical.xlsx
+
+# Export for supplier AND category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1&category=ELECTRICAL" \
+  -o price_history_supplier_1_electrical.xlsx
+```
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+  -F "file=@/path/to/price_history.xlsx"
+```
+
+```json
+{
+  "success": true,
+  "stats": {
+    "total_rows": 100,
+    "processed": 100,
+    "created": 50,
+    "updated": 45,
+    "skipped": 3,
+    "errors": 2
+  },
+  "warnings": [
+    "Row 10: Item ID 999 not found - skipping",
+    "Created new supplier: New Supplier Name"
+  ]
+}
+```
+
+```bash
+   cd backend
+   bin/rails server
+   ```
+
+```bash
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+     -o test_export_all.xlsx
+
+   # Verify file was downloaded
+   ls -lh test_export_all.xlsx
+   ```
+
+```bash
+   # First, get a supplier ID
+   curl -X GET "http://localhost:3000/api/v1/suppliers" | jq '.[0].id'
+
+   # Then export for that supplier
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+     -o test_export_supplier.xlsx
+   ```
+
+```bash
+   # Get available categories
+   curl -X GET "http://localhost:3000/api/v1/pricebook" | jq '.filters.categories'
+
+   # Export for a category
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+     -o test_export_category.xlsx
+   ```
+
+```bash
+   # Edit the exported file in Excel (change some prices)
+   # Then import it back
+   curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+     -F "file=@test_export_all.xlsx"
+   ```
+
+```bash
+   # Check a specific item's price history
+   curl -X GET "http://localhost:3000/api/v1/pricebook/1/history" | jq '.'
+   ```
+
+```ruby
+# Start console
+bin/rails console
+
+# Test export service
+service = PriceHistoryExportService.new(supplier_id: 1)
+result = service.export
+puts result[:success] ? "Export successful" : result[:errors]
+
+# Test import service (requires a file)
+# First create a test file by running export via curl
+service = PriceHistoryImportService.new('/path/to/test_export.xlsx')
+result = service.import
+puts result
+```
+
+```javascript
+const exportPriceHistory = async (supplierId, category) => {
+  const params = new URLSearchParams();
+  if (supplierId) params.append('supplier_id', supplierId);
+  if (category) params.append('category', category);
+
+  const response = await fetch(
+    `/api/v1/pricebook/export_price_history?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  );
+
+  if (response.ok) {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `price_history_${Date.now()}.xlsx`;
+    a.click();
+  } else {
+    const error = await response.json();
+    console.error('Export failed:', error);
+  }
+};
+```
+
+```javascript
+const importPriceHistory = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/v1/pricebook/import_price_history', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  const result = await response.json();
+
+  if (result.success) {
+    console.log('Import successful:', result.stats);
+    // Show success notification
+    // Refresh pricebook data
+  } else {
+    console.error('Import failed:', result.errors);
+    // Show error notification
+  }
+};
+```
+
+---
+
+## §4.3: Xero Sync Uses Priority-Based Fuzzy Matching
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.3"}]
+
+### Quick Summary
+-
+
+### Code Example
+```jsx
+# app/services/xero_contact_sync_service.rb
+def match_contact(xero_contact)
+  # Priority 1: Exact xero_id match
+  if xero_contact.contact_id.present?
+    match = Contact.find_by(xero_id: xero_contact.contact_id)
+    return { contact: match, match_type: 'xero_id' } if match
+  end
+
+  # Priority 2: Tax number match (ABN/ACN)
+  if xero_contact.tax_number.present?
+    normalized_tax = xero_contact.tax_number.gsub(/\D/, '')
+    if normalized_tax.length == 11
+      match = Contact.where("regexp_replace(tax_number, '[^0-9]', '', 'g') = ?", normalized_tax).first
+      return { contact: match, match_type: 'tax_number' } if match
+    end
+  end
+
+  # Priority 3: Email match
+  if xero_contact.email_address.present?
+    match = Contact.find_by('LOWER(email) = ?', xero_contact.email_address.downcase)
+    return { contact: match, match_type: 'email' } if match
+  end
+
+  # Priority 4: Fuzzy name match (>85% similarity)
+  if xero_contact.name.present?
+    contact_names = Contact.pluck(:full_name, :id).to_h
+    fuzzy_matcher = FuzzyMatch.new(contact_names.keys)
+    matched_name = fuzzy_matcher.find(xero_contact.name, threshold: 0.85)
+
+    if matched_name
+      match = Contact.find(contact_names[matched_name])
+      return { contact: match, match_type: 'fuzzy_name' }
+    end
+  end
+
+  { contact: nil, match_type: 'no_match' }
+end
+```
+
+---
+
+## §4.4: Contact Deletion MUST Check Purchase Order Dependencies
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.4"}]
+
+### Quick Summary
+- Check for linked suppliers via `contact.suppliers` association - Check if suppliers have purchase orders: `suppliers.joins(:purchase_orders).distinct` - Block deletion if ANY purchase orders exist -
+
+### Code Example
+```jsx
+# app/controllers/api/v1/contacts_controller.rb
+def destroy
+  # Check for linked suppliers with purchase orders
+  if @contact.suppliers.any?
+    suppliers_with_pos = @contact.suppliers.joins(:purchase_orders).distinct
+
+    if suppliers_with_pos.any?
+      # Check for paid/invoiced POs
+      paid_pos = PurchaseOrder
+        .where(supplier_id: suppliers_with_pos.pluck(:id))
+        .where("status IN (?) OR amount_paid > 0 OR amount_invoiced > 0",
+               ['paid', 'partially_paid', 'invoiced'])
+
+      if paid_pos.exists?
+        return render json: {
+          success: false,
+          error: "Cannot delete contact with suppliers that have paid or invoiced purchase orders"
+        }, status: :unprocessable_entity
+      end
+    end
+  end
+
+  @contact.destroy
+end
+```
+
+---
+
+## §4.6: Portal Users MUST Have Secure Password Requirements
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§4.6"}]
+
+### Quick Summary
+- Minimum 12 characters - At least one uppercase, lowercase, digit, and special character - Lock account after 5 failed login attempts - Lockout duration: 30 minutes - Reset failed attempts counter on
+
+### Code Example
+```jsx
+# app/models/portal_user.rb
+PASSWORD_REGEX = /\A
+  (?=.*[a-z])           # At least one lowercase
+  (?=.*[A-Z])           # At least one uppercase
+  (?=.*\d)              # At least one digit
+  (?=.*[!@#$%^&*()_+\-=\[\]{}|;:,.<>?])  # At least one special char
+  .{12,}                # At least 12 characters
+\z/x
+
+validates :password, length: { minimum: 12 }, format: PASSWORD_REGEX, on: :create
+```
+
+---
+
 
 # Chapter 5: Price Books & Suppliers
 
@@ -8193,11 +8096,11 @@ const importPriceHistory = async (file) => {
 
 ---
 
-## §4.1: Price Changes MUST Create Price History Automatically
+## §5.1: Price Changes MUST Create Price History Automatically
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #4.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§5.1"}]
 
 ### Quick Summary
 - Use `after_update` callback to detect price changes - Create PriceHistory with `old_price`, `new_price`, `change_reason` - Set `price_last_updated_at` to current timestamp - Track `changed_by_user_i
@@ -8244,11 +8147,11 @@ item.update!(current_price: 450.00)
 
 ---
 
-## §4.2: Prevent Duplicate Price History - Unique Constraint + Time Window
+## §5.2: Prevent Duplicate Price History - Unique Constraint + Time Window
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #4.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§5.2"}]
 
 ### Quick Summary
 - Use unique index: `(pricebook_item_id, supplier_id, new_price, created_at)` - Add custom validation preventing entries within 5 seconds - Handle race conditions gracefully (return existing record) -
@@ -8305,11 +8208,11 @@ end
 
 ---
 
-## §4.3: SmartPoLookupService - 6-Strategy Cascading Fallback
+## §5.3: SmartPoLookupService - 6-Strategy Cascading Fallback
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #4.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§5.3"}]
 
 ### Quick Summary
 - Execute strategies in priority order (most specific → most general) - Stop immediately on first match (don't continue searching) - Track which strategy succeeded for analytics - Collect warnings for
@@ -8414,11 +8317,11 @@ end
 
 ---
 
-## §4.4: Supplier Matching - Normalized Name Comparison with Business Suffix Removal
+## §5.4: Supplier Matching - Normalized Name Comparison with Business Suffix Removal
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #4.4
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§5.4"}]
 
 ### Quick Summary
 - Remove business entity types: "Pty Ltd", "Limited", "Inc", "Corporation", "Co" - Remove location identifiers: "Australia", "Australian", "Qld", "Queensland" - Remove organizational terms: "Group", "
@@ -8528,11 +8431,11 @@ end
 
 ---
 
-## §4.5: Price Volatility Detection - Coefficient of Variation on 6-Month Window
+## §5.5: Price Volatility Detection - Coefficient of Variation on 6-Month Window
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #4.5
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§5.5"}]
 
 ### Quick Summary
 - Use rolling 6-month window of prices - Calculate CV = (Standard Deviation / Mean) × 100 - Classify: stable (<5%), moderate (5-15%), volatile (>15%) - Require minimum 3 data points for valid calculat
@@ -8593,11 +8496,11 @@ mean = 116, std_dev = 35.8, CV = 30.9% → "volatile"
 
 ---
 
-## §4.6: Risk Scoring - Multi-Factor Weighted Calculation (0-100 Scale)
+## §5.6: Risk Scoring - Multi-Factor Weighted Calculation (0-100 Scale)
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #4.6
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§5.6"}]
 
 ### Quick Summary
 - Calculate all 4 components independently - Apply fixed weights (freshness=40%, reliability=20%, volatility=20%, missing=20%) - Return score 0-100 with level: low/medium/high/critical - Use database-
@@ -8698,11 +8601,11 @@ scope :by_risk_level, ->(level) {
 
 ---
 
-## §4.7: Bulk Updates - Transaction Wrapper with Price History Batch Creation
+## §5.7: Bulk Updates - Transaction Wrapper with Price History Batch Creation
 
 ⚡ Optimization | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #4.7
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§5.7"}]
 
 ### Quick Summary
 - Wrap all updates in `ActiveRecord::Base.transaction` - Batch create price histories in single insert - Rollback entirely on any validation error - Return detailed success/failure report per item - U
@@ -8800,11 +8703,11 @@ Bulk Update with Transaction:
 
 ---
 
-## §4.8: OneDrive Image Proxy - Cache Control with 1-Hour Expiry
+## §5.8: OneDrive Image Proxy - Cache Control with 1-Hour Expiry
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #4.8
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§5.8"}]
 
 ### Quick Summary
 - Set `Cache-Control: public, max-age=3600` (1 hour) - Store OneDrive `file_id` permanently (not URL) - Refresh URL on each request via Microsoft Graph API - Handle expired credentials gracefully (503
@@ -8878,11 +8781,11 @@ get 'pricebook/:id/proxy_image/:file_type', to: 'pricebook_items#proxy_image'
 
 ---
 
-## §5.1: Construction MUST Have At Least One Contact
+## §6.1: Construction MUST Have At Least One Contact
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #5.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§6.1"}]
 
 ### Quick Summary
 - Validate `must_have_at_least_one_contact` on update - Allow creation without contacts (initial save) - Require at least one contact before job can be used - Show validation error if all contacts rem
@@ -8911,11 +8814,11 @@ end
 
 ---
 
-## §5.2: Live Profit Calculation - Dynamic Not Cached
+## §6.2: Live Profit Calculation - Dynamic Not Cached
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #5.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§6.2"}]
 
 ### Quick Summary
 - Calculate `live_profit = contract_value - sum(all_purchase_orders.total)` - Recalculate `profit_percentage = (live_profit / contract_value) * 100` - Use `calculate_live_profit` and `calculate_profit
@@ -8954,11 +8857,11 @@ end
 
 ---
 
-## §5.3: Task Dependencies - No Circular References
+## §6.3: Task Dependencies - No Circular References
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #5.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§6.3"}]
 
 ### Quick Summary
 - Validate `no_circular_dependencies` before saving TaskDependency - Use graph traversal (BFS) to detect cycles - Check entire predecessor chain for successor_task - Reject dependency if circular refe
@@ -9022,11 +8925,11 @@ end
 
 ---
 
-## §5.4: Task Status Transitions - Automatic Date Setting
+## §6.4: Task Status Transitions - Automatic Date Setting
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #5.4
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§6.4"}]
 
 ### Quick Summary
 - Set `actual_start_date = Date.current` when status → `in_progress` (if nil) - Set `actual_end_date = Date.current` when status → `complete` - Set `progress_percentage = 100` when status → `complete`
@@ -9055,11 +8958,11 @@ end
 
 ---
 
-## §5.5: Task Spawning - Status-Based Child Task Creation
+## §6.5: Task Spawning - Status-Based Child Task Creation
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #5.5
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§6.5"}]
 
 ### Quick Summary
 - Spawn
@@ -9153,11 +9056,11 @@ end
 
 ---
 
-## §5.6: Schedule Cascade - Dependency-Based Date Propagation
+## §6.6: Schedule Cascade - Dependency-Based Date Propagation
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #5.6
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§6.6"}]
 
 ### Quick Summary
 - Use `ScheduleCascadeService` to recalculate dependent task dates - Respect dependency types (FS/SS/FF/SF) - Apply lag_days to calculations - Skip manually_positioned tasks (user-set dates) - Recursi
@@ -9244,11 +9147,11 @@ end
 
 ---
 
-## §5.7: OneDrive Folder Creation - Async with Status Tracking
+## §6.7: OneDrive Folder Creation - Async with Status Tracking
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #5.7
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§6.7"}]
 
 ### Quick Summary
 - Use `CreateJobFoldersJob` background job - Track status: `not_requested` → `pending` → `processing` → `completed` / `failed` - Use `onedrive_folder_creation_status` enum field - Set `onedrive_folder
@@ -9342,11 +9245,11 @@ end
 
 ---
 
-## §5.8: Schedule Template Instantiation - All-or-Nothing Transaction
+## §6.8: Schedule Template Instantiation - All-or-Nothing Transaction
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #5.8
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§6.8"}]
 
 ### Quick Summary
 - Use `ActiveRecord::Base.transaction` for all template instantiation - Rollback entire operation if any task fails to create - Rollback if dependency creation fails - Rollback if date calculation fai
@@ -9452,11 +9355,11 @@ end
 
 ---
 
-## §6.1: Fuzzy Job Matching - Three-Tier Confidence Thresholds
+## §7.1: Fuzzy Job Matching - Three-Tier Confidence Thresholds
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #6.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§7.1"}]
 
 ### Quick Summary
 - Use Levenshtein distance + word matching + substring bonuses - Auto-match at
@@ -9562,11 +9465,11 @@ end
 
 ---
 
-## §6.2: External API Key Security - SHA256 Hashing Only
+## §7.2: External API Key Security - SHA256 Hashing Only
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #6.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§7.2"}]
 
 ### Quick Summary
 - Hash API keys with SHA256 before storage - Validate incoming keys by hashing and comparing digests - Store keys in `external_integrations` table - Track usage with `last_used_at` timestamp - Support
@@ -9642,11 +9545,11 @@ end
 
 ---
 
-## §6.3: Estimate Import - Validate Before Auto-Matching
+## §7.3: Estimate Import - Validate Before Auto-Matching
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #6.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§7.3"}]
 
 ### Quick Summary
 - Validate `job_name` is present and non-empty - Validate `materials` array has at least 1 item - Validate each material has: `category`, `item`, `quantity` - Return 422 Unprocessable Entity for inval
@@ -9737,11 +9640,11 @@ end
 
 ---
 
-## §6.4: PO Generation from Estimate - Transaction Safety
+## §7.4: PO Generation from Estimate - Transaction Safety
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #6.4
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§7.4"}]
 
 ### Quick Summary
 - Wrap entire conversion in `ActiveRecord::Base.transaction` - Rollback if any PO creation fails - Rollback if any line item creation fails - Rollback if supplier lookup fails critically - Mark estima
@@ -9856,11 +9759,11 @@ end
 
 ---
 
-## §6.5: AI Plan Review - Async Processing Required
+## §7.5: AI Plan Review - Async Processing Required
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #6.5
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§7.5"}]
 
 ### Quick Summary
 - Enqueue `AiReviewJob` for all plan reviews - Create `EstimateReview` record with `status: 'pending'` immediately - Return review_id to client for polling - Update status to `processing` → `completed
@@ -9973,11 +9876,11 @@ const pollReviewStatus = async (reviewId) => {
 
 ---
 
-## §6.6: Line Item Categorization - Normalized Category Matching
+## §7.6: Line Item Categorization - Normalized Category Matching
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #6.6
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§7.6"}]
 
 ### Quick Summary
 - Normalize categories to lowercase before grouping - Map common variations: "plumbing" = "plumber" = "plumb" - Use category normalization service - Handle nil/blank categories with "Uncategorized" gr
@@ -10026,11 +9929,11 @@ end
 
 ---
 
-## §6.7: Estimate Status State Machine - Strict Transitions
+## §7.7: Estimate Status State Machine - Strict Transitions
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #6.7
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§7.7"}]
 
 ### Quick Summary
 - Start at `pending` status on creation - Transition to `matched` when linked to construction - Transition to `imported` when POs generated - Allow `rejected` from any state - Prevent reverse transiti
@@ -10125,11 +10028,11 @@ end
 
 ---
 
-## §7.1: Estimate Must Be Matched to Construction
+## §8.1: Estimate Must Be Matched to Construction
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #7.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§8.1"}]
 
 ### Quick Summary
 - Validate `estimate.construction_id` is present before starting review - Return 422 status with clear error message if not matched - Show "Match to Job" button in UI if unmatched
@@ -10146,11 +10049,11 @@ end
 
 ---
 
-## §7.2: OneDrive Plan Folder Structure
+## §8.2: OneDrive Plan Folder Structure
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #7.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§8.2"}]
 
 ### Quick Summary
 1. `01 - Plans` 2. `02 - Engineering` 3. `03 - Specifications`
@@ -10173,11 +10076,11 @@ end
 
 ---
 
-## §7.3: PDF File Size Limit
+## §8.3: PDF File Size Limit
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #7.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§8.3"}]
 
 ### Quick Summary
 - Check file size before download - Skip files > 20MB - Return error if NO valid PDFs found after filtering
@@ -10204,11 +10107,11 @@ end
 
 ---
 
-## §7.4: Async Processing with Background Jobs
+## §8.4: Async Processing with Background Jobs
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #7.4
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§8.4"}]
 
 ### Quick Summary
 - Return 202 Accepted immediately with review_id - Enqueue AiReviewJob with estimate_id - Set initial status to 'pending', update to 'processing' in job - Frontend MUST poll for status (every 5 second
@@ -10242,11 +10145,11 @@ const pollInterval = setInterval(async () => {
 
 ---
 
-## §7.5: Claude API Model and Prompt Structure
+## §8.5: Claude API Model and Prompt Structure
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #7.5
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§8.5"}]
 
 ### Quick Summary
 - Use exact model ID: `claude-3-5-sonnet-20241022` - Send PDFs as base64-encoded documents with MIME type `application/pdf` - Request JSON response format with specific schema - Include estimate line 
@@ -10316,11 +10219,11 @@ end
 
 ---
 
-## §7.6: Discrepancy Detection Logic
+## §8.6: Discrepancy Detection Logic
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #7.6
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§8.6"}]
 
 ### Quick Summary
 1.
@@ -10404,11 +10307,11 @@ end
 
 ---
 
-## §7.7: Confidence Score Calculation
+## §8.7: Confidence Score Calculation
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #7.7
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§8.7"}]
 
 ### Quick Summary
 ```ruby base_score = (items_matched / total_items) * 100 penalty = (items_mismatched * 5) + (items_missing * 3) + (items_extra * 2) confidence_score = [base_score - penalty, 0].max  # Clamp to 0 minim
@@ -10440,11 +10343,11 @@ end
 
 ---
 
-## §7.8: Error Handling and Status Updates
+## §8.8: Error Handling and Status Updates
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #7.8
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§8.8"}]
 
 ### Quick Summary
 - `NoConstructionError` - Estimate not matched - `OneDriveNotConnectedError` - OneDrive credential missing - `PDFNotFoundError` - No valid PDFs in plan folders - `FileTooLargeError` - All PDFs exceed 
@@ -10489,11 +10392,11 @@ end
 
 ---
 
-## §7.9: Prevent Duplicate Processing Reviews
+## §8.9: Prevent Duplicate Processing Reviews
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #7.9
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§8.9"}]
 
 ### Quick Summary
 - Query for existing review with `status: processing` - Return 422 error if found - Allow new review only if previous is completed/failed
@@ -10522,2143 +10425,6 @@ end
 ---
 
 
-# Chapter 9: Purchase Orders
-
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  9               │
-│ 📕 LEXICON (BUGS):    Chapter  9               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
-**Last Updated:** 2025-11-17
-
----
-
-## §8.1: PO Number Generation - Race Condition Protection
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.1
-
-### Quick Summary
-✅
-
-### Code Example
-```jsx
-def generate_purchase_order_number
-  ActiveRecord::Base.transaction do
-    ActiveRecord::Base.connection.execute('SELECT pg_advisory_xact_lock(123456789)')
-
-    last_po = PurchaseOrder.order(:purchase_order_number).last
-    next_number = last_po ? last_po.purchase_order_number.gsub(/\D/, '').to_i + 1 : 1
-    self.purchase_order_number = format('PO-%06d', next_number)
-  end
-end
-```
-
----
-
-## §8.2: Status State Machine
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.2
-
-### Quick Summary
-✅
-
-### Code Example
-```jsx
-draft → pending → approved → sent → received → invoiced → paid
-  ↘                                                         ↗
-   cancelled (can cancel any non-paid status)
-
-# ---
-
-def can_edit?         # Only draft/pending
-def can_approve?      # Only pending
-def can_cancel?       # Any except paid/cancelled
-```
-
----
-
-## §8.3: Payment Status Calculation
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.3
-
-### Quick Summary
-✅
-
-### Code Example
-```jsx
-def determine_payment_status(invoice_amount)
-  return :manual_review if total.zero? || invoice_amount > total + 1
-  return :pending if invoice_amount.zero?
-
-  percentage = (invoice_amount / total) * 100
-  return :complete if percentage >= 95 && percentage <= 105
-  return :part_payment
-end
-```
-
----
-
-## §8.5: Line Items - Totals Calculation
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.5
-
-### Quick Summary
-✅
-
-### Code Example
-```jsx
-before_save :calculate_totals
-
-def calculate_totals
-  self.sub_total = line_items.sum { |li| li.quantity * li.unit_price }
-  self.tax = sub_total * 0.10  # 10% GST
-  self.total = sub_total + tax
-end
-```
-
----
-
-## §8.6: Schedule Task Linking
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.6
-
-### Quick Summary
-✅
-
-### Code Example
-```jsx
-ActiveRecord::Base.transaction do
-  # Unlink old task
-  if old_task = purchase_order.schedule_task
-    old_task.update!(purchase_order_id: nil)
-  end
-
-  # Link new task
-  if new_task_id.present?
-    new_task = ScheduleTask.find(new_task_id)
-    new_task.update!(purchase_order_id: purchase_order.id)
-  end
-end
-```
-
----
-
-## §8.7: Price Drift Monitoring
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.7
-
-### Quick Summary
-✅
-
-### Code Example
-```jsx
-def price_drift
-  return 0 if pricebook_item.nil?
-  ((unit_price - pricebook_item.price) / pricebook_item.price) * 100
-end
-```
-
----
-
-## §9.1: Task Management Quick Reference
-
-✨ Feature | 🟢 Beginner
-
-### Quick Summary
-Quick reference for task management: two task systems, API endpoints, and common operations
-
-### Step-by-Step Guide
-# Trapid Task Management - Quick Reference Guide
-
-## Two Task Systems
-
-### 1. ProjectTask - Master Schedule (Detailed Planning)
-- **Used For:** Internal project planning with dependencies and critical path
-- **Main Fields:** status, progress_percentage, planned/actual dates, assigned_to_id
-- **Key Feature:** Task dependencies with 4 relationship types
-- **User Assignment:** Yes, to individual User objects
-- **Database:** `project_tasks` table
-
-### 2. ScheduleTask - Supplier Schedule (Delivery Tracking)
-- **Used For:** Tracking supplier deliveries and matching to purchase orders
-- **Main Fields:** title, status, start_date, complete_date, supplier_name
-- **Key Feature:** Link to purchase orders for delivery timing
-- **User Assignment:** No (tracks supplier info instead)
-- **Database:** `schedule_tasks` table
-
----
-
-## Key Models & Files
-
-```
-Models:
-  ProjectTask          → /backend/app/models/project_task.rb
-  ScheduleTask         → /backend/app/models/schedule_task.rb
-  TaskTemplate         → /backend/app/models/task_template.rb
-  TaskDependency       → /backend/app/models/task_dependency.rb
-  TaskUpdate           → /backend/app/models/task_update.rb
-  Project              → /backend/app/models/project.rb
-  Construction         → /backend/app/models/construction.rb
-  User                 → /backend/app/models/user.rb
-
-Controllers:
-  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
-  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
-  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
-
-Services:
-  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
-
-Frontend Pages:
-  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
-  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
-
-Frontend Components:
-  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
-  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
-  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
-```
-
----
-
-## API Endpoints
-
-### Task Management
-```
-GET    /api/v1/projects/:project_id/tasks                 - List all tasks
-POST   /api/v1/projects/:project_id/tasks                 - Create task
-GET    /api/v1/projects/:project_id/tasks/:id             - Get task
-PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
-DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
-GET    /api/v1/projects/:id/gantt                         - Get Gantt data
-```
-
-### Schedule Tasks
-```
-GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
-POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
-GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
-PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
-DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
-```
-
----
-
-## Task Status States
-
-```
-not_started  → Initial state (default)
-in_progress  → Task has started
-complete     → Task finished
-on_hold      → Paused/blocked
-```
-
----
-
-## Task Properties
-
-| Property | Type | Usage |
-|----------|------|-------|
-| name | string | Task title |
-| status | enum | Current state |
-| progress_percentage | 0-100 | Completion % |
-| planned_start_date | date | Scheduled start |
-| planned_end_date | date | Scheduled end |
-| actual_start_date | date | When work started |
-| actual_end_date | date | When work completed |
-| duration_days | integer | Task length in days |
-| is_milestone | boolean | Mark important milestone |
-| is_critical_path | boolean | On longest path |
-| assigned_to_id | foreign key | User assignment |
-| supplier_name | string | External supplier |
-| purchase_order_id | foreign key | Linked PO |
-
----
-
-## User Assignment (Current Limitation)
-
-Frontend uses hardcoded team members:
-```javascript
-[
-  'Rob Harder',
-  'Andrew Clement',
-  'Sam Harder',
-  'Sophie Harder',
-  'Jake Baird'
-]
-```
-
-**Problem:** Not dynamically fetched from database
-**Solution Needed:** Create `/api/v1/users` endpoint
-
----
-
-## Dependency Types
-
-```
-finish_to_start (FS)  → Task A finishes, Task B starts (default)
-start_to_start (SS)   → Task A starts, Task B starts
-finish_to_finish (FF) → Task A finishes, Task B finishes
-start_to_finish (SF)  → Task A starts, Task B finishes (rare)
-```
-
-All support optional lag_days for overlap.
-
----
-
-## Gantt Chart Features
-
-**Zoom Levels:**
-- Day view: 40px per day
-- Week view: 6px per day
-- Month view: 2px per day
-
-**Color By:**
-- Status (not_started=gray, in_progress=blue, complete=green)
-- Category (CONCRETE, CARPENTER, ELECTRICAL, etc.)
-- Type (DO, ORDER, GET, CLAIM, etc.)
-
-**Navigation:**
-- Previous/Next period buttons
-- "Today" button
-- Date range customizable
-
----
-
-## Data Flow
-
-```
-User creates/imports tasks
-        ↓
-ProjectTask or ScheduleTask created
-        ↓
-Dependencies established
-        ↓
-Schedule::GeneratorService runs (for ProjectTasks)
-        ↓
-Timeline calculated (forward pass)
-        ↓
-Critical path identified
-        ↓
-Gantt chart displays tasks & bars
-        ↓
-User updates status/progress
-        ↓
-TaskUpdate record created (history)
-```
-
----
-
-## Common Operations
-
-### Create a Task
-```bash
-POST /api/v1/projects/:project_id/tasks
-{
-  "project_task": {
-    "name": "Pour Concrete",
-    "task_type": "DO",
-    "category": "CONCRETE",
-    "duration_days": 5,
-    "assigned_to_id": 1
-  }
-}
-```
-
-### Update Task Progress
-```bash
-PATCH /api/v1/projects/:project_id/tasks/:id
-{
-  "project_task": {
-    "status": "in_progress",
-    "progress_percentage": 50
-  }
-}
-```
-
-### Link Task to Purchase Order
-```bash
-PATCH /api/v1/projects/:project_id/tasks/:id
-{
-  "project_task": {
-    "purchase_order_id": 42,
-    "required_on_site_date": "2025-01-20"
-  }
-}
-```
-
-### Import Schedule from Excel
-```bash
-POST /api/v1/constructions/:id/schedule_tasks/import
-Content-Type: multipart/form-data
-file: <Excel file>
-```
-
----
-
-## What's Missing & Needs Work
-
-### High Priority
-- [ ] Dynamic user list (hardcoded → database)
-- [ ] User roles/permissions
-- [ ] Backward pass for accurate float calculation
-
-### Medium Priority
-- [ ] Task comments/discussions
-- [ ] Change notifications
-- [ ] Export to PDF/PNG
-- [ ] Resource workload tracking
-
-### Nice to Have
-- [ ] Mobile support
-- [ ] Real-time WebSocket sync
-- [ ] Multi-project portfolios
-- [ ] Risk management integration
-
----
-
-## Performance Notes
-
-- Project progress cached for 5 minutes
-- Gantt data includes all task relationships
-- ScheduleTask import processes row-by-row (can slow with 1000+ rows)
-- No pagination on task lists (could be issue at scale)
-
----
-
-## Testing Checklist
-
-- [ ] Create task with all fields
-- [ ] Update task status (all 4 states)
-- [ ] Assign/unassign user
-- [ ] Create dependency between tasks
-- [ ] Verify circular dependency prevention
-- [ ] Import Excel schedule
-- [ ] Match schedule task to PO
-- [ ] View Gantt chart at different zoom levels
-- [ ] Edit task in table view
-- [ ] Sort table columns
-- [ ] Verify critical path calculation
-- [ ] Check materials_status (on_time/delayed)
-
----
-
-## Database Indexes
-
-Task-related indexes for performance:
-- project_id, status
-- planned_start_date, planned_end_date
-- is_critical_path
-- construction_id, matched_to_po
-
----
-
-## Related Documentation
-
-See `/Users/jakebaird/trapid/TASK_MANAGEMENT_ARCHITECTURE.md` for detailed investigation.
-
-
-
-### Code Example
-```jsx
-```
-Models:
-  ProjectTask          → /backend/app/models/project_task.rb
-  ScheduleTask         → /backend/app/models/schedule_task.rb
-  TaskTemplate         → /backend/app/models/task_template.rb
-  TaskDependency       → /backend/app/models/task_dependency.rb
-  TaskUpdate           → /backend/app/models/task_update.rb
-  Project              → /backend/app/models/project.rb
-  Construction         → /backend/app/models/construction.rb
-  User                 → /backend/app/models/user.rb
-
-Controllers:
-  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
-  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
-  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
-
-Services:
-  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
-
-Frontend Pages:
-  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
-  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
-
-Frontend Components:
-  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
-  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
-  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
-```
-
-```
-GET    /api/v1/projects/:project_id/tasks                 - List all tasks
-POST   /api/v1/projects/:project_id/tasks                 - Create task
-GET    /api/v1/projects/:project_id/tasks/:id             - Get task
-PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
-DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
-GET    /api/v1/projects/:id/gantt                         - Get Gantt data
-```
-
-```
-GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
-POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
-GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
-PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
-DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
-```
-
-```
-not_started  → Initial state (default)
-in_progress  → Task has started
-complete     → Task finished
-on_hold      → Paused/blocked
-```
-
-```javascript
-[
-  'Rob Harder',
-  'Andrew Clement',
-  'Sam Harder',
-  'Sophie Harder',
-  'Jake Baird'
-]
-```
-
-```
-finish_to_start (FS)  → Task A finishes, Task B starts (default)
-start_to_start (SS)   → Task A starts, Task B starts
-finish_to_finish (FF) → Task A finishes, Task B finishes
-start_to_finish (SF)  → Task A starts, Task B finishes (rare)
-```
-
-```
-User creates/imports tasks
-        ↓
-ProjectTask or ScheduleTask created
-        ↓
-Dependencies established
-        ↓
-Schedule::GeneratorService runs (for ProjectTasks)
-        ↓
-Timeline calculated (forward pass)
-        ↓
-Critical path identified
-        ↓
-Gantt chart displays tasks & bars
-        ↓
-User updates status/progress
-        ↓
-TaskUpdate record created (history)
-```
-
-```bash
-POST /api/v1/projects/:project_id/tasks
-{
-  "project_task": {
-    "name": "Pour Concrete",
-    "task_type": "DO",
-    "category": "CONCRETE",
-    "duration_days": 5,
-    "assigned_to_id": 1
-  }
-}
-```
-
-```bash
-PATCH /api/v1/projects/:project_id/tasks/:id
-{
-  "project_task": {
-    "status": "in_progress",
-    "progress_percentage": 50
-  }
-}
-```
-
-```bash
-PATCH /api/v1/projects/:project_id/tasks/:id
-{
-  "project_task": {
-    "purchase_order_id": 42,
-    "required_on_site_date": "2025-01-20"
-  }
-}
-```
-
-```bash
-POST /api/v1/constructions/:id/schedule_tasks/import
-Content-Type: multipart/form-data
-file: <Excel file>
-```
-```
-
-### Examples
-```
-Models:
-  ProjectTask          → /backend/app/models/project_task.rb
-  ScheduleTask         → /backend/app/models/schedule_task.rb
-  TaskTemplate         → /backend/app/models/task_template.rb
-  TaskDependency       → /backend/app/models/task_dependency.rb
-  TaskUpdate           → /backend/app/models/task_update.rb
-  Project              → /backend/app/models/project.rb
-  Construction         → /backend/app/models/construction.rb
-  User                 → /backend/app/models/user.rb
-
-Controllers:
-  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
-  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
-  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
-
-Services:
-  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
-
-Frontend Pages:
-  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
-  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
-
-Frontend Components:
-  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
-  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
-  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
-```
-
-```
-GET    /api/v1/projects/:project_id/tasks                 - List all tasks
-POST   /api/v1/projects/:project_id/tasks                 - Create task
-GET    /api/v1/projects/:project_id/tasks/:id             - Get task
-PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
-DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
-GET    /api/v1/projects/:id/gantt                         - Get Gantt data
-```
-
-```
-GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
-POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
-GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
-PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
-DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
-```
-
-```
-not_started  → Initial state (default)
-in_progress  → Task has started
-complete     → Task finished
-on_hold      → Paused/blocked
-```
-
-```javascript
-[
-  'Rob Harder',
-  'Andrew Clement',
-  'Sam Harder',
-  'Sophie Harder',
-  'Jake Baird'
-]
-```
-
-```
-finish_to_start (FS)  → Task A finishes, Task B starts (default)
-start_to_start (SS)   → Task A starts, Task B starts
-finish_to_finish (FF) → Task A finishes, Task B finishes
-start_to_finish (SF)  → Task A starts, Task B finishes (rare)
-```
-
-```
-User creates/imports tasks
-        ↓
-ProjectTask or ScheduleTask created
-        ↓
-Dependencies established
-        ↓
-Schedule::GeneratorService runs (for ProjectTasks)
-        ↓
-Timeline calculated (forward pass)
-        ↓
-Critical path identified
-        ↓
-Gantt chart displays tasks & bars
-        ↓
-User updates status/progress
-        ↓
-TaskUpdate record created (history)
-```
-
-```bash
-POST /api/v1/projects/:project_id/tasks
-{
-  "project_task": {
-    "name": "Pour Concrete",
-    "task_type": "DO",
-    "category": "CONCRETE",
-    "duration_days": 5,
-    "assigned_to_id": 1
-  }
-}
-```
-
-```bash
-PATCH /api/v1/projects/:project_id/tasks/:id
-{
-  "project_task": {
-    "status": "in_progress",
-    "progress_percentage": 50
-  }
-}
-```
-
-```bash
-PATCH /api/v1/projects/:project_id/tasks/:id
-{
-  "project_task": {
-    "purchase_order_id": 42,
-    "required_on_site_date": "2025-01-20"
-  }
-}
-```
-
-```bash
-POST /api/v1/constructions/:id/schedule_tasks/import
-Content-Type: multipart/form-data
-file: <Excel file>
-```
-
----
-
-## §9.2: Gantt Chart Developer Setup
-
-✨ Feature | 🟡 Intermediate
-
-### Quick Summary
-Development environment setup for Gantt chart features including dependencies and data seeding
-
-### Step-by-Step Guide
-# Gantt Developer Setup & Enforcement
-
-This document explains how to set up and enforce the Gantt onboarding process for all developers.
-
----
-
-## 🎯 Goals
-
-1. Ensure all developers read the Gantt Bible before modifying code
-2. Prevent reintroduction of bugs that took 8+ iterations to fix
-3. Maintain code quality through automated checks
-4. Create a culture of documentation-first development
-
----
-
-## 📚 Documentation Structure
-
-```
-trapid/
-├── GANTT_SCHEDULE_RULES.md          ← The Bible (development rules)
-├── GANTT_BIBLE_COLUMNS.md           ← Column implementation reference
-├── GANTT_BUGS_AND_FIXES.md          ← Bug history and Bug Hunter
-├── GANTT_ONBOARDING_CHECKLIST.md    ← Mandatory onboarding checklist
-├── GANTT_DEVELOPER_SETUP.md         ← This file
-└── scripts/
-    └── check-gantt-onboarding.sh    ← Pre-commit hook
-```
-
-All documentation is also available in `/frontend/public/` for the UI "Gantt Bible" button.
-
----
-
-## 🚀 Setup for New Developers
-
-### Step 1: Install Pre-Commit Hook
-
-```bash
-# Navigate to project root
-cd /Users/rob/Projects/trapid
-
-# Make the script executable
-chmod +x scripts/check-gantt-onboarding.sh
-
-# Install the hook
-cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
-
-# Make the hook executable
-chmod +x .git/hooks/pre-commit
-```
-
-### Step 2: Complete Onboarding
-
-New developers must complete the onboarding checklist:
-
-```bash
-# Open the checklist
-open GANTT_ONBOARDING_CHECKLIST.md
-
-# Follow all steps:
-# 1. Read GANTT_SCHEDULE_RULES.md (focus on 🚨 CRITICAL section)
-# 2. Read GANTT_BIBLE_COLUMNS.md
-# 3. Read GANTT_BUGS_AND_FIXES.md
-# 4. Answer all questions in the checklist
-# 5. Get checklist reviewed and signed by senior dev
-```
-
-**Estimated time:** 45-60 minutes
-
-### Step 3: Verify Setup
-
-Try to commit a change to Gantt code:
-
-```bash
-# Make a test change
-echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
-
-# Try to commit (should trigger the check)
-git add .
-git commit -m "test"
-
-# You should see the onboarding warning
-# If checklist is not signed, commit will be blocked
-```
-
----
-
-## 🛡️ Enforcement Mechanisms
-
-### 1. Pre-Commit Hook (Automated)
-
-**What it does:**
-- Detects when Gantt/Schedule files are modified
-- Checks if onboarding checklist has been completed (signed)
-- Blocks commits if checklist not signed
-- Shows reminders even after onboarding completed
-
-**Files that trigger the check:**
-- `frontend/src/components/schedule-master/DHtmlxGanttView.jsx`
-- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx`
-- `frontend/src/components/schedule-master/CascadeDependenciesModal.jsx`
-- `frontend/src/utils/ganttDebugger.js`
-- `backend/app/services/schedule_cascade_service.rb`
-- `backend/app/controllers/api/v1/schedule_template_rows_controller.rb`
-- `backend/app/models/schedule_template_row.rb`
-
-**Bypass (NOT RECOMMENDED):**
-```bash
-git commit --no-verify  # Skips the hook
-```
-
-### 2. Code Review Checklist (Manual)
-
-During code reviews, reviewers must verify:
-
-- [ ] Developer has completed onboarding (check signature in checklist)
-- [ ] Bug Hunter tests pass (screenshot in PR)
-- [ ] No Protected Code Patterns modified without justification
-- [ ] Changes documented if they affect The Bible
-
-**Template for PR description:**
-```markdown
-## Gantt Changes
-
-- [ ] Onboarding completed: ✅ Signed by [Name] on [Date]
-- [ ] Bug Hunter status: ✅ All tests passing (see screenshot)
-- [ ] Protected patterns: ✅ Not modified OR ✅ Approved by [Name]
-- [ ] Bible updated: ✅ Yes OR ⬜ N/A (no architectural changes)
-
-### Bug Hunter Results
-[Paste screenshot or output from `window.printBugHunterReport()`]
-
-### Changes Summary
-[Describe what you changed and why]
-```
-
-### 3. CI/CD Integration (Optional)
-
-Add to your CI pipeline (`.github/workflows/` or similar):
-
-```yaml
-- name: Check Gantt Bug Hunter Tests
-  run: |
-    cd frontend
-    npm run test:e2e -- gantt-cascade.spec.js
-```
-
-### 4. Slack/Teams Bot (Optional)
-
-Create a bot that:
-- Posts reminder when Gantt PR is opened
-- Links to onboarding checklist
-- Requires Bug Hunter screenshot before approval
-
----
-
-## 👥 Onboarding Process for Teams
-
-### For New Hires
-
-1. **Week 1:** General codebase onboarding
-2. **Week 2:** Complete Gantt onboarding checklist
-3. **Week 3:** Pair with senior dev on small Gantt fix
-4. **Week 4:** Independent Gantt work with code review
-
-### For External Contractors
-
-**Before starting work:**
-1. Send GANTT_SCHEDULE_RULES.md, GANTT_BIBLE_COLUMNS.md
-2. Schedule 30-minute video call to walk through critical sections
-3. Require signed onboarding checklist before granting repo access
-4. First 3 Gantt PRs require senior dev approval
-
-### For Senior Developers
-
-Even senior devs should:
-1. Re-read 🚨 CRITICAL section before working on Gantt
-2. Run Bug Hunter before and after changes
-3. Update The Bible when discovering new patterns
-
----
-
-## 📊 Tracking Onboarding Completion
-
-### Onboarding Log
-
-Maintain a log in your team wiki or project management tool:
-
-| Developer | Start Date | Completion Date | Reviewer | Status |
-|-----------|------------|-----------------|----------|--------|
-| Alice Dev | 2025-11-10 | 2025-11-10 | Bob Senior | ✅ Complete |
-| Charlie   | 2025-11-12 | Pending | - | 🟡 In Progress |
-
-### Metrics to Track
-
-- **Time to complete onboarding:** Target < 1 hour
-- **Gantt bugs introduced:** Target = 0 in first 90 days
-- **Bug Hunter test failures:** Target < 5% of commits
-- **Documentation updates:** Target = 1 per month
-
----
-
-## 🔧 Maintaining The System
-
-### Monthly Review
-
-Once per month:
-- Review all Gantt-related PRs from past month
-- Check if any bugs were reintroduced
-- Update The Bible with new patterns discovered
-- Review onboarding times and adjust checklist if needed
-
-### Updating The Hook
-
-If you add new Gantt files, update the hook:
-
-```bash
-# Edit scripts/check-gantt-onboarding.sh
-# Add new files to GANTT_FRONTEND_FILES or GANTT_BACKEND_FILES arrays
-
-# Reinstall
-cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-
-### When Onboarding Takes Too Long
-
-If developers report onboarding takes > 1 hour:
-- Review the checklist for unnecessary steps
-- Create a video walkthrough of critical sections (15 min)
-- Add more examples/diagrams
-- Consider splitting into "Essential" and "Advanced" checklists
-
----
-
-## 🚨 Handling Violations
-
-### First Offense
-
-**Scenario:** Developer commits Gantt code without completing onboarding
-
-**Action:**
-1. Politely point to GANTT_ONBOARDING_CHECKLIST.md
-2. Ask them to complete it before next Gantt change
-3. Review their changes for common bugs
-4. Add their name to onboarding log as "Pending"
-
-### Repeated Offenses
-
-**Scenario:** Developer repeatedly bypasses onboarding or introduces known bugs
-
-**Action:**
-1. Schedule 1-on-1 meeting to understand blockers
-2. Pair with senior dev for next 3 Gantt changes
-3. Restrict Gantt file access until onboarding complete
-4. Consider adding mandatory PR template
-
-### Critical Bug Introduced
-
-**Scenario:** Developer reintroduces a bug from GANTT_BUGS_AND_FIXES.md
-
-**Action:**
-1. Immediate rollback if in production
-2. Root cause analysis: Did they read The Bible?
-3. Update The Bible to make that section more prominent
-4. Consider adding that bug to the pre-commit hook check
-5. All-hands meeting to review the incident
-
----
-
-## 📞 Support & Escalation
-
-### When Developers Get Stuck
-
-**"The Bible is too long, I don't have time"**
-- Direct them to 🚨 CRITICAL section only (15 minutes)
-- Offer to schedule 15-minute walkthrough
-- Emphasize time savings: 15 min reading vs 2+ hours debugging
-
-**"I don't understand the predecessor ID mismatch"**
-- Point to GANTT_SCHEDULE_RULES.md line 161 (example code)
-- Show them backend: schedule_cascade_service.rb:88
-- Pair program: Make a test change together
-
-**"Bug Hunter is failing but I don't know why"**
-- Run `window.printBugHunterReport()` in browser console
-- Check which specific test is failing (1-10)
-- Cross-reference test # to GANTT_BIBLE_COLUMNS.md
-
-### Escalation Path
-
-1. **Level 1:** Check The Bible (GANTT_SCHEDULE_RULES.md)
-2. **Level 2:** Run Bug Hunter diagnostics
-3. **Level 3:** Check bug history (GANTT_BUGS_AND_FIXES.md)
-4. **Level 4:** Ask in team chat #gantt-help
-5. **Level 5:** Schedule pairing session with Gantt expert
-
----
-
-## 🎓 Advanced: Creating Training Materials
-
-### Video Walkthrough (Recommended)
-
-Create a 15-minute video covering:
-- **Minute 0-5:** Why this onboarding exists (8 iterations story)
-- **Minute 5-10:** The #1 and #2 killer bugs with examples
-- **Minute 10-15:** How to use Bug Hunter and verify your changes
-
-### Interactive Workshop (Optional)
-
-Host a 1-hour workshop:
-- **0-15 min:** Overview of Gantt architecture
-- **15-30 min:** Live demo of common bugs
-- **30-45 min:** Hands-on: Each dev makes a test change
-- **45-60 min:** Code review simulation
-
-### Quiz/Certification (Optional)
-
-Create a 10-question quiz:
-- Predecessor ID conversion question
-- Lock hierarchy ordering
-- useRef flag purposes
-- Bug Hunter interpretation
-- Require 90% to pass
-
----
-
-## 📈 Success Metrics
-
-Track these KPIs to measure onboarding effectiveness:
-
-| Metric | Target | Current | Trend |
-|--------|--------|---------|-------|
-| Bugs reintroduced | 0 | - | - |
-| Onboarding time | < 60 min | - | - |
-| Bug Hunter pass rate | > 95% | - | - |
-| Time to first Gantt commit | < 2 weeks | - | - |
-| Developer satisfaction | > 4/5 | - | - |
-
----
-
-## 🔄 Feedback Loop
-
-**Monthly developer feedback survey:**
-
-1. Was the onboarding helpful? (1-5 scale)
-2. What section was most valuable?
-3. What was confusing or could be improved?
-4. How long did onboarding take?
-5. Have you reintroduced any bugs? Which ones?
-
-**Use feedback to:**
-- Update The Bible with better examples
-- Revise checklist questions
-- Create additional training materials
-- Identify knowledge gaps
-
----
-
-## ✅ Setup Verification
-
-Run this checklist to verify your setup:
-
-- [ ] Pre-commit hook installed in `.git/hooks/pre-commit`
-- [ ] Hook is executable (`chmod +x`)
-- [ ] All 4 documentation files exist and are up to date
-- [ ] Onboarding checklist has template for new devs
-- [ ] Team has been notified about new onboarding process
-- [ ] At least one senior dev familiar with The Bible
-- [ ] Bug Hunter accessible via UI (Gantt Bible button)
-- [ ] Process documented in team wiki
-- [ ] Metrics tracking set up (optional)
-
----
-
-## 📞 Questions?
-
-If you have questions about this setup:
-
-1. Read GANTT_SCHEDULE_RULES.md (might already be answered)
-2. Check GANTT_BUGS_AND_FIXES.md for historical context
-3. Open an issue or discussion in your team's process
-4. Schedule time with the team lead
-
-**Remember:** The goal is to prevent bugs, not to create bureaucracy. If something isn't working, let's improve it together!
-
-
-### Code Example
-```jsx
-```
-trapid/
-├── GANTT_SCHEDULE_RULES.md          ← The Bible (development rules)
-├── GANTT_BIBLE_COLUMNS.md           ← Column implementation reference
-├── GANTT_BUGS_AND_FIXES.md          ← Bug history and Bug Hunter
-├── GANTT_ONBOARDING_CHECKLIST.md    ← Mandatory onboarding checklist
-├── GANTT_DEVELOPER_SETUP.md         ← This file
-└── scripts/
-    └── check-gantt-onboarding.sh    ← Pre-commit hook
-```
-
-```bash
-# Navigate to project root
-cd /Users/rob/Projects/trapid
-
-# Make the script executable
-chmod +x scripts/check-gantt-onboarding.sh
-
-# Install the hook
-cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
-
-# Make the hook executable
-chmod +x .git/hooks/pre-commit
-```
-
-```bash
-# Open the checklist
-open GANTT_ONBOARDING_CHECKLIST.md
-
-# Follow all steps:
-# 1. Read GANTT_SCHEDULE_RULES.md (focus on 🚨 CRITICAL section)
-# 2. Read GANTT_BIBLE_COLUMNS.md
-# 3. Read GANTT_BUGS_AND_FIXES.md
-# 4. Answer all questions in the checklist
-# 5. Get checklist reviewed and signed by senior dev
-```
-
-```bash
-# Make a test change
-echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
-
-# Try to commit (should trigger the check)
-git add .
-git commit -m "test"
-
-# You should see the onboarding warning
-# If checklist is not signed, commit will be blocked
-```
-
-```bash
-git commit --no-verify  # Skips the hook
-```
-
-```markdown
-## Gantt Changes
-
-- [ ] Onboarding completed: ✅ Signed by [Name] on [Date]
-- [ ] Bug Hunter status: ✅ All tests passing (see screenshot)
-- [ ] Protected patterns: ✅ Not modified OR ✅ Approved by [Name]
-- [ ] Bible updated: ✅ Yes OR ⬜ N/A (no architectural changes)
-
-### Bug Hunter Results
-[Paste screenshot or output from `window.printBugHunterReport()`]
-
-### Changes Summary
-[Describe what you changed and why]
-```
-
-```yaml
-- name: Check Gantt Bug Hunter Tests
-  run: |
-    cd frontend
-    npm run test:e2e -- gantt-cascade.spec.js
-```
-
-```bash
-# Edit scripts/check-gantt-onboarding.sh
-# Add new files to GANTT_FRONTEND_FILES or GANTT_BACKEND_FILES arrays
-
-# Reinstall
-cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-```
-
-### Examples
-```
-trapid/
-├── GANTT_SCHEDULE_RULES.md          ← The Bible (development rules)
-├── GANTT_BIBLE_COLUMNS.md           ← Column implementation reference
-├── GANTT_BUGS_AND_FIXES.md          ← Bug history and Bug Hunter
-├── GANTT_ONBOARDING_CHECKLIST.md    ← Mandatory onboarding checklist
-├── GANTT_DEVELOPER_SETUP.md         ← This file
-└── scripts/
-    └── check-gantt-onboarding.sh    ← Pre-commit hook
-```
-
-```bash
-# Navigate to project root
-cd /Users/rob/Projects/trapid
-
-# Make the script executable
-chmod +x scripts/check-gantt-onboarding.sh
-
-# Install the hook
-cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
-
-# Make the hook executable
-chmod +x .git/hooks/pre-commit
-```
-
-```bash
-# Open the checklist
-open GANTT_ONBOARDING_CHECKLIST.md
-
-# Follow all steps:
-# 1. Read GANTT_SCHEDULE_RULES.md (focus on 🚨 CRITICAL section)
-# 2. Read GANTT_BIBLE_COLUMNS.md
-# 3. Read GANTT_BUGS_AND_FIXES.md
-# 4. Answer all questions in the checklist
-# 5. Get checklist reviewed and signed by senior dev
-```
-
-```bash
-# Make a test change
-echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
-
-# Try to commit (should trigger the check)
-git add .
-git commit -m "test"
-
-# You should see the onboarding warning
-# If checklist is not signed, commit will be blocked
-```
-
-```bash
-git commit --no-verify  # Skips the hook
-```
-
-```markdown
-## Gantt Changes
-
-- [ ] Onboarding completed: ✅ Signed by [Name] on [Date]
-- [ ] Bug Hunter status: ✅ All tests passing (see screenshot)
-- [ ] Protected patterns: ✅ Not modified OR ✅ Approved by [Name]
-- [ ] Bible updated: ✅ Yes OR ⬜ N/A (no architectural changes)
-
-### Bug Hunter Results
-[Paste screenshot or output from `window.printBugHunterReport()`]
-
-### Changes Summary
-[Describe what you changed and why]
-```
-
-```yaml
-- name: Check Gantt Bug Hunter Tests
-  run: |
-    cd frontend
-    npm run test:e2e -- gantt-cascade.spec.js
-```
-
-```bash
-# Edit scripts/check-gantt-onboarding.sh
-# Add new files to GANTT_FRONTEND_FILES or GANTT_BACKEND_FILES arrays
-
-# Reinstall
-cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-
----
-
-## §9.3: Gantt Feature Onboarding Checklist
-
-✨ Feature | 🟢 Beginner
-
-### Quick Summary
-New developer onboarding checklist for understanding Gantt chart implementation
-
-### Step-by-Step Guide
-# Gantt Development Onboarding Checklist
-
-**⚠️ MANDATORY: Complete this checklist before making any changes to Gantt/Schedule code**
-
-## Why This Checklist Exists
-
-The Gantt and Schedule Master codebase contains subtle patterns that took **8+ iterations and many hours** to get right. This checklist ensures you understand these patterns before introducing bugs that we've already fixed.
-
----
-
-## Step 1: Read The Documentation
-
-Read these files IN ORDER (estimated time: 45 minutes):
-
-- [ ] **GANTT_SCHEDULE_RULES.md (The Bible)** - Start with the "🚨 CRITICAL" section
-  - [ ] Understand Predecessor ID Mismatch (1-based vs 0-based)
-  - [ ] Understand Infinite Render Loop prevention
-  - [ ] Know all 3 useRef anti-loop flags (isDragging, isLoadingData, isSaving)
-  - [ ] Know all 5 lock types and their priority order
-  - [ ] Read all "Common Gotchas" section
-
-- [ ] **GANTT_BIBLE_COLUMNS.md** - Column implementation reference
-  - [ ] Understand which columns are Active vs Inactive
-  - [ ] Know where each column is implemented (file:line)
-  - [ ] Understand lock hierarchy
-
-- [ ] **GANTT_BUGS_AND_FIXES.md** - Bug history and Bug Hunter
-  - [ ] Read BUG-001 (Drag Flickering) case study
-  - [ ] Understand why each fix attempt failed
-  - [ ] Know how to use Bug Hunter diagnostic tool
-
----
-
-## Step 2: Understand The Architecture
-
-Answer these questions (write your answers, they will be checked):
-
-### Backend Questions
-
-**Q1:** Why are predecessor IDs 1-based but sequence_order is 0-based?
-
-**Your Answer:**
-```
-[Write answer here]
-```
-
-**Q2:** Why does `ScheduleCascadeService` use `update_column()` instead of `update()`?
-
-**Your Answer:**
-```
-[Write answer here]
-```
-
-**Q3:** Which tasks does the cascade service skip? Why?
-
-**Your Answer:**
-```
-[Write answer here]
-```
-
-### Frontend Questions
-
-**Q4:** What triggers spurious `onAfterTaskDrag` events in DHtmlx Gantt?
-
-**Your Answer:**
-```
-[Write answer here]
-```
-
-**Q5:** Why must `isLoadingData` timeout be exactly 500ms (not less)?
-
-**Your Answer:**
-```
-[Write answer here]
-```
-
-**Q6:** Name all 5 lock types in priority order (highest to lowest):
-
-**Your Answer:**
-```
-1.
-2.
-3.
-4.
-5.
-```
-
----
-
-## Step 3: Set Up Your Environment
-
-Complete these setup tasks:
-
-- [ ] Enable DIAGNOSTIC_MODE in DHtmlxGanttView.jsx line 26
-- [ ] Open browser DevTools console
-- [ ] Run `window.printBugHunterReport()` to verify Bug Hunter works
-- [ ] Verify you can see diagnostic emoji logs (🔵 📊 ✅ ❌)
-
----
-
-## Step 4: Practice With The Code
-
-Complete these hands-on exercises:
-
-### Exercise 1: Predecessor ID Conversion
-
-- [ ] Open `schedule_cascade_service.rb`
-- [ ] Find line 88: `predecessor_id = predecessor_task.sequence_order + 1`
-- [ ] Explain why the `+ 1` is necessary:
-```
-[Write answer here]
-```
-
-### Exercise 2: Anti-Loop Flags
-
-- [ ] Open `DHtmlxGanttView.jsx`
-- [ ] Find line 1357: `isDragging.current = true`
-- [ ] Find line 3477: `if (isLoadingData.current) return`
-- [ ] Explain what would happen if line 3477 was removed:
-```
-[Write answer here]
-```
-
-### Exercise 3: Lock Checking
-
-- [ ] Open `DHtmlxGanttView.jsx`
-- [ ] Find the cascade modal logic around line 1700
-- [ ] Write the correct code to check if a task is locked:
-```javascript
-const isLocked = (task) => {
-  // Write your code here
-
-
-}
-```
-
----
-
-## Step 5: Run The Tests
-
-Before making any changes:
-
-- [ ] Run backend tests: `cd backend && bundle exec rspec spec/services/schedule_cascade_service_spec.rb`
-- [ ] Run E2E tests: `cd frontend && npm run test:e2e -- gantt-cascade.spec.js`
-- [ ] Verify Bug Hunter reports HEALTHY status
-- [ ] Verify all 10 Bug Hunter tests pass
-
----
-
-## Step 6: Make A Small Test Change
-
-Practice the workflow with a safe change:
-
-- [ ] Add a console.log to DHtmlxGanttView.jsx in handleTaskUpdate
-- [ ] Drag a task in the Gantt chart
-- [ ] Verify your log appears exactly ONCE (not multiple times)
-- [ ] Run `window.printBugHunterReport()` and verify:
-  - [ ] Test #1 passes (≤ 2 API calls per task)
-  - [ ] Test #2 passes (≤ 5 reloads per drag)
-- [ ] Remove your console.log
-
----
-
-## Step 7: Verify Comprehension
-
-Have a senior developer review your answers to the questions above.
-
-**Reviewer Name:** ________________
-
-**Review Date:** ________________
-
-**Reviewer Signature:** ________________
-
----
-
-## Step 8: Sign The Pledge
-
-By signing below, I certify that:
-
-1. I have read and understood GANTT_SCHEDULE_RULES.md (The Bible)
-2. I understand the Predecessor ID Mismatch bug and how to avoid it
-3. I understand the useRef anti-loop flags and will not "optimize" them away
-4. I will run Bug Hunter after every change to Gantt code
-5. I will not remove or modify Protected Code Patterns without explicit approval
-6. If I don't understand something, I will ask BEFORE making changes
-
-**Developer Name:** ________________
-
-**Date Completed:** ________________
-
-**Signature:** ________________
-
----
-
-## Emergency Contacts
-
-If you encounter issues or have questions:
-
-1. **Check The Bible First:** GANTT_SCHEDULE_RULES.md has the answer
-2. **Run Bug Hunter:** `window.printBugHunterReport()` for diagnostics
-3. **Check Bug History:** GANTT_BUGS_AND_FIXES.md may have your answer
-4. **Ask Senior Dev:** [Your team's escalation process here]
-
----
-
-## After Onboarding
-
-**Every time you work on Gantt code:**
-
-- [ ] Re-read the "🚨 CRITICAL" section of The Bible
-- [ ] Enable DIAGNOSTIC_MODE
-- [ ] Run Bug Hunter before and after your changes
-- [ ] Verify all 10 tests still pass
-- [ ] Update The Bible if you discover new patterns or gotchas
-
----
-
-## Onboarding Record
-
-**Developer:** ________________
-**Start Date:** ________________
-**Completion Date:** ________________
-**Time Spent:** _______ hours
-**Reviewer:** ________________
-**Status:** [ ] In Progress  [ ] Completed  [ ] Needs Revision
-
----
-
-## Common Onboarding Mistakes
-
-After completing this checklist, developers commonly make these mistakes:
-
-1. **"I'll just make a quick fix"** - No such thing with Gantt code. Read The Bible first.
-2. **"This code looks messy, I'll clean it up"** - Every line exists for a reason. Ask first.
-3. **"500ms is too long, I'll optimize to 100ms"** - Tested value. Don't change it.
-4. **"I don't need to run Bug Hunter, it's a small change"** - Bug Hunter catches issues you can't see.
-5. **"I understand loops, I don't need to read about the flags"** - The loops are NOT obvious.
-
-**If you skip this checklist and introduce a bug, you will spend HOURS debugging issues that are already documented here.**
-
-
-### Code Example
-```jsx
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```
-1.
-2.
-3.
-4.
-5.
-```
-
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```javascript
-const isLocked = (task) => {
-  // Write your code here
-
-
-}
-```
-```
-
-### Examples
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```
-1.
-2.
-3.
-4.
-5.
-```
-
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```javascript
-const isLocked = (task) => {
-  // Write your code here
-
-
-}
-```
-
----
-
-## §9.4: Gantt Chart README - Feature Overview
-
-✨ Feature | 🟢 Beginner
-
-### Quick Summary
-High-level overview of Gantt chart features, components, and usage
-
-### Step-by-Step Guide
-# Gantt & Schedule Master Documentation
-
-**Complete documentation system for Gantt and Schedule Master features**
-
----
-
-## 🚨 STOP! Read This First
-
-**Are you about to modify Gantt or Schedule code?**
-
-👉 **YOU MUST complete the onboarding checklist FIRST:** [GANTT_ONBOARDING_CHECKLIST.md](GANTT_ONBOARDING_CHECKLIST.md)
-
-**Why?** This code has subtle patterns that took **8+ iterations** to get right. Skip onboarding = hours of debugging bugs we've already fixed.
-
----
-
-## 📚 Documentation Files
-
-### 1. The Bible (Development Rules)
-**File:** [GANTT_SCHEDULE_RULES.md](GANTT_SCHEDULE_RULES.md) (114KB, 3715 lines)
-
-**What it contains:**
-- 🚨 **CRITICAL section** - Must-read before touching code (15 min)
-- Protected Code Patterns (do NOT modify)
-- Complete development rules
-- Performance patterns
-- Anti-loop mechanisms
-
-**When to read:**
-- Before making ANY changes to Gantt code
-- When debugging Gantt issues
-- Before code reviews
-
-**Start here:** Line 161 - "🚨 CRITICAL: Read Before Touching Gantt Code"
-
----
-
-### 2. Column Reference
-**File:** [GANTT_BIBLE_COLUMNS.md](GANTT_BIBLE_COLUMNS.md) (25KB)
-
-**What it contains:**
-- All 33 Schedule Master table columns
-- All 11 Gantt modal columns
-- Implementation details (file:line references)
-- Database field mappings
-- Active/Inactive status
-- Lock hierarchy and priorities
-- Test coverage map
-
-**When to read:**
-- Adding or modifying column functionality
-- Understanding what a column does
-- Finding which service processes a column
-
----
-
-### 3. Bug Tracking & Bug Hunter
-**File:** [GANTT_BUGS_AND_FIXES.md](frontend/public/GANTT_BUGS_AND_FIXES.md) (23KB)
-
-**What it contains:**
-- All resolved bugs with case studies
-- BUG-001: Drag Flickering (8 iterations to fix!)
-- Bug Hunter diagnostic tool usage
-- 10 automated test descriptions
-- Test results history
-
-**When to read:**
-- Debugging Gantt issues
-- Running performance diagnostics
-- Understanding why code is written a certain way
-
----
-
-### 4. Onboarding Checklist
-**File:** [GANTT_ONBOARDING_CHECKLIST.md](GANTT_ONBOARDING_CHECKLIST.md) (6.3KB)
-
-**What it contains:**
-- Step-by-step onboarding process
-- Questions to test comprehension
-- Hands-on exercises
-- Sign-off section for accountability
-
-**When to complete:**
-- Before your first Gantt code change
-- When onboarding new team members
-- As a refresher (re-read critical sections)
-
-**Time required:** 45-60 minutes
-
----
-
-### 5. Developer Setup & Enforcement
-**File:** [GANTT_DEVELOPER_SETUP.md](GANTT_DEVELOPER_SETUP.md) (11KB)
-
-**What it contains:**
-- How to install pre-commit hooks
-- Enforcement mechanisms
-- Team onboarding process
-- Tracking metrics
-- Support & escalation paths
-
-**When to read:**
-- Setting up a new developer
-- Configuring CI/CD
-- Team lead responsibilities
-
----
-
-## 🚀 Quick Start
-
-### For New Developers
-
-```bash
-# 1. Read the Critical section (15 min)
-open GANTT_SCHEDULE_RULES.md
-# → Jump to line 161: "🚨 CRITICAL: Read Before Touching Gantt Code"
-
-# 2. Install pre-commit hook
-chmod +x scripts/check-gantt-onboarding.sh
-cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-
-# 3. Complete onboarding checklist
-open GANTT_ONBOARDING_CHECKLIST.md
-# → Answer all questions, get it reviewed and signed
-
-# 4. Verify Bug Hunter works
-# Open app, go to Schedule Master, click "Gantt Bible"
-# In browser console: window.printBugHunterReport()
-```
-
-### For Quick Reference
-
-**Looking for a specific topic?**
-
-| Topic | File | Section |
-|-------|------|---------|
-| Predecessor ID bug | GANTT_SCHEDULE_RULES.md | Line 163 |
-| Infinite render loops | GANTT_SCHEDULE_RULES.md | Line 206 |
-| useRef anti-loop flags | GANTT_SCHEDULE_RULES.md | Line 276 |
-| Lock hierarchy | GANTT_SCHEDULE_RULES.md | Line 352 |
-| Column details | GANTT_BIBLE_COLUMNS.md | All columns listed |
-| Bug Hunter usage | GANTT_BUGS_AND_FIXES.md | Line 58 |
-| Common gotchas | GANTT_SCHEDULE_RULES.md | Line 524 |
-
----
-
-## 🔍 Bug Hunter Quick Reference
-
-**In browser console:**
-
-```javascript
-// Generate diagnostic report
-window.printBugHunterReport()
-
-// Enable debug categories
-window.enableGanttDebug(['drag', 'api', 'cascade'])
-
-// Export report for bug ticket
-window.exportBugHunterReport()
-
-// Reset for new test
-window.resetBugHunter()
-```
-
-**10 Automated Tests:**
-1. Duplicate API Call Detection (≤ 2 per task)
-2. Excessive Gantt Reload Detection (≤ 5 per drag)
-3. Slow Drag Operation Detection (< 5000ms)
-4. API Call Pattern Analysis
-5. Cascade Event Tracking
-6. State Update Batching (≤ 3 per drag)
-7. Lock State Monitoring
-8. Performance Timing Analysis
-9. Health Status Assessment
-10. Actionable Recommendations
-
----
-
-## 🏗️ Architecture Overview
-
-### Frontend (React)
-- **DHtmlxGanttView.jsx** (5276 lines) - Main Gantt component
-- **ScheduleTemplateEditor.jsx** (2500+ lines) - Schedule editor
-- **CascadeDependenciesModal.jsx** - User cascade choices
-- **ganttDebugger.js** - Bug Hunter diagnostic tool
-
-### Backend (Ruby on Rails)
-- **ScheduleCascadeService** - Dependency cascade logic
-- **ScheduleTemplateRowsController** - API endpoints
-- **ScheduleTemplateRow** (model) - With after_update cascade callback
-
-### Key Patterns
-- **Predecessor IDs:** 1-based (UI) vs 0-based (sequence_order)
-- **Anti-Loop Flags:** `isDragging`, `isLoadingData`, `isSaving`
-- **Lock Priority:** supplier_confirm > confirm > start > complete > manually_positioned
-- **API Pattern:** Single update + cascade response (not N calls)
-
----
-
-## ⚠️ The Two Killer Bugs
-
-### #1: Predecessor ID Mismatch
-
-**Problem:** Predecessor IDs are 1-based but sequence_order is 0-based
-
-**Fix:** Always convert with `+ 1`:
-```javascript
-const predecessorId = task.sequence_order + 1
-```
-
-**Impact:** Wrong tasks cascade, hours of debugging
-
-### #2: Infinite Render Loops
-
-**Problem:** `gantt.parse()` fires spurious drag events
-
-**Fix:** Three useRef flags with 500ms timeout:
-```javascript
-const isDragging = useRef(false)
-const isLoadingData = useRef(false)  // Reset by useEffect only!
-const isSaving = useRef(false)
-```
-
-**Impact:** Screen flickering, 8-16 reloads per drag
-
----
-
-## 📋 Before Every Commit Checklist
-
-- [ ] Re-read 🚨 CRITICAL section of The Bible
-- [ ] DIAGNOSTIC_MODE enabled during testing
-- [ ] Bug Hunter run: `window.printBugHunterReport()`
-- [ ] All 10 Bug Hunter tests pass
-- [ ] Test #2 passes (≤ 5 reloads per drag)
-- [ ] No screen flickering
-- [ ] Tested with locked AND unlocked tasks
-- [ ] Tested 3+ levels of dependencies
-- [ ] Did NOT modify Protected Code Patterns
-
----
-
-## 🆘 Getting Help
-
-### Level 1: Check The Docs
-- **GANTT_SCHEDULE_RULES.md** - Development patterns
-- **GANTT_BUGS_AND_FIXES.md** - Known issues
-- **GANTT_BIBLE_COLUMNS.md** - Column reference
-
-### Level 2: Run Diagnostics
-```javascript
-window.printBugHunterReport()
-```
-
-### Level 3: Ask Team
-- Check which specific test is failing (1-10)
-- Cross-reference test # to documentation
-- Share Bug Hunter output in team chat
-
-### Level 4: Escalate
-- Schedule pairing with Gantt expert
-- Review historical bugs for similar issues
-- Consider if Bible needs updating
-
----
-
-## 📊 File Sizes
-
-| File | Size | Lines | Purpose |
-|------|------|-------|---------|
-| GANTT_SCHEDULE_RULES.md | 114KB | 3715 | The Bible - all rules |
-| GANTT_BIBLE_COLUMNS.md | 25KB | - | Column reference |
-| GANTT_BUGS_AND_FIXES.md | 23KB | - | Bug history |
-| GANTT_ONBOARDING_CHECKLIST.md | 6.3KB | - | Onboarding steps |
-| GANTT_DEVELOPER_SETUP.md | 11KB | - | Setup & enforcement |
-| check-gantt-onboarding.sh | 6.7KB | - | Pre-commit hook |
-
-**Total documentation:** ~186KB
-
-**Time investment:**
-- Initial reading: 45-60 minutes
-- Time saved: Hours of debugging per developer
-
----
-
-## 🎯 Success Metrics
-
-**Goals:**
-- ✅ Zero reintroduced bugs
-- ✅ 100% onboarding completion
-- ✅ < 1 hour onboarding time
-- ✅ > 95% Bug Hunter pass rate
-
-**Current Status:** [Track in your project management tool]
-
----
-
-## 🔄 Keeping Documentation Updated
-
-**When to update:**
-- New bug discovered and fixed
-- New Protected Code Pattern identified
-- Architecture changes
-- Performance optimizations
-- New column added
-
-**How to update:**
-1. Make code changes
-2. Update relevant documentation file(s)
-3. Increment version number in The Bible
-4. Update timestamp
-5. Add changelog entry
-6. Sync to `/frontend/public/` if needed
-
-**Update process:** See GANTT_SCHEDULE_RULES.md lines 30-98
-
----
-
-## ✅ Installation Complete?
-
-Verify your setup:
-
-```bash
-# Check all files exist
-ls -lh GANTT*.md scripts/check-gantt-onboarding.sh
-
-# Check hook is installed
-ls -lh .git/hooks/pre-commit
-
-# Test the hook
-echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
-git add .
-git commit -m "test"
-# Should show onboarding warning
-
-# Revert test change
-git reset HEAD~1
-git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
-```
-
----
-
-## 📞 Questions?
-
-1. Read GANTT_SCHEDULE_RULES.md (probably already answered)
-2. Check GANTT_BUGS_AND_FIXES.md (historical context)
-3. Ask in team chat
-4. Schedule time with team lead
-
-**Remember:** The goal is preventing bugs, not creating bureaucracy. If something isn't working, let's improve it together!
-
----
-
-## Version History
-
-| Date | Version | Changes |
-|------|---------|---------|
-| 2025-11-15 | 1.0 | Initial comprehensive documentation system created |
-
----
-
-**Last Updated:** November 15, 2025
-**Maintained By:** Development Team
-**Contact:** [Your team's contact info]
-
-
-### Code Example
-```jsx
-```bash
-# 1. Read the Critical section (15 min)
-open GANTT_SCHEDULE_RULES.md
-# → Jump to line 161: "🚨 CRITICAL: Read Before Touching Gantt Code"
-
-# 2. Install pre-commit hook
-chmod +x scripts/check-gantt-onboarding.sh
-cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-
-# 3. Complete onboarding checklist
-open GANTT_ONBOARDING_CHECKLIST.md
-# → Answer all questions, get it reviewed and signed
-
-# 4. Verify Bug Hunter works
-# Open app, go to Schedule Master, click "Gantt Bible"
-# In browser console: window.printBugHunterReport()
-```
-
-```javascript
-// Generate diagnostic report
-window.printBugHunterReport()
-
-// Enable debug categories
-window.enableGanttDebug(['drag', 'api', 'cascade'])
-
-// Export report for bug ticket
-window.exportBugHunterReport()
-
-// Reset for new test
-window.resetBugHunter()
-```
-
-```javascript
-const predecessorId = task.sequence_order + 1
-```
-
-```javascript
-const isDragging = useRef(false)
-const isLoadingData = useRef(false)  // Reset by useEffect only!
-const isSaving = useRef(false)
-```
-
-```javascript
-window.printBugHunterReport()
-```
-
-```bash
-# Check all files exist
-ls -lh GANTT*.md scripts/check-gantt-onboarding.sh
-
-# Check hook is installed
-ls -lh .git/hooks/pre-commit
-
-# Test the hook
-echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
-git add .
-git commit -m "test"
-# Should show onboarding warning
-
-# Revert test change
-git reset HEAD~1
-git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
-```
-```
-
-### Examples
-```bash
-# 1. Read the Critical section (15 min)
-open GANTT_SCHEDULE_RULES.md
-# → Jump to line 161: "🚨 CRITICAL: Read Before Touching Gantt Code"
-
-# 2. Install pre-commit hook
-chmod +x scripts/check-gantt-onboarding.sh
-cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-
-# 3. Complete onboarding checklist
-open GANTT_ONBOARDING_CHECKLIST.md
-# → Answer all questions, get it reviewed and signed
-
-# 4. Verify Bug Hunter works
-# Open app, go to Schedule Master, click "Gantt Bible"
-# In browser console: window.printBugHunterReport()
-```
-
-```javascript
-// Generate diagnostic report
-window.printBugHunterReport()
-
-// Enable debug categories
-window.enableGanttDebug(['drag', 'api', 'cascade'])
-
-// Export report for bug ticket
-window.exportBugHunterReport()
-
-// Reset for new test
-window.resetBugHunter()
-```
-
-```javascript
-const predecessorId = task.sequence_order + 1
-```
-
-```javascript
-const isDragging = useRef(false)
-const isLoadingData = useRef(false)  // Reset by useEffect only!
-const isSaving = useRef(false)
-```
-
-```javascript
-window.printBugHunterReport()
-```
-
-```bash
-# Check all files exist
-ls -lh GANTT*.md scripts/check-gantt-onboarding.sh
-
-# Check hook is installed
-ls -lh .git/hooks/pre-commit
-
-# Test the hook
-echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
-git add .
-git commit -m "test"
-# Should show onboarding warning
-
-# Revert test change
-git reset HEAD~1
-git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
-```
-
----
-
-
 # Chapter 9: Gantt & Schedule Master
 
 ┌─────────────────────────────────────────────────┐
@@ -12672,11 +10438,11 @@ git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
 
 ---
 
-## §8.1: PO Number Generation - Race Condition Protection
+## §9.1: PO Number Generation - Race Condition Protection
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.1"}]
 
 ### Quick Summary
 ✅
@@ -12696,687 +10462,11 @@ end
 
 ---
 
-## §8.2: Status State Machine
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.2
-
-### Quick Summary
-✅
-
-### Code Example
-```jsx
-draft → pending → approved → sent → received → invoiced → paid
-  ↘                                                         ↗
-   cancelled (can cancel any non-paid status)
-
-# ---
-
-def can_edit?         # Only draft/pending
-def can_approve?      # Only pending
-def can_cancel?       # Any except paid/cancelled
-```
-
----
-
-## §8.3: Payment Status Calculation
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.3
-
-### Quick Summary
-✅
-
-### Code Example
-```jsx
-def determine_payment_status(invoice_amount)
-  return :manual_review if total.zero? || invoice_amount > total + 1
-  return :pending if invoice_amount.zero?
-
-  percentage = (invoice_amount / total) * 100
-  return :complete if percentage >= 95 && percentage <= 105
-  return :part_payment
-end
-```
-
----
-
-## §8.5: Line Items - Totals Calculation
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.5
-
-### Quick Summary
-✅
-
-### Code Example
-```jsx
-before_save :calculate_totals
-
-def calculate_totals
-  self.sub_total = line_items.sum { |li| li.quantity * li.unit_price }
-  self.tax = sub_total * 0.10  # 10% GST
-  self.total = sub_total + tax
-end
-```
-
----
-
-## §8.6: Schedule Task Linking
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.6
-
-### Quick Summary
-✅
-
-### Code Example
-```jsx
-ActiveRecord::Base.transaction do
-  # Unlink old task
-  if old_task = purchase_order.schedule_task
-    old_task.update!(purchase_order_id: nil)
-  end
-
-  # Link new task
-  if new_task_id.present?
-    new_task = ScheduleTask.find(new_task_id)
-    new_task.update!(purchase_order_id: purchase_order.id)
-  end
-end
-```
-
----
-
-## §8.7: Price Drift Monitoring
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.7
-
-### Quick Summary
-✅
-
-### Code Example
-```jsx
-def price_drift
-  return 0 if pricebook_item.nil?
-  ((unit_price - pricebook_item.price) / pricebook_item.price) * 100
-end
-```
-
----
-
-## §9.1: Task Management Quick Reference
-
-✨ Feature | 🟢 Beginner
-
-### Quick Summary
-Quick reference for task management: two task systems, API endpoints, and common operations
-
-### Step-by-Step Guide
-# Trapid Task Management - Quick Reference Guide
-
-## Two Task Systems
-
-### 1. ProjectTask - Master Schedule (Detailed Planning)
-- **Used For:** Internal project planning with dependencies and critical path
-- **Main Fields:** status, progress_percentage, planned/actual dates, assigned_to_id
-- **Key Feature:** Task dependencies with 4 relationship types
-- **User Assignment:** Yes, to individual User objects
-- **Database:** `project_tasks` table
-
-### 2. ScheduleTask - Supplier Schedule (Delivery Tracking)
-- **Used For:** Tracking supplier deliveries and matching to purchase orders
-- **Main Fields:** title, status, start_date, complete_date, supplier_name
-- **Key Feature:** Link to purchase orders for delivery timing
-- **User Assignment:** No (tracks supplier info instead)
-- **Database:** `schedule_tasks` table
-
----
-
-## Key Models & Files
-
-```
-Models:
-  ProjectTask          → /backend/app/models/project_task.rb
-  ScheduleTask         → /backend/app/models/schedule_task.rb
-  TaskTemplate         → /backend/app/models/task_template.rb
-  TaskDependency       → /backend/app/models/task_dependency.rb
-  TaskUpdate           → /backend/app/models/task_update.rb
-  Project              → /backend/app/models/project.rb
-  Construction         → /backend/app/models/construction.rb
-  User                 → /backend/app/models/user.rb
-
-Controllers:
-  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
-  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
-  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
-
-Services:
-  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
-
-Frontend Pages:
-  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
-  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
-
-Frontend Components:
-  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
-  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
-  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
-```
-
----
-
-## API Endpoints
-
-### Task Management
-```
-GET    /api/v1/projects/:project_id/tasks                 - List all tasks
-POST   /api/v1/projects/:project_id/tasks                 - Create task
-GET    /api/v1/projects/:project_id/tasks/:id             - Get task
-PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
-DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
-GET    /api/v1/projects/:id/gantt                         - Get Gantt data
-```
-
-### Schedule Tasks
-```
-GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
-POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
-GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
-PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
-DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
-```
-
----
-
-## Task Status States
-
-```
-not_started  → Initial state (default)
-in_progress  → Task has started
-complete     → Task finished
-on_hold      → Paused/blocked
-```
-
----
-
-## Task Properties
-
-| Property | Type | Usage |
-|----------|------|-------|
-| name | string | Task title |
-| status | enum | Current state |
-| progress_percentage | 0-100 | Completion % |
-| planned_start_date | date | Scheduled start |
-| planned_end_date | date | Scheduled end |
-| actual_start_date | date | When work started |
-| actual_end_date | date | When work completed |
-| duration_days | integer | Task length in days |
-| is_milestone | boolean | Mark important milestone |
-| is_critical_path | boolean | On longest path |
-| assigned_to_id | foreign key | User assignment |
-| supplier_name | string | External supplier |
-| purchase_order_id | foreign key | Linked PO |
-
----
-
-## User Assignment (Current Limitation)
-
-Frontend uses hardcoded team members:
-```javascript
-[
-  'Rob Harder',
-  'Andrew Clement',
-  'Sam Harder',
-  'Sophie Harder',
-  'Jake Baird'
-]
-```
-
-**Problem:** Not dynamically fetched from database
-**Solution Needed:** Create `/api/v1/users` endpoint
-
----
-
-## Dependency Types
-
-```
-finish_to_start (FS)  → Task A finishes, Task B starts (default)
-start_to_start (SS)   → Task A starts, Task B starts
-finish_to_finish (FF) → Task A finishes, Task B finishes
-start_to_finish (SF)  → Task A starts, Task B finishes (rare)
-```
-
-All support optional lag_days for overlap.
-
----
-
-## Gantt Chart Features
-
-**Zoom Levels:**
-- Day view: 40px per day
-- Week view: 6px per day
-- Month view: 2px per day
-
-**Color By:**
-- Status (not_started=gray, in_progress=blue, complete=green)
-- Category (CONCRETE, CARPENTER, ELECTRICAL, etc.)
-- Type (DO, ORDER, GET, CLAIM, etc.)
-
-**Navigation:**
-- Previous/Next period buttons
-- "Today" button
-- Date range customizable
-
----
-
-## Data Flow
-
-```
-User creates/imports tasks
-        ↓
-ProjectTask or ScheduleTask created
-        ↓
-Dependencies established
-        ↓
-Schedule::GeneratorService runs (for ProjectTasks)
-        ↓
-Timeline calculated (forward pass)
-        ↓
-Critical path identified
-        ↓
-Gantt chart displays tasks & bars
-        ↓
-User updates status/progress
-        ↓
-TaskUpdate record created (history)
-```
-
----
-
-## Common Operations
-
-### Create a Task
-```bash
-POST /api/v1/projects/:project_id/tasks
-{
-  "project_task": {
-    "name": "Pour Concrete",
-    "task_type": "DO",
-    "category": "CONCRETE",
-    "duration_days": 5,
-    "assigned_to_id": 1
-  }
-}
-```
-
-### Update Task Progress
-```bash
-PATCH /api/v1/projects/:project_id/tasks/:id
-{
-  "project_task": {
-    "status": "in_progress",
-    "progress_percentage": 50
-  }
-}
-```
-
-### Link Task to Purchase Order
-```bash
-PATCH /api/v1/projects/:project_id/tasks/:id
-{
-  "project_task": {
-    "purchase_order_id": 42,
-    "required_on_site_date": "2025-01-20"
-  }
-}
-```
-
-### Import Schedule from Excel
-```bash
-POST /api/v1/constructions/:id/schedule_tasks/import
-Content-Type: multipart/form-data
-file: <Excel file>
-```
-
----
-
-## What's Missing & Needs Work
-
-### High Priority
-- [ ] Dynamic user list (hardcoded → database)
-- [ ] User roles/permissions
-- [ ] Backward pass for accurate float calculation
-
-### Medium Priority
-- [ ] Task comments/discussions
-- [ ] Change notifications
-- [ ] Export to PDF/PNG
-- [ ] Resource workload tracking
-
-### Nice to Have
-- [ ] Mobile support
-- [ ] Real-time WebSocket sync
-- [ ] Multi-project portfolios
-- [ ] Risk management integration
-
----
-
-## Performance Notes
-
-- Project progress cached for 5 minutes
-- Gantt data includes all task relationships
-- ScheduleTask import processes row-by-row (can slow with 1000+ rows)
-- No pagination on task lists (could be issue at scale)
-
----
-
-## Testing Checklist
-
-- [ ] Create task with all fields
-- [ ] Update task status (all 4 states)
-- [ ] Assign/unassign user
-- [ ] Create dependency between tasks
-- [ ] Verify circular dependency prevention
-- [ ] Import Excel schedule
-- [ ] Match schedule task to PO
-- [ ] View Gantt chart at different zoom levels
-- [ ] Edit task in table view
-- [ ] Sort table columns
-- [ ] Verify critical path calculation
-- [ ] Check materials_status (on_time/delayed)
-
----
-
-## Database Indexes
-
-Task-related indexes for performance:
-- project_id, status
-- planned_start_date, planned_end_date
-- is_critical_path
-- construction_id, matched_to_po
-
----
-
-## Related Documentation
-
-See `/Users/jakebaird/trapid/TASK_MANAGEMENT_ARCHITECTURE.md` for detailed investigation.
-
-
-
-### Code Example
-```jsx
-```
-Models:
-  ProjectTask          → /backend/app/models/project_task.rb
-  ScheduleTask         → /backend/app/models/schedule_task.rb
-  TaskTemplate         → /backend/app/models/task_template.rb
-  TaskDependency       → /backend/app/models/task_dependency.rb
-  TaskUpdate           → /backend/app/models/task_update.rb
-  Project              → /backend/app/models/project.rb
-  Construction         → /backend/app/models/construction.rb
-  User                 → /backend/app/models/user.rb
-
-Controllers:
-  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
-  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
-  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
-
-Services:
-  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
-
-Frontend Pages:
-  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
-  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
-
-Frontend Components:
-  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
-  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
-  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
-```
-
-```
-GET    /api/v1/projects/:project_id/tasks                 - List all tasks
-POST   /api/v1/projects/:project_id/tasks                 - Create task
-GET    /api/v1/projects/:project_id/tasks/:id             - Get task
-PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
-DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
-GET    /api/v1/projects/:id/gantt                         - Get Gantt data
-```
-
-```
-GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
-POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
-GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
-PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
-DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
-```
-
-```
-not_started  → Initial state (default)
-in_progress  → Task has started
-complete     → Task finished
-on_hold      → Paused/blocked
-```
-
-```javascript
-[
-  'Rob Harder',
-  'Andrew Clement',
-  'Sam Harder',
-  'Sophie Harder',
-  'Jake Baird'
-]
-```
-
-```
-finish_to_start (FS)  → Task A finishes, Task B starts (default)
-start_to_start (SS)   → Task A starts, Task B starts
-finish_to_finish (FF) → Task A finishes, Task B finishes
-start_to_finish (SF)  → Task A starts, Task B finishes (rare)
-```
-
-```
-User creates/imports tasks
-        ↓
-ProjectTask or ScheduleTask created
-        ↓
-Dependencies established
-        ↓
-Schedule::GeneratorService runs (for ProjectTasks)
-        ↓
-Timeline calculated (forward pass)
-        ↓
-Critical path identified
-        ↓
-Gantt chart displays tasks & bars
-        ↓
-User updates status/progress
-        ↓
-TaskUpdate record created (history)
-```
-
-```bash
-POST /api/v1/projects/:project_id/tasks
-{
-  "project_task": {
-    "name": "Pour Concrete",
-    "task_type": "DO",
-    "category": "CONCRETE",
-    "duration_days": 5,
-    "assigned_to_id": 1
-  }
-}
-```
-
-```bash
-PATCH /api/v1/projects/:project_id/tasks/:id
-{
-  "project_task": {
-    "status": "in_progress",
-    "progress_percentage": 50
-  }
-}
-```
-
-```bash
-PATCH /api/v1/projects/:project_id/tasks/:id
-{
-  "project_task": {
-    "purchase_order_id": 42,
-    "required_on_site_date": "2025-01-20"
-  }
-}
-```
-
-```bash
-POST /api/v1/constructions/:id/schedule_tasks/import
-Content-Type: multipart/form-data
-file: <Excel file>
-```
-```
-
-### Examples
-```
-Models:
-  ProjectTask          → /backend/app/models/project_task.rb
-  ScheduleTask         → /backend/app/models/schedule_task.rb
-  TaskTemplate         → /backend/app/models/task_template.rb
-  TaskDependency       → /backend/app/models/task_dependency.rb
-  TaskUpdate           → /backend/app/models/task_update.rb
-  Project              → /backend/app/models/project.rb
-  Construction         → /backend/app/models/construction.rb
-  User                 → /backend/app/models/user.rb
-
-Controllers:
-  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
-  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
-  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
-
-Services:
-  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
-
-Frontend Pages:
-  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
-  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
-
-Frontend Components:
-  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
-  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
-  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
-```
-
-```
-GET    /api/v1/projects/:project_id/tasks                 - List all tasks
-POST   /api/v1/projects/:project_id/tasks                 - Create task
-GET    /api/v1/projects/:project_id/tasks/:id             - Get task
-PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
-DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
-GET    /api/v1/projects/:id/gantt                         - Get Gantt data
-```
-
-```
-GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
-POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
-GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
-PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
-DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
-```
-
-```
-not_started  → Initial state (default)
-in_progress  → Task has started
-complete     → Task finished
-on_hold      → Paused/blocked
-```
-
-```javascript
-[
-  'Rob Harder',
-  'Andrew Clement',
-  'Sam Harder',
-  'Sophie Harder',
-  'Jake Baird'
-]
-```
-
-```
-finish_to_start (FS)  → Task A finishes, Task B starts (default)
-start_to_start (SS)   → Task A starts, Task B starts
-finish_to_finish (FF) → Task A finishes, Task B finishes
-start_to_finish (SF)  → Task A starts, Task B finishes (rare)
-```
-
-```
-User creates/imports tasks
-        ↓
-ProjectTask or ScheduleTask created
-        ↓
-Dependencies established
-        ↓
-Schedule::GeneratorService runs (for ProjectTasks)
-        ↓
-Timeline calculated (forward pass)
-        ↓
-Critical path identified
-        ↓
-Gantt chart displays tasks & bars
-        ↓
-User updates status/progress
-        ↓
-TaskUpdate record created (history)
-```
-
-```bash
-POST /api/v1/projects/:project_id/tasks
-{
-  "project_task": {
-    "name": "Pour Concrete",
-    "task_type": "DO",
-    "category": "CONCRETE",
-    "duration_days": 5,
-    "assigned_to_id": 1
-  }
-}
-```
-
-```bash
-PATCH /api/v1/projects/:project_id/tasks/:id
-{
-  "project_task": {
-    "status": "in_progress",
-    "progress_percentage": 50
-  }
-}
-```
-
-```bash
-PATCH /api/v1/projects/:project_id/tasks/:id
-{
-  "project_task": {
-    "purchase_order_id": 42,
-    "required_on_site_date": "2025-01-20"
-  }
-}
-```
-
-```bash
-POST /api/v1/constructions/:id/schedule_tasks/import
-Content-Type: multipart/form-data
-file: <Excel file>
-```
-
----
-
-## §9.2: Gantt Chart Developer Setup
+## §9.10: Gantt Chart Developer Setup
 
 ✨ Feature | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.2"}]
 
 ### Quick Summary
 Development environment setup for Gantt chart features including dependencies and data seeding
@@ -13942,345 +11032,49 @@ chmod +x .git/hooks/pre-commit
 
 ---
 
-## §9.3: Gantt Feature Onboarding Checklist
+## §9.2: Status State Machine
 
-✨ Feature | 🟢 Beginner
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.2"}]
 
 ### Quick Summary
-New developer onboarding checklist for understanding Gantt chart implementation
-
-### Step-by-Step Guide
-# Gantt Development Onboarding Checklist
-
-**⚠️ MANDATORY: Complete this checklist before making any changes to Gantt/Schedule code**
-
-## Why This Checklist Exists
-
-The Gantt and Schedule Master codebase contains subtle patterns that took **8+ iterations and many hours** to get right. This checklist ensures you understand these patterns before introducing bugs that we've already fixed.
-
----
-
-## Step 1: Read The Documentation
-
-Read these files IN ORDER (estimated time: 45 minutes):
-
-- [ ] **GANTT_SCHEDULE_RULES.md (The Bible)** - Start with the "🚨 CRITICAL" section
-  - [ ] Understand Predecessor ID Mismatch (1-based vs 0-based)
-  - [ ] Understand Infinite Render Loop prevention
-  - [ ] Know all 3 useRef anti-loop flags (isDragging, isLoadingData, isSaving)
-  - [ ] Know all 5 lock types and their priority order
-  - [ ] Read all "Common Gotchas" section
-
-- [ ] **GANTT_BIBLE_COLUMNS.md** - Column implementation reference
-  - [ ] Understand which columns are Active vs Inactive
-  - [ ] Know where each column is implemented (file:line)
-  - [ ] Understand lock hierarchy
-
-- [ ] **GANTT_BUGS_AND_FIXES.md** - Bug history and Bug Hunter
-  - [ ] Read BUG-001 (Drag Flickering) case study
-  - [ ] Understand why each fix attempt failed
-  - [ ] Know how to use Bug Hunter diagnostic tool
-
----
-
-## Step 2: Understand The Architecture
-
-Answer these questions (write your answers, they will be checked):
-
-### Backend Questions
-
-**Q1:** Why are predecessor IDs 1-based but sequence_order is 0-based?
-
-**Your Answer:**
-```
-[Write answer here]
-```
-
-**Q2:** Why does `ScheduleCascadeService` use `update_column()` instead of `update()`?
-
-**Your Answer:**
-```
-[Write answer here]
-```
-
-**Q3:** Which tasks does the cascade service skip? Why?
-
-**Your Answer:**
-```
-[Write answer here]
-```
-
-### Frontend Questions
-
-**Q4:** What triggers spurious `onAfterTaskDrag` events in DHtmlx Gantt?
-
-**Your Answer:**
-```
-[Write answer here]
-```
-
-**Q5:** Why must `isLoadingData` timeout be exactly 500ms (not less)?
-
-**Your Answer:**
-```
-[Write answer here]
-```
-
-**Q6:** Name all 5 lock types in priority order (highest to lowest):
-
-**Your Answer:**
-```
-1.
-2.
-3.
-4.
-5.
-```
-
----
-
-## Step 3: Set Up Your Environment
-
-Complete these setup tasks:
-
-- [ ] Enable DIAGNOSTIC_MODE in DHtmlxGanttView.jsx line 26
-- [ ] Open browser DevTools console
-- [ ] Run `window.printBugHunterReport()` to verify Bug Hunter works
-- [ ] Verify you can see diagnostic emoji logs (🔵 📊 ✅ ❌)
-
----
-
-## Step 4: Practice With The Code
-
-Complete these hands-on exercises:
-
-### Exercise 1: Predecessor ID Conversion
-
-- [ ] Open `schedule_cascade_service.rb`
-- [ ] Find line 88: `predecessor_id = predecessor_task.sequence_order + 1`
-- [ ] Explain why the `+ 1` is necessary:
-```
-[Write answer here]
-```
-
-### Exercise 2: Anti-Loop Flags
-
-- [ ] Open `DHtmlxGanttView.jsx`
-- [ ] Find line 1357: `isDragging.current = true`
-- [ ] Find line 3477: `if (isLoadingData.current) return`
-- [ ] Explain what would happen if line 3477 was removed:
-```
-[Write answer here]
-```
-
-### Exercise 3: Lock Checking
-
-- [ ] Open `DHtmlxGanttView.jsx`
-- [ ] Find the cascade modal logic around line 1700
-- [ ] Write the correct code to check if a task is locked:
-```javascript
-const isLocked = (task) => {
-  // Write your code here
-
-
-}
-```
-
----
-
-## Step 5: Run The Tests
-
-Before making any changes:
-
-- [ ] Run backend tests: `cd backend && bundle exec rspec spec/services/schedule_cascade_service_spec.rb`
-- [ ] Run E2E tests: `cd frontend && npm run test:e2e -- gantt-cascade.spec.js`
-- [ ] Verify Bug Hunter reports HEALTHY status
-- [ ] Verify all 10 Bug Hunter tests pass
-
----
-
-## Step 6: Make A Small Test Change
-
-Practice the workflow with a safe change:
-
-- [ ] Add a console.log to DHtmlxGanttView.jsx in handleTaskUpdate
-- [ ] Drag a task in the Gantt chart
-- [ ] Verify your log appears exactly ONCE (not multiple times)
-- [ ] Run `window.printBugHunterReport()` and verify:
-  - [ ] Test #1 passes (≤ 2 API calls per task)
-  - [ ] Test #2 passes (≤ 5 reloads per drag)
-- [ ] Remove your console.log
-
----
-
-## Step 7: Verify Comprehension
-
-Have a senior developer review your answers to the questions above.
-
-**Reviewer Name:** ________________
-
-**Review Date:** ________________
-
-**Reviewer Signature:** ________________
-
----
-
-## Step 8: Sign The Pledge
-
-By signing below, I certify that:
-
-1. I have read and understood GANTT_SCHEDULE_RULES.md (The Bible)
-2. I understand the Predecessor ID Mismatch bug and how to avoid it
-3. I understand the useRef anti-loop flags and will not "optimize" them away
-4. I will run Bug Hunter after every change to Gantt code
-5. I will not remove or modify Protected Code Patterns without explicit approval
-6. If I don't understand something, I will ask BEFORE making changes
-
-**Developer Name:** ________________
-
-**Date Completed:** ________________
-
-**Signature:** ________________
-
----
-
-## Emergency Contacts
-
-If you encounter issues or have questions:
-
-1. **Check The Bible First:** GANTT_SCHEDULE_RULES.md has the answer
-2. **Run Bug Hunter:** `window.printBugHunterReport()` for diagnostics
-3. **Check Bug History:** GANTT_BUGS_AND_FIXES.md may have your answer
-4. **Ask Senior Dev:** [Your team's escalation process here]
-
----
-
-## After Onboarding
-
-**Every time you work on Gantt code:**
-
-- [ ] Re-read the "🚨 CRITICAL" section of The Bible
-- [ ] Enable DIAGNOSTIC_MODE
-- [ ] Run Bug Hunter before and after your changes
-- [ ] Verify all 10 tests still pass
-- [ ] Update The Bible if you discover new patterns or gotchas
-
----
-
-## Onboarding Record
-
-**Developer:** ________________
-**Start Date:** ________________
-**Completion Date:** ________________
-**Time Spent:** _______ hours
-**Reviewer:** ________________
-**Status:** [ ] In Progress  [ ] Completed  [ ] Needs Revision
-
----
-
-## Common Onboarding Mistakes
-
-After completing this checklist, developers commonly make these mistakes:
-
-1. **"I'll just make a quick fix"** - No such thing with Gantt code. Read The Bible first.
-2. **"This code looks messy, I'll clean it up"** - Every line exists for a reason. Ask first.
-3. **"500ms is too long, I'll optimize to 100ms"** - Tested value. Don't change it.
-4. **"I don't need to run Bug Hunter, it's a small change"** - Bug Hunter catches issues you can't see.
-5. **"I understand loops, I don't need to read about the flags"** - The loops are NOT obvious.
-
-**If you skip this checklist and introduce a bug, you will spend HOURS debugging issues that are already documented here.**
-
+✅
 
 ### Code Example
 ```jsx
-```
-[Write answer here]
+draft → pending → approved → sent → received → invoiced → paid
+  ↘                                                         ↗
+   cancelled (can cancel any non-paid status)
+
+# ---
+
+def can_edit?         # Only draft/pending
+def can_approve?      # Only pending
+def can_cancel?       # Any except paid/cancelled
 ```
 
-```
-[Write answer here]
-```
+---
 
-```
-[Write answer here]
-```
+## §9.3: Payment Status Calculation
 
-```
-[Write answer here]
-```
+🔧 Util | 🟡 Intermediate
 
-```
-[Write answer here]
-```
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.3"}]
 
-```
-1.
-2.
-3.
-4.
-5.
-```
+### Quick Summary
+✅
 
-```
-[Write answer here]
-```
+### Code Example
+```jsx
+def determine_payment_status(invoice_amount)
+  return :manual_review if total.zero? || invoice_amount > total + 1
+  return :pending if invoice_amount.zero?
 
-```
-[Write answer here]
-```
-
-```javascript
-const isLocked = (task) => {
-  // Write your code here
-
-
-}
-```
-```
-
-### Examples
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```
-1.
-2.
-3.
-4.
-5.
-```
-
-```
-[Write answer here]
-```
-
-```
-[Write answer here]
-```
-
-```javascript
-const isLocked = (task) => {
-  // Write your code here
-
-
-}
+  percentage = (invoice_amount / total) * 100
+  return :complete if percentage >= 95 && percentage <= 105
+  return :part_payment
+end
 ```
 
 ---
@@ -14288,6 +11082,8 @@ const isLocked = (task) => {
 ## §9.4: Gantt Chart README - Feature Overview
 
 ✨ Feature | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.4"}]
 
 ### Quick Summary
 High-level overview of Gantt chart features, components, and usage
@@ -14791,6 +11587,3129 @@ git commit -m "test"
 # Revert test change
 git reset HEAD~1
 git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+```
+
+---
+
+## §9.5: Line Items - Totals Calculation
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.5"}]
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+before_save :calculate_totals
+
+def calculate_totals
+  self.sub_total = line_items.sum { |li| li.quantity * li.unit_price }
+  self.tax = sub_total * 0.10  # 10% GST
+  self.total = sub_total + tax
+end
+```
+
+---
+
+## §9.6: Schedule Task Linking
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.6"}]
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+ActiveRecord::Base.transaction do
+  # Unlink old task
+  if old_task = purchase_order.schedule_task
+    old_task.update!(purchase_order_id: nil)
+  end
+
+  # Link new task
+  if new_task_id.present?
+    new_task = ScheduleTask.find(new_task_id)
+    new_task.update!(purchase_order_id: purchase_order.id)
+  end
+end
+```
+
+---
+
+## §9.7: Price Drift Monitoring
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.7"}]
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+def price_drift
+  return 0 if pricebook_item.nil?
+  ((unit_price - pricebook_item.price) / pricebook_item.price) * 100
+end
+```
+
+---
+
+## §9.8: Gantt Feature Onboarding Checklist
+
+✨ Feature | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.3"}]
+
+### Quick Summary
+New developer onboarding checklist for understanding Gantt chart implementation
+
+### Step-by-Step Guide
+# Gantt Development Onboarding Checklist
+
+**⚠️ MANDATORY: Complete this checklist before making any changes to Gantt/Schedule code**
+
+## Why This Checklist Exists
+
+The Gantt and Schedule Master codebase contains subtle patterns that took **8+ iterations and many hours** to get right. This checklist ensures you understand these patterns before introducing bugs that we've already fixed.
+
+---
+
+## Step 1: Read The Documentation
+
+Read these files IN ORDER (estimated time: 45 minutes):
+
+- [ ] **GANTT_SCHEDULE_RULES.md (The Bible)** - Start with the "🚨 CRITICAL" section
+  - [ ] Understand Predecessor ID Mismatch (1-based vs 0-based)
+  - [ ] Understand Infinite Render Loop prevention
+  - [ ] Know all 3 useRef anti-loop flags (isDragging, isLoadingData, isSaving)
+  - [ ] Know all 5 lock types and their priority order
+  - [ ] Read all "Common Gotchas" section
+
+- [ ] **GANTT_BIBLE_COLUMNS.md** - Column implementation reference
+  - [ ] Understand which columns are Active vs Inactive
+  - [ ] Know where each column is implemented (file:line)
+  - [ ] Understand lock hierarchy
+
+- [ ] **GANTT_BUGS_AND_FIXES.md** - Bug history and Bug Hunter
+  - [ ] Read BUG-001 (Drag Flickering) case study
+  - [ ] Understand why each fix attempt failed
+  - [ ] Know how to use Bug Hunter diagnostic tool
+
+---
+
+## Step 2: Understand The Architecture
+
+Answer these questions (write your answers, they will be checked):
+
+### Backend Questions
+
+**Q1:** Why are predecessor IDs 1-based but sequence_order is 0-based?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q2:** Why does `ScheduleCascadeService` use `update_column()` instead of `update()`?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q3:** Which tasks does the cascade service skip? Why?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+### Frontend Questions
+
+**Q4:** What triggers spurious `onAfterTaskDrag` events in DHtmlx Gantt?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q5:** Why must `isLoadingData` timeout be exactly 500ms (not less)?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q6:** Name all 5 lock types in priority order (highest to lowest):
+
+**Your Answer:**
+```
+1.
+2.
+3.
+4.
+5.
+```
+
+---
+
+## Step 3: Set Up Your Environment
+
+Complete these setup tasks:
+
+- [ ] Enable DIAGNOSTIC_MODE in DHtmlxGanttView.jsx line 26
+- [ ] Open browser DevTools console
+- [ ] Run `window.printBugHunterReport()` to verify Bug Hunter works
+- [ ] Verify you can see diagnostic emoji logs (🔵 📊 ✅ ❌)
+
+---
+
+## Step 4: Practice With The Code
+
+Complete these hands-on exercises:
+
+### Exercise 1: Predecessor ID Conversion
+
+- [ ] Open `schedule_cascade_service.rb`
+- [ ] Find line 88: `predecessor_id = predecessor_task.sequence_order + 1`
+- [ ] Explain why the `+ 1` is necessary:
+```
+[Write answer here]
+```
+
+### Exercise 2: Anti-Loop Flags
+
+- [ ] Open `DHtmlxGanttView.jsx`
+- [ ] Find line 1357: `isDragging.current = true`
+- [ ] Find line 3477: `if (isLoadingData.current) return`
+- [ ] Explain what would happen if line 3477 was removed:
+```
+[Write answer here]
+```
+
+### Exercise 3: Lock Checking
+
+- [ ] Open `DHtmlxGanttView.jsx`
+- [ ] Find the cascade modal logic around line 1700
+- [ ] Write the correct code to check if a task is locked:
+```javascript
+const isLocked = (task) => {
+  // Write your code here
+
+
+}
+```
+
+---
+
+## Step 5: Run The Tests
+
+Before making any changes:
+
+- [ ] Run backend tests: `cd backend && bundle exec rspec spec/services/schedule_cascade_service_spec.rb`
+- [ ] Run E2E tests: `cd frontend && npm run test:e2e -- gantt-cascade.spec.js`
+- [ ] Verify Bug Hunter reports HEALTHY status
+- [ ] Verify all 10 Bug Hunter tests pass
+
+---
+
+## Step 6: Make A Small Test Change
+
+Practice the workflow with a safe change:
+
+- [ ] Add a console.log to DHtmlxGanttView.jsx in handleTaskUpdate
+- [ ] Drag a task in the Gantt chart
+- [ ] Verify your log appears exactly ONCE (not multiple times)
+- [ ] Run `window.printBugHunterReport()` and verify:
+  - [ ] Test #1 passes (≤ 2 API calls per task)
+  - [ ] Test #2 passes (≤ 5 reloads per drag)
+- [ ] Remove your console.log
+
+---
+
+## Step 7: Verify Comprehension
+
+Have a senior developer review your answers to the questions above.
+
+**Reviewer Name:** ________________
+
+**Review Date:** ________________
+
+**Reviewer Signature:** ________________
+
+---
+
+## Step 8: Sign The Pledge
+
+By signing below, I certify that:
+
+1. I have read and understood GANTT_SCHEDULE_RULES.md (The Bible)
+2. I understand the Predecessor ID Mismatch bug and how to avoid it
+3. I understand the useRef anti-loop flags and will not "optimize" them away
+4. I will run Bug Hunter after every change to Gantt code
+5. I will not remove or modify Protected Code Patterns without explicit approval
+6. If I don't understand something, I will ask BEFORE making changes
+
+**Developer Name:** ________________
+
+**Date Completed:** ________________
+
+**Signature:** ________________
+
+---
+
+## Emergency Contacts
+
+If you encounter issues or have questions:
+
+1. **Check The Bible First:** GANTT_SCHEDULE_RULES.md has the answer
+2. **Run Bug Hunter:** `window.printBugHunterReport()` for diagnostics
+3. **Check Bug History:** GANTT_BUGS_AND_FIXES.md may have your answer
+4. **Ask Senior Dev:** [Your team's escalation process here]
+
+---
+
+## After Onboarding
+
+**Every time you work on Gantt code:**
+
+- [ ] Re-read the "🚨 CRITICAL" section of The Bible
+- [ ] Enable DIAGNOSTIC_MODE
+- [ ] Run Bug Hunter before and after your changes
+- [ ] Verify all 10 tests still pass
+- [ ] Update The Bible if you discover new patterns or gotchas
+
+---
+
+## Onboarding Record
+
+**Developer:** ________________
+**Start Date:** ________________
+**Completion Date:** ________________
+**Time Spent:** _______ hours
+**Reviewer:** ________________
+**Status:** [ ] In Progress  [ ] Completed  [ ] Needs Revision
+
+---
+
+## Common Onboarding Mistakes
+
+After completing this checklist, developers commonly make these mistakes:
+
+1. **"I'll just make a quick fix"** - No such thing with Gantt code. Read The Bible first.
+2. **"This code looks messy, I'll clean it up"** - Every line exists for a reason. Ask first.
+3. **"500ms is too long, I'll optimize to 100ms"** - Tested value. Don't change it.
+4. **"I don't need to run Bug Hunter, it's a small change"** - Bug Hunter catches issues you can't see.
+5. **"I understand loops, I don't need to read about the flags"** - The loops are NOT obvious.
+
+**If you skip this checklist and introduce a bug, you will spend HOURS debugging issues that are already documented here.**
+
+
+### Code Example
+```jsx
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+1.
+2.
+3.
+4.
+5.
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```javascript
+const isLocked = (task) => {
+  // Write your code here
+
+
+}
+```
+```
+
+### Examples
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+1.
+2.
+3.
+4.
+5.
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```javascript
+const isLocked = (task) => {
+  // Write your code here
+
+
+}
+```
+
+---
+
+## §9.9: Task Management Quick Reference
+
+✨ Feature | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.1"}]
+
+### Quick Summary
+Quick reference for task management: two task systems, API endpoints, and common operations
+
+### Step-by-Step Guide
+# Trapid Task Management - Quick Reference Guide
+
+## Two Task Systems
+
+### 1. ProjectTask - Master Schedule (Detailed Planning)
+- **Used For:** Internal project planning with dependencies and critical path
+- **Main Fields:** status, progress_percentage, planned/actual dates, assigned_to_id
+- **Key Feature:** Task dependencies with 4 relationship types
+- **User Assignment:** Yes, to individual User objects
+- **Database:** `project_tasks` table
+
+### 2. ScheduleTask - Supplier Schedule (Delivery Tracking)
+- **Used For:** Tracking supplier deliveries and matching to purchase orders
+- **Main Fields:** title, status, start_date, complete_date, supplier_name
+- **Key Feature:** Link to purchase orders for delivery timing
+- **User Assignment:** No (tracks supplier info instead)
+- **Database:** `schedule_tasks` table
+
+---
+
+## Key Models & Files
+
+```
+Models:
+  ProjectTask          → /backend/app/models/project_task.rb
+  ScheduleTask         → /backend/app/models/schedule_task.rb
+  TaskTemplate         → /backend/app/models/task_template.rb
+  TaskDependency       → /backend/app/models/task_dependency.rb
+  TaskUpdate           → /backend/app/models/task_update.rb
+  Project              → /backend/app/models/project.rb
+  Construction         → /backend/app/models/construction.rb
+  User                 → /backend/app/models/user.rb
+
+Controllers:
+  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
+  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
+  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
+
+Services:
+  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
+
+Frontend Pages:
+  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
+  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
+
+Frontend Components:
+  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
+  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
+  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
+```
+
+---
+
+## API Endpoints
+
+### Task Management
+```
+GET    /api/v1/projects/:project_id/tasks                 - List all tasks
+POST   /api/v1/projects/:project_id/tasks                 - Create task
+GET    /api/v1/projects/:project_id/tasks/:id             - Get task
+PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
+DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
+GET    /api/v1/projects/:id/gantt                         - Get Gantt data
+```
+
+### Schedule Tasks
+```
+GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
+POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
+GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
+PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
+DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
+```
+
+---
+
+## Task Status States
+
+```
+not_started  → Initial state (default)
+in_progress  → Task has started
+complete     → Task finished
+on_hold      → Paused/blocked
+```
+
+---
+
+## Task Properties
+
+| Property | Type | Usage |
+|----------|------|-------|
+| name | string | Task title |
+| status | enum | Current state |
+| progress_percentage | 0-100 | Completion % |
+| planned_start_date | date | Scheduled start |
+| planned_end_date | date | Scheduled end |
+| actual_start_date | date | When work started |
+| actual_end_date | date | When work completed |
+| duration_days | integer | Task length in days |
+| is_milestone | boolean | Mark important milestone |
+| is_critical_path | boolean | On longest path |
+| assigned_to_id | foreign key | User assignment |
+| supplier_name | string | External supplier |
+| purchase_order_id | foreign key | Linked PO |
+
+---
+
+## User Assignment (Current Limitation)
+
+Frontend uses hardcoded team members:
+```javascript
+[
+  'Rob Harder',
+  'Andrew Clement',
+  'Sam Harder',
+  'Sophie Harder',
+  'Jake Baird'
+]
+```
+
+**Problem:** Not dynamically fetched from database
+**Solution Needed:** Create `/api/v1/users` endpoint
+
+---
+
+## Dependency Types
+
+```
+finish_to_start (FS)  → Task A finishes, Task B starts (default)
+start_to_start (SS)   → Task A starts, Task B starts
+finish_to_finish (FF) → Task A finishes, Task B finishes
+start_to_finish (SF)  → Task A starts, Task B finishes (rare)
+```
+
+All support optional lag_days for overlap.
+
+---
+
+## Gantt Chart Features
+
+**Zoom Levels:**
+- Day view: 40px per day
+- Week view: 6px per day
+- Month view: 2px per day
+
+**Color By:**
+- Status (not_started=gray, in_progress=blue, complete=green)
+- Category (CONCRETE, CARPENTER, ELECTRICAL, etc.)
+- Type (DO, ORDER, GET, CLAIM, etc.)
+
+**Navigation:**
+- Previous/Next period buttons
+- "Today" button
+- Date range customizable
+
+---
+
+## Data Flow
+
+```
+User creates/imports tasks
+        ↓
+ProjectTask or ScheduleTask created
+        ↓
+Dependencies established
+        ↓
+Schedule::GeneratorService runs (for ProjectTasks)
+        ↓
+Timeline calculated (forward pass)
+        ↓
+Critical path identified
+        ↓
+Gantt chart displays tasks & bars
+        ↓
+User updates status/progress
+        ↓
+TaskUpdate record created (history)
+```
+
+---
+
+## Common Operations
+
+### Create a Task
+```bash
+POST /api/v1/projects/:project_id/tasks
+{
+  "project_task": {
+    "name": "Pour Concrete",
+    "task_type": "DO",
+    "category": "CONCRETE",
+    "duration_days": 5,
+    "assigned_to_id": 1
+  }
+}
+```
+
+### Update Task Progress
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "status": "in_progress",
+    "progress_percentage": 50
+  }
+}
+```
+
+### Link Task to Purchase Order
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "purchase_order_id": 42,
+    "required_on_site_date": "2025-01-20"
+  }
+}
+```
+
+### Import Schedule from Excel
+```bash
+POST /api/v1/constructions/:id/schedule_tasks/import
+Content-Type: multipart/form-data
+file: <Excel file>
+```
+
+---
+
+## What's Missing & Needs Work
+
+### High Priority
+- [ ] Dynamic user list (hardcoded → database)
+- [ ] User roles/permissions
+- [ ] Backward pass for accurate float calculation
+
+### Medium Priority
+- [ ] Task comments/discussions
+- [ ] Change notifications
+- [ ] Export to PDF/PNG
+- [ ] Resource workload tracking
+
+### Nice to Have
+- [ ] Mobile support
+- [ ] Real-time WebSocket sync
+- [ ] Multi-project portfolios
+- [ ] Risk management integration
+
+---
+
+## Performance Notes
+
+- Project progress cached for 5 minutes
+- Gantt data includes all task relationships
+- ScheduleTask import processes row-by-row (can slow with 1000+ rows)
+- No pagination on task lists (could be issue at scale)
+
+---
+
+## Testing Checklist
+
+- [ ] Create task with all fields
+- [ ] Update task status (all 4 states)
+- [ ] Assign/unassign user
+- [ ] Create dependency between tasks
+- [ ] Verify circular dependency prevention
+- [ ] Import Excel schedule
+- [ ] Match schedule task to PO
+- [ ] View Gantt chart at different zoom levels
+- [ ] Edit task in table view
+- [ ] Sort table columns
+- [ ] Verify critical path calculation
+- [ ] Check materials_status (on_time/delayed)
+
+---
+
+## Database Indexes
+
+Task-related indexes for performance:
+- project_id, status
+- planned_start_date, planned_end_date
+- is_critical_path
+- construction_id, matched_to_po
+
+---
+
+## Related Documentation
+
+See `/Users/jakebaird/trapid/TASK_MANAGEMENT_ARCHITECTURE.md` for detailed investigation.
+
+
+
+### Code Example
+```jsx
+```
+Models:
+  ProjectTask          → /backend/app/models/project_task.rb
+  ScheduleTask         → /backend/app/models/schedule_task.rb
+  TaskTemplate         → /backend/app/models/task_template.rb
+  TaskDependency       → /backend/app/models/task_dependency.rb
+  TaskUpdate           → /backend/app/models/task_update.rb
+  Project              → /backend/app/models/project.rb
+  Construction         → /backend/app/models/construction.rb
+  User                 → /backend/app/models/user.rb
+
+Controllers:
+  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
+  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
+  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
+
+Services:
+  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
+
+Frontend Pages:
+  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
+  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
+
+Frontend Components:
+  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
+  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
+  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
+```
+
+```
+GET    /api/v1/projects/:project_id/tasks                 - List all tasks
+POST   /api/v1/projects/:project_id/tasks                 - Create task
+GET    /api/v1/projects/:project_id/tasks/:id             - Get task
+PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
+DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
+GET    /api/v1/projects/:id/gantt                         - Get Gantt data
+```
+
+```
+GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
+POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
+GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
+PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
+DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
+```
+
+```
+not_started  → Initial state (default)
+in_progress  → Task has started
+complete     → Task finished
+on_hold      → Paused/blocked
+```
+
+```javascript
+[
+  'Rob Harder',
+  'Andrew Clement',
+  'Sam Harder',
+  'Sophie Harder',
+  'Jake Baird'
+]
+```
+
+```
+finish_to_start (FS)  → Task A finishes, Task B starts (default)
+start_to_start (SS)   → Task A starts, Task B starts
+finish_to_finish (FF) → Task A finishes, Task B finishes
+start_to_finish (SF)  → Task A starts, Task B finishes (rare)
+```
+
+```
+User creates/imports tasks
+        ↓
+ProjectTask or ScheduleTask created
+        ↓
+Dependencies established
+        ↓
+Schedule::GeneratorService runs (for ProjectTasks)
+        ↓
+Timeline calculated (forward pass)
+        ↓
+Critical path identified
+        ↓
+Gantt chart displays tasks & bars
+        ↓
+User updates status/progress
+        ↓
+TaskUpdate record created (history)
+```
+
+```bash
+POST /api/v1/projects/:project_id/tasks
+{
+  "project_task": {
+    "name": "Pour Concrete",
+    "task_type": "DO",
+    "category": "CONCRETE",
+    "duration_days": 5,
+    "assigned_to_id": 1
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "status": "in_progress",
+    "progress_percentage": 50
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "purchase_order_id": 42,
+    "required_on_site_date": "2025-01-20"
+  }
+}
+```
+
+```bash
+POST /api/v1/constructions/:id/schedule_tasks/import
+Content-Type: multipart/form-data
+file: <Excel file>
+```
+```
+
+### Examples
+```
+Models:
+  ProjectTask          → /backend/app/models/project_task.rb
+  ScheduleTask         → /backend/app/models/schedule_task.rb
+  TaskTemplate         → /backend/app/models/task_template.rb
+  TaskDependency       → /backend/app/models/task_dependency.rb
+  TaskUpdate           → /backend/app/models/task_update.rb
+  Project              → /backend/app/models/project.rb
+  Construction         → /backend/app/models/construction.rb
+  User                 → /backend/app/models/user.rb
+
+Controllers:
+  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
+  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
+  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
+
+Services:
+  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
+
+Frontend Pages:
+  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
+  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
+
+Frontend Components:
+  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
+  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
+  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
+```
+
+```
+GET    /api/v1/projects/:project_id/tasks                 - List all tasks
+POST   /api/v1/projects/:project_id/tasks                 - Create task
+GET    /api/v1/projects/:project_id/tasks/:id             - Get task
+PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
+DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
+GET    /api/v1/projects/:id/gantt                         - Get Gantt data
+```
+
+```
+GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
+POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
+GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
+PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
+DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
+```
+
+```
+not_started  → Initial state (default)
+in_progress  → Task has started
+complete     → Task finished
+on_hold      → Paused/blocked
+```
+
+```javascript
+[
+  'Rob Harder',
+  'Andrew Clement',
+  'Sam Harder',
+  'Sophie Harder',
+  'Jake Baird'
+]
+```
+
+```
+finish_to_start (FS)  → Task A finishes, Task B starts (default)
+start_to_start (SS)   → Task A starts, Task B starts
+finish_to_finish (FF) → Task A finishes, Task B finishes
+start_to_finish (SF)  → Task A starts, Task B finishes (rare)
+```
+
+```
+User creates/imports tasks
+        ↓
+ProjectTask or ScheduleTask created
+        ↓
+Dependencies established
+        ↓
+Schedule::GeneratorService runs (for ProjectTasks)
+        ↓
+Timeline calculated (forward pass)
+        ↓
+Critical path identified
+        ↓
+Gantt chart displays tasks & bars
+        ↓
+User updates status/progress
+        ↓
+TaskUpdate record created (history)
+```
+
+```bash
+POST /api/v1/projects/:project_id/tasks
+{
+  "project_task": {
+    "name": "Pour Concrete",
+    "task_type": "DO",
+    "category": "CONCRETE",
+    "duration_days": 5,
+    "assigned_to_id": 1
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "status": "in_progress",
+    "progress_percentage": 50
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "purchase_order_id": 42,
+    "required_on_site_date": "2025-01-20"
+  }
+}
+```
+
+```bash
+POST /api/v1/constructions/:id/schedule_tasks/import
+Content-Type: multipart/form-data
+file: <Excel file>
+```
+
+---
+
+
+# Chapter 9: Purchase Orders
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  9               │
+│ 📕 LEXICON (BUGS):    Chapter  9               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Code examples, implementation patterns, and step-by-step guides
+**Last Updated:** 2025-11-17
+
+---
+
+## §9.1: PO Number Generation - Race Condition Protection
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.1"}]
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+def generate_purchase_order_number
+  ActiveRecord::Base.transaction do
+    ActiveRecord::Base.connection.execute('SELECT pg_advisory_xact_lock(123456789)')
+
+    last_po = PurchaseOrder.order(:purchase_order_number).last
+    next_number = last_po ? last_po.purchase_order_number.gsub(/\D/, '').to_i + 1 : 1
+    self.purchase_order_number = format('PO-%06d', next_number)
+  end
+end
+```
+
+---
+
+## §9.10: Gantt Chart Developer Setup
+
+✨ Feature | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.2"}]
+
+### Quick Summary
+Development environment setup for Gantt chart features including dependencies and data seeding
+
+### Step-by-Step Guide
+# Gantt Developer Setup & Enforcement
+
+This document explains how to set up and enforce the Gantt onboarding process for all developers.
+
+---
+
+## 🎯 Goals
+
+1. Ensure all developers read the Gantt Bible before modifying code
+2. Prevent reintroduction of bugs that took 8+ iterations to fix
+3. Maintain code quality through automated checks
+4. Create a culture of documentation-first development
+
+---
+
+## 📚 Documentation Structure
+
+```
+trapid/
+├── GANTT_SCHEDULE_RULES.md          ← The Bible (development rules)
+├── GANTT_BIBLE_COLUMNS.md           ← Column implementation reference
+├── GANTT_BUGS_AND_FIXES.md          ← Bug history and Bug Hunter
+├── GANTT_ONBOARDING_CHECKLIST.md    ← Mandatory onboarding checklist
+├── GANTT_DEVELOPER_SETUP.md         ← This file
+└── scripts/
+    └── check-gantt-onboarding.sh    ← Pre-commit hook
+```
+
+All documentation is also available in `/frontend/public/` for the UI "Gantt Bible" button.
+
+---
+
+## 🚀 Setup for New Developers
+
+### Step 1: Install Pre-Commit Hook
+
+```bash
+# Navigate to project root
+cd /Users/rob/Projects/trapid
+
+# Make the script executable
+chmod +x scripts/check-gantt-onboarding.sh
+
+# Install the hook
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+
+# Make the hook executable
+chmod +x .git/hooks/pre-commit
+```
+
+### Step 2: Complete Onboarding
+
+New developers must complete the onboarding checklist:
+
+```bash
+# Open the checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+
+# Follow all steps:
+# 1. Read GANTT_SCHEDULE_RULES.md (focus on 🚨 CRITICAL section)
+# 2. Read GANTT_BIBLE_COLUMNS.md
+# 3. Read GANTT_BUGS_AND_FIXES.md
+# 4. Answer all questions in the checklist
+# 5. Get checklist reviewed and signed by senior dev
+```
+
+**Estimated time:** 45-60 minutes
+
+### Step 3: Verify Setup
+
+Try to commit a change to Gantt code:
+
+```bash
+# Make a test change
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+
+# Try to commit (should trigger the check)
+git add .
+git commit -m "test"
+
+# You should see the onboarding warning
+# If checklist is not signed, commit will be blocked
+```
+
+---
+
+## 🛡️ Enforcement Mechanisms
+
+### 1. Pre-Commit Hook (Automated)
+
+**What it does:**
+- Detects when Gantt/Schedule files are modified
+- Checks if onboarding checklist has been completed (signed)
+- Blocks commits if checklist not signed
+- Shows reminders even after onboarding completed
+
+**Files that trigger the check:**
+- `frontend/src/components/schedule-master/DHtmlxGanttView.jsx`
+- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx`
+- `frontend/src/components/schedule-master/CascadeDependenciesModal.jsx`
+- `frontend/src/utils/ganttDebugger.js`
+- `backend/app/services/schedule_cascade_service.rb`
+- `backend/app/controllers/api/v1/schedule_template_rows_controller.rb`
+- `backend/app/models/schedule_template_row.rb`
+
+**Bypass (NOT RECOMMENDED):**
+```bash
+git commit --no-verify  # Skips the hook
+```
+
+### 2. Code Review Checklist (Manual)
+
+During code reviews, reviewers must verify:
+
+- [ ] Developer has completed onboarding (check signature in checklist)
+- [ ] Bug Hunter tests pass (screenshot in PR)
+- [ ] No Protected Code Patterns modified without justification
+- [ ] Changes documented if they affect The Bible
+
+**Template for PR description:**
+```markdown
+## Gantt Changes
+
+- [ ] Onboarding completed: ✅ Signed by [Name] on [Date]
+- [ ] Bug Hunter status: ✅ All tests passing (see screenshot)
+- [ ] Protected patterns: ✅ Not modified OR ✅ Approved by [Name]
+- [ ] Bible updated: ✅ Yes OR ⬜ N/A (no architectural changes)
+
+### Bug Hunter Results
+[Paste screenshot or output from `window.printBugHunterReport()`]
+
+### Changes Summary
+[Describe what you changed and why]
+```
+
+### 3. CI/CD Integration (Optional)
+
+Add to your CI pipeline (`.github/workflows/` or similar):
+
+```yaml
+- name: Check Gantt Bug Hunter Tests
+  run: |
+    cd frontend
+    npm run test:e2e -- gantt-cascade.spec.js
+```
+
+### 4. Slack/Teams Bot (Optional)
+
+Create a bot that:
+- Posts reminder when Gantt PR is opened
+- Links to onboarding checklist
+- Requires Bug Hunter screenshot before approval
+
+---
+
+## 👥 Onboarding Process for Teams
+
+### For New Hires
+
+1. **Week 1:** General codebase onboarding
+2. **Week 2:** Complete Gantt onboarding checklist
+3. **Week 3:** Pair with senior dev on small Gantt fix
+4. **Week 4:** Independent Gantt work with code review
+
+### For External Contractors
+
+**Before starting work:**
+1. Send GANTT_SCHEDULE_RULES.md, GANTT_BIBLE_COLUMNS.md
+2. Schedule 30-minute video call to walk through critical sections
+3. Require signed onboarding checklist before granting repo access
+4. First 3 Gantt PRs require senior dev approval
+
+### For Senior Developers
+
+Even senior devs should:
+1. Re-read 🚨 CRITICAL section before working on Gantt
+2. Run Bug Hunter before and after changes
+3. Update The Bible when discovering new patterns
+
+---
+
+## 📊 Tracking Onboarding Completion
+
+### Onboarding Log
+
+Maintain a log in your team wiki or project management tool:
+
+| Developer | Start Date | Completion Date | Reviewer | Status |
+|-----------|------------|-----------------|----------|--------|
+| Alice Dev | 2025-11-10 | 2025-11-10 | Bob Senior | ✅ Complete |
+| Charlie   | 2025-11-12 | Pending | - | 🟡 In Progress |
+
+### Metrics to Track
+
+- **Time to complete onboarding:** Target < 1 hour
+- **Gantt bugs introduced:** Target = 0 in first 90 days
+- **Bug Hunter test failures:** Target < 5% of commits
+- **Documentation updates:** Target = 1 per month
+
+---
+
+## 🔧 Maintaining The System
+
+### Monthly Review
+
+Once per month:
+- Review all Gantt-related PRs from past month
+- Check if any bugs were reintroduced
+- Update The Bible with new patterns discovered
+- Review onboarding times and adjust checklist if needed
+
+### Updating The Hook
+
+If you add new Gantt files, update the hook:
+
+```bash
+# Edit scripts/check-gantt-onboarding.sh
+# Add new files to GANTT_FRONTEND_FILES or GANTT_BACKEND_FILES arrays
+
+# Reinstall
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+### When Onboarding Takes Too Long
+
+If developers report onboarding takes > 1 hour:
+- Review the checklist for unnecessary steps
+- Create a video walkthrough of critical sections (15 min)
+- Add more examples/diagrams
+- Consider splitting into "Essential" and "Advanced" checklists
+
+---
+
+## 🚨 Handling Violations
+
+### First Offense
+
+**Scenario:** Developer commits Gantt code without completing onboarding
+
+**Action:**
+1. Politely point to GANTT_ONBOARDING_CHECKLIST.md
+2. Ask them to complete it before next Gantt change
+3. Review their changes for common bugs
+4. Add their name to onboarding log as "Pending"
+
+### Repeated Offenses
+
+**Scenario:** Developer repeatedly bypasses onboarding or introduces known bugs
+
+**Action:**
+1. Schedule 1-on-1 meeting to understand blockers
+2. Pair with senior dev for next 3 Gantt changes
+3. Restrict Gantt file access until onboarding complete
+4. Consider adding mandatory PR template
+
+### Critical Bug Introduced
+
+**Scenario:** Developer reintroduces a bug from GANTT_BUGS_AND_FIXES.md
+
+**Action:**
+1. Immediate rollback if in production
+2. Root cause analysis: Did they read The Bible?
+3. Update The Bible to make that section more prominent
+4. Consider adding that bug to the pre-commit hook check
+5. All-hands meeting to review the incident
+
+---
+
+## 📞 Support & Escalation
+
+### When Developers Get Stuck
+
+**"The Bible is too long, I don't have time"**
+- Direct them to 🚨 CRITICAL section only (15 minutes)
+- Offer to schedule 15-minute walkthrough
+- Emphasize time savings: 15 min reading vs 2+ hours debugging
+
+**"I don't understand the predecessor ID mismatch"**
+- Point to GANTT_SCHEDULE_RULES.md line 161 (example code)
+- Show them backend: schedule_cascade_service.rb:88
+- Pair program: Make a test change together
+
+**"Bug Hunter is failing but I don't know why"**
+- Run `window.printBugHunterReport()` in browser console
+- Check which specific test is failing (1-10)
+- Cross-reference test # to GANTT_BIBLE_COLUMNS.md
+
+### Escalation Path
+
+1. **Level 1:** Check The Bible (GANTT_SCHEDULE_RULES.md)
+2. **Level 2:** Run Bug Hunter diagnostics
+3. **Level 3:** Check bug history (GANTT_BUGS_AND_FIXES.md)
+4. **Level 4:** Ask in team chat #gantt-help
+5. **Level 5:** Schedule pairing session with Gantt expert
+
+---
+
+## 🎓 Advanced: Creating Training Materials
+
+### Video Walkthrough (Recommended)
+
+Create a 15-minute video covering:
+- **Minute 0-5:** Why this onboarding exists (8 iterations story)
+- **Minute 5-10:** The #1 and #2 killer bugs with examples
+- **Minute 10-15:** How to use Bug Hunter and verify your changes
+
+### Interactive Workshop (Optional)
+
+Host a 1-hour workshop:
+- **0-15 min:** Overview of Gantt architecture
+- **15-30 min:** Live demo of common bugs
+- **30-45 min:** Hands-on: Each dev makes a test change
+- **45-60 min:** Code review simulation
+
+### Quiz/Certification (Optional)
+
+Create a 10-question quiz:
+- Predecessor ID conversion question
+- Lock hierarchy ordering
+- useRef flag purposes
+- Bug Hunter interpretation
+- Require 90% to pass
+
+---
+
+## 📈 Success Metrics
+
+Track these KPIs to measure onboarding effectiveness:
+
+| Metric | Target | Current | Trend |
+|--------|--------|---------|-------|
+| Bugs reintroduced | 0 | - | - |
+| Onboarding time | < 60 min | - | - |
+| Bug Hunter pass rate | > 95% | - | - |
+| Time to first Gantt commit | < 2 weeks | - | - |
+| Developer satisfaction | > 4/5 | - | - |
+
+---
+
+## 🔄 Feedback Loop
+
+**Monthly developer feedback survey:**
+
+1. Was the onboarding helpful? (1-5 scale)
+2. What section was most valuable?
+3. What was confusing or could be improved?
+4. How long did onboarding take?
+5. Have you reintroduced any bugs? Which ones?
+
+**Use feedback to:**
+- Update The Bible with better examples
+- Revise checklist questions
+- Create additional training materials
+- Identify knowledge gaps
+
+---
+
+## ✅ Setup Verification
+
+Run this checklist to verify your setup:
+
+- [ ] Pre-commit hook installed in `.git/hooks/pre-commit`
+- [ ] Hook is executable (`chmod +x`)
+- [ ] All 4 documentation files exist and are up to date
+- [ ] Onboarding checklist has template for new devs
+- [ ] Team has been notified about new onboarding process
+- [ ] At least one senior dev familiar with The Bible
+- [ ] Bug Hunter accessible via UI (Gantt Bible button)
+- [ ] Process documented in team wiki
+- [ ] Metrics tracking set up (optional)
+
+---
+
+## 📞 Questions?
+
+If you have questions about this setup:
+
+1. Read GANTT_SCHEDULE_RULES.md (might already be answered)
+2. Check GANTT_BUGS_AND_FIXES.md for historical context
+3. Open an issue or discussion in your team's process
+4. Schedule time with the team lead
+
+**Remember:** The goal is to prevent bugs, not to create bureaucracy. If something isn't working, let's improve it together!
+
+
+### Code Example
+```jsx
+```
+trapid/
+├── GANTT_SCHEDULE_RULES.md          ← The Bible (development rules)
+├── GANTT_BIBLE_COLUMNS.md           ← Column implementation reference
+├── GANTT_BUGS_AND_FIXES.md          ← Bug history and Bug Hunter
+├── GANTT_ONBOARDING_CHECKLIST.md    ← Mandatory onboarding checklist
+├── GANTT_DEVELOPER_SETUP.md         ← This file
+└── scripts/
+    └── check-gantt-onboarding.sh    ← Pre-commit hook
+```
+
+```bash
+# Navigate to project root
+cd /Users/rob/Projects/trapid
+
+# Make the script executable
+chmod +x scripts/check-gantt-onboarding.sh
+
+# Install the hook
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+
+# Make the hook executable
+chmod +x .git/hooks/pre-commit
+```
+
+```bash
+# Open the checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+
+# Follow all steps:
+# 1. Read GANTT_SCHEDULE_RULES.md (focus on 🚨 CRITICAL section)
+# 2. Read GANTT_BIBLE_COLUMNS.md
+# 3. Read GANTT_BUGS_AND_FIXES.md
+# 4. Answer all questions in the checklist
+# 5. Get checklist reviewed and signed by senior dev
+```
+
+```bash
+# Make a test change
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+
+# Try to commit (should trigger the check)
+git add .
+git commit -m "test"
+
+# You should see the onboarding warning
+# If checklist is not signed, commit will be blocked
+```
+
+```bash
+git commit --no-verify  # Skips the hook
+```
+
+```markdown
+## Gantt Changes
+
+- [ ] Onboarding completed: ✅ Signed by [Name] on [Date]
+- [ ] Bug Hunter status: ✅ All tests passing (see screenshot)
+- [ ] Protected patterns: ✅ Not modified OR ✅ Approved by [Name]
+- [ ] Bible updated: ✅ Yes OR ⬜ N/A (no architectural changes)
+
+### Bug Hunter Results
+[Paste screenshot or output from `window.printBugHunterReport()`]
+
+### Changes Summary
+[Describe what you changed and why]
+```
+
+```yaml
+- name: Check Gantt Bug Hunter Tests
+  run: |
+    cd frontend
+    npm run test:e2e -- gantt-cascade.spec.js
+```
+
+```bash
+# Edit scripts/check-gantt-onboarding.sh
+# Add new files to GANTT_FRONTEND_FILES or GANTT_BACKEND_FILES arrays
+
+# Reinstall
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+```
+
+### Examples
+```
+trapid/
+├── GANTT_SCHEDULE_RULES.md          ← The Bible (development rules)
+├── GANTT_BIBLE_COLUMNS.md           ← Column implementation reference
+├── GANTT_BUGS_AND_FIXES.md          ← Bug history and Bug Hunter
+├── GANTT_ONBOARDING_CHECKLIST.md    ← Mandatory onboarding checklist
+├── GANTT_DEVELOPER_SETUP.md         ← This file
+└── scripts/
+    └── check-gantt-onboarding.sh    ← Pre-commit hook
+```
+
+```bash
+# Navigate to project root
+cd /Users/rob/Projects/trapid
+
+# Make the script executable
+chmod +x scripts/check-gantt-onboarding.sh
+
+# Install the hook
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+
+# Make the hook executable
+chmod +x .git/hooks/pre-commit
+```
+
+```bash
+# Open the checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+
+# Follow all steps:
+# 1. Read GANTT_SCHEDULE_RULES.md (focus on 🚨 CRITICAL section)
+# 2. Read GANTT_BIBLE_COLUMNS.md
+# 3. Read GANTT_BUGS_AND_FIXES.md
+# 4. Answer all questions in the checklist
+# 5. Get checklist reviewed and signed by senior dev
+```
+
+```bash
+# Make a test change
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+
+# Try to commit (should trigger the check)
+git add .
+git commit -m "test"
+
+# You should see the onboarding warning
+# If checklist is not signed, commit will be blocked
+```
+
+```bash
+git commit --no-verify  # Skips the hook
+```
+
+```markdown
+## Gantt Changes
+
+- [ ] Onboarding completed: ✅ Signed by [Name] on [Date]
+- [ ] Bug Hunter status: ✅ All tests passing (see screenshot)
+- [ ] Protected patterns: ✅ Not modified OR ✅ Approved by [Name]
+- [ ] Bible updated: ✅ Yes OR ⬜ N/A (no architectural changes)
+
+### Bug Hunter Results
+[Paste screenshot or output from `window.printBugHunterReport()`]
+
+### Changes Summary
+[Describe what you changed and why]
+```
+
+```yaml
+- name: Check Gantt Bug Hunter Tests
+  run: |
+    cd frontend
+    npm run test:e2e -- gantt-cascade.spec.js
+```
+
+```bash
+# Edit scripts/check-gantt-onboarding.sh
+# Add new files to GANTT_FRONTEND_FILES or GANTT_BACKEND_FILES arrays
+
+# Reinstall
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+---
+
+## §9.2: Status State Machine
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.2"}]
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+draft → pending → approved → sent → received → invoiced → paid
+  ↘                                                         ↗
+   cancelled (can cancel any non-paid status)
+
+# ---
+
+def can_edit?         # Only draft/pending
+def can_approve?      # Only pending
+def can_cancel?       # Any except paid/cancelled
+```
+
+---
+
+## §9.3: Payment Status Calculation
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.3"}]
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+def determine_payment_status(invoice_amount)
+  return :manual_review if total.zero? || invoice_amount > total + 1
+  return :pending if invoice_amount.zero?
+
+  percentage = (invoice_amount / total) * 100
+  return :complete if percentage >= 95 && percentage <= 105
+  return :part_payment
+end
+```
+
+---
+
+## §9.4: Gantt Chart README - Feature Overview
+
+✨ Feature | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.4"}]
+
+### Quick Summary
+High-level overview of Gantt chart features, components, and usage
+
+### Step-by-Step Guide
+# Gantt & Schedule Master Documentation
+
+**Complete documentation system for Gantt and Schedule Master features**
+
+---
+
+## 🚨 STOP! Read This First
+
+**Are you about to modify Gantt or Schedule code?**
+
+👉 **YOU MUST complete the onboarding checklist FIRST:** [GANTT_ONBOARDING_CHECKLIST.md](GANTT_ONBOARDING_CHECKLIST.md)
+
+**Why?** This code has subtle patterns that took **8+ iterations** to get right. Skip onboarding = hours of debugging bugs we've already fixed.
+
+---
+
+## 📚 Documentation Files
+
+### 1. The Bible (Development Rules)
+**File:** [GANTT_SCHEDULE_RULES.md](GANTT_SCHEDULE_RULES.md) (114KB, 3715 lines)
+
+**What it contains:**
+- 🚨 **CRITICAL section** - Must-read before touching code (15 min)
+- Protected Code Patterns (do NOT modify)
+- Complete development rules
+- Performance patterns
+- Anti-loop mechanisms
+
+**When to read:**
+- Before making ANY changes to Gantt code
+- When debugging Gantt issues
+- Before code reviews
+
+**Start here:** Line 161 - "🚨 CRITICAL: Read Before Touching Gantt Code"
+
+---
+
+### 2. Column Reference
+**File:** [GANTT_BIBLE_COLUMNS.md](GANTT_BIBLE_COLUMNS.md) (25KB)
+
+**What it contains:**
+- All 33 Schedule Master table columns
+- All 11 Gantt modal columns
+- Implementation details (file:line references)
+- Database field mappings
+- Active/Inactive status
+- Lock hierarchy and priorities
+- Test coverage map
+
+**When to read:**
+- Adding or modifying column functionality
+- Understanding what a column does
+- Finding which service processes a column
+
+---
+
+### 3. Bug Tracking & Bug Hunter
+**File:** [GANTT_BUGS_AND_FIXES.md](frontend/public/GANTT_BUGS_AND_FIXES.md) (23KB)
+
+**What it contains:**
+- All resolved bugs with case studies
+- BUG-001: Drag Flickering (8 iterations to fix!)
+- Bug Hunter diagnostic tool usage
+- 10 automated test descriptions
+- Test results history
+
+**When to read:**
+- Debugging Gantt issues
+- Running performance diagnostics
+- Understanding why code is written a certain way
+
+---
+
+### 4. Onboarding Checklist
+**File:** [GANTT_ONBOARDING_CHECKLIST.md](GANTT_ONBOARDING_CHECKLIST.md) (6.3KB)
+
+**What it contains:**
+- Step-by-step onboarding process
+- Questions to test comprehension
+- Hands-on exercises
+- Sign-off section for accountability
+
+**When to complete:**
+- Before your first Gantt code change
+- When onboarding new team members
+- As a refresher (re-read critical sections)
+
+**Time required:** 45-60 minutes
+
+---
+
+### 5. Developer Setup & Enforcement
+**File:** [GANTT_DEVELOPER_SETUP.md](GANTT_DEVELOPER_SETUP.md) (11KB)
+
+**What it contains:**
+- How to install pre-commit hooks
+- Enforcement mechanisms
+- Team onboarding process
+- Tracking metrics
+- Support & escalation paths
+
+**When to read:**
+- Setting up a new developer
+- Configuring CI/CD
+- Team lead responsibilities
+
+---
+
+## 🚀 Quick Start
+
+### For New Developers
+
+```bash
+# 1. Read the Critical section (15 min)
+open GANTT_SCHEDULE_RULES.md
+# → Jump to line 161: "🚨 CRITICAL: Read Before Touching Gantt Code"
+
+# 2. Install pre-commit hook
+chmod +x scripts/check-gantt-onboarding.sh
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
+# 3. Complete onboarding checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+# → Answer all questions, get it reviewed and signed
+
+# 4. Verify Bug Hunter works
+# Open app, go to Schedule Master, click "Gantt Bible"
+# In browser console: window.printBugHunterReport()
+```
+
+### For Quick Reference
+
+**Looking for a specific topic?**
+
+| Topic | File | Section |
+|-------|------|---------|
+| Predecessor ID bug | GANTT_SCHEDULE_RULES.md | Line 163 |
+| Infinite render loops | GANTT_SCHEDULE_RULES.md | Line 206 |
+| useRef anti-loop flags | GANTT_SCHEDULE_RULES.md | Line 276 |
+| Lock hierarchy | GANTT_SCHEDULE_RULES.md | Line 352 |
+| Column details | GANTT_BIBLE_COLUMNS.md | All columns listed |
+| Bug Hunter usage | GANTT_BUGS_AND_FIXES.md | Line 58 |
+| Common gotchas | GANTT_SCHEDULE_RULES.md | Line 524 |
+
+---
+
+## 🔍 Bug Hunter Quick Reference
+
+**In browser console:**
+
+```javascript
+// Generate diagnostic report
+window.printBugHunterReport()
+
+// Enable debug categories
+window.enableGanttDebug(['drag', 'api', 'cascade'])
+
+// Export report for bug ticket
+window.exportBugHunterReport()
+
+// Reset for new test
+window.resetBugHunter()
+```
+
+**10 Automated Tests:**
+1. Duplicate API Call Detection (≤ 2 per task)
+2. Excessive Gantt Reload Detection (≤ 5 per drag)
+3. Slow Drag Operation Detection (< 5000ms)
+4. API Call Pattern Analysis
+5. Cascade Event Tracking
+6. State Update Batching (≤ 3 per drag)
+7. Lock State Monitoring
+8. Performance Timing Analysis
+9. Health Status Assessment
+10. Actionable Recommendations
+
+---
+
+## 🏗️ Architecture Overview
+
+### Frontend (React)
+- **DHtmlxGanttView.jsx** (5276 lines) - Main Gantt component
+- **ScheduleTemplateEditor.jsx** (2500+ lines) - Schedule editor
+- **CascadeDependenciesModal.jsx** - User cascade choices
+- **ganttDebugger.js** - Bug Hunter diagnostic tool
+
+### Backend (Ruby on Rails)
+- **ScheduleCascadeService** - Dependency cascade logic
+- **ScheduleTemplateRowsController** - API endpoints
+- **ScheduleTemplateRow** (model) - With after_update cascade callback
+
+### Key Patterns
+- **Predecessor IDs:** 1-based (UI) vs 0-based (sequence_order)
+- **Anti-Loop Flags:** `isDragging`, `isLoadingData`, `isSaving`
+- **Lock Priority:** supplier_confirm > confirm > start > complete > manually_positioned
+- **API Pattern:** Single update + cascade response (not N calls)
+
+---
+
+## ⚠️ The Two Killer Bugs
+
+### #1: Predecessor ID Mismatch
+
+**Problem:** Predecessor IDs are 1-based but sequence_order is 0-based
+
+**Fix:** Always convert with `+ 1`:
+```javascript
+const predecessorId = task.sequence_order + 1
+```
+
+**Impact:** Wrong tasks cascade, hours of debugging
+
+### #2: Infinite Render Loops
+
+**Problem:** `gantt.parse()` fires spurious drag events
+
+**Fix:** Three useRef flags with 500ms timeout:
+```javascript
+const isDragging = useRef(false)
+const isLoadingData = useRef(false)  // Reset by useEffect only!
+const isSaving = useRef(false)
+```
+
+**Impact:** Screen flickering, 8-16 reloads per drag
+
+---
+
+## 📋 Before Every Commit Checklist
+
+- [ ] Re-read 🚨 CRITICAL section of The Bible
+- [ ] DIAGNOSTIC_MODE enabled during testing
+- [ ] Bug Hunter run: `window.printBugHunterReport()`
+- [ ] All 10 Bug Hunter tests pass
+- [ ] Test #2 passes (≤ 5 reloads per drag)
+- [ ] No screen flickering
+- [ ] Tested with locked AND unlocked tasks
+- [ ] Tested 3+ levels of dependencies
+- [ ] Did NOT modify Protected Code Patterns
+
+---
+
+## 🆘 Getting Help
+
+### Level 1: Check The Docs
+- **GANTT_SCHEDULE_RULES.md** - Development patterns
+- **GANTT_BUGS_AND_FIXES.md** - Known issues
+- **GANTT_BIBLE_COLUMNS.md** - Column reference
+
+### Level 2: Run Diagnostics
+```javascript
+window.printBugHunterReport()
+```
+
+### Level 3: Ask Team
+- Check which specific test is failing (1-10)
+- Cross-reference test # to documentation
+- Share Bug Hunter output in team chat
+
+### Level 4: Escalate
+- Schedule pairing with Gantt expert
+- Review historical bugs for similar issues
+- Consider if Bible needs updating
+
+---
+
+## 📊 File Sizes
+
+| File | Size | Lines | Purpose |
+|------|------|-------|---------|
+| GANTT_SCHEDULE_RULES.md | 114KB | 3715 | The Bible - all rules |
+| GANTT_BIBLE_COLUMNS.md | 25KB | - | Column reference |
+| GANTT_BUGS_AND_FIXES.md | 23KB | - | Bug history |
+| GANTT_ONBOARDING_CHECKLIST.md | 6.3KB | - | Onboarding steps |
+| GANTT_DEVELOPER_SETUP.md | 11KB | - | Setup & enforcement |
+| check-gantt-onboarding.sh | 6.7KB | - | Pre-commit hook |
+
+**Total documentation:** ~186KB
+
+**Time investment:**
+- Initial reading: 45-60 minutes
+- Time saved: Hours of debugging per developer
+
+---
+
+## 🎯 Success Metrics
+
+**Goals:**
+- ✅ Zero reintroduced bugs
+- ✅ 100% onboarding completion
+- ✅ < 1 hour onboarding time
+- ✅ > 95% Bug Hunter pass rate
+
+**Current Status:** [Track in your project management tool]
+
+---
+
+## 🔄 Keeping Documentation Updated
+
+**When to update:**
+- New bug discovered and fixed
+- New Protected Code Pattern identified
+- Architecture changes
+- Performance optimizations
+- New column added
+
+**How to update:**
+1. Make code changes
+2. Update relevant documentation file(s)
+3. Increment version number in The Bible
+4. Update timestamp
+5. Add changelog entry
+6. Sync to `/frontend/public/` if needed
+
+**Update process:** See GANTT_SCHEDULE_RULES.md lines 30-98
+
+---
+
+## ✅ Installation Complete?
+
+Verify your setup:
+
+```bash
+# Check all files exist
+ls -lh GANTT*.md scripts/check-gantt-onboarding.sh
+
+# Check hook is installed
+ls -lh .git/hooks/pre-commit
+
+# Test the hook
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+git add .
+git commit -m "test"
+# Should show onboarding warning
+
+# Revert test change
+git reset HEAD~1
+git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+```
+
+---
+
+## 📞 Questions?
+
+1. Read GANTT_SCHEDULE_RULES.md (probably already answered)
+2. Check GANTT_BUGS_AND_FIXES.md (historical context)
+3. Ask in team chat
+4. Schedule time with team lead
+
+**Remember:** The goal is preventing bugs, not creating bureaucracy. If something isn't working, let's improve it together!
+
+---
+
+## Version History
+
+| Date | Version | Changes |
+|------|---------|---------|
+| 2025-11-15 | 1.0 | Initial comprehensive documentation system created |
+
+---
+
+**Last Updated:** November 15, 2025
+**Maintained By:** Development Team
+**Contact:** [Your team's contact info]
+
+
+### Code Example
+```jsx
+```bash
+# 1. Read the Critical section (15 min)
+open GANTT_SCHEDULE_RULES.md
+# → Jump to line 161: "🚨 CRITICAL: Read Before Touching Gantt Code"
+
+# 2. Install pre-commit hook
+chmod +x scripts/check-gantt-onboarding.sh
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
+# 3. Complete onboarding checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+# → Answer all questions, get it reviewed and signed
+
+# 4. Verify Bug Hunter works
+# Open app, go to Schedule Master, click "Gantt Bible"
+# In browser console: window.printBugHunterReport()
+```
+
+```javascript
+// Generate diagnostic report
+window.printBugHunterReport()
+
+// Enable debug categories
+window.enableGanttDebug(['drag', 'api', 'cascade'])
+
+// Export report for bug ticket
+window.exportBugHunterReport()
+
+// Reset for new test
+window.resetBugHunter()
+```
+
+```javascript
+const predecessorId = task.sequence_order + 1
+```
+
+```javascript
+const isDragging = useRef(false)
+const isLoadingData = useRef(false)  // Reset by useEffect only!
+const isSaving = useRef(false)
+```
+
+```javascript
+window.printBugHunterReport()
+```
+
+```bash
+# Check all files exist
+ls -lh GANTT*.md scripts/check-gantt-onboarding.sh
+
+# Check hook is installed
+ls -lh .git/hooks/pre-commit
+
+# Test the hook
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+git add .
+git commit -m "test"
+# Should show onboarding warning
+
+# Revert test change
+git reset HEAD~1
+git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+```
+```
+
+### Examples
+```bash
+# 1. Read the Critical section (15 min)
+open GANTT_SCHEDULE_RULES.md
+# → Jump to line 161: "🚨 CRITICAL: Read Before Touching Gantt Code"
+
+# 2. Install pre-commit hook
+chmod +x scripts/check-gantt-onboarding.sh
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
+# 3. Complete onboarding checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+# → Answer all questions, get it reviewed and signed
+
+# 4. Verify Bug Hunter works
+# Open app, go to Schedule Master, click "Gantt Bible"
+# In browser console: window.printBugHunterReport()
+```
+
+```javascript
+// Generate diagnostic report
+window.printBugHunterReport()
+
+// Enable debug categories
+window.enableGanttDebug(['drag', 'api', 'cascade'])
+
+// Export report for bug ticket
+window.exportBugHunterReport()
+
+// Reset for new test
+window.resetBugHunter()
+```
+
+```javascript
+const predecessorId = task.sequence_order + 1
+```
+
+```javascript
+const isDragging = useRef(false)
+const isLoadingData = useRef(false)  // Reset by useEffect only!
+const isSaving = useRef(false)
+```
+
+```javascript
+window.printBugHunterReport()
+```
+
+```bash
+# Check all files exist
+ls -lh GANTT*.md scripts/check-gantt-onboarding.sh
+
+# Check hook is installed
+ls -lh .git/hooks/pre-commit
+
+# Test the hook
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+git add .
+git commit -m "test"
+# Should show onboarding warning
+
+# Revert test change
+git reset HEAD~1
+git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+```
+
+---
+
+## §9.5: Line Items - Totals Calculation
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.5"}]
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+before_save :calculate_totals
+
+def calculate_totals
+  self.sub_total = line_items.sum { |li| li.quantity * li.unit_price }
+  self.tax = sub_total * 0.10  # 10% GST
+  self.total = sub_total + tax
+end
+```
+
+---
+
+## §9.6: Schedule Task Linking
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.6"}]
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+ActiveRecord::Base.transaction do
+  # Unlink old task
+  if old_task = purchase_order.schedule_task
+    old_task.update!(purchase_order_id: nil)
+  end
+
+  # Link new task
+  if new_task_id.present?
+    new_task = ScheduleTask.find(new_task_id)
+    new_task.update!(purchase_order_id: purchase_order.id)
+  end
+end
+```
+
+---
+
+## §9.7: Price Drift Monitoring
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.7"}]
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+def price_drift
+  return 0 if pricebook_item.nil?
+  ((unit_price - pricebook_item.price) / pricebook_item.price) * 100
+end
+```
+
+---
+
+## §9.8: Gantt Feature Onboarding Checklist
+
+✨ Feature | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.3"}]
+
+### Quick Summary
+New developer onboarding checklist for understanding Gantt chart implementation
+
+### Step-by-Step Guide
+# Gantt Development Onboarding Checklist
+
+**⚠️ MANDATORY: Complete this checklist before making any changes to Gantt/Schedule code**
+
+## Why This Checklist Exists
+
+The Gantt and Schedule Master codebase contains subtle patterns that took **8+ iterations and many hours** to get right. This checklist ensures you understand these patterns before introducing bugs that we've already fixed.
+
+---
+
+## Step 1: Read The Documentation
+
+Read these files IN ORDER (estimated time: 45 minutes):
+
+- [ ] **GANTT_SCHEDULE_RULES.md (The Bible)** - Start with the "🚨 CRITICAL" section
+  - [ ] Understand Predecessor ID Mismatch (1-based vs 0-based)
+  - [ ] Understand Infinite Render Loop prevention
+  - [ ] Know all 3 useRef anti-loop flags (isDragging, isLoadingData, isSaving)
+  - [ ] Know all 5 lock types and their priority order
+  - [ ] Read all "Common Gotchas" section
+
+- [ ] **GANTT_BIBLE_COLUMNS.md** - Column implementation reference
+  - [ ] Understand which columns are Active vs Inactive
+  - [ ] Know where each column is implemented (file:line)
+  - [ ] Understand lock hierarchy
+
+- [ ] **GANTT_BUGS_AND_FIXES.md** - Bug history and Bug Hunter
+  - [ ] Read BUG-001 (Drag Flickering) case study
+  - [ ] Understand why each fix attempt failed
+  - [ ] Know how to use Bug Hunter diagnostic tool
+
+---
+
+## Step 2: Understand The Architecture
+
+Answer these questions (write your answers, they will be checked):
+
+### Backend Questions
+
+**Q1:** Why are predecessor IDs 1-based but sequence_order is 0-based?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q2:** Why does `ScheduleCascadeService` use `update_column()` instead of `update()`?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q3:** Which tasks does the cascade service skip? Why?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+### Frontend Questions
+
+**Q4:** What triggers spurious `onAfterTaskDrag` events in DHtmlx Gantt?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q5:** Why must `isLoadingData` timeout be exactly 500ms (not less)?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q6:** Name all 5 lock types in priority order (highest to lowest):
+
+**Your Answer:**
+```
+1.
+2.
+3.
+4.
+5.
+```
+
+---
+
+## Step 3: Set Up Your Environment
+
+Complete these setup tasks:
+
+- [ ] Enable DIAGNOSTIC_MODE in DHtmlxGanttView.jsx line 26
+- [ ] Open browser DevTools console
+- [ ] Run `window.printBugHunterReport()` to verify Bug Hunter works
+- [ ] Verify you can see diagnostic emoji logs (🔵 📊 ✅ ❌)
+
+---
+
+## Step 4: Practice With The Code
+
+Complete these hands-on exercises:
+
+### Exercise 1: Predecessor ID Conversion
+
+- [ ] Open `schedule_cascade_service.rb`
+- [ ] Find line 88: `predecessor_id = predecessor_task.sequence_order + 1`
+- [ ] Explain why the `+ 1` is necessary:
+```
+[Write answer here]
+```
+
+### Exercise 2: Anti-Loop Flags
+
+- [ ] Open `DHtmlxGanttView.jsx`
+- [ ] Find line 1357: `isDragging.current = true`
+- [ ] Find line 3477: `if (isLoadingData.current) return`
+- [ ] Explain what would happen if line 3477 was removed:
+```
+[Write answer here]
+```
+
+### Exercise 3: Lock Checking
+
+- [ ] Open `DHtmlxGanttView.jsx`
+- [ ] Find the cascade modal logic around line 1700
+- [ ] Write the correct code to check if a task is locked:
+```javascript
+const isLocked = (task) => {
+  // Write your code here
+
+
+}
+```
+
+---
+
+## Step 5: Run The Tests
+
+Before making any changes:
+
+- [ ] Run backend tests: `cd backend && bundle exec rspec spec/services/schedule_cascade_service_spec.rb`
+- [ ] Run E2E tests: `cd frontend && npm run test:e2e -- gantt-cascade.spec.js`
+- [ ] Verify Bug Hunter reports HEALTHY status
+- [ ] Verify all 10 Bug Hunter tests pass
+
+---
+
+## Step 6: Make A Small Test Change
+
+Practice the workflow with a safe change:
+
+- [ ] Add a console.log to DHtmlxGanttView.jsx in handleTaskUpdate
+- [ ] Drag a task in the Gantt chart
+- [ ] Verify your log appears exactly ONCE (not multiple times)
+- [ ] Run `window.printBugHunterReport()` and verify:
+  - [ ] Test #1 passes (≤ 2 API calls per task)
+  - [ ] Test #2 passes (≤ 5 reloads per drag)
+- [ ] Remove your console.log
+
+---
+
+## Step 7: Verify Comprehension
+
+Have a senior developer review your answers to the questions above.
+
+**Reviewer Name:** ________________
+
+**Review Date:** ________________
+
+**Reviewer Signature:** ________________
+
+---
+
+## Step 8: Sign The Pledge
+
+By signing below, I certify that:
+
+1. I have read and understood GANTT_SCHEDULE_RULES.md (The Bible)
+2. I understand the Predecessor ID Mismatch bug and how to avoid it
+3. I understand the useRef anti-loop flags and will not "optimize" them away
+4. I will run Bug Hunter after every change to Gantt code
+5. I will not remove or modify Protected Code Patterns without explicit approval
+6. If I don't understand something, I will ask BEFORE making changes
+
+**Developer Name:** ________________
+
+**Date Completed:** ________________
+
+**Signature:** ________________
+
+---
+
+## Emergency Contacts
+
+If you encounter issues or have questions:
+
+1. **Check The Bible First:** GANTT_SCHEDULE_RULES.md has the answer
+2. **Run Bug Hunter:** `window.printBugHunterReport()` for diagnostics
+3. **Check Bug History:** GANTT_BUGS_AND_FIXES.md may have your answer
+4. **Ask Senior Dev:** [Your team's escalation process here]
+
+---
+
+## After Onboarding
+
+**Every time you work on Gantt code:**
+
+- [ ] Re-read the "🚨 CRITICAL" section of The Bible
+- [ ] Enable DIAGNOSTIC_MODE
+- [ ] Run Bug Hunter before and after your changes
+- [ ] Verify all 10 tests still pass
+- [ ] Update The Bible if you discover new patterns or gotchas
+
+---
+
+## Onboarding Record
+
+**Developer:** ________________
+**Start Date:** ________________
+**Completion Date:** ________________
+**Time Spent:** _______ hours
+**Reviewer:** ________________
+**Status:** [ ] In Progress  [ ] Completed  [ ] Needs Revision
+
+---
+
+## Common Onboarding Mistakes
+
+After completing this checklist, developers commonly make these mistakes:
+
+1. **"I'll just make a quick fix"** - No such thing with Gantt code. Read The Bible first.
+2. **"This code looks messy, I'll clean it up"** - Every line exists for a reason. Ask first.
+3. **"500ms is too long, I'll optimize to 100ms"** - Tested value. Don't change it.
+4. **"I don't need to run Bug Hunter, it's a small change"** - Bug Hunter catches issues you can't see.
+5. **"I understand loops, I don't need to read about the flags"** - The loops are NOT obvious.
+
+**If you skip this checklist and introduce a bug, you will spend HOURS debugging issues that are already documented here.**
+
+
+### Code Example
+```jsx
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+1.
+2.
+3.
+4.
+5.
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```javascript
+const isLocked = (task) => {
+  // Write your code here
+
+
+}
+```
+```
+
+### Examples
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+1.
+2.
+3.
+4.
+5.
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```javascript
+const isLocked = (task) => {
+  // Write your code here
+
+
+}
+```
+
+---
+
+## §9.9: Task Management Quick Reference
+
+✨ Feature | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§9.1"}]
+
+### Quick Summary
+Quick reference for task management: two task systems, API endpoints, and common operations
+
+### Step-by-Step Guide
+# Trapid Task Management - Quick Reference Guide
+
+## Two Task Systems
+
+### 1. ProjectTask - Master Schedule (Detailed Planning)
+- **Used For:** Internal project planning with dependencies and critical path
+- **Main Fields:** status, progress_percentage, planned/actual dates, assigned_to_id
+- **Key Feature:** Task dependencies with 4 relationship types
+- **User Assignment:** Yes, to individual User objects
+- **Database:** `project_tasks` table
+
+### 2. ScheduleTask - Supplier Schedule (Delivery Tracking)
+- **Used For:** Tracking supplier deliveries and matching to purchase orders
+- **Main Fields:** title, status, start_date, complete_date, supplier_name
+- **Key Feature:** Link to purchase orders for delivery timing
+- **User Assignment:** No (tracks supplier info instead)
+- **Database:** `schedule_tasks` table
+
+---
+
+## Key Models & Files
+
+```
+Models:
+  ProjectTask          → /backend/app/models/project_task.rb
+  ScheduleTask         → /backend/app/models/schedule_task.rb
+  TaskTemplate         → /backend/app/models/task_template.rb
+  TaskDependency       → /backend/app/models/task_dependency.rb
+  TaskUpdate           → /backend/app/models/task_update.rb
+  Project              → /backend/app/models/project.rb
+  Construction         → /backend/app/models/construction.rb
+  User                 → /backend/app/models/user.rb
+
+Controllers:
+  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
+  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
+  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
+
+Services:
+  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
+
+Frontend Pages:
+  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
+  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
+
+Frontend Components:
+  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
+  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
+  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
+```
+
+---
+
+## API Endpoints
+
+### Task Management
+```
+GET    /api/v1/projects/:project_id/tasks                 - List all tasks
+POST   /api/v1/projects/:project_id/tasks                 - Create task
+GET    /api/v1/projects/:project_id/tasks/:id             - Get task
+PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
+DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
+GET    /api/v1/projects/:id/gantt                         - Get Gantt data
+```
+
+### Schedule Tasks
+```
+GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
+POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
+GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
+PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
+DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
+```
+
+---
+
+## Task Status States
+
+```
+not_started  → Initial state (default)
+in_progress  → Task has started
+complete     → Task finished
+on_hold      → Paused/blocked
+```
+
+---
+
+## Task Properties
+
+| Property | Type | Usage |
+|----------|------|-------|
+| name | string | Task title |
+| status | enum | Current state |
+| progress_percentage | 0-100 | Completion % |
+| planned_start_date | date | Scheduled start |
+| planned_end_date | date | Scheduled end |
+| actual_start_date | date | When work started |
+| actual_end_date | date | When work completed |
+| duration_days | integer | Task length in days |
+| is_milestone | boolean | Mark important milestone |
+| is_critical_path | boolean | On longest path |
+| assigned_to_id | foreign key | User assignment |
+| supplier_name | string | External supplier |
+| purchase_order_id | foreign key | Linked PO |
+
+---
+
+## User Assignment (Current Limitation)
+
+Frontend uses hardcoded team members:
+```javascript
+[
+  'Rob Harder',
+  'Andrew Clement',
+  'Sam Harder',
+  'Sophie Harder',
+  'Jake Baird'
+]
+```
+
+**Problem:** Not dynamically fetched from database
+**Solution Needed:** Create `/api/v1/users` endpoint
+
+---
+
+## Dependency Types
+
+```
+finish_to_start (FS)  → Task A finishes, Task B starts (default)
+start_to_start (SS)   → Task A starts, Task B starts
+finish_to_finish (FF) → Task A finishes, Task B finishes
+start_to_finish (SF)  → Task A starts, Task B finishes (rare)
+```
+
+All support optional lag_days for overlap.
+
+---
+
+## Gantt Chart Features
+
+**Zoom Levels:**
+- Day view: 40px per day
+- Week view: 6px per day
+- Month view: 2px per day
+
+**Color By:**
+- Status (not_started=gray, in_progress=blue, complete=green)
+- Category (CONCRETE, CARPENTER, ELECTRICAL, etc.)
+- Type (DO, ORDER, GET, CLAIM, etc.)
+
+**Navigation:**
+- Previous/Next period buttons
+- "Today" button
+- Date range customizable
+
+---
+
+## Data Flow
+
+```
+User creates/imports tasks
+        ↓
+ProjectTask or ScheduleTask created
+        ↓
+Dependencies established
+        ↓
+Schedule::GeneratorService runs (for ProjectTasks)
+        ↓
+Timeline calculated (forward pass)
+        ↓
+Critical path identified
+        ↓
+Gantt chart displays tasks & bars
+        ↓
+User updates status/progress
+        ↓
+TaskUpdate record created (history)
+```
+
+---
+
+## Common Operations
+
+### Create a Task
+```bash
+POST /api/v1/projects/:project_id/tasks
+{
+  "project_task": {
+    "name": "Pour Concrete",
+    "task_type": "DO",
+    "category": "CONCRETE",
+    "duration_days": 5,
+    "assigned_to_id": 1
+  }
+}
+```
+
+### Update Task Progress
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "status": "in_progress",
+    "progress_percentage": 50
+  }
+}
+```
+
+### Link Task to Purchase Order
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "purchase_order_id": 42,
+    "required_on_site_date": "2025-01-20"
+  }
+}
+```
+
+### Import Schedule from Excel
+```bash
+POST /api/v1/constructions/:id/schedule_tasks/import
+Content-Type: multipart/form-data
+file: <Excel file>
+```
+
+---
+
+## What's Missing & Needs Work
+
+### High Priority
+- [ ] Dynamic user list (hardcoded → database)
+- [ ] User roles/permissions
+- [ ] Backward pass for accurate float calculation
+
+### Medium Priority
+- [ ] Task comments/discussions
+- [ ] Change notifications
+- [ ] Export to PDF/PNG
+- [ ] Resource workload tracking
+
+### Nice to Have
+- [ ] Mobile support
+- [ ] Real-time WebSocket sync
+- [ ] Multi-project portfolios
+- [ ] Risk management integration
+
+---
+
+## Performance Notes
+
+- Project progress cached for 5 minutes
+- Gantt data includes all task relationships
+- ScheduleTask import processes row-by-row (can slow with 1000+ rows)
+- No pagination on task lists (could be issue at scale)
+
+---
+
+## Testing Checklist
+
+- [ ] Create task with all fields
+- [ ] Update task status (all 4 states)
+- [ ] Assign/unassign user
+- [ ] Create dependency between tasks
+- [ ] Verify circular dependency prevention
+- [ ] Import Excel schedule
+- [ ] Match schedule task to PO
+- [ ] View Gantt chart at different zoom levels
+- [ ] Edit task in table view
+- [ ] Sort table columns
+- [ ] Verify critical path calculation
+- [ ] Check materials_status (on_time/delayed)
+
+---
+
+## Database Indexes
+
+Task-related indexes for performance:
+- project_id, status
+- planned_start_date, planned_end_date
+- is_critical_path
+- construction_id, matched_to_po
+
+---
+
+## Related Documentation
+
+See `/Users/jakebaird/trapid/TASK_MANAGEMENT_ARCHITECTURE.md` for detailed investigation.
+
+
+
+### Code Example
+```jsx
+```
+Models:
+  ProjectTask          → /backend/app/models/project_task.rb
+  ScheduleTask         → /backend/app/models/schedule_task.rb
+  TaskTemplate         → /backend/app/models/task_template.rb
+  TaskDependency       → /backend/app/models/task_dependency.rb
+  TaskUpdate           → /backend/app/models/task_update.rb
+  Project              → /backend/app/models/project.rb
+  Construction         → /backend/app/models/construction.rb
+  User                 → /backend/app/models/user.rb
+
+Controllers:
+  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
+  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
+  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
+
+Services:
+  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
+
+Frontend Pages:
+  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
+  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
+
+Frontend Components:
+  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
+  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
+  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
+```
+
+```
+GET    /api/v1/projects/:project_id/tasks                 - List all tasks
+POST   /api/v1/projects/:project_id/tasks                 - Create task
+GET    /api/v1/projects/:project_id/tasks/:id             - Get task
+PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
+DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
+GET    /api/v1/projects/:id/gantt                         - Get Gantt data
+```
+
+```
+GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
+POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
+GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
+PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
+DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
+```
+
+```
+not_started  → Initial state (default)
+in_progress  → Task has started
+complete     → Task finished
+on_hold      → Paused/blocked
+```
+
+```javascript
+[
+  'Rob Harder',
+  'Andrew Clement',
+  'Sam Harder',
+  'Sophie Harder',
+  'Jake Baird'
+]
+```
+
+```
+finish_to_start (FS)  → Task A finishes, Task B starts (default)
+start_to_start (SS)   → Task A starts, Task B starts
+finish_to_finish (FF) → Task A finishes, Task B finishes
+start_to_finish (SF)  → Task A starts, Task B finishes (rare)
+```
+
+```
+User creates/imports tasks
+        ↓
+ProjectTask or ScheduleTask created
+        ↓
+Dependencies established
+        ↓
+Schedule::GeneratorService runs (for ProjectTasks)
+        ↓
+Timeline calculated (forward pass)
+        ↓
+Critical path identified
+        ↓
+Gantt chart displays tasks & bars
+        ↓
+User updates status/progress
+        ↓
+TaskUpdate record created (history)
+```
+
+```bash
+POST /api/v1/projects/:project_id/tasks
+{
+  "project_task": {
+    "name": "Pour Concrete",
+    "task_type": "DO",
+    "category": "CONCRETE",
+    "duration_days": 5,
+    "assigned_to_id": 1
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "status": "in_progress",
+    "progress_percentage": 50
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "purchase_order_id": 42,
+    "required_on_site_date": "2025-01-20"
+  }
+}
+```
+
+```bash
+POST /api/v1/constructions/:id/schedule_tasks/import
+Content-Type: multipart/form-data
+file: <Excel file>
+```
+```
+
+### Examples
+```
+Models:
+  ProjectTask          → /backend/app/models/project_task.rb
+  ScheduleTask         → /backend/app/models/schedule_task.rb
+  TaskTemplate         → /backend/app/models/task_template.rb
+  TaskDependency       → /backend/app/models/task_dependency.rb
+  TaskUpdate           → /backend/app/models/task_update.rb
+  Project              → /backend/app/models/project.rb
+  Construction         → /backend/app/models/construction.rb
+  User                 → /backend/app/models/user.rb
+
+Controllers:
+  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
+  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
+  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
+
+Services:
+  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
+
+Frontend Pages:
+  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
+  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
+
+Frontend Components:
+  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
+  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
+  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
+```
+
+```
+GET    /api/v1/projects/:project_id/tasks                 - List all tasks
+POST   /api/v1/projects/:project_id/tasks                 - Create task
+GET    /api/v1/projects/:project_id/tasks/:id             - Get task
+PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
+DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
+GET    /api/v1/projects/:id/gantt                         - Get Gantt data
+```
+
+```
+GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
+POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
+GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
+PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
+DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
+```
+
+```
+not_started  → Initial state (default)
+in_progress  → Task has started
+complete     → Task finished
+on_hold      → Paused/blocked
+```
+
+```javascript
+[
+  'Rob Harder',
+  'Andrew Clement',
+  'Sam Harder',
+  'Sophie Harder',
+  'Jake Baird'
+]
+```
+
+```
+finish_to_start (FS)  → Task A finishes, Task B starts (default)
+start_to_start (SS)   → Task A starts, Task B starts
+finish_to_finish (FF) → Task A finishes, Task B finishes
+start_to_finish (SF)  → Task A starts, Task B finishes (rare)
+```
+
+```
+User creates/imports tasks
+        ↓
+ProjectTask or ScheduleTask created
+        ↓
+Dependencies established
+        ↓
+Schedule::GeneratorService runs (for ProjectTasks)
+        ↓
+Timeline calculated (forward pass)
+        ↓
+Critical path identified
+        ↓
+Gantt chart displays tasks & bars
+        ↓
+User updates status/progress
+        ↓
+TaskUpdate record created (history)
+```
+
+```bash
+POST /api/v1/projects/:project_id/tasks
+{
+  "project_task": {
+    "name": "Pour Concrete",
+    "task_type": "DO",
+    "category": "CONCRETE",
+    "duration_days": 5,
+    "assigned_to_id": 1
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "status": "in_progress",
+    "progress_percentage": 50
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "purchase_order_id": 42,
+    "required_on_site_date": "2025-01-20"
+  }
+}
+```
+
+```bash
+POST /api/v1/constructions/:id/schedule_tasks/import
+Content-Type: multipart/form-data
+file: <Excel file>
 ```
 
 ---
@@ -14809,11 +14728,11 @@ git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
 
 ---
 
-## §9.1: Predecessor ID Conversion
+## §10.1: Predecessor ID Conversion
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #9.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§10.1"}]
 
 ### Quick Summary
 ✅
@@ -14826,11 +14745,11 @@ predecessor_id = predecessor_task.sequence_order + 1  # 0-based → 1-based
 
 ---
 
-## §9.11: Debounced Render Pattern
+## §10.11: Debounced Render Pattern
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #9.11
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§10.11"}]
 
 ### Quick Summary
 ✅
@@ -14849,11 +14768,11 @@ const debouncedRender = (delay = 0) => {
 
 ---
 
-## §9.2: isLoadingData Lock Timing
+## §10.2: isLoadingData Lock Timing
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #9.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§10.2"}]
 
 ### Quick Summary
 ✅
@@ -14878,11 +14797,11 @@ gantt.attachEvent('onAfterTaskDrag', (id, mode, event) => {
 
 ---
 
-## §9.3: Company Settings - Working Days & Timezone
+## §10.3: Company Settings - Working Days & Timezone
 
 🧩 Component | 🔴 Advanced
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #9.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§10.3"}]
 
 ### Quick Summary
 ✅
@@ -14932,11 +14851,11 @@ const dateInTZ = new Date(`${year}-${month}-${day}T00:00:00`)
 
 ---
 
-## §9.5: Task Heights Configuration
+## §10.5: Task Heights Configuration
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #9.5
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§10.5"}]
 
 ### Quick Summary
 ✅
@@ -14950,11 +14869,11 @@ gantt.config.bar_height = 40   // MUST also match
 
 ---
 
-## §9.7: API Pattern - Single Update + Cascade Response
+## §10.7: API Pattern - Single Update + Cascade Response
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #9.7
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§10.7"}]
 
 ### Quick Summary
 ✅
@@ -14982,11 +14901,11 @@ PATCH /api/v1/schedule_templates/:id/rows/:row_id
 
 ---
 
-## §9.9: Predecessor Format
+## §10.9: Predecessor Format
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #9.9
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§10.9"}]
 
 ### Quick Summary
 ✅
@@ -15021,11 +14940,11 @@ PATCH /api/v1/schedule_templates/:id/rows/:row_id
 
 ---
 
-## §10.1: Task Status Lifecycle & Automatic Date Updates
+## §11.1: Task Status Lifecycle & Automatic Date Updates
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #10.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§11.1"}]
 
 ### Code Example
 ```jsx
@@ -15061,11 +14980,11 @@ end
 
 ---
 
-## §10.10: Duration Days Validation
+## §11.10: Duration Days Validation
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #10.10
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§11.10"}]
 
 ### Code Example
 ```jsx
@@ -15091,11 +15010,11 @@ end
 
 ---
 
-## §10.11: Tags System for Flexible Categorization
+## §11.11: Tags System for Flexible Categorization
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #10.11
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§11.11"}]
 
 ### Code Example
 ```jsx
@@ -15141,11 +15060,11 @@ render json: {
 
 ---
 
-## §10.2: Task Dependencies & Circular Dependency Prevention
+## §11.2: Task Dependencies & Circular Dependency Prevention
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #10.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§11.2"}]
 
 ### Code Example
 ```jsx
@@ -15180,11 +15099,11 @@ end
 
 ---
 
-## §10.3: Automatic Task Spawning from Templates
+## §11.3: Automatic Task Spawning from Templates
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #10.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§11.3"}]
 
 ### Code Example
 ```jsx
@@ -15272,11 +15191,11 @@ end
 
 ---
 
-## §10.4: Supervisor Checklist Template-to-Instance Flow
+## §11.4: Supervisor Checklist Template-to-Instance Flow
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #10.4
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§11.4"}]
 
 ### Code Example
 ```jsx
@@ -15334,11 +15253,11 @@ attribute :response_photo_url, :string
 
 ---
 
-## §10.5: Response Type Validation & Photo Upload
+## §11.5: Response Type Validation & Photo Upload
 
 🧩 Component | 🟢 Beginner
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #10.5
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§11.5"}]
 
 ### Code Example
 ```jsx
@@ -15388,11 +15307,11 @@ const uploadPhoto = async (file) => {
 
 ---
 
-## §10.6: Auto-Complete Predecessors Feature
+## §11.6: Auto-Complete Predecessors Feature
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #10.6
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§11.6"}]
 
 ### Code Example
 ```jsx
@@ -15443,11 +15362,11 @@ end
 
 ---
 
-## §10.7: Materials Status Calculation
+## §11.7: Materials Status Calculation
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #10.7
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§11.7"}]
 
 ### Code Example
 ```jsx
@@ -15504,11 +15423,11 @@ const MaterialsBadge = ({ status }) => {
 
 ---
 
-## §10.8: Sequence Order for Task Display
+## §11.8: Sequence Order for Task Display
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #10.8
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§11.8"}]
 
 ### Code Example
 ```jsx
@@ -15557,11 +15476,11 @@ add_index :project_tasks, [:project_id, :sequence_order]
 
 ---
 
-## §10.9: Task Update Audit Trail
+## §11.9: Task Update Audit Trail
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #10.9
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§11.9"}]
 
 ### Quick Summary
 Task Update Audit Trail
@@ -15612,11 +15531,11 @@ end
 
 ---
 
-## §11.1: Unique Holidays Per Region
+## §12.1: Unique Holidays Per Region
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #11.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§12.1"}]
 
 ### Quick Summary
 - Validate uniqueness: `validates :date, uniqueness: { scope: :region }` - Use region codes: QLD, NSW, VIC, SA, WA, TAS, NT, NZ - Store date in UTC (no time component)
@@ -15635,11 +15554,11 @@ UNIQUE(date, region)
 
 ---
 
-## §11.2: Rain Log - One Entry Per Construction Per Day
+## §12.2: Rain Log - One Entry Per Construction Per Day
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #11.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§12.2"}]
 
 ### Quick Summary
 - Enforce uniqueness at database level: `UNIQUE(construction_id, date)` - Check for existing log before auto-creation - Use `find_or_initialize_by` pattern for updates
@@ -15660,11 +15579,11 @@ next if existing_log  # Skip if already logged
 
 ---
 
-## §11.3: Rainfall Severity Auto-Calculation
+## §12.3: Rainfall Severity Auto-Calculation
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #11.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§12.3"}]
 
 ### Quick Summary
 - Light: `< 5mm` - Moderate: `5mm to 15mm` - Heavy: `> 15mm`
@@ -15688,11 +15607,11 @@ after_save :auto_calculate_severity!, if: :rainfall_mm_changed?
 
 ---
 
-## §11.4: Manual Rain Logs Require Notes
+## §12.4: Manual Rain Logs Require Notes
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #11.4
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§12.4"}]
 
 ### Quick Summary
 - Validate presence: `validates :notes, presence: true, if: :source_manual?` - Display notes in UI for audit trail - Include who created the entry (`created_by_user_id`)
@@ -15712,11 +15631,11 @@ validates :notes, presence: true, if: :source_manual?
 
 ---
 
-## §11.5: Weather API - Historical Data Only
+## §12.5: Weather API - Historical Data Only
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #11.5
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§12.5"}]
 
 ### Quick Summary
 - Validate date is not in future before API call - Use `Date.yesterday` for automatic checks - Raise `ArgumentError` if future date provided
@@ -15739,11 +15658,11 @@ end
 
 ---
 
-## §11.6: Location Extraction Priority
+## §12.6: Location Extraction Priority
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #11.6
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§12.6"}]
 
 ### Quick Summary
 1. `construction.location` (if present) 2. `construction.project.site_address` (extract suburb) 3. `construction.title` (parse after dash)
@@ -15774,11 +15693,11 @@ end
 
 ---
 
-## §11.7: Gantt Integration - Working Day Calculation
+## §12.7: Gantt Integration - Working Day Calculation
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #11.7
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§12.7"}]
 
 ### Quick Summary
 - Load company `working_days` configuration - Load `PublicHoliday` dates for relevant region (3-year range) - Skip task to next working day if lands on weekend OR holiday - Respect lock hierarchy (loc
@@ -15817,11 +15736,11 @@ end
 
 ---
 
-## §11.8: Weather API Response Storage
+## §12.8: Weather API Response Storage
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #11.8
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§12.8"}]
 
 ### Quick Summary
 - Store complete API JSON response - Include location confirmation data - Preserve all weather metrics (temp, condition, etc.) - Use for future analysis and verification
@@ -15870,11 +15789,11 @@ rain_log = construction.rain_logs.create!(
 
 ---
 
-## §12.2: Folder Template System
+## §13.2: Folder Template System
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #12.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§13.2"}]
 
 ### Quick Summary
 ✅
@@ -15907,11 +15826,11 @@ Trapid Jobs/
 
 ---
 
-## §13.1: Organization-Wide Singleton OAuth Credential
+## §14.1: Organization-Wide Singleton OAuth Credential
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #13.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§14.1"}]
 
 ### Code Example
 ```jsx
@@ -15961,11 +15880,11 @@ end
 
 ---
 
-## §13.2: Four-Strategy Email-to-Job Matching
+## §14.2: Four-Strategy Email-to-Job Matching
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #13.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§14.2"}]
 
 ### Code Example
 ```jsx
@@ -16022,11 +15941,11 @@ end
 
 ---
 
-## §13.3: Microsoft Graph API Usage Pattern
+## §14.3: Microsoft Graph API Usage Pattern
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #13.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§14.3"}]
 
 ### Code Example
 ```jsx
@@ -16081,11 +16000,11 @@ end
 
 ---
 
-## §13.4: Email Threading Support via Message-ID
+## §14.4: Email Threading Support via Message-ID
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #13.4
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§14.4"}]
 
 ### Code Example
 ```jsx
@@ -16135,11 +16054,11 @@ end
 
 ---
 
-## §13.5: Webhook Support for Email Services
+## §14.5: Webhook Support for Email Services
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #13.5
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§14.5"}]
 
 ### Code Example
 ```jsx
@@ -16192,11 +16111,11 @@ end
 
 ---
 
-## §13.6: Inbound-Only Architecture (Current Limitation)
+## §14.6: Inbound-Only Architecture (Current Limitation)
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #13.6
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§14.6"}]
 
 ### Quick Summary
 Inbound-Only Architecture (Current Limitation)
@@ -16238,11 +16157,11 @@ JobMailer.quote_sent(job.id, contact.id).deliver_later
 
 ---
 
-## §14.1: ChatMessage Multi-Channel Architecture
+## §15.1: ChatMessage Multi-Channel Architecture
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.1"}]
 
 ### Code Example
 ```jsx
@@ -16304,11 +16223,11 @@ end
 
 ---
 
-## §14.10: Authentication Placeholder - CRITICAL TODO
+## §15.10: Authentication Placeholder - CRITICAL TODO
 
 🔧 Util | 🔴 Advanced
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.10
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.10"}]
 
 ### Code Example
 ```jsx
@@ -16329,476 +16248,531 @@ end
 
 ---
 
-## §14.2: Message-to-Job Linking
+## §15.11: Invoice Matching Enhancement - PO to Xero Bill Linking
 
-🔌 Integration | 🟡 Intermediate
+✨ Feature | 🔴 Advanced
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.11"}]
+
+### Quick Summary
+Enhanced invoice matching between Purchase Orders and Xero Bills with confidence scoring
+
+### Step-by-Step Guide
+# Invoice Matching Service Enhancement
+
+## Summary
+
+Enhanced the `InvoiceMatchingService` to support fuzzy PO number matching across multiple Xero invoice fields. The service now handles various PO number formats that suppliers commonly use, significantly improving the automatic matching success rate.
+
+## Changes Made
+
+### 1. Enhanced `/backend/app/services/invoice_matching_service.rb`
+
+#### Added PO Number Extraction Patterns
+```ruby
+PO_PATTERNS = [
+  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
+  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
+  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
+  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
+  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
+].freeze
+```
+
+#### Six Matching Strategies (in priority order)
+
+1. **Reference Field** (Highest priority)
+   - Checks Xero invoice `Reference` field
+   - Most reliable - suppliers often put PO numbers here
+   - Performs exact match first, then fuzzy extraction
+
+2. **InvoiceNumber Field**
+   - Extracts PO numbers from invoice number using patterns
+   - Handles formats like "PO-123456", "Invoice for PO-123456", "PO123456"
+
+3. **LineItems Descriptions**
+   - Scans line item descriptions for PO numbers
+   - Useful when suppliers embed PO# in item descriptions
+
+4. **Normalized Matching**
+   - Compares numeric portions only
+   - Handles different zero-padding: "PO-001" matches "PO-000001"
+
+5. **Supplier + Amount Fallback**
+   - Matches by supplier name and approximate amount (±10%)
+   - Only for pending POs without existing invoices
+
+6. **Exact Invoice Reference** (Legacy)
+   - Matches by invoice reference stored in PO
+
+#### New Helper Methods
+
+**`extract_po_numbers(text)`**
+- Scans text with all PO patterns
+- Returns array of formatted candidates
+- Normalizes to standard format: "PO-XXXXXX"
+
+**`normalize_po_number(text)`**
+- Strips non-digits and converts to integer
+- Removes leading zeros for comparison
+- "PO-001" → 1, "PO-000123" → 123
+
+**`find_po_by_candidate(candidate)`**
+- Tries exact match first
+- Falls back to normalized matching
+
+**`find_po_by_normalized_number(number)`**
+- Compares numeric portions across all POs
+- Handles edge cases with different padding
+
+### 2. Enhanced `/backend/app/models/purchase_order.rb`
+
+Added payment tracking methods required by the invoice matching service:
+
+**`payment_status` enum**
+```ruby
+enum :payment_status, {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}, prefix: :payment
+```
+
+**`payment_percentage`**
+- Calculates percentage of PO total that has been invoiced
+
+**`determine_payment_status(invoice_amount)`**
+- Returns appropriate status based on invoice vs PO total
+- `complete`: 95% - 105% of total
+- `part_payment`: Less than 95%
+- `manual_review`: Exceeds total by $1 or more
+
+**`apply_invoice!(invoice_amount:, invoice_date:, invoice_reference:)`**
+- Updates PO with invoice details
+- Automatically sets payment status
+- Updates xero_invoice_id if applicable
+
+### 3. Test Files Created
+
+#### `/backend/lib/tasks/test_invoice_matching.rake`
+Comprehensive automated test suite covering:
+- Exact PO number matching
+- PO number without dash (PO123456)
+- Lowercase PO numbers
+- PO numbers with spaces
+- P.O. with periods
+- "Purchase Order" spelled out
+- PO numbers embedded in text
+- PO in Reference field
+- Different zero-padding normalization
+- PO numbers in LineItem descriptions
+- Supplier + amount fallback
+- No match scenarios
+
+**Run with:** `rails test:invoice_matching`
+
+#### `/backend/test/invoice_matching_demo.rb`
+Interactive demo showing:
+- PO number extraction examples
+- Normalization examples
+- Pattern matching demonstrations
+- Real-world invoice scenario testing
+
+**Run with:** `rails runner "load 'test/invoice_matching_demo.rb'"`
+
+## Test Results
+
+All 13 test cases pass successfully (100% pass rate):
+
+```
+Test Results:
+✓ Exact PO number
+✓ PO number without dash
+✓ Lowercase PO number
+✓ PO number with space
+✓ P.O. with periods
+✓ Purchase Order spelled out
+✓ PO number embedded in text
+✓ PO in Reference field
+✓ Different zero-padding (PO-1 → PO-000001)
+✓ Different zero-padding (PO-123 → PO-000123)
+✓ PO number in LineItem description
+✓ Supplier + amount matching (fallback)
+✓ No matching PO found
+```
+
+## Usage Examples
+
+### Before Enhancement
+Only matched exact "PO-123456" format in InvoiceNumber field.
+
+### After Enhancement
+
+**Example 1: Reference Field**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-98765',
+  'Reference' => 'PO-123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+**Example 2: Different Format**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'P.O. 123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+**Example 3: Zero-Padding**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'PO-1',
+  'Total' => 1000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-000001 via normalized matching
+```
+
+**Example 4: Line Item Description**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-12345',
+  'LineItems' => [
+    { 'Description' => 'Materials for Purchase Order 123456' }
+  ],
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+## Confidence Levels
+
+The matching strategies provide different confidence levels:
+
+- **High Confidence**: Exact match in Reference or InvoiceNumber
+- **Medium Confidence**: Fuzzy pattern extraction, normalized matching
+- **Low Confidence**: Supplier + amount matching (fallback)
+
+## Performance Considerations
+
+### Normalized Matching Performance
+The `find_po_by_normalized_number` method uses `find_each` to iterate through all POs. This is intentionally simple but may be slow with thousands of POs.
+
+**Future Optimization Option:**
+Add a `normalized_po_number` integer column to the `purchase_orders` table:
+
+```ruby
+# Migration
+add_column :purchase_orders, :normalized_po_number, :integer
+add_index :purchase_orders, :normalized_po_number
+
+# In PurchaseOrder model:
+before_save :set_normalized_po_number
+
+def set_normalized_po_number
+  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
+end
+```
+
+Then update the service to use: `PurchaseOrder.find_by(normalized_po_number: number)`
+
+## Files Modified
+
+1. `/Users/jakebaird/trapid/backend/app/services/invoice_matching_service.rb` - Enhanced matching logic
+2. `/Users/jakebaird/trapid/backend/app/models/purchase_order.rb` - Added payment tracking methods
+3. `/Users/jakebaird/trapid/backend/lib/tasks/test_invoice_matching.rake` - Comprehensive test suite
+4. `/Users/jakebaird/trapid/backend/test/invoice_matching_demo.rb` - Interactive demo
+
+## Next Steps
+
+1. ✅ Test locally (completed - 100% pass rate)
+2. Deploy to Heroku
+3. Monitor Xero invoice sync logs for matching success rate
+4. Consider adding normalized_po_number column if performance becomes an issue
+5. Potentially add machine learning for fuzzy supplier name matching
+
+## Deployment Instructions
+
+```bash
+cd /Users/jakebaird/trapid
+git add -A
+git commit -m "Enhance invoice matching with fuzzy PO number extraction
+
+- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
+- Check Reference field, InvoiceNumber, and LineItems
+- Implement normalized matching for different zero-padding
+- Add comprehensive test suite with 13 test cases
+- Add payment tracking methods to PurchaseOrder model
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+git subtree push --prefix backend heroku main
+```
+
+## Security Notes
+
+- All pattern matching uses safe regex (no eval)
+- SQL injection prevented by ActiveRecord parameterization
+- No external API calls in matching logic
+
+## Backward Compatibility
+
+All existing functionality preserved. The enhancement only adds new matching strategies that run before the original fallback logic.
+
+---
+
+**Generated:** November 5, 2025
+**Version:** 1.0
+**Status:** Tested and ready for deployment
+
 
 ### Code Example
 ```jsx
-# app/controllers/api/v1/chat_messages_controller.rb
-def save_to_job
-  @message = ChatMessage.find(params[:id])
-  construction = Construction.find(params[:construction_id])
+```ruby
+PO_PATTERNS = [
+  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
+  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
+  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
+  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
+  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
+].freeze
+```
 
-  @message.update!(
-    construction_id: construction.id,
-    saved_to_job: true
-  )
+```ruby
+enum :payment_status, {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}, prefix: :payment
+```
 
-  render json: { message: 'Message saved to job', chat_message: @message }
+```
+Test Results:
+✓ Exact PO number
+✓ PO number without dash
+✓ Lowercase PO number
+✓ PO number with space
+✓ P.O. with periods
+✓ Purchase Order spelled out
+✓ PO number embedded in text
+✓ PO in Reference field
+✓ Different zero-padding (PO-1 → PO-000001)
+✓ Different zero-padding (PO-123 → PO-000123)
+✓ PO number in LineItem description
+✓ Supplier + amount matching (fallback)
+✓ No matching PO found
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-98765',
+  'Reference' => 'PO-123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'P.O. 123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'PO-1',
+  'Total' => 1000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-000001 via normalized matching
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-12345',
+  'LineItems' => [
+    { 'Description' => 'Materials for Purchase Order 123456' }
+  ],
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+# Migration
+add_column :purchase_orders, :normalized_po_number, :integer
+add_index :purchase_orders, :normalized_po_number
+
+# In PurchaseOrder model:
+before_save :set_normalized_po_number
+
+def set_normalized_po_number
+  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
 end
+```
 
-def save_conversation_to_job
-  construction = Construction.find(params[:construction_id])
-  message_ids = params[:message_ids]
+```bash
+cd /Users/jakebaird/trapid
+git add -A
+git commit -m "Enhance invoice matching with fuzzy PO number extraction
 
-  ChatMessage.where(id: message_ids).update_all(
-    construction_id: construction.id,
-    saved_to_job: true
-  )
+- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
+- Check Reference field, InvoiceNumber, and LineItems
+- Implement normalized matching for different zero-padding
+- Add comprehensive test suite with 13 test cases
+- Add payment tracking methods to PurchaseOrder model
 
-  render json: {
-    message: "#{message_ids.length} messages saved to job",
-    construction_id: construction.id
-  }
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+git subtree push --prefix backend heroku main
+```
+```
+
+### Examples
+```ruby
+PO_PATTERNS = [
+  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
+  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
+  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
+  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
+  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
+].freeze
+```
+
+```ruby
+enum :payment_status, {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}, prefix: :payment
+```
+
+```
+Test Results:
+✓ Exact PO number
+✓ PO number without dash
+✓ Lowercase PO number
+✓ PO number with space
+✓ P.O. with periods
+✓ Purchase Order spelled out
+✓ PO number embedded in text
+✓ PO in Reference field
+✓ Different zero-padding (PO-1 → PO-000001)
+✓ Different zero-padding (PO-123 → PO-000123)
+✓ PO number in LineItem description
+✓ Supplier + amount matching (fallback)
+✓ No matching PO found
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-98765',
+  'Reference' => 'PO-123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'P.O. 123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'PO-1',
+  'Total' => 1000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-000001 via normalized matching
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-12345',
+  'LineItems' => [
+    { 'Description' => 'Materials for Purchase Order 123456' }
+  ],
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+# Migration
+add_column :purchase_orders, :normalized_po_number, :integer
+add_index :purchase_orders, :normalized_po_number
+
+# In PurchaseOrder model:
+before_save :set_normalized_po_number
+
+def set_normalized_po_number
+  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
 end
+```
 
-# ---
+```bash
+cd /Users/jakebaird/trapid
+git add -A
+git commit -m "Enhance invoice matching with fuzzy PO number extraction
 
-# db/migrate/20251111021538_add_construction_to_chat_messages.rb
-add_reference :chat_messages, :construction, foreign_key: true
-add_column :chat_messages, :saved_to_job, :boolean, default: false
-add_index :chat_messages, [:construction_id, :channel, :created_at]
+- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
+- Check Reference field, InvoiceNumber, and LineItems
+- Implement normalized matching for different zero-padding
+- Add comprehensive test suite with 13 test cases
+- Add payment tracking methods to PurchaseOrder model
 
-# ---
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-// frontend/src/components/chat/ChatBox.jsx
-const saveConversationToJob = async () => {
-  const messageIds = messages.map(m => m.id);
+Co-Authored-By: Claude <noreply@anthropic.com>"
 
-  await fetch('/api/v1/chat_messages/save_conversation_to_job', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      construction_id: selectedConstruction,
-      message_ids: messageIds
-    })
-  });
-};
+git subtree push --prefix backend heroku main
 ```
 
 ---
 
-## §14.3: SMS Twilio Integration
-
-🔌 Integration | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.3
-
-### Code Example
-```jsx
-# app/services/twilio_service.rb
-class TwilioService
-  def self.send_sms(to:, body:, contact:, user: nil)
-    settings = CompanySetting.current
-    raise 'Twilio not enabled' unless settings.twilio_enabled
-
-    client = Twilio::REST::Client.new(
-      settings.twilio_account_sid,
-      settings.twilio_auth_token
-    )
-
-    normalized_to = normalize_phone_number(to)
-
-    twilio_message = client.messages.create(
-      from: settings.twilio_phone_number,
-      to: normalized_to,
-      body: body
-    )
-
-    sms = SmsMessage.create!(
-      contact: contact,
-      user: user,
-      from_phone: settings.twilio_phone_number,
-      to_phone: normalized_to,
-      body: body,
-      direction: 'outbound',
-      status: 'sent',
-      twilio_sid: twilio_message.sid,
-      sent_at: Time.current
-    )
-
-    { success: true, sms: sms, twilio_message: twilio_message }
-  rescue Twilio::REST::RestError => e
-    { success: false, error: e.message }
-  end
-end
-
-# ---
-
-# app/controllers/api/v1/sms_messages_controller.rb
-def webhook
-  from_phone = params['From']
-  body = params['Body']
-  message_sid = params['MessageSid']
-
-  result = TwilioService.process_incoming_sms(params)
-
-  # Return TwiML response
-  response = Twilio::TwiML::MessagingResponse.new do |r|
-    r.message(body: 'Message received') if result[:success]
-  end
-
-  render xml: response.to_s
-end
-
-# ---
-
-# app/services/twilio_service.rb
-def self.normalize_phone_number(phone)
-  clean = phone.gsub(/\D/, '') # Remove non-digits
-
-  # Australian mobile starting with 04
-  if clean.start_with?('04') && clean.length == 10
-    return "+61#{clean[1..-1]}" # Convert to +61
-  end
-
-  # Already international format
-  return "+#{clean}" if clean.start_with?('61')
-
-  phone # Return as-is if unrecognized
-end
-```
-
----
-
-## §14.4: SMS Status Tracking
-
-🧩 Component | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.4
-
-### Code Example
-```jsx
-# app/models/sms_message.rb
-class SmsMessage < ApplicationRecord
-  belongs_to :contact
-  belongs_to :user, optional: true # null for inbound messages
-
-  validates :from_phone, :to_phone, :body, :direction, presence: true
-  validates :direction, inclusion: { in: %w[inbound outbound] }
-
-  scope :inbound, -> { where(direction: 'inbound') }
-  scope :outbound, -> { where(direction: 'outbound') }
-  scope :recent, -> { order(created_at: :desc) }
-
-  # Status helpers
-  def delivered?
-    status == 'delivered'
-  end
-
-  def failed?
-    status == 'failed'
-  end
-
-  def inbound?
-    direction == 'inbound'
-  end
-
-  def outbound?
-    direction == 'outbound'
-  end
-end
-
-# ---
-
-# app/controllers/api/v1/sms_messages_controller.rb
-def status_webhook
-  message_sid = params['MessageSid']
-  status = params['MessageStatus'] # queued, sent, delivered, failed
-
-  TwilioService.update_message_status(message_sid, status)
-
-  head :ok
-end
-
-# app/services/twilio_service.rb
-def self.update_message_status(message_sid, status)
-  sms = SmsMessage.find_by(twilio_sid: message_sid)
-  return unless sms
-
-  sms.update!(status: status)
-end
-
-# ---
-
-// frontend/src/components/contacts/SmsConversation.jsx
-const getStatusIcon = (message) => {
-  if (message.direction === 'inbound') return null;
-
-  switch (message.status) {
-    case 'delivered': return <CheckIcon className="text-green-500" />;
-    case 'sent': return <CheckIcon className="text-blue-500" />;
-    case 'failed': return <XMarkIcon className="text-red-500" />;
-    case 'queued': return <ClockIcon className="text-gray-400" />;
-    default: return null;
-  }
-};
-```
-
----
-
-## §14.5: Unread Message Tracking
-
-🔌 Integration | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.5
-
-### Code Example
-```jsx
-# app/models/user.rb
-class User < ApplicationRecord
-  has_many :chat_messages
-
-  # Timestamp when user last viewed chat
-  # Used to calculate unread count
-  # Migration: add_column :users, :last_chat_read_at, :datetime
-end
-
-# ---
-
-# app/controllers/api/v1/chat_messages_controller.rb
-def unread_count
-  if @current_user.last_chat_read_at.present?
-    count = ChatMessage.where('created_at > ?', @current_user.last_chat_read_at).count
-  else
-    count = ChatMessage.count
-  end
-
-  render json: { unread_count: count }
-end
-
-def mark_as_read
-  @current_user.update!(last_chat_read_at: Time.current)
-  render json: { message: 'Messages marked as read' }
-end
-
-# ---
-
-// frontend/src/components/AppLayout.jsx
-useEffect(() => {
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await fetch('http://localhost:3001/api/v1/chat_messages/unread_count');
-      const data = await response.json();
-      setUnreadCount(data.unread_count);
-    } catch (error) {
-      console.error('Failed to fetch unread count:', error);
-    }
-  };
-
-  fetchUnreadCount();
-  const interval = setInterval(fetchUnreadCount, 5000); // Poll every 5 seconds
-
-  return () => clearInterval(interval);
-}, []);
-```
-
----
-
-## §14.6: Message Polling (No WebSockets)
-
-🧩 Component | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.6
-
-### Code Example
-```jsx
-// frontend/src/components/chat/ChatBox.jsx
-useEffect(() => {
-  loadMessages();
-
-  const interval = setInterval(() => {
-    loadMessages();
-  }, 3000); // Poll every 3 seconds
-
-  return () => clearInterval(interval);
-}, [channel, projectId, userId]);
-
-const loadMessages = async () => {
-  let url = '/api/v1/chat_messages';
-
-  if (userId) {
-    url += `?user_id=${userId}`;
-  } else if (projectId) {
-    url += `?project_id=${projectId}`;
-  } else {
-    url += `?channel=${channel}`;
-  }
-
-  const response = await fetch(url);
-  const data = await response.json();
-  setMessages(data);
-};
-
-# ---
-
-// frontend/src/components/communications/SmsTab.jsx
-useEffect(() => {
-  loadMessages();
-
-  const interval = setInterval(() => {
-    loadMessages();
-  }, 3000);
-
-  return () => clearInterval(interval);
-}, [contactId, jobId]);
-```
-
----
-
-## §14.7: Contact-SMS Fuzzy Matching
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.7
-
-### Code Example
-```jsx
-# app/services/twilio_service.rb
-def self.find_contact_by_phone(phone_number)
-  normalized = normalize_phone_number(phone_number)
-
-  # Try exact match first
-  contact = Contact.find_by(mobile_phone: normalized)
-  return contact if contact
-
-  # Try partial match (last 9 digits for AU)
-  # 0412 345 678 → 412345678
-  last_9_digits = normalized.gsub(/\D/, '')[-9..-1]
-
-  Contact.where(
-    "regexp_replace(mobile_phone, '[^0-9]', '', 'g') LIKE ?",
-    "%#{last_9_digits}"
-  ).first
-end
-
-def self.process_incoming_sms(params)
-  from_phone = params['From']
-  body = params['Body']
-  message_sid = params['MessageSid']
-
-  contact = find_contact_by_phone(from_phone)
-
-  unless contact
-    Rails.logger.warn "Incoming SMS from unknown number: #{from_phone}"
-    return { success: false, error: 'Contact not found' }
-  end
-
-  sms = SmsMessage.create!(
-    contact: contact,
-    from_phone: from_phone,
-    to_phone: params['To'],
-    body: body,
-    direction: 'inbound',
-    status: 'received',
-    twilio_sid: message_sid,
-    received_at: Time.current
-  )
-
-  { success: true, sms: sms, contact: contact }
-end
-```
-
----
-
-## §14.8: Message Deletion Authorization
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.8
-
-### Code Example
-```jsx
-# app/controllers/api/v1/chat_messages_controller.rb
-def destroy
-  @message = ChatMessage.find(params[:id])
-
-  # Authorization: only creator can delete
-  unless @message.user_id == @current_user.id
-    return render json: { error: 'Unauthorized' }, status: :forbidden
-  end
-
-  @message.destroy
-  render json: { message: 'Message deleted' }
-end
-```
-
----
-
-## §14.9: Email Ingestion Storage
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.9
-
-### Code Example
-```jsx
-# app/models/email.rb
-class Email < ApplicationRecord
-  belongs_to :construction, optional: true
-  belongs_to :user, optional: true
-
-  validates :from_email, :subject, :body, presence: true
-  validates :message_id, uniqueness: true, allow_nil: true
-
-  scope :recent, -> { order(received_at: :desc) }
-  scope :for_construction, ->(construction_id) {
-    where(construction_id: construction_id).order(received_at: :desc)
-  }
-  scope :unassigned, -> { where(construction_id: nil) }
-  scope :with_attachments, -> { where(has_attachments: true) }
-
-  def formatted_received_at
-    return 'N/A' unless received_at
-    received_at.strftime('%b %d, %Y %I:%M %p')
-  end
-
-  def short_subject
-    return 'No Subject' if subject.blank?
-    subject.length > 50 ? "#{subject[0..47]}..." : subject
-  end
-end
-
-# ---
-
-# db/schema.rb (emails table)
-create_table :emails do |t|
-  t.references :construction, foreign_key: true, null: true
-  t.references :user, foreign_key: true, null: true
-  t.string :from_email, null: false
-  t.json :to_emails, default: []
-  t.json :cc_emails, default: []
-  t.json :bcc_emails, default: []
-  t.string :subject
-  t.text :body
-  t.datetime :received_at
-  t.string :message_id # Microsoft Graph message ID
-  t.boolean :has_attachments, default: false
-  t.timestamps
-end
-
-add_index :emails, :message_id, unique: true
-add_index :emails, :construction_id
-```
-
----
-
-## §15.10: Xero Sync Status Badges Implementation
+## §15.12: Xero Sync Status Badges Implementation
 
 🧩 Component | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.10"}]
 
 ### Quick Summary
 Visual status indicators for Xero-synced fields with color-coded badges
@@ -17357,520 +17331,469 @@ import {
 
 ---
 
-## §15.11: Invoice Matching Enhancement - PO to Xero Bill Linking
+## §15.2: Message-to-Job Linking
 
-✨ Feature | 🔴 Advanced
+🔌 Integration | 🟡 Intermediate
 
-### Quick Summary
-Enhanced invoice matching between Purchase Orders and Xero Bills with confidence scoring
-
-### Step-by-Step Guide
-# Invoice Matching Service Enhancement
-
-## Summary
-
-Enhanced the `InvoiceMatchingService` to support fuzzy PO number matching across multiple Xero invoice fields. The service now handles various PO number formats that suppliers commonly use, significantly improving the automatic matching success rate.
-
-## Changes Made
-
-### 1. Enhanced `/backend/app/services/invoice_matching_service.rb`
-
-#### Added PO Number Extraction Patterns
-```ruby
-PO_PATTERNS = [
-  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
-  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
-  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
-  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
-  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
-].freeze
-```
-
-#### Six Matching Strategies (in priority order)
-
-1. **Reference Field** (Highest priority)
-   - Checks Xero invoice `Reference` field
-   - Most reliable - suppliers often put PO numbers here
-   - Performs exact match first, then fuzzy extraction
-
-2. **InvoiceNumber Field**
-   - Extracts PO numbers from invoice number using patterns
-   - Handles formats like "PO-123456", "Invoice for PO-123456", "PO123456"
-
-3. **LineItems Descriptions**
-   - Scans line item descriptions for PO numbers
-   - Useful when suppliers embed PO# in item descriptions
-
-4. **Normalized Matching**
-   - Compares numeric portions only
-   - Handles different zero-padding: "PO-001" matches "PO-000001"
-
-5. **Supplier + Amount Fallback**
-   - Matches by supplier name and approximate amount (±10%)
-   - Only for pending POs without existing invoices
-
-6. **Exact Invoice Reference** (Legacy)
-   - Matches by invoice reference stored in PO
-
-#### New Helper Methods
-
-**`extract_po_numbers(text)`**
-- Scans text with all PO patterns
-- Returns array of formatted candidates
-- Normalizes to standard format: "PO-XXXXXX"
-
-**`normalize_po_number(text)`**
-- Strips non-digits and converts to integer
-- Removes leading zeros for comparison
-- "PO-001" → 1, "PO-000123" → 123
-
-**`find_po_by_candidate(candidate)`**
-- Tries exact match first
-- Falls back to normalized matching
-
-**`find_po_by_normalized_number(number)`**
-- Compares numeric portions across all POs
-- Handles edge cases with different padding
-
-### 2. Enhanced `/backend/app/models/purchase_order.rb`
-
-Added payment tracking methods required by the invoice matching service:
-
-**`payment_status` enum**
-```ruby
-enum :payment_status, {
-  pending: 'pending',
-  part_payment: 'part_payment',
-  complete: 'complete',
-  manual_review: 'manual_review'
-}, prefix: :payment
-```
-
-**`payment_percentage`**
-- Calculates percentage of PO total that has been invoiced
-
-**`determine_payment_status(invoice_amount)`**
-- Returns appropriate status based on invoice vs PO total
-- `complete`: 95% - 105% of total
-- `part_payment`: Less than 95%
-- `manual_review`: Exceeds total by $1 or more
-
-**`apply_invoice!(invoice_amount:, invoice_date:, invoice_reference:)`**
-- Updates PO with invoice details
-- Automatically sets payment status
-- Updates xero_invoice_id if applicable
-
-### 3. Test Files Created
-
-#### `/backend/lib/tasks/test_invoice_matching.rake`
-Comprehensive automated test suite covering:
-- Exact PO number matching
-- PO number without dash (PO123456)
-- Lowercase PO numbers
-- PO numbers with spaces
-- P.O. with periods
-- "Purchase Order" spelled out
-- PO numbers embedded in text
-- PO in Reference field
-- Different zero-padding normalization
-- PO numbers in LineItem descriptions
-- Supplier + amount fallback
-- No match scenarios
-
-**Run with:** `rails test:invoice_matching`
-
-#### `/backend/test/invoice_matching_demo.rb`
-Interactive demo showing:
-- PO number extraction examples
-- Normalization examples
-- Pattern matching demonstrations
-- Real-world invoice scenario testing
-
-**Run with:** `rails runner "load 'test/invoice_matching_demo.rb'"`
-
-## Test Results
-
-All 13 test cases pass successfully (100% pass rate):
-
-```
-Test Results:
-✓ Exact PO number
-✓ PO number without dash
-✓ Lowercase PO number
-✓ PO number with space
-✓ P.O. with periods
-✓ Purchase Order spelled out
-✓ PO number embedded in text
-✓ PO in Reference field
-✓ Different zero-padding (PO-1 → PO-000001)
-✓ Different zero-padding (PO-123 → PO-000123)
-✓ PO number in LineItem description
-✓ Supplier + amount matching (fallback)
-✓ No matching PO found
-```
-
-## Usage Examples
-
-### Before Enhancement
-Only matched exact "PO-123456" format in InvoiceNumber field.
-
-### After Enhancement
-
-**Example 1: Reference Field**
-```ruby
-invoice = {
-  'InvoiceNumber' => 'INV-98765',
-  'Reference' => 'PO-123456',
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
-
-**Example 2: Different Format**
-```ruby
-invoice = {
-  'InvoiceNumber' => 'P.O. 123456',
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
-
-**Example 3: Zero-Padding**
-```ruby
-invoice = {
-  'InvoiceNumber' => 'PO-1',
-  'Total' => 1000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-000001 via normalized matching
-```
-
-**Example 4: Line Item Description**
-```ruby
-invoice = {
-  'InvoiceNumber' => 'INV-12345',
-  'LineItems' => [
-    { 'Description' => 'Materials for Purchase Order 123456' }
-  ],
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
-
-## Confidence Levels
-
-The matching strategies provide different confidence levels:
-
-- **High Confidence**: Exact match in Reference or InvoiceNumber
-- **Medium Confidence**: Fuzzy pattern extraction, normalized matching
-- **Low Confidence**: Supplier + amount matching (fallback)
-
-## Performance Considerations
-
-### Normalized Matching Performance
-The `find_po_by_normalized_number` method uses `find_each` to iterate through all POs. This is intentionally simple but may be slow with thousands of POs.
-
-**Future Optimization Option:**
-Add a `normalized_po_number` integer column to the `purchase_orders` table:
-
-```ruby
-# Migration
-add_column :purchase_orders, :normalized_po_number, :integer
-add_index :purchase_orders, :normalized_po_number
-
-# In PurchaseOrder model:
-before_save :set_normalized_po_number
-
-def set_normalized_po_number
-  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
-end
-```
-
-Then update the service to use: `PurchaseOrder.find_by(normalized_po_number: number)`
-
-## Files Modified
-
-1. `/Users/jakebaird/trapid/backend/app/services/invoice_matching_service.rb` - Enhanced matching logic
-2. `/Users/jakebaird/trapid/backend/app/models/purchase_order.rb` - Added payment tracking methods
-3. `/Users/jakebaird/trapid/backend/lib/tasks/test_invoice_matching.rake` - Comprehensive test suite
-4. `/Users/jakebaird/trapid/backend/test/invoice_matching_demo.rb` - Interactive demo
-
-## Next Steps
-
-1. ✅ Test locally (completed - 100% pass rate)
-2. Deploy to Heroku
-3. Monitor Xero invoice sync logs for matching success rate
-4. Consider adding normalized_po_number column if performance becomes an issue
-5. Potentially add machine learning for fuzzy supplier name matching
-
-## Deployment Instructions
-
-```bash
-cd /Users/jakebaird/trapid
-git add -A
-git commit -m "Enhance invoice matching with fuzzy PO number extraction
-
-- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
-- Check Reference field, InvoiceNumber, and LineItems
-- Implement normalized matching for different zero-padding
-- Add comprehensive test suite with 13 test cases
-- Add payment tracking methods to PurchaseOrder model
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-
-git subtree push --prefix backend heroku main
-```
-
-## Security Notes
-
-- All pattern matching uses safe regex (no eval)
-- SQL injection prevented by ActiveRecord parameterization
-- No external API calls in matching logic
-
-## Backward Compatibility
-
-All existing functionality preserved. The enhancement only adds new matching strategies that run before the original fallback logic.
-
----
-
-**Generated:** November 5, 2025
-**Version:** 1.0
-**Status:** Tested and ready for deployment
-
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.2"}]
 
 ### Code Example
 ```jsx
-```ruby
-PO_PATTERNS = [
-  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
-  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
-  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
-  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
-  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
-].freeze
+# app/controllers/api/v1/chat_messages_controller.rb
+def save_to_job
+  @message = ChatMessage.find(params[:id])
+  construction = Construction.find(params[:construction_id])
+
+  @message.update!(
+    construction_id: construction.id,
+    saved_to_job: true
+  )
+
+  render json: { message: 'Message saved to job', chat_message: @message }
+end
+
+def save_conversation_to_job
+  construction = Construction.find(params[:construction_id])
+  message_ids = params[:message_ids]
+
+  ChatMessage.where(id: message_ids).update_all(
+    construction_id: construction.id,
+    saved_to_job: true
+  )
+
+  render json: {
+    message: "#{message_ids.length} messages saved to job",
+    construction_id: construction.id
+  }
+end
+
+# ---
+
+# db/migrate/20251111021538_add_construction_to_chat_messages.rb
+add_reference :chat_messages, :construction, foreign_key: true
+add_column :chat_messages, :saved_to_job, :boolean, default: false
+add_index :chat_messages, [:construction_id, :channel, :created_at]
+
+# ---
+
+// frontend/src/components/chat/ChatBox.jsx
+const saveConversationToJob = async () => {
+  const messageIds = messages.map(m => m.id);
+
+  await fetch('/api/v1/chat_messages/save_conversation_to_job', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      construction_id: selectedConstruction,
+      message_ids: messageIds
+    })
+  });
+};
 ```
 
-```ruby
-enum :payment_status, {
-  pending: 'pending',
-  part_payment: 'part_payment',
-  complete: 'complete',
-  manual_review: 'manual_review'
-}, prefix: :payment
-```
+---
 
-```
-Test Results:
-✓ Exact PO number
-✓ PO number without dash
-✓ Lowercase PO number
-✓ PO number with space
-✓ P.O. with periods
-✓ Purchase Order spelled out
-✓ PO number embedded in text
-✓ PO in Reference field
-✓ Different zero-padding (PO-1 → PO-000001)
-✓ Different zero-padding (PO-123 → PO-000123)
-✓ PO number in LineItem description
-✓ Supplier + amount matching (fallback)
-✓ No matching PO found
-```
+## §15.3: SMS Twilio Integration
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'INV-98765',
-  'Reference' => 'PO-123456',
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
+🔌 Integration | 🟡 Intermediate
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'P.O. 123456',
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.3"}]
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'PO-1',
-  'Total' => 1000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-000001 via normalized matching
-```
+### Code Example
+```jsx
+# app/services/twilio_service.rb
+class TwilioService
+  def self.send_sms(to:, body:, contact:, user: nil)
+    settings = CompanySetting.current
+    raise 'Twilio not enabled' unless settings.twilio_enabled
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'INV-12345',
-  'LineItems' => [
-    { 'Description' => 'Materials for Purchase Order 123456' }
-  ],
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
+    client = Twilio::REST::Client.new(
+      settings.twilio_account_sid,
+      settings.twilio_auth_token
+    )
 
-```ruby
-# Migration
-add_column :purchase_orders, :normalized_po_number, :integer
-add_index :purchase_orders, :normalized_po_number
+    normalized_to = normalize_phone_number(to)
 
-# In PurchaseOrder model:
-before_save :set_normalized_po_number
+    twilio_message = client.messages.create(
+      from: settings.twilio_phone_number,
+      to: normalized_to,
+      body: body
+    )
 
-def set_normalized_po_number
-  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
+    sms = SmsMessage.create!(
+      contact: contact,
+      user: user,
+      from_phone: settings.twilio_phone_number,
+      to_phone: normalized_to,
+      body: body,
+      direction: 'outbound',
+      status: 'sent',
+      twilio_sid: twilio_message.sid,
+      sent_at: Time.current
+    )
+
+    { success: true, sms: sms, twilio_message: twilio_message }
+  rescue Twilio::REST::RestError => e
+    { success: false, error: e.message }
+  end
+end
+
+# ---
+
+# app/controllers/api/v1/sms_messages_controller.rb
+def webhook
+  from_phone = params['From']
+  body = params['Body']
+  message_sid = params['MessageSid']
+
+  result = TwilioService.process_incoming_sms(params)
+
+  # Return TwiML response
+  response = Twilio::TwiML::MessagingResponse.new do |r|
+    r.message(body: 'Message received') if result[:success]
+  end
+
+  render xml: response.to_s
+end
+
+# ---
+
+# app/services/twilio_service.rb
+def self.normalize_phone_number(phone)
+  clean = phone.gsub(/\D/, '') # Remove non-digits
+
+  # Australian mobile starting with 04
+  if clean.start_with?('04') && clean.length == 10
+    return "+61#{clean[1..-1]}" # Convert to +61
+  end
+
+  # Already international format
+  return "+#{clean}" if clean.start_with?('61')
+
+  phone # Return as-is if unrecognized
 end
 ```
 
-```bash
-cd /Users/jakebaird/trapid
-git add -A
-git commit -m "Enhance invoice matching with fuzzy PO number extraction
+---
 
-- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
-- Check Reference field, InvoiceNumber, and LineItems
-- Implement normalized matching for different zero-padding
-- Add comprehensive test suite with 13 test cases
-- Add payment tracking methods to PurchaseOrder model
+## §15.4: SMS Status Tracking
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+🧩 Component | 🟡 Intermediate
 
-Co-Authored-By: Claude <noreply@anthropic.com>"
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.4"}]
 
-git subtree push --prefix backend heroku main
-```
-```
+### Code Example
+```jsx
+# app/models/sms_message.rb
+class SmsMessage < ApplicationRecord
+  belongs_to :contact
+  belongs_to :user, optional: true # null for inbound messages
 
-### Examples
-```ruby
-PO_PATTERNS = [
-  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
-  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
-  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
-  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
-  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
-].freeze
-```
+  validates :from_phone, :to_phone, :body, :direction, presence: true
+  validates :direction, inclusion: { in: %w[inbound outbound] }
 
-```ruby
-enum :payment_status, {
-  pending: 'pending',
-  part_payment: 'part_payment',
-  complete: 'complete',
-  manual_review: 'manual_review'
-}, prefix: :payment
-```
+  scope :inbound, -> { where(direction: 'inbound') }
+  scope :outbound, -> { where(direction: 'outbound') }
+  scope :recent, -> { order(created_at: :desc) }
 
-```
-Test Results:
-✓ Exact PO number
-✓ PO number without dash
-✓ Lowercase PO number
-✓ PO number with space
-✓ P.O. with periods
-✓ Purchase Order spelled out
-✓ PO number embedded in text
-✓ PO in Reference field
-✓ Different zero-padding (PO-1 → PO-000001)
-✓ Different zero-padding (PO-123 → PO-000123)
-✓ PO number in LineItem description
-✓ Supplier + amount matching (fallback)
-✓ No matching PO found
-```
+  # Status helpers
+  def delivered?
+    status == 'delivered'
+  end
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'INV-98765',
-  'Reference' => 'PO-123456',
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
+  def failed?
+    status == 'failed'
+  end
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'P.O. 123456',
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
+  def inbound?
+    direction == 'inbound'
+  end
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'PO-1',
-  'Total' => 1000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-000001 via normalized matching
+  def outbound?
+    direction == 'outbound'
+  end
+end
+
+# ---
+
+# app/controllers/api/v1/sms_messages_controller.rb
+def status_webhook
+  message_sid = params['MessageSid']
+  status = params['MessageStatus'] # queued, sent, delivered, failed
+
+  TwilioService.update_message_status(message_sid, status)
+
+  head :ok
+end
+
+# app/services/twilio_service.rb
+def self.update_message_status(message_sid, status)
+  sms = SmsMessage.find_by(twilio_sid: message_sid)
+  return unless sms
+
+  sms.update!(status: status)
+end
+
+# ---
+
+// frontend/src/components/contacts/SmsConversation.jsx
+const getStatusIcon = (message) => {
+  if (message.direction === 'inbound') return null;
+
+  switch (message.status) {
+    case 'delivered': return <CheckIcon className="text-green-500" />;
+    case 'sent': return <CheckIcon className="text-blue-500" />;
+    case 'failed': return <XMarkIcon className="text-red-500" />;
+    case 'queued': return <ClockIcon className="text-gray-400" />;
+    default: return null;
+  }
+};
 ```
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'INV-12345',
-  'LineItems' => [
-    { 'Description' => 'Materials for Purchase Order 123456' }
-  ],
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
+---
+
+## §15.5: Unread Message Tracking
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.5"}]
+
+### Code Example
+```jsx
+# app/models/user.rb
+class User < ApplicationRecord
+  has_many :chat_messages
+
+  # Timestamp when user last viewed chat
+  # Used to calculate unread count
+  # Migration: add_column :users, :last_chat_read_at, :datetime
+end
+
+# ---
+
+# app/controllers/api/v1/chat_messages_controller.rb
+def unread_count
+  if @current_user.last_chat_read_at.present?
+    count = ChatMessage.where('created_at > ?', @current_user.last_chat_read_at).count
+  else
+    count = ChatMessage.count
+  end
+
+  render json: { unread_count: count }
+end
+
+def mark_as_read
+  @current_user.update!(last_chat_read_at: Time.current)
+  render json: { message: 'Messages marked as read' }
+end
+
+# ---
+
+// frontend/src/components/AppLayout.jsx
+useEffect(() => {
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/v1/chat_messages/unread_count');
+      const data = await response.json();
+      setUnreadCount(data.unread_count);
+    } catch (error) {
+      console.error('Failed to fetch unread count:', error);
+    }
+  };
+
+  fetchUnreadCount();
+  const interval = setInterval(fetchUnreadCount, 5000); // Poll every 5 seconds
+
+  return () => clearInterval(interval);
+}, []);
 ```
 
-```ruby
-# Migration
-add_column :purchase_orders, :normalized_po_number, :integer
-add_index :purchase_orders, :normalized_po_number
+---
 
-# In PurchaseOrder model:
-before_save :set_normalized_po_number
+## §15.6: Message Polling (No WebSockets)
 
-def set_normalized_po_number
-  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.6"}]
+
+### Code Example
+```jsx
+// frontend/src/components/chat/ChatBox.jsx
+useEffect(() => {
+  loadMessages();
+
+  const interval = setInterval(() => {
+    loadMessages();
+  }, 3000); // Poll every 3 seconds
+
+  return () => clearInterval(interval);
+}, [channel, projectId, userId]);
+
+const loadMessages = async () => {
+  let url = '/api/v1/chat_messages';
+
+  if (userId) {
+    url += `?user_id=${userId}`;
+  } else if (projectId) {
+    url += `?project_id=${projectId}`;
+  } else {
+    url += `?channel=${channel}`;
+  }
+
+  const response = await fetch(url);
+  const data = await response.json();
+  setMessages(data);
+};
+
+# ---
+
+// frontend/src/components/communications/SmsTab.jsx
+useEffect(() => {
+  loadMessages();
+
+  const interval = setInterval(() => {
+    loadMessages();
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [contactId, jobId]);
+```
+
+---
+
+## §15.7: Contact-SMS Fuzzy Matching
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.7"}]
+
+### Code Example
+```jsx
+# app/services/twilio_service.rb
+def self.find_contact_by_phone(phone_number)
+  normalized = normalize_phone_number(phone_number)
+
+  # Try exact match first
+  contact = Contact.find_by(mobile_phone: normalized)
+  return contact if contact
+
+  # Try partial match (last 9 digits for AU)
+  # 0412 345 678 → 412345678
+  last_9_digits = normalized.gsub(/\D/, '')[-9..-1]
+
+  Contact.where(
+    "regexp_replace(mobile_phone, '[^0-9]', '', 'g') LIKE ?",
+    "%#{last_9_digits}"
+  ).first
+end
+
+def self.process_incoming_sms(params)
+  from_phone = params['From']
+  body = params['Body']
+  message_sid = params['MessageSid']
+
+  contact = find_contact_by_phone(from_phone)
+
+  unless contact
+    Rails.logger.warn "Incoming SMS from unknown number: #{from_phone}"
+    return { success: false, error: 'Contact not found' }
+  end
+
+  sms = SmsMessage.create!(
+    contact: contact,
+    from_phone: from_phone,
+    to_phone: params['To'],
+    body: body,
+    direction: 'inbound',
+    status: 'received',
+    twilio_sid: message_sid,
+    received_at: Time.current
+  )
+
+  { success: true, sms: sms, contact: contact }
 end
 ```
 
-```bash
-cd /Users/jakebaird/trapid
-git add -A
-git commit -m "Enhance invoice matching with fuzzy PO number extraction
+---
 
-- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
-- Check Reference field, InvoiceNumber, and LineItems
-- Implement normalized matching for different zero-padding
-- Add comprehensive test suite with 13 test cases
-- Add payment tracking methods to PurchaseOrder model
+## §15.8: Message Deletion Authorization
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+🔧 Util | 🟡 Intermediate
 
-Co-Authored-By: Claude <noreply@anthropic.com>"
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.8"}]
 
-git subtree push --prefix backend heroku main
+### Code Example
+```jsx
+# app/controllers/api/v1/chat_messages_controller.rb
+def destroy
+  @message = ChatMessage.find(params[:id])
+
+  # Authorization: only creator can delete
+  unless @message.user_id == @current_user.id
+    return render json: { error: 'Unauthorized' }, status: :forbidden
+  end
+
+  @message.destroy
+  render json: { message: 'Message deleted' }
+end
+```
+
+---
+
+## §15.9: Email Ingestion Storage
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.9"}]
+
+### Code Example
+```jsx
+# app/models/email.rb
+class Email < ApplicationRecord
+  belongs_to :construction, optional: true
+  belongs_to :user, optional: true
+
+  validates :from_email, :subject, :body, presence: true
+  validates :message_id, uniqueness: true, allow_nil: true
+
+  scope :recent, -> { order(received_at: :desc) }
+  scope :for_construction, ->(construction_id) {
+    where(construction_id: construction_id).order(received_at: :desc)
+  }
+  scope :unassigned, -> { where(construction_id: nil) }
+  scope :with_attachments, -> { where(has_attachments: true) }
+
+  def formatted_received_at
+    return 'N/A' unless received_at
+    received_at.strftime('%b %d, %Y %I:%M %p')
+  end
+
+  def short_subject
+    return 'No Subject' if subject.blank?
+    subject.length > 50 ? "#{subject[0..47]}..." : subject
+  end
+end
+
+# ---
+
+# db/schema.rb (emails table)
+create_table :emails do |t|
+  t.references :construction, foreign_key: true, null: true
+  t.references :user, foreign_key: true, null: true
+  t.string :from_email, null: false
+  t.json :to_emails, default: []
+  t.json :cc_emails, default: []
+  t.json :bcc_emails, default: []
+  t.string :subject
+  t.text :body
+  t.datetime :received_at
+  t.string :message_id # Microsoft Graph message ID
+  t.boolean :has_attachments, default: false
+  t.timestamps
+end
+
+add_index :emails, :message_id, unique: true
+add_index :emails, :construction_id
 ```
 
 ---
@@ -17889,11 +17812,11 @@ git subtree push --prefix backend heroku main
 
 ---
 
-## §14.1: ChatMessage Multi-Channel Architecture
+## §15.1: ChatMessage Multi-Channel Architecture
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.1"}]
 
 ### Code Example
 ```jsx
@@ -17955,11 +17878,11 @@ end
 
 ---
 
-## §14.10: Authentication Placeholder - CRITICAL TODO
+## §15.10: Authentication Placeholder - CRITICAL TODO
 
 🔧 Util | 🔴 Advanced
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.10
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.10"}]
 
 ### Code Example
 ```jsx
@@ -17980,476 +17903,531 @@ end
 
 ---
 
-## §14.2: Message-to-Job Linking
+## §15.11: Invoice Matching Enhancement - PO to Xero Bill Linking
 
-🔌 Integration | 🟡 Intermediate
+✨ Feature | 🔴 Advanced
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.11"}]
+
+### Quick Summary
+Enhanced invoice matching between Purchase Orders and Xero Bills with confidence scoring
+
+### Step-by-Step Guide
+# Invoice Matching Service Enhancement
+
+## Summary
+
+Enhanced the `InvoiceMatchingService` to support fuzzy PO number matching across multiple Xero invoice fields. The service now handles various PO number formats that suppliers commonly use, significantly improving the automatic matching success rate.
+
+## Changes Made
+
+### 1. Enhanced `/backend/app/services/invoice_matching_service.rb`
+
+#### Added PO Number Extraction Patterns
+```ruby
+PO_PATTERNS = [
+  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
+  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
+  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
+  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
+  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
+].freeze
+```
+
+#### Six Matching Strategies (in priority order)
+
+1. **Reference Field** (Highest priority)
+   - Checks Xero invoice `Reference` field
+   - Most reliable - suppliers often put PO numbers here
+   - Performs exact match first, then fuzzy extraction
+
+2. **InvoiceNumber Field**
+   - Extracts PO numbers from invoice number using patterns
+   - Handles formats like "PO-123456", "Invoice for PO-123456", "PO123456"
+
+3. **LineItems Descriptions**
+   - Scans line item descriptions for PO numbers
+   - Useful when suppliers embed PO# in item descriptions
+
+4. **Normalized Matching**
+   - Compares numeric portions only
+   - Handles different zero-padding: "PO-001" matches "PO-000001"
+
+5. **Supplier + Amount Fallback**
+   - Matches by supplier name and approximate amount (±10%)
+   - Only for pending POs without existing invoices
+
+6. **Exact Invoice Reference** (Legacy)
+   - Matches by invoice reference stored in PO
+
+#### New Helper Methods
+
+**`extract_po_numbers(text)`**
+- Scans text with all PO patterns
+- Returns array of formatted candidates
+- Normalizes to standard format: "PO-XXXXXX"
+
+**`normalize_po_number(text)`**
+- Strips non-digits and converts to integer
+- Removes leading zeros for comparison
+- "PO-001" → 1, "PO-000123" → 123
+
+**`find_po_by_candidate(candidate)`**
+- Tries exact match first
+- Falls back to normalized matching
+
+**`find_po_by_normalized_number(number)`**
+- Compares numeric portions across all POs
+- Handles edge cases with different padding
+
+### 2. Enhanced `/backend/app/models/purchase_order.rb`
+
+Added payment tracking methods required by the invoice matching service:
+
+**`payment_status` enum**
+```ruby
+enum :payment_status, {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}, prefix: :payment
+```
+
+**`payment_percentage`**
+- Calculates percentage of PO total that has been invoiced
+
+**`determine_payment_status(invoice_amount)`**
+- Returns appropriate status based on invoice vs PO total
+- `complete`: 95% - 105% of total
+- `part_payment`: Less than 95%
+- `manual_review`: Exceeds total by $1 or more
+
+**`apply_invoice!(invoice_amount:, invoice_date:, invoice_reference:)`**
+- Updates PO with invoice details
+- Automatically sets payment status
+- Updates xero_invoice_id if applicable
+
+### 3. Test Files Created
+
+#### `/backend/lib/tasks/test_invoice_matching.rake`
+Comprehensive automated test suite covering:
+- Exact PO number matching
+- PO number without dash (PO123456)
+- Lowercase PO numbers
+- PO numbers with spaces
+- P.O. with periods
+- "Purchase Order" spelled out
+- PO numbers embedded in text
+- PO in Reference field
+- Different zero-padding normalization
+- PO numbers in LineItem descriptions
+- Supplier + amount fallback
+- No match scenarios
+
+**Run with:** `rails test:invoice_matching`
+
+#### `/backend/test/invoice_matching_demo.rb`
+Interactive demo showing:
+- PO number extraction examples
+- Normalization examples
+- Pattern matching demonstrations
+- Real-world invoice scenario testing
+
+**Run with:** `rails runner "load 'test/invoice_matching_demo.rb'"`
+
+## Test Results
+
+All 13 test cases pass successfully (100% pass rate):
+
+```
+Test Results:
+✓ Exact PO number
+✓ PO number without dash
+✓ Lowercase PO number
+✓ PO number with space
+✓ P.O. with periods
+✓ Purchase Order spelled out
+✓ PO number embedded in text
+✓ PO in Reference field
+✓ Different zero-padding (PO-1 → PO-000001)
+✓ Different zero-padding (PO-123 → PO-000123)
+✓ PO number in LineItem description
+✓ Supplier + amount matching (fallback)
+✓ No matching PO found
+```
+
+## Usage Examples
+
+### Before Enhancement
+Only matched exact "PO-123456" format in InvoiceNumber field.
+
+### After Enhancement
+
+**Example 1: Reference Field**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-98765',
+  'Reference' => 'PO-123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+**Example 2: Different Format**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'P.O. 123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+**Example 3: Zero-Padding**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'PO-1',
+  'Total' => 1000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-000001 via normalized matching
+```
+
+**Example 4: Line Item Description**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-12345',
+  'LineItems' => [
+    { 'Description' => 'Materials for Purchase Order 123456' }
+  ],
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+## Confidence Levels
+
+The matching strategies provide different confidence levels:
+
+- **High Confidence**: Exact match in Reference or InvoiceNumber
+- **Medium Confidence**: Fuzzy pattern extraction, normalized matching
+- **Low Confidence**: Supplier + amount matching (fallback)
+
+## Performance Considerations
+
+### Normalized Matching Performance
+The `find_po_by_normalized_number` method uses `find_each` to iterate through all POs. This is intentionally simple but may be slow with thousands of POs.
+
+**Future Optimization Option:**
+Add a `normalized_po_number` integer column to the `purchase_orders` table:
+
+```ruby
+# Migration
+add_column :purchase_orders, :normalized_po_number, :integer
+add_index :purchase_orders, :normalized_po_number
+
+# In PurchaseOrder model:
+before_save :set_normalized_po_number
+
+def set_normalized_po_number
+  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
+end
+```
+
+Then update the service to use: `PurchaseOrder.find_by(normalized_po_number: number)`
+
+## Files Modified
+
+1. `/Users/jakebaird/trapid/backend/app/services/invoice_matching_service.rb` - Enhanced matching logic
+2. `/Users/jakebaird/trapid/backend/app/models/purchase_order.rb` - Added payment tracking methods
+3. `/Users/jakebaird/trapid/backend/lib/tasks/test_invoice_matching.rake` - Comprehensive test suite
+4. `/Users/jakebaird/trapid/backend/test/invoice_matching_demo.rb` - Interactive demo
+
+## Next Steps
+
+1. ✅ Test locally (completed - 100% pass rate)
+2. Deploy to Heroku
+3. Monitor Xero invoice sync logs for matching success rate
+4. Consider adding normalized_po_number column if performance becomes an issue
+5. Potentially add machine learning for fuzzy supplier name matching
+
+## Deployment Instructions
+
+```bash
+cd /Users/jakebaird/trapid
+git add -A
+git commit -m "Enhance invoice matching with fuzzy PO number extraction
+
+- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
+- Check Reference field, InvoiceNumber, and LineItems
+- Implement normalized matching for different zero-padding
+- Add comprehensive test suite with 13 test cases
+- Add payment tracking methods to PurchaseOrder model
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+git subtree push --prefix backend heroku main
+```
+
+## Security Notes
+
+- All pattern matching uses safe regex (no eval)
+- SQL injection prevented by ActiveRecord parameterization
+- No external API calls in matching logic
+
+## Backward Compatibility
+
+All existing functionality preserved. The enhancement only adds new matching strategies that run before the original fallback logic.
+
+---
+
+**Generated:** November 5, 2025
+**Version:** 1.0
+**Status:** Tested and ready for deployment
+
 
 ### Code Example
 ```jsx
-# app/controllers/api/v1/chat_messages_controller.rb
-def save_to_job
-  @message = ChatMessage.find(params[:id])
-  construction = Construction.find(params[:construction_id])
+```ruby
+PO_PATTERNS = [
+  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
+  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
+  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
+  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
+  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
+].freeze
+```
 
-  @message.update!(
-    construction_id: construction.id,
-    saved_to_job: true
-  )
+```ruby
+enum :payment_status, {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}, prefix: :payment
+```
 
-  render json: { message: 'Message saved to job', chat_message: @message }
+```
+Test Results:
+✓ Exact PO number
+✓ PO number without dash
+✓ Lowercase PO number
+✓ PO number with space
+✓ P.O. with periods
+✓ Purchase Order spelled out
+✓ PO number embedded in text
+✓ PO in Reference field
+✓ Different zero-padding (PO-1 → PO-000001)
+✓ Different zero-padding (PO-123 → PO-000123)
+✓ PO number in LineItem description
+✓ Supplier + amount matching (fallback)
+✓ No matching PO found
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-98765',
+  'Reference' => 'PO-123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'P.O. 123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'PO-1',
+  'Total' => 1000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-000001 via normalized matching
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-12345',
+  'LineItems' => [
+    { 'Description' => 'Materials for Purchase Order 123456' }
+  ],
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+# Migration
+add_column :purchase_orders, :normalized_po_number, :integer
+add_index :purchase_orders, :normalized_po_number
+
+# In PurchaseOrder model:
+before_save :set_normalized_po_number
+
+def set_normalized_po_number
+  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
 end
+```
 
-def save_conversation_to_job
-  construction = Construction.find(params[:construction_id])
-  message_ids = params[:message_ids]
+```bash
+cd /Users/jakebaird/trapid
+git add -A
+git commit -m "Enhance invoice matching with fuzzy PO number extraction
 
-  ChatMessage.where(id: message_ids).update_all(
-    construction_id: construction.id,
-    saved_to_job: true
-  )
+- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
+- Check Reference field, InvoiceNumber, and LineItems
+- Implement normalized matching for different zero-padding
+- Add comprehensive test suite with 13 test cases
+- Add payment tracking methods to PurchaseOrder model
 
-  render json: {
-    message: "#{message_ids.length} messages saved to job",
-    construction_id: construction.id
-  }
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+git subtree push --prefix backend heroku main
+```
+```
+
+### Examples
+```ruby
+PO_PATTERNS = [
+  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
+  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
+  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
+  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
+  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
+].freeze
+```
+
+```ruby
+enum :payment_status, {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}, prefix: :payment
+```
+
+```
+Test Results:
+✓ Exact PO number
+✓ PO number without dash
+✓ Lowercase PO number
+✓ PO number with space
+✓ P.O. with periods
+✓ Purchase Order spelled out
+✓ PO number embedded in text
+✓ PO in Reference field
+✓ Different zero-padding (PO-1 → PO-000001)
+✓ Different zero-padding (PO-123 → PO-000123)
+✓ PO number in LineItem description
+✓ Supplier + amount matching (fallback)
+✓ No matching PO found
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-98765',
+  'Reference' => 'PO-123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'P.O. 123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'PO-1',
+  'Total' => 1000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-000001 via normalized matching
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-12345',
+  'LineItems' => [
+    { 'Description' => 'Materials for Purchase Order 123456' }
+  ],
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+# Migration
+add_column :purchase_orders, :normalized_po_number, :integer
+add_index :purchase_orders, :normalized_po_number
+
+# In PurchaseOrder model:
+before_save :set_normalized_po_number
+
+def set_normalized_po_number
+  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
 end
+```
 
-# ---
+```bash
+cd /Users/jakebaird/trapid
+git add -A
+git commit -m "Enhance invoice matching with fuzzy PO number extraction
 
-# db/migrate/20251111021538_add_construction_to_chat_messages.rb
-add_reference :chat_messages, :construction, foreign_key: true
-add_column :chat_messages, :saved_to_job, :boolean, default: false
-add_index :chat_messages, [:construction_id, :channel, :created_at]
+- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
+- Check Reference field, InvoiceNumber, and LineItems
+- Implement normalized matching for different zero-padding
+- Add comprehensive test suite with 13 test cases
+- Add payment tracking methods to PurchaseOrder model
 
-# ---
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-// frontend/src/components/chat/ChatBox.jsx
-const saveConversationToJob = async () => {
-  const messageIds = messages.map(m => m.id);
+Co-Authored-By: Claude <noreply@anthropic.com>"
 
-  await fetch('/api/v1/chat_messages/save_conversation_to_job', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      construction_id: selectedConstruction,
-      message_ids: messageIds
-    })
-  });
-};
+git subtree push --prefix backend heroku main
 ```
 
 ---
 
-## §14.3: SMS Twilio Integration
-
-🔌 Integration | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.3
-
-### Code Example
-```jsx
-# app/services/twilio_service.rb
-class TwilioService
-  def self.send_sms(to:, body:, contact:, user: nil)
-    settings = CompanySetting.current
-    raise 'Twilio not enabled' unless settings.twilio_enabled
-
-    client = Twilio::REST::Client.new(
-      settings.twilio_account_sid,
-      settings.twilio_auth_token
-    )
-
-    normalized_to = normalize_phone_number(to)
-
-    twilio_message = client.messages.create(
-      from: settings.twilio_phone_number,
-      to: normalized_to,
-      body: body
-    )
-
-    sms = SmsMessage.create!(
-      contact: contact,
-      user: user,
-      from_phone: settings.twilio_phone_number,
-      to_phone: normalized_to,
-      body: body,
-      direction: 'outbound',
-      status: 'sent',
-      twilio_sid: twilio_message.sid,
-      sent_at: Time.current
-    )
-
-    { success: true, sms: sms, twilio_message: twilio_message }
-  rescue Twilio::REST::RestError => e
-    { success: false, error: e.message }
-  end
-end
-
-# ---
-
-# app/controllers/api/v1/sms_messages_controller.rb
-def webhook
-  from_phone = params['From']
-  body = params['Body']
-  message_sid = params['MessageSid']
-
-  result = TwilioService.process_incoming_sms(params)
-
-  # Return TwiML response
-  response = Twilio::TwiML::MessagingResponse.new do |r|
-    r.message(body: 'Message received') if result[:success]
-  end
-
-  render xml: response.to_s
-end
-
-# ---
-
-# app/services/twilio_service.rb
-def self.normalize_phone_number(phone)
-  clean = phone.gsub(/\D/, '') # Remove non-digits
-
-  # Australian mobile starting with 04
-  if clean.start_with?('04') && clean.length == 10
-    return "+61#{clean[1..-1]}" # Convert to +61
-  end
-
-  # Already international format
-  return "+#{clean}" if clean.start_with?('61')
-
-  phone # Return as-is if unrecognized
-end
-```
-
----
-
-## §14.4: SMS Status Tracking
-
-🧩 Component | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.4
-
-### Code Example
-```jsx
-# app/models/sms_message.rb
-class SmsMessage < ApplicationRecord
-  belongs_to :contact
-  belongs_to :user, optional: true # null for inbound messages
-
-  validates :from_phone, :to_phone, :body, :direction, presence: true
-  validates :direction, inclusion: { in: %w[inbound outbound] }
-
-  scope :inbound, -> { where(direction: 'inbound') }
-  scope :outbound, -> { where(direction: 'outbound') }
-  scope :recent, -> { order(created_at: :desc) }
-
-  # Status helpers
-  def delivered?
-    status == 'delivered'
-  end
-
-  def failed?
-    status == 'failed'
-  end
-
-  def inbound?
-    direction == 'inbound'
-  end
-
-  def outbound?
-    direction == 'outbound'
-  end
-end
-
-# ---
-
-# app/controllers/api/v1/sms_messages_controller.rb
-def status_webhook
-  message_sid = params['MessageSid']
-  status = params['MessageStatus'] # queued, sent, delivered, failed
-
-  TwilioService.update_message_status(message_sid, status)
-
-  head :ok
-end
-
-# app/services/twilio_service.rb
-def self.update_message_status(message_sid, status)
-  sms = SmsMessage.find_by(twilio_sid: message_sid)
-  return unless sms
-
-  sms.update!(status: status)
-end
-
-# ---
-
-// frontend/src/components/contacts/SmsConversation.jsx
-const getStatusIcon = (message) => {
-  if (message.direction === 'inbound') return null;
-
-  switch (message.status) {
-    case 'delivered': return <CheckIcon className="text-green-500" />;
-    case 'sent': return <CheckIcon className="text-blue-500" />;
-    case 'failed': return <XMarkIcon className="text-red-500" />;
-    case 'queued': return <ClockIcon className="text-gray-400" />;
-    default: return null;
-  }
-};
-```
-
----
-
-## §14.5: Unread Message Tracking
-
-🔌 Integration | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.5
-
-### Code Example
-```jsx
-# app/models/user.rb
-class User < ApplicationRecord
-  has_many :chat_messages
-
-  # Timestamp when user last viewed chat
-  # Used to calculate unread count
-  # Migration: add_column :users, :last_chat_read_at, :datetime
-end
-
-# ---
-
-# app/controllers/api/v1/chat_messages_controller.rb
-def unread_count
-  if @current_user.last_chat_read_at.present?
-    count = ChatMessage.where('created_at > ?', @current_user.last_chat_read_at).count
-  else
-    count = ChatMessage.count
-  end
-
-  render json: { unread_count: count }
-end
-
-def mark_as_read
-  @current_user.update!(last_chat_read_at: Time.current)
-  render json: { message: 'Messages marked as read' }
-end
-
-# ---
-
-// frontend/src/components/AppLayout.jsx
-useEffect(() => {
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await fetch('http://localhost:3001/api/v1/chat_messages/unread_count');
-      const data = await response.json();
-      setUnreadCount(data.unread_count);
-    } catch (error) {
-      console.error('Failed to fetch unread count:', error);
-    }
-  };
-
-  fetchUnreadCount();
-  const interval = setInterval(fetchUnreadCount, 5000); // Poll every 5 seconds
-
-  return () => clearInterval(interval);
-}, []);
-```
-
----
-
-## §14.6: Message Polling (No WebSockets)
-
-🧩 Component | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.6
-
-### Code Example
-```jsx
-// frontend/src/components/chat/ChatBox.jsx
-useEffect(() => {
-  loadMessages();
-
-  const interval = setInterval(() => {
-    loadMessages();
-  }, 3000); // Poll every 3 seconds
-
-  return () => clearInterval(interval);
-}, [channel, projectId, userId]);
-
-const loadMessages = async () => {
-  let url = '/api/v1/chat_messages';
-
-  if (userId) {
-    url += `?user_id=${userId}`;
-  } else if (projectId) {
-    url += `?project_id=${projectId}`;
-  } else {
-    url += `?channel=${channel}`;
-  }
-
-  const response = await fetch(url);
-  const data = await response.json();
-  setMessages(data);
-};
-
-# ---
-
-// frontend/src/components/communications/SmsTab.jsx
-useEffect(() => {
-  loadMessages();
-
-  const interval = setInterval(() => {
-    loadMessages();
-  }, 3000);
-
-  return () => clearInterval(interval);
-}, [contactId, jobId]);
-```
-
----
-
-## §14.7: Contact-SMS Fuzzy Matching
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.7
-
-### Code Example
-```jsx
-# app/services/twilio_service.rb
-def self.find_contact_by_phone(phone_number)
-  normalized = normalize_phone_number(phone_number)
-
-  # Try exact match first
-  contact = Contact.find_by(mobile_phone: normalized)
-  return contact if contact
-
-  # Try partial match (last 9 digits for AU)
-  # 0412 345 678 → 412345678
-  last_9_digits = normalized.gsub(/\D/, '')[-9..-1]
-
-  Contact.where(
-    "regexp_replace(mobile_phone, '[^0-9]', '', 'g') LIKE ?",
-    "%#{last_9_digits}"
-  ).first
-end
-
-def self.process_incoming_sms(params)
-  from_phone = params['From']
-  body = params['Body']
-  message_sid = params['MessageSid']
-
-  contact = find_contact_by_phone(from_phone)
-
-  unless contact
-    Rails.logger.warn "Incoming SMS from unknown number: #{from_phone}"
-    return { success: false, error: 'Contact not found' }
-  end
-
-  sms = SmsMessage.create!(
-    contact: contact,
-    from_phone: from_phone,
-    to_phone: params['To'],
-    body: body,
-    direction: 'inbound',
-    status: 'received',
-    twilio_sid: message_sid,
-    received_at: Time.current
-  )
-
-  { success: true, sms: sms, contact: contact }
-end
-```
-
----
-
-## §14.8: Message Deletion Authorization
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.8
-
-### Code Example
-```jsx
-# app/controllers/api/v1/chat_messages_controller.rb
-def destroy
-  @message = ChatMessage.find(params[:id])
-
-  # Authorization: only creator can delete
-  unless @message.user_id == @current_user.id
-    return render json: { error: 'Unauthorized' }, status: :forbidden
-  end
-
-  @message.destroy
-  render json: { message: 'Message deleted' }
-end
-```
-
----
-
-## §14.9: Email Ingestion Storage
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.9
-
-### Code Example
-```jsx
-# app/models/email.rb
-class Email < ApplicationRecord
-  belongs_to :construction, optional: true
-  belongs_to :user, optional: true
-
-  validates :from_email, :subject, :body, presence: true
-  validates :message_id, uniqueness: true, allow_nil: true
-
-  scope :recent, -> { order(received_at: :desc) }
-  scope :for_construction, ->(construction_id) {
-    where(construction_id: construction_id).order(received_at: :desc)
-  }
-  scope :unassigned, -> { where(construction_id: nil) }
-  scope :with_attachments, -> { where(has_attachments: true) }
-
-  def formatted_received_at
-    return 'N/A' unless received_at
-    received_at.strftime('%b %d, %Y %I:%M %p')
-  end
-
-  def short_subject
-    return 'No Subject' if subject.blank?
-    subject.length > 50 ? "#{subject[0..47]}..." : subject
-  end
-end
-
-# ---
-
-# db/schema.rb (emails table)
-create_table :emails do |t|
-  t.references :construction, foreign_key: true, null: true
-  t.references :user, foreign_key: true, null: true
-  t.string :from_email, null: false
-  t.json :to_emails, default: []
-  t.json :cc_emails, default: []
-  t.json :bcc_emails, default: []
-  t.string :subject
-  t.text :body
-  t.datetime :received_at
-  t.string :message_id # Microsoft Graph message ID
-  t.boolean :has_attachments, default: false
-  t.timestamps
-end
-
-add_index :emails, :message_id, unique: true
-add_index :emails, :construction_id
-```
-
----
-
-## §15.10: Xero Sync Status Badges Implementation
+## §15.12: Xero Sync Status Badges Implementation
 
 🧩 Component | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.10"}]
 
 ### Quick Summary
 Visual status indicators for Xero-synced fields with color-coded badges
@@ -19008,520 +18986,469 @@ import {
 
 ---
 
-## §15.11: Invoice Matching Enhancement - PO to Xero Bill Linking
+## §15.2: Message-to-Job Linking
 
-✨ Feature | 🔴 Advanced
+🔌 Integration | 🟡 Intermediate
 
-### Quick Summary
-Enhanced invoice matching between Purchase Orders and Xero Bills with confidence scoring
-
-### Step-by-Step Guide
-# Invoice Matching Service Enhancement
-
-## Summary
-
-Enhanced the `InvoiceMatchingService` to support fuzzy PO number matching across multiple Xero invoice fields. The service now handles various PO number formats that suppliers commonly use, significantly improving the automatic matching success rate.
-
-## Changes Made
-
-### 1. Enhanced `/backend/app/services/invoice_matching_service.rb`
-
-#### Added PO Number Extraction Patterns
-```ruby
-PO_PATTERNS = [
-  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
-  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
-  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
-  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
-  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
-].freeze
-```
-
-#### Six Matching Strategies (in priority order)
-
-1. **Reference Field** (Highest priority)
-   - Checks Xero invoice `Reference` field
-   - Most reliable - suppliers often put PO numbers here
-   - Performs exact match first, then fuzzy extraction
-
-2. **InvoiceNumber Field**
-   - Extracts PO numbers from invoice number using patterns
-   - Handles formats like "PO-123456", "Invoice for PO-123456", "PO123456"
-
-3. **LineItems Descriptions**
-   - Scans line item descriptions for PO numbers
-   - Useful when suppliers embed PO# in item descriptions
-
-4. **Normalized Matching**
-   - Compares numeric portions only
-   - Handles different zero-padding: "PO-001" matches "PO-000001"
-
-5. **Supplier + Amount Fallback**
-   - Matches by supplier name and approximate amount (±10%)
-   - Only for pending POs without existing invoices
-
-6. **Exact Invoice Reference** (Legacy)
-   - Matches by invoice reference stored in PO
-
-#### New Helper Methods
-
-**`extract_po_numbers(text)`**
-- Scans text with all PO patterns
-- Returns array of formatted candidates
-- Normalizes to standard format: "PO-XXXXXX"
-
-**`normalize_po_number(text)`**
-- Strips non-digits and converts to integer
-- Removes leading zeros for comparison
-- "PO-001" → 1, "PO-000123" → 123
-
-**`find_po_by_candidate(candidate)`**
-- Tries exact match first
-- Falls back to normalized matching
-
-**`find_po_by_normalized_number(number)`**
-- Compares numeric portions across all POs
-- Handles edge cases with different padding
-
-### 2. Enhanced `/backend/app/models/purchase_order.rb`
-
-Added payment tracking methods required by the invoice matching service:
-
-**`payment_status` enum**
-```ruby
-enum :payment_status, {
-  pending: 'pending',
-  part_payment: 'part_payment',
-  complete: 'complete',
-  manual_review: 'manual_review'
-}, prefix: :payment
-```
-
-**`payment_percentage`**
-- Calculates percentage of PO total that has been invoiced
-
-**`determine_payment_status(invoice_amount)`**
-- Returns appropriate status based on invoice vs PO total
-- `complete`: 95% - 105% of total
-- `part_payment`: Less than 95%
-- `manual_review`: Exceeds total by $1 or more
-
-**`apply_invoice!(invoice_amount:, invoice_date:, invoice_reference:)`**
-- Updates PO with invoice details
-- Automatically sets payment status
-- Updates xero_invoice_id if applicable
-
-### 3. Test Files Created
-
-#### `/backend/lib/tasks/test_invoice_matching.rake`
-Comprehensive automated test suite covering:
-- Exact PO number matching
-- PO number without dash (PO123456)
-- Lowercase PO numbers
-- PO numbers with spaces
-- P.O. with periods
-- "Purchase Order" spelled out
-- PO numbers embedded in text
-- PO in Reference field
-- Different zero-padding normalization
-- PO numbers in LineItem descriptions
-- Supplier + amount fallback
-- No match scenarios
-
-**Run with:** `rails test:invoice_matching`
-
-#### `/backend/test/invoice_matching_demo.rb`
-Interactive demo showing:
-- PO number extraction examples
-- Normalization examples
-- Pattern matching demonstrations
-- Real-world invoice scenario testing
-
-**Run with:** `rails runner "load 'test/invoice_matching_demo.rb'"`
-
-## Test Results
-
-All 13 test cases pass successfully (100% pass rate):
-
-```
-Test Results:
-✓ Exact PO number
-✓ PO number without dash
-✓ Lowercase PO number
-✓ PO number with space
-✓ P.O. with periods
-✓ Purchase Order spelled out
-✓ PO number embedded in text
-✓ PO in Reference field
-✓ Different zero-padding (PO-1 → PO-000001)
-✓ Different zero-padding (PO-123 → PO-000123)
-✓ PO number in LineItem description
-✓ Supplier + amount matching (fallback)
-✓ No matching PO found
-```
-
-## Usage Examples
-
-### Before Enhancement
-Only matched exact "PO-123456" format in InvoiceNumber field.
-
-### After Enhancement
-
-**Example 1: Reference Field**
-```ruby
-invoice = {
-  'InvoiceNumber' => 'INV-98765',
-  'Reference' => 'PO-123456',
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
-
-**Example 2: Different Format**
-```ruby
-invoice = {
-  'InvoiceNumber' => 'P.O. 123456',
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
-
-**Example 3: Zero-Padding**
-```ruby
-invoice = {
-  'InvoiceNumber' => 'PO-1',
-  'Total' => 1000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-000001 via normalized matching
-```
-
-**Example 4: Line Item Description**
-```ruby
-invoice = {
-  'InvoiceNumber' => 'INV-12345',
-  'LineItems' => [
-    { 'Description' => 'Materials for Purchase Order 123456' }
-  ],
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
-
-## Confidence Levels
-
-The matching strategies provide different confidence levels:
-
-- **High Confidence**: Exact match in Reference or InvoiceNumber
-- **Medium Confidence**: Fuzzy pattern extraction, normalized matching
-- **Low Confidence**: Supplier + amount matching (fallback)
-
-## Performance Considerations
-
-### Normalized Matching Performance
-The `find_po_by_normalized_number` method uses `find_each` to iterate through all POs. This is intentionally simple but may be slow with thousands of POs.
-
-**Future Optimization Option:**
-Add a `normalized_po_number` integer column to the `purchase_orders` table:
-
-```ruby
-# Migration
-add_column :purchase_orders, :normalized_po_number, :integer
-add_index :purchase_orders, :normalized_po_number
-
-# In PurchaseOrder model:
-before_save :set_normalized_po_number
-
-def set_normalized_po_number
-  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
-end
-```
-
-Then update the service to use: `PurchaseOrder.find_by(normalized_po_number: number)`
-
-## Files Modified
-
-1. `/Users/jakebaird/trapid/backend/app/services/invoice_matching_service.rb` - Enhanced matching logic
-2. `/Users/jakebaird/trapid/backend/app/models/purchase_order.rb` - Added payment tracking methods
-3. `/Users/jakebaird/trapid/backend/lib/tasks/test_invoice_matching.rake` - Comprehensive test suite
-4. `/Users/jakebaird/trapid/backend/test/invoice_matching_demo.rb` - Interactive demo
-
-## Next Steps
-
-1. ✅ Test locally (completed - 100% pass rate)
-2. Deploy to Heroku
-3. Monitor Xero invoice sync logs for matching success rate
-4. Consider adding normalized_po_number column if performance becomes an issue
-5. Potentially add machine learning for fuzzy supplier name matching
-
-## Deployment Instructions
-
-```bash
-cd /Users/jakebaird/trapid
-git add -A
-git commit -m "Enhance invoice matching with fuzzy PO number extraction
-
-- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
-- Check Reference field, InvoiceNumber, and LineItems
-- Implement normalized matching for different zero-padding
-- Add comprehensive test suite with 13 test cases
-- Add payment tracking methods to PurchaseOrder model
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-
-git subtree push --prefix backend heroku main
-```
-
-## Security Notes
-
-- All pattern matching uses safe regex (no eval)
-- SQL injection prevented by ActiveRecord parameterization
-- No external API calls in matching logic
-
-## Backward Compatibility
-
-All existing functionality preserved. The enhancement only adds new matching strategies that run before the original fallback logic.
-
----
-
-**Generated:** November 5, 2025
-**Version:** 1.0
-**Status:** Tested and ready for deployment
-
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.2"}]
 
 ### Code Example
 ```jsx
-```ruby
-PO_PATTERNS = [
-  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
-  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
-  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
-  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
-  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
-].freeze
+# app/controllers/api/v1/chat_messages_controller.rb
+def save_to_job
+  @message = ChatMessage.find(params[:id])
+  construction = Construction.find(params[:construction_id])
+
+  @message.update!(
+    construction_id: construction.id,
+    saved_to_job: true
+  )
+
+  render json: { message: 'Message saved to job', chat_message: @message }
+end
+
+def save_conversation_to_job
+  construction = Construction.find(params[:construction_id])
+  message_ids = params[:message_ids]
+
+  ChatMessage.where(id: message_ids).update_all(
+    construction_id: construction.id,
+    saved_to_job: true
+  )
+
+  render json: {
+    message: "#{message_ids.length} messages saved to job",
+    construction_id: construction.id
+  }
+end
+
+# ---
+
+# db/migrate/20251111021538_add_construction_to_chat_messages.rb
+add_reference :chat_messages, :construction, foreign_key: true
+add_column :chat_messages, :saved_to_job, :boolean, default: false
+add_index :chat_messages, [:construction_id, :channel, :created_at]
+
+# ---
+
+// frontend/src/components/chat/ChatBox.jsx
+const saveConversationToJob = async () => {
+  const messageIds = messages.map(m => m.id);
+
+  await fetch('/api/v1/chat_messages/save_conversation_to_job', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      construction_id: selectedConstruction,
+      message_ids: messageIds
+    })
+  });
+};
 ```
 
-```ruby
-enum :payment_status, {
-  pending: 'pending',
-  part_payment: 'part_payment',
-  complete: 'complete',
-  manual_review: 'manual_review'
-}, prefix: :payment
-```
+---
 
-```
-Test Results:
-✓ Exact PO number
-✓ PO number without dash
-✓ Lowercase PO number
-✓ PO number with space
-✓ P.O. with periods
-✓ Purchase Order spelled out
-✓ PO number embedded in text
-✓ PO in Reference field
-✓ Different zero-padding (PO-1 → PO-000001)
-✓ Different zero-padding (PO-123 → PO-000123)
-✓ PO number in LineItem description
-✓ Supplier + amount matching (fallback)
-✓ No matching PO found
-```
+## §15.3: SMS Twilio Integration
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'INV-98765',
-  'Reference' => 'PO-123456',
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
+🔌 Integration | 🟡 Intermediate
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'P.O. 123456',
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.3"}]
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'PO-1',
-  'Total' => 1000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-000001 via normalized matching
-```
+### Code Example
+```jsx
+# app/services/twilio_service.rb
+class TwilioService
+  def self.send_sms(to:, body:, contact:, user: nil)
+    settings = CompanySetting.current
+    raise 'Twilio not enabled' unless settings.twilio_enabled
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'INV-12345',
-  'LineItems' => [
-    { 'Description' => 'Materials for Purchase Order 123456' }
-  ],
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
+    client = Twilio::REST::Client.new(
+      settings.twilio_account_sid,
+      settings.twilio_auth_token
+    )
 
-```ruby
-# Migration
-add_column :purchase_orders, :normalized_po_number, :integer
-add_index :purchase_orders, :normalized_po_number
+    normalized_to = normalize_phone_number(to)
 
-# In PurchaseOrder model:
-before_save :set_normalized_po_number
+    twilio_message = client.messages.create(
+      from: settings.twilio_phone_number,
+      to: normalized_to,
+      body: body
+    )
 
-def set_normalized_po_number
-  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
+    sms = SmsMessage.create!(
+      contact: contact,
+      user: user,
+      from_phone: settings.twilio_phone_number,
+      to_phone: normalized_to,
+      body: body,
+      direction: 'outbound',
+      status: 'sent',
+      twilio_sid: twilio_message.sid,
+      sent_at: Time.current
+    )
+
+    { success: true, sms: sms, twilio_message: twilio_message }
+  rescue Twilio::REST::RestError => e
+    { success: false, error: e.message }
+  end
+end
+
+# ---
+
+# app/controllers/api/v1/sms_messages_controller.rb
+def webhook
+  from_phone = params['From']
+  body = params['Body']
+  message_sid = params['MessageSid']
+
+  result = TwilioService.process_incoming_sms(params)
+
+  # Return TwiML response
+  response = Twilio::TwiML::MessagingResponse.new do |r|
+    r.message(body: 'Message received') if result[:success]
+  end
+
+  render xml: response.to_s
+end
+
+# ---
+
+# app/services/twilio_service.rb
+def self.normalize_phone_number(phone)
+  clean = phone.gsub(/\D/, '') # Remove non-digits
+
+  # Australian mobile starting with 04
+  if clean.start_with?('04') && clean.length == 10
+    return "+61#{clean[1..-1]}" # Convert to +61
+  end
+
+  # Already international format
+  return "+#{clean}" if clean.start_with?('61')
+
+  phone # Return as-is if unrecognized
 end
 ```
 
-```bash
-cd /Users/jakebaird/trapid
-git add -A
-git commit -m "Enhance invoice matching with fuzzy PO number extraction
+---
 
-- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
-- Check Reference field, InvoiceNumber, and LineItems
-- Implement normalized matching for different zero-padding
-- Add comprehensive test suite with 13 test cases
-- Add payment tracking methods to PurchaseOrder model
+## §15.4: SMS Status Tracking
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+🧩 Component | 🟡 Intermediate
 
-Co-Authored-By: Claude <noreply@anthropic.com>"
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.4"}]
 
-git subtree push --prefix backend heroku main
-```
-```
+### Code Example
+```jsx
+# app/models/sms_message.rb
+class SmsMessage < ApplicationRecord
+  belongs_to :contact
+  belongs_to :user, optional: true # null for inbound messages
 
-### Examples
-```ruby
-PO_PATTERNS = [
-  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
-  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
-  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
-  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
-  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
-].freeze
-```
+  validates :from_phone, :to_phone, :body, :direction, presence: true
+  validates :direction, inclusion: { in: %w[inbound outbound] }
 
-```ruby
-enum :payment_status, {
-  pending: 'pending',
-  part_payment: 'part_payment',
-  complete: 'complete',
-  manual_review: 'manual_review'
-}, prefix: :payment
-```
+  scope :inbound, -> { where(direction: 'inbound') }
+  scope :outbound, -> { where(direction: 'outbound') }
+  scope :recent, -> { order(created_at: :desc) }
 
-```
-Test Results:
-✓ Exact PO number
-✓ PO number without dash
-✓ Lowercase PO number
-✓ PO number with space
-✓ P.O. with periods
-✓ Purchase Order spelled out
-✓ PO number embedded in text
-✓ PO in Reference field
-✓ Different zero-padding (PO-1 → PO-000001)
-✓ Different zero-padding (PO-123 → PO-000123)
-✓ PO number in LineItem description
-✓ Supplier + amount matching (fallback)
-✓ No matching PO found
-```
+  # Status helpers
+  def delivered?
+    status == 'delivered'
+  end
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'INV-98765',
-  'Reference' => 'PO-123456',
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
+  def failed?
+    status == 'failed'
+  end
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'P.O. 123456',
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
-```
+  def inbound?
+    direction == 'inbound'
+  end
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'PO-1',
-  'Total' => 1000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-000001 via normalized matching
+  def outbound?
+    direction == 'outbound'
+  end
+end
+
+# ---
+
+# app/controllers/api/v1/sms_messages_controller.rb
+def status_webhook
+  message_sid = params['MessageSid']
+  status = params['MessageStatus'] # queued, sent, delivered, failed
+
+  TwilioService.update_message_status(message_sid, status)
+
+  head :ok
+end
+
+# app/services/twilio_service.rb
+def self.update_message_status(message_sid, status)
+  sms = SmsMessage.find_by(twilio_sid: message_sid)
+  return unless sms
+
+  sms.update!(status: status)
+end
+
+# ---
+
+// frontend/src/components/contacts/SmsConversation.jsx
+const getStatusIcon = (message) => {
+  if (message.direction === 'inbound') return null;
+
+  switch (message.status) {
+    case 'delivered': return <CheckIcon className="text-green-500" />;
+    case 'sent': return <CheckIcon className="text-blue-500" />;
+    case 'failed': return <XMarkIcon className="text-red-500" />;
+    case 'queued': return <ClockIcon className="text-gray-400" />;
+    default: return null;
+  }
+};
 ```
 
-```ruby
-invoice = {
-  'InvoiceNumber' => 'INV-12345',
-  'LineItems' => [
-    { 'Description' => 'Materials for Purchase Order 123456' }
-  ],
-  'Total' => 5000.00,
-  'Contact' => { 'Name' => 'ABC Supplier' }
-}
-result = InvoiceMatchingService.call(invoice_data: invoice)
-# ✓ Matches PO-123456
+---
+
+## §15.5: Unread Message Tracking
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.5"}]
+
+### Code Example
+```jsx
+# app/models/user.rb
+class User < ApplicationRecord
+  has_many :chat_messages
+
+  # Timestamp when user last viewed chat
+  # Used to calculate unread count
+  # Migration: add_column :users, :last_chat_read_at, :datetime
+end
+
+# ---
+
+# app/controllers/api/v1/chat_messages_controller.rb
+def unread_count
+  if @current_user.last_chat_read_at.present?
+    count = ChatMessage.where('created_at > ?', @current_user.last_chat_read_at).count
+  else
+    count = ChatMessage.count
+  end
+
+  render json: { unread_count: count }
+end
+
+def mark_as_read
+  @current_user.update!(last_chat_read_at: Time.current)
+  render json: { message: 'Messages marked as read' }
+end
+
+# ---
+
+// frontend/src/components/AppLayout.jsx
+useEffect(() => {
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/v1/chat_messages/unread_count');
+      const data = await response.json();
+      setUnreadCount(data.unread_count);
+    } catch (error) {
+      console.error('Failed to fetch unread count:', error);
+    }
+  };
+
+  fetchUnreadCount();
+  const interval = setInterval(fetchUnreadCount, 5000); // Poll every 5 seconds
+
+  return () => clearInterval(interval);
+}, []);
 ```
 
-```ruby
-# Migration
-add_column :purchase_orders, :normalized_po_number, :integer
-add_index :purchase_orders, :normalized_po_number
+---
 
-# In PurchaseOrder model:
-before_save :set_normalized_po_number
+## §15.6: Message Polling (No WebSockets)
 
-def set_normalized_po_number
-  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.6"}]
+
+### Code Example
+```jsx
+// frontend/src/components/chat/ChatBox.jsx
+useEffect(() => {
+  loadMessages();
+
+  const interval = setInterval(() => {
+    loadMessages();
+  }, 3000); // Poll every 3 seconds
+
+  return () => clearInterval(interval);
+}, [channel, projectId, userId]);
+
+const loadMessages = async () => {
+  let url = '/api/v1/chat_messages';
+
+  if (userId) {
+    url += `?user_id=${userId}`;
+  } else if (projectId) {
+    url += `?project_id=${projectId}`;
+  } else {
+    url += `?channel=${channel}`;
+  }
+
+  const response = await fetch(url);
+  const data = await response.json();
+  setMessages(data);
+};
+
+# ---
+
+// frontend/src/components/communications/SmsTab.jsx
+useEffect(() => {
+  loadMessages();
+
+  const interval = setInterval(() => {
+    loadMessages();
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [contactId, jobId]);
+```
+
+---
+
+## §15.7: Contact-SMS Fuzzy Matching
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.7"}]
+
+### Code Example
+```jsx
+# app/services/twilio_service.rb
+def self.find_contact_by_phone(phone_number)
+  normalized = normalize_phone_number(phone_number)
+
+  # Try exact match first
+  contact = Contact.find_by(mobile_phone: normalized)
+  return contact if contact
+
+  # Try partial match (last 9 digits for AU)
+  # 0412 345 678 → 412345678
+  last_9_digits = normalized.gsub(/\D/, '')[-9..-1]
+
+  Contact.where(
+    "regexp_replace(mobile_phone, '[^0-9]', '', 'g') LIKE ?",
+    "%#{last_9_digits}"
+  ).first
+end
+
+def self.process_incoming_sms(params)
+  from_phone = params['From']
+  body = params['Body']
+  message_sid = params['MessageSid']
+
+  contact = find_contact_by_phone(from_phone)
+
+  unless contact
+    Rails.logger.warn "Incoming SMS from unknown number: #{from_phone}"
+    return { success: false, error: 'Contact not found' }
+  end
+
+  sms = SmsMessage.create!(
+    contact: contact,
+    from_phone: from_phone,
+    to_phone: params['To'],
+    body: body,
+    direction: 'inbound',
+    status: 'received',
+    twilio_sid: message_sid,
+    received_at: Time.current
+  )
+
+  { success: true, sms: sms, contact: contact }
 end
 ```
 
-```bash
-cd /Users/jakebaird/trapid
-git add -A
-git commit -m "Enhance invoice matching with fuzzy PO number extraction
+---
 
-- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
-- Check Reference field, InvoiceNumber, and LineItems
-- Implement normalized matching for different zero-padding
-- Add comprehensive test suite with 13 test cases
-- Add payment tracking methods to PurchaseOrder model
+## §15.8: Message Deletion Authorization
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+🔧 Util | 🟡 Intermediate
 
-Co-Authored-By: Claude <noreply@anthropic.com>"
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.8"}]
 
-git subtree push --prefix backend heroku main
+### Code Example
+```jsx
+# app/controllers/api/v1/chat_messages_controller.rb
+def destroy
+  @message = ChatMessage.find(params[:id])
+
+  # Authorization: only creator can delete
+  unless @message.user_id == @current_user.id
+    return render json: { error: 'Unauthorized' }, status: :forbidden
+  end
+
+  @message.destroy
+  render json: { message: 'Message deleted' }
+end
+```
+
+---
+
+## §15.9: Email Ingestion Storage
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§15.9"}]
+
+### Code Example
+```jsx
+# app/models/email.rb
+class Email < ApplicationRecord
+  belongs_to :construction, optional: true
+  belongs_to :user, optional: true
+
+  validates :from_email, :subject, :body, presence: true
+  validates :message_id, uniqueness: true, allow_nil: true
+
+  scope :recent, -> { order(received_at: :desc) }
+  scope :for_construction, ->(construction_id) {
+    where(construction_id: construction_id).order(received_at: :desc)
+  }
+  scope :unassigned, -> { where(construction_id: nil) }
+  scope :with_attachments, -> { where(has_attachments: true) }
+
+  def formatted_received_at
+    return 'N/A' unless received_at
+    received_at.strftime('%b %d, %Y %I:%M %p')
+  end
+
+  def short_subject
+    return 'No Subject' if subject.blank?
+    subject.length > 50 ? "#{subject[0..47]}..." : subject
+  end
+end
+
+# ---
+
+# db/schema.rb (emails table)
+create_table :emails do |t|
+  t.references :construction, foreign_key: true, null: true
+  t.references :user, foreign_key: true, null: true
+  t.string :from_email, null: false
+  t.json :to_emails, default: []
+  t.json :cc_emails, default: []
+  t.json :bcc_emails, default: []
+  t.string :subject
+  t.text :body
+  t.datetime :received_at
+  t.string :message_id # Microsoft Graph message ID
+  t.boolean :has_attachments, default: false
+  t.timestamps
+end
+
+add_index :emails, :message_id, unique: true
+add_index :emails, :construction_id
 ```
 
 ---
@@ -19540,11 +19467,11 @@ git subtree push --prefix backend heroku main
 
 ---
 
-## §15.1: OAuth Token Management
+## §16.1: OAuth Token Management
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #15.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§16.1"}]
 
 ### Quick Summary
 ✅
@@ -19563,11 +19490,11 @@ end
 
 ---
 
-## §15.2: Two-Way Contact Sync
+## §16.2: Two-Way Contact Sync
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #15.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§16.2"}]
 
 ### Quick Summary
 ✅
@@ -19583,11 +19510,11 @@ add_column :contacts, :xero_sync_error, :text
 
 ---
 
-## §15.4: Webhook Signature Verification
+## §16.4: Webhook Signature Verification
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #15.4
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§16.4"}]
 
 ### Quick Summary
 ✅
@@ -19608,11 +19535,11 @@ end
 
 ---
 
-## §15.7: Background Job Processing
+## §16.7: Background Job Processing
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #15.7
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§16.7"}]
 
 ### Quick Summary
 ✅
@@ -19633,11 +19560,11 @@ end
 
 ---
 
-## §15.8: Payment Sync Workflow
+## §16.8: Payment Sync Workflow
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #15.8
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§16.8"}]
 
 ### Quick Summary
 ✅
@@ -19664,11 +19591,11 @@ add_column :payments, :synced_to_xero_at, :datetime
 
 ---
 
-## §16.1: Payment Model Structure
+## §17.1: Payment Model Structure
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #16.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§17.1"}]
 
 ### Code Example
 ```jsx
@@ -19716,11 +19643,11 @@ add_index :payments, :xero_payment_id
 
 ---
 
-## §16.10: Cascade Delete Payments
+## §17.10: Cascade Delete Payments
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #16.10
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§17.10"}]
 
 ### Code Example
 ```jsx
@@ -19733,11 +19660,11 @@ add_foreign_key :payments, :purchase_orders, on_delete: :cascade
 
 ---
 
-## §16.2: Automatic Payment Status Updates
+## §17.2: Automatic Payment Status Updates
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #16.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§17.2"}]
 
 ### Code Example
 ```jsx
@@ -19791,11 +19718,11 @@ end
 
 ---
 
-## §16.3: Xero Invoice Fuzzy Matching
+## §17.3: Xero Invoice Fuzzy Matching
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #16.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§17.3"}]
 
 ### Code Example
 ```jsx
@@ -19892,11 +19819,11 @@ end
 
 ---
 
-## §16.4: Xero Payment Sync
+## §17.4: Xero Payment Sync
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #16.4
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§17.4"}]
 
 ### Code Example
 ```jsx
@@ -19973,11 +19900,11 @@ end
 
 ---
 
-## §16.5: Payment Method Enum
+## §17.5: Payment Method Enum
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #16.5
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§17.5"}]
 
 ### Code Example
 ```jsx
@@ -20031,11 +19958,11 @@ const PAYMENT_METHODS = [
 
 ---
 
-## §16.6: Financial Precision with DECIMAL(15,2)
+## §17.6: Financial Precision with DECIMAL(15,2)
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #16.6
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§17.6"}]
 
 ### Code Example
 ```jsx
@@ -20065,11 +19992,11 @@ validates :total, :invoiced_amount, :xero_amount_paid,
 
 ---
 
-## §16.7: Payment Status Badge Display
+## §17.7: Payment Status Badge Display
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #16.7
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§17.7"}]
 
 ### Code Example
 ```jsx
@@ -20112,11 +20039,11 @@ export function PaymentStatusBadge({ status }) {
 
 ---
 
-## §16.8: Payment Summary Calculation
+## §17.8: Payment Summary Calculation
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #16.8
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§17.8"}]
 
 ### Code Example
 ```jsx
@@ -20163,11 +20090,11 @@ end
 
 ---
 
-## §16.9: Budget Variance Tracking
+## §17.9: Budget Variance Tracking
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #16.9
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§17.9"}]
 
 ### Code Example
 ```jsx
@@ -20234,11 +20161,11 @@ end
 
 ---
 
-## §17.1: Solid Queue Background Job System
+## §18.1: Solid Queue Background Job System
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #17.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§18.1"}]
 
 ### Code Example
 ```jsx
@@ -20277,11 +20204,11 @@ end
 
 ---
 
-## §17.2: Workflow State Machine
+## §18.2: Workflow State Machine
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #17.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§18.2"}]
 
 ### Code Example
 ```jsx
@@ -20348,11 +20275,11 @@ end
 
 ---
 
-## §17.3: Idempotent Background Jobs
+## §18.3: Idempotent Background Jobs
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #17.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§18.3"}]
 
 ### Code Example
 ```jsx
@@ -20396,11 +20323,11 @@ end
 
 ---
 
-## §17.4: Price Update Automation
+## §18.4: Price Update Automation
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #17.4
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§18.4"}]
 
 ### Code Example
 ```jsx
@@ -20445,11 +20372,11 @@ recurring_tasks:
 
 ---
 
-## §17.5: Model Callback Automation
+## §18.5: Model Callback Automation
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #17.5
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§18.5"}]
 
 ### Code Example
 ```jsx
@@ -20506,11 +20433,11 @@ end
 
 ---
 
-## §17.6: Job Status Tracking
+## §18.6: Job Status Tracking
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #17.6
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§18.6"}]
 
 ### Code Example
 ```jsx
@@ -20550,11 +20477,11 @@ end
 
 ---
 
-## §17.7: Batch Processing with Rate Limiting
+## §18.7: Batch Processing with Rate Limiting
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #17.7
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§18.7"}]
 
 ### Code Example
 ```jsx
@@ -20593,11 +20520,11 @@ end
 
 ---
 
-## §17.8: Workflow Metadata Storage
+## §18.8: Workflow Metadata Storage
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #17.8
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§18.8"}]
 
 ### Code Example
 ```jsx
@@ -20682,11 +20609,11 @@ await api.post('/workflow_instances', {
 
 ---
 
-## §18.1: Dynamic Table Creation Pattern
+## §19.1: Dynamic Table Creation Pattern
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.1"}]
 
 ### Code Example
 ```jsx
@@ -20724,11 +20651,11 @@ end
 
 ---
 
-## §18.2: Column Type System
+## §19.2: Column Type System
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.2"}]
 
 ### Code Example
 ```jsx
@@ -20788,388 +20715,11 @@ end
 
 ---
 
-## §18.3: Formula Evaluation System
-
-⚡ Optimization | 🟢 Beginner
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.3
-
-### Code Example
-```jsx
-# Valid formula examples:
-"{quantity} * {unit_price}"                    # Simple calculation
-"({cost} + {tax}) * {quantity}"                # Grouping
-"{amount} / {units}"                           # Division with decimal result
-"{supplier.tax_rate} * {amount}"               # Cross-table lookup
-"IF({quantity} > 100, {bulk_price}, {unit_price})" # Conditional (Dentaku function)
-
-# ---
-
-# app/services/formula_evaluator.rb
-def evaluate(formula_expression, record_data, record_instance = nil)
-  # Step 1: Replace {field_name} with variable placeholders
-  variables = {}
-  processed_formula = formula_expression.gsub(/\{([^}]+)\}/) do |match|
-    field_ref = $1
-
-    if field_ref.include?('.')
-      # Cross-table reference: {lookup_column.target_field}
-      value = resolve_cross_table_reference(field_ref, record_instance)
-    else
-      # Direct field reference
-      value = record_data[field_ref] || 0
-    end
-
-    var_name = field_ref.gsub('.', '_')
-    variables[var_name] = value.to_f
-    var_name
-  end
-
-  # Step 2: Evaluate with Dentaku
-  calculator = Dentaku::Calculator.new
-  result = calculator.evaluate(processed_formula, variables)
-
-  # Step 3: Round floats to 2 decimals
-  result.is_a?(Float) ? result.round(2) : result
-rescue => e
-  "ERROR: #{e.message}"
-end
-
-def resolve_cross_table_reference(field_ref, record_instance)
-  lookup_column_name, target_field = field_ref.split('.')
-
-  # Get related record via association
-  related_record = record_instance.send(lookup_column_name.to_sym)
-  return 0 unless related_record
-
-  related_record.send(target_field.to_sym) || 0
-end
-
-# ---
-
-# app/models/column.rb
-before_save :detect_cross_table_references, if: -> { column_type == 'computed' }
-
-def detect_cross_table_references
-  formula = settings&.dig('formula') || ''
-  self.has_cross_table_refs = FormulaEvaluator.uses_cross_table_references?(formula)
-end
-
-# app/services/formula_evaluator.rb
-def self.uses_cross_table_references?(formula_expression)
-  formula_expression.match?(/\{[^}]+\.[^}]+\}/)
-end
-```
-
----
-
-## §18.4: Lookup Column Pattern
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.4
-
-### Code Example
-```jsx
-# app/models/table.rb
-def inject_lookup_association(column)
-  return unless column.lookup_table_id.present?
-
-  target_table = Table.find(column.lookup_table_id)
-  target_class = target_table.name.classify
-
-  @dynamic_model.belongs_to column.column_name.to_sym,
-    class_name: target_class,
-    foreign_key: "#{column.column_name}_id",
-    optional: !column.required
-end
-
-# ---
-
-# app/controllers/api/v1/records_controller.rb
-def build_lookup_cache(records, table)
-  cache = {}
-
-  table.columns.where(column_type: 'lookup').each do |column|
-    next unless column.lookup_table_id.present?
-
-    target_table = Table.find(column.lookup_table_id)
-    foreign_key = "#{column.column_name}_id"
-
-    # Collect all foreign key IDs
-    ids = records.map { |r| r.send(foreign_key) }.compact.uniq
-    next if ids.empty?
-
-    # Batch load related records
-    related_records = target_table.dynamic_model.where(id: ids).index_by(&:id)
-
-    cache[column.id] = {
-      records: related_records,
-      display_column: column.lookup_display_column || target_table.title_column
-    }
-  end
-
-  cache
-end
-
-# ---
-
-{
-  "supplier": {
-    "id": 5,
-    "display": "ABC Building Supplies"
-  }
-}
-```
-
----
-
-## §18.5: Record CRUD with Formula Calculation
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.5
-
-### Code Example
-```jsx
-# app/controllers/api/v1/records_controller.rb
-def create
-  record = @table.dynamic_model.new(record_params)
-
-  if record.save
-    # Calculate computed columns AFTER save (so ID exists for lookups)
-    update_computed_columns(record)
-
-    render json: record_to_json(record), status: :created
-  else
-    render json: { errors: record.errors.full_messages }, status: :unprocessable_entity
-  end
-end
-
-def update_computed_columns(record)
-  computed_columns = @table.columns.where(column_type: 'computed')
-
-  computed_columns.each do |column|
-    formula = column.settings&.dig('formula')
-    next unless formula.present?
-
-    # Get current record data
-    record_data = record.attributes
-
-    # Evaluate formula
-    result = FormulaEvaluator.new.evaluate(
-      formula,
-      record_data,
-      column.has_cross_table_refs? ? record : nil
-    )
-
-    # Update computed field
-    record.update_column(column.column_name, result.to_s)
-  end
-end
-
-# ---
-
-# app/controllers/api/v1/records_controller.rb
-def record_to_json(record)
-  json = record.attributes
-
-  @table.columns.each do |column|
-    case column.column_type
-    when 'computed'
-      # Parse string back to number
-      value = json[column.column_name]
-      json[column.column_name] = value.present? ? value.to_f : 0
-
-    when 'lookup'
-      # Replace FK with {id, display}
-      if lookup_cache[column.id]
-        id = json["#{column.column_name}_id"]
-        related = lookup_cache[column.id][:records][id]
-        display_col = lookup_cache[column.id][:display_column]
-
-        json[column.column_name] = {
-          id: id,
-          display: related&.send(display_col) || 'Unknown'
-        }
-      end
-    end
-  end
-
-  json
-end
-```
-
----
-
-## §18.6: Table Deletion Safety
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.6
-
-### Code Example
-```jsx
-# app/controllers/api/v1/tables_controller.rb
-def destroy
-  # Check 1: Is table marked as live?
-  if @table.is_live?
-    return render json: {
-      error: 'Cannot delete live table. Set is_live to false first.'
-    }, status: :unprocessable_entity
-  end
-
-  # Check 2: Does table have records?
-  record_count = @table.dynamic_model.count
-  if record_count > 0
-    return render json: {
-      error: "Cannot delete table with #{record_count} records. Delete records first."
-    }, status: :unprocessable_entity
-  end
-
-  # Check 3: Do other tables reference this table?
-  referencing_columns = Column.where(lookup_table_id: @table.id)
-  if referencing_columns.any?
-    table_names = referencing_columns.map { |c| c.table.name }.uniq.join(', ')
-    return render json: {
-      error: "Cannot delete. Referenced by lookup columns in: #{table_names}"
-    }, status: :unprocessable_entity
-  end
-
-  # Safe to delete
-  TableBuilder.new(@table).drop_database_table
-  @table.destroy
-
-  head :no_content
-end
-
-# ---
-
-# app/services/table_builder.rb
-def drop_database_table
-  ActiveRecord::Migration.suppress_messages do
-    ActiveRecord::Migration.drop_table(table.database_table_name, if_exists: true)
-  end
-
-  # Remove dynamic model from memory
-  class_name = table.name.classify
-  Object.send(:remove_const, class_name) if Object.const_defined?(class_name)
-end
-```
-
----
-
-## §18.7: Column Validation Rules
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.7
-
-### Code Example
-```jsx
-# app/models/column.rb
-validates :name, presence: true
-validates :column_name, presence: true, uniqueness: { scope: :table_id }
-validates :column_type, inclusion: { in: COLUMN_TYPES }
-
-# Type-specific validations
-validate :validate_max_length_for_text_columns
-validate :validate_min_max_for_numeric_columns
-validate :validate_lookup_table_exists
-
-def validate_max_length_for_text_columns
-  return unless column_type.ends_with?('text')
-
-  if max_length.present? && max_length > 65535
-    errors.add(:max_length, 'cannot exceed 65,535 for text columns')
-  end
-end
-
-def validate_min_max_for_numeric_columns
-  return unless column_type.in?(%w[number whole_number currency percentage])
-
-  if min_value.present? && max_value.present? && min_value > max_value
-    errors.add(:min_value, 'cannot be greater than max_value')
-  end
-end
-
-def validate_lookup_table_exists
-  return unless column_type.in?(%w[lookup multiple_lookups])
-
-  if lookup_table_id.blank?
-    errors.add(:lookup_table_id, 'is required for lookup columns')
-  elsif !Table.exists?(lookup_table_id)
-    errors.add(:lookup_table_id, 'references non-existent table')
-  end
-end
-
-# ---
-
-# app/controllers/api/v1/records_controller.rb
-def validate_record_data(record, params)
-  @table.columns.each do |column|
-    value = params[column.column_name]
-
-    # Required check
-    if column.required && value.blank?
-      record.errors.add(column.column_name, column.validation_message || 'is required')
-    end
-
-    # Type-specific validation
-    case column.column_type
-    when 'email'
-      unless value =~ URI::MailTo::EMAIL_REGEXP
-        record.errors.add(column.column_name, 'is not a valid email')
-      end
-    when 'url'
-      unless value =~ URI::DEFAULT_PARSER.make_regexp
-        record.errors.add(column.column_name, 'is not a valid URL')
-      end
-    when 'number', 'currency', 'percentage'
-      if column.min_value && value.to_f < column.min_value
-        record.errors.add(column.column_name, "must be at least #{column.min_value}")
-      end
-      if column.max_value && value.to_f > column.max_value
-        record.errors.add(column.column_name, "cannot exceed #{column.max_value}")
-      end
-    end
-  end
-end
-```
-
----
-
-## §18.8: Foreign Key Constraints
-
-🧩 Component | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.8
-
-### Code Example
-```jsx
-# app/services/table_builder.rb
-def add_foreign_key(column)
-  return unless column.column_type == 'lookup'
-  return unless column.lookup_table_id.present?
-
-  target_table = Table.find(column.lookup_table_id)
-
-  ActiveRecord::Migration.suppress_messages do
-    ActiveRecord::Migration.add_foreign_key(
-      table.database_table_name,
-      target_table.database_table_name,
-      column: "#{column.column_name}_id",
-      on_delete: :nullify  # Don't cascade delete
-    )
-  end
-end
-```
-
----
-
 ## §19.20: Standard Table UI Pattern - Column Management
 
 🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.20"}]
 
 ### Quick Summary
 Complete pattern for table components with column drag/drop, sorting, filtering, resize, and bulk actions
@@ -22502,6 +22052,8 @@ const resetColumnSettings = () => {
 
 🧩 Component | 🟢 Beginner
 
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.21"}]
+
 ### Quick Summary
 Single-level editing pattern with click-to-edit fields and visual borders instead of pencil icons
 
@@ -22943,11 +22495,86 @@ className={`
 
 ---
 
+## §19.3: Formula Evaluation System
+
+⚡ Optimization | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.3"}]
+
+### Code Example
+```jsx
+# Valid formula examples:
+"{quantity} * {unit_price}"                    # Simple calculation
+"({cost} + {tax}) * {quantity}"                # Grouping
+"{amount} / {units}"                           # Division with decimal result
+"{supplier.tax_rate} * {amount}"               # Cross-table lookup
+"IF({quantity} > 100, {bulk_price}, {unit_price})" # Conditional (Dentaku function)
+
+# ---
+
+# app/services/formula_evaluator.rb
+def evaluate(formula_expression, record_data, record_instance = nil)
+  # Step 1: Replace {field_name} with variable placeholders
+  variables = {}
+  processed_formula = formula_expression.gsub(/\{([^}]+)\}/) do |match|
+    field_ref = $1
+
+    if field_ref.include?('.')
+      # Cross-table reference: {lookup_column.target_field}
+      value = resolve_cross_table_reference(field_ref, record_instance)
+    else
+      # Direct field reference
+      value = record_data[field_ref] || 0
+    end
+
+    var_name = field_ref.gsub('.', '_')
+    variables[var_name] = value.to_f
+    var_name
+  end
+
+  # Step 2: Evaluate with Dentaku
+  calculator = Dentaku::Calculator.new
+  result = calculator.evaluate(processed_formula, variables)
+
+  # Step 3: Round floats to 2 decimals
+  result.is_a?(Float) ? result.round(2) : result
+rescue => e
+  "ERROR: #{e.message}"
+end
+
+def resolve_cross_table_reference(field_ref, record_instance)
+  lookup_column_name, target_field = field_ref.split('.')
+
+  # Get related record via association
+  related_record = record_instance.send(lookup_column_name.to_sym)
+  return 0 unless related_record
+
+  related_record.send(target_field.to_sym) || 0
+end
+
+# ---
+
+# app/models/column.rb
+before_save :detect_cross_table_references, if: -> { column_type == 'computed' }
+
+def detect_cross_table_references
+  formula = settings&.dig('formula') || ''
+  self.has_cross_table_refs = FormulaEvaluator.uses_cross_table_references?(formula)
+end
+
+# app/services/formula_evaluator.rb
+def self.uses_cross_table_references?(formula_expression)
+  formula_expression.match?(/\{[^}]+\.[^}]+\}/)
+end
+```
+
+---
+
 ## §19.38: Cascading Filter Implementation Pattern
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** [{"type":"Bible","reference":"RULE #19.38"}]
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.38"}]
 
 ### Quick Summary
 Complete guide to implementing cascading filters in tables where one filter's selection dynamically updates available options in dependent filters.
@@ -23097,6 +22724,310 @@ expect(typeFilter.value).toBe('')
 
 ### Description
 Cascading filters create a hierarchical filtering experience where selecting a value in one filter (e.g., Chapter) automatically updates the available options in dependent filters (e.g., Type), showing only values that exist in the filtered dataset with dynamic counts.
+
+---
+
+## §19.4: Lookup Column Pattern
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.4"}]
+
+### Code Example
+```jsx
+# app/models/table.rb
+def inject_lookup_association(column)
+  return unless column.lookup_table_id.present?
+
+  target_table = Table.find(column.lookup_table_id)
+  target_class = target_table.name.classify
+
+  @dynamic_model.belongs_to column.column_name.to_sym,
+    class_name: target_class,
+    foreign_key: "#{column.column_name}_id",
+    optional: !column.required
+end
+
+# ---
+
+# app/controllers/api/v1/records_controller.rb
+def build_lookup_cache(records, table)
+  cache = {}
+
+  table.columns.where(column_type: 'lookup').each do |column|
+    next unless column.lookup_table_id.present?
+
+    target_table = Table.find(column.lookup_table_id)
+    foreign_key = "#{column.column_name}_id"
+
+    # Collect all foreign key IDs
+    ids = records.map { |r| r.send(foreign_key) }.compact.uniq
+    next if ids.empty?
+
+    # Batch load related records
+    related_records = target_table.dynamic_model.where(id: ids).index_by(&:id)
+
+    cache[column.id] = {
+      records: related_records,
+      display_column: column.lookup_display_column || target_table.title_column
+    }
+  end
+
+  cache
+end
+
+# ---
+
+{
+  "supplier": {
+    "id": 5,
+    "display": "ABC Building Supplies"
+  }
+}
+```
+
+---
+
+## §19.5: Record CRUD with Formula Calculation
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.5"}]
+
+### Code Example
+```jsx
+# app/controllers/api/v1/records_controller.rb
+def create
+  record = @table.dynamic_model.new(record_params)
+
+  if record.save
+    # Calculate computed columns AFTER save (so ID exists for lookups)
+    update_computed_columns(record)
+
+    render json: record_to_json(record), status: :created
+  else
+    render json: { errors: record.errors.full_messages }, status: :unprocessable_entity
+  end
+end
+
+def update_computed_columns(record)
+  computed_columns = @table.columns.where(column_type: 'computed')
+
+  computed_columns.each do |column|
+    formula = column.settings&.dig('formula')
+    next unless formula.present?
+
+    # Get current record data
+    record_data = record.attributes
+
+    # Evaluate formula
+    result = FormulaEvaluator.new.evaluate(
+      formula,
+      record_data,
+      column.has_cross_table_refs? ? record : nil
+    )
+
+    # Update computed field
+    record.update_column(column.column_name, result.to_s)
+  end
+end
+
+# ---
+
+# app/controllers/api/v1/records_controller.rb
+def record_to_json(record)
+  json = record.attributes
+
+  @table.columns.each do |column|
+    case column.column_type
+    when 'computed'
+      # Parse string back to number
+      value = json[column.column_name]
+      json[column.column_name] = value.present? ? value.to_f : 0
+
+    when 'lookup'
+      # Replace FK with {id, display}
+      if lookup_cache[column.id]
+        id = json["#{column.column_name}_id"]
+        related = lookup_cache[column.id][:records][id]
+        display_col = lookup_cache[column.id][:display_column]
+
+        json[column.column_name] = {
+          id: id,
+          display: related&.send(display_col) || 'Unknown'
+        }
+      end
+    end
+  end
+
+  json
+end
+```
+
+---
+
+## §19.6: Table Deletion Safety
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.6"}]
+
+### Code Example
+```jsx
+# app/controllers/api/v1/tables_controller.rb
+def destroy
+  # Check 1: Is table marked as live?
+  if @table.is_live?
+    return render json: {
+      error: 'Cannot delete live table. Set is_live to false first.'
+    }, status: :unprocessable_entity
+  end
+
+  # Check 2: Does table have records?
+  record_count = @table.dynamic_model.count
+  if record_count > 0
+    return render json: {
+      error: "Cannot delete table with #{record_count} records. Delete records first."
+    }, status: :unprocessable_entity
+  end
+
+  # Check 3: Do other tables reference this table?
+  referencing_columns = Column.where(lookup_table_id: @table.id)
+  if referencing_columns.any?
+    table_names = referencing_columns.map { |c| c.table.name }.uniq.join(', ')
+    return render json: {
+      error: "Cannot delete. Referenced by lookup columns in: #{table_names}"
+    }, status: :unprocessable_entity
+  end
+
+  # Safe to delete
+  TableBuilder.new(@table).drop_database_table
+  @table.destroy
+
+  head :no_content
+end
+
+# ---
+
+# app/services/table_builder.rb
+def drop_database_table
+  ActiveRecord::Migration.suppress_messages do
+    ActiveRecord::Migration.drop_table(table.database_table_name, if_exists: true)
+  end
+
+  # Remove dynamic model from memory
+  class_name = table.name.classify
+  Object.send(:remove_const, class_name) if Object.const_defined?(class_name)
+end
+```
+
+---
+
+## §19.7: Column Validation Rules
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.7"}]
+
+### Code Example
+```jsx
+# app/models/column.rb
+validates :name, presence: true
+validates :column_name, presence: true, uniqueness: { scope: :table_id }
+validates :column_type, inclusion: { in: COLUMN_TYPES }
+
+# Type-specific validations
+validate :validate_max_length_for_text_columns
+validate :validate_min_max_for_numeric_columns
+validate :validate_lookup_table_exists
+
+def validate_max_length_for_text_columns
+  return unless column_type.ends_with?('text')
+
+  if max_length.present? && max_length > 65535
+    errors.add(:max_length, 'cannot exceed 65,535 for text columns')
+  end
+end
+
+def validate_min_max_for_numeric_columns
+  return unless column_type.in?(%w[number whole_number currency percentage])
+
+  if min_value.present? && max_value.present? && min_value > max_value
+    errors.add(:min_value, 'cannot be greater than max_value')
+  end
+end
+
+def validate_lookup_table_exists
+  return unless column_type.in?(%w[lookup multiple_lookups])
+
+  if lookup_table_id.blank?
+    errors.add(:lookup_table_id, 'is required for lookup columns')
+  elsif !Table.exists?(lookup_table_id)
+    errors.add(:lookup_table_id, 'references non-existent table')
+  end
+end
+
+# ---
+
+# app/controllers/api/v1/records_controller.rb
+def validate_record_data(record, params)
+  @table.columns.each do |column|
+    value = params[column.column_name]
+
+    # Required check
+    if column.required && value.blank?
+      record.errors.add(column.column_name, column.validation_message || 'is required')
+    end
+
+    # Type-specific validation
+    case column.column_type
+    when 'email'
+      unless value =~ URI::MailTo::EMAIL_REGEXP
+        record.errors.add(column.column_name, 'is not a valid email')
+      end
+    when 'url'
+      unless value =~ URI::DEFAULT_PARSER.make_regexp
+        record.errors.add(column.column_name, 'is not a valid URL')
+      end
+    when 'number', 'currency', 'percentage'
+      if column.min_value && value.to_f < column.min_value
+        record.errors.add(column.column_name, "must be at least #{column.min_value}")
+      end
+      if column.max_value && value.to_f > column.max_value
+        record.errors.add(column.column_name, "cannot exceed #{column.max_value}")
+      end
+    end
+  end
+end
+```
+
+---
+
+## §19.8: Foreign Key Constraints
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.8"}]
+
+### Code Example
+```jsx
+# app/services/table_builder.rb
+def add_foreign_key(column)
+  return unless column.column_type == 'lookup'
+  return unless column.lookup_table_id.present?
+
+  target_table = Table.find(column.lookup_table_id)
+
+  ActiveRecord::Migration.suppress_messages do
+    ActiveRecord::Migration.add_foreign_key(
+      table.database_table_name,
+      target_table.database_table_name,
+      column: "#{column.column_name}_id",
+      on_delete: :nullify  # Don't cascade delete
+    )
+  end
+end
+```
 
 ---
 
@@ -23114,11 +23045,11 @@ Cascading filters create a hierarchical filtering experience where selecting a v
 
 ---
 
-## §18.1: Dynamic Table Creation Pattern
+## §19.1: Dynamic Table Creation Pattern
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.1"}]
 
 ### Code Example
 ```jsx
@@ -23156,11 +23087,11 @@ end
 
 ---
 
-## §18.2: Column Type System
+## §19.2: Column Type System
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.2"}]
 
 ### Code Example
 ```jsx
@@ -23220,388 +23151,11 @@ end
 
 ---
 
-## §18.3: Formula Evaluation System
-
-⚡ Optimization | 🟢 Beginner
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.3
-
-### Code Example
-```jsx
-# Valid formula examples:
-"{quantity} * {unit_price}"                    # Simple calculation
-"({cost} + {tax}) * {quantity}"                # Grouping
-"{amount} / {units}"                           # Division with decimal result
-"{supplier.tax_rate} * {amount}"               # Cross-table lookup
-"IF({quantity} > 100, {bulk_price}, {unit_price})" # Conditional (Dentaku function)
-
-# ---
-
-# app/services/formula_evaluator.rb
-def evaluate(formula_expression, record_data, record_instance = nil)
-  # Step 1: Replace {field_name} with variable placeholders
-  variables = {}
-  processed_formula = formula_expression.gsub(/\{([^}]+)\}/) do |match|
-    field_ref = $1
-
-    if field_ref.include?('.')
-      # Cross-table reference: {lookup_column.target_field}
-      value = resolve_cross_table_reference(field_ref, record_instance)
-    else
-      # Direct field reference
-      value = record_data[field_ref] || 0
-    end
-
-    var_name = field_ref.gsub('.', '_')
-    variables[var_name] = value.to_f
-    var_name
-  end
-
-  # Step 2: Evaluate with Dentaku
-  calculator = Dentaku::Calculator.new
-  result = calculator.evaluate(processed_formula, variables)
-
-  # Step 3: Round floats to 2 decimals
-  result.is_a?(Float) ? result.round(2) : result
-rescue => e
-  "ERROR: #{e.message}"
-end
-
-def resolve_cross_table_reference(field_ref, record_instance)
-  lookup_column_name, target_field = field_ref.split('.')
-
-  # Get related record via association
-  related_record = record_instance.send(lookup_column_name.to_sym)
-  return 0 unless related_record
-
-  related_record.send(target_field.to_sym) || 0
-end
-
-# ---
-
-# app/models/column.rb
-before_save :detect_cross_table_references, if: -> { column_type == 'computed' }
-
-def detect_cross_table_references
-  formula = settings&.dig('formula') || ''
-  self.has_cross_table_refs = FormulaEvaluator.uses_cross_table_references?(formula)
-end
-
-# app/services/formula_evaluator.rb
-def self.uses_cross_table_references?(formula_expression)
-  formula_expression.match?(/\{[^}]+\.[^}]+\}/)
-end
-```
-
----
-
-## §18.4: Lookup Column Pattern
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.4
-
-### Code Example
-```jsx
-# app/models/table.rb
-def inject_lookup_association(column)
-  return unless column.lookup_table_id.present?
-
-  target_table = Table.find(column.lookup_table_id)
-  target_class = target_table.name.classify
-
-  @dynamic_model.belongs_to column.column_name.to_sym,
-    class_name: target_class,
-    foreign_key: "#{column.column_name}_id",
-    optional: !column.required
-end
-
-# ---
-
-# app/controllers/api/v1/records_controller.rb
-def build_lookup_cache(records, table)
-  cache = {}
-
-  table.columns.where(column_type: 'lookup').each do |column|
-    next unless column.lookup_table_id.present?
-
-    target_table = Table.find(column.lookup_table_id)
-    foreign_key = "#{column.column_name}_id"
-
-    # Collect all foreign key IDs
-    ids = records.map { |r| r.send(foreign_key) }.compact.uniq
-    next if ids.empty?
-
-    # Batch load related records
-    related_records = target_table.dynamic_model.where(id: ids).index_by(&:id)
-
-    cache[column.id] = {
-      records: related_records,
-      display_column: column.lookup_display_column || target_table.title_column
-    }
-  end
-
-  cache
-end
-
-# ---
-
-{
-  "supplier": {
-    "id": 5,
-    "display": "ABC Building Supplies"
-  }
-}
-```
-
----
-
-## §18.5: Record CRUD with Formula Calculation
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.5
-
-### Code Example
-```jsx
-# app/controllers/api/v1/records_controller.rb
-def create
-  record = @table.dynamic_model.new(record_params)
-
-  if record.save
-    # Calculate computed columns AFTER save (so ID exists for lookups)
-    update_computed_columns(record)
-
-    render json: record_to_json(record), status: :created
-  else
-    render json: { errors: record.errors.full_messages }, status: :unprocessable_entity
-  end
-end
-
-def update_computed_columns(record)
-  computed_columns = @table.columns.where(column_type: 'computed')
-
-  computed_columns.each do |column|
-    formula = column.settings&.dig('formula')
-    next unless formula.present?
-
-    # Get current record data
-    record_data = record.attributes
-
-    # Evaluate formula
-    result = FormulaEvaluator.new.evaluate(
-      formula,
-      record_data,
-      column.has_cross_table_refs? ? record : nil
-    )
-
-    # Update computed field
-    record.update_column(column.column_name, result.to_s)
-  end
-end
-
-# ---
-
-# app/controllers/api/v1/records_controller.rb
-def record_to_json(record)
-  json = record.attributes
-
-  @table.columns.each do |column|
-    case column.column_type
-    when 'computed'
-      # Parse string back to number
-      value = json[column.column_name]
-      json[column.column_name] = value.present? ? value.to_f : 0
-
-    when 'lookup'
-      # Replace FK with {id, display}
-      if lookup_cache[column.id]
-        id = json["#{column.column_name}_id"]
-        related = lookup_cache[column.id][:records][id]
-        display_col = lookup_cache[column.id][:display_column]
-
-        json[column.column_name] = {
-          id: id,
-          display: related&.send(display_col) || 'Unknown'
-        }
-      end
-    end
-  end
-
-  json
-end
-```
-
----
-
-## §18.6: Table Deletion Safety
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.6
-
-### Code Example
-```jsx
-# app/controllers/api/v1/tables_controller.rb
-def destroy
-  # Check 1: Is table marked as live?
-  if @table.is_live?
-    return render json: {
-      error: 'Cannot delete live table. Set is_live to false first.'
-    }, status: :unprocessable_entity
-  end
-
-  # Check 2: Does table have records?
-  record_count = @table.dynamic_model.count
-  if record_count > 0
-    return render json: {
-      error: "Cannot delete table with #{record_count} records. Delete records first."
-    }, status: :unprocessable_entity
-  end
-
-  # Check 3: Do other tables reference this table?
-  referencing_columns = Column.where(lookup_table_id: @table.id)
-  if referencing_columns.any?
-    table_names = referencing_columns.map { |c| c.table.name }.uniq.join(', ')
-    return render json: {
-      error: "Cannot delete. Referenced by lookup columns in: #{table_names}"
-    }, status: :unprocessable_entity
-  end
-
-  # Safe to delete
-  TableBuilder.new(@table).drop_database_table
-  @table.destroy
-
-  head :no_content
-end
-
-# ---
-
-# app/services/table_builder.rb
-def drop_database_table
-  ActiveRecord::Migration.suppress_messages do
-    ActiveRecord::Migration.drop_table(table.database_table_name, if_exists: true)
-  end
-
-  # Remove dynamic model from memory
-  class_name = table.name.classify
-  Object.send(:remove_const, class_name) if Object.const_defined?(class_name)
-end
-```
-
----
-
-## §18.7: Column Validation Rules
-
-🔧 Util | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.7
-
-### Code Example
-```jsx
-# app/models/column.rb
-validates :name, presence: true
-validates :column_name, presence: true, uniqueness: { scope: :table_id }
-validates :column_type, inclusion: { in: COLUMN_TYPES }
-
-# Type-specific validations
-validate :validate_max_length_for_text_columns
-validate :validate_min_max_for_numeric_columns
-validate :validate_lookup_table_exists
-
-def validate_max_length_for_text_columns
-  return unless column_type.ends_with?('text')
-
-  if max_length.present? && max_length > 65535
-    errors.add(:max_length, 'cannot exceed 65,535 for text columns')
-  end
-end
-
-def validate_min_max_for_numeric_columns
-  return unless column_type.in?(%w[number whole_number currency percentage])
-
-  if min_value.present? && max_value.present? && min_value > max_value
-    errors.add(:min_value, 'cannot be greater than max_value')
-  end
-end
-
-def validate_lookup_table_exists
-  return unless column_type.in?(%w[lookup multiple_lookups])
-
-  if lookup_table_id.blank?
-    errors.add(:lookup_table_id, 'is required for lookup columns')
-  elsif !Table.exists?(lookup_table_id)
-    errors.add(:lookup_table_id, 'references non-existent table')
-  end
-end
-
-# ---
-
-# app/controllers/api/v1/records_controller.rb
-def validate_record_data(record, params)
-  @table.columns.each do |column|
-    value = params[column.column_name]
-
-    # Required check
-    if column.required && value.blank?
-      record.errors.add(column.column_name, column.validation_message || 'is required')
-    end
-
-    # Type-specific validation
-    case column.column_type
-    when 'email'
-      unless value =~ URI::MailTo::EMAIL_REGEXP
-        record.errors.add(column.column_name, 'is not a valid email')
-      end
-    when 'url'
-      unless value =~ URI::DEFAULT_PARSER.make_regexp
-        record.errors.add(column.column_name, 'is not a valid URL')
-      end
-    when 'number', 'currency', 'percentage'
-      if column.min_value && value.to_f < column.min_value
-        record.errors.add(column.column_name, "must be at least #{column.min_value}")
-      end
-      if column.max_value && value.to_f > column.max_value
-        record.errors.add(column.column_name, "cannot exceed #{column.max_value}")
-      end
-    end
-  end
-end
-```
-
----
-
-## §18.8: Foreign Key Constraints
-
-🧩 Component | 🟡 Intermediate
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.8
-
-### Code Example
-```jsx
-# app/services/table_builder.rb
-def add_foreign_key(column)
-  return unless column.column_type == 'lookup'
-  return unless column.lookup_table_id.present?
-
-  target_table = Table.find(column.lookup_table_id)
-
-  ActiveRecord::Migration.suppress_messages do
-    ActiveRecord::Migration.add_foreign_key(
-      table.database_table_name,
-      target_table.database_table_name,
-      column: "#{column.column_name}_id",
-      on_delete: :nullify  # Don't cascade delete
-    )
-  end
-end
-```
-
----
-
 ## §19.20: Standard Table UI Pattern - Column Management
 
 🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.20"}]
 
 ### Quick Summary
 Complete pattern for table components with column drag/drop, sorting, filtering, resize, and bulk actions
@@ -24934,6 +24488,8 @@ const resetColumnSettings = () => {
 
 🧩 Component | 🟢 Beginner
 
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.21"}]
+
 ### Quick Summary
 Single-level editing pattern with click-to-edit fields and visual borders instead of pencil icons
 
@@ -25375,11 +24931,86 @@ className={`
 
 ---
 
+## §19.3: Formula Evaluation System
+
+⚡ Optimization | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.3"}]
+
+### Code Example
+```jsx
+# Valid formula examples:
+"{quantity} * {unit_price}"                    # Simple calculation
+"({cost} + {tax}) * {quantity}"                # Grouping
+"{amount} / {units}"                           # Division with decimal result
+"{supplier.tax_rate} * {amount}"               # Cross-table lookup
+"IF({quantity} > 100, {bulk_price}, {unit_price})" # Conditional (Dentaku function)
+
+# ---
+
+# app/services/formula_evaluator.rb
+def evaluate(formula_expression, record_data, record_instance = nil)
+  # Step 1: Replace {field_name} with variable placeholders
+  variables = {}
+  processed_formula = formula_expression.gsub(/\{([^}]+)\}/) do |match|
+    field_ref = $1
+
+    if field_ref.include?('.')
+      # Cross-table reference: {lookup_column.target_field}
+      value = resolve_cross_table_reference(field_ref, record_instance)
+    else
+      # Direct field reference
+      value = record_data[field_ref] || 0
+    end
+
+    var_name = field_ref.gsub('.', '_')
+    variables[var_name] = value.to_f
+    var_name
+  end
+
+  # Step 2: Evaluate with Dentaku
+  calculator = Dentaku::Calculator.new
+  result = calculator.evaluate(processed_formula, variables)
+
+  # Step 3: Round floats to 2 decimals
+  result.is_a?(Float) ? result.round(2) : result
+rescue => e
+  "ERROR: #{e.message}"
+end
+
+def resolve_cross_table_reference(field_ref, record_instance)
+  lookup_column_name, target_field = field_ref.split('.')
+
+  # Get related record via association
+  related_record = record_instance.send(lookup_column_name.to_sym)
+  return 0 unless related_record
+
+  related_record.send(target_field.to_sym) || 0
+end
+
+# ---
+
+# app/models/column.rb
+before_save :detect_cross_table_references, if: -> { column_type == 'computed' }
+
+def detect_cross_table_references
+  formula = settings&.dig('formula') || ''
+  self.has_cross_table_refs = FormulaEvaluator.uses_cross_table_references?(formula)
+end
+
+# app/services/formula_evaluator.rb
+def self.uses_cross_table_references?(formula_expression)
+  formula_expression.match?(/\{[^}]+\.[^}]+\}/)
+end
+```
+
+---
+
 ## §19.38: Cascading Filter Implementation Pattern
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** [{"type":"Bible","reference":"RULE #19.38"}]
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.38"}]
 
 ### Quick Summary
 Complete guide to implementing cascading filters in tables where one filter's selection dynamically updates available options in dependent filters.
@@ -25532,6 +25163,310 @@ Cascading filters create a hierarchical filtering experience where selecting a v
 
 ---
 
+## §19.4: Lookup Column Pattern
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.4"}]
+
+### Code Example
+```jsx
+# app/models/table.rb
+def inject_lookup_association(column)
+  return unless column.lookup_table_id.present?
+
+  target_table = Table.find(column.lookup_table_id)
+  target_class = target_table.name.classify
+
+  @dynamic_model.belongs_to column.column_name.to_sym,
+    class_name: target_class,
+    foreign_key: "#{column.column_name}_id",
+    optional: !column.required
+end
+
+# ---
+
+# app/controllers/api/v1/records_controller.rb
+def build_lookup_cache(records, table)
+  cache = {}
+
+  table.columns.where(column_type: 'lookup').each do |column|
+    next unless column.lookup_table_id.present?
+
+    target_table = Table.find(column.lookup_table_id)
+    foreign_key = "#{column.column_name}_id"
+
+    # Collect all foreign key IDs
+    ids = records.map { |r| r.send(foreign_key) }.compact.uniq
+    next if ids.empty?
+
+    # Batch load related records
+    related_records = target_table.dynamic_model.where(id: ids).index_by(&:id)
+
+    cache[column.id] = {
+      records: related_records,
+      display_column: column.lookup_display_column || target_table.title_column
+    }
+  end
+
+  cache
+end
+
+# ---
+
+{
+  "supplier": {
+    "id": 5,
+    "display": "ABC Building Supplies"
+  }
+}
+```
+
+---
+
+## §19.5: Record CRUD with Formula Calculation
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.5"}]
+
+### Code Example
+```jsx
+# app/controllers/api/v1/records_controller.rb
+def create
+  record = @table.dynamic_model.new(record_params)
+
+  if record.save
+    # Calculate computed columns AFTER save (so ID exists for lookups)
+    update_computed_columns(record)
+
+    render json: record_to_json(record), status: :created
+  else
+    render json: { errors: record.errors.full_messages }, status: :unprocessable_entity
+  end
+end
+
+def update_computed_columns(record)
+  computed_columns = @table.columns.where(column_type: 'computed')
+
+  computed_columns.each do |column|
+    formula = column.settings&.dig('formula')
+    next unless formula.present?
+
+    # Get current record data
+    record_data = record.attributes
+
+    # Evaluate formula
+    result = FormulaEvaluator.new.evaluate(
+      formula,
+      record_data,
+      column.has_cross_table_refs? ? record : nil
+    )
+
+    # Update computed field
+    record.update_column(column.column_name, result.to_s)
+  end
+end
+
+# ---
+
+# app/controllers/api/v1/records_controller.rb
+def record_to_json(record)
+  json = record.attributes
+
+  @table.columns.each do |column|
+    case column.column_type
+    when 'computed'
+      # Parse string back to number
+      value = json[column.column_name]
+      json[column.column_name] = value.present? ? value.to_f : 0
+
+    when 'lookup'
+      # Replace FK with {id, display}
+      if lookup_cache[column.id]
+        id = json["#{column.column_name}_id"]
+        related = lookup_cache[column.id][:records][id]
+        display_col = lookup_cache[column.id][:display_column]
+
+        json[column.column_name] = {
+          id: id,
+          display: related&.send(display_col) || 'Unknown'
+        }
+      end
+    end
+  end
+
+  json
+end
+```
+
+---
+
+## §19.6: Table Deletion Safety
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.6"}]
+
+### Code Example
+```jsx
+# app/controllers/api/v1/tables_controller.rb
+def destroy
+  # Check 1: Is table marked as live?
+  if @table.is_live?
+    return render json: {
+      error: 'Cannot delete live table. Set is_live to false first.'
+    }, status: :unprocessable_entity
+  end
+
+  # Check 2: Does table have records?
+  record_count = @table.dynamic_model.count
+  if record_count > 0
+    return render json: {
+      error: "Cannot delete table with #{record_count} records. Delete records first."
+    }, status: :unprocessable_entity
+  end
+
+  # Check 3: Do other tables reference this table?
+  referencing_columns = Column.where(lookup_table_id: @table.id)
+  if referencing_columns.any?
+    table_names = referencing_columns.map { |c| c.table.name }.uniq.join(', ')
+    return render json: {
+      error: "Cannot delete. Referenced by lookup columns in: #{table_names}"
+    }, status: :unprocessable_entity
+  end
+
+  # Safe to delete
+  TableBuilder.new(@table).drop_database_table
+  @table.destroy
+
+  head :no_content
+end
+
+# ---
+
+# app/services/table_builder.rb
+def drop_database_table
+  ActiveRecord::Migration.suppress_messages do
+    ActiveRecord::Migration.drop_table(table.database_table_name, if_exists: true)
+  end
+
+  # Remove dynamic model from memory
+  class_name = table.name.classify
+  Object.send(:remove_const, class_name) if Object.const_defined?(class_name)
+end
+```
+
+---
+
+## §19.7: Column Validation Rules
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.7"}]
+
+### Code Example
+```jsx
+# app/models/column.rb
+validates :name, presence: true
+validates :column_name, presence: true, uniqueness: { scope: :table_id }
+validates :column_type, inclusion: { in: COLUMN_TYPES }
+
+# Type-specific validations
+validate :validate_max_length_for_text_columns
+validate :validate_min_max_for_numeric_columns
+validate :validate_lookup_table_exists
+
+def validate_max_length_for_text_columns
+  return unless column_type.ends_with?('text')
+
+  if max_length.present? && max_length > 65535
+    errors.add(:max_length, 'cannot exceed 65,535 for text columns')
+  end
+end
+
+def validate_min_max_for_numeric_columns
+  return unless column_type.in?(%w[number whole_number currency percentage])
+
+  if min_value.present? && max_value.present? && min_value > max_value
+    errors.add(:min_value, 'cannot be greater than max_value')
+  end
+end
+
+def validate_lookup_table_exists
+  return unless column_type.in?(%w[lookup multiple_lookups])
+
+  if lookup_table_id.blank?
+    errors.add(:lookup_table_id, 'is required for lookup columns')
+  elsif !Table.exists?(lookup_table_id)
+    errors.add(:lookup_table_id, 'references non-existent table')
+  end
+end
+
+# ---
+
+# app/controllers/api/v1/records_controller.rb
+def validate_record_data(record, params)
+  @table.columns.each do |column|
+    value = params[column.column_name]
+
+    # Required check
+    if column.required && value.blank?
+      record.errors.add(column.column_name, column.validation_message || 'is required')
+    end
+
+    # Type-specific validation
+    case column.column_type
+    when 'email'
+      unless value =~ URI::MailTo::EMAIL_REGEXP
+        record.errors.add(column.column_name, 'is not a valid email')
+      end
+    when 'url'
+      unless value =~ URI::DEFAULT_PARSER.make_regexp
+        record.errors.add(column.column_name, 'is not a valid URL')
+      end
+    when 'number', 'currency', 'percentage'
+      if column.min_value && value.to_f < column.min_value
+        record.errors.add(column.column_name, "must be at least #{column.min_value}")
+      end
+      if column.max_value && value.to_f > column.max_value
+        record.errors.add(column.column_name, "cannot exceed #{column.max_value}")
+      end
+    end
+  end
+end
+```
+
+---
+
+## §19.8: Foreign Key Constraints
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§19.8"}]
+
+### Code Example
+```jsx
+# app/services/table_builder.rb
+def add_foreign_key(column)
+  return unless column.column_type == 'lookup'
+  return unless column.lookup_table_id.present?
+
+  target_table = Table.find(column.lookup_table_id)
+
+  ActiveRecord::Migration.suppress_messages do
+    ActiveRecord::Migration.add_foreign_key(
+      table.database_table_name,
+      target_table.database_table_name,
+      column: "#{column.column_name}_id",
+      on_delete: :nullify  # Don't cascade delete
+    )
+  end
+end
+```
+
+---
+
 
 # Chapter 20: UI/UX Standards & Patterns
 
@@ -25546,163 +25481,256 @@ Cascading filters create a hierarchical filtering experience where selecting a v
 
 ---
 
-## §19.1: Table Component Selection Pattern
+## §20.03: Always-On Edit Mode with Dropdown Support
 
 🧩 Component
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.1
+### Quick Summary
+Trinity tables now support always-visible Edit button with inline editing for all cells including dropdown fields for status and severity lookups.
+
+### Code Example
+```jsx
+// Edit button always visible - no row selection required
+<button onClick={() => setEditModeActive(!editModeActive)}>
+  {editModeActive ? "Lock Cells" : "Edit"}
+</button>
+
+// Status dropdown when editing
+if (editingRowId === entry.id) {
+  return <select value={editingData.status}>
+    <option value="open">Open</option>
+    <option value="fixed">Fixed</option>
+  </select>
+}
+```
+
+### ⚠️ Common Mistakes
+Forgetting to check editModeActive before allowing cell editing. Not providing onClick handler for dropdown fields. Missing yellow hover effect on editable cells.
+
+### 🧪 Testing Strategy
+Verify Edit button is always visible. Click Edit and verify cells show yellow hover. Double-click text fields to edit. Single-click dropdown fields to edit.
+
+### Description
+The TrinityTableView component has been enhanced with always-on edit mode that allows users to edit any cell in the table without selecting rows first. Dropdown fields automatically appear for lookup columns when clicked in edit mode.
+
+---
+
+## §20.04: Inline Dropdown Editing for Lookup Fields
+
+🧩 Component
+
+### Quick Summary
+Status and severity fields use dropdown selects when editing, providing a consistent UX for lookup values with emojis and proper labeling.
+
+### Code Example
+```jsx
+// Status dropdown with emojis
+case "status":
+  if (editingRowId === entry.id) {
+    return (
+      <select
+        value={editingData.status || entry.status || ""}
+        onChange={(e) => setEditingData({ ...editingData, status: e.target.value })}
+        className="w-full px-2 py-1 text-sm border border-blue-500 rounded"
+      >
+        <option value="">Select Status</option>
+        <option value="open">⚡ Open</option>
+        <option value="fixed">✅ Fixed</option>
+        <option value="by_design">⚠️ By Design</option>
+        <option value="monitoring">🔄 Monitoring</option>
+      </select>
+    )
+  }
+```
+
+### ⚠️ Common Mistakes
+Using text input instead of dropdown for lookup fields. Forgetting to preserve existing value when dropdown opens. Not including empty option for clearing value. Missing emojis or visual indicators.
+
+### 🧪 Testing Strategy
+Single-click status or severity cell in edit mode. Verify dropdown opens immediately. Select different option and save. Verify badge updates with correct emoji. Test with null/empty initial values.
+
+### Description
+Lookup fields (status, severity) render as dropdown selects when in edit mode, allowing users to choose from predefined options. Single-click activates the dropdown automatically. Fields include visual indicators like emojis for better UX.
+
+---
+
+## §20.1: Table Component Selection Pattern
+
+🧩 Component
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.1"}]
 
 ### Quick Summary
 Decision tree for choosing between DataTable.jsx (read-only, basic sorting) vs Full table pattern (editing, bulk actions, advanced features)
 
 ---
 
-## §19.10: Column Visibility Toggle Pattern
+## §20.10: Column Visibility Toggle Pattern
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** RULE #19.10: Column Visibility Standards
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.10"}]
 
 ### Quick Summary
 Implement column visibility toggle dropdown
 
 ---
 
-## §19.11: Search & Filter UI Standards Pattern
+## §20.11: Search & Filter UI Standards Pattern
 
 🧩 Component | 🟢 Beginner
 
-**📖 Related Bible Rules:** RULE #19.11: Search & Filter UI Standards
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.11"}]
 
 ### Quick Summary
 Implement search boxes with clear buttons
 
 ---
 
-## §19.11A: Standardized Toolbar Layout Pattern
+## §20.13: State Persistence Pattern
 
 🧩 Component
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.11A
-
-### Quick Summary
-Standard layout for table toolbars: Global search (left), action buttons in specific order (right)
-
----
-
-## §19.13: State Persistence Pattern
-
-🧩 Component
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.13
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.13"}]
 
 ### Quick Summary
 How to persist table state (filters, column order, visibility) to localStorage
 
 ---
 
-## §19.15: Dark Mode Implementation
+## §20.15: Dark Mode Implementation
 
 🧩 Component
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.15
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.15"}]
 
 ### Quick Summary
 Pattern for implementing dark mode support in table components
 
 ---
 
-## §19.2: Table Header Implementation
+## §20.2: Table Header Implementation
 
 🧩 Component
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.2"}]
 
 ### Quick Summary
 Required header elements: sortable columns, visibility controls, sticky headers, dark mode
 
 ---
 
-## §19.20: Search Functionality Implementation Pattern
+## §20.20: Search Functionality Implementation Pattern
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** RULE #19.20: Search Functionality Standards
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.20"}]
 
 ### Quick Summary
 Implement performant search with debouncing
 
 ---
 
-## §19.21: Form Standards Pattern
+## §20.21: Form Standards Pattern
 
 🧩 Component
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.21
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.21"}]
 
 ### Quick Summary
 Standard patterns for form layout, validation, and submission
 
 ---
 
-## §19.24: Loading State Standards Pattern
+## §20.24: Implementing Interactive Cursor Styles in Tables
 
 🧩 Component | 🟢 Beginner
 
-**📖 Related Bible Rules:** RULE #19.24: Loading State Standards
+**📖 Related Bible Rules:** RULE #20.22, #20.23, #20.4, #20.5
 
 ### Quick Summary
-Implement loading spinners and skeleton screens
+How to implement cursor styles for table headers that provide clear visual feedback for resize, drag, and sort operations.
+
+### Code Example
+```jsx
+/* CSS Cursor Styles */
+.trinity-resize-handle {
+  cursor: col-resize;
+}
+.trinity-drag-handle {
+  cursor: grab;
+}
+.trinity-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* React Component Usage */
+<th className="trinity-resize-handle cursor-pointer">
+  <Bars3Icon className="trinity-drag-handle" />
+  <span>Column Header</span>
+</th>
+```
+
+### ⚠️ Common Mistakes
+1. Forgetting to add cursor styles - users cannot tell which elements are interactive. 2. Using wrong cursor type - resize cursor on drag handle is confusing. 3. Not handling active state - grabbing cursor should appear when dragging. 4. Conflicting cursor classes - ensure only one cursor style applies at a time.
+
+### 🧪 Testing Strategy
+Manual testing: Hover over column headers to verify col-resize cursor. Hover over three-dot icons to verify grab cursor. Click and drag to verify grabbing cursor. Hover over sortable headers to verify pointer cursor.
+
+### Description
+Tables need intuitive cursor feedback to communicate interactive capabilities. This pattern shows how to implement col-resize for column resizing, grab/grabbing for drag operations, and pointer for sorting.
 
 ---
 
-## §19.25: Button & Action Standards Pattern
+## §20.25: Button & Action Standards Pattern
 
 🧩 Component | 🟢 Beginner
 
-**📖 Related Bible Rules:** RULE #19.25: Button & Action Standards
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.25"}]
 
 ### Quick Summary
 Implement consistent button styles and states
 
 ---
 
-## §19.26: Status Badge Standards Pattern
+## §20.26: Status Badge Standards Pattern
 
 🧩 Component | 🟢 Beginner
 
-**📖 Related Bible Rules:** RULE #19.26: Status Badge Standards
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.26"}]
 
 ### Quick Summary
 Implement status badges with consistent colors
 
 ---
 
-## §19.28: Navigation Standards Pattern
+## §20.28: Navigation Standards Pattern
 
 🧩 Component | 🟢 Beginner
 
-**📖 Related Bible Rules:** RULE #19.28: Navigation Standards
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.28"}]
 
 ### Quick Summary
 Implement tab navigation and breadcrumbs
 
 ---
 
-## §19.3: Column Filter Implementation
+## §20.3: Column Filter Implementation
 
 🧩 Component
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.3"}]
 
 ### Quick Summary
 How to implement inline column filters in table headers
 
 ---
 
-## §19.31: Data-Dense Table Layout
+## §20.31: Data-Dense Table Layout
 
 🧩 Component
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.31"}]
 
 ### Description
 ## §19.31: Data-Dense Table Layout Pattern
@@ -25796,9 +25824,11 @@ const DataDenseTable = ({ rows }) => {
 
 ---
 
-## §19.32: Zebra Striping (Alternating Row Colors)
+## §20.32: Zebra Striping (Alternating Row Colors)
 
 🧩 Component
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.32"}]
 
 ### Description
 ## §19.32: Zebra Striping Implementation
@@ -25891,22 +25921,11 @@ bg-gray-100 // Solid color, good contrast
 
 ---
 
-## §19.33: Sticky Horizontal Scrollbar Component Pattern
+## §20.33: Sticky Horizontal Scrollbar Component Pattern
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** **Related Bible Rules:**
-- RULE #19.1: Table Type Selection (Advanced vs DataTable)
-- RULE #19.2: Sticky Gradient Headers
-- RULE #19.10: Column Visibility Toggle
-
-**Related Lexicon Entries:**
-- §19.12: Sticky Horizontal Scrollbar Implementation Bugs
-
-**Example Implementation:**
-- frontend/src/components/documentation/BibleTableView.jsx
-- frontend/src/components/documentation/LexiconTableView.jsx
-
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.33"}]
 
 ### Quick Summary
 Learn how to implement a custom sticky horizontal scrollbar that stays visible at the bottom of wide tables, with bidirectional scroll synchronization.
@@ -26284,9 +26303,11 @@ See: TRAPID_BIBLE.md Chapter 19, RULE #19.12
 
 ---
 
-## §19.34: Modern Table Header Aesthetics
+## §20.34: Modern Table Header Aesthetics
 
 🧩 Component
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.34"}]
 
 ### Description
 ## §19.34: Modern Table Header Implementation
@@ -26400,9 +26421,11 @@ bg-white/95
 
 ---
 
-## §19.35: Table Border Framing
+## §20.35: Table Border Framing
 
 🧩 Component
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.35"}]
 
 ### Description
 ## §19.35: Table Border Framing Implementation
@@ -26533,9 +26556,11 @@ const FramedTable = ({ data }) => {
 
 ---
 
-## §19.36: Expand/Collapse Row Details
+## §20.36: Expand/Collapse Row Details
 
 🧩 Component
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.36"}]
 
 ### Description
 ## §19.36: Expand/Collapse Row Details Pattern
@@ -26758,47 +26783,22 @@ import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 
 ---
 
-## §19.4: Column Resizing Pattern
+## §20.37: Column Visibility Toggle Pattern
 
 🧩 Component
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.4
-
-### Quick Summary
-Pattern for implementing draggable column resize handles
-
----
-
-## §19.5: Column Reordering Pattern
-
-🧩 Component
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.5
-
-### Quick Summary
-Pattern for implementing drag-and-drop column reordering
-
----
-
-## §19.5A: Column Visibility Toggle Pattern
-
-🧩 Component
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.5A
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.5A"}]
 
 ### Quick Summary
 Pattern for eye icon dropdown to show/hide columns
 
 ---
 
-## §19.5B: Column Width Persistence Pattern
+## §20.39: Column Width Persistence Pattern
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** **Related Bible Rules:**
-- RULE #19.5B: Column Width Persistence (REQUIRED)
-- RULE #19.13: State Persistence Standards
-- RULE #19.4: Column Resizing Standards
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.5B"}]
 
 ### Quick Summary
 Learn how to persist column widths to localStorage so users' custom column sizing is remembered across sessions.
@@ -27075,9 +27075,166 @@ This pattern is **required** for all tables with resizable columns to provide a 
 
 ---
 
-## §19.6: Scroll Behavior Implementation
+## §20.4: Column Resizing Pattern
 
 🧩 Component
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.4"}]
+
+### Quick Summary
+Pattern for implementing draggable column resize handles
+
+---
+
+## §20.40: Standardized Toolbar Layout Pattern
+
+🧩 Component
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.11A"}]
+
+### Quick Summary
+Standard layout for table toolbars: Global search (left), action buttons in specific order (right)
+
+---
+
+## §20.41: Custom Action Buttons in Trinity Tables (Add, Import, etc.)
+
+✨ Feature
+
+### Description
+Complete guide for adding custom action buttons (Add, Import, Export, Sync, Configure) to Trinity table toolbars with mandatory h-[42px] alignment
+
+---
+
+## §20.42: Inline Bulk Actions Pattern - Delete Safety
+
+🧩 Component
+
+### Quick Summary
+Bulk action buttons positioned inline next to Columns button with Delete-after-Edit safety pattern
+
+### Code Example
+```jsx
+const [showDeleteButton, setShowDeleteButton] = useState(false)
+
+const handleEdit = () => {
+  const entry = filteredAndSorted.find(e => e.id === Array.from(selectedRows)[0])
+  onEdit(entry)
+  setShowDeleteButton(true) // Enable delete after edit
+}
+
+const handleDelete = () => {
+  if (confirm(`Delete ${selectedRows.size} entries?`)) {
+    selectedRows.forEach(id => deleteEntry(id))
+    setSelectedRows(new Set())
+    setShowDeleteButton(false)
+  }
+}
+```
+
+### Description
+**Pattern:** Place bulk action buttons inline with table controls instead of separate bar
+
+**Implementation:**
+```jsx
+{selectedRows.size > 0 && (
+  <>
+    <button className="h-[42px]" onClick={handleEdit}>Edit</button>
+    {showDeleteButton && (
+      <button className="h-[42px]" onClick={handleDelete}>Delete</button>
+    )}
+    <button className="h-[42px]" onClick={handleExport}>Export</button>
+    <button className="h-[42px]" onClick={handleClear}>Clear</button>
+  </>
+)}
+```
+
+**Safety Pattern:**
+- Delete button hidden by default
+- Only shows after Edit is clicked
+- Prevents accidental bulk deletion
+- User must explicitly click Edit first
+
+**Button Alignment:**
+- All buttons: h-[42px] for consistent height
+- Positioned inline next to Columns button
+- Only visible when rows selected (selectedRows.size > 0)
+
+**Reference:** TrinityTableView.jsx lines 779-859
+
+---
+
+## §20.43: CSV Export for Selected Table Rows
+
+🧩 Component
+
+### Quick Summary
+Export selected table rows to CSV file with proper escaping and datestamp filename
+
+### Code Example
+```jsx
+const handleExport = () => {
+  const selectedEntryIds = Array.from(selectedRows)
+  const selectedEntries = filteredAndSorted.filter(e => selectedEntryIds.includes(e.id))
+  
+  const csvContent = [
+    ["Chapter", "Section", "Type", "Title", "Content", "Component", "Status", "Severity"].join(","),
+    ...selectedEntries.map(e => [
+      `"${e.chapter_number} - ${CHAPTER_NAMES[e.chapter_number] || e.chapter_name}"`,
+      e.section_number || "",
+      e.entry_type || "",
+      `"${e.title?.replace(/"/g, """)}"`,
+      `"${(e.description || e.details || e.scenario || "")?.replace(/"/g, """)}"`,
+      `"${e.component?.replace(/"/g, """) || ""}"`,
+      e.status || "",
+      e.severity || ""
+    ].join(","))
+  ].join("\n")
+
+  const blob = new Blob([csvContent], { type: "text/csv" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = `trinity-export-${new Date().toISOString().split("T")[0]}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+```
+
+### Description
+**Pattern:** Bulk export of selected table rows to CSV format
+
+**Features:**
+- Exports only selected rows
+- Includes all relevant columns (Chapter, Section, Type, Title, Content, Component, Status, Severity)
+- Proper CSV escaping (quotes doubled, fields wrapped in quotes)
+- Filename includes datestamp: `trinity-export-2025-11-17.csv`
+- Content truncated to 150 chars in table, full content exported
+- Download triggered via blob URL and anchor element
+
+**Implementation:**
+Creates CSV content with header row, maps selected entries to CSV rows, properly escapes quotes and commas, creates downloadable blob.
+
+**Reference:** TrinityTableView.jsx Export button (lines 818-844)
+
+---
+
+## §20.5: Column Reordering Pattern
+
+🧩 Component
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.5"}]
+
+### Quick Summary
+Pattern for implementing drag-and-drop column reordering
+
+---
+
+## §20.6: Scroll Behavior Implementation
+
+🧩 Component
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.6"}]
 
 ### Description
 ## §19.6: Scroll Behavior Standards Implementation
@@ -27171,15 +27328,11 @@ useEffect(() => {
 
 ---
 
-## §19.8: Cell Content Standards Pattern
+## §20.8: Cell Content Standards Pattern
 
 🧩 Component | 🟢 Beginner
 
-**📖 Related Bible Rules:** **Related Bible Rules:**
-- RULE #19.8: Cell Content Standards
-- RULE #19.15: Dark Mode Requirements
-- RULE #19.7: Column Width Standards
-
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.8"}]
 
 ### Quick Summary
 Learn how to properly format and truncate cell content with tooltips for overflow text, ensuring data remains accessible.
@@ -27361,11 +27514,11 @@ This pattern prevents horizontal scrolling caused by long content and provides h
 
 ---
 
-## §19.9: Row Selection Pattern
+## §20.9: Row Selection Pattern
 
 🧩 Component
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.9
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20.9"}]
 
 ### Quick Summary
 Pattern for checkbox-based row selection with bulk actions
@@ -27375,6 +27528,8 @@ Pattern for checkbox-based row selection with bulk actions
 ## Test Teacher Pattern
 
 🧩 Component | 🟢 Beginner
+
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§20"}]
 
 ### Description
 How to create a new documentation component
@@ -27395,11 +27550,11 @@ How to create a new documentation component
 
 ---
 
-## §20.1: Agent Definitions Are Database-Driven
+## §21.1: Agent Definitions Are Database-Driven
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #20.1
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§21.1"}]
 
 ### Quick Summary
 - Store all agent metadata in database - Update run history after each agent execution - Use API endpoints to manage agents - Track success/failure rates - Maintain agent priority order
@@ -27431,11 +27586,267 @@ agent.record_failure(
 
 ---
 
-## §20.2: Agent Invocation Protocol
+## §21.10: Modifying Existing Agents - Step-by-Step Guide
+
+✨ Feature
+
+### Description
+## 📋 Overview
+
+Complete step-by-step guide for modifying existing Claude Code agents. This ensures all 5 locations stay in sync and the agent works correctly.
+
+## 🎯 Bible Reference
+
+**RULE #21.19**: Modifying Existing Agents - Complete Checklist
+See: TRAPID_BIBLE.md Chapter 21, RULE #21.19
+
+## 📝 Step-by-Step Process
+
+### Step 1: Update Database (AgentDefinition)
+
+```ruby
+agent = AgentDefinition.find_by(agent_id: 'ui-compliance-auditor')
+agent.update!(
+  name: 'UI Compliance Auditor',
+  focus: 'Scans React components for RULE #19 compliance',
+  purpose: 'Identifies UI/UX violations and creates actionable fix list',
+  example_invocations: '/ui-audit, ui compliance, ui check',
+  priority: 85
+)
+```
+
+### Step 2: Update Trinity Bible Rule
+
+Find and update the agent's rule in Chapter 21.
+
+### Step 3: Update Agent Definition File
+
+Edit `.claude/agents/agent-name.md` with new behavior.
+
+### Step 4: Update Frontend Shortcuts
+
+Update `AgentShortcutsTab.jsx` baseCommands array.
+
+### Step 5: Update Frontend Display Info
+
+Update `AgentStatus.jsx` display functions if needed.
+
+### Step 6: Export Trinity
+
+```bash
+bundle exec rake trapid:export_bible
+bundle exec rake trapid:export_teacher
+```
+
+### Step 7: Verify Changes
+
+Test agent invocation and verify all locations updated.
+
+## Common Mistakes
+
+- Only updating one location
+- Changing agent_id (breaks references)
+- Forgetting to export Trinity
+- Putting Teacher entries in wrong chapter (must be Chapter 21!)
+
+
+---
+
+## §21.15: UI Compliance Auditor Agent - Markdown Definition
+
+📋 Dropdown Md
+
+### Description
+# UI/UX Compliance Auditor Agent
+
+**Agent ID:** ui-compliance-auditor
+**Type:** Specialized Diagnostic Agent (diagnostic)
+**Focus:** UI/UX Standards Compliance (Chapter 19)
+**Priority:** 80
+**Model:** Sonnet (default)
+
+## Purpose
+
+Audits all frontend code against Chapter 19 UI/UX standards (from Bible API) and fixes violations to ensure consistency across the application.
+
+## Capabilities
+
+- Scan all table components for Chapter 19 compliance
+- Identify missing features (resize, reorder, filters, search)
+- Check for incorrect icon usage (e.g., wrong column visibility button)
+- Verify dark mode support across all components
+- Check state persistence (localStorage)
+- Validate header styling (gradients, sticky positioning)
+- Ensure accessibility standards (ARIA, keyboard nav)
+- Generate detailed compliance reports
+- Auto-fix common violations
+
+## When to Use
+
+- Before any release/deployment
+- After adding new table/list components
+- When user reports UI inconsistency
+- During UI/UX refactoring tasks
+- When adding new pages with tables
+- As part of regular quality checks
+
+## Compliance Checks
+
+### Critical Violations (MUST FIX)
+1. **Column Visibility Button** - Must use EyeIcon + "Columns" text (RULE #19.10)
+2. **Custom Tables Missing Features** - Must have resize, reorder, filters, search (RULE #19.1)
+3. **No Dark Mode Support** - All components must support dark mode (RULE #19.15)
+4. **Missing Sticky Headers** - Headers must stick on scroll (RULE #19.2)
+5. **No State Persistence** - Column widths/order/visibility must persist (RULE #19.13)
+
+### Medium Violations (SHOULD FIX)
+6. **Wrong Header Gradient** - Must use standard gradient pattern (RULE #19.2)
+7. **Missing Sort Indicators** - Must show chevrons for sort state (RULE #19.2)
+8. **No Empty States** - Must handle no data gracefully (RULE #19.12)
+9. **Missing Search Box** - Advanced tables need global search (RULE #19.11)
+10. **Wrong Cell Padding** - Must use standard padding (RULE #19.8)
+
+### Low Violations (NICE TO HAVE)
+11. **No Hover States** - Rows should highlight on hover (RULE #19.9)
+12. **Missing ARIA Attributes** - Accessibility improvements (RULE #19.17)
+13. **No Memoization** - Large datasets should use useMemo (RULE #19.16)
+
+## Audit Process
+
+### 0. Check Test Recency (Smart Decision - RULE #20.7)
+
+**Before running full audit, check last run:**
+
+```bash
+# Check agent run history
+cat /Users/rob/Projects/trapid/.claude/agents/run-history.json
+```
+
+**Decision logic:**
+- **Last run <60 minutes ago AND successful:** Skip full audit, review cached report
+- **Last run >60 minutes ago OR last run failed:** Run full audit
+- **Never run before:** Run full audit
+
+This ensures:
+- Fast iteration when making multiple UI fixes
+- Full compliance check when enough time has passed
+- Always re-audit after failures
+
+### 1. Scan Phase
+
+- Find all `.jsx` files with tables (`<table>`, `<DataTable>`, custom table components)
+- Identify which pages use DataTable vs custom tables
+- Categorize by complexity level
+
+### 2. Analysis Phase
+
+- Check each component against 22 RULES from Chapter 19
+- Score compliance (0-100%)
+- Flag critical violations first
+
+### 3. Report Phase
+
+- Generate markdown report with findings
+- Prioritize by severity (Critical → Medium → Low)
+- Provide fix recommendations with code examples
+
+### 4. Fix Phase
+
+- Apply auto-fixes for common patterns
+- Flag complex issues for manual review
+- Verify fixes don't break functionality
+
+## Tools Available
+
+- Read, Write, Edit (all file operations)
+- Grep, Glob (code search)
+- TodoWrite (tracking fix progress)
+
+## Shortcuts
+
+- `ui audit`
+- `run ui-compliance-auditor`
+- `ui compliance`
+
+## Example Invocations
+
+```
+"Audit all tables for Chapter 19 compliance"
+"Check ActiveJobsPage against UI/UX standards"
+"Fix column visibility buttons to use EyeIcon"
+"Generate UI compliance report for all pages"
+```
+
+## Success Criteria
+
+- All tables scored for compliance (% match to Chapter 19)
+- Critical violations fixed (100% compliance on MUST rules)
+- Compliance report generated
+- No regressions introduced
+- Dark mode works everywhere
+- State persistence verified
+
+## Output Format
+
+### Compliance Report Structure
+
+```markdown
+# UI/UX Compliance Report - [DATE]
+
+## Summary
+- Total Components Scanned: X
+- Fully Compliant: Y (100%)
+- Needs Fixes: Z
+
+## Critical Violations
+### [ComponentName.jsx]
+- ❌ RULE #19.10 - Wrong column visibility icon (using AdjustmentsHorizontalIcon instead of EyeIcon)
+- ❌ RULE #19.1 - Missing resize handles
+- Fix: [Code snippet or file reference]
+
+## Medium Violations
+[Same format]
+
+## Low Violations
+[Same format]
+
+## Fully Compliant Components ✅
+- ContactsPage.jsx
+- POTable.jsx
+- PriceBooksPage.jsx
+```
+
+## Before Running This Agent
+
+**CRITICAL:** Fetch Chapter 19 rules from API first:
+```bash
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible&chapter_number=19'
+```
+
+All fixes MUST follow the RULES from Chapter 19 without exception.
+
+**Note:** Do NOT read `TRAPID_BIBLE.md` - it's an auto-generated export. Always use the API for latest rules.
+
+## After Running This Agent
+
+1. Review compliance report
+2. Test all fixed components manually
+3. Verify dark mode on all pages
+4. Check localStorage persistence
+5. Update Lexicon if new UI bugs discovered
+
+## Last Run
+
+*Run history will be tracked automatically*
+
+
+---
+
+## §21.2: Agent Invocation Protocol
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #20.2
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§21.2"}]
 
 ### Quick Summary
 - Check if agent exists and is active - Record run start timestamp - Execute agent task - Record success or failure with details - Return comprehensive result
@@ -27468,11 +27879,11 @@ await fetch(`/api/v1/agent_definitions/backend-developer/record_run`, {
 
 ---
 
-## §20.3: Run History Tracking
+## §21.3: Run History Tracking
 
 ✨ Feature | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #20.3
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§21.3"}]
 
 ### Quick Summary
 - Record total_runs, successful_runs, failed_runs - Store last_run_at timestamp - Save last_status and last_message - Include detailed last_run_details (JSONB) - Calculate success_rate automatically
@@ -27502,11 +27913,11 @@ end
 
 ---
 
-## §20.4: Agent Types and Specialization
+## §21.4: Agent Types and Specialization
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #20.4
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§21.4"}]
 
 ### Quick Summary
 - Assign agent_type: `development`, `diagnostic`, `deployment`, or `planning` - Define clear focus area (e.g., "Rails API Backend Development") - Specify tools available to agent - Document when to us
@@ -27526,11 +27937,11 @@ when_to_use: 'All non-Gantt production bugs'
 
 ---
 
-## §20.5: Agent Priority and Display Order
+## §21.5: Agent Priority and Display Order
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #20.5
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§21.5"}]
 
 ### Quick Summary
 - Set priority field (0-100) - Display agents sorted by: priority DESC, name ASC - Show active agents first - Hide inactive agents from main list
@@ -27548,11 +27959,11 @@ when_to_use: 'All non-Gantt production bugs'
 
 ---
 
-## §20.6: Agent Shortcuts and Invocation
+## §21.6: Agent Shortcuts and Invocation
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #20.6
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§21.6"}]
 
 ### Quick Summary
 - Support `run {agent-id}` (e.g., `run backend-developer`) - Support shortened versions (e.g., `backend dev`, `gantt`) - Document shortcuts in `example_invocations` field - Parse user input case-insen
@@ -27592,11 +28003,11 @@ planning-collaborator:
 
 ---
 
-## §20.7: Recently Run Check (Smart Testing)
+## §21.7: Recently Run Check (Smart Testing)
 
 🔧 Util | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #20.7
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§21.7"}]
 
 ### Quick Summary
 - Check `last_run_at` timestamp - Compare to threshold (e.g., 60 minutes) - Skip redundant tests if recent successful run - ALWAYS re-run if last run failed - Ask user if uncertain
@@ -27627,11 +28038,11 @@ if (agent.recently_run(60)) {
 
 ---
 
-## §20.8: Shortcut Clarity - AgentShortcutsTab Updates
+## §21.8: Shortcut Clarity - AgentShortcutsTab Updates
 
 🧩 Component | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #20.8
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§21.8"}]
 
 ### Quick Summary
 - Update `frontend/src/components/settings/AgentShortcutsTab.jsx` when adding new shortcuts - Add new shortcuts to the `baseCommands` array - Ensure shortcuts match agent file definitions exactly - Us
@@ -27648,11 +28059,11 @@ const baseCommands = [
 
 ---
 
-## §20.9: Creating New Agents - Complete Checklist
+## §21.9: Creating New Agents - Complete Checklist
 
 🔌 Integration | 🟡 Intermediate
 
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #20.9
+**📖 Related Bible Rules:** [{"type":"Teacher","reference":"§21.9"}]
 
 ### Quick Summary
 1.
@@ -27722,7 +28133,7 @@ const getAgentIcon = (agentName) => {
 ---
 
 
-**Last Generated:** 2025-11-17 15:41 AEST
+**Last Generated:** 2025-11-17 21:47 AEST
 **Generated By:** `rake trapid:export_teacher`
 **Maintained By:** Development Team via Database UI
 **Review Schedule:** After adding new patterns or updating examples
