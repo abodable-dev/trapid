@@ -305,13 +305,6 @@ Rails.application.routes.draw do
         end
       end
 
-      # Bible Rules (Trinity+1 system)
-      resources :bible_rules do
-        collection do
-          get :stats
-          post :export
-        end
-      end
 
       # Legacy routes for backwards compatibility
       resources :documented_bugs, controller: 'documentation_entries' do
