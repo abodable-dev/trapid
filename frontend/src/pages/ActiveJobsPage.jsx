@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { api } from '../api'
 import { formatCurrency, formatPercentage } from '../utils/formatters'
 import {
@@ -12,14 +13,17 @@ import {
   EyeIcon,
   Bars3Icon,
   FunnelIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
 import NewJobModal from '../components/jobs/NewJobModal'
 import CsvImportJobModal from '../components/jobs/CsvImportJobModal'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
+import TrinityTableView from '../components/documentation/TrinityTableView'
 
 export default function ActiveJobsPage() {
   const navigate = useNavigate()
+  const [selectedTab, setSelectedTab] = useState(0) // 0 = Custom, 1 = Trinity
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -29,9 +33,12 @@ export default function ActiveJobsPage() {
   const [showCsvImportModal, setShowCsvImportModal] = useState(false)
   const [showColumnModal, setShowColumnModal] = useState(false)
 
-  // Search and filters
+  // Search and filters with localStorage persistence (RULE #20.13)
   const [searchQuery, setSearchQuery] = useState('')
-  const [columnFilters, setColumnFilters] = useState({})
+  const [columnFilters, setColumnFilters] = useState(() => {
+    const saved = localStorage.getItem('activeJobsTableState_columnFilters')
+    return saved ? JSON.parse(saved) : {}
+  })
 
   // Column state with localStorage persistence
   const [columnOrder, setColumnOrder] = useState(() => {
@@ -42,7 +49,7 @@ export default function ActiveJobsPage() {
   const [columnWidths, setColumnWidths] = useState(() => {
     const saved = localStorage.getItem('activeJobsTableState_columnWidths')
     return saved ? JSON.parse(saved) : {
-      checkbox: 50,
+      checkbox: 32,  // RULE #20.1: Must be exactly 32px
       number: 80,
       title: 300,
       contract_value: 150,
@@ -75,9 +82,15 @@ export default function ActiveJobsPage() {
   // Column reorder state
   const [draggedColumn, setDraggedColumn] = useState(null)
 
-  // Sort state
-  const [sortBy, setSortBy] = useState('title')
-  const [sortDirection, setSortDirection] = useState('asc')
+  // Sort state with localStorage persistence (RULE #20.13)
+  const [sortBy, setSortBy] = useState(() => {
+    const saved = localStorage.getItem('activeJobsTableState_sortBy')
+    return saved ? JSON.parse(saved) : 'title'
+  })
+  const [sortDirection, setSortDirection] = useState(() => {
+    const saved = localStorage.getItem('activeJobsTableState_sortDirection')
+    return saved ? JSON.parse(saved) : 'asc'
+  })
 
   // Row selection state
   const [selectedItems, setSelectedItems] = useState(new Set())
@@ -99,6 +112,20 @@ export default function ActiveJobsPage() {
   useEffect(() => {
     localStorage.setItem('activeJobsTableState_visibleColumns', JSON.stringify(visibleColumns))
   }, [visibleColumns])
+
+  // Persist sort state to localStorage (RULE #20.13)
+  useEffect(() => {
+    localStorage.setItem('activeJobsTableState_sortBy', JSON.stringify(sortBy))
+  }, [sortBy])
+
+  useEffect(() => {
+    localStorage.setItem('activeJobsTableState_sortDirection', JSON.stringify(sortDirection))
+  }, [sortDirection])
+
+  // Persist column filters to localStorage (RULE #20.13)
+  useEffect(() => {
+    localStorage.setItem('activeJobsTableState_columnFilters', JSON.stringify(columnFilters))
+  }, [columnFilters])
 
   // Column resize handlers
   useEffect(() => {
@@ -207,10 +234,21 @@ export default function ActiveJobsPage() {
 
   // Column visibility toggle
   const toggleColumn = (columnKey) => {
-    setVisibleColumns(prev => ({
-      ...prev,
-      [columnKey]: !prev[columnKey]
-    }))
+    setVisibleColumns(prev => {
+      const newVisibleColumns = {
+        ...prev,
+        [columnKey]: !prev[columnKey]
+      }
+
+      // RULE #20.37: Prevent hiding ALL columns
+      const visibleCount = Object.values(newVisibleColumns).filter(Boolean).length
+      if (visibleCount === 0) {
+        console.warn('Cannot hide all columns - at least one must remain visible')
+        return prev // Don't apply the change
+      }
+
+      return newVisibleColumns
+    })
   }
 
   // Column filter handler
@@ -224,7 +262,13 @@ export default function ActiveJobsPage() {
   // Sort handler
   const handleSort = (columnKey) => {
     if (sortBy === columnKey) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+      if (sortDirection === 'asc') {
+        setSortDirection('desc')
+      } else if (sortDirection === 'desc') {
+        // Third state: clear sort (RULE #20.14)
+        setSortBy(null)
+        setSortDirection('asc')
+      }
     } else {
       setSortBy(columnKey)
       setSortDirection('asc')
@@ -370,12 +414,27 @@ export default function ActiveJobsPage() {
 
   const columns = columnOrder.map(key => columnsConfig[key])
 
+  // Transform jobs to Trinity format for comparison
+  const trinityJobs = filteredJobs.map((job, index) => ({
+    id: job.id,
+    category: 'jobs',
+    chapter_number: 0,
+    chapter_name: 'Active Jobs',
+    section_number: String(index + 1),
+    title: job.job_title,
+    entry_type: job.stage,
+    description: `${formatCurrency(job.contract_value || 0)} contract`,
+    status: job.stage,
+    severity: job.profit_percentage > 50 ? 'high' : 'medium',
+    _original: job
+  }))
+
   // Render table cell
   const renderCell = (job, index, columnKey) => {
     if (!visibleColumns[columnKey]) return null
 
     const width = columnWidths[columnKey]
-    const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }
+    const cellStyle = { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px`, fontSize: '14px' }
 
     switch (columnKey) {
       case 'checkbox':
@@ -385,7 +444,7 @@ export default function ActiveJobsPage() {
               type="checkbox"
               checked={selectedItems.has(job.id)}
               onChange={() => handleSelectItem(job.id)}
-              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
           </td>
         )
@@ -408,13 +467,13 @@ export default function ActiveJobsPage() {
                 onBlur={handleCellBlur}
                 onKeyDown={handleKeyDown}
                 autoFocus
-                className="w-full px-2 py-1 text-sm border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-2 py-1 text-sm border border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               />
             ) : (
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => navigate(`/jobs/${job.id}`)}
-                  className="text-sm font-medium text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 truncate max-w-md"
+                  className="text-sm font-medium text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 truncate max-w-md"
                   title={job.title}
                 >
                   {job.title || 'Untitled Job'}
@@ -447,7 +506,7 @@ export default function ActiveJobsPage() {
                 onBlur={handleCellBlur}
                 onKeyDown={handleKeyDown}
                 autoFocus
-                className="w-full px-2 py-1 text-sm text-right border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-2 py-1 text-sm text-right border border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               />
             ) : (
               <div
@@ -455,7 +514,7 @@ export default function ActiveJobsPage() {
                   e.stopPropagation()
                   handleCellClick(job.id, 'contract_value', job.contract_value)
                 }}
-                className="text-gray-900 dark:text-white cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md"
+                className="text-gray-900 dark:text-white cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded-md"
                 title="Click to edit"
               >
                 {job.contract_value ? formatCurrency(job.contract_value, false) : '-'}
@@ -477,7 +536,7 @@ export default function ActiveJobsPage() {
                 onBlur={handleCellBlur}
                 onKeyDown={handleKeyDown}
                 autoFocus
-                className="w-full px-2 py-1 text-sm text-right border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-2 py-1 text-sm text-right border border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               />
             ) : (
               <div
@@ -485,7 +544,7 @@ export default function ActiveJobsPage() {
                   e.stopPropagation()
                   handleCellClick(job.id, 'live_profit', job.live_profit)
                 }}
-                className={`cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md font-medium ${
+                className={`cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded-md font-medium ${
                   job.live_profit >= 0
                     ? 'text-green-600 dark:text-green-400'
                     : 'text-red-600 dark:text-red-400'
@@ -511,7 +570,7 @@ export default function ActiveJobsPage() {
                 onBlur={handleCellBlur}
                 onKeyDown={handleKeyDown}
                 autoFocus
-                className="w-full px-2 py-1 text-sm text-right border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-2 py-1 text-sm text-right border border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               />
             ) : (
               <div
@@ -519,7 +578,7 @@ export default function ActiveJobsPage() {
                   e.stopPropagation()
                   handleCellClick(job.id, 'profit_percentage', job.profit_percentage)
                 }}
-                className={`cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md font-medium ${
+                className={`cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded-md font-medium ${
                   job.profit_percentage >= 0
                     ? 'text-green-600 dark:text-green-400'
                     : 'text-red-600 dark:text-red-400'
@@ -543,7 +602,7 @@ export default function ActiveJobsPage() {
                 onBlur={handleCellBlur}
                 onKeyDown={handleKeyDown}
                 autoFocus
-                className="w-full px-2 py-1 text-sm border border-indigo-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-2 py-1 text-sm border border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               />
             ) : (
               <div
@@ -551,10 +610,10 @@ export default function ActiveJobsPage() {
                   e.stopPropagation()
                   handleCellClick(job.id, 'stage', job.stage)
                 }}
-                className="cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded-md inline-block"
+                className="cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded-md inline-block"
                 title="Click to edit"
               >
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200">
                   {job.stage || 'Not Set'}
                 </span>
               </div>
@@ -567,7 +626,7 @@ export default function ActiveJobsPage() {
           <td key="actions" style={cellStyle} className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
             <button
               onClick={() => navigate(`/jobs/${job.id}`)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               title="View job details"
             >
               View
@@ -585,7 +644,7 @@ export default function ActiveJobsPage() {
     return (
       <div className="flex h-screen overflow-hidden">
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
       </div>
     )
@@ -603,78 +662,121 @@ export default function ActiveJobsPage() {
 
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8 h-screen flex flex-col bg-white dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-4">
-        <div>
-          <div className="flex items-center justify-between">
+      {/* Compact Header with all controls */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-3">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left: Title and count + Tabs */}
+          <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
-              <BriefcaseIcon className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
-              <div>
-                <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  Active Jobs <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(constructions)</span>
+              <BriefcaseIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div className="flex items-baseline gap-2">
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Active Jobs
                 </h1>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'}
-                </p>
+                </span>
               </div>
             </div>
-            <div className="flex gap-x-2">
+
+            {/* Tabs */}
+            <div className="flex gap-2 border-l border-gray-300 dark:border-gray-600 pl-6">
               <button
-                onClick={() => setShowNewJobModal(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none shadow-lg shadow-indigo-500/30 transition-all"
+                onClick={() => setSelectedTab(0)}
+                className={`px-3 py-1 text-sm rounded-lg transition ${
+                  selectedTab === 0
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
               >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                New Job
+                Custom Table
               </button>
               <button
-                onClick={() => setShowCsvImportModal(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-600 hover:from-green-700 hover:to-green-700 focus:outline-none shadow-lg shadow-green-500/30 transition-all"
+                onClick={() => setSelectedTab(1)}
+                className={`px-3 py-1 text-sm rounded-lg transition ${
+                  selectedTab === 1
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
               >
-                <DocumentArrowUpIcon className="h-5 w-5 mr-2" />
-                Import CSV
+                Trinity Table
               </button>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Search and Controls Bar */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
+          {/* Middle: Search */}
+          <div className="flex-1 max-w-md">
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search jobs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                className="w-full pl-9 pr-4 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
             </div>
           </div>
 
+          {/* Right: Action buttons (conditional based on selection) */}
           <div className="flex gap-2">
-            <button
-              onClick={() => setShowColumnModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-            >
-              <EyeIcon className="h-5 w-5" />
-              Columns
-            </button>
+            {selectedItems.size > 0 ? (
+              <>
+                <div className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400">
+                  {selectedItems.size} selected
+                </div>
+                <button
+                  onClick={() => {
+                    if (confirm(`Clear selection of ${selectedItems.size} ${selectedItems.size === 1 ? 'job' : 'jobs'}?`)) {
+                      setSelectedItems(new Set())
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                  Clear Selection
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowColumnModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                >
+                  <EyeIcon className="h-4 w-4" />
+                  Columns
+                </button>
+                <button
+                  onClick={() => setShowCsvImportModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-transparent rounded-lg text-white bg-gradient-to-r from-green-600 to-green-600 hover:from-green-700 hover:to-green-700 transition"
+                >
+                  <DocumentArrowUpIcon className="h-4 w-4" />
+                  Import CSV
+                </button>
+                <button
+                  onClick={() => setShowNewJobModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-transparent rounded-lg text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  New Job
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Scroll container for table */}
-      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-900">
-        <div className="w-full h-full overflow-auto" style={{
-          scrollbarWidth: 'thin',
-          scrollbarColor: '#9CA3AF #E5E7EB'
-        }}>
-          <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+      {/* Table Content - Conditional based on selectedTab */}
+      {selectedTab === 0 ? (
+        /* Custom Table Implementation */
+        <div className="flex-1 overflow-hidden bg-white dark:bg-gray-900">
+          <div className="w-full h-full overflow-auto" style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#9CA3AF #E5E7EB'
+          }}>
+            <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
             {/* Table header with gradient background and sticky positioning */}
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-10">
+            <thead className="backdrop-blur-sm bg-blue-600 dark:bg-blue-800 sticky top-0 z-10">
               <tr>
                 {columns.map((column) => {
                   if (!visibleColumns[column.key]) return null
@@ -688,13 +790,13 @@ export default function ActiveJobsPage() {
                       <th
                         key={column.key}
                         style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
-                        className="px-3 py-2 border-r border-gray-200 dark:border-gray-700"
+                        className="px-3 py-2 border-r border-white/20 dark:border-white/10"
                       >
                         <input
                           type="checkbox"
                           checked={filteredJobs.length > 0 && selectedItems.size === filteredJobs.length}
                           onChange={handleSelectAll}
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          className="h-4 w-4 rounded border-2 border-white bg-white/10 checked:bg-white checked:border-white text-blue-600 focus:ring-2 focus:ring-white/50 cursor-pointer"
                         />
                       </th>
                     )
@@ -704,24 +806,29 @@ export default function ActiveJobsPage() {
                     <th
                       key={column.key}
                       style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
-                      className={`px-3 py-2 border-r border-gray-200 dark:border-gray-700 ${column.key === 'actions' ? 'text-right' : column.key === 'contract_value' || column.key === 'live_profit' || column.key === 'profit_percentage' ? 'text-right' : 'text-left'} ${draggedColumn === column.key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+                      className={`px-3 py-2 border-r border-white/20 dark:border-white/10 ${column.key === 'actions' ? 'text-right' : column.key === 'contract_value' || column.key === 'live_profit' || column.key === 'profit_percentage' ? 'text-right' : 'text-left'} ${draggedColumn === column.key ? 'bg-white/10' : ''}`}
                       draggable={column.key !== 'number' && column.key !== 'actions' && column.key !== 'checkbox'}
                       onDragStart={(e) => handleDragStart(e, column.key)}
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, column.key)}
                     >
                       <div
-                        className={`flex items-center gap-2 ${column.key === 'contract_value' || column.key === 'live_profit' || column.key === 'profit_percentage' ? 'justify-end' : ''} ${isSortable ? 'cursor-pointer' : column.key !== 'number' && column.key !== 'actions' && column.key !== 'checkbox' ? 'cursor-move' : ''}`}
+                        className={`flex items-center gap-2 ${column.key === 'contract_value' || column.key === 'live_profit' || column.key === 'profit_percentage' || column.key === 'actions' ? 'justify-end' : ''} ${isSortable ? 'cursor-pointer' : column.key !== 'number' && column.key !== 'actions' && column.key !== 'checkbox' ? 'cursor-move' : ''}`}
                         onClick={() => isSortable && handleSort(column.key)}
                       >
-                        {column.key !== 'number' && column.key !== 'actions' && column.key !== 'checkbox' && (
-                          <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+                        {/* Drag icon on left for left-aligned columns */}
+                        {column.key !== 'number' && column.key !== 'actions' && column.key !== 'checkbox' && column.key !== 'contract_value' && column.key !== 'live_profit' && column.key !== 'profit_percentage' && (
+                          <Bars3Icon className="h-4 w-4 text-white/70 cursor-move" />
                         )}
-                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{column.label}</span>
+                        <span className="font-medium text-white uppercase tracking-wider" style={{ fontSize: '18px', fontWeight: 'bold' }}>{column.label}</span>
                         {isSortable && isSorted && (
                           sortDirection === 'asc' ?
-                            <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
-                            <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                            <ChevronUpIcon className="h-4 w-4 text-white" /> :
+                            <ChevronDownIcon className="h-4 w-4 text-white" />
+                        )}
+                        {/* Drag icon on right for right-aligned columns */}
+                        {(column.key === 'contract_value' || column.key === 'live_profit' || column.key === 'profit_percentage') && (
+                          <Bars3Icon className="h-4 w-4 text-white/70 cursor-move" />
                         )}
                       </div>
                       {column.searchable && (
@@ -731,13 +838,13 @@ export default function ActiveJobsPage() {
                           value={columnFilters[column.key] || ''}
                           onChange={(e) => handleColumnFilterChange(column.key, e.target.value)}
                           onClick={(e) => e.stopPropagation()}
-                          className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                          className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                         />
                       )}
                       {/* Resize handle */}
                       {column.key !== 'actions' && column.key !== 'checkbox' && (
                         <div
-                          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+                          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-400 dark:hover:bg-blue-600 transition-colors z-20"
                           onMouseDown={(e) => handleResizeStart(e, column.key)}
                           onClick={(e) => e.stopPropagation()}
                         />
@@ -760,7 +867,11 @@ export default function ActiveJobsPage() {
                 filteredJobs.map((job, index) => (
                   <tr
                     key={job.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    className={`${
+                      index % 2 === 0
+                        ? 'bg-white dark:bg-gray-900'
+                        : 'bg-blue-50 dark:bg-blue-900/20'
+                    } hover:bg-blue-100 dark:hover:bg-blue-800/30 transition-colors duration-150`}
                   >
                     {columns.map((column) => renderCell(job, index, column.key))}
                   </tr>
@@ -770,6 +881,22 @@ export default function ActiveJobsPage() {
           </table>
         </div>
       </div>
+      ) : (
+        /* Trinity Table Implementation */
+        <div className="flex-1 overflow-hidden">
+          <TrinityTableView
+            entries={trinityJobs}
+            onEdit={(entry) => {
+              console.log('Edit job:', entry._original)
+              navigate(`/jobs/${entry._original.id}`)
+            }}
+            onDelete={(entry) => {
+              console.log('Delete job:', entry._original)
+            }}
+            category="jobs"
+          />
+        </div>
+      )}
 
       {/* New Job Modal */}
       <NewJobModal
