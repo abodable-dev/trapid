@@ -250,7 +250,7 @@ entries = [
 puts "📖 Importing Chapter 1 Teacher entries..."
 
 entries.each do |attrs|
-  entry = DocumentationEntry.find_or_initialize_by(
+  entry = Trinity.find_or_initialize_by(
     chapter_number: 1,
     section_number: attrs[:section_number]
   )
@@ -274,4 +274,4 @@ end
 
 puts ""
 puts "✨ Chapter 1 Complete!"
-puts "📊 Total Chapter 1 Teacher entries: #{DocumentationEntry.teacher_entries.where(chapter_number: 1).count}"
+puts "📊 Total Chapter 1 Teacher entries: #{Trinity.teacher_entries.where(chapter_number: 1).count}"
