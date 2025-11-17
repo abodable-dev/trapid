@@ -263,8 +263,8 @@ export default function AgentTasksPage() {
 
         if (completedTasks.length > 0) {
           // Create a knowledge entry for this agent's completed tasks
-          await api.post('/api/v1/documentation_entries', {
-            documentation_entry: {
+          await api.post('/api/v1/trinity', {
+            trinity: {
               category: 'lexicon',
               chapter_number: 20, // Chapter 20 = Agent System
               chapter_name: 'Agent System & Automation',
@@ -277,7 +277,7 @@ export default function AgentTasksPage() {
       }
 
       // Export to markdown
-      const exportResponse = await api.post('/api/v1/documentation_entries/export_lexicon')
+      const exportResponse = await api.post('/api/v1/trinity/export_lexicon')
 
       if (exportResponse.data.success) {
         setExportStatus({

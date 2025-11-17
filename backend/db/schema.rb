@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_17_045524) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_17_051007) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -419,51 +419,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_045524) do
     t.datetime "updated_at", null: false
     t.string "folder_path"
     t.index ["name"], name: "index_documentation_categories_on_name", unique: true
-  end
-
-  create_table "documentation_entries", force: :cascade do |t|
-    t.integer "chapter_number", null: false
-    t.string "chapter_name", null: false
-    t.string "component"
-    t.string "title", null: false
-    t.string "status", default: "open"
-    t.string "severity", default: "medium"
-    t.date "first_reported"
-    t.date "last_occurred"
-    t.date "fixed_date"
-    t.text "scenario"
-    t.text "root_cause"
-    t.text "solution"
-    t.text "prevention"
-    t.jsonb "metadata", default: {}
-    t.text "search_text"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "entry_type", default: "bug", null: false
-    t.text "description"
-    t.text "details"
-    t.text "examples"
-    t.text "recommendations"
-    t.string "rule_reference"
-    t.string "section_number"
-    t.string "difficulty"
-    t.text "summary"
-    t.text "code_example"
-    t.text "common_mistakes"
-    t.text "testing_strategy"
-    t.text "related_rules"
-    t.string "category", null: false
-    t.index ["category", "chapter_number"], name: "index_documentation_entries_on_category_and_chapter_number"
-    t.index ["category"], name: "index_documentation_entries_on_category"
-    t.index ["chapter_number", "entry_type"], name: "index_documentation_entries_on_chapter_number_and_entry_type"
-    t.index ["chapter_number", "section_number"], name: "idx_on_chapter_number_section_number_9d7330bbf5"
-    t.index ["chapter_number", "status"], name: "index_documentation_entries_on_chapter_number_and_status"
-    t.index ["chapter_number"], name: "index_documentation_entries_on_chapter_number"
-    t.index ["entry_type"], name: "index_documentation_entries_on_entry_type"
-    t.index ["search_text"], name: "index_documentation_entries_on_search_text", opclass: :gin_trgm_ops, using: :gin
-    t.index ["section_number"], name: "index_documentation_entries_on_section_number"
-    t.index ["severity"], name: "index_documentation_entries_on_severity"
-    t.index ["status"], name: "index_documentation_entries_on_status"
   end
 
   create_table "emails", force: :cascade do |t|
@@ -1482,6 +1437,51 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_045524) do
   create_table "teaching_patterns", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "trinity", force: :cascade do |t|
+    t.integer "chapter_number", null: false
+    t.string "chapter_name", null: false
+    t.string "component"
+    t.string "title", null: false
+    t.string "status", default: "open"
+    t.string "severity", default: "medium"
+    t.date "first_reported"
+    t.date "last_occurred"
+    t.date "fixed_date"
+    t.text "scenario"
+    t.text "root_cause"
+    t.text "solution"
+    t.text "prevention"
+    t.jsonb "metadata", default: {}
+    t.text "search_text"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "entry_type", default: "bug", null: false
+    t.text "description"
+    t.text "details"
+    t.text "examples"
+    t.text "recommendations"
+    t.string "rule_reference"
+    t.string "section_number"
+    t.string "difficulty"
+    t.text "summary"
+    t.text "code_example"
+    t.text "common_mistakes"
+    t.text "testing_strategy"
+    t.text "related_rules"
+    t.string "category", null: false
+    t.index ["category", "chapter_number"], name: "index_trinity_on_category_and_chapter_number"
+    t.index ["category"], name: "index_trinity_on_category"
+    t.index ["chapter_number", "entry_type"], name: "index_trinity_on_chapter_number_and_entry_type"
+    t.index ["chapter_number", "section_number"], name: "index_trinity_on_chapter_number_and_section_number"
+    t.index ["chapter_number", "status"], name: "index_trinity_on_chapter_number_and_status"
+    t.index ["chapter_number"], name: "index_trinity_on_chapter_number"
+    t.index ["entry_type"], name: "index_trinity_on_entry_type"
+    t.index ["search_text"], name: "index_trinity_on_search_text", opclass: :gin_trgm_ops, using: :gin
+    t.index ["section_number"], name: "index_trinity_on_section_number"
+    t.index ["severity"], name: "index_trinity_on_severity"
+    t.index ["status"], name: "index_trinity_on_status"
   end
 
   create_table "unreal_variables", force: :cascade do |t|

@@ -102,7 +102,7 @@ const COLUMNS = [
   { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200, tooltip: 'Chapter number and name' },
   { key: 'rule', label: 'Rule', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 100, tooltip: 'Rule number (e.g., 1.01, 20.37)' },
   { key: 'type', label: 'Type', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120, tooltip: 'Rule type: MUST, NEVER, ALWAYS, PROTECTED, CONFIG' },
-  { key: 'relatedDocs', label: 'Related Docs', resizable: true, sortable: false, filterable: true, filterType: 'dropdown', width: 200, tooltip: 'Links to Teacher and Lexicon entries' },
+  { key: 'trinity', label: 'Trinity', resizable: true, sortable: false, filterable: true, filterType: 'dropdown', width: 180, tooltip: 'Related Trinity documents: Bible, Teacher, Lexicon' },
   { key: 'subtitle', label: 'Rule Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 500, tooltip: 'Rule title - click row to view full details' },
   { key: 'content', label: 'Description', resizable: true, sortable: false, filterable: false, width: 800, tooltip: 'Rule description - click row to view full details' }
 ]
@@ -204,7 +204,7 @@ export default function BibleTableView({ content }) {
   const fetchRules = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:3000/api/v1/documentation_entries?category=bible')
+      const response = await fetch('http://localhost:3000/api/v1/trinity?category=bible')
       const data = await response.json()
 
       if (data.success) {
@@ -299,6 +299,18 @@ export default function BibleTableView({ content }) {
         case 'description':
           result = result.filter(r => r.description?.toLowerCase().includes(value.toLowerCase()))
           break
+        case 'trinity':
+          // Filter by Trinity relationship (Bible, Teacher, or Lexicon)
+          result = result.filter(r => {
+            if (!r.relatedDocs) return false
+            try {
+              const docs = JSON.parse(r.relatedDocs)
+              return docs && docs.some(doc => doc.type === value)
+            } catch (e) {
+              return false
+            }
+          })
+          break
       }
     })
 
@@ -348,6 +360,34 @@ export default function BibleTableView({ content }) {
 
     return result
   }, [rules, search, columnFilters, sortBy, sortDir])
+
+  // CASCADING FILTERS: Calculate available filter options based on current selections
+  const availableFilterOptions = useMemo(() => {
+    // For Type filter: apply ONLY chapter filter (not type itself)
+    let dataForTypeFilter = rules
+    if (columnFilters.chapter) {
+      dataForTypeFilter = rules.filter(r => r.chapter === parseInt(columnFilters.chapter))
+    }
+
+    // Count available types
+    const typeCounts = {}
+    dataForTypeFilter.forEach(rule => {
+      const type = rule.ruleType || 'UNKNOWN'
+      typeCounts[type] = (typeCounts[type] || 0) + 1
+    })
+
+    // Count available chapters (no upstream filters, so use all rules)
+    const chapterCounts = {}
+    rules.forEach(rule => {
+      const chapter = rule.chapter
+      chapterCounts[chapter] = (chapterCounts[chapter] || 0) + 1
+    })
+
+    return {
+      types: typeCounts,
+      chapters: chapterCounts
+    }
+  }, [rules, columnFilters.chapter]) // Re-run when chapter filter changes
 
   // Initialize scrollbar on mount and content change
   useEffect(() => {
@@ -583,13 +623,13 @@ export default function BibleTableView({ content }) {
     e.preventDefault()
 
     try {
-      const response = await fetch(`http://localhost:3000/api/v1/documentation_entries/${editingRule.id}`, {
+      const response = await fetch(`http://localhost:3000/api/v1/trinity/${editingRule.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          documentation_entry: {
+          trinity: {
             category: 'bible',
             section_number: editFormData.rule_number,
             title: editFormData.title,
@@ -701,6 +741,93 @@ export default function BibleTableView({ content }) {
         return (
           <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-normal">
             {cleanContent || <span className="text-gray-400 dark:text-gray-500 italic">No description</span>}
+          </div>
+        )
+
+      case 'trinity':
+        // Parse current trinity relationships from relatedDocs field
+        let currentTrinity = { bible: false, teacher: false, lexicon: false }
+        try {
+          if (rule.relatedDocs) {
+            const docs = JSON.parse(rule.relatedDocs)
+            if (docs && Array.isArray(docs)) {
+              docs.forEach(doc => {
+                if (doc.type === 'Bible') currentTrinity.bible = true
+                if (doc.type === 'Teacher') currentTrinity.teacher = true
+                if (doc.type === 'Lexicon') currentTrinity.lexicon = true
+              })
+            }
+          }
+        } catch (e) {
+          // Invalid JSON, use defaults
+        }
+
+        const handleTrinityChange = async (e, trinityType) => {
+          e.stopPropagation()
+          const isChecked = e.target.checked
+
+          // Update local state
+          const newTrinity = { ...currentTrinity, [trinityType]: isChecked }
+
+          // Build new relatedDocs array
+          const newDocs = []
+          if (newTrinity.bible) newDocs.push({ type: 'Bible', reference: `RULE #${rule.ruleNumber}` })
+          if (newTrinity.teacher) newDocs.push({ type: 'Teacher', reference: `§${rule.ruleNumber}` })
+          if (newTrinity.lexicon) newDocs.push({ type: 'Lexicon', reference: `Ch${rule.chapter}` })
+
+          // Save to API
+          try {
+            const response = await fetch(`http://localhost:3000/api/v1/trinity/${rule.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                trinity: {
+                  related_rules: JSON.stringify(newDocs)
+                }
+              })
+            })
+
+            if (response.ok) {
+              // Refresh data to show updated checkboxes
+              fetchRules()
+            } else {
+              alert('Failed to update Trinity relationships')
+            }
+          } catch (error) {
+            console.error('Error updating Trinity:', error)
+            alert('Error updating Trinity relationships')
+          }
+        }
+
+        return (
+          <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
+              <input
+                type="checkbox"
+                checked={currentTrinity.bible}
+                onChange={(e) => handleTrinityChange(e, 'bible')}
+                className="h-3 w-3 rounded border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <span className="text-purple-700 dark:text-purple-400 font-medium">📖 Bible</span>
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
+              <input
+                type="checkbox"
+                checked={currentTrinity.teacher}
+                onChange={(e) => handleTrinityChange(e, 'teacher')}
+                className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <span className="text-blue-700 dark:text-blue-400 font-medium">🔧 Teacher</span>
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
+              <input
+                type="checkbox"
+                checked={currentTrinity.lexicon}
+                onChange={(e) => handleTrinityChange(e, 'lexicon')}
+                className="h-3 w-3 rounded border-gray-300 text-orange-600 focus:ring-orange-500 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <span className="text-orange-700 dark:text-orange-400 font-medium">📕 Lexicon</span>
+            </label>
           </div>
         )
 
@@ -978,16 +1105,48 @@ export default function BibleTableView({ content }) {
                         {column.filterable && column.filterType === 'dropdown' && (
                           <select
                             value={columnFilters[colKey] || ''}
-                            onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
+                            onChange={(e) => {
+                              const newValue = e.target.value
+                              handleColumnFilterChange(colKey, newValue)
+
+                              // CASCADE RESET: If changing chapter, reset type filter
+                              if (colKey === 'chapter') {
+                                handleColumnFilterChange('type', '')
+                              }
+                            }}
                             onClick={(e) => e.stopPropagation()}
                             className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                           >
                             <option value="">All</option>
-                            {colKey === 'chapter' && uniqueChapters.map(ch => (
-                              <option key={ch.value} value={ch.value}>{ch.label}</option>
-                            ))}
-                            {colKey === 'type' && ['MUST', 'NEVER', 'ALWAYS', 'PROTECTED', 'CONFIG'].map(type => (
-                              <option key={type} value={type}>{type}</option>
+                            {colKey === 'chapter' && uniqueChapters.map(ch => {
+                              const count = availableFilterOptions.chapters[ch.value] || 0
+                              return (
+                                <option key={ch.value} value={ch.value}>
+                                  {ch.label} ({count})
+                                </option>
+                              )
+                            })}
+                            {colKey === 'type' && ['MUST', 'NEVER', 'ALWAYS', 'PROTECTED', 'CONFIG'].map(type => {
+                              const count = availableFilterOptions.types[type] || 0
+                              const isDisabled = count === 0
+                              return (
+                                <option
+                                  key={type}
+                                  value={type}
+                                  disabled={isDisabled}
+                                  style={isDisabled ? { color: '#9CA3AF', fontStyle: 'italic' } : {}}
+                                >
+                                  {type} ({count})
+                                </option>
+                              )
+                            })}
+                            {colKey === 'trinity' && ['Bible', 'Teacher', 'Lexicon'].map(doc => (
+                              <option key={doc} value={doc}>
+                                {doc === 'Bible' && '📖 '}
+                                {doc === 'Teacher' && '🔧 '}
+                                {doc === 'Lexicon' && '📕 '}
+                                {doc}
+                              </option>
                             ))}
                           </select>
                         )}

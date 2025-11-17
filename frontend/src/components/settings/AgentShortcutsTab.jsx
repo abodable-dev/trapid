@@ -396,8 +396,8 @@ export default function AgentShortcutsTab() {
     try {
       localStorage.setItem('claudeCommands', JSON.stringify(commands))
 
-      await api.post('/api/v1/documentation_entries', {
-        documentation_entry: {
+      await api.post('/api/v1/trinity', {
+        trinity: {
           category: 'lexicon',
           chapter_number: 20,
           chapter_name: 'Agent System & Automation',
@@ -409,7 +409,7 @@ export default function AgentShortcutsTab() {
         }
       })
 
-      await api.post('/api/v1/documentation_entries/export_lexicon')
+      await api.post('/api/v1/trinity/export_lexicon')
 
       setExportStatus({ type: 'success', message: 'Commands saved to Lexicon!' })
       setIsEditingCommands(false)
@@ -428,8 +428,8 @@ export default function AgentShortcutsTab() {
     try {
       localStorage.setItem('claudeSlang', JSON.stringify(slang))
 
-      await api.post('/api/v1/documentation_entries', {
-        documentation_entry: {
+      await api.post('/api/v1/trinity', {
+        trinity: {
           category: 'lexicon',
           chapter_number: 20,
           chapter_name: 'Agent System & Automation',
@@ -441,7 +441,7 @@ export default function AgentShortcutsTab() {
         }
       })
 
-      await api.post('/api/v1/documentation_entries/export_lexicon')
+      await api.post('/api/v1/trinity/export_lexicon')
 
       setExportStatus({ type: 'success', message: 'Slang saved to Lexicon!' })
       setIsEditingSlang(false)

@@ -182,15 +182,15 @@ export default function DocumentationPage() {
       if (filters.severity !== 'all') params.append('severity', filters.severity)
       if (searchQuery) params.append('search', searchQuery)
 
-      // Load entries (using new documentation_entries endpoint with category filter)
+      // Load entries (using new trinity endpoint with category filter)
       params.append('category', 'lexicon')
-      const entriesResponse = await api.get(`/api/v1/documentation_entries?${params}`)
+      const entriesResponse = await api.get(`/api/v1/trinity?${params}`)
       if (entriesResponse.success) {
         setEntries(entriesResponse.data)
       }
 
       // Load stats
-      const statsResponse = await api.get('/api/v1/documentation_entries/stats')
+      const statsResponse = await api.get('/api/v1/trinity/stats')
       if (statsResponse.success) {
         setStats(statsResponse.data)
       }
@@ -214,7 +214,7 @@ export default function DocumentationPage() {
   const handleEntrySelect = async (entry) => {
     // Fetch full entry details
     try {
-      const response = await api.get(`/api/v1/documentation_entries/${entry.id}`)
+      const response = await api.get(`/api/v1/trinity/${entry.id}`)
       if (response.success) {
         setSelectedEntry(response.data)
       }
@@ -239,7 +239,7 @@ export default function DocumentationPage() {
     if (!confirm(`Delete "${entry.title}"?`)) return
 
     try {
-      await api.delete(`/api/v1/documentation_entries/${entry.id}`)
+      await api.delete(`/api/v1/trinity/${entry.id}`)
       loadLexiconData()
       setSelectedEntry(null)
     } catch (error) {
@@ -251,12 +251,12 @@ export default function DocumentationPage() {
   const handleSaveEntry = async (formData, entryId) => {
     try {
       if (entryId) {
-        await api.put(`/api/v1/documentation_entries/${entryId}`, {
-          documentation_entry: formData
+        await api.put(`/api/v1/trinity/${entryId}`, {
+          trinity: formData
         })
       } else {
-        await api.post('/api/v1/documentation_entries', {
-          documentation_entry: formData
+        await api.post('/api/v1/trinity', {
+          trinity: formData
         })
       }
 
@@ -271,7 +271,7 @@ export default function DocumentationPage() {
 
   const handleExportLexicon = async () => {
     try {
-      const response = await api.post('/api/v1/documentation_entries/export_lexicon')
+      const response = await api.post('/api/v1/trinity/export_lexicon')
 
       if (response.success) {
         alert(`✅ ${response.message}\n\nExported ${response.total_entries} entries to:\n${response.file_path}`)

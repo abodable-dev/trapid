@@ -2,11 +2,11 @@
 
 module Api
   module V1
-    class DocumentationEntriesController < ApplicationController
+    class TrinityController < ApplicationController
       skip_before_action :authorize_request, only: [:index, :show, :stats]
-      before_action :set_documentation_entry, only: [:show, :update, :destroy]
+      before_action :set_trinity_entry, only: [:show, :update, :destroy]
 
-      # GET /api/v1/documentation_entries
+      # GET /api/v1/trinity
       # Query params:
       #   ?chapter=3
       #   ?section=19.1
@@ -17,7 +17,7 @@ module Api
       #   ?difficulty=beginner|intermediate|advanced (only for teacher)
       #   ?search=xero sync
       def index
-        @entries = DocumentationEntry.all
+        @entries = Trinity.all
 
         # Filter by category
         if params[:category] == 'bible'
@@ -46,7 +46,7 @@ module Api
         }
       end
 
-      # GET /api/v1/documentation_entries/:id
+      # GET /api/v1/trinity/:id
       def show
         render json: {
           success: true,
@@ -54,9 +54,9 @@ module Api
         }
       end
 
-      # POST /api/v1/documentation_entries
+      # POST /api/v1/trinity
       def create
-        @entry = DocumentationEntry.new(entry_params)
+        @entry = Trinity.new(entry_params)
 
         if @entry.save
           render json: {
@@ -72,7 +72,7 @@ module Api
         end
       end
 
-      # PATCH /api/v1/documentation_entries/:id
+      # PATCH /api/v1/trinity/:id
       def update
         if @entry.update(entry_params)
           render json: {
@@ -88,7 +88,7 @@ module Api
         end
       end
 
-      # DELETE /api/v1/documentation_entries/:id
+      # DELETE /api/v1/trinity/:id
       def destroy
         @entry.destroy
         render json: {
@@ -97,29 +97,29 @@ module Api
         }
       end
 
-      # GET /api/v1/documentation_entries/stats
+      # GET /api/v1/trinity/stats
       # Returns statistics about entries per chapter
       def stats
         stats = {
-          total_entries: DocumentationEntry.count,
-          bible_count: DocumentationEntry.bible_entries.count,
-          lexicon_count: DocumentationEntry.lexicon_entries.count,
-          teacher_count: DocumentationEntry.teacher_entries.count,
-          by_type: DocumentationEntry.group(:entry_type).count,
-          by_category: DocumentationEntry.group(:category).count,
-          by_status: DocumentationEntry.group(:status).count,
-          by_severity: DocumentationEntry.group(:severity).count,
-          by_difficulty: DocumentationEntry.group(:difficulty).count,
-          by_chapter: DocumentationEntry.group(:chapter_number, :chapter_name).count.map do |(num, name), count|
+          total_entries: Trinity.count,
+          bible_count: Trinity.bible_entries.count,
+          lexicon_count: Trinity.lexicon_entries.count,
+          teacher_count: Trinity.teacher_entries.count,
+          by_type: Trinity.group(:entry_type).count,
+          by_category: Trinity.group(:category).count,
+          by_status: Trinity.group(:status).count,
+          by_severity: Trinity.group(:severity).count,
+          by_difficulty: Trinity.group(:difficulty).count,
+          by_chapter: Trinity.group(:chapter_number, :chapter_name).count.map do |(num, name), count|
             {
               chapter_number: num,
               chapter_name: name,
               total_count: count,
-              bible_count: DocumentationEntry.by_chapter(num).bible_entries.count,
-              lexicon_count: DocumentationEntry.by_chapter(num).lexicon_entries.count,
-              teacher_count: DocumentationEntry.by_chapter(num).teacher_entries.count,
-              open_bugs_count: DocumentationEntry.by_chapter(num).open_bugs.count,
-              critical_bugs_count: DocumentationEntry.by_chapter(num).critical_bugs.count
+              bible_count: Trinity.by_chapter(num).bible_entries.count,
+              lexicon_count: Trinity.by_chapter(num).lexicon_entries.count,
+              teacher_count: Trinity.by_chapter(num).teacher_entries.count,
+              open_bugs_count: Trinity.by_chapter(num).open_bugs.count,
+              critical_bugs_count: Trinity.by_chapter(num).critical_bugs.count
             }
           end.sort_by { |c| c[:chapter_number] }
         }
@@ -130,7 +130,7 @@ module Api
         }
       end
 
-      # POST /api/v1/documentation_entries/export_lexicon
+      # POST /api/v1/trinity/export_lexicon
       # Exports Lexicon (bug/architecture/etc) entries to TRAPID_LEXICON.md
       def export_lexicon
         result = system("cd #{Rails.root} && bundle exec rake trapid:export_lexicon")
@@ -140,7 +140,7 @@ module Api
             success: true,
             message: 'Lexicon exported to TRAPID_LEXICON.md successfully',
             file_path: Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_LEXICON.md').to_s,
-            total_entries: DocumentationEntry.lexicon_entries.count
+            total_entries: Trinity.lexicon_entries.count
           }
         else
           render json: {
@@ -150,7 +150,7 @@ module Api
         end
       end
 
-      # POST /api/v1/documentation_entries/export_teacher
+      # POST /api/v1/trinity/export_teacher
       # Exports Teacher (component/feature/etc) entries to TRAPID_TEACHER.md
       def export_teacher
         result = system("cd #{Rails.root} && bundle exec rake trapid:export_teacher")
@@ -160,7 +160,7 @@ module Api
             success: true,
             message: 'Teacher exported to TRAPID_TEACHER.md successfully',
             file_path: Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_TEACHER.md').to_s,
-            total_entries: DocumentationEntry.teacher_entries.count
+            total_entries: Trinity.teacher_entries.count
           }
         else
           render json: {
@@ -172,17 +172,17 @@ module Api
 
       private
 
-      def set_documentation_entry
-        @entry = DocumentationEntry.find(params[:id])
+      def set_trinity_entry
+        @entry = Trinity.find(params[:id])
       rescue ActiveRecord::RecordNotFound
         render json: {
           success: false,
-          error: 'Documentation entry not found'
+          error: 'Trinity entry not found'
         }, status: :not_found
       end
 
       def entry_params
-        params.require(:documentation_entry).permit(
+        params.require(:trinity).permit(
           :category,
           :chapter_number,
           :chapter_name,

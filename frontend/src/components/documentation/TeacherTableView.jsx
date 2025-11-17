@@ -240,7 +240,7 @@ export default function TeacherTableView({ content }) {
     const fetchSections = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/v1/documentation_entries?category=teacher')
+        const response = await fetch('/api/v1/trinity?category=teacher')
         const data = await response.json()
 
         if (data.success) {

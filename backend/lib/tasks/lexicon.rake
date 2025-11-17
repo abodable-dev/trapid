@@ -24,7 +24,7 @@ namespace :trapid do
       created_at = attrs.delete('created_at')
       updated_at = attrs.delete('updated_at')
 
-      entry = DocumentationEntry.find_or_initialize_by(
+      entry = Trinity.find_or_initialize_by(
         chapter_number: attrs['chapter_number'],
         section_number: attrs['section_number']
       )
@@ -48,14 +48,14 @@ namespace :trapid do
     puts "✅ Import complete!"
     puts "   Imported: #{imported}"
     puts "   Skipped (duplicates): #{skipped}"
-    puts "   Total in database: #{DocumentationEntry.count}"
+    puts "   Total in database: #{Trinity.count}"
   end
 
   desc 'Export documentation entries to JSON file'
   task export_docs: :environment do
     puts '📤 Exporting documentation entries to JSON...'
 
-    data = DocumentationEntry.all.map(&:attributes)
+    data = Trinity.all.map(&:attributes)
 
     json_path = Rails.root.join('tmp', 'documentation_entries.json')
     File.write(json_path, JSON.pretty_generate(data))
@@ -103,7 +103,7 @@ namespace :trapid do
     content << ''
     content << '## 💾 Database-Driven Lexicon'
     content << ''
-    content << '**IMPORTANT:** This file is auto-generated from the `documentation_entries` database table.'
+    content << '**IMPORTANT:** This file is auto-generated from the `trinity` database table.'
     content << ''
     content << '**To edit entries:**'
     content << '1. Go to Documentation page in Trapid'
@@ -119,10 +119,10 @@ namespace :trapid do
     content << ''
 
     # Get all chapters (only from Lexicon entries)
-    chapters = DocumentationEntry.lexicon_entries
-                                 .select(:chapter_number, :chapter_name)
-                                 .distinct
-                                 .order(:chapter_number)
+    chapters = Trinity.lexicon_entries
+                      .select(:chapter_number, :chapter_name)
+                      .distinct
+                      .order(:chapter_number)
 
     chapters.each do |chapter|
       content << "- [Chapter #{chapter.chapter_number}: #{chapter.chapter_name}](#chapter-#{chapter.chapter_number}-#{chapter.chapter_name.downcase.gsub(/[^a-z0-9]+/, '-')})"
@@ -150,9 +150,9 @@ namespace :trapid do
       content << ''
 
       # Get Lexicon entries for this chapter only
-      entries = DocumentationEntry.lexicon_entries
-                                  .where(chapter_number: chapter.chapter_number)
-                                  .order(:entry_type, :created_at)
+      entries = Trinity.lexicon_entries
+                       .where(chapter_number: chapter.chapter_number)
+                       .order(:entry_type, :created_at)
 
       # Group by entry_type
       bugs = entries.where(entry_type: 'bug')
@@ -405,7 +405,7 @@ namespace :trapid do
     file_path = Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_LEXICON.md')
     File.write(file_path, content.join("\n"))
 
-    total_entries = DocumentationEntry.lexicon_entries.count
+    total_entries = Trinity.lexicon_entries.count
     puts "✅ Exported #{total_entries} entries across #{chapters.count} chapters"
     puts "📄 File: #{file_path}"
     puts ''
@@ -459,7 +459,7 @@ namespace :trapid do
     content << ''
     content << '## 💾 Database-Driven Teacher'
     content << ''
-    content << '**IMPORTANT:** This file is auto-generated from the `documentation_entries` database table.'
+    content << '**IMPORTANT:** This file is auto-generated from the `trinity` database table.'
     content << ''
     content << '**To edit entries:**'
     content << '1. Go to Documentation page in Trapid'
@@ -475,10 +475,10 @@ namespace :trapid do
     content << ''
 
     # Get all chapters (only from Teacher entries)
-    chapters = DocumentationEntry.teacher_entries
-                                 .select(:chapter_number, :chapter_name)
-                                 .distinct
-                                 .order(:chapter_number)
+    chapters = Trinity.teacher_entries
+                      .select(:chapter_number, :chapter_name)
+                      .distinct
+                      .order(:chapter_number)
 
     chapters.each do |chapter|
       content << "- [Chapter #{chapter.chapter_number}: #{chapter.chapter_name}](#chapter-#{chapter.chapter_number}-#{chapter.chapter_name.downcase.gsub(/[^a-z0-9]+/, '-')})"
@@ -506,9 +506,9 @@ namespace :trapid do
       content << ''
 
       # Get Teacher entries for this chapter
-      entries = DocumentationEntry.teacher_entries
-                                  .where(chapter_number: chapter.chapter_number)
-                                  .order(:section_number, :created_at)
+      entries = Trinity.teacher_entries
+                       .where(chapter_number: chapter.chapter_number)
+                       .order(:section_number, :created_at)
 
       entries.each do |entry|
         # Section header
@@ -601,7 +601,7 @@ namespace :trapid do
     file_path = Rails.root.join('..', 'TRAPID_DOCS', 'TRAPID_TEACHER.md')
     File.write(file_path, content.join("\n"))
 
-    total_entries = DocumentationEntry.teacher_entries.count
+    total_entries = Trinity.teacher_entries.count
     puts "✅ Exported #{total_entries} teaching patterns across #{chapters.count} chapters"
     puts "📄 File: #{file_path}"
     puts ''
