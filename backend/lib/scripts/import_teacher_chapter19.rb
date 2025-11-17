@@ -58,7 +58,7 @@ sections.each do |section_number, title, body|
   related_rules = rules_match&.[](1)&.strip
   
   # Create or update entry
-  entry = DocumentationEntry.find_or_initialize_by(
+  entry = Trinity.find_or_initialize_by(
     chapter_number: 19,
     section_number: section_number
   )
@@ -85,4 +85,4 @@ sections.each do |section_number, title, body|
 end
 
 puts "\n✅ Import complete!"
-puts "📊 Total Chapter 19 Teacher entries: #{DocumentationEntry.teacher_entries.where(chapter_number: 19).count}"
+puts "📊 Total Chapter 19 Teacher entries: #{Trinity.teacher_entries.where(chapter_number: 19).count}"

@@ -53,7 +53,7 @@ chapters.each do |chapter_num_str, chapter_title, chapter_content|
   chapter_num = chapter_num_str.to_i
 
   # Skip if already processed (0, 1, 19)
-  existing_count = DocumentationEntry.teacher_entries.where(chapter_number: chapter_num).count
+  existing_count = Trinity.teacher_entries.where(chapter_number: chapter_num).count
   if existing_count > 0 && [0, 1, 19].include?(chapter_num)
     puts "⏭️  Chapter #{chapter_num}: #{CHAPTER_NAMES[chapter_num]} - SKIPPING (#{existing_count} entries already exist)"
     total_skipped += existing_count
@@ -98,7 +98,7 @@ chapters.each do |chapter_num_str, chapter_title, chapter_content|
                  end
 
     # Create entry
-    entry = DocumentationEntry.find_or_initialize_by(
+    entry = Trinity.find_or_initialize_by(
       chapter_number: chapter_num,
       section_number: rule_num
     )
@@ -129,6 +129,6 @@ puts "📊 EXTRACTION COMPLETE"
 puts "=" * 60
 puts "✅ Created: #{total_created} new Teacher entries"
 puts "⏭️  Skipped: #{total_skipped} existing entries"
-puts "📚 Total Teacher entries: #{DocumentationEntry.teacher_entries.count}"
+puts "📚 Total Teacher entries: #{Trinity.teacher_entries.count}"
 puts ""
 puts "Next step: bin/rails trapid:export_teacher"

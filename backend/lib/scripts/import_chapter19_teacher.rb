@@ -50,7 +50,7 @@ if content =~ /# Chapter 19: (.+?)\n(.+?)(?=\n# Chapter 20:|\z)/m
     end
 
     # Create entry
-    entry = DocumentationEntry.find_or_initialize_by(
+    entry = Trinity.find_or_initialize_by(
       chapter_number: 19,
       section_number: section_num
     )
@@ -75,7 +75,7 @@ if content =~ /# Chapter 19: (.+?)\n(.+?)(?=\n# Chapter 20:|\z)/m
   end
 
   puts "\n✅ Import complete!"
-  puts "📊 Total Chapter 19 Teacher entries: #{DocumentationEntry.teacher_entries.where(chapter_number: 19).count}"
+  puts "📊 Total Chapter 19 Teacher entries: #{Trinity.teacher_entries.where(chapter_number: 19).count}"
 else
   puts "❌ Could not find Chapter 19 in TRAPID_TEACHER.md"
 end
