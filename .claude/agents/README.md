@@ -58,12 +58,22 @@ This directory contains specialized agent definitions for the Trapid project.
 - Trinity database is source of truth
 
 ### 8. ui-compliance-auditor
-**Focus:** UI/UX Standards Compliance (Chapter 19)
+**Focus:** UI/UX Standards Compliance (Chapter 19 & 20 - Non-Table Components)
 - Audits all frontend code against Chapter 19 UI/UX standards
-- Identifies missing features (resize, reorder, filters, search)
+- Focuses on forms, modals, navigation, buttons, layouts
 - Checks for incorrect icon usage
 - Verifies dark mode support across all components
 - Generates detailed compliance reports
+- **Note:** For table-specific audits, use ui-table-auditor
+
+### 9. ui-table-auditor
+**Focus:** Table Component Compliance (Chapter 19 - Tables)
+- Specialized audits for ALL table components
+- Trinity tables, DataTable, custom table implementations
+- Validates table structure, inline editing, column formatting
+- Checks sorting, filtering, row actions
+- Verifies empty/loading states, mobile responsiveness
+- Dark mode compliance for tables
 
 ## How to Use
 
@@ -79,6 +89,7 @@ This directory contains specialized agent definitions for the Trapid project.
 "run gantt-bug-hunter"
 "run trinity-sync-validator"
 "run ui-compliance-auditor"
+"run ui-table-auditor"
 
 # Shorter versions
 "backend dev"
@@ -89,6 +100,7 @@ This directory contains specialized agent definitions for the Trapid project.
 "gantt"
 "trinity"
 "ui audit"
+"audit tables"
 ```
 
 ### Run All Agents
@@ -99,7 +111,7 @@ This directory contains specialized agent definitions for the Trapid project.
 "allagent"
 ```
 
-This will run all 8 agents in parallel with health check tasks.
+This will run all 9 agents in parallel with health check tasks.
 
 ## Run History
 

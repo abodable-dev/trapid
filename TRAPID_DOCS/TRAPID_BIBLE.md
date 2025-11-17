@@ -1,7 +1,7 @@
 # TRAPID BIBLE - Development Rules
 
 **Version:** 2.0.0
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:59 AEST
 **Authority Level:** ABSOLUTE
 **Audience:** Claude Code + Human Developers
 **Source of Truth:** Database table `bible_rules` (this file is auto-generated)
@@ -39,58 +39,47 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 # Chapter 1: Overview & System-Wide Rules
 
-**Last Updated:** 2025-11-18 02:29 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #1.1: Documentation Maintenance
 
-📖 Rule
-
+RULE:
 When to Update Bible:
-✅ MUST update Bible when:
+MUST update Bible when:
 1. Adding a new coding rule (MUST/NEVER/ALWAYS pattern)
 2. Discovering a protected code pattern
 3. Adding a critical configuration value
 4. Finding a bug-causing violation
-
-❌ DO NOT update Bible for:
+DO NOT update Bible for:
 - Bug discoveries (goes in Lexicon)
 - Architecture explanations (goes in Lexicon)
 - Performance optimizations (goes in Lexicon unless it creates a new RULE)
 
-
 ## RULE #1.10: Section Numbers Must Be Unique Within Chapter + Category
 
-✅ Must
-
-✅ **MUST ensure section numbers are unique within each chapter + category combination:**
+MUST:
+**MUST ensure section numbers are unique within each chapter + category combination:**
 - Each section number can only be used ONCE per chapter per category
 - Bible, Teacher, and Lexicon each have independent section numbering
 - Example: Bible RULE #21.10, Teacher §21.10, and Lexicon §21.10 can all coexist
-
-❌ **NEVER reuse section numbers within same chapter + category:**
+**NEVER reuse section numbers within same chapter + category:**
 - Invalid: Two Bible entries both using RULE #21.10 (same chapter, same category)
 - Invalid: Two Teacher entries both using §0.2 (same chapter, same category)
-
-✅ **VALID - different categories can share section numbers:**
-- Bible RULE #21.10 AND Teacher §21.10 (different categories) ✅
-- Bible RULE #0.2 AND Teacher §0.2 (different categories) ✅
-
+**VALID - different categories can share section numbers:**
+- Bible RULE #21.10 AND Teacher §21.10 (different categories) 
+- Bible RULE #0.2 AND Teacher §0.2 (different categories) 
 **Why this matters:**
 - Each Trinity category has its own documentation structure
 - Section numbers reference entries within their own category
 - Database constraints should enforce uniqueness on (chapter_number, section_number, category)
-
 **How to implement:**
 - Add unique index: CREATE UNIQUE INDEX idx_trinity_unique_section ON trinity(chapter_number, section_number, category)
 - Model validation: validates :section_number, uniqueness: { scope: [:chapter_number, :category] }
 
-
 ## RULE #1.11: Chapter Assignment - Where to Place New Rules
 
-✅ Must
-
-✅ **MUST place rules in the correct chapter:**
-
+MUST:
+**MUST place rules in the correct chapter:**
 **Chapter 1: System-Wide Rules**
 - Trinity documentation workflow and meta-rules
 - Trinity entry types and section numbering
@@ -101,7 +90,6 @@ When to Update Bible:
 - General application patterns
 - Example: RULE #1.8 (Always Fetch Trinity Before Modifying Code)
 - Example: RULE #1.9 (Section Numbers Must Be Purely Numeric)
-
 **Chapters 2-21: Feature-Specific Rules**
 - Chapter 2: Authentication & Users
 - Chapter 3: System Administration
@@ -123,51 +111,40 @@ When to Update Bible:
 - Chapter 19: Custom Tables & Formulas
 - Chapter 20: UI/UX Standards & Patterns
 - Chapter 21: Agent System & Automation
-
-❌ **NEVER:**
 - Create Chapter 0 (all system-wide rules go in Chapter 1)
 - Put feature-specific rules in Chapter 1
 - Create rules in wrong feature chapters (e.g., Gantt rules in Chapter 4)
-
 **How to decide:**
 1. Is this a system-wide rule or Trinity meta-rule? → Chapter 1
 2. Is this feature-specific? → Find matching chapter (2-21)
 3. Unsure? Ask which chapter it belongs in
 
-
 ## RULE #1.12: Never Guess - Always Ask
 
-❌ Never
-
-❌ **NEVER guess what the user wants:**
+NEVER:
+**NEVER guess what the user wants:**
 - When user asks "anything else we should remove" → Ask specific clarifying questions
 - When user says "can we take this out" → Ask which specific parts they mean
 - When given vague requests → List options and ask user to choose
 - When uncertain about intent → Present alternatives and ask for confirmation
-
-✅ **ALWAYS ask explicitly:**
+**ALWAYS ask explicitly:**
 - "Would you like me to remove X?"
 - "Do you mean A, B, or C?"
 - "Should I proceed with option 1 or option 2?"
 - "Which of these would you prefer?"
-
 **Why this matters:**
 User gave feedback "please dont guess" when Claude assumed user wanted to remove a line without asking first. Guessing wastes user time when Claude guesses wrong.
 
-
 ## RULE #1.13: Single Source of Truth - Eliminate Data Duplication
 
-✅ Must
-
-✅ **MUST identify and eliminate multiple sources of truth:**
-
+MUST:
+**MUST identify and eliminate multiple sources of truth:**
 **The Problem:**
 When the same data exists in multiple places, they inevitably drift out of sync, causing:
 - Conflicting information
 - Unclear which source is authoritative
 - Bugs when one source is updated but not others
 - Maintenance burden keeping everything synchronized
-
 **How to Identify:**
 Look for the same information stored in:
 - Database tables AND configuration files
@@ -175,205 +152,159 @@ Look for the same information stored in:
 - Markdown files AND database tables
 - Frontend constants AND backend database
 - Multiple database tables with overlapping data
-
 **MUST Fix Pattern:**
 1. **Identify the single source of truth** (usually database)
 2. **Make other locations read from the source** (via API, query, import)
 3. **Remove duplication** - delete redundant copies
 4. **Document the authority** - which source is canonical
-
 **Example - General Pattern:**
-❌ **BAD (Multiple sources of truth):**
+**BAD (Multiple sources of truth):**
 - User roles in database AND hardcoded in frontend
 - Configuration in .env AND database settings table
 - Feature flags in code AND database
-
-✅ **GOOD (Single source of truth):**
+**GOOD (Single source of truth):**
 - Database is the ONLY source of truth
 - Frontend reads from API (not hardcoded)
 - Code imports from authoritative source
-
 **When duplication is acceptable:**
 - Performance caching (with clear expiry/invalidation)
 - Offline/backup copies (with sync mechanism)
 - Derived/computed data (with clear calculation source)
-
 **Document it:**
 Always add comment showing which source is authoritative:
 ```javascript
 // Source of truth: database settings table
 // This component reads from API /api/v1/settings
 ```
-
-❌ **NEVER:**
 - Create duplicate data without clear authority
 - Assume manual sync will stay consistent
 - Store same data in multiple writeable locations
 
-
 ## RULE #1.2: Code Quality Standards
 
-📖 Rule
-
-❌ NEVER commit code with:
+RULE:
+NEVER commit code with:
 - Console.log statements (use proper logging)
 - Commented-out code (delete it)
 - TODO comments without GitHub issues
 - Hardcoded credentials or API keys
-
-✅ ALWAYS:
+ALWAYS:
 - Use environment variables for secrets
 - Write descriptive commit messages
 - Run linter before committing
 - Test locally before pushing
 
-
 ## RULE #1.3: API Response Format
 
-📖 Rule
-
-✅ ALWAYS return consistent JSON:
-
+RULE:
+ALWAYS return consistent JSON:
 Success response:
 { success: true, data: { ... }, message: "Optional" }
-
 Error response:
 { success: false, error: "Error message", details: { ... } }
 
-
 ## RULE #1.4: Database Migrations
 
-📖 Rule
-
-❌ NEVER:
+RULE:
+NEVER:
 - Modify existing migrations after deployment
 - Delete migrations that have run in production
 - Add columns manually without migrations
-
-✅ ALWAYS:
+ALWAYS:
 - Create new migration to fix issues
 - Test migrations with db:rollback
 - Add indexes for foreign keys
 - Create migrations for ALL schema changes
 
-
 ## RULE #1.5: Agent Maintenance & Learning
 
-📖 Rule
-
+RULE:
 When an agent fails to catch a bug:
 1. Update agent definition in .claude/agents/
 2. Document in Lexicon Chapter 0
 3. Update Bible if it reveals a new RULE
-
-✅ ALWAYS ask: "Could an agent have prevented this?"
-❌ NEVER let the same class of bug happen twice
-
+ALWAYS ask: "Could an agent have prevented this?"
+NEVER let the same class of bug happen twice
 
 ## RULE #1.6: Documentation Authority Hierarchy
 
-📖 Rule
-
+RULE:
 Authority Order (Highest to Lowest):
 1. TRAPID_BIBLE.md - ABSOLUTE AUTHORITY for protected features
 2. CLAUDE.md - META INSTRUCTIONS for AI behavior
 3. TRAPID_LEXICON.md - REFERENCE for bug history
 4. Code comments - IMPLEMENTATION DETAILS
 
-
 ## RULE #1.7: Trinity Database Sync
 
-✅ Must
-
-✅ MUST
-
+MUST:
 The Trinity system (Bible + Lexicon + Teacher combined) is **DATABASE-FIRST**.
-
 **Source of Truth:** Trinity database table (PostgreSQL)
 **Markdown Files:** Auto-generated exports for git history and offline reference ONLY
-
 **Architecture:**
 - Database → API → Frontend UI (primary use)
 - Database → Export → Markdown files (backup/git only)
-
 **DO NOT:**
-- ❌ Read markdown files for rules (always use API)
-- ❌ Edit markdown files directly (use UI or database)
-- ❌ Trust markdown as source of truth (may be stale)
-
-**ALWAYS:**
-- ✅ Fetch from /api/v1/trinity APIs for real-time data
-- ✅ Edit via UI (stores in database)
-- ✅ Export to markdown for git commit backups
+- Read markdown files for rules (always use API)
+- Edit markdown files directly (use UI or database)
+- Trust markdown as source of truth (may be stale)
+ALWAYS:
+- Fetch from /api/v1/trinity APIs for real-time data
+- Edit via UI (stores in database)
+- Export to markdown for git commit backups
 
 **Fetch from Trinity API:**
 ```bash
 # Get all Bible rules
 curl https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible
-
 # Get all Lexicon entries
 curl https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=lexicon
-
-# Get all Teacher guides  
+# Get all Teacher guides 
 curl https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=teacher
-
 # Get specific chapter
 curl https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible&chapter=21
 ```
-
 **Export to Markdown (for git backup):**
 ```bash
 # Export Bible to TRAPID_BIBLE.md
 bin/rails trapid:export_bible
-
 # Export Lexicon to TRAPID_LEXICON.md
 bin/rails trapid:export_lexicon
-
 # Export Teacher to TRAPID_TEACHER.md
 bin/rails trapid:export_teacher
 ```
-
 **Import from Markdown (restore from backup):**
 ```bash
 # Import Bible from TRAPID_BIBLE.md
 bin/rails trapid:import_bible
-
 # Import Lexicon from TRAPID_LEXICON.md
 bin/rails trapid:import_lexicon
-
 # Import Teacher from TRAPID_TEACHER.md
 bin/rails trapid:import_teacher
 ```
-
 **Workflow:**
 1. Edit via UI → Updates trinity table
 2. Run export task → Generates markdown file
 3. Commit markdown file to git (backup)
 4. Other developers: Pull → Database is already synced (no import needed)
-
 **Validation:**
 - Use /trinity-sync-validator agent to verify sync
 - Trinity table is ALWAYS authoritative
 - Markdown exports are snapshots for git history
 
-
 ## RULE #1.8: Always Fetch Trinity Before Modifying Code
 
-🔄 Always
-
-✅ **ALWAYS fetch Trinity Bible/Lexicon/Teacher when:**
+ALWAYS:
+**ALWAYS fetch Trinity Bible/Lexicon/Teacher when:**
 - User mentions a feature name
 - Working on files related to a specific chapter
 - User reports a bug
 - Adding new functionality
 - Modifying existing code
-
-❌ **NEVER:**
 - Modify feature code without fetching Bible rules for that chapter
 - Change values or patterns mentioned in Bible rules
 - Skip reading Protected Code Patterns
 - "Optimize" or "simplify" code without checking Bible first
-
 **Chapter → Feature mapping:**
 - Chapter 7: Gantt Chart, Schedule Master, cascade, dependencies
 - Chapter 15: Xero, accounting, invoice sync
@@ -381,451 +312,273 @@ bin/rails trapid:import_teacher
 - Chapter 20: UI/UX Standards & Patterns
 - Chapter 21: Agent System & Automation
 
-
 ## RULE #1.9: Section Numbers Must Be Purely Numeric
 
-✅ Must
-
-✅ **MUST use only digits and dots in section numbers:**
+MUST:
+**MUST use only digits and dots in section numbers:**
 - Valid: 0.1, 19.11, 21.9
 - Valid: Single decimal point only (X.Y format)
-
-❌ **NEVER use letters or suffixes in section numbers:**
+**NEVER use letters or suffixes in section numbers:**
 - Invalid: 0.1A, 19.11A, 21.9a
 - Invalid: 0.1-beta, 19.11v2
 - Invalid: Any non-numeric characters
-
 **Why this matters:**
 Section numbers are used for sorting, filtering, and API queries. Adding letters breaks numeric sorting and makes API filtering unpredictable.
-
 **If you need to add content between existing sections:**
 - Option 1: Renumber subsequent sections (e.g., insert 19.6, renumber old 19.6 → 19.7, old 19.7 → 19.8)
 - Option 2: Use decimal increments (19.6, then 19.7, NOT 19.6A)
 - Option 3: Add as next available number and reorder manually
 
-
 # Chapter 2: Authentication & Users
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #2.1: JWT Token Handling
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use `JsonWebToken.encode` to create tokens
 - Include `user_id` in payload
 - Set expiration to 24 hours maximum
 - Send token in `Authorization: Bearer <token>` header
-
-❌ **NEVER:**
 - Store sensitive data in JWT payload (it's base64, not encrypted)
 - Create tokens without expiration
 - Share SECRET_KEY across environments
 - Store tokens in localStorage (XSS vulnerable) - use httpOnly cookies on frontend
-
-
 ---
-
 
 ## RULE #2.2: Password Security Requirements
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST enforce:**
+MUST:
+**MUST enforce:**
 - Minimum 12 characters (NOT 8, NOT 10)
 - At least 1 uppercase letter [A-Z]
 - At least 1 lowercase letter [a-z]
 - At least 1 digit [0-9]
 - At least 1 special character [!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]
-
-❌ **NEVER:**
 - Log passwords (even hashed)
 - Send passwords in API responses
 - Store passwords in plain text
 - Allow common passwords (implement dictionary check if needed)
-
-
 ---
-
 
 ## RULE #2.3: Role-Based Access Control
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use predefined roles: `user`, `admin`, `product_owner`, `estimator`, `supervisor`, `builder`
 - Check permissions via User model methods (`can_create_templates?`, `can_edit_schedule?`)
 - Use `before_action :require_admin` for admin-only endpoints
 - Set default role to `"user"` for new signups
-
-❌ **NEVER:**
 - Create roles dynamically via API
 - Store roles outside the enum
 - Bypass permission checks with hardcoded user IDs
 - Grant admin role automatically (even for @tekna.com.au emails)
-
-
 ---
-
 
 ## RULE #2.4: Rate Limiting on Auth Endpoints
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST configure:**
+MUST:
+**MUST configure:**
 - Auth endpoints: 5 requests per 20 seconds per IP
 - Password reset: 3 requests per hour per email
 - General API: 300 requests per 5 minutes per IP
-
-❌ **NEVER:**
 - Disable rate limiting in production
 - Use same limits for external vs internal APIs
 - Skip rate limiting for "trusted" IPs (除非 explicitly whitelisted)
-
-
 ---
-
 
 ## RULE #2.5: OAuth Integration Pattern
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use OmniAuth gem for all OAuth providers
 - Store `provider`, `uid`, `oauth_token`, `oauth_expires_at` on User
 - Generate random password for OAuth users (via `SecureRandom.hex`)
 - Return JWT token after OAuth callback
 - Validate OAuth tokens on every external API call
-
-❌ **NEVER:**
 - Store OAuth refresh tokens in database (security risk)
 - Share OAuth tokens across users
 - Skip token expiration checks
 - Use OAuth for internal user creation (only for login)
-
-
 ---
-
 
 ## RULE #2.6: Password Reset Flow
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Generate token via `SecureRandom.urlsafe_base64(32)`
 - Store hashed token in database (NOT plain text)
 - Set `reset_password_sent_at` timestamp
 - Expire tokens after 2 hours
 - Clear token after successful reset
 - Send reset email with token URL
-
-❌ **NEVER:**
 - Store tokens in plain text
 - Reuse tokens across multiple resets
 - Skip token expiration check
 - Send token in API response (only via email)
-
-
 ---
-
 
 ## RULE #2.7: Portal User Separation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use separate `portal_users` table (NOT users table)
 - Associate portal users with `Contact` record
 - Implement account lockout for portal users (5 failed attempts = 30 min lockout)
 - Log all portal user activities via `PortalAccessLog`
 - Use `portal_type` enum: `'supplier'` or `'customer'`
-
-❌ **NEVER:**
 - Mix portal users and admin users in same table
 - Grant admin access to portal users
 - Skip activity logging for portal users
 - Allow portal users to access internal APIs
-
-
 ---
-
 
 ## RULE #2.8: Login Activity Tracking
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Update `last_login_at` timestamp on successful login
 - Store in UTC timezone
 - Track for both User and PortalUser
 - Use for account activity monitoring
-
-❌ **NEVER:**
 - Update on token refresh (only on actual login)
 - Track in local timezone
 - Skip updates (used for security monitoring)
-
-
 ---
-
 
 # Chapter 3: System Administration
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #3.1: Company Settings Singleton Pattern
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement as singleton:**
-
-✅ **MUST access via instance method:**
-
-❌ **NEVER:**
+MUST:
+**MUST implement as singleton:**
+**MUST access via instance method:**
 - Create multiple CompanySetting records (singleton = one record only)
 - Hardcode configuration values instead of reading from settings
 - Use `CompanySetting.first` (use `CompanySetting.instance`)
 - Call `CompanySetting.create` manually (use `instance` method)
-
-
 ---
-
 
 ## RULE #3.2: Timezone Handling - Backend Time Calculations
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST use CompanySetting timezone methods:**
-
-✅ **MUST use Time.use_zone context:**
-
-❌ **NEVER:**
+MUST:
+**MUST use CompanySetting timezone methods:**
+**MUST use Time.use_zone context:**
 - Use `Date.today` or `Time.now` without timezone context
 - Store dates/times in UTC without timezone conversion
 - Assume server timezone matches company timezone
 - Use JavaScript `new Date()` for date calculations (see RULE #2.3)
-
-
 ---
-
 
 ## RULE #3.3: Timezone Handling - Frontend Time Display
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST use Intl API with explicit timezone:**
-
-✅ **MUST import and use timezone utilities:**
-
-❌ **NEVER:**
+MUST:
+**MUST use Intl API with explicit timezone:**
+**MUST import and use timezone utilities:**
 - Use `Date.toLocaleDateString()` without timeZone parameter (uses browser timezone!)
 - Use `Date.toLocaleString()` without explicit timezone
 - Use date libraries without timezone configuration (moment.js, date-fns)
 - Assume user's browser timezone matches company timezone
-
-
 ---
-
 
 ## RULE #3.4: Working Days Configuration & Business Day Calculations
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement working_day? and business_day? methods:**
-
-✅ **MUST use in date calculations:**
-
-❌ **NEVER:**
+MUST:
+**MUST implement working_day? and business_day? methods:**
+**MUST use in date calculations:**
 - Hardcode working days as Monday-Friday only (some industries work Sundays, skip Saturdays)
 - Use Rails' `business_day?` method (doesn't respect company settings)
 - Calculate task dates without checking working_days
 - Allow cascade to schedule tasks on non-working days (exception: locked tasks)
-
-
 ---
-
 
 ## RULE #3.5: User Roles & Permission System
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement permission helper methods:**
-
-✅ **MUST check permissions in controllers:**
-
-❌ **NEVER:**
+MUST:
+**MUST implement permission helper methods:**
+**MUST check permissions in controllers:**
 - Allow users to change their own role (admin-only operation)
 - Grant permissions based on string matching role names
 - Skip permission checks in controllers ("I'll handle it in the UI")
 - Use role checking in frontend only (backend MUST validate)
-
-
 ---
-
 
 ## RULE #3.6: Assignable Roles for Task Assignment
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST use assignable_role for task filtering:**
-
-❌ **NEVER:**
+MUST:
+**MUST use assignable_role for task filtering:**
 - Confuse system role (permissions) with assignable_role (task filtering)
 - Use system role for task assignment
 - Allow users with assignable_role: none to be assigned tasks
 - Hardcode role names in task queries
-
-
 ---
-
 
 ## RULE #3.7: Password Complexity Requirements
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST validate password complexity:**
-
-✅ **MUST generate random password for OAuth users:**
-
-❌ **NEVER:**
+MUST:
+**MUST validate password complexity:**
+**MUST generate random password for OAuth users:**
 - Allow passwords shorter than 12 characters
 - Allow passwords without uppercase, lowercase, digit, and special character
 - Require OAuth users to set passwords (they don't use them)
 - Store passwords in plain text (use bcrypt via has_secure_password)
-
-
 ---
-
 
 ## RULE #3.8: Timezone Options Limitation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST use this exact list:**
-
-✅ **MUST use select with these options:**
-
-❌ **NEVER:**
+MUST:
+**MUST use this exact list:**
+**MUST use select with these options:**
 - Allow free-text timezone entry (validation nightmare)
 - Show all 400+ IANA timezones (overwhelming, unnecessary)
 - Use timezone abbreviations (AEST, AEDT - ambiguous)
 - Default to UTC (construction companies operate in specific regions)
-
-
 ---
-
 
 ## RULE #3.9: Working Days UI - Sunday Default True
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST initialize with Sunday = true:**
-
-✅ **MUST show checkboxes for all 7 days:**
-
-❌ **NEVER:**
+MUST:
+**MUST initialize with Sunday = true:**
+**MUST show checkboxes for all 7 days:**
 - Hardcode Monday-Friday as only working days
 - Hide Sunday checkbox (some companies DO work Sundays)
 - Default all days to true (Saturday rarely worked)
 - Prevent users from customizing working days
-
-
 ---
-
 
 # Chapter 4: Contacts & Relationships
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #4.1: Contact Types are Multi-Select Arrays
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use `contact_types` as PostgreSQL array column
 - Allow multiple types: `['customer', 'supplier']` for hybrid contacts
 - Set `primary_contact_type` automatically if blank (first type in array)
 - Validate types against `CONTACT_TYPES = ['customer', 'supplier', 'sales', 'land_agent']`
 - Use array operations for querying: `where("'supplier' = ANY(contact_types)")`
-
-❌ **NEVER:**
 - Use single contact_type field (legacy pattern)
 - Store types as comma-separated strings
 - Assume a contact has only one type
 - Query with `contact_type =` (use array containment instead)
-
-
 ---
-
 
 ## RULE #4.2: Bidirectional Relationships Require Reverse Sync
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Create reverse relationship after creating forward relationship
 - Update reverse relationship when forward is updated
 - Delete reverse relationship when forward is deleted
 - Use Thread-local flags to prevent infinite recursion: `Thread.current[:creating_reverse_relationship]`
 - Validate unique relationship pairs: `[source_contact_id, related_contact_id]`
 - Prevent self-relationships: `source_contact_id != related_contact_id`
-
-❌ **NEVER:**
 - Create one-way relationships without reverse
 - Allow circular reference loops during cascade updates
 - Delete reverse relationship without checking Thread flag
 - Allow duplicate relationships (same source + related pair)
-
-
 ---
-
 
 ## RULE #4.3: Xero Sync Uses Priority-Based Fuzzy Matching
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - **Priority 1:** Match by `xero_id` (exact match)
 - **Priority 2:** Match by `tax_number` (normalized ABN/ACN, 11 digits)
 - **Priority 3:** Match by `email` (case-insensitive exact match)
@@ -835,49 +588,31 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Set `last_synced_at` timestamp on successful sync
 - Clear `xero_sync_error` on success, set on failure
 - Respect `sync_with_xero` flag (skip if false)
-
-❌ **NEVER:**
 - Match only by name (too unreliable without fuzzy matching)
 - Sync without rate limiting (will hit Xero API limits)
 - Override manual `xero_id` links without confirmation
 - Sync contacts with `sync_with_xero = false`
 - Delete local contacts that don't exist in Xero
-
-
 ---
-
 
 ## RULE #4.4: Contact Deletion MUST Check Purchase Order Dependencies
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Check for linked suppliers via `contact.suppliers` association
 - Check if suppliers have purchase orders: `suppliers.joins(:purchase_orders).distinct`
 - Block deletion if ANY purchase orders exist
 - Block deletion if ANY purchase orders have been paid or invoiced
 - Return detailed error message listing suppliers and PO counts
 - Allow deletion of contacts without supplier dependencies
-
-❌ **NEVER:**
 - Delete contacts with active supplier relationships that have POs
 - Cascade delete purchase orders when deleting contact
 - Allow deletion without checking payment/invoice status
 - Delete last contact from a construction/job
-
-
 ---
-
 
 ## RULE #4.5: Contact Merge MUST Consolidate All Related Records
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Merge `contact_types` arrays (union, no duplicates)
 - Fill missing info from source to target (email, phone, address, etc.)
 - Keep best `rating` if both are suppliers (higher wins)
@@ -886,24 +621,15 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Delete source contacts after successful merge
 - Log activity with "contact_merged" type and metadata
 - Return updated target contact
-
-❌ **NEVER:**
 - Overwrite target data with blank source data
 - Merge without updating related records
 - Delete source without logging activity
 - Allow merge if validation fails on target
-
-
 ---
-
 
 ## RULE #4.6: Portal Users MUST Have Secure Password Requirements
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Minimum 12 characters
 - At least one uppercase, lowercase, digit, and special character
 - Lock account after 5 failed login attempts
@@ -911,2647 +637,1503 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Reset failed attempts counter on successful login
 - Use `has_secure_password` with bcrypt
 - Validate email uniqueness and `contact_id` uniqueness scoped to `portal_type`
-
-❌ **NEVER:**
 - Allow weak passwords (<12 chars or missing character types)
 - Store passwords in plain text
 - Allow unlimited login attempts
 - Share portal accounts across contacts
-
-
 ---
-
 
 ## RULE #4.7: Primary Contact/Address/Person MUST Be Unique Per Contact
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Validate `is_primary` uniqueness scoped to `contact_id` in before_save callback
 - Automatically unmark other primaries when setting new primary
 - Use database index on `[contact_id, is_primary]` for performance
 - Ensure at least one contact remains on construction (cannot delete last)
-
-❌ **NEVER:**
 - Allow multiple primary persons/addresses per contact
 - Delete the only remaining contact from a construction
 - Set `is_primary = true` without unmarking others
-
-
 ---
-
 
 ## RULE #4.8: Contact Activity Logging MUST Track All Significant Changes
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Log activity types: `created`, `updated`, `synced_from_xero`, `synced_to_xero`, `purchase_order_created`, `supplier_linked`, `contact_merged`
 - Include `occurred_at` timestamp (required)
 - Store structured metadata in JSONB column
 - Use `ContactActivity.log_xero_sync` class method for Xero sync activities
 - Combine with SMS messages in activity timeline endpoint
-
-❌ **NEVER:**
 - Skip logging for "minor" updates (all changes matter)
 - Log without `occurred_at` timestamp
 - Store sensitive data in metadata (passwords, tokens, etc.)
 - Delete activity records (archive only for compliance)
-
-
 ---
-
 
 # Chapter 5: Price Books & Suppliers
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #5.1: Price Changes MUST Create Price History Automatically
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use `after_update` callback to detect price changes
 - Create PriceHistory with `old_price`, `new_price`, `change_reason`
 - Set `price_last_updated_at` to current timestamp
 - Track `changed_by_user_id` for audit trail
 - Allow skipping via `skip_price_history_callback` flag when needed
-
-❌ **NEVER:**
 - Update `current_price` without creating history
 - Skip price history for "small" price changes
 - Delete price history records (archive only)
 - Allow price updates without tracking who made the change
-
-
 ---
-
 
 ## RULE #5.2: Prevent Duplicate Price History - Unique Constraint + Time Window
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use unique index: `(pricebook_item_id, supplier_id, new_price, created_at)`
 - Add custom validation preventing entries within 5 seconds
 - Handle race conditions gracefully (return existing record)
 - Log duplicate attempts for monitoring
-
-❌ **NEVER:**
 - Rely only on application-level validation
 - Allow duplicate price history from concurrent requests
 - Fail hard on duplicate attempts (graceful degradation)
-
-
 ---
-
 
 ## RULE #5.3: SmartPoLookupService - 6-Strategy Cascading Fallback
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Execute strategies in priority order (most specific → most general)
 - Stop immediately on first match (don't continue searching)
 - Track which strategy succeeded for analytics
 - Collect warnings for all failed strategies
-
-❌ **NEVER:**
 - Skip intermediate strategies
 - Continue searching after finding a match
 - Return multiple matches (return best only)
 - Fail if early strategies miss (cascade to less specific)
-
-
 ---
-
 
 ## RULE #5.4: Supplier Matching - Normalized Name Comparison with Business Suffix Removal
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Remove business entity types: "Pty Ltd", "Limited", "Inc", "Corporation", "Co"
 - Remove location identifiers: "Australia", "Australian", "Qld", "Queensland"
 - Remove organizational terms: "Group", "Services", "& Associates"
 - Lowercase and remove special characters
 - Use Levenshtein distance for similarity scoring
-
-❌ **NEVER:**
 - Match on raw supplier names without normalization
 - Include business suffixes in similarity calculation
 - Skip normalization for "exact" match detection
 - Use case-sensitive comparison
-
-
 ---
-
 
 ## RULE #5.5: Price Volatility Detection - Coefficient of Variation on 6-Month Window
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use rolling 6-month window of prices
 - Calculate CV = (Standard Deviation / Mean) × 100
 - Classify: stable (<5%), moderate (5-15%), volatile (>15%)
 - Require minimum 3 data points for valid calculation
 - Return 'unknown' for insufficient data
-
-❌ **NEVER:**
 - Use fixed time windows (calendar months/quarters)
 - Calculate volatility on fewer than 3 price points
 - Include prices older than 6 months
 - Use absolute price change instead of percentage
-
-
 ---
-
 
 ## RULE #5.6: Risk Scoring - Multi-Factor Weighted Calculation (0-100 Scale)
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Calculate all 4 components independently
 - Apply fixed weights (freshness=40%, reliability=20%, volatility=20%, missing=20%)
 - Return score 0-100 with level: low/medium/high/critical
 - Use database-level scoping for efficient filtering
 - Cache calculation results for 1 hour
-
-❌ **NEVER:**
 - Change weights without updating all documentation
 - Skip any of the 4 components
 - Return risk score without risk level
 - Calculate risk client-side (compute server-side)
-
-
 ---
-
 
 ## RULE #5.7: Bulk Updates - Transaction Wrapper with Price History Batch Creation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Wrap all updates in `ActiveRecord::Base.transaction`
 - Batch create price histories in single insert
 - Rollback entirely on any validation error
 - Return detailed success/failure report per item
 - Use `skip_price_history_callback` to prevent duplicate history
-
-❌ **NEVER:**
 - Update items one-by-one without transaction
 - Create price history one record at a time (N+1 performance issue)
 - Continue processing after first error
 - Commit partial updates
-
-
 ---
-
 
 ## RULE #5.8: OneDrive Image Proxy - Cache Control with 1-Hour Expiry
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Set `Cache-Control: public, max-age=3600` (1 hour)
 - Store OneDrive `file_id` permanently (not URL)
 - Refresh URL on each request via Microsoft Graph API
 - Handle expired credentials gracefully (503 Service Unavailable)
 - Return appropriate Content-Type from OneDrive metadata
-
-❌ **NEVER:**
 - Store OneDrive direct URLs (expire after 1 hour)
 - Cache beyond 1 hour (OneDrive credential lifespan)
 - Proxy without Cache-Control header
 - Return errors for missing images (return 404 gracefully)
-
-
 ---
-
 
 # Chapter 6: Jobs & Construction Management
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #6.1: Construction MUST Have At Least One Contact
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Validate `must_have_at_least_one_contact` on update
 - Allow creation without contacts (initial save)
 - Require at least one contact before job can be used
 - Show validation error if all contacts removed
-
-❌ **NEVER:**
 - Allow Construction to exist without contacts after initial creation
 - Skip contact validation on updates
 - Delete all contacts without replacement
-
-
 ---
-
 
 ## RULE #6.2: Live Profit Calculation - Dynamic Not Cached
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Calculate `live_profit = contract_value - sum(all_purchase_orders.total)`
 - Recalculate `profit_percentage = (live_profit / contract_value) * 100`
 - Use `calculate_live_profit` and `calculate_profit_percentage` methods
 - Return calculated values in API responses
-
-❌ **NEVER:**
 - Store live_profit or profit_percentage in database
 - Cache profit values (they change with every PO update)
 - Use stale profit calculations
-
-
 ---
-
 
 ## RULE #6.3: Task Dependencies - No Circular References
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Validate `no_circular_dependencies` before saving TaskDependency
 - Use graph traversal (BFS) to detect cycles
 - Check entire predecessor chain for successor_task
 - Reject dependency if circular reference detected
-
-❌ **NEVER:**
 - Allow Task A → B → C → A chains
 - Skip circular dependency validation
 - Allow self-dependencies (task depending on itself)
-
-
 ---
-
 
 ## RULE #6.4: Task Status Transitions - Automatic Date Setting
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Set `actual_start_date = Date.current` when status → `in_progress` (if nil)
 - Set `actual_end_date = Date.current` when status → `complete`
 - Set `progress_percentage = 100` when status → `complete`
 - Use `before_save :update_actual_dates` callback
-
-❌ **NEVER:**
 - Allow `complete` status without actual_end_date
 - Allow `in_progress` without actual_start_date
 - Manually set these dates in controller
-
-
 ---
-
 
 ## RULE #6.5: Task Spawning - Status-Based Child Task Creation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Spawn **subtasks** when parent status → `in_progress`
 - Spawn **photo task** when parent status → `complete`
 - Spawn **certificate task** when parent status → `complete` (with cert_lag_days)
 - Use `Schedule::TaskSpawner` service
 - Set `spawned_type` field to identify task type
 - Link via `parent_task_id`
-
-❌ **NEVER:**
 - Create photo/cert tasks manually
 - Spawn tasks without checking schedule_template_row configuration
 - Skip TaskSpawner service
-
-
 ---
-
 
 ## RULE #6.6: Schedule Cascade - Dependency-Based Date Propagation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use `ScheduleCascadeService` to recalculate dependent task dates
 - Respect dependency types (FS/SS/FF/SF)
 - Apply lag_days to calculations
 - Skip manually_positioned tasks (user-set dates)
 - Recursively cascade to downstream tasks
 - Use company timezone and working days
-
-❌ **NEVER:**
 - Skip cascade when task dates change
 - Ignore dependency types
 - Override manually_positioned tasks
 - Cascade to different projects
-
-
 ---
-
 
 ## RULE #6.7: OneDrive Folder Creation - Async with Status Tracking
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use `CreateJobFoldersJob` background job
 - Track status: `not_requested` → `pending` → `processing` → `completed` / `failed`
 - Use `onedrive_folder_creation_status` enum field
 - Set `onedrive_folders_created_at` timestamp on completion
 - Make idempotent (check if folders already exist)
 - Use exponential backoff for retries
-
-❌ **NEVER:**
 - Create folders synchronously in controller
 - Skip status tracking
 - Create duplicate folders
 - Fail silently without updating status
-
-
 ---
-
 
 ## RULE #6.8: Schedule Template Instantiation - All-or-Nothing Transaction
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use `ActiveRecord::Base.transaction` for all template instantiation
 - Rollback entire operation if any task fails to create
 - Rollback if dependency creation fails
 - Rollback if date calculation fails
 - Return `{ success: true/false, errors: [] }` response
-
-❌ **NEVER:**
 - Create partial schedules (some tasks without others)
 - Leave orphaned tasks if dependencies fail
 - Continue after validation errors
-
-
 ---
-
 
 # Chapter 7: Estimates & Quoting
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #7.1: Fuzzy Job Matching - Three-Tier Confidence Thresholds
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use Levenshtein distance + word matching + substring bonuses
 - Auto-match at **≥70% confidence** (high certainty)
 - Suggest candidates at **50-70% confidence** (ambiguous)
 - Return no match at **<50% confidence** (low similarity)
 - Set `matched_automatically: true` for auto-matches
 - Store `match_confidence_score` for all matches
-
-❌ **NEVER:**
 - Auto-match below 70% confidence
 - Skip confidence scoring
 - Match without normalizing strings (lowercase, trim, remove special chars)
 - Allow duplicate auto-matches
-
-
 ---
-
 
 ## RULE #7.2: External API Key Security - SHA256 Hashing Only
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Hash API keys with SHA256 before storage
 - Validate incoming keys by hashing and comparing digests
 - Store keys in `external_integrations` table
 - Track usage with `last_used_at` timestamp
 - Support key deactivation without deletion
-
-❌ **NEVER:**
 - Store plaintext API keys in database
 - Log API keys in server logs
 - Return API keys in API responses
 - Use reversible encryption (one-way hash only)
-
-
 ---
-
 
 ## RULE #7.3: Estimate Import - Validate Before Auto-Matching
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Validate `job_name` is present and non-empty
 - Validate `materials` array has at least 1 item
 - Validate each material has: `category`, `item`, `quantity`
 - Return 422 Unprocessable Entity for invalid data
 - Log validation errors with request details
-
-❌ **NEVER:**
 - Attempt to match with missing job_name
 - Create estimate with zero line items
 - Skip validation on external API endpoint
 - Create estimate with nil or zero quantities
-
-
 ---
-
 
 ## RULE #7.4: PO Generation from Estimate - Transaction Safety
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Wrap entire conversion in `ActiveRecord::Base.transaction`
 - Rollback if any PO creation fails
 - Rollback if any line item creation fails
 - Rollback if supplier lookup fails critically
 - Mark estimate as `imported` only on successful commit
-
-❌ **NEVER:**
 - Create partial POs (some categories succeed, others fail)
 - Leave estimate in `matched` status if POs were created
 - Continue after critical errors
 - Create POs without line items
-
-
 ---
-
 
 ## RULE #7.5: AI Plan Review - Async Processing Required
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Enqueue `AiReviewJob` for all plan reviews
 - Create `EstimateReview` record with `status: 'pending'` immediately
 - Return review_id to client for polling
 - Update status to `processing` → `completed` / `failed`
 - Set timeout of 5 minutes for Claude API call
-
-❌ **NEVER:**
 - Run plan review in synchronous HTTP request
 - Block API response waiting for Claude
 - Skip background job for "small" reviews
 - Leave review in `processing` status indefinitely
-
-
 ---
-
 
 ## RULE #7.6: Line Item Categorization - Normalized Category Matching
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Normalize categories to lowercase before grouping
 - Map common variations: "plumbing" = "plumber" = "plumb"
 - Use category normalization service
 - Handle nil/blank categories with "Uncategorized" group
 - Store original category in line item, use normalized for matching
-
-❌ **NEVER:**
 - Group POs by case-sensitive categories ("Plumbing" ≠ "plumbing")
 - Skip category normalization in SmartPoLookupService
 - Create separate POs for "Electrical" and "electrical"
 - Fail import if category is missing
-
-
 ---
-
 
 ## RULE #7.7: Estimate Status State Machine - Strict Transitions
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Start at `pending` status on creation
 - Transition to `matched` when linked to construction
 - Transition to `imported` when POs generated
 - Allow `rejected` from any state
 - Prevent reverse transitions (no imported → matched)
-
-❌ **NEVER:**
 - Skip `matched` status and go directly to `imported`
 - Mark as `imported` before POs are created
 - Change status back from `imported` to `pending`
 - Allow PO generation from `pending` status
-
-
 ---
-
 
 # Chapter 8: AI Plan Review
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #8.1: Estimate Must Be Matched to Construction
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Validate `estimate.construction_id` is present before starting review
 - Return 422 status with clear error message if not matched
 - Show "Match to Job" button in UI if unmatched
-
-❌ **NEVER:**
 - Allow AI review on unmatched estimates
 - Start review without construction context
-
-
 ---
-
 
 ## RULE #8.2: OneDrive Plan Folder Structure
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST search folders:**
-
-❌ **NEVER:**
+MUST:
+**MUST search folders:**
 - Search entire OneDrive (security risk)
 - Use different folder names without updating constant
 - Skip folder validation
-
-
 ---
-
 
 ## RULE #8.3: PDF File Size Limit
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Check file size before download
 - Skip files > 20MB
 - Return error if NO valid PDFs found after filtering
-
-❌ **NEVER:**
 - Attempt to send files > 20MB to Claude API
 - Download large files unnecessarily
 - Proceed without plan documents
-
-
 ---
-
 
 ## RULE #8.4: Async Processing with Background Jobs
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Return 202 Accepted immediately with review_id
 - Enqueue AiReviewJob with estimate_id
 - Set initial status to 'pending', update to 'processing' in job
 - Frontend MUST poll for status (every 5 seconds recommended)
-
-❌ **NEVER:**
 - Process review synchronously (causes request timeout)
 - Block HTTP request waiting for Claude API response
 - Assume review completes instantly
-
-
 ---
-
 
 ## RULE #8.5: Claude API Model and Prompt Structure
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Use exact model ID: `claude-3-5-sonnet-20241022`
 - Send PDFs as base64-encoded documents with MIME type `application/pdf`
 - Request JSON response format with specific schema
 - Include estimate line items in prompt for comparison context
 - Set max_tokens to 4096 minimum
-
-❌ **NEVER:**
 - Use older Claude models (lack PDF support)
 - Send PDFs as text (loses formatting)
 - Omit response format instructions
 - Exceed token limits with oversized prompts
-
-
 ---
-
 
 ## RULE #8.6: Discrepancy Detection Logic
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST categorize as:**
-
-✅ **MUST use fuzzy matching:**
+MUST:
+**MUST categorize as:**
+**MUST use fuzzy matching:**
 - Remove non-alphanumeric characters from item descriptions
 - Case-insensitive comparison
 - Match by category + description
-
-❌ **NEVER:**
 - Require exact string match (causes false negatives)
 - Ignore category in matching (causes false positives)
 - Use < 10% threshold for mismatches (too strict)
-
-
 ---
-
 
 ## RULE #8.7: Confidence Score Calculation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST calculate:**
-
-✅ **MUST store:**
+MUST:
+**MUST calculate:**
+**MUST store:**
 - `confidence_score` - Final score (0-100)
 - `items_matched` - Count of matched items
 - `items_mismatched` - Count of quantity mismatches
 - `items_missing` - Count of missing items
 - `items_extra` - Count of extra items
-
-❌ **NEVER:**
 - Return confidence > 100 or < 0
 - Use equal penalty weights for all discrepancy types
 - Skip confidence calculation
-
-
 ---
-
 
 ## RULE #8.8: Error Handling and Status Updates
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST handle errors:**
+MUST:
+**MUST handle errors:**
 - `NoConstructionError` - Estimate not matched
 - `OneDriveNotConnectedError` - OneDrive credential missing
 - `PDFNotFoundError` - No valid PDFs in plan folders
 - `FileTooLargeError` - All PDFs exceed 20MB limit
 - `Anthropic::Error` - Claude API errors (rate limit, auth, etc.)
 - `StandardError` - Generic catch-all
-
-✅ **MUST update review record:**
-
-❌ **NEVER:**
+**MUST update review record:**
 - Leave review in 'processing' state on error (orphaned record)
 - Expose sensitive error details to client
 - Retry automatically without user intervention
-
-
 ---
-
 
 ## RULE #8.9: Prevent Duplicate Processing Reviews
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST check:**
+MUST:
+**MUST check:**
 - Query for existing review with `status: processing`
 - Return 422 error if found
 - Allow new review only if previous is completed/failed
-
-❌ **NEVER:**
 - Allow concurrent reviews on same estimate
 - Overwrite existing processing review
-
-
 ---
-
 
 # Chapter 9: Purchase Orders
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #9.1: PO Number Generation - Race Condition Protection
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER generate PO numbers without lock**
-
-✅ **ALWAYS use `pg_advisory_xact_lock` in transaction**
-
-
+NEVER:
+**NEVER generate PO numbers without lock**
+**ALWAYS use `pg_advisory_xact_lock` in transaction**
 ---
-
 
 ## RULE #9.2: Status State Machine
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER skip status steps**
-
-✅ **ALWAYS validate transitions**
-
-
+NEVER:
+**NEVER skip status steps**
+**ALWAYS validate transitions**
 ---
-
 
 ## RULE #9.3: Payment Status Calculation
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER set `payment_status` directly**
-
-✅ **ALWAYS use `determine_payment_status(amount)`**
-
-
+NEVER:
+**NEVER set `payment_status` directly**
+**ALWAYS use `determine_payment_status(amount)`**
 ---
-
 
 ## RULE #9.4: Smart Lookup - Supplier Selection Priority
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER randomly select supplier**
-
-✅ **ALWAYS use SmartPoLookupService priority cascade**
-
-
+NEVER:
+**NEVER randomly select supplier**
+**ALWAYS use SmartPoLookupService priority cascade**
 ---
-
 
 ## RULE #9.5: Line Items - Totals Calculation
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER save PO without recalculating totals**
-
-✅ **ALWAYS use `before_save` callback**
-
-
+NEVER:
+**NEVER save PO without recalculating totals**
+**ALWAYS use `before_save` callback**
 ---
-
 
 ## RULE #9.6: Schedule Task Linking
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER link without unlinking previous**
-
-✅ **ALWAYS use transaction for task linking**
-
-
+NEVER:
+**NEVER link without unlinking previous**
+**ALWAYS use transaction for task linking**
 ---
-
 
 ## RULE #9.7: Price Drift Monitoring
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER ignore price drift**
-
-✅ **ALWAYS calculate drift percentage**
-
-
+NEVER:
+**NEVER ignore price drift**
+**ALWAYS calculate drift percentage**
 ---
-
 
 # Chapter 10: Gantt & Schedule Master
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #10.1: Predecessor ID Conversion
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER use sequence_order directly in predecessor lookups**
-
-✅ **ALWAYS convert:** `predecessor_id = sequence_order + 1`
-
-
+NEVER:
+**NEVER use sequence_order directly in predecessor lookups**
+**ALWAYS convert:** `predecessor_id = sequence_order + 1`
 ---
-
 
 ## RULE #10.10: Cascade Triggers
 
-📖 Rule
-
+RULE:
 ---
-
 
 ## RULE #10.11: Debounced Render Pattern
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER call gantt.render() directly**
-
-✅ **ALWAYS use debounced render:**
-
-
+NEVER:
+**NEVER call gantt.render() directly**
+**ALWAYS use debounced render:**
 ---
-
 
 ## RULE #10.12: Column Documentation - CC_UPDATE Table
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER change Schedule Master columns without updating CC_UPDATE table**
-
-✅ **ALWAYS update NewFeaturesTab.jsx when column implementation changes**
-
-
+NEVER:
+**NEVER change Schedule Master columns without updating CC_UPDATE table**
+**ALWAYS update NewFeaturesTab.jsx when column implementation changes**
 ---
-
 
 ## RULE #10.2: isLoadingData Lock Timing
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER reset isLoadingData in drag handler**
-
-✅ **ALWAYS reset in useEffect with 1000ms timeout**
-
-
+NEVER:
+**NEVER reset isLoadingData in drag handler**
+**ALWAYS reset in useEffect with 1000ms timeout**
 ---
-
 
 ## RULE #10.3: Company Settings - Working Days & Timezone
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER hardcode working days or ignore company timezone**
-
-✅ **ALWAYS read from:** `company_settings.working_days` and `company_settings.timezone`
-
-
+NEVER:
+**NEVER hardcode working days or ignore company timezone**
+**ALWAYS read from:** `company_settings.working_days` and `company_settings.timezone`
 ---
-
 
 ## RULE #10.4: Lock Hierarchy
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER cascade to locked tasks**
-
-✅ **ALWAYS check all 5 locks before cascade**
-
-
+NEVER:
+**NEVER cascade to locked tasks**
+**ALWAYS check all 5 locks before cascade**
 ---
-
 
 ## RULE #10.5: Task Heights Configuration
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST set all three to same value:**
-
-❌ **NEVER have mismatched height values**
-
-
+MUST:
+**MUST set all three to same value:**
+**NEVER have mismatched height values**
 ---
-
 
 ## RULE #10.6: Auto-Scheduling
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER enable:** `gantt.config.auto_scheduling = true`
-
-✅ **ALWAYS set:** `gantt.config.auto_scheduling = false`
-
-
+NEVER:
+**NEVER enable:** `gantt.config.auto_scheduling = true`
+**ALWAYS set:** `gantt.config.auto_scheduling = false`
 ---
-
 
 ## RULE #10.7: API Pattern - Single Update + Cascade Response
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER make multiple API calls for cascade updates**
-
-✅ **ALWAYS use:** Single update + cascade response pattern
-
-
+NEVER:
+**NEVER make multiple API calls for cascade updates**
+**ALWAYS use:** Single update + cascade response pattern
 ---
-
 
 ## RULE #10.8: useRef Anti-Loop Flags
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST use all 7 useRef flags correctly:**
-
-
+MUST:
+**MUST use all 7 useRef flags correctly:**
 ---
-
 
 ## RULE #10.9: Predecessor Format
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER save without predecessor_ids**
-
-✅ **ALWAYS include predecessor_ids in every update**
-
-
+NEVER:
+**NEVER save without predecessor_ids**
+**ALWAYS include predecessor_ids in every update**
 ---
-
 
 # Chapter 11: Project Tasks & Checklists
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #11.1: Task Status Lifecycle & Automatic Date Updates
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST update dates automatically:**
-
-❌ **NEVER:**
+MUST:
+**MUST update dates automatically:**
 - Allow status to skip lifecycle stages (not_started → complete without in_progress)
 - Overwrite existing actual dates when status changes again
 - Leave progress_percentage < 100 when status is complete
-
-
 ---
-
 
 ## RULE #11.10: Duration Days Validation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST validate:**
-
-❌ **NEVER:**
+MUST:
+**MUST validate:**
 - Allow duration_days = 0 (causes same-day start/end, confusing)
 - Allow negative durations (logically impossible)
 - Skip duration validation on updates
 - Use decimal durations (always integer days)
-
-
 ---
-
 
 ## RULE #11.11: Tags System for Flexible Categorization
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST use GIN index for efficient queries:**
-
-✅ **MUST include tags in serialization:**
-
-❌ **NEVER:**
+MUST:
+**MUST use GIN index for efficient queries:**
+**MUST include tags in serialization:**
 - Store tags as comma-separated string (use JSONB array)
 - Allow duplicate tags in array
 - Skip GIN index (queries will be slow)
 - Use tags for data that should be proper associations (e.g., don't tag "assigned_to_john", use assigned_to FK)
-
-
 ---
-
 
 ## RULE #11.2: Task Dependencies & Circular Dependency Prevention
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST validate:**
-
-❌ **NEVER:**
+MUST:
+**MUST validate:**
 - Allow task to depend on itself (self-dependency)
 - Allow circular chains (A depends on B, B depends on C, C depends on A)
 - Allow cross-project dependencies
 - Allow duplicate dependencies (same predecessor + successor pair)
-
-
 ---
-
 
 ## RULE #11.3: Automatic Task Spawning from Templates
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement via TaskSpawner service:**
-
-✅ **MUST trigger spawning on status changes:**
-
-❌ **NEVER:**
+MUST:
+**MUST implement via TaskSpawner service:**
+**MUST trigger spawning on status changes:**
 - Spawn tasks multiple times (check if already spawned)
 - Spawn tasks without checking template configuration
 - Create circular parent-child relationships
 - Skip sequence ordering for subtasks (causes display chaos)
-
-
 ---
-
 
 ## RULE #11.4: Supervisor Checklist Template-to-Instance Flow
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST copy templates to instances during job instantiation:**
-
-❌ **NEVER:**
+MUST:
+**MUST copy templates to instances during job instantiation:**
 - Share checklist items across tasks (each task gets own copies)
 - Allow checklist item deletion after task starts
 - Skip category validation (required for filtering)
 - Store User FK for completed_by (store username string for flexibility)
-
-
 ---
-
 
 ## RULE #11.5: Response Type Validation & Photo Upload
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST validate before marking complete:**
-
-✅ **MUST use Cloudinary for photo storage:**
-
-❌ **NEVER:**
+MUST:
+**MUST validate before marking complete:**
+**MUST use Cloudinary for photo storage:**
 - Allow completion without required response data
 - Store photos in Rails backend (use Cloudinary)
 - Skip folder organization in Cloudinary (use job-specific folders)
 - Allow checklist item updates after completion (completed_at is immutable)
-
-
 ---
-
 
 ## RULE #11.6: Auto-Complete Predecessors Feature
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement via callback:**
-
-✅ **MUST show checkbox in task form:**
-
-❌ **NEVER:**
+MUST:
+**MUST implement via callback:**
+**MUST show checkbox in task form:**
 - Auto-complete tasks with incomplete subtasks (check has_subtasks)
 - Skip audit trail (add completion_notes explaining auto-completion)
 - Allow infinite recursion (predecessors don't trigger their own predecessors)
 - Auto-complete milestones (they should be explicitly completed)
-
-
 ---
-
 
 ## RULE #11.7: Materials Status Calculation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST include in task serialization:**
-
-✅ **MUST show status badges:**
-
-❌ **NEVER:**
+MUST:
+**MUST include in task serialization:**
+**MUST show status badges:**
 - Store materials_status in database (always calculate)
 - Show materials status for tasks without critical_po flag
 - Allow task to start if materials_status = 'delayed' (warn user)
 - Skip materials check during schedule cascade calculations
-
-
 ---
-
 
 ## RULE #11.8: Sequence Order for Task Display
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST set sequence on creation:**
-
-✅ **MUST index for efficient sorting:**
-
-❌ **NEVER:**
+MUST:
+**MUST set sequence on creation:**
+**MUST index for efficient sorting:**
 - Use random sequence numbers (breaks visual grouping)
 - Allow gaps larger than 1.0 between top-level tasks
 - Use sequence > 9.9 for subtasks (use 9 or fewer subtasks per parent)
 - Resort entire project when adding one task (use smart insertion)
-
-
 ---
-
 
 ## RULE #11.9: Task Update Audit Trail
 
-📖 Rule
-
+RULE:
 ---
-
 
 # Chapter 12: Weather & Public Holidays
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #12.1: Unique Holidays Per Region
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Validate uniqueness: `validates :date, uniqueness: { scope: :region }`
 - Use region codes: QLD, NSW, VIC, SA, WA, TAS, NT, NZ
 - Store date in UTC (no time component)
-
-❌ **NEVER:**
 - Allow duplicate holidays for same date + region
 - Use inconsistent region codes
 - Store holidays with time components
-
-
 ---
-
 
 ## RULE #12.2: Rain Log - One Entry Per Construction Per Day
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Enforce uniqueness at database level: `UNIQUE(construction_id, date)`
 - Check for existing log before auto-creation
 - Use `find_or_initialize_by` pattern for updates
-
-❌ **NEVER:**
 - Create multiple rain logs for same job + date
 - Override existing automatic logs without checking source
 - Allow future-dated rain logs
-
-
 ---
-
 
 ## RULE #12.3: Rainfall Severity Auto-Calculation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST calculate severity as:**
+MUST:
+**MUST calculate severity as:**
 - Light: `< 5mm`
 - Moderate: `5mm to 15mm`
 - Heavy: `> 15mm`
-
-✅ **MUST:**
 - Auto-calculate on create if `rainfall_mm` present
 - Recalculate on update if `rainfall_mm` changes
 - Allow nil severity if `rainfall_mm` is nil or 0
-
-❌ **NEVER:**
 - Allow manual severity override without rainfall_mm
 - Use different thresholds without updating constants
 - Skip calculation for automatic entries
-
-
 ---
-
 
 ## RULE #12.4: Manual Rain Logs Require Notes
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Validate presence: `validates :notes, presence: true, if: :source_manual?`
 - Display notes in UI for audit trail
 - Include who created the entry (`created_by_user_id`)
-
-❌ **NEVER:**
 - Allow blank notes for manual entries
 - Skip audit trail for manual modifications
 - Allow automatic entries to have editable notes
-
-
 ---
-
 
 ## RULE #12.5: Weather API - Historical Data Only
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Validate date is not in future before API call
 - Use `Date.yesterday` for automatic checks
 - Raise `ArgumentError` if future date provided
-
-❌ **NEVER:**
 - Call weather API for today or future dates
 - Use weather forecasts (not historical data)
 - Proceed with API call if date validation fails
-
-
 ---
-
 
 ## RULE #12.6: Location Extraction Priority
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST follow priority:**
-
-❌ **NEVER:**
+MUST:
+**MUST follow priority:**
 - Use random location extraction order
 - Fail silently if location cannot be determined
 - Use company address as fallback (wrong location)
-
-
 ---
-
 
 ## RULE #12.7: Gantt Integration - Working Day Calculation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Load company `working_days` configuration
 - Load `PublicHoliday` dates for relevant region (3-year range)
 - Skip task to next working day if lands on weekend OR holiday
 - Respect lock hierarchy (locked tasks can stay on holidays)
-
-❌ **NEVER:**
 - Check only weekends without holidays
 - Check only holidays without weekends
 - Override locked task dates
 - Use different holiday lookups across services
-
-
 ---
-
 
 ## RULE #12.8: Weather API Response Storage
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Store complete API JSON response
 - Include location confirmation data
 - Preserve all weather metrics (temp, condition, etc.)
 - Use for future analysis and verification
-
-❌ **NEVER:**
 - Store only rainfall value
 - Discard API response after extraction
 - Modify API response before storage
-
-
 ---
-
 
 # Chapter 13: OneDrive Integration
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #13.1: Organization-Wide Authentication
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER require each user to authenticate separately**
-
-✅ **ALWAYS store single credential for entire organization**
-
-
+NEVER:
+**NEVER require each user to authenticate separately**
+**ALWAYS store single credential for entire organization**
 ---
-
 
 ## RULE #13.2: Folder Template System
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER hardcode folder names**
-
-✅ **ALWAYS respect template customizations**
-
-
+NEVER:
+**NEVER hardcode folder names**
+**ALWAYS respect template customizations**
 ---
-
 
 ## RULE #13.3: Root Folder Management
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER create folders at OneDrive root level**
-
-✅ **ALWAYS use `root_folder_id` from credential**
-
-
+NEVER:
+**NEVER create folders at OneDrive root level**
+**ALWAYS use `root_folder_id` from credential**
 ---
-
 
 ## RULE #13.4: Pricebook Image Sync
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER rely solely on OneDrive for image display**
-
-✅ **ALWAYS upload to Cloudinary after OneDrive upload**
-
-
+NEVER:
+**NEVER rely solely on OneDrive for image display**
+**ALWAYS upload to Cloudinary after OneDrive upload**
 ---
-
 
 ## RULE #13.5: File Upload Chunking
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER use simple upload for files >4MB**
-
-✅ **ALWAYS use resumable upload session**
-
-
+NEVER:
+**NEVER use simple upload for files >4MB**
+**ALWAYS use resumable upload session**
 ---
-
 
 # Chapter 14: Outlook/Email Integration
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #14.1: Organization-Wide Singleton OAuth Credential
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement as singleton:**
-
-✅ **MUST auto-refresh tokens before expiration:**
-
-❌ **NEVER:**
+MUST:
+**MUST implement as singleton:**
+**MUST auto-refresh tokens before expiration:**
 - Store multiple Outlook credentials (one organization = one credential)
 - Store tokens unencrypted
 - Let tokens expire without auto-refresh
 - Hardcode token expiration buffer (always use 5-minute safety margin)
-
-
 ---
-
 
 ## RULE #14.2: Four-Strategy Email-to-Job Matching
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement all 4 strategies:**
-
-✅ **MUST auto-assign on email creation:**
-
-❌ **NEVER:**
+MUST:
+**MUST implement all 4 strategies:**
+**MUST auto-assign on email creation:**
 - Skip matching strategies (must try all 4 in order)
 - Match to inactive/archived jobs
 - Auto-assign to wrong construction (false positive worse than nil)
 - Allow email creation without attempting match
-
-
 ---
-
 
 ## RULE #14.3: Microsoft Graph API Usage Pattern
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST use Graph API v1.0:**
-
-✅ **MUST request these scopes:**
-
-❌ **NEVER:**
+MUST:
+**MUST use Graph API v1.0:**
+**MUST request these scopes:**
 - Use Outlook REST API v2.0 (deprecated, use Graph API)
 - Request more scopes than needed (principle of least privilege)
 - Skip $select parameter (bandwidth waste - emails can be large)
 - Use synchronous API calls without pagination
-
-
 ---
-
 
 ## RULE #14.4: Email Threading Support via Message-ID
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST include threading fields:**
-
-✅ **MUST populate threading fields:**
-
-❌ **NEVER:**
+MUST:
+**MUST include threading fields:**
+**MUST populate threading fields:**
 - Allow duplicate message_id (unique constraint required)
 - Skip message_id extraction (breaks threading)
 - Store references as array (use text with space-separated values per RFC 2822)
-
-
 ---
-
 
 ## RULE #14.5: Webhook Support for Email Services
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement webhook receiver:**
-
-❌ **NEVER:**
+MUST:
+**MUST implement webhook receiver:**
 - Return error status for webhook (email providers will retry, causing duplicates)
 - Skip duplicate detection (check message_id uniqueness)
 - Process webhook synchronously (use background job for heavy parsing)
-
-
 ---
-
 
 ## RULE #14.6: Inbound-Only Architecture (Current Limitation)
 
-📖 Rule
-
+RULE:
 ---
-
 
 # Chapter 15: Chat & Communications
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #15.1: ChatMessage Multi-Channel Architecture
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST define channel types:**
-
-✅ **MUST route messages correctly:**
-
-
+MUST:
+**MUST define channel types:**
+**MUST route messages correctly:**
 ---
-
 
 ## RULE #15.10: Authentication Placeholder - CRITICAL TODO
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement proper authentication:**
-
-❌ **NEVER use in production:**
+MUST:
+**MUST implement proper authentication:**
+**NEVER use in production:**
 - `User.first` placeholder
 - Hardcoded user IDs
 - Session-less chat without auth
-
-
 ---
-
 
 ## RULE #15.2: Message-to-Job Linking
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST provide save-to-job endpoints:**
-
-✅ **MUST include construction_id foreign key:**
-
-✅ **MUST allow bulk conversation saving:**
-
-
+MUST:
+**MUST provide save-to-job endpoints:**
+**MUST include construction_id foreign key:**
+**MUST allow bulk conversation saving:**
 ---
-
 
 ## RULE #15.3: SMS Twilio Integration
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST centralize Twilio operations:**
-
-✅ **MUST handle incoming SMS webhooks:**
-
-✅ **MUST support Australian phone formats:**
-
-
+MUST:
+**MUST centralize Twilio operations:**
+**MUST handle incoming SMS webhooks:**
+**MUST support Australian phone formats:**
 ---
-
 
 ## RULE #15.4: SMS Status Tracking
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST define status states:**
-
-✅ **MUST accept Twilio status webhooks:**
-
-✅ **MUST show status icons:**
-
-
+MUST:
+**MUST define status states:**
+**MUST accept Twilio status webhooks:**
+**MUST show status icons:**
 ---
-
 
 ## RULE #15.5: Unread Message Tracking
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST add read timestamp:**
-
-✅ **MUST provide unread count endpoint:**
-
-✅ **MUST poll for unread count:**
-
-
+MUST:
+**MUST add read timestamp:**
+**MUST provide unread count endpoint:**
+**MUST poll for unread count:**
 ---
-
 
 ## RULE #15.6: Message Polling (No WebSockets)
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST poll at 3-second intervals:**
-
-✅ **MUST poll SMS messages:**
-
-❌ **NEVER use WebSockets:**
+MUST:
+**MUST poll at 3-second intervals:**
+**MUST poll SMS messages:**
+**NEVER use WebSockets:**
 - WebSocket infrastructure not implemented
 - ActionCable not configured
 - All real-time updates via polling
-
-
 ---
-
 
 ## RULE #15.7: Contact-SMS Fuzzy Matching
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST support partial phone matches:**
-
-
+MUST:
+**MUST support partial phone matches:**
 ---
-
 
 ## RULE #15.8: Message Deletion Authorization
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST verify ownership:**
-
-❌ **NEVER allow:**
+MUST:
+**MUST verify ownership:**
+**NEVER allow:**
 - Admins deleting other users' messages (not implemented)
 - Bulk message deletion without ownership check
 - Deletion of messages saved to jobs without audit trail
-
-
 ---
-
 
 ## RULE #15.9: Email Ingestion Storage
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST store email metadata:**
-
-✅ **MUST include fields:**
-
-
+MUST:
+**MUST store email metadata:**
+**MUST include fields:**
 ---
-
 
 # Chapter 16: Xero Accounting Integration
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #16.1: OAuth Token Management
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER store API keys in plaintext**
-
-✅ **ALWAYS encrypt tokens using ActiveRecord Encryption**
-
-
+NEVER:
+**NEVER store API keys in plaintext**
+**ALWAYS encrypt tokens using ActiveRecord Encryption**
 ---
-
 
 ## RULE #16.2: Two-Way Contact Sync
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER assume single-direction sync**
-
-✅ **ALWAYS check `sync_with_xero` flag before syncing**
-
-✅ **ALWAYS update `last_synced_at` timestamp**
-
-
+NEVER:
+**NEVER assume single-direction sync**
+**ALWAYS check `sync_with_xero` flag before syncing**
+**ALWAYS update `last_synced_at` timestamp**
 ---
-
 
 ## RULE #16.3: Invoice Matching
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER sync payments without invoice match**
-
-✅ **ALWAYS validate invoice total vs PO total**
-
-✅ **ALWAYS store `xero_invoice_id` on PurchaseOrder**
-
-
+NEVER:
+**NEVER sync payments without invoice match**
+**ALWAYS validate invoice total vs PO total**
+**ALWAYS store `xero_invoice_id` on PurchaseOrder**
 ---
-
 
 ## RULE #16.4: Webhook Signature Verification
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER process webhooks without signature verification**
-
-✅ **ALWAYS use `XERO_WEBHOOK_KEY` from environment**
-
-
+NEVER:
+**NEVER process webhooks without signature verification**
+**ALWAYS use `XERO_WEBHOOK_KEY` from environment**
 ---
-
 
 ## RULE #16.5: Rate Limiting & Error Handling
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER retry immediately on 429 errors**
-
-✅ **ALWAYS implement exponential backoff**
-
-✅ **ALWAYS log failed requests for debugging**
-
-
+NEVER:
+**NEVER retry immediately on 429 errors**
+**ALWAYS implement exponential backoff**
+**ALWAYS log failed requests for debugging**
 ---
-
 
 ## RULE #16.6: Tax Rates & Chart of Accounts
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER hardcode tax codes**
-
-✅ **ALWAYS fetch from Xero and cache locally**
-
-
+NEVER:
+**NEVER hardcode tax codes**
+**ALWAYS fetch from Xero and cache locally**
 ---
-
 
 ## RULE #16.7: Background Job Processing
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER sync contacts in HTTP request**
-
-✅ **ALWAYS use `XeroContactSyncJob` via Solid Queue**
-
-✅ **ALWAYS provide job progress tracking**
-
-
+NEVER:
+**NEVER sync contacts in HTTP request**
+**ALWAYS use `XeroContactSyncJob` via Solid Queue**
+**ALWAYS provide job progress tracking**
 ---
-
 
 ## RULE #16.8: Payment Sync Workflow
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER create Xero payment before local Payment record**
-
-✅ **ALWAYS link Payment to PurchaseOrder**
-
-
+NEVER:
+**NEVER create Xero payment before local Payment record**
+**ALWAYS link Payment to PurchaseOrder**
 ---
-
 
 # Chapter 17: Payments & Financials
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #17.1: Payment Model Structure
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST include core fields:**
-
-✅ **MUST use DECIMAL(15,2) for precision:**
-
-
+MUST:
+**MUST include core fields:**
+**MUST use DECIMAL(15,2) for precision:**
 ---
-
 
 ## RULE #17.10: Cascade Delete Payments
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST set dependent: :destroy:**
-
-❌ **NEVER orphan payments:**
+MUST:
+**MUST set dependent: :destroy:**
+**NEVER orphan payments:**
 - Deleting PO without deleting payments breaks referential integrity
 - Payment without PO is meaningless
 - Use `dependent: :destroy` not `dependent: :nullify`
-
-
 ---
-
 
 ## RULE #17.2: Automatic Payment Status Updates
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST trigger on payment save/destroy:**
-
-✅ **MUST define payment status states:**
-
-
+MUST:
+**MUST trigger on payment save/destroy:**
+**MUST define payment status states:**
 ---
-
 
 ## RULE #17.3: Xero Invoice Fuzzy Matching
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement matching hierarchy:**
-
-✅ **MUST update PO with invoice data:**
-
-
+MUST:
+**MUST implement matching hierarchy:**
+**MUST update PO with invoice data:**
 ---
-
 
 ## RULE #17.4: Xero Payment Sync
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST validate and sync:**
-
-
+MUST:
+**MUST validate and sync:**
 ---
-
 
 ## RULE #17.5: Payment Method Enum
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST restrict to valid methods:**
-
-✅ **MUST provide method selector:**
-
-
+MUST:
+**MUST restrict to valid methods:**
+**MUST provide method selector:**
 ---
-
 
 ## RULE #17.6: Financial Precision with DECIMAL(15,2)
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST use DECIMAL type:**
-
-✅ **MUST validate precision:**
-
-❌ **NEVER use FLOAT:**
+MUST:
+**MUST use DECIMAL type:**
+**MUST validate precision:**
+**NEVER use FLOAT:**
 - Causes rounding errors in currency calculations
 - Example: `0.1 + 0.2 = 0.30000000000000004` (FLOAT)
 - DECIMAL: `0.10 + 0.20 = 0.30` (exact)
-
-
 ---
-
 
 ## RULE #17.7: Payment Status Badge Display
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST use semantic colors:**
-
-
+MUST:
+**MUST use semantic colors:**
 ---
-
 
 ## RULE #17.8: Payment Summary Calculation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST include summary:**
-
-✅ **MUST show summary prominently:**
-
-
+MUST:
+**MUST include summary:**
+**MUST show summary prominently:**
 ---
-
 
 ## RULE #17.9: Budget Variance Tracking
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST calculate variances:**
-
-✅ **MUST highlight overages:**
-
-
+MUST:
+**MUST calculate variances:**
+**MUST highlight overages:**
 ---
-
 
 # Chapter 18: Workflows & Automation
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #18.1: Solid Queue Background Job System
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST configure Solid Queue:**
-
-✅ **MUST inherit from ApplicationJob:**
-
-
+MUST:
+**MUST configure Solid Queue:**
+**MUST inherit from ApplicationJob:**
 ---
-
 
 ## RULE #18.2: Workflow State Machine
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement state machine:**
-
-✅ **MUST auto-advance on step completion:**
-
-
+MUST:
+**MUST implement state machine:**
+**MUST auto-advance on step completion:**
 ---
-
 
 ## RULE #18.3: Idempotent Background Jobs
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST check completion status:**
-
-✅ **MUST verify record doesn't exist:**
-
-
+MUST:
+**MUST check completion status:**
+**MUST verify record doesn't exist:**
 ---
-
 
 ## RULE #18.4: Price Update Automation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement price application:**
-
-
+MUST:
+**MUST implement price application:**
 ---
-
 
 ## RULE #18.5: Model Callback Automation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST update dependent data:**
-
-✅ **MUST trigger child creation:**
-
-✅ **MUST track changes:**
-
-
+MUST:
+**MUST update dependent data:**
+**MUST trigger child creation:**
+**MUST track changes:**
 ---
-
 
 ## RULE #18.6: Job Status Tracking
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST provide status visibility:**
-
-✅ **MUST show percentage:**
-
-
+MUST:
+**MUST provide status visibility:**
+**MUST show percentage:**
 ---
-
 
 ## RULE #18.7: Batch Processing with Rate Limiting
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST batch and throttle:**
-
-
+MUST:
+**MUST batch and throttle:**
 ---
-
 
 ## RULE #18.8: Workflow Metadata Storage
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST support all workflow types:**
-
-✅ **MUST collect metadata:**
-
-
+MUST:
+**MUST support all workflow types:**
+**MUST collect metadata:**
 ---
-
 
 # Chapter 19: Custom Tables & Formulas
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #19.1: Dynamic Table Creation Pattern
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST use auto-generated unique name:**
-
-✅ **MUST create ActiveRecord model at runtime:**
-
-❌ **NEVER:**
+MUST:
+**MUST use auto-generated unique name:**
+**MUST create ActiveRecord model at runtime:**
 - Use table names without prefix
 - Allow reserved names: `["user", "users", "table", "tables", "column", "columns", "record", "records"]`
 - Reuse database_table_name across tables
-
-
 ---
-
 
 ## RULE #19.2: Column Type System
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST map column types correctly:**
-
-✅ **MUST use TableBuilder for physical schema changes:**
-
-
+MUST:
+**MUST map column types correctly:**
+**MUST use TableBuilder for physical schema changes:**
 ---
-
 
 ## RULE #19.3: Formula Evaluation System
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST support curly brace references:**
-
-✅ **MUST evaluate formulas safely:**
-
-✅ **MUST flag columns with cross-table refs:**
-
-
+MUST:
+**MUST support curly brace references:**
+**MUST evaluate formulas safely:**
+**MUST flag columns with cross-table refs:**
 ---
-
 
 ## RULE #19.4: Lookup Column Pattern
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST create associations dynamically:**
-
-✅ **MUST batch-load related records:**
-
-✅ **MUST return id + display value:**
-
-
+MUST:
+**MUST create associations dynamically:**
+**MUST batch-load related records:**
+**MUST return id + display value:**
 ---
-
 
 ## RULE #19.5: Record CRUD with Formula Calculation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST calculate formulas on save:**
-
-✅ **MUST transform computed values on read:**
-
-
+MUST:
+**MUST calculate formulas on save:**
+**MUST transform computed values on read:**
 ---
-
 
 ## RULE #19.6: Table Deletion Safety
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST validate before deletion:**
-
-✅ **MUST drop database table:**
-
-
+MUST:
+**MUST validate before deletion:**
+**MUST drop database table:**
 ---
-
 
 ## RULE #19.7: Column Validation Rules
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST enforce validation rules:**
-
-✅ **MUST validate record data before save:**
-
-
+MUST:
+**MUST enforce validation rules:**
+**MUST validate record data before save:**
 ---
-
 
 ## RULE #19.8: Foreign Key Constraints
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST add foreign keys for lookups:**
-
-❌ **NEVER use on_delete: :cascade** for lookup columns (data loss risk)
-
-
+MUST:
+**MUST add foreign keys for lookups:**
+**NEVER use on_delete: :cascade** for lookup columns (data loss risk)
 ---
-
 
 # Chapter 20: UI/UX Standards & Patterns
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #20.1: Checkbox Column Must Be First, Locked, Minimal Size
 
-✅ Must
-
+MUST:
 The first column MUST be a checkbox for row selection with locked position and minimal size.
 
 Width: 32px (minimal size to fit checkbox). Padding: px-1 (minimal horizontal padding). Non-resizable (locked size). Non-reorderable (always first). Centered alignment (header and cells).
 
-
 ## RULE #20.10: Column Visibility Standards
 
-✅ Must
-
-✅ MUST
-
-
+MUST:
 ---
-
 
 ## RULE #20.11: Search & Filter UI Standards
 
-✅ Must
-
-✅ MUST
-
-
+MUST:
 ---
-
 
 ## RULE #20.12: Empty States
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST differentiate:**
-
-
+MUST:
+**MUST differentiate:**
 ---
-
 
 ## RULE #20.13: State Persistence Standards
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST persist to localStorage:**
-
-❌ **NEVER:**
+MUST:
+**MUST persist to localStorage:**
 - Use generic keys (collision risk)
 - Persist without try/catch
 - Forget defaults
-
-
 ---
-
 
 ## RULE #20.14: Sorting Standards
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST support:**
+MUST:
+**MUST support:**
 - Primary/secondary sort
 - 3-state cycle: asc → desc → none
-
-
 ---
-
 
 ## RULE #20.15: Dark Mode Requirements
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER:**
+NEVER:
 - Use light-mode-only colors
 - Use pure white/black (use gray-50/gray-900)
-
-
 ---
-
 
 ## RULE #20.16: Performance Standards
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST memoize when:**
+MUST:
+**MUST memoize when:**
 - Filtering large datasets (>100 rows)
 - Sorting complex data
 - Computing derived values
-
-❌ **NEVER:**
 - Filter/sort without memoization
 - Create inline functions in map()
-
-
 ---
-
 
 ## RULE #20.17: Accessibility Standards
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST support:**
+MUST:
+**MUST support:**
 - Tab through interactive elements
 - Enter/Space to trigger actions
 - `scope="col"` on `<th>` elements
 - `aria-label` on icon-only buttons
 - Semantic HTML (`<table>`, `<thead>`, `<tbody>`)
 - `sr-only` text for icons
-
-
 ---
-
 
 ## RULE #20.18: Table Container Must Have Visible Borders On All Sides
 
-✅ Must
-
+MUST:
 Table container MUST have visible borders on all four sides (top, right, bottom, left).
 
 Full border on all four sides of table container. Border color: gray-200 (dark: gray-700). Horizontal margin (mx-4) to align with search bar above. Borders frame the entire table content including top and bottom. Creates a complete bordered box around the table.
 
-
 ## RULE #20.19: Native Browser Scrollbars Styled With Blue Theme
 
-✅ Must
-
+MUST:
 Native browser scrollbars MUST be styled with blue theme matching the header color.
 
 Light mode: Track #E0E7FF (light blue), Thumb #2563EB (blue-600 matching header), Hover #1D4ED8. Dark mode: Track #1E293B (dark slate), Thumb #1E40AF (blue-800), Hover #1E3A8A. Removed sticky horizontal scrollbar due to duplicate display issue.
 
-
 ## RULE #20.2: Table Header Requirements
 
-✅ Must
-
-✅ MUST
-
-
+MUST:
 ---
-
 
 ## RULE #20.20: Search Functionality Standards
 
-✅ Must
-
-✅ MUST
-
-
+MUST:
 ---
-
 
 ## RULE #20.21: Form Standards
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST include for all inputs:**
+MUST:
+**MUST include for all inputs:**
 - Label with `htmlFor` matching input `id`
 - Dark mode styling
 - Focus states (indigo ring)
 - Error state styling
-
-
 ---
-
 
 ## RULE #20.22: Table headers MUST provide visual cursor feedback
 
-✅ Must
-
+MUST:
 All interactive table header elements must display appropriate cursor styles to indicate their functionality.
 
 Column headers that support resizing must show col-resize cursor. Drag handles (three-dot icons) must show grab cursor when hovering and grabbing when dragging. Sortable headers must show pointer cursor.
 
-
 ## RULE #20.23: Table headers and content MUST use differentiated font sizes
 
-✅ Must
-
+MUST:
 Table headers must use 18px bold font. Table rows must use 14px regular font. Both must use system font stack for native appearance.
 
 Header font: 18px bold weight for visual hierarchy and emphasis. Row font: 14px regular weight for optimal data density and readability. Font family must use system font stack: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif. Apply styles inline for maximum specificity.
 
-
 ## RULE #20.24: Loading State Standards
 
-✅ Must
-
-✅ MUST
-
-
+MUST:
 ---
-
 
 ## RULE #20.25: Content and Title columns MUST be clickable to view full details
 
-✅ Must
-
+MUST:
 Only the Content and Title columns should open a modal when clicked. Other columns (Type, Chapter, Section, Status, Severity, Actions, Select) must not trigger the modal.
 
 Modal opens ONLY when clicking Content or Title cells - these are the columns with truncated data. Click handlers with stopPropagation prevent modal on other columns. Cursor pointer only appears on Content and Title columns. Select column checkboxes and Action buttons remain functional without opening modal.
 
-
 ## RULE #20.26: Status Badge Standards
 
-✅ Must
-
-✅ MUST
-
-
+MUST:
 ---
-
 
 ## RULE #20.27: Empty State Standards
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST differentiate:**
-
-
+MUST:
+**MUST differentiate:**
 ---
-
 
 ## RULE #20.28: Navigation Standards
 
-✅ Must
-
-✅ MUST
-
-
+MUST:
 ---
-
 
 ## RULE #20.29: Chapter 19 Documentation Maintenance (REQUIRED)
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST update Chapter 19 when:**
+MUST:
+**MUST update Chapter 19 when:**
 - Adding new table features
 - Modifying existing table patterns
 - Creating new components
 - Changing standard UI patterns
 - Adding new requirements
 - Discovering missing features
-
-❌ **NEVER:**
 - Make table changes without updating Chapter 19
 - Create custom patterns not documented
 - Skip timestamp update
 - Forget to commit Bible with code
-
-
 ---
-
 
 ## RULE #20.3: Column Search/Filter Requirements (REQUIRED)
 
-✅ Must
-
-✅ MUST
-
-
+MUST:
 ---
-
 
 ## RULE #20.30: Touch Target Sizes & Click Areas
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER:**
+NEVER:
 - Create interactive elements < 44px without compensating padding
 - Place elements closer than 8px
 - Assume mouse users only
-
-
 ---
-
 
 ## RULE #20.31: Data-Dense Table Layout Pattern
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST use compact layout for data-heavy tables:**
+MUST:
+**MUST use compact layout for data-heavy tables:**
 - Compact padding on rows and headers
 - Cell truncation with hover tooltips
 - Row expansion for full content
-
-❌ **NEVER:**
 - Use spacious padding (`py-6`) for data-dense tables
 - Skip expansion mechanism for truncated content
-
-
 ---
-
 
 ## RULE #20.32: Zebra Striping (Alternating Row Colors)
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST use zebra striping for wide tables (> 7 columns):**
+MUST:
+**MUST use zebra striping for wide tables (> 7 columns):**
 - Alternating row colors for horizontal tracking
 - Sufficient contrast in both light and dark modes
 - Maintain pattern when filtering/sorting
-
-❌ **NEVER:**
 - Use too subtle colors (insufficient contrast)
 - Remove zebra on hover (both should be visible)
 - Use zebra on narrow tables (< 5 columns)
-
-
 ---
-
 
 ## RULE #20.33: Sticky Horizontal Scrollbar Pattern
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST ALWAYS:**
-
+MUST:
+**MUST ALWAYS:**
 1. **MUST use ref flags** to prevent infinite scroll loops:
-   - `isScrollingStickyRef` - Set when sticky scrollbar scrolls
-   - `isScrollingMainRef` - Set when main container scrolls
-   - Check flags at start of handlers and return early if set
-
+- `isScrollingStickyRef` - Set when sticky scrollbar scrolls
+- `isScrollingMainRef` - Set when main container scrolls
+- Check flags at start of handlers and return early if set
 2. **MUST hide native horizontal scrollbar** when using custom sticky scrollbar:
-   [Code example - see code_example field]
-   [Code example - see code_example field]
-
+[Code example - see code_example field]
+[Code example - see code_example field]
 3. **MUST measure actual table element** for scrollbar width:
-   [Code example - see code_example field]
-
+[Code example - see code_example field]
 4. **MUST position sticky scrollbar** with `position: sticky` and `bottom: 0`
-
 5. **MUST use ResizeObserver** to update scrollbar on column resize
-
-❌ **NEVER:**
-
 1. **NEVER use placeholder values** in scroll loop - causes infinite loops
 2. **NEVER measure container scrollWidth** - use actual table offsetWidth instead
 3. **NEVER use overflow-x-hidden** on main container - breaks horizontal scrolling
 4. **NEVER forget to sync scrollLeft** in both directions (main ↔ sticky)
-
 📋 **Implementation Checklist:**
-
 - [ ] Scroll loop prevention refs created (`isScrollingStickyRef`, `isScrollingMainRef`)
 - [ ] Main scroll handler syncs to sticky scrollbar
 - [ ] Sticky scroll handler syncs to main container
@@ -3561,312 +2143,198 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 - [ ] Table has `minWidth` based on sum of column widths
 - [ ] Default column widths ensure horizontal overflow on most screens
 
-
 ## RULE #20.34: Modern Table Header Aesthetics
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST apply glass-morphism effect to table headers:**
+MUST:
+**MUST apply glass-morphism effect to table headers:**
 - Semi-transparent background with backdrop blur
 - Subtle shadow and borders
 - Small font size with medium weight
 - Subtle colors in light and dark modes
-
-❌ **NEVER:**
 - Use solid opaque backgrounds (loses modern effect)
 - Use heavy font weights (`font-bold`, `font-semibold`)
 - Use bright or saturated header colors
-
-
 ---
-
 
 ## RULE #20.35: Table Border Framing
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST add complete border framing for full-width tables:**
+MUST:
+**MUST add complete border framing for full-width tables:**
 - Left and right borders on `<table>` element
 - Consistent border colors in light and dark modes
 - Provides visual container boundary
-
-❌ **NEVER:**
 - Skip borders on full-width tables
 - Use incomplete framing (border-b or border-t only)
 - Apply borders to container div instead of table element
-
-
 ---
-
 
 ## RULE #20.36: Expand/Collapse Row Details Pattern
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement for tables with detailed content:**
+MUST:
+**MUST implement for tables with detailed content:**
 - Expand icon with click entire row to toggle
 - Expanded row spans all columns with visual separation
 - Use `Set` for tracking expansion state (performance)
 - Properly formatted content in expanded view
-
-❌ **NEVER:**
 - Make only icon clickable (bad UX)
 - Use array for expandedRows (slow lookup)
 - Skip colSpan (content constrained to first column)
 - Forget click event propagation on nested elements
-
-
 ---
-
 
 ## RULE #20.37: Column Visibility Toggle (REQUIRED)
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER:**
+NEVER:
 - Allow hiding ALL columns
 - Hide actions column
 - Forget localStorage persistence
-
-
 ---
-
 
 ## RULE #20.38: Cascading Filter Pattern
 
-✅ Must
-
-✅ **MUST use cascading filters for multi-level hierarchical data:**
-
+MUST:
+**MUST use cascading filters for multi-level hierarchical data:**
 **When to Use:**
 - Tables with 2+ filterable dimensions (Chapter → Type, Category → Subcategory, etc.)
 - Data has clear parent-child relationships
 - Filtering one dimension narrows options in dependent dimensions
-
 **How Cascading Works:**
 - Filters go **left-to-right** (broader → narrower)
 - Parent filter (left) affects child filter options (right)
 - Changing parent filter resets child filters to "All"
 - Show dynamic counts: "MUST (18)", "NEVER (5)", "PROTECTED (0)"
 - Disable options with 0 count
-
 **Filter Hierarchy Example:**
 ```
 Chapter (Level 1) → Type (Level 2) → Status (Level 3)
-    ↓                    ↓                 ↓
-  Affects            Affects           [End]
-  Type options       Status options
+↓ ↓ ↓
+Affects Affects [End]
+Type options Status options
 ```
-
-❌ **NEVER:**
 - Use bidirectional cascading (Chapter ← → Type = circular dependency)
 - Skip memoization (causes performance issues)
 - Forget to reset downstream filters when upstream changes
 - Make filters cascade backwards (right-to-left)
-
-
 **Example (BibleTableView):**
 - User selects "Chapter 9" → Type filter shows: MUST (18), NEVER (5), PROTECTED (0 - disabled)
 - User selects "MUST" → Shows only 18 Chapter 9 MUST rules
 - User changes to "Chapter 19" → Type resets to "All", recalculates for Ch 19
 
-
 ## RULE #20.39: Column Width Persistence (REQUIRED)
 
-✅ Must
-
-✅ MUST
-
-
+MUST:
 ---
-
 
 ## RULE #20.4: Column Resizing Standards
 
-✅ Must
-
-✅ MUST
-
-
+MUST:
 ---
-
 
 ## RULE #20.40: Table Toolbar Layout Standards (REQUIRED)
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER:**
+NEVER:
 - Put search on right side
 - Use different button heights
 - Stack toolbar vertically
 - Add gap between search and first button
-
-
 ---
-
 
 ## RULE #20.41: All Custom Action Buttons MUST Use h-[42px] Alignment
 
-🔄 Always
-
+ALWAYS:
 ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MUST use h-[42px] for perfect toolbar alignment with search bar and Columns button
-
 
 ## RULE #20.42: No Actions Column - Use Inline Bulk Actions Instead
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER:**
+NEVER:
 - Add an Actions column to tables with Edit/Delete buttons per row
 - Place action buttons in the rightmost column
 - Duplicate edit/delete functionality in both row actions and bulk actions
 - Show Delete button immediately when rows are selected
-
-✅ **ALWAYS:**
 - Use inline bulk action buttons that appear when rows are selected
 - Position bulk actions next to Columns button (h-[42px] alignment)
 - Implement Delete-after-Edit safety pattern
 - Hide Delete button until Edit is clicked first
-
 **Rationale:**
 - Cleaner table layout without extra column
 - Prevents accidental deletions (safety pattern)
 - Encourages batch operations over individual row actions
 - Consistent button height alignment (h-[42px])
-
 **Reference:** TrinityTableView.jsx removed Actions column, added inline bulk buttons
-
 
 ## RULE #20.5: Column Reordering Standards
 
-❌ Never
-
-❌ NEVER
-
-❌ **NEVER:**
+NEVER:
 - Put entire header in one onClick handler
 - Make drag handle sortable
 - Forget `e.stopPropagation()` on drag handle
-
-
 ---
-
 
 ## RULE #20.6: Scroll Behavior Standards
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement for scrollable tables:**
+MUST:
+**MUST implement for scrollable tables:**
 - Use `flex` layout with `flex-1 min-h-0 flex flex-col` on container
 - Scrollable area: `overflow-y-scroll overflow-x-auto`
 - Sync horizontal scroll between main container and sticky scrollbar via refs
 - Track scrollWidth with `ResizeObserver` for dynamic updates
 - Custom scrollbar styling via webkit pseudo-elements
 - Thin scrollbars: `scrollbar-width: thin` for Firefox
-
-❌ **NEVER:**
 - Use `overflow: hidden` on flex containers (prevents scrolling)
 - Forget `min-h-0` on flex children (causes overflow issues)
 - Skip scroll sync between container and sticky scrollbar
 - Use inline scroll handlers without refs (performance issue)
-
-
 ---
-
 
 ## RULE #20.7: Column Width Standards
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST set widths consistently:**
+MUST:
+**MUST set widths consistently:**
 - `<th>`: `style={{ width: `${width}px`, minWidth: `${width}px` }}`
 - `<td>`: `style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}`
-
-
 ---
-
 
 ## RULE #20.8: Cell Content Standards
 
-✅ Must
-
-✅ MUST
-
-
+MUST:
 ---
-
 
 ## RULE #20.9: Row Interaction Standards
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST implement:**
+MUST:
+**MUST implement:**
 - Selection column minimum width: 50px (never smaller)
 - Selection column always visible (exclude from visibility toggles)
 - Selection column excluded from column reordering (always leftmost)
-
-❌ **NEVER:**
 - Add explicit size classes to checkboxes (`h-4 w-4` OK, but browser default preferred)
 - Make selection column draggable
 - Include selection column in columnOrder state
 - Allow selection column to be hidden via visibility toggles
 - Allow selection column to be reordered (must stay leftmost)
-
-
 ---
-
 
 # Chapter 21: Agent System & Automation
 
-**Last Updated:** 2025-11-17 22:19 AEST
+**Last Updated:** 2025-11-17 22:58 AEST
 
 ## RULE #21.1: Agent Definitions Are Database-Driven
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Store all agent metadata in database
 - Update run history after each agent execution
 - Use API endpoints to manage agents
 - Track success/failure rates
 - Maintain agent priority order
-
-❌ **NEVER:**
 - Hardcode agent configurations in code
 - Skip recording agent runs
 - Modify `.claude/agents/*.md` files without updating database
 - Create agents without database entries
-
-
 ---
-
 
 ## RULE #21.10: Production Bug Hunter Agent
 
-📚 Reference
-
+REFERENCE:
 **Triggers:** /bug-hunter, bug hunter
-
 **What it does:**
 1. Checks Heroku production logs for errors and exceptions
 2. Searches Lexicon for similar bugs previously encountered
@@ -3877,13 +2345,10 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 7. Documents bug and solution in Lexicon with bug_fix entry
 8. Provides deployment recommendation
 
-
 ## RULE #21.11: Planning Collaborator Agent
 
-📚 Reference
-
+REFERENCE:
 **Triggers:** /plan, planning
-
 **What it does:**
 1. Analyzes feature request and breaks down into tasks
 2. Reads relevant Bible chapters for architecture guidance
@@ -3894,13 +2359,10 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 7. Provides recommendations for testing strategy
 8. Suggests Bible chapter updates if new patterns emerge
 
-
 ## RULE #21.12: Trinity Sync Validator Agent
 
-📚 Reference
-
+REFERENCE:
 **Triggers:** /trinity, trinity sync
-
 **What it does:**
 1. Compares Trinity Bible database records vs markdown files
 2. Checks Lexicon database vs markdown file consistency
@@ -3910,13 +2372,10 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 6. Runs export_bible and export_lexicon if needed
 7. Reports sync status and any discrepancies found
 
-
 ## RULE #21.13: Backend Developer Agent
 
-📚 Reference
-
+REFERENCE:
 **Triggers:** /backend, backend dev
-
 **What it does:**
 1. Reads Trinity Bible chapters for backend architecture rules
 2. Searches Lexicon for known backend bugs and API patterns
@@ -3926,25 +2385,18 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 6. Updates database schema and handles migrations
 7. Documents changes in Lexicon with dev_note entries
 
-
 ## RULE #21.14: Run All Agents in Parallel
 
-📚 Reference
-
+REFERENCE:
 **Triggers:** /all-agents, /ag
-
 **What it does:**
 Launches Backend Developer, Frontend Developer, Production Bug Hunter, Gantt Bug Hunter, Deploy Manager, Planning Collaborator, Trinity Sync Validator, and UI Compliance Auditor **simultaneously**.
-
 Each agent runs independently and reports back with their findings. Use this for comprehensive project health checks and multi-area debugging.
-
 
 ## RULE #21.15: UI Compliance Auditor Agent
 
-📚 Reference
-
+REFERENCE:
 **Triggers:** /ui-audit, ui compliance
-
 **What it does:**
 1. Reads Trinity Bible Chapter 20 (UI/UX Standards & Patterns rules)
 2. Reads Trinity Lexicon Chapter 20 (known UI/UX bugs and issues)
@@ -3959,13 +2411,10 @@ Each agent runs independently and reports back with their findings. Use this for
 11. Generates detailed compliance report with before/after examples
 12. Documents findings in Lexicon for future reference
 
-
 ## RULE #21.16: Frontend Developer Agent
 
-📚 Reference
-
+REFERENCE:
 **Triggers:** /frontend, frontend dev
-
 **What it does:**
 1. Reads Trinity Bible RULE #19 (Table Pattern) and UI chapters
 2. Searches Lexicon for frontend component patterns and known UI bugs
@@ -3975,13 +2424,10 @@ Each agent runs independently and reports back with their findings. Use this for
 6. Runs npm build and fixes any ESLint/TypeScript errors
 7. Documents component changes and patterns in Lexicon
 
-
 ## RULE #21.17: Deploy Manager Agent
 
-📚 Reference
-
+REFERENCE:
 **Triggers:** /deploy, deployment
-
 **What it does:**
 1. Runs full test suite (backend + frontend) to ensure stability
 2. Checks git status and creates clean commit if needed
@@ -3992,13 +2438,10 @@ Each agent runs independently and reports back with their findings. Use this for
 7. Verifies deployment health with API health checks
 8. Reports deployment status and any issues encountered
 
-
 ## RULE #21.18: Gantt Bug Hunter Agent
 
-📚 Reference
-
+REFERENCE:
 **Triggers:** /gantt, gantt bug hunter
-
 **What it does:**
 1. Reads Trinity Bible Chapter 7 (Gantt Chart rules)
 2. Searches Lexicon for Gantt-specific bugs and patterns
@@ -4009,232 +2452,149 @@ Each agent runs independently and reports back with their findings. Use this for
 7. Runs Gantt-specific diagnostic tests
 8. Documents any Gantt bugs found in Lexicon
 
-
 ## RULE #21.19: Modifying Existing Agents - Complete Checklist
 
-📖 Rule
-
-✅ MUST UPDATE (3 locations - Database is source of truth):
-
+RULE:
+MUST UPDATE (3 locations - Database is source of truth):
 **NEW APPROACH (Following RULE #1.13 - Single Source of Truth):**
-
 **1. Database (Trinity - ONLY source of truth)**
 ```ruby
 # Update the agent in Trinity database
 Trinity.find_by(
-  category: 'teacher',
-  chapter_number: 21,
-  section_number: '21.15'
+category: 'teacher',
+chapter_number: 21,
+section_number: '21.15'
 ).update!(
-  title: 'Updated Agent Name',
-  description: 'Full markdown content for agent...'
+title: 'Updated Agent Name',
+description: 'Full markdown content for agent...'
 )
 ```
-
 **2. Export to .md file**
 ```bash
 # Generate .claude/agents/*.md from database
 cd backend && bundle exec rake agents:export_definitions
 ```
-
 **3. Trinity Bible (Agent behavior summary)**
 ```ruby
 # Update high-level description in Bible
 Trinity.find_by(
-  category: 'bible',
-  chapter_number: 21,
-  title: 'Agent Name'
+category: 'bible',
+chapter_number: 21,
+title: 'Agent Name'
 ).update!(
-  description: 'High-level what it does...'
+description: 'High-level what it does...'
 )
 ```
-
-✅ **BENEFITS:**
 - Single source of truth (Trinity database)
 - .md files auto-generated from database
 - No manual sync needed
 - Frontend can read from API
-
-❌ **NEVER:**
 - Manually edit .claude/agents/*.md files
 - Keep agent data in multiple places
 - Update only one location
 
-
 ## RULE #21.2: Agent Invocation Protocol
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Check if agent exists and is active
 - Record run start timestamp
 - Execute agent task
 - Record success or failure with details
 - Return comprehensive result
-
-❌ **NEVER:**
 - Invoke inactive agents
 - Skip recording run results
 - Return vague error messages
 - Execute agents without user context
-
-
 ---
-
 
 ## RULE #21.3: Run History Tracking
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Record total_runs, successful_runs, failed_runs
 - Store last_run_at timestamp
 - Save last_status and last_message
 - Include detailed last_run_details (JSONB)
 - Calculate success_rate automatically
-
-❌ **NEVER:**
 - Skip recording runs
 - Overwrite historical run data
 - Record runs for testing/debugging
 - Fake success/failure status
-
-
 ---
-
 
 ## RULE #21.4: Agent Types and Specialization
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Assign agent_type: `development`, `diagnostic`, `deployment`, or `planning`
 - Define clear focus area (e.g., "Rails API Backend Development")
 - Specify tools available to agent
 - Document when to use each agent
 - Provide example invocations
-
-❌ **NEVER:**
 - Create overlapping agent responsibilities
 - Use generic agent for specialized tasks
 - Skip documenting agent capabilities
 - Create agents without clear purpose
-
-
 ---
-
 
 ## RULE #21.5: Agent Priority and Display Order
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Set priority field (0-100)
 - Display agents sorted by: priority DESC, name ASC
 - Show active agents first
 - Hide inactive agents from main list
-
-❌ **NEVER:**
 - Display agents alphabetically only
 - Show inactive agents in main list
 - Change priority without reason
-
-
 ---
-
 
 ## RULE #21.6: Agent Shortcuts and Invocation
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Support `run {agent-id}` (e.g., `run backend-developer`)
 - Support shortened versions (e.g., `backend dev`, `gantt`)
 - Document shortcuts in `example_invocations` field
 - Parse user input case-insensitively
-
-❌ **NEVER:**
 - Require exact agent_id match
 - Skip documenting shortcuts
 - Create conflicting shortcuts
-
-
 ---
-
 
 ## RULE #21.7: Recently Run Check (Smart Testing)
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Check `last_run_at` timestamp
 - Compare to threshold (e.g., 60 minutes)
 - Skip redundant tests if recent successful run
 - ALWAYS re-run if last run failed
 - Ask user if uncertain
-
-❌ **NEVER:**
 - Skip tests without checking recency
 - Ignore failed runs in recency check
 - Use stale results without user awareness
-
-
 ---
-
 
 ## RULE #21.8: Shortcut Clarity - AgentShortcutsTab Updates
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST:**
+MUST:
 - Update `frontend/src/components/settings/AgentShortcutsTab.jsx` when adding new shortcuts
 - Add new shortcuts to the `baseCommands` array
 - Ensure shortcuts match agent file definitions exactly
 - Use sequential IDs (avoid duplicates)
 - Document the shortcut pattern in the command field
 - Follow the format: `{ id: N, command: 'What Claude executes', shortcut: 'what user types, comma-separated' }`
-
-❌ **NEVER:**
 - Leave shortcuts undocumented
 - Create duplicate IDs in baseCommands array
 - Use shortcuts that contradict agent definitions
 - Hardcode shortcuts outside the table
-
-
 ---
-
 
 ## RULE #21.9: Creating New Agents - Complete Checklist
 
-✅ Must
-
-✅ MUST
-
-✅ **MUST UPDATE (4 files):**
-
-❌ **NEVER:**
+MUST:
+**MUST UPDATE (4 files):**
 - Create an agent in only one location
 - Skip updating run-history.json
 - Forget to add to the controllers fallback list
 - Miss updating the frontend component
-
-
 ---
-
 ---
-
 

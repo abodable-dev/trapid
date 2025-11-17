@@ -99,7 +99,7 @@ const parseRulesFromMarkdown = (content) => {
 
 // Define columns (RULE #19.1 compliant) - Simplified for readability
 const COLUMNS = [
-  { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 50, tooltip: 'Select rows' },
+  { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32, tooltip: 'Select rows' },
   { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200, tooltip: 'Chapter number and name' },
   { key: 'rule', label: 'Rule', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 100, tooltip: 'Rule number (e.g., 1.01, 20.37)' },
   { key: 'type', label: 'Type', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120, tooltip: 'Rule type: MUST, NEVER, ALWAYS, PROTECTED, CONFIG' },

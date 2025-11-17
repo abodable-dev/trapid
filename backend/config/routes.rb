@@ -301,6 +301,7 @@ Rails.application.routes.draw do
         collection do
           get :stats
           get :constants
+          get :search
           post :export_lexicon
           post :export_teacher
         end

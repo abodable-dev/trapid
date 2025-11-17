@@ -10,6 +10,8 @@
 
 Performs comprehensive audits of all frontend code against Chapter 19 (UI/UX Standards) and Chapter 20 (Agent System & Best Practices) by reading from Bible, Teacher, and Lexicon sources, then generates a complete audit report of exactly what needs to be fixed.
 
+**Note:** For table-specific audits, use the `ui-table-auditor` agent instead. This agent focuses on non-table UI components.
+
 ## Phase 1: Knowledge Gathering (ALWAYS RUN FIRST)
 
 Before performing any audit, the agent MUST gather the latest rules from all three sources:
@@ -34,9 +36,9 @@ curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?catego
 curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=teacher&chapter_number=20'
 ```
 
-### 5. Fetch UI/UX Related Lexicon Entries
+### 5. Fetch UI/UX Related Lexicon Entries (Excluding Tables)
 ```bash
-curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=lexicon' | jq 'select(.title | test("ui|ux|table|component|dark|mode|icon|button"; "i"))'
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=lexicon' | jq 'select(.title | test("ui|ux|component|dark|mode|icon|button|form|modal|navigation"; "i")) | select(.title | test("table"; "i") | not)'
 ```
 
 **Why all sources?**
@@ -46,25 +48,28 @@ curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?catego
 
 ## Phase 2: Comprehensive Audit Process
 
-### Step 1: Scan All UI Components
+### Step 1: Scan All UI Components (Excluding Tables)
 
 Find ALL frontend files that need auditing:
-- All `.jsx` files in `frontend/src/pages/`
-- All `.jsx` files in `frontend/src/components/`
-- All table components (DataTable, custom tables)
+- All `.jsx` files in `frontend/src/pages/` (excluding *Table.jsx, *List.jsx)
+- All `.jsx` files in `frontend/src/components/` (excluding DataTable, Trinity tables)
 - All form components
 - All modal/dialog components
 - All navigation components
 - All button/icon components
+- All layout components
+- All utility components
+
+**Note:** Skip table components - these are handled by `ui-table-auditor`
 
 ### Step 2: Categorize Components
 
 Group components by type:
-- **Tables/Lists** (Chapter 19 compliance)
 - **Forms** (Chapter 19 compliance)
 - **Navigation** (Chapter 19 compliance)
 - **Modals/Dialogs** (Chapter 19 compliance)
 - **Buttons/Actions** (Chapter 19 compliance)
+- **Layouts** (Chapter 19 compliance)
 - **Agent Interactions** (Chapter 20 compliance)
 
 ### Step 3: Apply Rules Against Each Component
@@ -128,16 +133,21 @@ Create a comprehensive markdown report with:
 
 ## Detailed Breakdown by Component
 
-### Tables (X components)
+### Forms (X components)
 | Component | Critical | Medium | Low | Compliance % |
 |-----------|----------|---------|-----|--------------|
-| POTable.jsx | 0 | 2 | 1 | 85% |
-| ContactsPage.jsx | 1 | 0 | 0 | 95% |
-
-### Forms (X components)
-[Same format]
+| ContactForm.jsx | 0 | 2 | 1 | 85% |
+| SettingsForm.jsx | 1 | 0 | 0 | 95% |
 
 ### Modals (X components)
+| Component | Critical | Medium | Low | Compliance % |
+|-----------|----------|---------|-----|--------------|
+| ConfirmDialog.jsx | 0 | 1 | 0 | 90% |
+
+### Navigation (X components)
+[Same format]
+
+### Layouts (X components)
 [Same format]
 
 ## Action Plan
@@ -237,16 +247,18 @@ After presenting the audit report, the agent CAN:
 
 ### DO:
 - ✅ Always fetch latest rules from API (never use cached files)
-- ✅ Check ALL components, not just tables
+- ✅ Check ALL non-table components (forms, modals, navigation, etc.)
 - ✅ Provide specific file paths and line numbers
 - ✅ Include code examples in fix recommendations
 - ✅ Prioritize critical violations
 - ✅ Calculate realistic time estimates
 - ✅ Cross-reference Bible, Teacher, and Lexicon
+- ✅ Defer to ui-table-auditor for table components
 
 ### DON'T:
 - ❌ Read TRAPID_BIBLE.md or TRAPID_TEACHER.md files directly
-- ❌ Skip any components (scan everything)
+- ❌ Skip any non-table components (scan everything except tables)
+- ❌ Audit table components (use ui-table-auditor instead)
 - ❌ Make fixes without presenting audit first
 - ❌ Ignore Lexicon warnings about known bugs
 - ❌ Give vague recommendations (be specific)

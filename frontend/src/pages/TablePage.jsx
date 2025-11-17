@@ -364,7 +364,13 @@ export default function TablePage() {
 
   const handleSort = (columnKey) => {
     if (sortBy === columnKey) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+      if (sortDirection === 'asc') {
+        setSortDirection('desc')
+      } else if (sortDirection === 'desc') {
+        // Third state: clear sort
+        setSortBy(null)
+        setSortDirection('asc')
+      }
     } else {
       setSortBy(columnKey)
       setSortDirection('asc')

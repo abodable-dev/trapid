@@ -196,13 +196,17 @@ namespace :trapid do
       CHAPTER
 
       rules.each do |rule|
+        # Ultra-lean format: No emojis, minimal formatting
         content += "## #{rule.section_display}: #{rule.title}\n\n" if rule.section_number.present?
         content += "## #{rule.title}\n\n" unless rule.section_number.present?
-        content += "#{rule.type_display}\n\n"
+
+        # Type without emoji (e.g., "MUST:" instead of "✅ MUST")
+        content += "#{rule.entry_type.upcase}:\n" if rule.entry_type.present?
+
+        # Content without extra blank lines or bold formatting
         content += "#{rule.summary}\n\n" if rule.summary.present?
         content += "#{rule.description}\n\n" if rule.description.present?
         content += "#{rule.details}\n\n" if rule.details.present?
-        content += "\n"
       end
     end
 

@@ -88,9 +88,15 @@ export default function POTable({ purchaseOrders, onDelete, searchQuery = '' }) 
     }
   })
 
-  // Sort state (primary and secondary)
-  const [sortBy, setSortBy] = useState('poNumber')
-  const [sortDirection, setSortDirection] = useState('desc')
+  // Sort state (primary and secondary) with localStorage persistence (RULE #20.13)
+  const [sortBy, setSortBy] = useState(() => {
+    const saved = localStorage.getItem('po_table_sortBy')
+    return saved ? JSON.parse(saved) : 'poNumber'
+  })
+  const [sortDirection, setSortDirection] = useState(() => {
+    const saved = localStorage.getItem('po_table_sortDirection')
+    return saved ? JSON.parse(saved) : 'desc'
+  })
   const secondarySortBy = 'supplier'
   const secondarySortDirection = 'asc'
 
@@ -99,8 +105,11 @@ export default function POTable({ purchaseOrders, onDelete, searchQuery = '' }) 
   const [resizeStartX, setResizeStartX] = useState(0)
   const [resizeStartWidth, setResizeStartWidth] = useState(0)
 
-  // Column filter state
-  const [columnFilters, setColumnFilters] = useState({})
+  // Column filter state with localStorage persistence (RULE #20.13)
+  const [columnFilters, setColumnFilters] = useState(() => {
+    const saved = localStorage.getItem('po_table_columnFilters')
+    return saved ? JSON.parse(saved) : {}
+  })
 
   // Drag and drop state
   const [draggedColumn, setDraggedColumn] = useState(null)
@@ -125,6 +134,20 @@ export default function POTable({ purchaseOrders, onDelete, searchQuery = '' }) 
   useEffect(() => {
     localStorage.setItem('po_table_columnWidths', JSON.stringify(columnWidths))
   }, [columnWidths])
+
+  // Persist sort state to localStorage (RULE #20.13)
+  useEffect(() => {
+    localStorage.setItem('po_table_sortBy', JSON.stringify(sortBy))
+  }, [sortBy])
+
+  useEffect(() => {
+    localStorage.setItem('po_table_sortDirection', JSON.stringify(sortDirection))
+  }, [sortDirection])
+
+  // Persist column filters to localStorage (RULE #20.13)
+  useEffect(() => {
+    localStorage.setItem('po_table_columnFilters', JSON.stringify(columnFilters))
+  }, [columnFilters])
 
   // Column resize handlers
   const handleResizeStart = (e, columnKey) => {
@@ -194,7 +217,13 @@ export default function POTable({ purchaseOrders, onDelete, searchQuery = '' }) 
   // Sort handler
   const handleSort = (columnKey) => {
     if (sortBy === columnKey) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+      if (sortDirection === 'asc') {
+        setSortDirection('desc')
+      } else if (sortDirection === 'desc') {
+        // Third state: clear sort
+        setSortBy(null)
+        setSortDirection('asc')
+      }
     } else {
       setSortBy(columnKey)
       setSortDirection('asc')

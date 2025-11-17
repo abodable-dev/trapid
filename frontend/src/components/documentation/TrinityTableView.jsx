@@ -63,12 +63,14 @@ const SEVERITY_COLORS = {
 // Define columns (Chapter 20: Checkbox column must be first, locked, and minimal size)
 const COLUMNS = [
   { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32 },
+  { key: 'category', label: 'Category', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 100, tooltip: 'Bible, Teacher, or Lexicon' },
   { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200, tooltip: 'Chapter number and name' },
   { key: 'section', label: 'Section', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 100, tooltip: 'Section number (e.g., 2.01)' },
   { key: 'type', label: 'Type', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120 },
   { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 300 },
   { key: 'content', label: 'Content', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 400 },
-  { key: 'component', label: 'Component', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 180 },
+  { key: 'component', label: 'Component', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 180 },
+  { key: 'dense_index', label: 'Dense Index', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 400, tooltip: 'Searchable index (no formatting)' },
   { key: 'status', label: 'Status', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 140 },
   { key: 'severity', label: 'Severity', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120 },
   { key: 'audit', label: 'Audit', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Last modification date and user' }
@@ -129,6 +131,10 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
   // Inline column filters (Chapter 20.1)
   const [columnFilters, setColumnFilters] = useState({})
 
+  // Component multi-select checkbox state
+  const [selectedComponents, setSelectedComponents] = useState(new Set())
+  const [showComponentDropdown, setShowComponentDropdown] = useState(false)
+
   // Modal state for viewing full row details
   const [selectedEntry, setSelectedEntry] = useState(null)
 
@@ -149,6 +155,10 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
   const [tableScrollWidth, setTableScrollWidth] = useState(0)
   const scrollContainerRef = useRef(null)
   const stickyScrollbarRef = useRef(null)
+
+  // Scroll loop prevention flags (RULE #20.33)
+  const isScrollingStickyRef = useRef(false)
+  const isScrollingMainRef = useRef(false)
 
   // Load table state from localStorage on mount (Chapter 20.5B)
   useEffect(() => {
@@ -212,14 +222,22 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
     }
   }, [resizingColumn, resizeStartX, resizeStartWidth])
 
-  // Scroll handlers for sticky horizontal scrollbar
+  // Scroll handlers for sticky horizontal scrollbar (RULE #20.33)
   const handleScroll = (e) => {
+    // Prevent infinite loop from sticky scrollbar
+    if (isScrollingStickyRef.current) {
+      isScrollingStickyRef.current = false
+      return
+    }
+
     const container = e.target
     const { scrollLeft, scrollTop } = container
 
     // Sync horizontal sticky scrollbar
     if (stickyScrollbarRef.current) {
+      isScrollingMainRef.current = true
       stickyScrollbarRef.current.scrollLeft = scrollLeft
+      setTimeout(() => { isScrollingMainRef.current = false }, 0)
     }
 
     // Log scroll position occasionally (every 100px)
@@ -229,9 +247,17 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
   }
 
   const handleStickyScroll = (e) => {
+    // Prevent infinite loop from main container
+    if (isScrollingMainRef.current) {
+      isScrollingMainRef.current = false
+      return
+    }
+
     const scrollLeft = e.target.scrollLeft
     if (scrollContainerRef.current) {
+      isScrollingStickyRef.current = true
       scrollContainerRef.current.scrollLeft = scrollLeft
+      setTimeout(() => { isScrollingStickyRef.current = false }, 0)
       console.log('📊 Lexicon sticky scrollbar scrolled to:', scrollLeft)
     }
   }
@@ -292,10 +318,21 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
 
   // Column visibility toggle (Chapter 20.10)
   const handleToggleColumn = (columnKey) => {
-    setVisibleColumns(prev => ({
-      ...prev,
-      [columnKey]: !prev[columnKey]
-    }))
+    setVisibleColumns(prev => {
+      const newVisibleColumns = {
+        ...prev,
+        [columnKey]: !prev[columnKey]
+      }
+
+      // RULE #20.37: Prevent hiding ALL columns
+      const visibleCount = Object.values(newVisibleColumns).filter(Boolean).length
+      if (visibleCount === 0) {
+        console.warn('Cannot hide all columns - at least one must remain visible')
+        return prev // Don't apply the change
+      }
+
+      return newVisibleColumns
+    })
   }
 
   // Row selection handlers (Chapter 20: Multi-select with bulk actions)
@@ -393,7 +430,16 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
           })
           break
         case 'component':
-          result = result.filter(e => e.component?.toLowerCase().includes(value.toLowerCase()))
+          // Component uses multi-select checkboxes
+          if (selectedComponents.size > 0) {
+            result = result.filter(e => {
+              // Special handling: "Table" checkbox also includes "DynamicTables"
+              if (selectedComponents.has('Table') && (e.component === 'Table' || e.component === 'DynamicTables')) {
+                return true
+              }
+              return selectedComponents.has(e.component)
+            })
+          }
           break
         case 'status':
           result = result.filter(e => e.status === value)
@@ -432,8 +478,36 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
           bVal = b.chapter_number
           break
         case 'section':
-          aVal = a.section_number || ''
-          bVal = b.section_number || ''
+          // Parse section numbers with optional category prefix (B01.01, L01.02, T01.03)
+          const parseSection = (str) => {
+            if (!str) return ['', 0, 0]
+
+            // Match: B01.01 → prefix="B", chapter=1, section=1
+            // Match: 03.05 → prefix="", chapter=3, section=5 (legacy)
+            const match = str.match(/^([BTL])?(\d+)\.(\d+)$/)
+            if (!match) return ['', 0, 0]
+
+            return [
+              match[1] || '',           // prefix letter (B/L/T or empty)
+              parseInt(match[2]),       // chapter number
+              parseInt(match[3])        // section number
+            ]
+          }
+
+          const [aPrefix, aChapter, aSection] = parseSection(a.section_number)
+          const [bPrefix, bChapter, bSection] = parseSection(b.section_number)
+
+          // Sort by prefix first (B < L < T), then chapter, then section
+          if (aPrefix !== bPrefix) {
+            aVal = aPrefix
+            bVal = bPrefix
+          } else if (aChapter !== bChapter) {
+            aVal = aChapter
+            bVal = bChapter
+          } else {
+            aVal = aSection
+            bVal = bSection
+          }
           break
         case 'title':
           aVal = a.title || ''
@@ -474,7 +548,13 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
 
   const handleSort = (column) => {
     if (sortBy === column) {
-      setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+      if (sortDir === 'asc') {
+        setSortDir('desc')
+      } else if (sortDir === 'desc') {
+        // Third state: clear sort
+        setSortBy(null)
+        setSortDir(null)
+      }
     } else {
       setSortBy(column)
       setSortDir('asc')
@@ -511,6 +591,24 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
             }}
             className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
           />
+        )
+
+      case 'category':
+        const categoryColors = {
+          bible: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+          teacher: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+          lexicon: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+        }
+        const categoryIcons = {
+          bible: '📖',
+          teacher: '🔧',
+          lexicon: '📕'
+        }
+        return (
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${categoryColors[entry.category] || 'bg-gray-100 text-gray-800'}`}>
+            <span className="mr-1">{categoryIcons[entry.category]}</span>
+            {entry.category}
+          </span>
         )
 
       case 'chapter':
@@ -556,13 +654,26 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
         )
 
       case 'type':
+        // Format type display: first letter capital, rest lowercase
+        const formatType = (type) => {
+          if (!type) return ''
+          // Handle special cases with underscores
+          if (type.includes('_')) {
+            return type.split('_').map(word =>
+              word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            ).join(' ')
+          }
+          // Standard: First letter uppercase, rest lowercase
+          return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()
+        }
+
         return (
           <>
             {entry.entry_type === 'bug' && '🐛'}
             {entry.entry_type === 'architecture' && '🏛️'}
             {entry.entry_type === 'test' && '📊'}
             {entry.entry_type === 'note' && '🎓'}
-            <span className="ml-1">{entry.entry_type}</span>
+            <span className="ml-1">{formatType(entry.entry_type)}</span>
           </>
         )
 
@@ -619,6 +730,19 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
         return (
           <div className="truncate text-gray-600 dark:text-gray-400">
             {displayText || '-'}
+          </div>
+        )
+
+      case 'dense_index':
+        const denseText = entry.dense_index || ''
+        const maxDenseLength = 150
+        const displayDense = denseText.length > maxDenseLength
+          ? denseText.substring(0, maxDenseLength) + '...'
+          : denseText
+
+        return (
+          <div className="truncate text-xs font-mono text-gray-500 dark:text-gray-500">
+            {displayDense || '-'}
           </div>
         )
 
@@ -1158,7 +1282,7 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                           />
                         )}
 
-                        {column.filterable && column.filterType === 'dropdown' && (
+                        {column.filterable && column.filterType === 'dropdown' && colKey !== 'component' && (
                           <select
                             value={columnFilters[colKey] || ''}
                             onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
@@ -1178,10 +1302,29 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                             ))}
                             {colKey === 'type' && (
                               <>
-                                <option value="bug">Bug</option>
-                                <option value="architecture">Architecture</option>
-                                <option value="test">Test</option>
-                                <option value="note">Note</option>
+                                {/* Lexicon types */}
+                                <option value="bug">🐛 Bug</option>
+                                <option value="architecture">🏗️ Architecture</option>
+                                <option value="test">📊 Test</option>
+                                <option value="performance">📈 Performance</option>
+                                <option value="dev_note">🎓 Dev Note</option>
+                                <option value="common_issue">🔍 Common Issue</option>
+                                {/* Teacher types */}
+                                <option value="component">🧩 Component</option>
+                                <option value="feature">✨ Feature</option>
+                                <option value="util">🔧 Util</option>
+                                <option value="hook">🪝 Hook</option>
+                                <option value="integration">🔌 Integration</option>
+                                <option value="optimization">⚡ Optimization</option>
+                                <option value="dropdown_md">📋 Dropdown Md</option>
+                                {/* Bible types */}
+                                <option value="MUST">✅ Must</option>
+                                <option value="NEVER">❌ Never</option>
+                                <option value="ALWAYS">🔄 Always</option>
+                                <option value="PROTECTED">🔒 Protected</option>
+                                <option value="CONFIG">⚙️ Config</option>
+                                <option value="rule">📖 Rule</option>
+                                <option value="REFERENCE">📚 Reference</option>
                               </>
                             )}
                             {colKey === 'status' && (
@@ -1207,7 +1350,64 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                                 <option value="lexicon">📕 Lexicon</option>
                               </>
                             )}
+                            {colKey === 'component' && (
+                              <>
+                                <option value="Auth">Auth</option>
+                                <option value="Chat">Chat</option>
+                                <option value="DynamicTables">DynamicTables</option>
+                                <option value="Email">Email</option>
+                                <option value="Gantt">Gantt</option>
+                                <option value="Jobs">Jobs</option>
+                                <option value="OneDrive">OneDrive</option>
+                                <option value="Payments">Payments</option>
+                                <option value="PurchaseOrders">PurchaseOrders</option>
+                                <option value="Settings">Settings</option>
+                                <option value="Table">Table</option>
+                                <option value="Tasks">Tasks</option>
+                                <option value="Weather">Weather</option>
+                                <option value="Xero">Xero</option>
+                              </>
+                            )}
                           </select>
+                        )}
+
+                        {/* Component multi-select checkboxes */}
+                        {column.filterable && colKey === 'component' && (
+                          <div className="relative mt-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setShowComponentDropdown(!showComponentDropdown)
+                              }}
+                              className="w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white flex items-center justify-between"
+                            >
+                              <span>{selectedComponents.size > 0 ? `${selectedComponents.size} selected` : 'Filter...'}</span>
+                              <span>▼</span>
+                            </button>
+                            {showComponentDropdown && (
+                              <div className="absolute top-full left-0 mt-1 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg text-xs z-50 min-w-full" onClick={(e) => e.stopPropagation()}>
+                                {['Auth', 'Chat', 'DynamicTables', 'Email', 'Gantt', 'Jobs', 'OneDrive', 'Payments', 'PurchaseOrders', 'Settings', 'Table', 'Tasks', 'Weather', 'Xero'].map(comp => (
+                                  <label key={comp} className="flex items-center space-x-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 px-1 rounded cursor-pointer text-gray-900 dark:text-white whitespace-nowrap">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedComponents.has(comp)}
+                                      onChange={(e) => {
+                                        const newSet = new Set(selectedComponents)
+                                        if (e.target.checked) {
+                                          newSet.add(comp)
+                                        } else {
+                                          newSet.delete(comp)
+                                        }
+                                        setSelectedComponents(newSet)
+                                      }}
+                                      className="rounded border-gray-300"
+                                    />
+                                    <span>{comp}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </>
                     )}
