@@ -1,7 +1,7 @@
 # TRAPID BIBLE - Development Rules
 
 **Version:** 2.0.0
-**Last Updated:** 2025-11-17 21:47 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 **Authority Level:** ABSOLUTE
 **Audience:** Claude Code + Human Developers
 **Source of Truth:** Database table `bible_rules` (this file is auto-generated)
@@ -39,13 +39,7 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 # Chapter 1: Overview & System-Wide Rules
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch1    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch1    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch1 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-18 07:42 AEST
+**Last Updated:** 2025-11-18 02:29 AEST
 
 ## RULE #1.1: Documentation Maintenance
 
@@ -63,10 +57,6 @@ When to Update Bible:
 - Architecture explanations (goes in Lexicon)
 - Performance optimizations (goes in Lexicon unless it creates a new RULE)
 
-
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
-
----
 
 ## RULE #1.10: Section Numbers Must Be Unique Within Chapter + Category
 
@@ -94,11 +84,6 @@ When to Update Bible:
 - Add unique index: CREATE UNIQUE INDEX idx_trinity_unique_section ON trinity(chapter_number, section_number, category)
 - Model validation: validates :section_number, uniqueness: { scope: [:chapter_number, :category] }
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §0.4](TRAPID_TEACHER.md#04-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 0](TRAPID_LEXICON.md)
-
-
----
 
 ## RULE #1.11: Chapter Assignment - Where to Place New Rules
 
@@ -149,11 +134,6 @@ When to Update Bible:
 2. Is this feature-specific? → Find matching chapter (2-21)
 3. Unsure? Ask which chapter it belongs in
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §1.11](TRAPID_TEACHER.md#111-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
-
-
----
 
 ## RULE #1.12: Never Guess - Always Ask
 
@@ -174,11 +154,6 @@ When to Update Bible:
 **Why this matters:**
 User gave feedback "please dont guess" when Claude assumed user wanted to remove a line without asking first. Guessing wastes user time when Claude guesses wrong.
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §0.99](TRAPID_TEACHER.md#099-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 0](TRAPID_LEXICON.md)
-
-
----
 
 ## RULE #1.13: Single Source of Truth - Eliminate Data Duplication
 
@@ -235,11 +210,6 @@ Always add comment showing which source is authoritative:
 - Assume manual sync will stay consistent
 - Store same data in multiple writeable locations
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §1.13](TRAPID_TEACHER.md#113-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
-
-
----
 
 ## RULE #1.2: Code Quality Standards
 
@@ -258,10 +228,6 @@ Always add comment showing which source is authoritative:
 - Test locally before pushing
 
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
-
----
-
 ## RULE #1.3: API Response Format
 
 📖 Rule
@@ -274,10 +240,6 @@ Success response:
 Error response:
 { success: false, error: "Error message", details: { ... } }
 
-
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
-
----
 
 ## RULE #1.4: Database Migrations
 
@@ -295,10 +257,6 @@ Error response:
 - Create migrations for ALL schema changes
 
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
-
----
-
 ## RULE #1.5: Agent Maintenance & Learning
 
 📖 Rule
@@ -312,10 +270,6 @@ When an agent fails to catch a bug:
 ❌ NEVER let the same class of bug happen twice
 
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
-
----
-
 ## RULE #1.6: Documentation Authority Hierarchy
 
 📖 Rule
@@ -326,10 +280,6 @@ Authority Order (Highest to Lowest):
 3. TRAPID_LEXICON.md - REFERENCE for bug history
 4. Code comments - IMPLEMENTATION DETAILS
 
-
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
-
----
 
 ## RULE #1.7: Trinity Database Sync
 
@@ -407,8 +357,6 @@ bin/rails trapid:import_teacher
 - Markdown exports are snapshots for git history
 
 
----
-
 ## RULE #1.8: Always Fetch Trinity Before Modifying Code
 
 🔄 Always
@@ -433,11 +381,6 @@ bin/rails trapid:import_teacher
 - Chapter 20: UI/UX Standards & Patterns
 - Chapter 21: Agent System & Automation
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §0.1](TRAPID_TEACHER.md#01-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 0](TRAPID_LEXICON.md)
-
-
----
 
 ## RULE #1.9: Section Numbers Must Be Purely Numeric
 
@@ -460,21 +403,10 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Option 2: Use decimal increments (19.6, then 19.7, NOT 19.6A)
 - Option 3: Add as next available number and reorder manually
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §0.3](TRAPID_TEACHER.md#03-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 0](TRAPID_LEXICON.md)
-
-
----
 
 # Chapter 2: Authentication & Users
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch2    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch2    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch2 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #2.1: JWT Token Handling
 
@@ -494,14 +426,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Share SECRET_KEY across environments
 - Store tokens in localStorage (XSS vulnerable) - use httpOnly cookies on frontend
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §1.1](TRAPID_TEACHER.md#11-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
-
----
 
 ## RULE #2.2: Password Security Requirements
 
@@ -522,14 +449,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Store passwords in plain text
 - Allow common passwords (implement dictionary check if needed)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §1.2](TRAPID_TEACHER.md#12-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
-
----
 
 ## RULE #2.3: Role-Based Access Control
 
@@ -549,14 +471,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Bypass permission checks with hardcoded user IDs
 - Grant admin role automatically (even for @tekna.com.au emails)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §1.3](TRAPID_TEACHER.md#13-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
-
----
 
 ## RULE #2.4: Rate Limiting on Auth Endpoints
 
@@ -574,14 +491,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Use same limits for external vs internal APIs
 - Skip rate limiting for "trusted" IPs (除非 explicitly whitelisted)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §1.4](TRAPID_TEACHER.md#14-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
-
----
 
 ## RULE #2.5: OAuth Integration Pattern
 
@@ -602,14 +514,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip token expiration checks
 - Use OAuth for internal user creation (only for login)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §1.5](TRAPID_TEACHER.md#15-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
-
----
 
 ## RULE #2.6: Password Reset Flow
 
@@ -631,14 +538,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip token expiration check
 - Send token in API response (only via email)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §1.6](TRAPID_TEACHER.md#16-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
-
----
 
 ## RULE #2.7: Portal User Separation
 
@@ -659,14 +561,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip activity logging for portal users
 - Allow portal users to access internal APIs
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §1.7](TRAPID_TEACHER.md#17-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
-
----
 
 ## RULE #2.8: Login Activity Tracking
 
@@ -685,24 +582,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Track in local timezone
 - Skip updates (used for security monitoring)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §1.8](TRAPID_TEACHER.md#18-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
-
----
 
 # Chapter 3: System Administration
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch3    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch3    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch3 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #3.1: Company Settings Singleton Pattern
 
@@ -720,14 +606,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Use `CompanySetting.first` (use `CompanySetting.instance`)
 - Call `CompanySetting.create` manually (use `instance` method)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §2.1](TRAPID_TEACHER.md#21-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
-
----
 
 ## RULE #3.2: Timezone Handling - Backend Time Calculations
 
@@ -745,14 +626,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Assume server timezone matches company timezone
 - Use JavaScript `new Date()` for date calculations (see RULE #2.3)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §2.2](TRAPID_TEACHER.md#22-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
-
----
 
 ## RULE #3.3: Timezone Handling - Frontend Time Display
 
@@ -770,14 +646,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Use date libraries without timezone configuration (moment.js, date-fns)
 - Assume user's browser timezone matches company timezone
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §2.3](TRAPID_TEACHER.md#23-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
-
----
 
 ## RULE #3.4: Working Days Configuration & Business Day Calculations
 
@@ -795,14 +666,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Calculate task dates without checking working_days
 - Allow cascade to schedule tasks on non-working days (exception: locked tasks)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §2.4](TRAPID_TEACHER.md#24-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
-
----
 
 ## RULE #3.5: User Roles & Permission System
 
@@ -820,14 +686,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip permission checks in controllers ("I'll handle it in the UI")
 - Use role checking in frontend only (backend MUST validate)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §2.5](TRAPID_TEACHER.md#25-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
-
----
 
 ## RULE #3.6: Assignable Roles for Task Assignment
 
@@ -843,14 +704,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Allow users with assignable_role: none to be assigned tasks
 - Hardcode role names in task queries
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §2.6](TRAPID_TEACHER.md#26-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
-
----
 
 ## RULE #3.7: Password Complexity Requirements
 
@@ -868,14 +724,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Require OAuth users to set passwords (they don't use them)
 - Store passwords in plain text (use bcrypt via has_secure_password)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §2.7](TRAPID_TEACHER.md#27-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
-
----
 
 ## RULE #3.8: Timezone Options Limitation
 
@@ -893,14 +744,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Use timezone abbreviations (AEST, AEDT - ambiguous)
 - Default to UTC (construction companies operate in specific regions)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §2.8](TRAPID_TEACHER.md#28-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
-
----
 
 ## RULE #3.9: Working Days UI - Sunday Default True
 
@@ -918,24 +764,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Default all days to true (Saturday rarely worked)
 - Prevent users from customizing working days
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §2.9](TRAPID_TEACHER.md#29-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
-
----
 
 # Chapter 4: Contacts & Relationships
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch4    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch4    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch4 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #4.1: Contact Types are Multi-Select Arrays
 
@@ -956,14 +791,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Assume a contact has only one type
 - Query with `contact_type =` (use array containment instead)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §3.1](TRAPID_TEACHER.md#31-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
-
----
 
 ## RULE #4.2: Bidirectional Relationships Require Reverse Sync
 
@@ -985,14 +815,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Delete reverse relationship without checking Thread flag
 - Allow duplicate relationships (same source + related pair)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §3.2](TRAPID_TEACHER.md#32-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
-
----
 
 ## RULE #4.3: Xero Sync Uses Priority-Based Fuzzy Matching
 
@@ -1018,14 +843,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Sync contacts with `sync_with_xero = false`
 - Delete local contacts that don't exist in Xero
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §3.3](TRAPID_TEACHER.md#33-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
-
----
 
 ## RULE #4.4: Contact Deletion MUST Check Purchase Order Dependencies
 
@@ -1047,14 +867,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Allow deletion without checking payment/invoice status
 - Delete last contact from a construction/job
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §3.4](TRAPID_TEACHER.md#34-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
-
----
 
 ## RULE #4.5: Contact Merge MUST Consolidate All Related Records
 
@@ -1078,14 +893,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Delete source without logging activity
 - Allow merge if validation fails on target
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §3.5](TRAPID_TEACHER.md#35-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
-
----
 
 ## RULE #4.6: Portal Users MUST Have Secure Password Requirements
 
@@ -1108,14 +918,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Allow unlimited login attempts
 - Share portal accounts across contacts
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §3.6](TRAPID_TEACHER.md#36-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
-
----
 
 ## RULE #4.7: Primary Contact/Address/Person MUST Be Unique Per Contact
 
@@ -1134,14 +939,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Delete the only remaining contact from a construction
 - Set `is_primary = true` without unmarking others
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §3.7](TRAPID_TEACHER.md#37-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
-
----
 
 ## RULE #4.8: Contact Activity Logging MUST Track All Significant Changes
 
@@ -1162,24 +962,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Store sensitive data in metadata (passwords, tokens, etc.)
 - Delete activity records (archive only for compliance)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §3.8](TRAPID_TEACHER.md#38-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
-
----
 
 # Chapter 5: Price Books & Suppliers
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch5    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch5    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch5 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #5.1: Price Changes MUST Create Price History Automatically
 
@@ -1200,14 +989,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Delete price history records (archive only)
 - Allow price updates without tracking who made the change
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §4.1](TRAPID_TEACHER.md#41-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
-
----
 
 ## RULE #5.2: Prevent Duplicate Price History - Unique Constraint + Time Window
 
@@ -1226,14 +1010,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Allow duplicate price history from concurrent requests
 - Fail hard on duplicate attempts (graceful degradation)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §4.2](TRAPID_TEACHER.md#42-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
-
----
 
 ## RULE #5.3: SmartPoLookupService - 6-Strategy Cascading Fallback
 
@@ -1253,14 +1032,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Return multiple matches (return best only)
 - Fail if early strategies miss (cascade to less specific)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §4.3](TRAPID_TEACHER.md#43-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
-
----
 
 ## RULE #5.4: Supplier Matching - Normalized Name Comparison with Business Suffix Removal
 
@@ -1281,14 +1055,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip normalization for "exact" match detection
 - Use case-sensitive comparison
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §4.4](TRAPID_TEACHER.md#44-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
-
----
 
 ## RULE #5.5: Price Volatility Detection - Coefficient of Variation on 6-Month Window
 
@@ -1309,14 +1078,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Include prices older than 6 months
 - Use absolute price change instead of percentage
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §4.5](TRAPID_TEACHER.md#45-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
-
----
 
 ## RULE #5.6: Risk Scoring - Multi-Factor Weighted Calculation (0-100 Scale)
 
@@ -1337,14 +1101,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Return risk score without risk level
 - Calculate risk client-side (compute server-side)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §4.6](TRAPID_TEACHER.md#46-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
-
----
 
 ## RULE #5.7: Bulk Updates - Transaction Wrapper with Price History Batch Creation
 
@@ -1365,14 +1124,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Continue processing after first error
 - Commit partial updates
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §4.7](TRAPID_TEACHER.md#47-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
-
----
 
 ## RULE #5.8: OneDrive Image Proxy - Cache Control with 1-Hour Expiry
 
@@ -1393,24 +1147,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Proxy without Cache-Control header
 - Return errors for missing images (return 404 gracefully)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §4.8](TRAPID_TEACHER.md#48-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
-
----
 
 # Chapter 6: Jobs & Construction Management
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch6    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch6    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch6 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #6.1: Construction MUST Have At Least One Contact
 
@@ -1429,14 +1172,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip contact validation on updates
 - Delete all contacts without replacement
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §5.1](TRAPID_TEACHER.md#51-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
-
----
 
 ## RULE #6.2: Live Profit Calculation - Dynamic Not Cached
 
@@ -1455,14 +1193,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Cache profit values (they change with every PO update)
 - Use stale profit calculations
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §5.2](TRAPID_TEACHER.md#52-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
-
----
 
 ## RULE #6.3: Task Dependencies - No Circular References
 
@@ -1481,14 +1214,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip circular dependency validation
 - Allow self-dependencies (task depending on itself)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §5.3](TRAPID_TEACHER.md#53-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
-
----
 
 ## RULE #6.4: Task Status Transitions - Automatic Date Setting
 
@@ -1507,14 +1235,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Allow `in_progress` without actual_start_date
 - Manually set these dates in controller
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §5.4](TRAPID_TEACHER.md#54-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
-
----
 
 ## RULE #6.5: Task Spawning - Status-Based Child Task Creation
 
@@ -1535,14 +1258,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Spawn tasks without checking schedule_template_row configuration
 - Skip TaskSpawner service
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §5.5](TRAPID_TEACHER.md#55-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
-
----
 
 ## RULE #6.6: Schedule Cascade - Dependency-Based Date Propagation
 
@@ -1564,14 +1282,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Override manually_positioned tasks
 - Cascade to different projects
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §5.6](TRAPID_TEACHER.md#56-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
-
----
 
 ## RULE #6.7: OneDrive Folder Creation - Async with Status Tracking
 
@@ -1593,14 +1306,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Create duplicate folders
 - Fail silently without updating status
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §5.7](TRAPID_TEACHER.md#57-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
-
----
 
 ## RULE #6.8: Schedule Template Instantiation - All-or-Nothing Transaction
 
@@ -1620,24 +1328,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Leave orphaned tasks if dependencies fail
 - Continue after validation errors
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §5.8](TRAPID_TEACHER.md#58-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
-
----
 
 # Chapter 7: Estimates & Quoting
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch7    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch7    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch7 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #7.1: Fuzzy Job Matching - Three-Tier Confidence Thresholds
 
@@ -1659,14 +1356,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Match without normalizing strings (lowercase, trim, remove special chars)
 - Allow duplicate auto-matches
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §6.1](TRAPID_TEACHER.md#61-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
-
----
 
 ## RULE #7.2: External API Key Security - SHA256 Hashing Only
 
@@ -1687,14 +1379,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Return API keys in API responses
 - Use reversible encryption (one-way hash only)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §6.2](TRAPID_TEACHER.md#62-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
-
----
 
 ## RULE #7.3: Estimate Import - Validate Before Auto-Matching
 
@@ -1715,14 +1402,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip validation on external API endpoint
 - Create estimate with nil or zero quantities
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §6.3](TRAPID_TEACHER.md#63-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
-
----
 
 ## RULE #7.4: PO Generation from Estimate - Transaction Safety
 
@@ -1743,14 +1425,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Continue after critical errors
 - Create POs without line items
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §6.4](TRAPID_TEACHER.md#64-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
-
----
 
 ## RULE #7.5: AI Plan Review - Async Processing Required
 
@@ -1771,14 +1448,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip background job for "small" reviews
 - Leave review in `processing` status indefinitely
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §6.5](TRAPID_TEACHER.md#65-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
-
----
 
 ## RULE #7.6: Line Item Categorization - Normalized Category Matching
 
@@ -1799,14 +1471,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Create separate POs for "Electrical" and "electrical"
 - Fail import if category is missing
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §6.6](TRAPID_TEACHER.md#66-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
-
----
 
 ## RULE #7.7: Estimate Status State Machine - Strict Transitions
 
@@ -1827,24 +1494,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Change status back from `imported` to `pending`
 - Allow PO generation from `pending` status
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §6.7](TRAPID_TEACHER.md#67-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
-
----
 
 # Chapter 8: AI Plan Review
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch8    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch8    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch8 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #8.1: Estimate Must Be Matched to Construction
 
@@ -1861,14 +1517,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Allow AI review on unmatched estimates
 - Start review without construction context
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §7.1](TRAPID_TEACHER.md#71-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
-
----
 
 ## RULE #8.2: OneDrive Plan Folder Structure
 
@@ -1883,14 +1534,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Use different folder names without updating constant
 - Skip folder validation
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §7.2](TRAPID_TEACHER.md#72-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
-
----
 
 ## RULE #8.3: PDF File Size Limit
 
@@ -1908,14 +1554,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Download large files unnecessarily
 - Proceed without plan documents
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §7.3](TRAPID_TEACHER.md#73-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
-
----
 
 ## RULE #8.4: Async Processing with Background Jobs
 
@@ -1934,14 +1575,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Block HTTP request waiting for Claude API response
 - Assume review completes instantly
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §7.4](TRAPID_TEACHER.md#74-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
-
----
 
 ## RULE #8.5: Claude API Model and Prompt Structure
 
@@ -1962,14 +1598,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Omit response format instructions
 - Exceed token limits with oversized prompts
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §7.5](TRAPID_TEACHER.md#75-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
-
----
 
 ## RULE #8.6: Discrepancy Detection Logic
 
@@ -1989,14 +1620,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Ignore category in matching (causes false positives)
 - Use < 10% threshold for mismatches (too strict)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §7.6](TRAPID_TEACHER.md#76-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
-
----
 
 ## RULE #8.7: Confidence Score Calculation
 
@@ -2018,14 +1644,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Use equal penalty weights for all discrepancy types
 - Skip confidence calculation
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §7.7](TRAPID_TEACHER.md#77-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
-
----
 
 ## RULE #8.8: Error Handling and Status Updates
 
@@ -2048,14 +1669,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Expose sensitive error details to client
 - Retry automatically without user intervention
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §7.8](TRAPID_TEACHER.md#78-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
-
----
 
 ## RULE #8.9: Prevent Duplicate Processing Reviews
 
@@ -2072,24 +1688,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Allow concurrent reviews on same estimate
 - Overwrite existing processing review
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §7.9](TRAPID_TEACHER.md#79-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
-
----
 
 # Chapter 9: Purchase Orders
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch9    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch9    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch9 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #9.1: PO Number Generation - Race Condition Protection
 
@@ -2101,14 +1706,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS use `pg_advisory_xact_lock` in transaction**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §8.1](TRAPID_TEACHER.md#81-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
 
 ## RULE #9.2: Status State Machine
 
@@ -2120,14 +1720,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS validate transitions**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §8.2](TRAPID_TEACHER.md#82-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
 
 ## RULE #9.3: Payment Status Calculation
 
@@ -2139,14 +1734,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS use `determine_payment_status(amount)`**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §8.3](TRAPID_TEACHER.md#83-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
 
 ## RULE #9.4: Smart Lookup - Supplier Selection Priority
 
@@ -2158,14 +1748,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS use SmartPoLookupService priority cascade**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §8.4](TRAPID_TEACHER.md#84-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
 
 ## RULE #9.5: Line Items - Totals Calculation
 
@@ -2177,14 +1762,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS use `before_save` callback**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §8.5](TRAPID_TEACHER.md#85-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
 
 ## RULE #9.6: Schedule Task Linking
 
@@ -2196,14 +1776,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS use transaction for task linking**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §8.6](TRAPID_TEACHER.md#86-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
 
 ## RULE #9.7: Price Drift Monitoring
 
@@ -2215,24 +1790,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS calculate drift percentage**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §8.7](TRAPID_TEACHER.md#87-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
 
 # Chapter 10: Gantt & Schedule Master
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch10    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch10    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch10 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #10.1: Predecessor ID Conversion
 
@@ -2244,27 +1808,16 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS convert:** `predecessor_id = sequence_order + 1`
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.1](TRAPID_TEACHER.md#91-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
 
 ## RULE #10.10: Cascade Triggers
 
 📖 Rule
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.10](TRAPID_TEACHER.md#910-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
 
 ## RULE #10.11: Debounced Render Pattern
 
@@ -2276,14 +1829,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS use debounced render:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.11](TRAPID_TEACHER.md#911-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
 
 ## RULE #10.12: Column Documentation - CC_UPDATE Table
 
@@ -2295,14 +1843,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS update NewFeaturesTab.jsx when column implementation changes**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.12](TRAPID_TEACHER.md#912-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
 
 ## RULE #10.2: isLoadingData Lock Timing
 
@@ -2314,14 +1857,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS reset in useEffect with 1000ms timeout**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.2](TRAPID_TEACHER.md#92-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
 
 ## RULE #10.3: Company Settings - Working Days & Timezone
 
@@ -2333,14 +1871,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS read from:** `company_settings.working_days` and `company_settings.timezone`
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.3](TRAPID_TEACHER.md#93-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
 
 ## RULE #10.4: Lock Hierarchy
 
@@ -2352,14 +1885,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS check all 5 locks before cascade**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.4](TRAPID_TEACHER.md#94-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
 
 ## RULE #10.5: Task Heights Configuration
 
@@ -2371,14 +1899,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ❌ **NEVER have mismatched height values**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.5](TRAPID_TEACHER.md#95-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
 
 ## RULE #10.6: Auto-Scheduling
 
@@ -2390,14 +1913,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS set:** `gantt.config.auto_scheduling = false`
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.6](TRAPID_TEACHER.md#96-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
 
 ## RULE #10.7: API Pattern - Single Update + Cascade Response
 
@@ -2409,14 +1927,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS use:** Single update + cascade response pattern
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.7](TRAPID_TEACHER.md#97-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
 
 ## RULE #10.8: useRef Anti-Loop Flags
 
@@ -2426,14 +1939,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST use all 7 useRef flags correctly:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.8](TRAPID_TEACHER.md#98-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
 
 ## RULE #10.9: Predecessor Format
 
@@ -2445,24 +1953,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS include predecessor_ids in every update**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.9](TRAPID_TEACHER.md#99-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
 
 # Chapter 11: Project Tasks & Checklists
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch11    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch11    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch11 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #11.1: Task Status Lifecycle & Automatic Date Updates
 
@@ -2477,14 +1974,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Overwrite existing actual dates when status changes again
 - Leave progress_percentage < 100 when status is complete
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.1](TRAPID_TEACHER.md#101-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
-
----
 
 ## RULE #11.10: Duration Days Validation
 
@@ -2500,14 +1992,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip duration validation on updates
 - Use decimal durations (always integer days)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.10](TRAPID_TEACHER.md#1010-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
-
----
 
 ## RULE #11.11: Tags System for Flexible Categorization
 
@@ -2525,14 +2012,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip GIN index (queries will be slow)
 - Use tags for data that should be proper associations (e.g., don't tag "assigned_to_john", use assigned_to FK)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.11](TRAPID_TEACHER.md#1011-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
-
----
 
 ## RULE #11.2: Task Dependencies & Circular Dependency Prevention
 
@@ -2548,14 +2030,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Allow cross-project dependencies
 - Allow duplicate dependencies (same predecessor + successor pair)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.2](TRAPID_TEACHER.md#102-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
-
----
 
 ## RULE #11.3: Automatic Task Spawning from Templates
 
@@ -2573,14 +2050,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Create circular parent-child relationships
 - Skip sequence ordering for subtasks (causes display chaos)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.3](TRAPID_TEACHER.md#103-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
-
----
 
 ## RULE #11.4: Supervisor Checklist Template-to-Instance Flow
 
@@ -2596,14 +2068,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip category validation (required for filtering)
 - Store User FK for completed_by (store username string for flexibility)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.4](TRAPID_TEACHER.md#104-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
-
----
 
 ## RULE #11.5: Response Type Validation & Photo Upload
 
@@ -2621,14 +2088,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip folder organization in Cloudinary (use job-specific folders)
 - Allow checklist item updates after completion (completed_at is immutable)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.5](TRAPID_TEACHER.md#105-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
-
----
 
 ## RULE #11.6: Auto-Complete Predecessors Feature
 
@@ -2646,14 +2108,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Allow infinite recursion (predecessors don't trigger their own predecessors)
 - Auto-complete milestones (they should be explicitly completed)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.6](TRAPID_TEACHER.md#106-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
-
----
 
 ## RULE #11.7: Materials Status Calculation
 
@@ -2671,14 +2128,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Allow task to start if materials_status = 'delayed' (warn user)
 - Skip materials check during schedule cascade calculations
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.7](TRAPID_TEACHER.md#107-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
-
----
 
 ## RULE #11.8: Sequence Order for Task Display
 
@@ -2696,37 +2148,20 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Use sequence > 9.9 for subtasks (use 9 or fewer subtasks per parent)
 - Resort entire project when adding one task (use smart insertion)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.8](TRAPID_TEACHER.md#108-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
-
----
 
 ## RULE #11.9: Task Update Audit Trail
 
 📖 Rule
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.9](TRAPID_TEACHER.md#109-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
-
----
 
 # Chapter 12: Weather & Public Holidays
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch12    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch12    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch12 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #12.1: Unique Holidays Per Region
 
@@ -2744,14 +2179,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Use inconsistent region codes
 - Store holidays with time components
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §11.1](TRAPID_TEACHER.md#111-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
-
----
 
 ## RULE #12.2: Rain Log - One Entry Per Construction Per Day
 
@@ -2769,14 +2199,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Override existing automatic logs without checking source
 - Allow future-dated rain logs
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §11.2](TRAPID_TEACHER.md#112-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
-
----
 
 ## RULE #12.3: Rainfall Severity Auto-Calculation
 
@@ -2799,14 +2224,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Use different thresholds without updating constants
 - Skip calculation for automatic entries
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §11.3](TRAPID_TEACHER.md#113-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
-
----
 
 ## RULE #12.4: Manual Rain Logs Require Notes
 
@@ -2824,14 +2244,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip audit trail for manual modifications
 - Allow automatic entries to have editable notes
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §11.4](TRAPID_TEACHER.md#114-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
-
----
 
 ## RULE #12.5: Weather API - Historical Data Only
 
@@ -2849,14 +2264,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Use weather forecasts (not historical data)
 - Proceed with API call if date validation fails
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §11.5](TRAPID_TEACHER.md#115-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
-
----
 
 ## RULE #12.6: Location Extraction Priority
 
@@ -2871,14 +2281,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Fail silently if location cannot be determined
 - Use company address as fallback (wrong location)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §11.6](TRAPID_TEACHER.md#116-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
-
----
 
 ## RULE #12.7: Gantt Integration - Working Day Calculation
 
@@ -2898,14 +2303,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Override locked task dates
 - Use different holiday lookups across services
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §11.7](TRAPID_TEACHER.md#117-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
-
----
 
 ## RULE #12.8: Weather API Response Storage
 
@@ -2924,24 +2324,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Discard API response after extraction
 - Modify API response before storage
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §11.8](TRAPID_TEACHER.md#118-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
-
----
 
 # Chapter 13: OneDrive Integration
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch13    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch13    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch13 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #13.1: Organization-Wide Authentication
 
@@ -2953,14 +2342,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS store single credential for entire organization**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §12.1](TRAPID_TEACHER.md#121-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
-
----
 
 ## RULE #13.2: Folder Template System
 
@@ -2972,14 +2356,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS respect template customizations**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §12.2](TRAPID_TEACHER.md#122-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
-
----
 
 ## RULE #13.3: Root Folder Management
 
@@ -2991,14 +2370,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS use `root_folder_id` from credential**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §12.3](TRAPID_TEACHER.md#123-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
-
----
 
 ## RULE #13.4: Pricebook Image Sync
 
@@ -3010,14 +2384,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS upload to Cloudinary after OneDrive upload**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §12.4](TRAPID_TEACHER.md#124-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
-
----
 
 ## RULE #13.5: File Upload Chunking
 
@@ -3029,24 +2398,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS use resumable upload session**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §12.5](TRAPID_TEACHER.md#125-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
-
----
 
 # Chapter 14: Outlook/Email Integration
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch14    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch14    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch14 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #14.1: Organization-Wide Singleton OAuth Credential
 
@@ -3064,14 +2422,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Let tokens expire without auto-refresh
 - Hardcode token expiration buffer (always use 5-minute safety margin)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §13.1](TRAPID_TEACHER.md#131-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
-
----
 
 ## RULE #14.2: Four-Strategy Email-to-Job Matching
 
@@ -3089,14 +2442,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Auto-assign to wrong construction (false positive worse than nil)
 - Allow email creation without attempting match
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §13.2](TRAPID_TEACHER.md#132-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
-
----
 
 ## RULE #14.3: Microsoft Graph API Usage Pattern
 
@@ -3114,14 +2462,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip $select parameter (bandwidth waste - emails can be large)
 - Use synchronous API calls without pagination
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §13.3](TRAPID_TEACHER.md#133-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
-
----
 
 ## RULE #14.4: Email Threading Support via Message-ID
 
@@ -3138,14 +2481,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip message_id extraction (breaks threading)
 - Store references as array (use text with space-separated values per RFC 2822)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §13.4](TRAPID_TEACHER.md#134-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
-
----
 
 ## RULE #14.5: Webhook Support for Email Services
 
@@ -3160,37 +2498,20 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Skip duplicate detection (check message_id uniqueness)
 - Process webhook synchronously (use background job for heavy parsing)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §13.5](TRAPID_TEACHER.md#135-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
-
----
 
 ## RULE #14.6: Inbound-Only Architecture (Current Limitation)
 
 📖 Rule
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §13.6](TRAPID_TEACHER.md#136-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
-
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
-
----
 
 # Chapter 15: Chat & Communications
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch15    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch15    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch15 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #15.1: ChatMessage Multi-Channel Architecture
 
@@ -3202,14 +2523,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST route messages correctly:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §14.1](TRAPID_TEACHER.md#141-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
-
----
 
 ## RULE #15.10: Authentication Placeholder - CRITICAL TODO
 
@@ -3224,14 +2540,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Hardcoded user IDs
 - Session-less chat without auth
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §14.10](TRAPID_TEACHER.md#1410-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
-
----
 
 ## RULE #15.2: Message-to-Job Linking
 
@@ -3245,14 +2556,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST allow bulk conversation saving:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §14.2](TRAPID_TEACHER.md#142-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
-
----
 
 ## RULE #15.3: SMS Twilio Integration
 
@@ -3266,14 +2572,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST support Australian phone formats:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §14.3](TRAPID_TEACHER.md#143-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
-
----
 
 ## RULE #15.4: SMS Status Tracking
 
@@ -3287,14 +2588,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST show status icons:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §14.4](TRAPID_TEACHER.md#144-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
-
----
 
 ## RULE #15.5: Unread Message Tracking
 
@@ -3308,14 +2604,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST poll for unread count:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §14.5](TRAPID_TEACHER.md#145-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
-
----
 
 ## RULE #15.6: Message Polling (No WebSockets)
 
@@ -3332,14 +2623,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - ActionCable not configured
 - All real-time updates via polling
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §14.6](TRAPID_TEACHER.md#146-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
-
----
 
 ## RULE #15.7: Contact-SMS Fuzzy Matching
 
@@ -3349,14 +2635,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST support partial phone matches:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §14.7](TRAPID_TEACHER.md#147-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
-
----
 
 ## RULE #15.8: Message Deletion Authorization
 
@@ -3371,14 +2652,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Bulk message deletion without ownership check
 - Deletion of messages saved to jobs without audit trail
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §14.8](TRAPID_TEACHER.md#148-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
-
----
 
 ## RULE #15.9: Email Ingestion Storage
 
@@ -3390,24 +2666,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST include fields:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §14.9](TRAPID_TEACHER.md#149-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
-
----
 
 # Chapter 16: Xero Accounting Integration
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch16    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch16    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch16 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #16.1: OAuth Token Management
 
@@ -3419,14 +2684,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS encrypt tokens using ActiveRecord Encryption**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §15.1](TRAPID_TEACHER.md#151-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
-
----
 
 ## RULE #16.2: Two-Way Contact Sync
 
@@ -3440,14 +2700,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS update `last_synced_at` timestamp**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §15.2](TRAPID_TEACHER.md#152-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
-
----
 
 ## RULE #16.3: Invoice Matching
 
@@ -3461,14 +2716,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS store `xero_invoice_id` on PurchaseOrder**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §15.3](TRAPID_TEACHER.md#153-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
-
----
 
 ## RULE #16.4: Webhook Signature Verification
 
@@ -3480,14 +2730,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS use `XERO_WEBHOOK_KEY` from environment**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §15.4](TRAPID_TEACHER.md#154-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
-
----
 
 ## RULE #16.5: Rate Limiting & Error Handling
 
@@ -3501,14 +2746,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS log failed requests for debugging**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §15.5](TRAPID_TEACHER.md#155-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
-
----
 
 ## RULE #16.6: Tax Rates & Chart of Accounts
 
@@ -3520,14 +2760,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS fetch from Xero and cache locally**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §15.6](TRAPID_TEACHER.md#156-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
-
----
 
 ## RULE #16.7: Background Job Processing
 
@@ -3541,14 +2776,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS provide job progress tracking**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §15.7](TRAPID_TEACHER.md#157-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
-
----
 
 ## RULE #16.8: Payment Sync Workflow
 
@@ -3560,24 +2790,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **ALWAYS link Payment to PurchaseOrder**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §15.8](TRAPID_TEACHER.md#158-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
-
----
 
 # Chapter 17: Payments & Financials
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch17    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch17    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch17 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #17.1: Payment Model Structure
 
@@ -3589,14 +2808,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST use DECIMAL(15,2) for precision:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §16.1](TRAPID_TEACHER.md#161-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
-
----
 
 ## RULE #17.10: Cascade Delete Payments
 
@@ -3611,14 +2825,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Payment without PO is meaningless
 - Use `dependent: :destroy` not `dependent: :nullify`
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §16.10](TRAPID_TEACHER.md#1610-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
-
----
 
 ## RULE #17.2: Automatic Payment Status Updates
 
@@ -3630,14 +2839,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST define payment status states:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §16.2](TRAPID_TEACHER.md#162-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
-
----
 
 ## RULE #17.3: Xero Invoice Fuzzy Matching
 
@@ -3649,14 +2853,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST update PO with invoice data:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §16.3](TRAPID_TEACHER.md#163-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
-
----
 
 ## RULE #17.4: Xero Payment Sync
 
@@ -3666,14 +2865,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST validate and sync:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §16.4](TRAPID_TEACHER.md#164-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
-
----
 
 ## RULE #17.5: Payment Method Enum
 
@@ -3685,14 +2879,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST provide method selector:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §16.5](TRAPID_TEACHER.md#165-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
-
----
 
 ## RULE #17.6: Financial Precision with DECIMAL(15,2)
 
@@ -3709,14 +2898,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Example: `0.1 + 0.2 = 0.30000000000000004` (FLOAT)
 - DECIMAL: `0.10 + 0.20 = 0.30` (exact)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §16.6](TRAPID_TEACHER.md#166-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
-
----
 
 ## RULE #17.7: Payment Status Badge Display
 
@@ -3726,14 +2910,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST use semantic colors:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §16.7](TRAPID_TEACHER.md#167-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
-
----
 
 ## RULE #17.8: Payment Summary Calculation
 
@@ -3745,14 +2924,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST show summary prominently:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §16.8](TRAPID_TEACHER.md#168-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
-
----
 
 ## RULE #17.9: Budget Variance Tracking
 
@@ -3764,24 +2938,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST highlight overages:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §16.9](TRAPID_TEACHER.md#169-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
-
----
 
 # Chapter 18: Workflows & Automation
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch18    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch18    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch18 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #18.1: Solid Queue Background Job System
 
@@ -3793,14 +2956,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST inherit from ApplicationJob:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §17.1](TRAPID_TEACHER.md#171-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
-
----
 
 ## RULE #18.2: Workflow State Machine
 
@@ -3812,14 +2970,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST auto-advance on step completion:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §17.2](TRAPID_TEACHER.md#172-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
-
----
 
 ## RULE #18.3: Idempotent Background Jobs
 
@@ -3831,14 +2984,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST verify record doesn't exist:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §17.3](TRAPID_TEACHER.md#173-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
-
----
 
 ## RULE #18.4: Price Update Automation
 
@@ -3848,14 +2996,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST implement price application:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §17.4](TRAPID_TEACHER.md#174-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
-
----
 
 ## RULE #18.5: Model Callback Automation
 
@@ -3869,14 +3012,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST track changes:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §17.5](TRAPID_TEACHER.md#175-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
-
----
 
 ## RULE #18.6: Job Status Tracking
 
@@ -3888,14 +3026,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST show percentage:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §17.6](TRAPID_TEACHER.md#176-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
-
----
 
 ## RULE #18.7: Batch Processing with Rate Limiting
 
@@ -3905,14 +3038,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST batch and throttle:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §17.7](TRAPID_TEACHER.md#177-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
-
----
 
 ## RULE #18.8: Workflow Metadata Storage
 
@@ -3924,24 +3052,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST collect metadata:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §17.8](TRAPID_TEACHER.md#178-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
-
----
 
 # Chapter 19: Custom Tables & Formulas
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch19    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch19    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch19 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #19.1: Dynamic Table Creation Pattern
 
@@ -3958,14 +3075,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 - Allow reserved names: `["user", "users", "table", "tables", "column", "columns", "record", "records"]`
 - Reuse database_table_name across tables
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §18.1](TRAPID_TEACHER.md#181-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
 
 ## RULE #19.2: Column Type System
 
@@ -3977,14 +3089,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST use TableBuilder for physical schema changes:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §18.2](TRAPID_TEACHER.md#182-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
 
 ## RULE #19.3: Formula Evaluation System
 
@@ -3998,14 +3105,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST flag columns with cross-table refs:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §18.3](TRAPID_TEACHER.md#183-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
 
 ## RULE #19.4: Lookup Column Pattern
 
@@ -4019,14 +3121,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST return id + display value:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §18.4](TRAPID_TEACHER.md#184-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
 
 ## RULE #19.5: Record CRUD with Formula Calculation
 
@@ -4038,14 +3135,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST transform computed values on read:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §18.5](TRAPID_TEACHER.md#185-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
 
 ## RULE #19.6: Table Deletion Safety
 
@@ -4057,14 +3149,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST drop database table:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §18.6](TRAPID_TEACHER.md#186-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
 
 ## RULE #19.7: Column Validation Rules
 
@@ -4076,14 +3163,9 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ✅ **MUST validate record data before save:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §18.7](TRAPID_TEACHER.md#187-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
 
 ## RULE #19.8: Foreign Key Constraints
 
@@ -4095,24 +3177,13 @@ Section numbers are used for sorting, filtering, and API queries. Adding letters
 
 ❌ **NEVER use on_delete: :cascade** for lookup columns (data loss risk)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §18.8](TRAPID_TEACHER.md#188-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
 
 # Chapter 20: UI/UX Standards & Patterns
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch20    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch20    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch20 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 20:54 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #20.1: Checkbox Column Must Be First, Locked, Minimal Size
 
@@ -4122,9 +3193,6 @@ The first column MUST be a checkbox for row selection with locked position and m
 
 Width: 32px (minimal size to fit checkbox). Padding: px-1 (minimal horizontal padding). Non-resizable (locked size). Non-reorderable (always first). Centered alignment (header and cells).
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.10: Column Visibility Standards
 
@@ -4132,14 +3200,9 @@ Width: 32px (minimal size to fit checkbox). Padding: px-1 (minimal horizontal pa
 
 ✅ MUST
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.10](TRAPID_TEACHER.md#1910-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.11: Search & Filter UI Standards
 
@@ -4147,14 +3210,9 @@ Width: 32px (minimal size to fit checkbox). Padding: px-1 (minimal horizontal pa
 
 ✅ MUST
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.11](TRAPID_TEACHER.md#1911-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.12: Empty States
 
@@ -4164,14 +3222,9 @@ Width: 32px (minimal size to fit checkbox). Padding: px-1 (minimal horizontal pa
 
 ✅ **MUST differentiate:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.12](TRAPID_TEACHER.md#1912-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.13: State Persistence Standards
 
@@ -4186,14 +3239,9 @@ Width: 32px (minimal size to fit checkbox). Padding: px-1 (minimal horizontal pa
 - Persist without try/catch
 - Forget defaults
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.13](TRAPID_TEACHER.md#1913-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.14: Sorting Standards
 
@@ -4205,14 +3253,9 @@ Width: 32px (minimal size to fit checkbox). Padding: px-1 (minimal horizontal pa
 - Primary/secondary sort
 - 3-state cycle: asc → desc → none
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.14](TRAPID_TEACHER.md#1914-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.15: Dark Mode Requirements
 
@@ -4224,14 +3267,9 @@ Width: 32px (minimal size to fit checkbox). Padding: px-1 (minimal horizontal pa
 - Use light-mode-only colors
 - Use pure white/black (use gray-50/gray-900)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.15](TRAPID_TEACHER.md#1915-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.16: Performance Standards
 
@@ -4248,14 +3286,9 @@ Width: 32px (minimal size to fit checkbox). Padding: px-1 (minimal horizontal pa
 - Filter/sort without memoization
 - Create inline functions in map()
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.16](TRAPID_TEACHER.md#1916-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.17: Accessibility Standards
 
@@ -4271,14 +3304,9 @@ Width: 32px (minimal size to fit checkbox). Padding: px-1 (minimal horizontal pa
 - Semantic HTML (`<table>`, `<thead>`, `<tbody>`)
 - `sr-only` text for icons
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.17](TRAPID_TEACHER.md#1917-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.18: Table Container Must Have Visible Borders On All Sides
 
@@ -4288,9 +3316,6 @@ Table container MUST have visible borders on all four sides (top, right, bottom,
 
 Full border on all four sides of table container. Border color: gray-200 (dark: gray-700). Horizontal margin (mx-4) to align with search bar above. Borders frame the entire table content including top and bottom. Creates a complete bordered box around the table.
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.19: Native Browser Scrollbars Styled With Blue Theme
 
@@ -4300,9 +3325,6 @@ Native browser scrollbars MUST be styled with blue theme matching the header col
 
 Light mode: Track #E0E7FF (light blue), Thumb #2563EB (blue-600 matching header), Hover #1D4ED8. Dark mode: Track #1E293B (dark slate), Thumb #1E40AF (blue-800), Hover #1E3A8A. Removed sticky horizontal scrollbar due to duplicate display issue.
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.2: Table Header Requirements
 
@@ -4310,14 +3332,9 @@ Light mode: Track #E0E7FF (light blue), Thumb #2563EB (blue-600 matching header)
 
 ✅ MUST
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.2](TRAPID_TEACHER.md#192-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.20: Search Functionality Standards
 
@@ -4325,14 +3342,9 @@ Light mode: Track #E0E7FF (light blue), Thumb #2563EB (blue-600 matching header)
 
 ✅ MUST
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.20](TRAPID_TEACHER.md#1920-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.21: Form Standards
 
@@ -4346,14 +3358,9 @@ Light mode: Track #E0E7FF (light blue), Thumb #2563EB (blue-600 matching header)
 - Focus states (indigo ring)
 - Error state styling
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.21](TRAPID_TEACHER.md#1921-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.22: Table headers MUST provide visual cursor feedback
 
@@ -4363,9 +3370,6 @@ All interactive table header elements must display appropriate cursor styles to 
 
 Column headers that support resizing must show col-resize cursor. Drag handles (three-dot icons) must show grab cursor when hovering and grabbing when dragging. Sortable headers must show pointer cursor.
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.23: Table headers and content MUST use differentiated font sizes
 
@@ -4375,9 +3379,6 @@ Table headers must use 18px bold font. Table rows must use 14px regular font. Bo
 
 Header font: 18px bold weight for visual hierarchy and emphasis. Row font: 14px regular weight for optimal data density and readability. Font family must use system font stack: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif. Apply styles inline for maximum specificity.
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.24: Loading State Standards
 
@@ -4385,14 +3386,9 @@ Header font: 18px bold weight for visual hierarchy and emphasis. Row font: 14px 
 
 ✅ MUST
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.24](TRAPID_TEACHER.md#1924-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.25: Content and Title columns MUST be clickable to view full details
 
@@ -4402,9 +3398,6 @@ Only the Content and Title columns should open a modal when clicked. Other colum
 
 Modal opens ONLY when clicking Content or Title cells - these are the columns with truncated data. Click handlers with stopPropagation prevent modal on other columns. Cursor pointer only appears on Content and Title columns. Select column checkboxes and Action buttons remain functional without opening modal.
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.26: Status Badge Standards
 
@@ -4412,14 +3405,9 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 
 ✅ MUST
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.26](TRAPID_TEACHER.md#1926-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.27: Empty State Standards
 
@@ -4429,14 +3417,9 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 
 ✅ **MUST differentiate:**
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.27](TRAPID_TEACHER.md#1927-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.28: Navigation Standards
 
@@ -4444,14 +3427,9 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 
 ✅ MUST
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.28](TRAPID_TEACHER.md#1928-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.29: Chapter 19 Documentation Maintenance (REQUIRED)
 
@@ -4473,14 +3451,9 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 - Skip timestamp update
 - Forget to commit Bible with code
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.29](TRAPID_TEACHER.md#1929-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.3: Column Search/Filter Requirements (REQUIRED)
 
@@ -4488,14 +3461,9 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 
 ✅ MUST
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.3](TRAPID_TEACHER.md#193-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.30: Touch Target Sizes & Click Areas
 
@@ -4508,14 +3476,9 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 - Place elements closer than 8px
 - Assume mouse users only
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.30](TRAPID_TEACHER.md#1930-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.31: Data-Dense Table Layout Pattern
 
@@ -4532,14 +3495,9 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 - Use spacious padding (`py-6`) for data-dense tables
 - Skip expansion mechanism for truncated content
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.31](TRAPID_TEACHER.md#1931-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.32: Zebra Striping (Alternating Row Colors)
 
@@ -4557,14 +3515,9 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 - Remove zebra on hover (both should be visible)
 - Use zebra on narrow tables (< 5 columns)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.32](TRAPID_TEACHER.md#1932-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.33: Sticky Horizontal Scrollbar Pattern
 
@@ -4608,12 +3561,6 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 - [ ] Table has `minWidth` based on sum of column widths
 - [ ] Default column widths ensure horizontal overflow on most screens
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.33](TRAPID_TEACHER.md#1933-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19, §19.33](TRAPID_LEXICON.md)
-
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.34: Modern Table Header Aesthetics
 
@@ -4632,14 +3579,9 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 - Use heavy font weights (`font-bold`, `font-semibold`)
 - Use bright or saturated header colors
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.34](TRAPID_TEACHER.md#1934-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.35: Table Border Framing
 
@@ -4657,14 +3599,9 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 - Use incomplete framing (border-b or border-t only)
 - Apply borders to container div instead of table element
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.35](TRAPID_TEACHER.md#1935-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.36: Expand/Collapse Row Details Pattern
 
@@ -4684,14 +3621,9 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 - Skip colSpan (content constrained to first column)
 - Forget click event propagation on nested elements
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.36](TRAPID_TEACHER.md#1936-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.37: Column Visibility Toggle (REQUIRED)
 
@@ -4704,14 +3636,9 @@ Modal opens ONLY when clicking Content or Title cells - these are the columns wi
 - Hide actions column
 - Forget localStorage persistence
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.5A](TRAPID_TEACHER.md#195a-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.38: Cascading Filter Pattern
 
@@ -4745,17 +3672,12 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 - Forget to reset downstream filters when upstream changes
 - Make filters cascade backwards (right-to-left)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.38](TRAPID_TEACHER.md#1938-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 **Example (BibleTableView):**
 - User selects "Chapter 9" → Type filter shows: MUST (18), NEVER (5), PROTECTED (0 - disabled)
 - User selects "MUST" → Shows only 18 Chapter 9 MUST rules
 - User changes to "Chapter 19" → Type resets to "All", recalculates for Ch 19
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.39: Column Width Persistence (REQUIRED)
 
@@ -4763,14 +3685,9 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ✅ MUST
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.5B](TRAPID_TEACHER.md#195b-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.4: Column Resizing Standards
 
@@ -4778,14 +3695,9 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ✅ MUST
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.4](TRAPID_TEACHER.md#194-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.40: Table Toolbar Layout Standards (REQUIRED)
 
@@ -4799,14 +3711,9 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 - Stack toolbar vertically
 - Add gap between search and first button
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.11A](TRAPID_TEACHER.md#1911a-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.41: All Custom Action Buttons MUST Use h-[42px] Alignment
 
@@ -4814,8 +3721,6 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MUST use h-[42px] for perfect toolbar alignment with search bar and Columns button
 
-
----
 
 ## RULE #20.42: No Actions Column - Use Inline Bulk Actions Instead
 
@@ -4844,8 +3749,6 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 **Reference:** TrinityTableView.jsx removed Actions column, added inline bulk buttons
 
 
----
-
 ## RULE #20.5: Column Reordering Standards
 
 ❌ Never
@@ -4857,14 +3760,9 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 - Make drag handle sortable
 - Forget `e.stopPropagation()` on drag handle
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.5](TRAPID_TEACHER.md#195-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.6: Scroll Behavior Standards
 
@@ -4886,14 +3784,9 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 - Skip scroll sync between container and sticky scrollbar
 - Use inline scroll handlers without refs (performance issue)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.6](TRAPID_TEACHER.md#196-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.7: Column Width Standards
 
@@ -4905,14 +3798,9 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 - `<th>`: `style={{ width: `${width}px`, minWidth: `${width}px` }}`
 - `<td>`: `style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}`
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.7](TRAPID_TEACHER.md#197-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.8: Cell Content Standards
 
@@ -4920,14 +3808,9 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 
 ✅ MUST
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.8](TRAPID_TEACHER.md#198-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 ## RULE #20.9: Row Interaction Standards
 
@@ -4947,24 +3830,13 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 - Allow selection column to be hidden via visibility toggles
 - Allow selection column to be reordered (must stay leftmost)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.9](TRAPID_TEACHER.md#199-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
-
----
 
 # Chapter 21: Agent System & Automation
 
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch21    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch21    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch21 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 21:17 AEST
+**Last Updated:** 2025-11-17 22:19 AEST
 
 ## RULE #21.1: Agent Definitions Are Database-Driven
 
@@ -4985,14 +3857,9 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 - Modify `.claude/agents/*.md` files without updating database
 - Create agents without database entries
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.1](TRAPID_TEACHER.md#201-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
-
----
 
 ## RULE #21.10: Production Bug Hunter Agent
 
@@ -5011,8 +3878,6 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 8. Provides deployment recommendation
 
 
----
-
 ## RULE #21.11: Planning Collaborator Agent
 
 📚 Reference
@@ -5030,8 +3895,6 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 8. Suggests Bible chapter updates if new patterns emerge
 
 
----
-
 ## RULE #21.12: Trinity Sync Validator Agent
 
 📚 Reference
@@ -5047,8 +3910,6 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 6. Runs export_bible and export_lexicon if needed
 7. Reports sync status and any discrepancies found
 
-
----
 
 ## RULE #21.13: Backend Developer Agent
 
@@ -5066,8 +3927,6 @@ ALL custom action buttons in Trinity tables (Add, Import, Export, Sync, etc.) MU
 7. Documents changes in Lexicon with dev_note entries
 
 
----
-
 ## RULE #21.14: Run All Agents in Parallel
 
 📚 Reference
@@ -5079,8 +3938,6 @@ Launches Backend Developer, Frontend Developer, Production Bug Hunter, Gantt Bug
 
 Each agent runs independently and reports back with their findings. Use this for comprehensive project health checks and multi-area debugging.
 
-
----
 
 ## RULE #21.15: UI Compliance Auditor Agent
 
@@ -5103,8 +3960,6 @@ Each agent runs independently and reports back with their findings. Use this for
 12. Documents findings in Lexicon for future reference
 
 
----
-
 ## RULE #21.16: Frontend Developer Agent
 
 📚 Reference
@@ -5120,8 +3975,6 @@ Each agent runs independently and reports back with their findings. Use this for
 6. Runs npm build and fixes any ESLint/TypeScript errors
 7. Documents component changes and patterns in Lexicon
 
-
----
 
 ## RULE #21.17: Deploy Manager Agent
 
@@ -5140,8 +3993,6 @@ Each agent runs independently and reports back with their findings. Use this for
 8. Reports deployment status and any issues encountered
 
 
----
-
 ## RULE #21.18: Gantt Bug Hunter Agent
 
 📚 Reference
@@ -5158,8 +4009,6 @@ Each agent runs independently and reports back with their findings. Use this for
 7. Runs Gantt-specific diagnostic tests
 8. Documents any Gantt bugs found in Lexicon
 
-
----
 
 ## RULE #21.19: Modifying Existing Agents - Complete Checklist
 
@@ -5211,11 +4060,6 @@ Trinity.find_by(
 - Keep agent data in multiple places
 - Update only one location
 
-**📖 Implementation:** See Teacher §21.19
-**📕 Bug History:** See Lexicon Chapter 21
-
-
----
 
 ## RULE #21.2: Agent Invocation Protocol
 
@@ -5236,14 +4080,9 @@ Trinity.find_by(
 - Return vague error messages
 - Execute agents without user context
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.2](TRAPID_TEACHER.md#202-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
-
----
 
 ## RULE #21.3: Run History Tracking
 
@@ -5264,14 +4103,9 @@ Trinity.find_by(
 - Record runs for testing/debugging
 - Fake success/failure status
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.3](TRAPID_TEACHER.md#203-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
-
----
 
 ## RULE #21.4: Agent Types and Specialization
 
@@ -5292,14 +4126,9 @@ Trinity.find_by(
 - Skip documenting agent capabilities
 - Create agents without clear purpose
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.4](TRAPID_TEACHER.md#204-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
-
----
 
 ## RULE #21.5: Agent Priority and Display Order
 
@@ -5318,14 +4147,9 @@ Trinity.find_by(
 - Show inactive agents in main list
 - Change priority without reason
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.5](TRAPID_TEACHER.md#205-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
-
----
 
 ## RULE #21.6: Agent Shortcuts and Invocation
 
@@ -5344,14 +4168,9 @@ Trinity.find_by(
 - Skip documenting shortcuts
 - Create conflicting shortcuts
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.6](TRAPID_TEACHER.md#206-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
-
----
 
 ## RULE #21.7: Recently Run Check (Smart Testing)
 
@@ -5371,14 +4190,9 @@ Trinity.find_by(
 - Ignore failed runs in recency check
 - Use stale results without user awareness
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.7](TRAPID_TEACHER.md#207-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
-
----
 
 ## RULE #21.8: Shortcut Clarity - AgentShortcutsTab Updates
 
@@ -5400,14 +4214,9 @@ Trinity.find_by(
 - Use shortcuts that contradict agent definitions
 - Hardcode shortcuts outside the table
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.8](TRAPID_TEACHER.md#208-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
-
----
 
 ## RULE #21.9: Creating New Agents - Complete Checklist
 
@@ -5423,14 +4232,9 @@ Trinity.find_by(
 - Forget to add to the controllers fallback list
 - Miss updating the frontend component
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.9](TRAPID_TEACHER.md#209-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
 ---
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
-
----
 

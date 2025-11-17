@@ -137,16 +137,7 @@ namespace :trapid do
       content << ''
       content << "# Chapter #{chapter.chapter_number}: #{chapter.chapter_name}"
       content << ''
-      content << '┌─────────────────────────────────────────────────┐'
-      content << "│ 📖 BIBLE (RULES):     Chapter #{chapter.chapter_number.to_s.rjust(2)}               │"
-      content << "│ 📘 USER MANUAL (HOW): Chapter #{chapter.chapter_number.to_s.rjust(2)}               │"
-      content << '└─────────────────────────────────────────────────┘'
-      content << ''
-      content << '**Audience:** Claude Code + Human Developers'
-      content << '**Purpose:** Bug history, architecture decisions, and test catalog'
       content << "**Last Updated:** #{Time.current.strftime('%Y-%m-%d')}"
-      content << ''
-      content << '---'
       content << ''
 
       # Get Lexicon entries for this chapter only
@@ -493,16 +484,7 @@ namespace :trapid do
       content << ''
       content << "# Chapter #{chapter.chapter_number}: #{chapter.chapter_name}"
       content << ''
-      content << '┌─────────────────────────────────────────────────┐'
-      content << "│ 📖 BIBLE (RULES):     Chapter #{chapter.chapter_number.to_s.rjust(2)}               │"
-      content << "│ 📕 LEXICON (BUGS):    Chapter #{chapter.chapter_number.to_s.rjust(2)}               │"
-      content << '└─────────────────────────────────────────────────┘'
-      content << ''
-      content << '**Audience:** Claude Code + Human Developers'
-      content << '**Purpose:** Code examples, implementation patterns, and step-by-step guides'
       content << "**Last Updated:** #{Time.current.strftime('%Y-%m-%d')}"
-      content << ''
-      content << '---'
       content << ''
 
       # Get Teacher entries for this chapter
@@ -585,7 +567,6 @@ namespace :trapid do
           content << ''
         end
 
-        content << '---'
         content << ''
       end
     end
