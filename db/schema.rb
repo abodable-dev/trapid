@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_17_141640) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_17_200115) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -602,6 +602,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_141640) do
     t.index ["session_key"], name: "index_import_sessions_on_session_key", unique: true
     t.index ["status"], name: "index_import_sessions_on_status"
     t.index ["table_id"], name: "index_import_sessions_on_table_id"
+  end
+
+  create_table "inspiring_quotes", force: :cascade do |t|
+    t.text "quote", null: false
+    t.string "author"
+    t.string "category"
+    t.boolean "is_active", default: true, null: false
+    t.integer "display_order", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "aussie_slang"
+    t.index ["display_order"], name: "index_inspiring_quotes_on_display_order"
+    t.index ["is_active"], name: "index_inspiring_quotes_on_is_active"
   end
 
   create_table "maintenance_requests", force: :cascade do |t|
