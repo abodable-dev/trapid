@@ -1,7 +1,7 @@
 # TRAPID TEACHER - Implementation Patterns & Code Examples
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-17 21:47 AEST
+**Last Updated:** 2025-11-17 22:23 AEST
 **Authority Level:** Reference (HOW to implement Bible rules)
 **Audience:** Claude Code + Human Developers
 
@@ -81,16 +81,7 @@ This file contains **code examples and step-by-step guides** for implementing Tr
 
 # Chapter 1: Overview & System-Wide Rules
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  1               │
-│ 📕 LEXICON (BUGS):    Chapter  1               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §1.1: Trinity Documentation Update Workflow
 
@@ -119,7 +110,6 @@ How to add and update Trinity documentation entries
 ### 🧪 Testing Strategy
 Always verify entries appear in API after creation
 
----
 
 ## §1.2: Trinity Entry Types Quick Reference
 
@@ -152,7 +142,6 @@ Examples:
 - Step-by-step implementation guides
 - Best practices
 
----
 
 ## §1.3: Dropdown MD Type - Markdown Documentation for Dropdowns
 
@@ -202,21 +191,11 @@ Trinity.create!(
 - RULE #1.13: Single Source of Truth
 - Teacher entry types documentation
 
----
 
 
 # Chapter 2: Overview & System-Wide Rules
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  2               │
-│ 📕 LEXICON (BUGS):    Chapter  2               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §2.1: Lexicon Update Workflow - Database-Driven Documentation
 
@@ -268,7 +247,6 @@ DocumentationEntry.create!(
 )
 ```
 
----
 
 ## §2.10: Authentication & Contacts Quick Reference
 
@@ -282,7 +260,6 @@ Quick reference guide for authentication flows, contact CRUD operations, and com
 ### Recommendations
 Original file archived at: AUTH_AND_CONTACTS_QUICK_REFERENCE.md (12.1 KB)
 
----
 
 ## §2.11: JWT Token Handling Implementation
 
@@ -327,7 +304,6 @@ end
 
 ```
 
----
 
 ## §2.12: Password Complexity Validation
 
@@ -371,7 +347,6 @@ end
 
 ```
 
----
 
 ## §2.13: Role-Based Access Control
 
@@ -410,7 +385,6 @@ end
 
 ```
 
----
 
 ## §2.14: Password Reset Flow with Secure Tokens
 
@@ -452,7 +426,6 @@ end
 
 ```
 
----
 
 ## §2.15: OAuth Integration with OmniAuth
 
@@ -486,7 +459,6 @@ end
 
 ```
 
----
 
 ## §2.16: Rate Limiting with Rack::Attack
 
@@ -516,7 +488,6 @@ end
 
 ```
 
----
 
 ## §2.2: Database Schema Reference - documentation_entries Table
 
@@ -563,7 +534,6 @@ Complete field reference for documentation_entries table structure.
 - `recommendations` - Best practices
 - `rule_reference` - Link to Bible RULE
 
----
 
 ## §2.3: API Endpoints Reference - Documentation System
 
@@ -618,7 +588,6 @@ const response = await api.post('/api/v1/documentation_entries', {
 await api.post('/api/v1/documentation_entries/export_lexicon')
 ```
 
----
 
 ## §2.4: Component Creation Enforcement Pattern
 
@@ -708,7 +677,6 @@ const COMPONENT_CHAPTER_MAP = {
 - Wastes time and tokens
 - Violates RULE #0.1
 
----
 
 ## §2.5: Bug Fix Documentation Workflow
 
@@ -803,7 +771,6 @@ rule_reference: "Chapter 9, RULE #9.2"
 4. Test search finds the entry
 5. Validate all fields populated
 
----
 
 ## §2.6: Chapter Relationship Map - Feature Dependencies
 
@@ -879,7 +846,6 @@ Affects: Task due dates (Ch 10), Workflow deadlines (Ch 17)
 4. Consider cross-chapter impacts
 5. Test integration points
 
----
 
 ## §2.7: Portal User Separation
 
@@ -930,21 +896,11 @@ end
 
 ```
 
----
 
 
 # Chapter 2: Authentication & Users
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  2               │
-│ 📕 LEXICON (BUGS):    Chapter  2               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §2.1: Lexicon Update Workflow - Database-Driven Documentation
 
@@ -996,7 +952,6 @@ DocumentationEntry.create!(
 )
 ```
 
----
 
 ## §2.10: Authentication & Contacts Quick Reference
 
@@ -1010,7 +965,6 @@ Quick reference guide for authentication flows, contact CRUD operations, and com
 ### Recommendations
 Original file archived at: AUTH_AND_CONTACTS_QUICK_REFERENCE.md (12.1 KB)
 
----
 
 ## §2.11: JWT Token Handling Implementation
 
@@ -1055,7 +1009,6 @@ end
 
 ```
 
----
 
 ## §2.12: Password Complexity Validation
 
@@ -1099,7 +1052,6 @@ end
 
 ```
 
----
 
 ## §2.13: Role-Based Access Control
 
@@ -1138,7 +1090,6 @@ end
 
 ```
 
----
 
 ## §2.14: Password Reset Flow with Secure Tokens
 
@@ -1180,7 +1131,6 @@ end
 
 ```
 
----
 
 ## §2.15: OAuth Integration with OmniAuth
 
@@ -1214,7 +1164,6 @@ end
 
 ```
 
----
 
 ## §2.16: Rate Limiting with Rack::Attack
 
@@ -1244,7 +1193,6 @@ end
 
 ```
 
----
 
 ## §2.2: Database Schema Reference - documentation_entries Table
 
@@ -1291,7 +1239,6 @@ Complete field reference for documentation_entries table structure.
 - `recommendations` - Best practices
 - `rule_reference` - Link to Bible RULE
 
----
 
 ## §2.3: API Endpoints Reference - Documentation System
 
@@ -1346,7 +1293,6 @@ const response = await api.post('/api/v1/documentation_entries', {
 await api.post('/api/v1/documentation_entries/export_lexicon')
 ```
 
----
 
 ## §2.4: Component Creation Enforcement Pattern
 
@@ -1436,7 +1382,6 @@ const COMPONENT_CHAPTER_MAP = {
 - Wastes time and tokens
 - Violates RULE #0.1
 
----
 
 ## §2.5: Bug Fix Documentation Workflow
 
@@ -1531,7 +1476,6 @@ rule_reference: "Chapter 9, RULE #9.2"
 4. Test search finds the entry
 5. Validate all fields populated
 
----
 
 ## §2.6: Chapter Relationship Map - Feature Dependencies
 
@@ -1607,7 +1551,6 @@ Affects: Task due dates (Ch 10), Workflow deadlines (Ch 17)
 4. Consider cross-chapter impacts
 5. Test integration points
 
----
 
 ## §2.7: Portal User Separation
 
@@ -1658,21 +1601,11 @@ end
 
 ```
 
----
 
 
 # Chapter 3: Contacts & Relationships
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  3               │
-│ 📕 LEXICON (BUGS):    Chapter  3               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §3.1: Company Settings Singleton Pattern
 
@@ -1712,7 +1645,6 @@ working_days = settings.working_days
 company_name = settings.company_name
 ```
 
----
 
 ## §3.15: Contact Detail Page - Complete Integration Guide
 
@@ -2205,7 +2137,6 @@ After making these changes, your ContactDetailPage will:
 7. ✅ Respect edit/lock mode for all sections
 
 The components handle all the complexity of adding/editing/deleting nested records, and the handler functions properly format the data for the Rails nested attributes API.
-
 
 ### Code Example
 ```jsx
@@ -3075,7 +3006,6 @@ const handleContactAddressesUpdate = async (updatedAddresses) => {
 )}
 ```
 
----
 
 ## §3.2: Timezone Handling - Backend Time Calculations
 
@@ -3112,7 +3042,6 @@ Time.use_zone(settings.timezone) do
 end
 ```
 
----
 
 ## §3.20: Timezone Migration Implementation Guide
 
@@ -3126,7 +3055,6 @@ Step-by-step guide for implementing timezone support across backend and frontend
 ### Recommendations
 Original file archived at: TIMEZONE_MIGRATION_GUIDE.md (10.4 KB)
 
----
 
 ## §3.21: Timezone Testing Guide
 
@@ -3140,7 +3068,6 @@ Testing strategies for timezone-aware features including edge cases and DST tran
 ### Recommendations
 Original file archived at: TIMEZONE_TESTING_GUIDE.md (10.8 KB)
 
----
 
 ## §3.3: Timezone Handling - Frontend Time Display
 
@@ -3195,7 +3122,6 @@ const TaskRow = ({ task }) => (
 );
 ```
 
----
 
 ## §3.4: Working Days Configuration & Business Day Calculations
 
@@ -3259,7 +3185,6 @@ def add_business_days(start_date, days_to_add)
 end
 ```
 
----
 
 ## §3.5: User Roles & Permission System
 
@@ -3314,7 +3239,6 @@ def require_template_permissions
 end
 ```
 
----
 
 ## §3.6: Assignable Roles for Task Assignment
 
@@ -3345,7 +3269,6 @@ def my_tasks
 end
 ```
 
----
 
 ## §3.7: Password Complexity Requirements
 
@@ -3393,7 +3316,6 @@ def create_from_oauth(oauth_data)
 end
 ```
 
----
 
 ## §3.8: Timezone Options Limitation
 
@@ -3432,7 +3354,6 @@ const TIMEZONE_OPTIONS = [
 </select>
 ```
 
----
 
 ## §3.9: Working Days UI - Sunday Default True
 
@@ -3470,21 +3391,11 @@ const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
 ))}
 ```
 
----
 
 
 # Chapter 3: System Administration
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  3               │
-│ 📕 LEXICON (BUGS):    Chapter  3               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §3.1: Company Settings Singleton Pattern
 
@@ -3524,7 +3435,6 @@ working_days = settings.working_days
 company_name = settings.company_name
 ```
 
----
 
 ## §3.15: Contact Detail Page - Complete Integration Guide
 
@@ -4018,7 +3928,6 @@ After making these changes, your ContactDetailPage will:
 
 The components handle all the complexity of adding/editing/deleting nested records, and the handler functions properly format the data for the Rails nested attributes API.
 
-
 ### Code Example
 ```jsx
 ```javascript
@@ -4887,7 +4796,6 @@ const handleContactAddressesUpdate = async (updatedAddresses) => {
 )}
 ```
 
----
 
 ## §3.2: Timezone Handling - Backend Time Calculations
 
@@ -4924,7 +4832,6 @@ Time.use_zone(settings.timezone) do
 end
 ```
 
----
 
 ## §3.20: Timezone Migration Implementation Guide
 
@@ -4938,7 +4845,6 @@ Step-by-step guide for implementing timezone support across backend and frontend
 ### Recommendations
 Original file archived at: TIMEZONE_MIGRATION_GUIDE.md (10.4 KB)
 
----
 
 ## §3.21: Timezone Testing Guide
 
@@ -4952,7 +4858,6 @@ Testing strategies for timezone-aware features including edge cases and DST tran
 ### Recommendations
 Original file archived at: TIMEZONE_TESTING_GUIDE.md (10.8 KB)
 
----
 
 ## §3.3: Timezone Handling - Frontend Time Display
 
@@ -5007,7 +4912,6 @@ const TaskRow = ({ task }) => (
 );
 ```
 
----
 
 ## §3.4: Working Days Configuration & Business Day Calculations
 
@@ -5071,7 +4975,6 @@ def add_business_days(start_date, days_to_add)
 end
 ```
 
----
 
 ## §3.5: User Roles & Permission System
 
@@ -5126,7 +5029,6 @@ def require_template_permissions
 end
 ```
 
----
 
 ## §3.6: Assignable Roles for Task Assignment
 
@@ -5157,7 +5059,6 @@ def my_tasks
 end
 ```
 
----
 
 ## §3.7: Password Complexity Requirements
 
@@ -5205,7 +5106,6 @@ def create_from_oauth(oauth_data)
 end
 ```
 
----
 
 ## §3.8: Timezone Options Limitation
 
@@ -5244,7 +5144,6 @@ const TIMEZONE_OPTIONS = [
 </select>
 ```
 
----
 
 ## §3.9: Working Days UI - Sunday Default True
 
@@ -5282,21 +5181,11 @@ const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
 ))}
 ```
 
----
 
 
 # Chapter 4: Price Books & Suppliers
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  4               │
-│ 📕 LEXICON (BUGS):    Chapter  4               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §4.1: Contact Types are Multi-Select Arrays
 
@@ -5350,7 +5239,6 @@ when 'both'
 end
 ```
 
----
 
 ## §4.2: Bidirectional Relationships Require Reverse Sync
 
@@ -5412,7 +5300,6 @@ def unique_relationship_pair
 end
 ```
 
----
 
 ## §4.20: Price Book Import from Excel/CSV
 
@@ -5635,7 +5522,6 @@ Price History: 45
 Data successfully imported and linked!
 ```
 
-
 ### Code Example
 ```jsx
 ```csv
@@ -5832,7 +5718,6 @@ Price History: 45
 Data successfully imported and linked!
 ```
 
----
 
 ## §4.21: Price History Export/Import System
 
@@ -6248,7 +6133,6 @@ const importPriceHistory = async (file) => {
 
 For issues or questions, contact the development team or create an issue in the project repository.
 
-
 ### Code Example
 ```jsx
 ```bash
@@ -6565,7 +6449,6 @@ const importPriceHistory = async (file) => {
 };
 ```
 
----
 
 ## §4.3: Xero Sync Uses Priority-Based Fuzzy Matching
 
@@ -6617,7 +6500,6 @@ def match_contact(xero_contact)
 end
 ```
 
----
 
 ## §4.4: Contact Deletion MUST Check Purchase Order Dependencies
 
@@ -6656,7 +6538,6 @@ def destroy
 end
 ```
 
----
 
 ## §4.6: Portal Users MUST Have Secure Password Requirements
 
@@ -6681,21 +6562,11 @@ PASSWORD_REGEX = /\A
 validates :password, length: { minimum: 12 }, format: PASSWORD_REGEX, on: :create
 ```
 
----
 
 
 # Chapter 4: Contacts & Relationships
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  4               │
-│ 📕 LEXICON (BUGS):    Chapter  4               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §4.1: Contact Types are Multi-Select Arrays
 
@@ -6749,7 +6620,6 @@ when 'both'
 end
 ```
 
----
 
 ## §4.2: Bidirectional Relationships Require Reverse Sync
 
@@ -6811,7 +6681,6 @@ def unique_relationship_pair
 end
 ```
 
----
 
 ## §4.20: Price Book Import from Excel/CSV
 
@@ -7034,7 +6903,6 @@ Price History: 45
 Data successfully imported and linked!
 ```
 
-
 ### Code Example
 ```jsx
 ```csv
@@ -7231,7 +7099,6 @@ Price History: 45
 Data successfully imported and linked!
 ```
 
----
 
 ## §4.21: Price History Export/Import System
 
@@ -7647,7 +7514,6 @@ const importPriceHistory = async (file) => {
 
 For issues or questions, contact the development team or create an issue in the project repository.
 
-
 ### Code Example
 ```jsx
 ```bash
@@ -7964,7 +7830,6 @@ const importPriceHistory = async (file) => {
 };
 ```
 
----
 
 ## §4.3: Xero Sync Uses Priority-Based Fuzzy Matching
 
@@ -8016,7 +7881,6 @@ def match_contact(xero_contact)
 end
 ```
 
----
 
 ## §4.4: Contact Deletion MUST Check Purchase Order Dependencies
 
@@ -8055,7 +7919,6 @@ def destroy
 end
 ```
 
----
 
 ## §4.6: Portal Users MUST Have Secure Password Requirements
 
@@ -8080,21 +7943,11 @@ PASSWORD_REGEX = /\A
 validates :password, length: { minimum: 12 }, format: PASSWORD_REGEX, on: :create
 ```
 
----
 
 
 # Chapter 5: Price Books & Suppliers
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  5               │
-│ 📕 LEXICON (BUGS):    Chapter  5               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §5.1: Price Changes MUST Create Price History Automatically
 
@@ -8145,7 +7998,6 @@ item.skip_price_history_callback = true
 item.update!(current_price: 450.00)
 ```
 
----
 
 ## §5.2: Prevent Duplicate Price History - Unique Constraint + Time Window
 
@@ -8206,7 +8058,6 @@ def add_price
 end
 ```
 
----
 
 ## §5.3: SmartPoLookupService - 6-Strategy Cascading Fallback
 
@@ -8315,7 +8166,6 @@ class SmartPoLookupService
 end
 ```
 
----
 
 ## §5.4: Supplier Matching - Normalized Name Comparison with Business Suffix Removal
 
@@ -8429,7 +8279,6 @@ end
 "Smith & Associates Inc." → "smith"
 ```
 
----
 
 ## §5.5: Price Volatility Detection - Coefficient of Variation on 6-Month Window
 
@@ -8494,7 +8343,6 @@ prices = [100, 150, 80, 160, 90]
 mean = 116, std_dev = 35.8, CV = 30.9% → "volatile"
 ```
 
----
 
 ## §5.6: Risk Scoring - Multi-Factor Weighted Calculation (0-100 Scale)
 
@@ -8599,7 +8447,6 @@ scope :by_risk_level, ->(level) {
 }
 ```
 
----
 
 ## §5.7: Bulk Updates - Transaction Wrapper with Price History Batch Creation
 
@@ -8701,7 +8548,6 @@ Bulk Update with Transaction:
 = 101 queries, ~1 second
 ```
 
----
 
 ## §5.8: OneDrive Image Proxy - Cache Control with 1-Hour Expiry
 
@@ -8765,21 +8611,11 @@ end
 get 'pricebook/:id/proxy_image/:file_type', to: 'pricebook_items#proxy_image'
 ```
 
----
 
 
 # Chapter 6: Jobs & Construction Management
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  6               │
-│ 📕 LEXICON (BUGS):    Chapter  6               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §6.1: Construction MUST Have At Least One Contact
 
@@ -8812,7 +8648,6 @@ class Construction < ApplicationRecord
 end
 ```
 
----
 
 ## §6.2: Live Profit Calculation - Dynamic Not Cached
 
@@ -8855,7 +8690,6 @@ def show
 end
 ```
 
----
 
 ## §6.3: Task Dependencies - No Circular References
 
@@ -8923,7 +8757,6 @@ class TaskDependency < ApplicationRecord
 end
 ```
 
----
 
 ## §6.4: Task Status Transitions - Automatic Date Setting
 
@@ -8956,7 +8789,6 @@ class ProjectTask < ApplicationRecord
 end
 ```
 
----
 
 ## §6.5: Task Spawning - Status-Based Child Task Creation
 
@@ -9054,7 +8886,6 @@ class Schedule::TaskSpawner
 end
 ```
 
----
 
 ## §6.6: Schedule Cascade - Dependency-Based Date Propagation
 
@@ -9145,7 +8976,6 @@ class ProjectTask < ApplicationRecord
 end
 ```
 
----
 
 ## §6.7: OneDrive Folder Creation - Async with Status Tracking
 
@@ -9243,7 +9073,6 @@ class Construction < ApplicationRecord
 end
 ```
 
----
 
 ## §6.8: Schedule Template Instantiation - All-or-Nothing Transaction
 
@@ -9339,21 +9168,11 @@ class Schedule::TemplateInstantiator
 end
 ```
 
----
 
 
 # Chapter 7: Estimates & Quoting
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  7               │
-│ 📕 LEXICON (BUGS):    Chapter  7               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §7.1: Fuzzy Job Matching - Three-Tier Confidence Thresholds
 
@@ -9463,7 +9282,6 @@ class JobMatcherService
 end
 ```
 
----
 
 ## §7.2: External API Key Security - SHA256 Hashing Only
 
@@ -9543,7 +9361,6 @@ create_table :external_integrations do |t|
 end
 ```
 
----
 
 ## §7.3: Estimate Import - Validate Before Auto-Matching
 
@@ -9638,7 +9455,6 @@ end
 }
 ```
 
----
 
 ## §7.4: PO Generation from Estimate - Transaction Safety
 
@@ -9757,7 +9573,6 @@ class EstimateToPurchaseOrderService
 end
 ```
 
----
 
 ## §7.5: AI Plan Review - Async Processing Required
 
@@ -9874,7 +9689,6 @@ const pollReviewStatus = async (reviewId) => {
 };
 ```
 
----
 
 ## §7.6: Line Item Categorization - Normalized Category Matching
 
@@ -9927,7 +9741,6 @@ def lookup(task_description:, category:, quantity: 1)
 end
 ```
 
----
 
 ## §7.7: Estimate Status State Machine - Strict Transitions
 
@@ -10012,21 +9825,11 @@ def match
 end
 ```
 
----
 
 
 # Chapter 8: AI Plan Review
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  8               │
-│ 📕 LEXICON (BUGS):    Chapter  8               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §8.1: Estimate Must Be Matched to Construction
 
@@ -10047,7 +9850,6 @@ def validate_estimate_matched!
 end
 ```
 
----
 
 ## §8.2: OneDrive Plan Folder Structure
 
@@ -10074,7 +9876,6 @@ def fetch_pdf_plans_from_onedrive
 end
 ```
 
----
 
 ## §8.3: PDF File Size Limit
 
@@ -10105,7 +9906,6 @@ def fetch_pdf_plans_from_onedrive
 end
 ```
 
----
 
 ## §8.4: Async Processing with Background Jobs
 
@@ -10143,7 +9943,6 @@ const pollInterval = setInterval(async () => {
 }, 5000)
 ```
 
----
 
 ## §8.5: Claude API Model and Prompt Structure
 
@@ -10152,7 +9951,7 @@ const pollInterval = setInterval(async () => {
 **📖 Related Bible Rules:** [{"type":"Teacher","reference":"§8.5"}]
 
 ### Quick Summary
-- Use exact model ID: `claude-3-5-sonnet-20241022` - Send PDFs as base64-encoded documents with MIME type `application/pdf` - Request JSON response format with specific schema - Include estimate line 
+- Use exact model ID: `claude-3-5-sonnet-20241022` - Send PDFs as base64-encoded documents with MIME type `application/pdf` - Request JSON response format with specific schema - Include estimate line
 
 ### Code Example
 ```jsx
@@ -10217,7 +10016,6 @@ def build_analysis_prompt
 end
 ```
 
----
 
 ## §8.6: Discrepancy Detection Logic
 
@@ -10305,7 +10103,6 @@ def normalize(str)
 end
 ```
 
----
 
 ## §8.7: Confidence Score Calculation
 
@@ -10341,7 +10138,6 @@ def calculate_confidence_score(discrepancies)
 end
 ```
 
----
 
 ## §8.8: Error Handling and Status Updates
 
@@ -10350,7 +10146,7 @@ end
 **📖 Related Bible Rules:** [{"type":"Teacher","reference":"§8.8"}]
 
 ### Quick Summary
-- `NoConstructionError` - Estimate not matched - `OneDriveNotConnectedError` - OneDrive credential missing - `PDFNotFoundError` - No valid PDFs in plan folders - `FileTooLargeError` - All PDFs exceed 
+- `NoConstructionError` - Estimate not matched - `OneDriveNotConnectedError` - OneDrive credential missing - `PDFNotFoundError` - No valid PDFs in plan folders - `FileTooLargeError` - All PDFs exceed
 
 ### Code Example
 ```jsx
@@ -10390,7 +10186,6 @@ rescue StandardError => e
 end
 ```
 
----
 
 ## §8.9: Prevent Duplicate Processing Reviews
 
@@ -10422,21 +10217,11 @@ def create
 end
 ```
 
----
 
 
 # Chapter 9: Gantt & Schedule Master
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  9               │
-│ 📕 LEXICON (BUGS):    Chapter  9               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §9.1: PO Number Generation - Race Condition Protection
 
@@ -10460,7 +10245,6 @@ def generate_purchase_order_number
 end
 ```
 
----
 
 ## §9.10: Gantt Chart Developer Setup
 
@@ -10857,7 +10641,6 @@ If you have questions about this setup:
 
 **Remember:** The goal is to prevent bugs, not to create bureaucracy. If something isn't working, let's improve it together!
 
-
 ### Code Example
 ```jsx
 ```
@@ -11030,7 +10813,6 @@ cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
----
 
 ## §9.2: Status State Machine
 
@@ -11054,7 +10836,6 @@ def can_approve?      # Only pending
 def can_cancel?       # Any except paid/cancelled
 ```
 
----
 
 ## §9.3: Payment Status Calculation
 
@@ -11077,7 +10858,6 @@ def determine_payment_status(invoice_amount)
 end
 ```
 
----
 
 ## §9.4: Gantt Chart README - Feature Overview
 
@@ -11454,7 +11234,6 @@ git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
 **Maintained By:** Development Team
 **Contact:** [Your team's contact info]
 
-
 ### Code Example
 ```jsx
 ```bash
@@ -11589,7 +11368,6 @@ git reset HEAD~1
 git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
 ```
 
----
 
 ## §9.5: Line Items - Totals Calculation
 
@@ -11611,7 +11389,6 @@ def calculate_totals
 end
 ```
 
----
 
 ## §9.6: Schedule Task Linking
 
@@ -11638,7 +11415,6 @@ ActiveRecord::Base.transaction do
 end
 ```
 
----
 
 ## §9.7: Price Drift Monitoring
 
@@ -11657,7 +11433,6 @@ def price_drift
 end
 ```
 
----
 
 ## §9.8: Gantt Feature Onboarding Checklist
 
@@ -11909,7 +11684,6 @@ After completing this checklist, developers commonly make these mistakes:
 
 **If you skip this checklist and introduce a bug, you will spend HOURS debugging issues that are already documented here.**
 
-
 ### Code Example
 ```jsx
 ```
@@ -12002,7 +11776,6 @@ const isLocked = (task) => {
 }
 ```
 
----
 
 ## §9.9: Task Management Quick Reference
 
@@ -12303,8 +12076,6 @@ Task-related indexes for performance:
 
 See `/Users/jakebaird/trapid/TASK_MANAGEMENT_ARCHITECTURE.md` for detailed investigation.
 
-
-
 ### Code Example
 ```jsx
 ```
@@ -12567,21 +12338,11 @@ Content-Type: multipart/form-data
 file: <Excel file>
 ```
 
----
 
 
 # Chapter 9: Purchase Orders
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  9               │
-│ 📕 LEXICON (BUGS):    Chapter  9               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §9.1: PO Number Generation - Race Condition Protection
 
@@ -12605,7 +12366,6 @@ def generate_purchase_order_number
 end
 ```
 
----
 
 ## §9.10: Gantt Chart Developer Setup
 
@@ -13002,7 +12762,6 @@ If you have questions about this setup:
 
 **Remember:** The goal is to prevent bugs, not to create bureaucracy. If something isn't working, let's improve it together!
 
-
 ### Code Example
 ```jsx
 ```
@@ -13175,7 +12934,6 @@ cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
----
 
 ## §9.2: Status State Machine
 
@@ -13199,7 +12957,6 @@ def can_approve?      # Only pending
 def can_cancel?       # Any except paid/cancelled
 ```
 
----
 
 ## §9.3: Payment Status Calculation
 
@@ -13222,7 +12979,6 @@ def determine_payment_status(invoice_amount)
 end
 ```
 
----
 
 ## §9.4: Gantt Chart README - Feature Overview
 
@@ -13599,7 +13355,6 @@ git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
 **Maintained By:** Development Team
 **Contact:** [Your team's contact info]
 
-
 ### Code Example
 ```jsx
 ```bash
@@ -13734,7 +13489,6 @@ git reset HEAD~1
 git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
 ```
 
----
 
 ## §9.5: Line Items - Totals Calculation
 
@@ -13756,7 +13510,6 @@ def calculate_totals
 end
 ```
 
----
 
 ## §9.6: Schedule Task Linking
 
@@ -13783,7 +13536,6 @@ ActiveRecord::Base.transaction do
 end
 ```
 
----
 
 ## §9.7: Price Drift Monitoring
 
@@ -13802,7 +13554,6 @@ def price_drift
 end
 ```
 
----
 
 ## §9.8: Gantt Feature Onboarding Checklist
 
@@ -14054,7 +13805,6 @@ After completing this checklist, developers commonly make these mistakes:
 
 **If you skip this checklist and introduce a bug, you will spend HOURS debugging issues that are already documented here.**
 
-
 ### Code Example
 ```jsx
 ```
@@ -14147,7 +13897,6 @@ const isLocked = (task) => {
 }
 ```
 
----
 
 ## §9.9: Task Management Quick Reference
 
@@ -14448,8 +14197,6 @@ Task-related indexes for performance:
 
 See `/Users/jakebaird/trapid/TASK_MANAGEMENT_ARCHITECTURE.md` for detailed investigation.
 
-
-
 ### Code Example
 ```jsx
 ```
@@ -14712,21 +14459,11 @@ Content-Type: multipart/form-data
 file: <Excel file>
 ```
 
----
 
 
 # Chapter 10: Gantt & Schedule Master
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 10               │
-│ 📕 LEXICON (BUGS):    Chapter 10               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §10.1: Predecessor ID Conversion
 
@@ -14743,7 +14480,6 @@ file: <Excel file>
 predecessor_id = predecessor_task.sequence_order + 1  # 0-based → 1-based
 ```
 
----
 
 ## §10.11: Debounced Render Pattern
 
@@ -14766,7 +14502,6 @@ const debouncedRender = (delay = 0) => {
 }
 ```
 
----
 
 ## §10.2: isLoadingData Lock Timing
 
@@ -14795,7 +14530,6 @@ gantt.attachEvent('onAfterTaskDrag', (id, mode, event) => {
 })
 ```
 
----
 
 ## §10.3: Company Settings - Working Days & Timezone
 
@@ -14849,7 +14583,6 @@ const day = parts.find(p => p.type === 'day').value
 const dateInTZ = new Date(`${year}-${month}-${day}T00:00:00`)
 ```
 
----
 
 ## §10.5: Task Heights Configuration
 
@@ -14867,7 +14600,6 @@ gantt.config.task_height = 40  // MUST match row_height
 gantt.config.bar_height = 40   // MUST also match
 ```
 
----
 
 ## §10.7: API Pattern - Single Update + Cascade Response
 
@@ -14899,7 +14631,6 @@ PATCH /api/v1/schedule_templates/:id/rows/:row_id
 }
 ```
 
----
 
 ## §10.9: Predecessor Format
 
@@ -14924,21 +14655,11 @@ PATCH /api/v1/schedule_templates/:id/rows/:row_id
 }
 ```
 
----
 
 
 # Chapter 11: Project Tasks & Checklists
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 11               │
-│ 📕 LEXICON (BUGS):    Chapter 11               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §11.1: Task Status Lifecycle & Automatic Date Updates
 
@@ -14978,7 +14699,6 @@ def set_completion_data
 end
 ```
 
----
 
 ## §11.10: Duration Days Validation
 
@@ -15008,7 +14728,6 @@ end
 # Start: Jan 1, Duration: 3 days → End: Jan 3
 ```
 
----
 
 ## §11.11: Tags System for Flexible Categorization
 
@@ -15058,7 +14777,6 @@ render json: {
 }
 ```
 
----
 
 ## §11.2: Task Dependencies & Circular Dependency Prevention
 
@@ -15097,7 +14815,6 @@ def same_project
 end
 ```
 
----
 
 ## §11.3: Automatic Task Spawning from Templates
 
@@ -15189,7 +14906,6 @@ def spawn_child_tasks
 end
 ```
 
----
 
 ## §11.4: Supervisor Checklist Template-to-Instance Flow
 
@@ -15251,7 +14967,6 @@ attribute :response_note, :text
 attribute :response_photo_url, :string
 ```
 
----
 
 ## §11.5: Response Type Validation & Photo Upload
 
@@ -15305,7 +15020,6 @@ const uploadPhoto = async (file) => {
 };
 ```
 
----
 
 ## §11.6: Auto-Complete Predecessors Feature
 
@@ -15360,7 +15074,6 @@ end
 </label>
 ```
 
----
 
 ## §11.7: Materials Status Calculation
 
@@ -15421,7 +15134,6 @@ const MaterialsBadge = ({ status }) => {
 };
 ```
 
----
 
 ## §11.8: Sequence Order for Task Display
 
@@ -15474,7 +15186,6 @@ add_column :project_tasks, :sequence_order, :decimal, precision: 10, scale: 2
 add_index :project_tasks, [:project_id, :sequence_order]
 ```
 
----
 
 ## §11.9: Task Update Audit Trail
 
@@ -15515,21 +15226,11 @@ def log_status_change
 end
 ```
 
----
 
 
 # Chapter 12: Weather & Public Holidays
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 12               │
-│ 📕 LEXICON (BUGS):    Chapter 12               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §12.1: Unique Holidays Per Region
 
@@ -15552,7 +15253,6 @@ validates :region, presence: true
 UNIQUE(date, region)
 ```
 
----
 
 ## §12.2: Rain Log - One Entry Per Construction Per Day
 
@@ -15577,7 +15277,6 @@ existing_log = construction.rain_logs.find_by(date: yesterday)
 next if existing_log  # Skip if already logged
 ```
 
----
 
 ## §12.3: Rainfall Severity Auto-Calculation
 
@@ -15605,7 +15304,6 @@ end
 after_save :auto_calculate_severity!, if: :rainfall_mm_changed?
 ```
 
----
 
 ## §12.4: Manual Rain Logs Require Notes
 
@@ -15629,7 +15327,6 @@ enum :source, {
 validates :notes, presence: true, if: :source_manual?
 ```
 
----
 
 ## §12.5: Weather API - Historical Data Only
 
@@ -15656,7 +15353,6 @@ def fetch_historical(location, date)
 end
 ```
 
----
 
 ## §12.6: Location Extraction Priority
 
@@ -15691,7 +15387,6 @@ def extract_location(construction)
 end
 ```
 
----
 
 ## §12.7: Gantt Integration - Working Day Calculation
 
@@ -15734,7 +15429,6 @@ def load_holidays
 end
 ```
 
----
 
 ## §12.8: Weather API Response Storage
 
@@ -15773,21 +15467,11 @@ rain_log = construction.rain_logs.create!(
 )
 ```
 
----
 
 
 # Chapter 13: OneDrive Integration
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 13               │
-│ 📕 LEXICON (BUGS):    Chapter 13               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §13.2: Folder Template System
 
@@ -15810,21 +15494,11 @@ Trapid Jobs/
       └── Correspondence/
 ```
 
----
 
 
 # Chapter 14: Outlook/Email Integration
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 14               │
-│ 📕 LEXICON (BUGS):    Chapter 14               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §14.1: Organization-Wide Singleton OAuth Credential
 
@@ -15878,7 +15552,6 @@ def refresh_access_token(credential)
 end
 ```
 
----
 
 ## §14.2: Four-Strategy Email-to-Job Matching
 
@@ -15939,7 +15612,6 @@ def create
 end
 ```
 
----
 
 ## §14.3: Microsoft Graph API Usage Pattern
 
@@ -15998,7 +15670,6 @@ def auth_url
 end
 ```
 
----
 
 ## §14.4: Email Threading Support via Message-ID
 
@@ -16052,7 +15723,6 @@ def conversation_thread
 end
 ```
 
----
 
 ## §14.5: Webhook Support for Email Services
 
@@ -16109,7 +15779,6 @@ def verify_sendgrid_signature
 end
 ```
 
----
 
 ## §14.6: Inbound-Only Architecture (Current Limitation)
 
@@ -16141,21 +15810,11 @@ end
 JobMailer.quote_sent(job.id, contact.id).deliver_later
 ```
 
----
 
 
 # Chapter 15: Xero Accounting Integration
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 15               │
-│ 📕 LEXICON (BUGS):    Chapter 15               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §15.1: ChatMessage Multi-Channel Architecture
 
@@ -16221,7 +15880,6 @@ def index
 end
 ```
 
----
 
 ## §15.10: Authentication Placeholder - CRITICAL TODO
 
@@ -16246,7 +15904,6 @@ def set_current_user
 end
 ```
 
----
 
 ## §15.11: Invoice Matching Enhancement - PO to Xero Bill Linking
 
@@ -16539,7 +16196,6 @@ All existing functionality preserved. The enhancement only adds new matching str
 **Version:** 1.0
 **Status:** Tested and ready for deployment
 
-
 ### Code Example
 ```jsx
 ```ruby
@@ -16766,7 +16422,6 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 git subtree push --prefix backend heroku main
 ```
 
----
 
 ## §15.12: Xero Sync Status Badges Implementation
 
@@ -16996,7 +16651,6 @@ The sync status badges will:
 - ✅ Display Xero ID when linked
 - ✅ Display error details when sync fails
 
-
 ### Code Example
 ```jsx
 ```javascript
@@ -17329,7 +16983,6 @@ import {
 } from '@heroicons/react/24/outline'
 ```
 
----
 
 ## §15.2: Message-to-Job Linking
 
@@ -17391,7 +17044,6 @@ const saveConversationToJob = async () => {
 };
 ```
 
----
 
 ## §15.3: SMS Twilio Integration
 
@@ -17474,7 +17126,6 @@ def self.normalize_phone_number(phone)
 end
 ```
 
----
 
 ## §15.4: SMS Status Tracking
 
@@ -17550,7 +17201,6 @@ const getStatusIcon = (message) => {
 };
 ```
 
----
 
 ## §15.5: Unread Message Tracking
 
@@ -17608,7 +17258,6 @@ useEffect(() => {
 }, []);
 ```
 
----
 
 ## §15.6: Message Polling (No WebSockets)
 
@@ -17659,7 +17308,6 @@ useEffect(() => {
 }, [contactId, jobId]);
 ```
 
----
 
 ## §15.7: Contact-SMS Fuzzy Matching
 
@@ -17714,7 +17362,6 @@ def self.process_incoming_sms(params)
 end
 ```
 
----
 
 ## §15.8: Message Deletion Authorization
 
@@ -17738,7 +17385,6 @@ def destroy
 end
 ```
 
----
 
 ## §15.9: Email Ingestion Storage
 
@@ -17796,21 +17442,11 @@ add_index :emails, :message_id, unique: true
 add_index :emails, :construction_id
 ```
 
----
 
 
 # Chapter 15: Chat & Communications
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 15               │
-│ 📕 LEXICON (BUGS):    Chapter 15               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §15.1: ChatMessage Multi-Channel Architecture
 
@@ -17876,7 +17512,6 @@ def index
 end
 ```
 
----
 
 ## §15.10: Authentication Placeholder - CRITICAL TODO
 
@@ -17901,7 +17536,6 @@ def set_current_user
 end
 ```
 
----
 
 ## §15.11: Invoice Matching Enhancement - PO to Xero Bill Linking
 
@@ -18194,7 +17828,6 @@ All existing functionality preserved. The enhancement only adds new matching str
 **Version:** 1.0
 **Status:** Tested and ready for deployment
 
-
 ### Code Example
 ```jsx
 ```ruby
@@ -18421,7 +18054,6 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 git subtree push --prefix backend heroku main
 ```
 
----
 
 ## §15.12: Xero Sync Status Badges Implementation
 
@@ -18651,7 +18283,6 @@ The sync status badges will:
 - ✅ Display Xero ID when linked
 - ✅ Display error details when sync fails
 
-
 ### Code Example
 ```jsx
 ```javascript
@@ -18984,7 +18615,6 @@ import {
 } from '@heroicons/react/24/outline'
 ```
 
----
 
 ## §15.2: Message-to-Job Linking
 
@@ -19046,7 +18676,6 @@ const saveConversationToJob = async () => {
 };
 ```
 
----
 
 ## §15.3: SMS Twilio Integration
 
@@ -19129,7 +18758,6 @@ def self.normalize_phone_number(phone)
 end
 ```
 
----
 
 ## §15.4: SMS Status Tracking
 
@@ -19205,7 +18833,6 @@ const getStatusIcon = (message) => {
 };
 ```
 
----
 
 ## §15.5: Unread Message Tracking
 
@@ -19263,7 +18890,6 @@ useEffect(() => {
 }, []);
 ```
 
----
 
 ## §15.6: Message Polling (No WebSockets)
 
@@ -19314,7 +18940,6 @@ useEffect(() => {
 }, [contactId, jobId]);
 ```
 
----
 
 ## §15.7: Contact-SMS Fuzzy Matching
 
@@ -19369,7 +18994,6 @@ def self.process_incoming_sms(params)
 end
 ```
 
----
 
 ## §15.8: Message Deletion Authorization
 
@@ -19393,7 +19017,6 @@ def destroy
 end
 ```
 
----
 
 ## §15.9: Email Ingestion Storage
 
@@ -19451,21 +19074,11 @@ add_index :emails, :message_id, unique: true
 add_index :emails, :construction_id
 ```
 
----
 
 
 # Chapter 16: Xero Accounting Integration
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 16               │
-│ 📕 LEXICON (BUGS):    Chapter 16               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §16.1: OAuth Token Management
 
@@ -19488,7 +19101,6 @@ class XeroCredential < ApplicationRecord
 end
 ```
 
----
 
 ## §16.2: Two-Way Contact Sync
 
@@ -19508,7 +19120,6 @@ add_column :contacts, :last_synced_at, :datetime
 add_column :contacts, :xero_sync_error, :text
 ```
 
----
 
 ## §16.4: Webhook Signature Verification
 
@@ -19533,7 +19144,6 @@ def verify_xero_webhook_signature
 end
 ```
 
----
 
 ## §16.7: Background Job Processing
 
@@ -19558,7 +19168,6 @@ end
 }
 ```
 
----
 
 ## §16.8: Payment Sync Workflow
 
@@ -19575,21 +19184,11 @@ add_column :payments, :xero_payment_id, :string
 add_column :payments, :synced_to_xero_at, :datetime
 ```
 
----
 
 
 # Chapter 17: Payments & Financials
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 17               │
-│ 📕 LEXICON (BUGS):    Chapter 17               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §17.1: Payment Model Structure
 
@@ -19641,7 +19240,6 @@ add_index :payments, [:purchase_order_id, :payment_date]
 add_index :payments, :xero_payment_id
 ```
 
----
 
 ## §17.10: Cascade Delete Payments
 
@@ -19658,7 +19256,6 @@ has_many :payments, dependent: :destroy
 add_foreign_key :payments, :purchase_orders, on_delete: :cascade
 ```
 
----
 
 ## §17.2: Automatic Payment Status Updates
 
@@ -19716,7 +19313,6 @@ def update_payment_status_from_payments!
 end
 ```
 
----
 
 ## §17.3: Xero Invoice Fuzzy Matching
 
@@ -19817,7 +19413,6 @@ def determine_payment_status(invoice_amount)
 end
 ```
 
----
 
 ## §17.4: Xero Payment Sync
 
@@ -19898,7 +19493,6 @@ def sync_error?
 end
 ```
 
----
 
 ## §17.5: Payment Method Enum
 
@@ -19956,7 +19550,6 @@ const PAYMENT_METHODS = [
 </select>
 ```
 
----
 
 ## §17.6: Financial Precision with DECIMAL(15,2)
 
@@ -19990,7 +19583,6 @@ validates :total, :invoiced_amount, :xero_amount_paid,
   numericality: { greater_than_or_equal_to: 0 }
 ```
 
----
 
 ## §17.7: Payment Status Badge Display
 
@@ -20037,7 +19629,6 @@ export function PaymentStatusBadge({ status }) {
 }
 ```
 
----
 
 ## §17.8: Payment Summary Calculation
 
@@ -20088,7 +19679,6 @@ end
 </div>
 ```
 
----
 
 ## §17.9: Budget Variance Tracking
 
@@ -20145,21 +19735,11 @@ end
 )}
 ```
 
----
 
 
 # Chapter 18: Workflows & Automation
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 18               │
-│ 📕 LEXICON (BUGS):    Chapter 18               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §18.1: Solid Queue Background Job System
 
@@ -20202,7 +19782,6 @@ class ApplicationJob < ActiveJob::Base
 end
 ```
 
----
 
 ## §18.2: Workflow State Machine
 
@@ -20273,7 +19852,6 @@ def reject!(user:, comment:)
 end
 ```
 
----
 
 ## §18.3: Idempotent Background Jobs
 
@@ -20321,7 +19899,6 @@ def perform
 end
 ```
 
----
 
 ## §18.4: Price Update Automation
 
@@ -20370,7 +19947,6 @@ recurring_tasks:
     schedule: every day at midnight
 ```
 
----
 
 ## §18.5: Model Callback Automation
 
@@ -20431,7 +20007,6 @@ def track_price_change
 end
 ```
 
----
 
 ## §18.6: Job Status Tracking
 
@@ -20475,7 +20050,6 @@ def perform(import_session_id, table_id, column_mapping)
 end
 ```
 
----
 
 ## §18.7: Batch Processing with Rate Limiting
 
@@ -20518,7 +20092,6 @@ def sync_contact(xero_contact)
 end
 ```
 
----
 
 ## §18.8: Workflow Metadata Storage
 
@@ -20593,21 +20166,11 @@ await api.post('/workflow_instances', {
 });
 ```
 
----
 
 
 # Chapter 19: Custom Tables & Formulas
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 19               │
-│ 📕 LEXICON (BUGS):    Chapter 19               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §19.1: Dynamic Table Creation Pattern
 
@@ -20649,7 +20212,6 @@ def dynamic_model
 end
 ```
 
----
 
 ## §19.2: Column Type System
 
@@ -20713,7 +20275,6 @@ def column_options(column)
 end
 ```
 
----
 
 ## §19.20: Standard Table UI Pattern - Column Management
 
@@ -21229,7 +20790,6 @@ When migrating an existing table to this pattern:
 
 See `ContactsPage.jsx` and `PriceBooksPage.jsx` for reference implementations.
 
-
 ### Code Example
 ```jsx
 ```javascript
@@ -22046,7 +21606,6 @@ const resetColumnSettings = () => {
 </div>
 ```
 
----
 
 ## §19.21: Inline Editing Pattern - Click to Edit with Visual Indicators
 
@@ -22250,7 +21809,6 @@ These components are already correct! They:
 
 No changes needed for those components.
 
-
 ### Code Example
 ```jsx
 ```jsx
@@ -22493,7 +22051,6 @@ className={`
 </div>
 ```
 
----
 
 ## §19.3: Formula Evaluation System
 
@@ -22568,7 +22125,6 @@ def self.uses_cross_table_references?(formula_expression)
 end
 ```
 
----
 
 ## §19.38: Cascading Filter Implementation Pattern
 
@@ -22725,7 +22281,6 @@ expect(typeFilter.value).toBe('')
 ### Description
 Cascading filters create a hierarchical filtering experience where selecting a value in one filter (e.g., Chapter) automatically updates the available options in dependent filters (e.g., Type), showing only values that exist in the filtered dataset with dynamic counts.
 
----
 
 ## §19.4: Lookup Column Pattern
 
@@ -22786,7 +22341,6 @@ end
 }
 ```
 
----
 
 ## §19.5: Record CRUD with Formula Calculation
 
@@ -22864,7 +22418,6 @@ def record_to_json(record)
 end
 ```
 
----
 
 ## §19.6: Table Deletion Safety
 
@@ -22921,7 +22474,6 @@ def drop_database_table
 end
 ```
 
----
 
 ## §19.7: Column Validation Rules
 
@@ -23001,7 +22553,6 @@ def validate_record_data(record, params)
 end
 ```
 
----
 
 ## §19.8: Foreign Key Constraints
 
@@ -23029,21 +22580,11 @@ def add_foreign_key(column)
 end
 ```
 
----
 
 
 # Chapter 19: UI/UX Standards & Patterns
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 19               │
-│ 📕 LEXICON (BUGS):    Chapter 19               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §19.1: Dynamic Table Creation Pattern
 
@@ -23085,7 +22626,6 @@ def dynamic_model
 end
 ```
 
----
 
 ## §19.2: Column Type System
 
@@ -23149,7 +22689,6 @@ def column_options(column)
 end
 ```
 
----
 
 ## §19.20: Standard Table UI Pattern - Column Management
 
@@ -23665,7 +23204,6 @@ When migrating an existing table to this pattern:
 
 See `ContactsPage.jsx` and `PriceBooksPage.jsx` for reference implementations.
 
-
 ### Code Example
 ```jsx
 ```javascript
@@ -24482,7 +24020,6 @@ const resetColumnSettings = () => {
 </div>
 ```
 
----
 
 ## §19.21: Inline Editing Pattern - Click to Edit with Visual Indicators
 
@@ -24686,7 +24223,6 @@ These components are already correct! They:
 
 No changes needed for those components.
 
-
 ### Code Example
 ```jsx
 ```jsx
@@ -24929,7 +24465,6 @@ className={`
 </div>
 ```
 
----
 
 ## §19.3: Formula Evaluation System
 
@@ -25004,7 +24539,6 @@ def self.uses_cross_table_references?(formula_expression)
 end
 ```
 
----
 
 ## §19.38: Cascading Filter Implementation Pattern
 
@@ -25161,7 +24695,6 @@ expect(typeFilter.value).toBe('')
 ### Description
 Cascading filters create a hierarchical filtering experience where selecting a value in one filter (e.g., Chapter) automatically updates the available options in dependent filters (e.g., Type), showing only values that exist in the filtered dataset with dynamic counts.
 
----
 
 ## §19.4: Lookup Column Pattern
 
@@ -25222,7 +24755,6 @@ end
 }
 ```
 
----
 
 ## §19.5: Record CRUD with Formula Calculation
 
@@ -25300,7 +24832,6 @@ def record_to_json(record)
 end
 ```
 
----
 
 ## §19.6: Table Deletion Safety
 
@@ -25357,7 +24888,6 @@ def drop_database_table
 end
 ```
 
----
 
 ## §19.7: Column Validation Rules
 
@@ -25437,7 +24967,6 @@ def validate_record_data(record, params)
 end
 ```
 
----
 
 ## §19.8: Foreign Key Constraints
 
@@ -25465,21 +24994,11 @@ def add_foreign_key(column)
 end
 ```
 
----
 
 
 # Chapter 20: UI/UX Standards & Patterns
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 20               │
-│ 📕 LEXICON (BUGS):    Chapter 20               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §20.03: Always-On Edit Mode with Dropdown Support
 
@@ -25513,7 +25032,6 @@ Verify Edit button is always visible. Click Edit and verify cells show yellow ho
 ### Description
 The TrinityTableView component has been enhanced with always-on edit mode that allows users to edit any cell in the table without selecting rows first. Dropdown fields automatically appear for lookup columns when clicked in edit mode.
 
----
 
 ## §20.04: Inline Dropdown Editing for Lookup Fields
 
@@ -25552,7 +25070,6 @@ Single-click status or severity cell in edit mode. Verify dropdown opens immedia
 ### Description
 Lookup fields (status, severity) render as dropdown selects when in edit mode, allowing users to choose from predefined options. Single-click activates the dropdown automatically. Fields include visual indicators like emojis for better UX.
 
----
 
 ## §20.1: Table Component Selection Pattern
 
@@ -25563,7 +25080,6 @@ Lookup fields (status, severity) render as dropdown selects when in edit mode, a
 ### Quick Summary
 Decision tree for choosing between DataTable.jsx (read-only, basic sorting) vs Full table pattern (editing, bulk actions, advanced features)
 
----
 
 ## §20.10: Column Visibility Toggle Pattern
 
@@ -25574,7 +25090,6 @@ Decision tree for choosing between DataTable.jsx (read-only, basic sorting) vs F
 ### Quick Summary
 Implement column visibility toggle dropdown
 
----
 
 ## §20.11: Search & Filter UI Standards Pattern
 
@@ -25585,7 +25100,6 @@ Implement column visibility toggle dropdown
 ### Quick Summary
 Implement search boxes with clear buttons
 
----
 
 ## §20.13: State Persistence Pattern
 
@@ -25596,7 +25110,6 @@ Implement search boxes with clear buttons
 ### Quick Summary
 How to persist table state (filters, column order, visibility) to localStorage
 
----
 
 ## §20.15: Dark Mode Implementation
 
@@ -25607,7 +25120,6 @@ How to persist table state (filters, column order, visibility) to localStorage
 ### Quick Summary
 Pattern for implementing dark mode support in table components
 
----
 
 ## §20.2: Table Header Implementation
 
@@ -25618,7 +25130,6 @@ Pattern for implementing dark mode support in table components
 ### Quick Summary
 Required header elements: sortable columns, visibility controls, sticky headers, dark mode
 
----
 
 ## §20.20: Search Functionality Implementation Pattern
 
@@ -25629,7 +25140,6 @@ Required header elements: sortable columns, visibility controls, sticky headers,
 ### Quick Summary
 Implement performant search with debouncing
 
----
 
 ## §20.21: Form Standards Pattern
 
@@ -25640,7 +25150,6 @@ Implement performant search with debouncing
 ### Quick Summary
 Standard patterns for form layout, validation, and submission
 
----
 
 ## §20.24: Implementing Interactive Cursor Styles in Tables
 
@@ -25680,7 +25189,6 @@ Manual testing: Hover over column headers to verify col-resize cursor. Hover ove
 ### Description
 Tables need intuitive cursor feedback to communicate interactive capabilities. This pattern shows how to implement col-resize for column resizing, grab/grabbing for drag operations, and pointer for sorting.
 
----
 
 ## §20.25: Button & Action Standards Pattern
 
@@ -25691,7 +25199,6 @@ Tables need intuitive cursor feedback to communicate interactive capabilities. T
 ### Quick Summary
 Implement consistent button styles and states
 
----
 
 ## §20.26: Status Badge Standards Pattern
 
@@ -25702,7 +25209,6 @@ Implement consistent button styles and states
 ### Quick Summary
 Implement status badges with consistent colors
 
----
 
 ## §20.28: Navigation Standards Pattern
 
@@ -25713,7 +25219,6 @@ Implement status badges with consistent colors
 ### Quick Summary
 Implement tab navigation and breadcrumbs
 
----
 
 ## §20.3: Column Filter Implementation
 
@@ -25724,7 +25229,6 @@ Implement tab navigation and breadcrumbs
 ### Quick Summary
 How to implement inline column filters in table headers
 
----
 
 ## §20.31: Data-Dense Table Layout
 
@@ -25822,8 +25326,6 @@ const DataDenseTable = ({ rows }) => {
 ```
 
 
----
-
 ## §20.32: Zebra Striping (Alternating Row Colors)
 
 🧩 Component
@@ -25918,8 +25420,6 @@ bg-gray-100 // Solid color, good contrast
 - ❌ Small tables (< 5 columns)
 - ❌ Short lists (< 5 rows)
 
-
----
 
 ## §20.33: Sticky Horizontal Scrollbar Component Pattern
 
@@ -26301,8 +25801,6 @@ See: TRAPID_BIBLE.md Chapter 19, RULE #19.12
 - Overflow detection on wide monitors
 
 
----
-
 ## §20.34: Modern Table Header Aesthetics
 
 🧩 Component
@@ -26418,8 +25916,6 @@ bg-white
 bg-white/95
 ```
 
-
----
 
 ## §20.35: Table Border Framing
 
@@ -26553,8 +26049,6 @@ const FramedTable = ({ data }) => {
 <table className="border-l border-r">
 ```
 
-
----
 
 ## §20.36: Expand/Collapse Row Details
 
@@ -26781,8 +26275,6 @@ import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 ```
 
 
----
-
 ## §20.37: Column Visibility Toggle Pattern
 
 🧩 Component
@@ -26792,7 +26284,6 @@ import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 ### Quick Summary
 Pattern for eye icon dropdown to show/hide columns
 
----
 
 ## §20.39: Column Width Persistence Pattern
 
@@ -27073,7 +26564,6 @@ The **Column Width Persistence Pattern** ensures that when users manually resize
 
 This pattern is **required** for all tables with resizable columns to provide a consistent user experience.
 
----
 
 ## §20.4: Column Resizing Pattern
 
@@ -27084,7 +26574,6 @@ This pattern is **required** for all tables with resizable columns to provide a 
 ### Quick Summary
 Pattern for implementing draggable column resize handles
 
----
 
 ## §20.40: Standardized Toolbar Layout Pattern
 
@@ -27095,7 +26584,6 @@ Pattern for implementing draggable column resize handles
 ### Quick Summary
 Standard layout for table toolbars: Global search (left), action buttons in specific order (right)
 
----
 
 ## §20.41: Custom Action Buttons in Trinity Tables (Add, Import, etc.)
 
@@ -27104,7 +26592,6 @@ Standard layout for table toolbars: Global search (left), action buttons in spec
 ### Description
 Complete guide for adding custom action buttons (Add, Import, Export, Sync, Configure) to Trinity table toolbars with mandatory h-[42px] alignment
 
----
 
 ## §20.42: Inline Bulk Actions Pattern - Delete Safety
 
@@ -27162,7 +26649,6 @@ const handleDelete = () => {
 
 **Reference:** TrinityTableView.jsx lines 779-859
 
----
 
 ## §20.43: CSV Export for Selected Table Rows
 
@@ -27217,7 +26703,6 @@ Creates CSV content with header row, maps selected entries to CSV rows, properly
 
 **Reference:** TrinityTableView.jsx Export button (lines 818-844)
 
----
 
 ## §20.5: Column Reordering Pattern
 
@@ -27228,7 +26713,6 @@ Creates CSV content with header row, maps selected entries to CSV rows, properly
 ### Quick Summary
 Pattern for implementing drag-and-drop column reordering
 
----
 
 ## §20.6: Scroll Behavior Implementation
 
@@ -27325,8 +26809,6 @@ useEffect(() => {
 }
 ```
 
-
----
 
 ## §20.8: Cell Content Standards Pattern
 
@@ -27512,8 +26994,6 @@ The **Cell Content Standards Pattern** defines how to handle text overflow, trun
 This pattern prevents horizontal scrolling caused by long content and provides hover tooltips for full text.
 
 
----
-
 ## §20.9: Row Selection Pattern
 
 🧩 Component
@@ -27523,7 +27003,6 @@ This pattern prevents horizontal scrolling caused by long content and provides h
 ### Quick Summary
 Pattern for checkbox-based row selection with bulk actions
 
----
 
 ## Test Teacher Pattern
 
@@ -27534,21 +27013,11 @@ Pattern for checkbox-based row selection with bulk actions
 ### Description
 How to create a new documentation component
 
----
 
 
 # Chapter 21: Agent System & Automation
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 21               │
-│ 📕 LEXICON (BUGS):    Chapter 21               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Code examples, implementation patterns, and step-by-step guides
 **Last Updated:** 2025-11-17
-
----
 
 ## §21.1: Agent Definitions Are Database-Driven
 
@@ -27584,7 +27053,6 @@ agent.record_failure(
 )
 ```
 
----
 
 ## §21.10: Modifying Existing Agents - Step-by-Step Guide
 
@@ -27650,8 +27118,6 @@ Test agent invocation and verify all locations updated.
 - Putting Teacher entries in wrong chapter (must be Chapter 21!)
 
 
----
-
 ## §21.15: UI Compliance Auditor Agent - Markdown Definition
 
 📋 Dropdown Md
@@ -27661,186 +27127,297 @@ Test agent invocation and verify all locations updated.
 
 **Agent ID:** ui-compliance-auditor
 **Type:** Specialized Diagnostic Agent (diagnostic)
-**Focus:** UI/UX Standards Compliance (Chapter 19)
+**Focus:** Complete UI/UX Standards Compliance (Chapter 19 & 20)
 **Priority:** 80
 **Model:** Sonnet (default)
 
 ## Purpose
 
-Audits all frontend code against Chapter 19 UI/UX standards (from Bible API) and fixes violations to ensure consistency across the application.
+Performs comprehensive audits of all frontend code against Chapter 19 (UI/UX Standards) and Chapter 20 (Agent System & Best Practices) by reading from Bible, Teacher, and Lexicon sources, then generates a complete audit report of exactly what needs to be fixed.
+
+## Phase 1: Knowledge Gathering (ALWAYS RUN FIRST)
+
+Before performing any audit, the agent MUST gather the latest rules from all three sources:
+
+### 1. Fetch Chapter 19 (UI/UX Standards) - Bible
+```bash
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible&chapter_number=19'
+```
+
+### 2. Fetch Chapter 19 (UI/UX Standards) - Teacher
+```bash
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=teacher&chapter_number=19'
+```
+
+### 3. Fetch Chapter 20 (Agent System) - Bible
+```bash
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible&chapter_number=20'
+```
+
+### 4. Fetch Chapter 20 (Agent System) - Teacher
+```bash
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=teacher&chapter_number=20'
+```
+
+### 5. Fetch UI/UX Related Lexicon Entries
+```bash
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=lexicon' | jq 'select(.title | test("ui|ux|table|component|dark|mode|icon|button"; "i"))'
+```
+
+**Why all sources?**
+- **Bible**: Core rules and standards (MUST follow)
+- **Teacher**: Implementation guidance and examples (HOW to follow)
+- **Lexicon**: Known issues, bugs, and edge cases (WHAT to avoid)
+
+## Phase 2: Comprehensive Audit Process
+
+### Step 1: Scan All UI Components
+
+Find ALL frontend files that need auditing:
+- All `.jsx` files in `frontend/src/pages/`
+- All `.jsx` files in `frontend/src/components/`
+- All table components (DataTable, custom tables)
+- All form components
+- All modal/dialog components
+- All navigation components
+- All button/icon components
+
+### Step 2: Categorize Components
+
+Group components by type:
+- **Tables/Lists** (Chapter 19 compliance)
+- **Forms** (Chapter 19 compliance)
+- **Navigation** (Chapter 19 compliance)
+- **Modals/Dialogs** (Chapter 19 compliance)
+- **Buttons/Actions** (Chapter 19 compliance)
+- **Agent Interactions** (Chapter 20 compliance)
+
+### Step 3: Apply Rules Against Each Component
+
+For EACH component found, check against ALL rules from:
+1. Chapter 19 Bible rules (UI/UX standards)
+2. Chapter 19 Teacher guidance (implementation patterns)
+3. Chapter 20 Bible rules (agent best practices)
+4. Chapter 20 Teacher guidance (agent implementation)
+5. Lexicon entries (known bugs and issues)
+
+### Step 4: Generate Complete Audit Report
+
+Create a comprehensive markdown report with:
+
+```markdown
+# UI/UX Compliance Audit Report - [DATE]
+
+## Executive Summary
+- Total Components Scanned: X
+- Fully Compliant: Y (Z%)
+- Components Needing Fixes: N
+- Total Violations Found: M
+- Critical: X | Medium: Y | Low: Z
+
+## Knowledge Base Used
+- Chapter 19 Bible: [X rules loaded]
+- Chapter 19 Teacher: [Y entries loaded]
+- Chapter 20 Bible: [X rules loaded]
+- Chapter 20 Teacher: [Y entries loaded]
+- Lexicon: [Z UI/UX entries loaded]
+
+## Critical Violations (MUST FIX IMMEDIATELY)
+
+### [ComponentName.jsx]
+- ❌ **RULE #19.X** - [Description]
+  - Current: [What the code does now]
+  - Required: [What it should do]
+  - Fix: [Specific code change needed]
+  - Reference: [Bible/Teacher/Lexicon reference]
+
+## Medium Violations (SHOULD FIX SOON)
+
+### [ComponentName.jsx]
+- ⚠️ **RULE #19.X** - [Description]
+  - Current: [What the code does now]
+  - Recommended: [What it should do]
+  - Fix: [Specific code change needed]
+
+## Low Priority Issues (NICE TO HAVE)
+
+### [ComponentName.jsx]
+- ℹ️ **RULE #19.X** - [Description]
+  - Current: [What the code does now]
+  - Suggested: [What it could do better]
+
+## Fully Compliant Components ✅
+
+- ComponentName.jsx - 100% compliant with all rules
+- AnotherComponent.jsx - 100% compliant with all rules
+
+## Detailed Breakdown by Component
+
+### Tables (X components)
+| Component | Critical | Medium | Low | Compliance % |
+|-----------|----------|---------|-----|--------------|
+| POTable.jsx | 0 | 2 | 1 | 85% |
+| ContactsPage.jsx | 1 | 0 | 0 | 95% |
+
+### Forms (X components)
+[Same format]
+
+### Modals (X components)
+[Same format]
+
+## Action Plan
+
+### Immediate (Critical Fixes)
+1. [Component] - Fix [Issue] - Estimated: Xmin
+2. [Component] - Fix [Issue] - Estimated: Xmin
+
+### Short Term (Medium Fixes)
+1. [Component] - Fix [Issue] - Estimated: Xmin
+
+### Long Term (Low Priority)
+1. [Component] - Fix [Issue] - Estimated: Xmin
+
+## Estimated Total Fix Time
+- Critical: X hours
+- Medium: Y hours
+- Low: Z hours
+- **Total: N hours**
+```
+
+## Phase 3: Execution (Optional)
+
+After presenting the audit report, the agent CAN:
+1. **Ask user which fixes to apply** (recommended)
+2. **Auto-fix critical violations** (if explicitly requested)
+3. **Create a todo list** for tracking fix progress
+4. **Re-audit after fixes** to verify compliance
 
 ## Capabilities
 
-- Scan all table components for Chapter 19 compliance
-- Identify missing features (resize, reorder, filters, search)
-- Check for incorrect icon usage (e.g., wrong column visibility button)
-- Verify dark mode support across all components
-- Check state persistence (localStorage)
-- Validate header styling (gradients, sticky positioning)
-- Ensure accessibility standards (ARIA, keyboard nav)
-- Generate detailed compliance reports
-- Auto-fix common violations
+### Analysis
+- Scan all UI components across entire frontend
+- Cross-reference against Bible, Teacher, and Lexicon
+- Identify violations with severity levels
+- Calculate compliance percentages
+- Generate prioritized action plans
 
-## When to Use
+### Reporting
+- Detailed violation descriptions
+- Specific fix recommendations with code examples
+- Estimated fix times
+- Compliance scoring per component
+- Executive summary for stakeholders
 
-- Before any release/deployment
-- After adding new table/list components
-- When user reports UI inconsistency
-- During UI/UX refactoring tasks
-- When adding new pages with tables
-- As part of regular quality checks
-
-## Compliance Checks
-
-### Critical Violations (MUST FIX)
-1. **Column Visibility Button** - Must use EyeIcon + "Columns" text (RULE #19.10)
-2. **Custom Tables Missing Features** - Must have resize, reorder, filters, search (RULE #19.1)
-3. **No Dark Mode Support** - All components must support dark mode (RULE #19.15)
-4. **Missing Sticky Headers** - Headers must stick on scroll (RULE #19.2)
-5. **No State Persistence** - Column widths/order/visibility must persist (RULE #19.13)
-
-### Medium Violations (SHOULD FIX)
-6. **Wrong Header Gradient** - Must use standard gradient pattern (RULE #19.2)
-7. **Missing Sort Indicators** - Must show chevrons for sort state (RULE #19.2)
-8. **No Empty States** - Must handle no data gracefully (RULE #19.12)
-9. **Missing Search Box** - Advanced tables need global search (RULE #19.11)
-10. **Wrong Cell Padding** - Must use standard padding (RULE #19.8)
-
-### Low Violations (NICE TO HAVE)
-11. **No Hover States** - Rows should highlight on hover (RULE #19.9)
-12. **Missing ARIA Attributes** - Accessibility improvements (RULE #19.17)
-13. **No Memoization** - Large datasets should use useMemo (RULE #19.16)
-
-## Audit Process
-
-### 0. Check Test Recency (Smart Decision - RULE #20.7)
-
-**Before running full audit, check last run:**
-
-```bash
-# Check agent run history
-cat /Users/rob/Projects/trapid/.claude/agents/run-history.json
-```
-
-**Decision logic:**
-- **Last run <60 minutes ago AND successful:** Skip full audit, review cached report
-- **Last run >60 minutes ago OR last run failed:** Run full audit
-- **Never run before:** Run full audit
-
-This ensures:
-- Fast iteration when making multiple UI fixes
-- Full compliance check when enough time has passed
-- Always re-audit after failures
-
-### 1. Scan Phase
-
-- Find all `.jsx` files with tables (`<table>`, `<DataTable>`, custom table components)
-- Identify which pages use DataTable vs custom tables
-- Categorize by complexity level
-
-### 2. Analysis Phase
-
-- Check each component against 22 RULES from Chapter 19
-- Score compliance (0-100%)
-- Flag critical violations first
-
-### 3. Report Phase
-
-- Generate markdown report with findings
-- Prioritize by severity (Critical → Medium → Low)
-- Provide fix recommendations with code examples
-
-### 4. Fix Phase
-
-- Apply auto-fixes for common patterns
-- Flag complex issues for manual review
-- Verify fixes don't break functionality
+### Optional Execution
+- Auto-fix common patterns (with approval)
+- Create todo lists for tracking
+- Re-audit to verify fixes
+- Update Lexicon with new issues found
 
 ## Tools Available
 
-- Read, Write, Edit (all file operations)
+- Bash (API calls, grep, file operations)
+- Read, Write, Edit (file operations)
 - Grep, Glob (code search)
 - TodoWrite (tracking fix progress)
+- WebFetch (if needed for additional context)
+
+## When to Use This Agent
+
+- **Before any release/deployment** - Ensure UI compliance
+- **After adding new components** - Verify standards adherence
+- **When user reports UI inconsistency** - Find root cause
+- **During refactoring** - Maintain quality standards
+- **Weekly/monthly quality checks** - Prevent regression
+- **After updating Chapter 19/20** - Re-validate against new rules
 
 ## Shortcuts
 
 - `ui audit`
 - `run ui-compliance-auditor`
-- `ui compliance`
+- `ui compliance check`
+- `audit all ui components`
 
 ## Example Invocations
 
 ```
-"Audit all tables for Chapter 19 compliance"
-"Check ActiveJobsPage against UI/UX standards"
-"Fix column visibility buttons to use EyeIcon"
-"Generate UI compliance report for all pages"
+"Run complete UI audit against Chapter 19 and 20"
+"Audit all frontend components and tell me what needs fixing"
+"Check entire UI for compliance and generate fix list"
+"Perform comprehensive UI/UX audit with Lexicon checks"
 ```
 
 ## Success Criteria
 
-- All tables scored for compliance (% match to Chapter 19)
-- Critical violations fixed (100% compliance on MUST rules)
-- Compliance report generated
-- No regressions introduced
-- Dark mode works everywhere
-- State persistence verified
+✅ All three sources loaded (Bible, Teacher, Lexicon)
+✅ All UI components scanned
+✅ Every component checked against all applicable rules
+✅ Comprehensive audit report generated
+✅ Violations categorized by severity
+✅ Specific fix recommendations provided
+✅ Estimated fix times calculated
+✅ Action plan prioritized
 
-## Output Format
+## Important Notes
 
-### Compliance Report Structure
+### DO:
+- ✅ Always fetch latest rules from API (never use cached files)
+- ✅ Check ALL components, not just tables
+- ✅ Provide specific file paths and line numbers
+- ✅ Include code examples in fix recommendations
+- ✅ Prioritize critical violations
+- ✅ Calculate realistic time estimates
+- ✅ Cross-reference Bible, Teacher, and Lexicon
 
-```markdown
-# UI/UX Compliance Report - [DATE]
+### DON'T:
+- ❌ Read TRAPID_BIBLE.md or TRAPID_TEACHER.md files directly
+- ❌ Skip any components (scan everything)
+- ❌ Make fixes without presenting audit first
+- ❌ Ignore Lexicon warnings about known bugs
+- ❌ Give vague recommendations (be specific)
+- ❌ Forget to re-audit after making fixes
 
-## Summary
-- Total Components Scanned: X
-- Fully Compliant: Y (100%)
-- Needs Fixes: Z
+## Output Expectations
 
-## Critical Violations
-### [ComponentName.jsx]
-- ❌ RULE #19.10 - Wrong column visibility icon (using AdjustmentsHorizontalIcon instead of EyeIcon)
-- ❌ RULE #19.1 - Missing resize handles
-- Fix: [Code snippet or file reference]
+The agent MUST produce:
+1. **Complete audit report** (as markdown)
+2. **Exact list of what needs fixing** (not suggestions, but specifics)
+3. **Prioritized action plan** (ordered by severity)
+4. **Time estimates** (realistic fix durations)
+5. **Compliance scores** (percentage per component)
 
-## Medium Violations
-[Same format]
+## Agent Workflow Summary
 
-## Low Violations
-[Same format]
-
-## Fully Compliant Components ✅
-- ContactsPage.jsx
-- POTable.jsx
-- PriceBooksPage.jsx
+```
+START
+  ↓
+1. Fetch Chapter 19 Bible/Teacher
+  ↓
+2. Fetch Chapter 20 Bible/Teacher
+  ↓
+3. Fetch UI/UX Lexicon entries
+  ↓
+4. Scan all frontend components
+  ↓
+5. Apply ALL rules against EACH component
+  ↓
+6. Generate comprehensive audit report
+  ↓
+7. Present findings to user
+  ↓
+8. Wait for user decision on fixes
+  ↓
+9. (Optional) Execute approved fixes
+  ↓
+10. (Optional) Re-audit to verify
+  ↓
+END
 ```
 
-## Before Running This Agent
+## Last Updated
 
-**CRITICAL:** Fetch Chapter 19 rules from API first:
-```bash
-curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible&chapter_number=19'
-```
+[Auto-generated timestamp will be added]
 
-All fixes MUST follow the RULES from Chapter 19 without exception.
-
-**Note:** Do NOT read `TRAPID_BIBLE.md` - it's an auto-generated export. Always use the API for latest rules.
-
-## After Running This Agent
-
-1. Review compliance report
-2. Test all fixed components manually
-3. Verify dark mode on all pages
-4. Check localStorage persistence
-5. Update Lexicon if new UI bugs discovered
-
-## Last Run
-
-*Run history will be tracked automatically*
-
-
----
 
 ## §21.2: Agent Invocation Protocol
 
@@ -27877,7 +27454,6 @@ await fetch(`/api/v1/agent_definitions/backend-developer/record_run`, {
 })
 ```
 
----
 
 ## §21.3: Run History Tracking
 
@@ -27911,7 +27487,6 @@ def success_rate
 end
 ```
 
----
 
 ## §21.4: Agent Types and Specialization
 
@@ -27935,7 +27510,6 @@ focus: 'General Production Bug Diagnosis & Resolution'
 when_to_use: 'All non-Gantt production bugs'
 ```
 
----
 
 ## §21.5: Agent Priority and Display Order
 
@@ -27957,7 +27531,6 @@ when_to_use: 'All non-Gantt production bugs'
 0   - Default (new agents)
 ```
 
----
 
 ## §21.6: Agent Shortcuts and Invocation
 
@@ -28001,7 +27574,6 @@ planning-collaborator:
   - "run planner"
 ```
 
----
 
 ## §21.7: Recently Run Check (Smart Testing)
 
@@ -28036,7 +27608,6 @@ if (agent.recently_run(60)) {
 }
 ```
 
----
 
 ## §21.8: Shortcut Clarity - AgentShortcutsTab Updates
 
@@ -28057,7 +27628,6 @@ const baseCommands = [
 ]
 ```
 
----
 
 ## §21.9: Creating New Agents - Complete Checklist
 
@@ -28130,10 +27700,9 @@ const getAgentIcon = (agentName) => {
 };
 ```
 
----
 
 
-**Last Generated:** 2025-11-17 21:47 AEST
+**Last Generated:** 2025-11-17 22:23 AEST
 **Generated By:** `rake trapid:export_teacher`
 **Maintained By:** Development Team via Database UI
 **Review Schedule:** After adding new patterns or updating examples

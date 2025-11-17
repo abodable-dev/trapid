@@ -1,7 +1,7 @@
 # TRAPID LEXICON - Bug History & Knowledge Base
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-17 15:41 AEST
+**Last Updated:** 2025-11-17 22:26 AEST
 **Authority Level:** Reference (supplements Bible)
 **Audience:** Claude Code + Human Developers
 
@@ -43,14 +43,13 @@ This file is the **knowledge base** for all Trapid development.
 
 ## Table of Contents
 
-- [Chapter 0: System-Wide Rules](#chapter-0-system-wide-rules)
 - [Chapter 1: Overview & System-Wide Rules](#chapter-1-overview-system-wide-rules)
-- [Chapter 1: Authentication & Users](#chapter-1-authentication-users)
+- [Chapter 2: Overview & System-Wide Rules](#chapter-2-overview-system-wide-rules)
 - [Chapter 2: Authentication & Users](#chapter-2-authentication-users)
-- [Chapter 3: System Administration](#chapter-3-system-administration)
 - [Chapter 3: Contacts & Relationships](#chapter-3-contacts-relationships)
-- [Chapter 4: Price Books & Suppliers](#chapter-4-price-books-suppliers)
+- [Chapter 3: System Administration](#chapter-3-system-administration)
 - [Chapter 4: Contacts & Relationships](#chapter-4-contacts-relationships)
+- [Chapter 4: Price Books & Suppliers](#chapter-4-price-books-suppliers)
 - [Chapter 5: Price Books & Suppliers](#chapter-5-price-books-suppliers)
 - [Chapter 6: Jobs & Construction Management](#chapter-6-jobs-construction-management)
 - [Chapter 7: Estimates & Quoting](#chapter-7-estimates-quoting)
@@ -66,314 +65,116 @@ This file is the **knowledge base** for all Trapid development.
 - [Chapter 16: Xero Accounting Integration](#chapter-16-xero-accounting-integration)
 - [Chapter 17: Payments & Financials](#chapter-17-payments-financials)
 - [Chapter 18: Workflows & Automation](#chapter-18-workflows-automation)
-- [Chapter 19: UI/UX Standards & Patterns](#chapter-19-ui-ux-standards-patterns)
 - [Chapter 19: Custom Tables & Formulas](#chapter-19-custom-tables-formulas)
+- [Chapter 19: UI/UX Standards & Patterns](#chapter-19-ui-ux-standards-patterns)
+- [Chapter 20: Trinity Table - Gold Standard](#chapter-20-trinity-table-gold-standard)
 - [Chapter 20: UI/UX Standards & Patterns](#chapter-20-ui-ux-standards-patterns)
 - [Chapter 21: Agent System & Automation](#chapter-21-agent-system-automation)
 
 ---
 
 
-# Chapter 0: System-Wide Rules
-
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  0               │
-│ 📘 USER MANUAL (HOW): Chapter  0               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-17
-
----
-
-## 🎓 Developer Notes
-
-### Frontend Implementation Status - Historical Snapshot
-
-Historical record of frontend implementation progress and completed features
-
-# Frontend Implementation Status
-
-## ✅ Completed
-
-### Backend
-- ✅ All database migrations created and run
-- ✅ ContactPerson, ContactAddress, ContactGroup, ContactGroupMembership models created
-- ✅ Contact model updated with associations
-- ✅ XeroContactSyncJob fully updated to sync all fields including nested structures
-- ✅ contacts_controller.rb updated with nested attributes
-- ✅ Contact serialization includes nested data
-
-### Frontend
-- ✅ ContactPersonsSection component created at `frontend/src/components/contacts/ContactPersonsSection.jsx`
-
-## 🚧 Remaining Frontend Work
-
-### 1. Create ContactAddressesSection Component
-File: `frontend/src/components/contacts/ContactAddressesSection.jsx`
-
-Similar to ContactPersonsSection but for addresses with fields:
-- address_type (STREET, POBOX, DELIVERY)
-- line1, line2, line3, line4
-- city, region, postal_code, country
-- attention_to
-- is_primary checkbox
-
-### 2. Update ContactDetailPage.jsx
-
-**Import new components:**
-```javascript
-import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
-import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
-```
-
-**Add new state for nested data:**
-```javascript
-const [contactPersons, setContactPersons] = useState([])
-const [contactAddresses, setContactAddresses] = useState([])
-```
-
-**In loadContact(), extract nested data:**
-```javascript
-setContactPersons(contactData.contact_persons || [])
-setContactAddresses(contactData.contact_addresses || [])
-```
-
-**Add handler functions:**
-```javascript
-const handleContactPersonsUpdate = async (updatedPersons) => {
-  // Send PATCH request with contact_persons_attributes
-}
-
-const handleContactAddressesUpdate = async (updatedAddresses) => {
-  // Send PATCH request with contact_addresses_attributes
-}
-```
-
-**Add new sections in JSX (after Contact Information section):**
-```jsx
-<ContactPersonsSection
-  contactPersons={contactPersons}
-  onUpdate={handleContactPersonsUpdate}
-  isEditMode={isPageEditMode}
-  contactId={id}
-/>
-
-<ContactAddressesSection
-  contactAddresses={contactAddresses}
-  onUpdate={handleContactAddressesUpdate}
-  isEditMode={isPageEditMode}
-  contactId={id}
-/>
-```
-
-**Add new Xero fields to Purchase & Payment Settings section:**
-- fax_phone (inline editable)
-- sales_due_day, sales_due_type (inline editable)
-- default_sales_account (inline editable)
-- default_discount (inline editable)
-- company_number (inline editable)
-- xero_contact_number (read-only display)
-- xero_account_number (inline editable)
-
-**Add Account Balances section (read-only display):**
-```jsx
-{contact.accounts_receivable_outstanding && (
-  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
-    <h3>Account Balances (From Xero)</h3>
-    <div className="grid grid-cols-2 gap-4">
-      <div>
-        <p>Accounts Receivable Outstanding: ${contact.accounts_receivable_outstanding}</p>
-        <p>Accounts Receivable Overdue: ${contact.accounts_receivable_overdue}</p>
-      </div>
-      <div>
-        <p>Accounts Payable Outstanding: ${contact.accounts_payable_outstanding}</p>
-        <p>Accounts Payable Overdue: ${contact.accounts_payable_overdue}</p>
-      </div>
-    </div>
-  </div>
-)}
-```
-
-**Add Contact Groups display (read-only):**
-```jsx
-{contact.contact_groups && contact.contact_groups.length > 0 && (
-  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
-    <h3>Xero Contact Groups</h3>
-    <div className="flex flex-wrap gap-2">
-      {contact.contact_groups.map(group => (
-        <span key={group.id} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded-full text-sm">
-          {group.name}
-        </span>
-      ))}
-    </div>
-  </div>
-)}
-```
-
-## Testing Checklist
-
-1. Test Xero sync with contact that has multiple contact persons
-2. Test Xero sync with contact that has multiple addresses
-3. Test adding/editing/deleting contact persons in UI
-4. Test adding/editing/deleting addresses in UI
-5. Test all new inline editable fields
-6. Test that sync status indicators work for nested data
-7. Test primary person/address toggle
-8. Verify data persists after page reload
-9. Test with contacts that have no nested data (empty arrays)
-10. Test contact groups display
-
-## Quick Implementation Guide
-
-Due to the large size of ContactDetailPage.jsx, the easiest approach is:
-
-1. Create ContactAddressesSection component (similar to ContactPersonsSection)
-2. Import both new components into ContactDetailPage
-3. Add state and handlers for nested data
-4. Insert the two new section components after the Contact Information section
-5. Add new scalar fields to existing sections using the same inline editing pattern
-6. Add read-only sections for balances and groups
-
-The inline editing pattern is already established in the file - just follow the same pattern for new fields.
-
-
----
-
-### Claude Code Update - Complete Documentation
-
-Documentation of Claude Code configuration updates and improvements
-
-# Schedule Master - Complete CC_UPDATE Documentation
-**Generated:** 2025-11-15
-**Purpose:** Complete implementation documentation for all 24 Schedule Master table columns
-**Source:** Code review of ScheduleTemplateEditor.jsx + backend models
-**Use:** Reference for updating NewFeaturesTab CC_UPDATE table
-
----
-
-## How to Use This Document
-
-This document contains the complete, accurate CC_UPDATE documentation for all columns based on actual code implementation.
-
-**To update NewFeaturesTab.jsx:**
-1. Navigate to: http://localhost:5173/settings?tab=schedule-master&subtab=new-features
-2. For each column below, click the "CC Update" cell
-3. Copy/paste the documentation from this file
-4. Click Save
-
-**Or:** Use the script at bottom of this file to programmatically update localStorage
-
----
-
-## Column -1: select (Multi-Select Checkbox)
-
-```markdown
-**Status:** Fully functional ✅
-
-**Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2388-2398
-- Rendering: Checkbox input, 40px width, center-aligned, order: -1 (first column)
-- Event handlers:
-  - onChange: `onSelectRow(row.id)` toggles individual row selection
-  - State: Managed via `isSelected` prop passed from parent
-  - Styling: h-4 w-4, indigo-600 color, rounded, cursor-pointer
-
-**Backend:**
-- Field: N/A (frontend-only state management)
-- Type: Client-side selection tracking (Set of row IDs in parent component)
-
-**How It Works:**
-Enables multi-row selection for bulk operations. Users click checkboxes to select multiple rows, triggering bulk actions toolbar. Parent component manages selection state via Set data structure for O(1) lookup performance. Header checkbox (not in this cell) enables select-all/deselect-all functionality.
-
-**Interdependencies:**
-- Bulk operations toolbar visibility depends on selection count > 0
-- Bulk update actions: Set PO Required, Enable Auto PO, Disable Auto PO, Delete Selected
-
-**Current Limitations:**
-- Selection state lost when filters/sorts applied
-- No shift-click range selection
-- No ctrl-click multi-select
-- Selection not persisted across page reloads
-```
-
----
-
-## Column 0: sequence (Task Sequence Number)
-
-```markdown
-**Status:** Fully functional ✅
-
-**Frontend Implementation:**
-- Location: ScheduleTemplateEditor.jsx:2400-2405
-- Rendering: Read-only text display, 40px width, center-aligned, order: 0
-- Display: `{index + 1}` - converts 0-based index to 1-based display
-- Styling: text-gray-500 dark:text-gray-400, no input (display only)
-
-**Backend:**
-- Field: schedule_template_rows.sequence_order
-- Type: integer (NOT NULL, >= 0)
-- Validation: Presence required (model line 14), numericality >= 0 (model line 15)
-- Scope: in_sequence orders by sequence_order asc (model line 28)
-
-**How It Works:**
-Auto-generated task sequence number representing row position in template. Database stores 0-based (0, 1, 2...), frontend displays 1-based (#1, #2, #3...). Critical for predecessor dependency system which references tasks by sequence number. Updated automatically when rows reordered via move up/down buttons (lines 2734-2741).
-
-**CRITICAL - Dependency System Integration:**
-- **Storage**: sequence_order is 0-based in DB (0, 1, 2, 3, ...)
-- **Display**: Frontend shows 1-based (#1, #2, #3, #4, ...)
-- **Dependencies**: predecessor_ids use 1-based references (task #1 = sequence_order 0)
-- **Conversion**: See Bible RULE #1 for mandatory conversion logic
-
-**Interdependencies:**
-- Predecessor Editor modal references tasks by displayed sequence number
-- Move up/down actions recalculate all sequence_order values
-- Sorting by sequence maintains template task order
-
-**Current Limitations:**
-- No automatic dependency update when tasks reordered
-- Manual verification needed after reordering to ensure deps still valid
-- No visual warning if dependencies broken by reordering
-- 0-based/1-based conversion can cause confusion for developers
-```
-
----
-
-**[Document continues with all 24 columns - truncated for length. Would you like me to continue with the full document, or would you prefer a different approach?]**
-
-Due to the massive size of this update (498 lines of detailed documentation × 24 columns), I have three options for you:
-
-**Option A:** I create the complete markdown file (like above) with all 24 columns, and you manually copy/paste into the UI
-
-**Option B:** I create a JavaScript script that directly updates the localStorage where CC_UPDATE data is stored
-
-**Option C:** I update the NewFeaturesTab.jsx file directly with all new content (will be a very large edit)
-
-Which approach would you prefer?
-
-
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
-
-
 # Chapter 1: Overview & System-Wide Rules
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  1               │
-│ 📘 USER MANUAL (HOW): Chapter  1               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
 
----
+## 🏛️ Architecture
+
+### Design Decisions & Rationale
+
+### 1. Multiple Sources of Truth - Codebase Audit Findings
+
+**Decision:** ## 🔍 Audit Date: 2025-11-17
+
+Found **7 critical violations** of RULE #1.13 (Single Source of Truth):
+
+### ❌ VIOLATION #1: AgentShortcutsTab.jsx hardcoded commands
+**Location:** `frontend/src/components/settings/AgentShortcutsTab.jsx`
+**Problem:** Agent shortcuts hardcoded in `baseCommands` array
+**Should be:** Read from AgentDefinition database via API
+**Impact:** When agents change, must update code manually
+
+### ❌ VIOLATION #2: AgentStatus.jsx hardcoded agent info
+**Location:** `frontend/src/components/settings/AgentStatus.jsx`
+**Problem:** Agent icons, names, descriptions hardcoded in 3 functions
+**Should be:** Read from AgentDefinition database via API
+**Impact:** Duplicate data, manual sync required
+
+### ❌ VIOLATION #3: User roles hardcoded in frontend
+**Location:** 
+- `frontend/src/components/settings/AddUserModal.jsx`
+- `frontend/src/components/settings/EditUserModal.jsx`
+**Problem:** `roles` and `assignableRoles` arrays hardcoded
+**Should be:** Fetch from backend API (/api/v1/roles)
+**Impact:** Role changes require frontend code updates
+
+### ❌ VIOLATION #4: Contact types hardcoded in frontend
+**Location:** `frontend/src/components/settings/ContactRolesManagement.jsx`
+**Problem:** `CONTACT_TYPES` array hardcoded
+**Should be:** Fetch from backend (matches database enum)
+**Impact:** Adding contact types requires code change
+
+### ❌ VIOLATION #5: Trinity filter options hardcoded
+**Location:** `frontend/src/components/documentation/FilterSection.jsx`
+**Problem:** `typeOptions` and `statusOptions` hardcoded
+**Should be:** Fetch from Trinity model constants via API
+**Impact:** Adding new types requires frontend update
+
+### ❌ VIOLATION #6: Schedule Master types hardcoded
+**Location:** 
+- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx`
+- `frontend/src/components/schedule-master/PredecessorEditor.jsx`
+**Problem:** Task types, dependency types, roles hardcoded
+**Should be:** Database enums or configuration table
+**Impact:** Changes require code updates
+
+### ❌ VIOLATION #7: Column types hardcoded
+**Location:** `frontend/src/constants/columnTypes.js`
+**Problem:** `COLUMN_TYPES` array hardcoded
+**Should be:** Database table or API endpoint
+**Impact:** Cannot add column types without deployment
+
+## ✅ Recommended Fixes
+
+1. Create API endpoints for all enum/constant data
+2. Frontend fetches from API on mount
+3. Cache in React Context/Redux for performance
+4. Remove hardcoded arrays from components
+
+## 📊 Priority
+
+**High:** #1, #2 (Agents already have database)
+**Medium:** #3, #4, #5 (Used frequently)  
+**Low:** #6, #7 (Less frequently changed)
+
+## ✅ FIXES APPLIED (2025-11-17)
+
+### Backend Infrastructure Complete:
+1. ✅ Created  endpoint (AgentsController)
+2. ✅ Created  endpoint
+3. ✅ Created  task
+4. ✅ Added  entry type to Trinity
+5. ✅ Updated RULE #21.19 (3-step process, database as source of truth)
+6. ✅ Imported UI Compliance Auditor to Trinity database
+
+### Frontend Fixes Remaining (9 hours estimated):
+- [ ] Update AgentShortcutsTab to fetch from API (2h)
+- [ ] Update AgentStatus to fetch from API (included)
+- [ ] Create roles API + update modals (3h)
+- [ ] Create contact types API + update component (2h)
+- [ ] Create Trinity constants API + update filters (2h)
+
+### Future Work (Low Priority, 8-12 hours):
+- [ ] Schedule Master types to database
+- [ ] Column types to database
+
+See implementation summary for details.
+
+
+
+# Chapter 2: Overview & System-Wide Rules
+
+**Last Updated:** 2025-11-17
 
 ## 🐛 Bug Hunter
 
@@ -395,97 +196,6 @@ The `working_days` column was added manually to `company_settings` table without
 3. ActiveRecord's schema cache didn't recognize the column
 4. Test failed: `undefined method 'working_days' for an instance of CompanySetting`
 
----
-
-## 🏛️ Architecture
-
-### Design Decisions & Rationale
-
-### 1. Authentication & Contacts System - Complete Investigation
-
-**Decision:** Comprehensive investigation of authentication flow and contact management system. Key Findings: JWT token-based authentication with 24-hour expiration, User model with bcrypt password hashing, Contact system with Xero sync integration, Portal users (separate from admin users), Nested contact persons and addresses. Architecture Decisions: Chose JWT over session-based auth for API flexibility, Separate portal_users table for customer access, Contact sync with Xero using fuzzy matching, Bidirectional relationship management. Full investigation archived in: AUTHENTICATION_AND_CONTACTS_INVESTIGATION.md
-
-**Trade-offs:**
-Original file archived at: AUTHENTICATION_AND_CONTACTS_INVESTIGATION.md (38.5 KB)
-
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
-
-
-# Chapter 1: Authentication & Users
-
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  1               │
-│ 📘 USER MANUAL (HOW): Chapter  1               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-17
-
----
-
-## 🐛 Bug Hunter
-
-### ⚡ Unmigrated Schema Changes (working_days column)
-
-**Status:** ⚡ FIXED
-**First Reported:** Unknown
-**Severity:** Medium
-
-#### Summary
-The `working_days` column was added manually to `company_settings` table without creating a migration file. When the test tried to use `working_days`, it failed with "undefined method" despite the column existing in the database.
-
-#### Scenario
-The `working_days` column was added manually to `company_settings` table without creating a migration file. When the test tried to use `working_days`, it failed with "undefined method" despite the column existing in the database.
-
-#### Root Cause
-1. Column was added directly to staging database (via console or manual SQL)
-2. No migration file created to track this schema change
-3. ActiveRecord's schema cache didn't recognize the column
-4. Test failed: `undefined method 'working_days' for an instance of CompanySetting`
-
----
-
-## 🏛️ Architecture
-
-### Design Decisions & Rationale
-
-### 1. Authentication & Contacts System - Complete Investigation
-
-**Decision:** Comprehensive investigation of authentication flow and contact management system. Key Findings: JWT token-based authentication with 24-hour expiration, User model with bcrypt password hashing, Contact system with Xero sync integration, Portal users (separate from admin users), Nested contact persons and addresses. Architecture Decisions: Chose JWT over session-based auth for API flexibility, Separate portal_users table for customer access, Contact sync with Xero using fuzzy matching, Bidirectional relationship management. Full investigation archived in: AUTHENTICATION_AND_CONTACTS_INVESTIGATION.md
-
-**Trade-offs:**
-Original file archived at: AUTHENTICATION_AND_CONTACTS_INVESTIGATION.md (38.5 KB)
-
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
-
-
-# Chapter 2: Authentication & Users
-
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  2               │
-│ 📘 USER MANUAL (HOW): Chapter  2               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-17
-
----
-
-## 🐛 Bug Hunter
 
 ### ⚡ Nil User in Authorization Check
 
@@ -512,7 +222,6 @@ User attempts to update schedule template rows via Gantt drag-and-drop. API retu
 
 **Component:** ScheduleTemplateRows
 
----
 
 ### ⚡ JWT Token Expiration Not Handled in Frontend
 
@@ -529,7 +238,6 @@ User logs in, leaves tab open for 25 hours, makes request → 401 Unauthorized e
 #### Root Cause
 JWT tokens expire after 24 hours with NO automatic refresh mechanism.
 
----
 
 ### ⚡ No Account Lockout for Admin Users
 
@@ -546,7 +254,6 @@ Attacker brute forces admin user password with unlimited attempts.
 #### Root Cause
 Account lockout only implemented for `PortalUser`, not `User` model.
 
----
 
 ### ⚡ Password Reset Email Disabled
 
@@ -562,7 +269,6 @@ User requests password reset → token generated but NO email sent.
 
 **Component:** Users
 
----
 
 ### ⚡ OAuth Token Expiration Not Monitored
 
@@ -584,7 +290,6 @@ Check token expiration before OneDrive API calls:
 
 **Component:** OmniauthCallbacks
 
----
 
 ## 🏛️ Architecture
 
@@ -604,7 +309,6 @@ Check token expiration before OneDrive API calls:
 - Cannot revoke tokens
 - Larger size than session ID
 
----
 
 ### 2. Role System Architecture
 
@@ -613,68 +317,174 @@ Check token expiration before OneDrive API calls:
 **Details:**
 Roles are hardcoded rather than database-driven to prevent privilege escalation via API exploits.
 
----
 
-## 📚 Related Chapters
+### 3. Authentication & Contacts System - Complete Investigation
 
-_Links to related chapters will be added as cross-references are identified._
+**Decision:** Comprehensive investigation of authentication flow and contact management system. Key Findings: JWT token-based authentication with 24-hour expiration, User model with bcrypt password hashing, Contact system with Xero sync integration, Portal users (separate from admin users), Nested contact persons and addresses. Architecture Decisions: Chose JWT over session-based auth for API flexibility, Separate portal_users table for customer access, Contact sync with Xero using fuzzy matching, Bidirectional relationship management. Full investigation archived in: AUTHENTICATION_AND_CONTACTS_INVESTIGATION.md
 
----
+**Trade-offs:**
+Original file archived at: AUTHENTICATION_AND_CONTACTS_INVESTIGATION.md (38.5 KB)
 
 
-# Chapter 3: System Administration
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  3               │
-│ 📘 USER MANUAL (HOW): Chapter  3               │
-└─────────────────────────────────────────────────┘
+# Chapter 2: Authentication & Users
 
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
 
----
+## 🐛 Bug Hunter
+
+### ⚡ Unmigrated Schema Changes (working_days column)
+
+**Status:** ⚡ FIXED
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+The `working_days` column was added manually to `company_settings` table without creating a migration file. When the test tried to use `working_days`, it failed with "undefined method" despite the column existing in the database.
+
+#### Scenario
+The `working_days` column was added manually to `company_settings` table without creating a migration file. When the test tried to use `working_days`, it failed with "undefined method" despite the column existing in the database.
+
+#### Root Cause
+1. Column was added directly to staging database (via console or manual SQL)
+2. No migration file created to track this schema change
+3. ActiveRecord's schema cache didn't recognize the column
+4. Test failed: `undefined method 'working_days' for an instance of CompanySetting`
+
+
+### ⚡ Nil User in Authorization Check
+
+**Status:** ⚡ FIXED
+**First Reported:** Unknown
+**Severity:** Critical
+
+#### Summary
+User attempts to update schedule template rows via Gantt drag-and-drop. API returns error:
+
+#### Scenario
+User attempts to update schedule template rows via Gantt drag-and-drop. API returns error:
+
+#### Root Cause
+1. `ApplicationController#authorize_request` decoded JWT token but didn't validate that `@current_user` was set
+2. If JWT was missing/invalid, `decoded` would be `nil` → `@current_user` remained `nil`
+3. No error was raised - request continued
+4. When `check_can_edit_templates` called `@current_user.can_create_templates?`, it failed with NoMethodError
+
+#### Prevention
+- ALWAYS use safe navigation (`&.`) when calling methods on `@current_user`
+- Ensure `authorize_request` validates `@current_user` is not nil
+- Return proper 401 Unauthorized instead of allowing nil to propagate
+
+**Component:** ScheduleTemplateRows
+
+
+### ⚡ JWT Token Expiration Not Handled in Frontend
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+User logs in, leaves tab open for 25 hours, makes request → 401 Unauthorized error.
+
+#### Scenario
+User logs in, leaves tab open for 25 hours, makes request → 401 Unauthorized error.
+
+#### Root Cause
+JWT tokens expire after 24 hours with NO automatic refresh mechanism.
+
+
+### ⚡ No Account Lockout for Admin Users
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+Attacker brute forces admin user password with unlimited attempts.
+
+#### Scenario
+Attacker brute forces admin user password with unlimited attempts.
+
+#### Root Cause
+Account lockout only implemented for `PortalUser`, not `User` model.
+
+
+### ⚡ Password Reset Email Disabled
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+User requests password reset → token generated but NO email sent.
+
+#### Scenario
+User requests password reset → token generated but NO email sent.
+
+**Component:** Users
+
+
+### ⚡ OAuth Token Expiration Not Monitored
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Low
+
+#### Summary
+User logs in via Microsoft OAuth → token expires after 1 hour → OneDrive API calls fail silently.
+
+#### Scenario
+User logs in via Microsoft OAuth → token expires after 1 hour → OneDrive API calls fail silently.
+
+#### Root Cause
+`oauth_expires_at` field is stored but not checked before API calls.
+
+#### Solution
+Check token expiration before OneDrive API calls:
+
+**Component:** OmniauthCallbacks
+
 
 ## 🏛️ Architecture
 
 ### Design Decisions & Rationale
 
-### 1. Timezone Support Migration - Architecture Decision
+### 1. JWT vs Session-Based Auth (Design Decision)
 
-**Decision:** Decision to add timezone support to company_settings and handle all dates in UTC with timezone conversion. Migration Approach: Added timezone column to company_settings, Default: Australia/Brisbane, Frontend converts to local timezone, Backend stores all times in UTC, Working days respect business timezone. Impact: All scheduling features now timezone-aware, Gantt chart displays in business hours, Reports use correct business day boundaries. Full migration guide: TIMEZONE_MIGRATION_GUIDE.md, Testing guide: TIMEZONE_TESTING_GUIDE.md
+**Decision:** Stateless authentication using JWT tokens instead of session cookies for API-friendly architecture
+
+**Details:**
+**Why JWT?**
+- Stateless: No server-side session storage
+- API-friendly: Works well with React SPA
+- Mobile-ready
 
 **Trade-offs:**
-Original file archived at: TIMEZONE_MIGRATION_SUMMARY.md (7.9 KB)
+- Cannot revoke tokens
+- Larger size than session ID
 
----
 
-## 🎓 Developer Notes
+### 2. Role System Architecture
 
-### Chapter Documentation Pending
+**Decision:** Hardcoded enum roles in User model for security and performance
 
-This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+**Details:**
+Roles are hardcoded rather than database-driven to prevent privilege escalation via API exploits.
 
----
 
-## 📚 Related Chapters
+### 3. Authentication & Contacts System - Complete Investigation
 
-_Links to related chapters will be added as cross-references are identified._
+**Decision:** Comprehensive investigation of authentication flow and contact management system. Key Findings: JWT token-based authentication with 24-hour expiration, User model with bcrypt password hashing, Contact system with Xero sync integration, Portal users (separate from admin users), Nested contact persons and addresses. Architecture Decisions: Chose JWT over session-based auth for API flexibility, Separate portal_users table for customer access, Contact sync with Xero using fuzzy matching, Bidirectional relationship management. Full investigation archived in: AUTHENTICATION_AND_CONTACTS_INVESTIGATION.md
 
----
+**Trade-offs:**
+Original file archived at: AUTHENTICATION_AND_CONTACTS_INVESTIGATION.md (38.5 KB)
+
 
 
 # Chapter 3: Contacts & Relationships
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  3               │
-│ 📘 USER MANUAL (HOW): Chapter  3               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🏛️ Architecture
 
@@ -687,7 +497,6 @@ _Links to related chapters will be added as cross-references are identified._
 **Trade-offs:**
 Original file archived at: TIMEZONE_MIGRATION_SUMMARY.md (7.9 KB)
 
----
 
 ## 🎓 Developer Notes
 
@@ -695,339 +504,35 @@ Original file archived at: TIMEZONE_MIGRATION_SUMMARY.md (7.9 KB)
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
-# Chapter 4: Price Books & Suppliers
+# Chapter 3: System Administration
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  4               │
-│ 📘 USER MANUAL (HOW): Chapter  4               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
-
-## 🐛 Bug Hunter
-
-### ⚠️ Xero Sync Creates Duplicate Contacts for Name Variations
-
-**Status:** ⚠️ BY_DESIGN
-**First Reported:** 2025-09-20
-**Last Occurred:** 2025-11-10
-**Severity:** Medium
-
-#### Summary
-Xero contact "ABC Plumbing Pty Ltd" and existing local contact "ABC Plumbing" are treated as different contacts during sync, creating duplicates.
-
-#### Scenario
-Xero contact "ABC Plumbing Pty Ltd" and existing local contact "ABC Plumbing" are treated as different contacts during sync, creating duplicates.
-
-#### Root Cause
-Fuzzy match threshold set at 85% similarity doesn't catch common business suffix variations like "Pty Ltd" vs no suffix, "Trading As" vs legal name, ampersand vs "and".
-
-#### Solution
-1. Manual Merge: Use POST /api/v1/contacts/merge. 2. Preventive: Set tax_number (ABN/ACN) - Priority 2 matching catches these. 3. Workaround: Manually link via POST /api/v1/contacts/:id/link_xero_contact
-
-#### Prevention
-Always set ABN for Australian businesses to enable Priority 2 matching
-
-**Component:** XeroContactSync
-
----
-
-### ⚡ Contact Merge Fails When Supplier Has Active Purchase Orders
-
-**Status:** ⚡ FIXED
-**First Reported:** 2025-11-04
-**Last Occurred:** 2025-11-04
-**Fixed Date:** 2025-11-05
-**Severity:** High
-
-#### Summary
-Attempting to merge two supplier contacts fails with foreign key constraint error when source supplier has purchase orders.
-
-#### Scenario
-Attempting to merge two supplier contacts fails with foreign key constraint error when source supplier has purchase orders.
-
-#### Root Cause
-Merge controller was updating PricebookItem and PriceHistory foreign keys, but forgot to update PurchaseOrder.supplier_id.
-
-#### Solution
-Added missing PurchaseOrder update: PurchaseOrder.where(supplier_id: source.id).update_all(supplier_id: target.id)
-
-#### Prevention
-Always check ALL foreign key relationships when implementing merge features
-
-**Component:** ContactMerge
-
----
-
-### ⚡ Primary Contact Person Not Enforced on Xero Sync
-
-**Status:** ⚡ FIXED
-**First Reported:** 2025-10-12
-**Last Occurred:** 2025-10-12
-**Fixed Date:** 2025-10-15
-**Severity:** Low
-
-#### Summary
-After Xero contact sync, contacts end up with multiple is_primary = true contact persons.
-
-#### Scenario
-After Xero contact sync, contacts end up with multiple is_primary = true contact persons.
-
-#### Root Cause
-XeroContactSyncService was creating ContactPerson records directly without triggering callbacks
-
-#### Solution
-Changed to use single record creation which triggers callbacks
-
-#### Prevention
-Added validation test in contact_person_spec.rb
-
-**Component:** XeroContactSync
-
----
-
-### ⚡ Portal Password Reset Loop for Locked Accounts
-
-**Status:** ⚡ FIXED
-**First Reported:** 2025-10-28
-**Last Occurred:** 2025-10-28
-**Fixed Date:** 2025-11-01
-**Severity:** Medium
-
-#### Summary
-Portal users locked out after 5 failed attempts cannot reset password because password reset endpoint also checks locked? status.
-
-#### Scenario
-Portal users locked out after 5 failed attempts cannot reset password because password reset endpoint also checks locked? status.
-
-#### Root Cause
-Password reset endpoint was checking lockout status, preventing locked users from resetting passwords
-
-#### Solution
-Modified password reset endpoint to skip lockout check and clear locked_until and failed_login_attempts on successful reset
-
-#### Prevention
-Only check lockout on login attempts, not password resets
-
-**Component:** PortalAuth
-
----
-
-### ⚠️ Bidirectional Relationship Cascade Causes Infinite Loop
-
-**Status:** ⚠️ BY_DESIGN
-**First Reported:** 2025-09-15
-**Severity:** Critical
-
-#### Summary
-Creating a relationship triggers after_create which creates the reverse, which triggers another after_create, leading to infinite recursion.
-
-#### Scenario
-Creating a relationship triggers after_create which creates the reverse, which triggers another after_create, leading to infinite recursion.
-
-#### Root Cause
-Bidirectional relationships need to create reverse relationships automatically without protection
-
-#### Solution
-Use Thread-local flag to prevent recursion: Thread.current[:creating_reverse_relationship]
-
-#### Prevention
-This pattern MUST be used for all bidirectional associations. See BIBLE RULE #3.2
-
-**Component:** ContactRelationship
-
----
-
-### 🔄 Contact Activity Log Growing Too Large (>10k Records)
-
-**Status:** 🔄 MONITORING
-**First Reported:** 2025-10-20
-**Severity:** Low
-
-#### Summary
-Contacts with high Xero sync frequency accumulate thousands of ContactActivity records, slowing down activities endpoint
-
-#### Scenario
-Contacts with high Xero sync frequency accumulate thousands of ContactActivity records, slowing down activities endpoint
-
-#### Root Cause
-No archival or pagination for activity logs
-
-#### Solution
-Activities endpoint limits to 50 most recent records
-
-#### Prevention
-Consider adding archival for activities older than 6 months, implement pagination
-
-**Component:** ContactActivity
-
----
-
-### ⚡ Portal User Email Validation Too Strict
-
-**Status:** ⚡ FIXED
-**First Reported:** 2025-10-22
-**Fixed Date:** 2025-10-25
-**Severity:** Low
-
-#### Summary
-Portal user creation fails for valid email addresses with plus addressing or subdomains
-
-#### Scenario
-Portal user creation fails for valid email addresses with plus addressing or subdomains
-
-#### Root Cause
-Email validation regex was overly restrictive
-
-#### Solution
-Changed to use Ruby's built-in URI::MailTo::EMAIL_REGEXP
-
-#### Prevention
-Use standard email validation libraries instead of custom regex
-
-**Component:** PortalUser
-
----
-
-### ⚡ Contact Type Filter Returns Wrong Results for "Both"
-
-**Status:** ⚡ FIXED
-**First Reported:** 2025-10-15
-**Fixed Date:** 2025-10-18
-**Severity:** Medium
-
-#### Summary
-Filtering contacts with ?type=both returns contacts that are customer OR supplier instead of customer AND supplier
-
-#### Scenario
-Filtering contacts with ?type=both returns contacts that are customer OR supplier instead of customer AND supplier
-
-#### Root Cause
-Controller was using array overlap check (&&) instead of array containment (@>)
-
-#### Solution
-Changed to array containment operator: contact_types @> ARRAY['customer', 'supplier']::varchar[]
-
-#### Prevention
-Use @> for AND logic on PostgreSQL arrays, && for OR logic
-
-**Component:** ContactsController
-
----
-
-### ⚡ Deleting Contact Doesn't Clear Related Supplier References
-
-**Status:** ⚡ FIXED
-**First Reported:** 2025-09-25
-**Fixed Date:** 2025-09-28
-**Severity:** High
-
-#### Summary
-Deleting a contact that has linked suppliers leaves orphaned SupplierContact records
-
-#### Scenario
-Deleting a contact that has linked suppliers leaves orphaned SupplierContact records
-
-#### Root Cause
-Missing dependent: :destroy on has_many :supplier_contacts association
-
-#### Solution
-Added cascade delete: has_many :supplier_contacts, dependent: :destroy
-
-#### Prevention
-Added model test to verify cascade deletion
-
-**Component:** Contact
-
----
-
-### ⚠️ Xero Sync Rate Limiting Causes Timeout on Large Contact Lists
-
-**Status:** ⚠️ BY_DESIGN
-**First Reported:** 2025-11-08
-**Severity:** Low
-
-#### Summary
-Syncing 500+ contacts from Xero takes over 10 minutes due to 1.2-second delay, causing Heroku timeout
-
-#### Scenario
-Syncing 500+ contacts from Xero takes over 10 minutes due to 1.2-second delay, causing Heroku timeout
-
-#### Root Cause
-Xero API has 60 requests/minute limit. With 500 contacts sync takes 600 seconds
-
-#### Solution
-Run Xero sync as background job: XeroContactSyncJob.perform_later
-
-#### Prevention
-Large syncs must use background jobs
-
-**Component:** XeroContactSync
-
----
 
 ## 🏛️ Architecture
 
 ### Design Decisions & Rationale
 
-### 1. Contact Type System
+### 1. Timezone Support Migration - Architecture Decision
 
-**Decision:** PostgreSQL array column for contact_types to support hybrid entities
-
-**Details:**
-Uses varchar[] to allow contacts to be both customers and suppliers simultaneously. GIN indexes provide fast querying.
-
----
-
-### 2. Supplier Portal - Implementation Plan & Architecture
-
-**Decision:** Complete plan for building supplier portal allowing external access to quotes, POs, and invoices. Features Planned: Separate portal_users authentication, Scoped access to contact data only, Quote approval workflow, PO confirmation, Invoice status tracking. Security Considerations: Separate auth tokens from admin, Row-level security checks, Email verification required, Password complexity requirements. Full plan archived in: PORTAL_IMPLEMENTATION_PLAN.md
+**Decision:** Decision to add timezone support to company_settings and handle all dates in UTC with timezone conversion. Migration Approach: Added timezone column to company_settings, Default: Australia/Brisbane, Frontend converts to local timezone, Backend stores all times in UTC, Working days respect business timezone. Impact: All scheduling features now timezone-aware, Gantt chart displays in business hours, Reports use correct business day boundaries. Full migration guide: TIMEZONE_MIGRATION_GUIDE.md, Testing guide: TIMEZONE_TESTING_GUIDE.md
 
 **Trade-offs:**
-Original file archived at: PORTAL_IMPLEMENTATION_PLAN.md (26.9 KB)
+Original file archived at: TIMEZONE_MIGRATION_SUMMARY.md (7.9 KB)
 
----
 
 ## 🎓 Developer Notes
 
-### Supplier Portal Phase 1 - Completion Summary
+### Chapter Documentation Pending
 
-Phase 1 completion report for supplier portal. Completed Features: Portal user authentication, Contact association, Quote viewing, Basic dashboard. Pending Features: PO confirmation workflow, Invoice upload, Email notifications, Advanced permissions. Full details in: PORTAL_PHASE1_COMPLETE.md
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 4: Contacts & Relationships
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  4               │
-│ 📘 USER MANUAL (HOW): Chapter  4               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🐛 Bug Hunter
 
@@ -1055,7 +560,6 @@ Always set ABN for Australian businesses to enable Priority 2 matching
 
 **Component:** XeroContactSync
 
----
 
 ### ⚡ Contact Merge Fails When Supplier Has Active Purchase Orders
 
@@ -1082,7 +586,6 @@ Always check ALL foreign key relationships when implementing merge features
 
 **Component:** ContactMerge
 
----
 
 ### ⚡ Primary Contact Person Not Enforced on Xero Sync
 
@@ -1109,7 +612,6 @@ Added validation test in contact_person_spec.rb
 
 **Component:** XeroContactSync
 
----
 
 ### ⚡ Portal Password Reset Loop for Locked Accounts
 
@@ -1136,7 +638,6 @@ Only check lockout on login attempts, not password resets
 
 **Component:** PortalAuth
 
----
 
 ### ⚠️ Bidirectional Relationship Cascade Causes Infinite Loop
 
@@ -1161,7 +662,6 @@ This pattern MUST be used for all bidirectional associations. See BIBLE RULE #3.
 
 **Component:** ContactRelationship
 
----
 
 ### 🔄 Contact Activity Log Growing Too Large (>10k Records)
 
@@ -1186,7 +686,6 @@ Consider adding archival for activities older than 6 months, implement paginatio
 
 **Component:** ContactActivity
 
----
 
 ### ⚡ Portal User Email Validation Too Strict
 
@@ -1212,7 +711,6 @@ Use standard email validation libraries instead of custom regex
 
 **Component:** PortalUser
 
----
 
 ### ⚡ Contact Type Filter Returns Wrong Results for "Both"
 
@@ -1238,7 +736,6 @@ Use @> for AND logic on PostgreSQL arrays, && for OR logic
 
 **Component:** ContactsController
 
----
 
 ### ⚡ Deleting Contact Doesn't Clear Related Supplier References
 
@@ -1264,7 +761,6 @@ Added model test to verify cascade deletion
 
 **Component:** Contact
 
----
 
 ### ⚠️ Xero Sync Rate Limiting Causes Timeout on Large Contact Lists
 
@@ -1289,7 +785,6 @@ Large syncs must use background jobs
 
 **Component:** XeroContactSync
 
----
 
 ## 🏛️ Architecture
 
@@ -1302,7 +797,6 @@ Large syncs must use background jobs
 **Details:**
 Uses varchar[] to allow contacts to be both customers and suppliers simultaneously. GIN indexes provide fast querying.
 
----
 
 ### 2. Supplier Portal - Implementation Plan & Architecture
 
@@ -1311,7 +805,6 @@ Uses varchar[] to allow contacts to be both customers and suppliers simultaneous
 **Trade-offs:**
 Original file archived at: PORTAL_IMPLEMENTATION_PLAN.md (26.9 KB)
 
----
 
 ## 🎓 Developer Notes
 
@@ -1319,27 +812,295 @@ Original file archived at: PORTAL_IMPLEMENTATION_PLAN.md (26.9 KB)
 
 Phase 1 completion report for supplier portal. Completed Features: Portal user authentication, Contact association, Quote viewing, Basic dashboard. Pending Features: PO confirmation workflow, Invoice upload, Email notifications, Advanced permissions. Full details in: PORTAL_PHASE1_COMPLETE.md
 
----
 
-## 📚 Related Chapters
 
-_Links to related chapters will be added as cross-references are identified._
+# Chapter 4: Price Books & Suppliers
 
----
+**Last Updated:** 2025-11-17
+
+## 🐛 Bug Hunter
+
+### ⚠️ Xero Sync Creates Duplicate Contacts for Name Variations
+
+**Status:** ⚠️ BY_DESIGN
+**First Reported:** 2025-09-20
+**Last Occurred:** 2025-11-10
+**Severity:** Medium
+
+#### Summary
+Xero contact "ABC Plumbing Pty Ltd" and existing local contact "ABC Plumbing" are treated as different contacts during sync, creating duplicates.
+
+#### Scenario
+Xero contact "ABC Plumbing Pty Ltd" and existing local contact "ABC Plumbing" are treated as different contacts during sync, creating duplicates.
+
+#### Root Cause
+Fuzzy match threshold set at 85% similarity doesn't catch common business suffix variations like "Pty Ltd" vs no suffix, "Trading As" vs legal name, ampersand vs "and".
+
+#### Solution
+1. Manual Merge: Use POST /api/v1/contacts/merge. 2. Preventive: Set tax_number (ABN/ACN) - Priority 2 matching catches these. 3. Workaround: Manually link via POST /api/v1/contacts/:id/link_xero_contact
+
+#### Prevention
+Always set ABN for Australian businesses to enable Priority 2 matching
+
+**Component:** XeroContactSync
+
+
+### ⚡ Contact Merge Fails When Supplier Has Active Purchase Orders
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-11-04
+**Last Occurred:** 2025-11-04
+**Fixed Date:** 2025-11-05
+**Severity:** High
+
+#### Summary
+Attempting to merge two supplier contacts fails with foreign key constraint error when source supplier has purchase orders.
+
+#### Scenario
+Attempting to merge two supplier contacts fails with foreign key constraint error when source supplier has purchase orders.
+
+#### Root Cause
+Merge controller was updating PricebookItem and PriceHistory foreign keys, but forgot to update PurchaseOrder.supplier_id.
+
+#### Solution
+Added missing PurchaseOrder update: PurchaseOrder.where(supplier_id: source.id).update_all(supplier_id: target.id)
+
+#### Prevention
+Always check ALL foreign key relationships when implementing merge features
+
+**Component:** ContactMerge
+
+
+### ⚡ Primary Contact Person Not Enforced on Xero Sync
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-10-12
+**Last Occurred:** 2025-10-12
+**Fixed Date:** 2025-10-15
+**Severity:** Low
+
+#### Summary
+After Xero contact sync, contacts end up with multiple is_primary = true contact persons.
+
+#### Scenario
+After Xero contact sync, contacts end up with multiple is_primary = true contact persons.
+
+#### Root Cause
+XeroContactSyncService was creating ContactPerson records directly without triggering callbacks
+
+#### Solution
+Changed to use single record creation which triggers callbacks
+
+#### Prevention
+Added validation test in contact_person_spec.rb
+
+**Component:** XeroContactSync
+
+
+### ⚡ Portal Password Reset Loop for Locked Accounts
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-10-28
+**Last Occurred:** 2025-10-28
+**Fixed Date:** 2025-11-01
+**Severity:** Medium
+
+#### Summary
+Portal users locked out after 5 failed attempts cannot reset password because password reset endpoint also checks locked? status.
+
+#### Scenario
+Portal users locked out after 5 failed attempts cannot reset password because password reset endpoint also checks locked? status.
+
+#### Root Cause
+Password reset endpoint was checking lockout status, preventing locked users from resetting passwords
+
+#### Solution
+Modified password reset endpoint to skip lockout check and clear locked_until and failed_login_attempts on successful reset
+
+#### Prevention
+Only check lockout on login attempts, not password resets
+
+**Component:** PortalAuth
+
+
+### ⚠️ Bidirectional Relationship Cascade Causes Infinite Loop
+
+**Status:** ⚠️ BY_DESIGN
+**First Reported:** 2025-09-15
+**Severity:** Critical
+
+#### Summary
+Creating a relationship triggers after_create which creates the reverse, which triggers another after_create, leading to infinite recursion.
+
+#### Scenario
+Creating a relationship triggers after_create which creates the reverse, which triggers another after_create, leading to infinite recursion.
+
+#### Root Cause
+Bidirectional relationships need to create reverse relationships automatically without protection
+
+#### Solution
+Use Thread-local flag to prevent recursion: Thread.current[:creating_reverse_relationship]
+
+#### Prevention
+This pattern MUST be used for all bidirectional associations. See BIBLE RULE #3.2
+
+**Component:** ContactRelationship
+
+
+### 🔄 Contact Activity Log Growing Too Large (>10k Records)
+
+**Status:** 🔄 MONITORING
+**First Reported:** 2025-10-20
+**Severity:** Low
+
+#### Summary
+Contacts with high Xero sync frequency accumulate thousands of ContactActivity records, slowing down activities endpoint
+
+#### Scenario
+Contacts with high Xero sync frequency accumulate thousands of ContactActivity records, slowing down activities endpoint
+
+#### Root Cause
+No archival or pagination for activity logs
+
+#### Solution
+Activities endpoint limits to 50 most recent records
+
+#### Prevention
+Consider adding archival for activities older than 6 months, implement pagination
+
+**Component:** ContactActivity
+
+
+### ⚡ Portal User Email Validation Too Strict
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-10-22
+**Fixed Date:** 2025-10-25
+**Severity:** Low
+
+#### Summary
+Portal user creation fails for valid email addresses with plus addressing or subdomains
+
+#### Scenario
+Portal user creation fails for valid email addresses with plus addressing or subdomains
+
+#### Root Cause
+Email validation regex was overly restrictive
+
+#### Solution
+Changed to use Ruby's built-in URI::MailTo::EMAIL_REGEXP
+
+#### Prevention
+Use standard email validation libraries instead of custom regex
+
+**Component:** PortalUser
+
+
+### ⚡ Contact Type Filter Returns Wrong Results for "Both"
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-10-15
+**Fixed Date:** 2025-10-18
+**Severity:** Medium
+
+#### Summary
+Filtering contacts with ?type=both returns contacts that are customer OR supplier instead of customer AND supplier
+
+#### Scenario
+Filtering contacts with ?type=both returns contacts that are customer OR supplier instead of customer AND supplier
+
+#### Root Cause
+Controller was using array overlap check (&&) instead of array containment (@>)
+
+#### Solution
+Changed to array containment operator: contact_types @> ARRAY['customer', 'supplier']::varchar[]
+
+#### Prevention
+Use @> for AND logic on PostgreSQL arrays, && for OR logic
+
+**Component:** ContactsController
+
+
+### ⚡ Deleting Contact Doesn't Clear Related Supplier References
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-09-25
+**Fixed Date:** 2025-09-28
+**Severity:** High
+
+#### Summary
+Deleting a contact that has linked suppliers leaves orphaned SupplierContact records
+
+#### Scenario
+Deleting a contact that has linked suppliers leaves orphaned SupplierContact records
+
+#### Root Cause
+Missing dependent: :destroy on has_many :supplier_contacts association
+
+#### Solution
+Added cascade delete: has_many :supplier_contacts, dependent: :destroy
+
+#### Prevention
+Added model test to verify cascade deletion
+
+**Component:** Contact
+
+
+### ⚠️ Xero Sync Rate Limiting Causes Timeout on Large Contact Lists
+
+**Status:** ⚠️ BY_DESIGN
+**First Reported:** 2025-11-08
+**Severity:** Low
+
+#### Summary
+Syncing 500+ contacts from Xero takes over 10 minutes due to 1.2-second delay, causing Heroku timeout
+
+#### Scenario
+Syncing 500+ contacts from Xero takes over 10 minutes due to 1.2-second delay, causing Heroku timeout
+
+#### Root Cause
+Xero API has 60 requests/minute limit. With 500 contacts sync takes 600 seconds
+
+#### Solution
+Run Xero sync as background job: XeroContactSyncJob.perform_later
+
+#### Prevention
+Large syncs must use background jobs
+
+**Component:** XeroContactSync
+
+
+## 🏛️ Architecture
+
+### Design Decisions & Rationale
+
+### 1. Contact Type System
+
+**Decision:** PostgreSQL array column for contact_types to support hybrid entities
+
+**Details:**
+Uses varchar[] to allow contacts to be both customers and suppliers simultaneously. GIN indexes provide fast querying.
+
+
+### 2. Supplier Portal - Implementation Plan & Architecture
+
+**Decision:** Complete plan for building supplier portal allowing external access to quotes, POs, and invoices. Features Planned: Separate portal_users authentication, Scoped access to contact data only, Quote approval workflow, PO confirmation, Invoice status tracking. Security Considerations: Separate auth tokens from admin, Row-level security checks, Email verification required, Password complexity requirements. Full plan archived in: PORTAL_IMPLEMENTATION_PLAN.md
+
+**Trade-offs:**
+Original file archived at: PORTAL_IMPLEMENTATION_PLAN.md (26.9 KB)
+
+
+## 🎓 Developer Notes
+
+### Supplier Portal Phase 1 - Completion Summary
+
+Phase 1 completion report for supplier portal. Completed Features: Portal user authentication, Contact association, Quote viewing, Basic dashboard. Pending Features: PO confirmation workflow, Invoice upload, Email notifications, Advanced permissions. Full details in: PORTAL_PHASE1_COMPLETE.md
+
 
 
 # Chapter 5: Price Books & Suppliers
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  5               │
-│ 📘 USER MANUAL (HOW): Chapter  5               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🐛 Bug Hunter
 
@@ -1368,7 +1129,6 @@ When a user rapidly updates the same pricebook item's price multiple times in qu
 
 **Component:** PricebookItem
 
----
 
 ### ⚠️ SmartPoLookupService Missing Items Despite Fuzzy Match
 
@@ -1395,7 +1155,6 @@ User creates estimate with item "2x4 Framing Lumber" but SmartPoLookupService do
 
 **Component:** SmartPoLookupService
 
----
 
 ### ⚡ Price Volatility False Positives on New Items
 
@@ -1421,7 +1180,6 @@ New pricebook items with only 2-3 price history entries show "High Volatility" w
 
 **Component:** PricebookItem
 
----
 
 ### ⚡ Supplier Name Normalization Overly Aggressive
 
@@ -1447,27 +1205,11 @@ Two distinct suppliers "ABC Supply LLC" and "ABC Supply Co." both normalize to "
 
 **Component:** PricebookItem
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 6: Jobs & Construction Management
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  6               │
-│ 📘 USER MANUAL (HOW): Chapter  6               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🐛 Bug Hunter
 
@@ -1495,7 +1237,6 @@ When task dates change, `ScheduleCascadeService` recursively cascades to depende
 
 **Component:** ScheduleCascadeService
 
----
 
 ### ⚠️ Profit Calculation Performance at Scale
 
@@ -1516,7 +1257,6 @@ Construction profit is calculated dynamically via `calculate_live_profit` which 
 
 **Component:** Constructions
 
----
 
 ### ⚡ OneDrive Folder Creation Failures
 
@@ -1531,7 +1271,6 @@ Construction profit is calculated dynamically via `calculate_live_profit` which 
 
 **Common Errors:**
 
----
 
 ### ⚡ Task Spawning Duplicates (Photo/Cert Tasks)
 
@@ -1558,27 +1297,11 @@ task.blocked_by  # Returns array of incomplete predecessor tasks
 
 **Component:** ProjectTask
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 7: Estimates & Quoting
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  7               │
-│ 📘 USER MANUAL (HOW): Chapter  7               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🐛 Bug Hunter
 
@@ -1604,7 +1327,6 @@ Job names like "Smith Residence" might auto-match to "Smith Commercial Building"
 2. **Mitigation:** Threshold tuning based on production data
 3. **Future:** Add address-based validation (if addresses available in estimate)
 
----
 
 ### ⚡ Levenshtein Performance with Very Long Job Names
 
@@ -1623,7 +1345,6 @@ Job names exceeding 150 characters (rare but possible) cause Levenshtein calcula
 - Matrix allocation for long strings
 - Pure Ruby implementation (no C extension)
 
----
 
 ### ⚡ Estimate Import Fails Silently on Malformed JSON
 
@@ -1642,7 +1363,6 @@ Validate JSON format before processing in Unreal Engine.
 
 ---
 
----
 
 ### ⚡ AI Review Timeout on Large PDFs
 
@@ -1688,27 +1408,11 @@ If this happens frequently:
 
 **Component:** EstimateToPurchaseOrderService
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 8: AI Plan Review
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  8               │
-│ 📘 USER MANUAL (HOW): Chapter  8               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🎓 Developer Notes
 
@@ -1716,27 +1420,11 @@ _Links to related chapters will be added as cross-references are identified._
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 9: Purchase Orders
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  9               │
-│ 📘 USER MANUAL (HOW): Chapter  9               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🐛 Bug Hunter
 
@@ -1752,7 +1440,6 @@ Two users create POs simultaneously → potential for duplicate PO numbers.
 #### Scenario
 Two users create POs simultaneously → potential for duplicate PO numbers.
 
----
 
 ### ⚡ Payment Status Calculation Confusion
 
@@ -1768,7 +1455,6 @@ Payment status shows "Part Payment" instead of "Complete".
 User sets `amount_paid = $990` on PO with `total = $1000`.
 Payment status shows "Part Payment" instead of "Complete".
 
----
 
 ### ⚡ Smart Lookup Returns Wrong Supplier
 
@@ -1787,7 +1473,6 @@ User expects "ABC Supplier" but system selects "XYZ Supplier" for item.
 2. Update default supplier if needed
 3. Or manually override after smart lookup
 
----
 
 ### ⚡ Price Drift Warning on First-Time Items
 
@@ -1816,7 +1501,6 @@ ActiveRecord::Base.transaction do
   end
 end
 
----
 
 ## 🏛️ Architecture
 
@@ -2753,29 +2437,11 @@ Trapid has a **solid, well-architected task management foundation** with:
 
 The system is **production-ready for basic to intermediate project scheduling** but needs enhancement for advanced resource management and multi-project portfolio planning. The separation between ProjectTasks (detailed planning) and ScheduleTasks (supplier tracking) is well-designed and allows for flexible use cases.
 
-
-
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 9: Gantt & Schedule Master
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  9               │
-│ 📘 USER MANUAL (HOW): Chapter  9               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🐛 Bug Hunter
 
@@ -2791,7 +2457,6 @@ Two users create POs simultaneously → potential for duplicate PO numbers.
 #### Scenario
 Two users create POs simultaneously → potential for duplicate PO numbers.
 
----
 
 ### ⚡ Payment Status Calculation Confusion
 
@@ -2807,7 +2472,6 @@ Payment status shows "Part Payment" instead of "Complete".
 User sets `amount_paid = $990` on PO with `total = $1000`.
 Payment status shows "Part Payment" instead of "Complete".
 
----
 
 ### ⚡ Smart Lookup Returns Wrong Supplier
 
@@ -2826,7 +2490,6 @@ User expects "ABC Supplier" but system selects "XYZ Supplier" for item.
 2. Update default supplier if needed
 3. Or manually override after smart lookup
 
----
 
 ### ⚡ Price Drift Warning on First-Time Items
 
@@ -2855,7 +2518,6 @@ ActiveRecord::Base.transaction do
   end
 end
 
----
 
 ## 🏛️ Architecture
 
@@ -3794,27 +3456,9 @@ The system is **production-ready for basic to intermediate project scheduling** 
 
 
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
-
-
 # Chapter 10: Gantt & Schedule Master
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 10               │
-│ 📘 USER MANUAL (HOW): Chapter 10               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🐛 Bug Hunter
 
@@ -3842,27 +3486,11 @@ Always check cascade depth before allowing signature-based reloads. Batch all ca
 
 **Component:** DHtmlxGanttView + ScheduleTemplateEditor
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 11: Project Tasks & Checklists
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 11               │
-│ 📘 USER MANUAL (HOW): Chapter 11               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🎓 Developer Notes
 
@@ -3870,27 +3498,11 @@ _Links to related chapters will be added as cross-references are identified._
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 12: Weather & Public Holidays
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 12               │
-│ 📘 USER MANUAL (HOW): Chapter 12               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🎓 Developer Notes
 
@@ -3898,27 +3510,11 @@ _Links to related chapters will be added as cross-references are identified._
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 13: OneDrive Integration
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 13               │
-│ 📘 USER MANUAL (HOW): Chapter 13               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🎓 Developer Notes
 
@@ -3926,27 +3522,11 @@ _Links to related chapters will be added as cross-references are identified._
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 14: Outlook/Email Integration
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 14               │
-│ 📘 USER MANUAL (HOW): Chapter 14               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🎓 Developer Notes
 
@@ -3954,27 +3534,11 @@ _Links to related chapters will be added as cross-references are identified._
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 15: Chat & Communications
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 15               │
-│ 📘 USER MANUAL (HOW): Chapter 15               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🎓 Developer Notes
 
@@ -3982,27 +3546,11 @@ _Links to related chapters will be added as cross-references are identified._
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 16: Xero Accounting Integration
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 16               │
-│ 📘 USER MANUAL (HOW): Chapter 16               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🎓 Developer Notes
 
@@ -4010,27 +3558,11 @@ _Links to related chapters will be added as cross-references are identified._
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 17: Payments & Financials
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 17               │
-│ 📘 USER MANUAL (HOW): Chapter 17               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🎓 Developer Notes
 
@@ -4038,27 +3570,11 @@ _Links to related chapters will be added as cross-references are identified._
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 18: Workflows & Automation
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 18               │
-│ 📘 USER MANUAL (HOW): Chapter 18               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🎓 Developer Notes
 
@@ -4066,74 +3582,11 @@ _Links to related chapters will be added as cross-references are identified._
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
-
-
-# Chapter 19: UI/UX Standards & Patterns
-
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 19               │
-│ 📘 USER MANUAL (HOW): Chapter 19               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-17
-
----
-
-## 🐛 Bug Hunter
-
-### ⚡ Table Deletion Bug Investigation - Complete Analysis
-
-**Status:** ⚡ FIXED
-**First Reported:** Unknown
-**Severity:** High
-
-#### Scenario
-Custom table deletion was failing with cascade errors and orphaned records. Investigation uncovered multiple issues in deletion flow.
-
-#### Root Cause
-1. Foreign key constraints not properly handled. 2. Records component not clearing deleted table from state. 3. Cascade deletion not following dependency chain. 4. Formula columns referencing deleted tables.
-
-#### Solution
-1. Added proper dependency checking before deletion. 2. Implemented cascade deletion for all related records. 3. Updated Records component to remove deleted table. 4. Added validation to prevent deletion of referenced tables. Full investigation in 5 files: TABLE_DELETION_ANALYSIS_*.md
-
----
-
-## 🎓 Developer Notes
-
-### Chapter Documentation Pending
-
-This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
-
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
 # Chapter 19: Custom Tables & Formulas
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 19               │
-│ 📘 USER MANUAL (HOW): Chapter 19               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🐛 Bug Hunter
 
@@ -4152,7 +3605,6 @@ Custom table deletion was failing with cascade errors and orphaned records. Inve
 #### Solution
 1. Added proper dependency checking before deletion. 2. Implemented cascade deletion for all related records. 3. Updated Records component to remove deleted table. 4. Added validation to prevent deletion of referenced tables. Full investigation in 5 files: TABLE_DELETION_ANALYSIS_*.md
 
----
 
 ## 🎓 Developer Notes
 
@@ -4160,27 +3612,41 @@ Custom table deletion was failing with cascade errors and orphaned records. Inve
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
-# Chapter 20: UI/UX Standards & Patterns
+# Chapter 19: UI/UX Standards & Patterns
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 20               │
-│ 📘 USER MANUAL (HOW): Chapter 20               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
 
----
+## 🐛 Bug Hunter
+
+### ⚡ Table Deletion Bug Investigation - Complete Analysis
+
+**Status:** ⚡ FIXED
+**First Reported:** Unknown
+**Severity:** High
+
+#### Scenario
+Custom table deletion was failing with cascade errors and orphaned records. Investigation uncovered multiple issues in deletion flow.
+
+#### Root Cause
+1. Foreign key constraints not properly handled. 2. Records component not clearing deleted table from state. 3. Cascade deletion not following dependency chain. 4. Formula columns referencing deleted tables.
+
+#### Solution
+1. Added proper dependency checking before deletion. 2. Implemented cascade deletion for all related records. 3. Updated Records component to remove deleted table. 4. Added validation to prevent deletion of referenced tables. Full investigation in 5 files: TABLE_DELETION_ANALYSIS_*.md
+
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+
+
+# Chapter 20: Trinity Table - Gold Standard
+
+**Last Updated:** 2025-11-17
 
 ## 🐛 Bug Hunter
 
@@ -4202,8 +3668,6 @@ _Links to related chapters will be added as cross-references are identified._
 **Affected Pages:** ContactsPage, PriceBooksPage, SuppliersPage, PurchaseOrdersPage, +40 more
 
 
----
-
 ### ⚡ Modals Missing Close Buttons (58 components)
 
 **Status:** ⚡ OPEN
@@ -4223,8 +3687,6 @@ _Links to related chapters will be added as cross-references are identified._
 **Affected Modals:** NewJobModal, EditJobModal, PurchaseOrderModal, +50 more
 
 
----
-
 ### ⚡ Empty States Missing Action Buttons (66 components)
 
 **Status:** ⚡ OPEN
@@ -4242,8 +3704,6 @@ _Links to related chapters will be added as cross-references are identified._
 **Automation:** PARTIAL - Manual work required (1-2 hours total)
 
 
----
-
 ### ⚡ Table Headers Not Sticky (36 tables)
 
 **Status:** ⚡ OPEN
@@ -4260,8 +3720,6 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Automation:** YES - Add `sticky top-0 z-10` to thead (15-20 min)
 
-
----
 
 ### ⚡ Inline Column Filters Missing (44 tables)
 
@@ -4281,8 +3739,6 @@ _Links to related chapters will be added as cross-references are identified._
 **Affected Pages:** PriceBooksPage (2 tables), SuppliersPage, JobDetailPage (3 tables), ContactDetailPage (3 tables)
 
 
----
-
 ### ⚡ Icon Buttons Missing aria-label (50 components)
 
 **Status:** ⚡ OPEN
@@ -4298,8 +3754,6 @@ _Links to related chapters will be added as cross-references are identified._
 
 **Automation:** PARTIAL - Requires semantic label for each button (1-2 hours)
 
-
----
 
 ### ⚡ Search Results Count Not Displayed (53 components)
 
@@ -4317,8 +3771,6 @@ _Links to related chapters will be added as cross-references are identified._
 **Automation:** YES - Template addition (30 min)
 
 
----
-
 ### ⚡ Scrollbar Overlapping Content and Header
 
 **Status:** ⚡ FIXED
@@ -4334,7 +3786,6 @@ The Bible table had two scrollbar-related visual bugs:
 1. **Vertical scrollbar overlapping table content** - The native scrollbar was taking up space but appearing broken
 2. **Content scrolling under sticky header** - Table rows were scrolling underneath the header instead of below it
 
-
 #### Scenario
 ## How to Reproduce
 
@@ -4342,7 +3793,6 @@ The Bible table had two scrollbar-related visual bugs:
 2. Scroll down the table
 3. **Bug 1:** Notice right edge of table is cut off by scrollbar gutter
 4. **Bug 2:** Notice table rows scroll under the header (header z-index too low)
-
 
 #### Root Cause
 ## Root Cause
@@ -4375,7 +3825,6 @@ style={{
 ```
 
 **Result:** Content scrolling at z-index 1 (default) doesn't stay below header at z-20 properly
-
 
 #### Solution
 ## Solution
@@ -4413,7 +3862,6 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 
 **Why:** Ensures header stays visually above scrolling content
 
-
 #### Prevention
 ## Prevention
 
@@ -4433,10 +3881,8 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 - RULE #19.33: Sticky Horizontal Scrollbar Pattern
 - RULE #19.34: Modern Table Header Aesthetics
 
-
 **Component:** BibleTableView.jsx
 
----
 
 ### ⚡ Scrollbar Overlapping Content and Header
 
@@ -4453,7 +3899,6 @@ The Bible table had two scrollbar-related visual bugs:
 1. **Vertical scrollbar overlapping table content** - The native scrollbar was taking up space but appearing broken
 2. **Content scrolling under sticky header** - Table rows were scrolling underneath the header instead of below it
 
-
 #### Scenario
 ## How to Reproduce
 
@@ -4461,7 +3906,6 @@ The Bible table had two scrollbar-related visual bugs:
 2. Scroll down the table
 3. **Bug 1:** Notice right edge of table is cut off by scrollbar gutter
 4. **Bug 2:** Notice table rows scroll under the header (header z-index too low)
-
 
 #### Root Cause
 ## Root Cause
@@ -4494,7 +3938,6 @@ style={{
 ```
 
 **Result:** Content scrolling at z-index 1 (default) doesn't stay below header at z-20 properly
-
 
 #### Solution
 ## Solution
@@ -4532,7 +3975,6 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 
 **Why:** Ensures header stays visually above scrolling content
 
-
 #### Prevention
 ## Prevention
 
@@ -4552,10 +3994,8 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 - RULE #19.33: Sticky Horizontal Scrollbar Pattern
 - RULE #19.34: Modern Table Header Aesthetics
 
-
 **Component:** BibleTableView.jsx
 
----
 
 ## 🏛️ Architecture
 
@@ -4579,8 +4019,6 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 **Protected Pattern:** HeadlessUI patterns must be preserved in all modals/dropdowns
 
 
----
-
 ### 2. TailwindCSS Styling Strategy (No CSS-in-JS)
 
 **Decision:** **Decision:** Pure TailwindCSS with dark mode via `dark:` prefix (no CSS-in-JS)
@@ -4598,8 +4036,6 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 
 **Protected Pattern:** No CSS-in-JS conversions planned
 
-
----
 
 ### 3. ContactsPage as Gold Standard Reference
 
@@ -4625,8 +4061,6 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 - Table feature implementation
 
 
----
-
 ### 4. Dark Mode Implementation Strategy
 
 **Decision:** **Decision:** CSS-first dark mode using `prefers-color-scheme` media query
@@ -4646,8 +4080,6 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 **Protected Pattern:** All dark mode classes must be preserved
 
 
----
-
 ### 5. HeadlessUI + Heroicons Architecture Decision
 
 **Decision:** **Decision:** Use HeadlessUI for component composition + Heroicons for consistent icons
@@ -4666,8 +4098,6 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 **Protected Pattern:** HeadlessUI patterns must be preserved in all modals/dropdowns
 
 
----
-
 ### 6. TailwindCSS Styling Strategy (No CSS-in-JS)
 
 **Decision:** **Decision:** Pure TailwindCSS with dark mode via `dark:` prefix (no CSS-in-JS)
@@ -4685,8 +4115,6 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 
 **Protected Pattern:** No CSS-in-JS conversions planned
 
-
----
 
 ### 7. ContactsPage as Gold Standard Reference
 
@@ -4712,8 +4140,6 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 - Table feature implementation
 
 
----
-
 ### 8. Dark Mode Implementation Strategy
 
 **Decision:** **Decision:** CSS-first dark mode using `prefers-color-scheme` media query
@@ -4732,8 +4158,6 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 
 **Protected Pattern:** All dark mode classes must be preserved
 
-
----
 
 ### 9. Chapter 19 Table Compliance Implementation
 
@@ -4771,7 +4195,6 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 - Add keyboard shortcuts for column reordering
 - Add column order reset button
 
----
 
 ## 📊 Test Catalog
 
@@ -4807,15 +4230,12 @@ Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
 6. Modal close button functionality
 
 
----
-
 ## 🎓 Developer Notes
 
 ### Chapter Documentation Pending
 
 This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
 
----
 
 ### UI/UX Enhancement Roadmap
 
@@ -4847,13 +4267,48 @@ This chapter requires comprehensive documentation. Bug fixes and architecture de
 - [ ] Design tokens export (Figma integration)
 
 
----
-
 ### Test Entry - Dummy Run
 
 This is a test entry to verify the unified API works correctly
 
----
+
+### Trinity Table Visual Updates - Blue Theme and Borders
+
+Complete visual refresh of Trinity table component with blue theme throughout
+
+CHANGES MADE:
+1. Scrollbars: Changed from gray to blue (#2563EB) matching header
+   - WebKit: Custom ::-webkit-scrollbar styling with 12px size
+   - Firefox: scrollbarColor property for cross-browser support
+   - Dark mode: Uses blue-800 (#1E40AF) for thumb
+   
+2. Table Borders: Changed from border-l border-r to full border
+   - Now has top, right, bottom, left borders
+   - Creates complete bordered box around table
+   - Maintains mx-4 margin for search bar alignment
+   
+3. Alternating Rows: Kept light blue (bg-blue-50)
+   - Even rows: white
+   - Odd rows: bg-blue-50 (light blue)
+   - Hover: bg-blue-100
+   - Initially tried bg-blue-600 matching header but too dark
+   
+4. Removed Sticky Scrollbar: 
+   - Previously had custom sticky horizontal scrollbar at bottom
+   - Caused duplicate scrollbar display issue
+   - Now uses only native browser scrollbars
+   
+SPECIFICATION UPDATES:
+- RULE #20.19: Native scrollbars with blue theme
+- RULE #20.18: Full border on all sides
+- Updated section 10 with complete CSS examples
+- Documented removal of sticky scrollbar and reasoning
+
+
+### Trinity Table Complete - Modal and All Features
+
+Complete gold standard implementation. Modal opens ONLY on Content/Title columns. Dedicated resize handles prevent conflicts. Bold 18px headers, 14px rows. All interactions work independently: resize, drag, sort, filter, select, modal.
+
 
 ## 🔍 Common Issues
 
@@ -4869,7 +4324,6 @@ When implementing a sticky horizontal scrollbar at the bottom of a table view (B
 2. **Table width detection**: Container scrollWidth !== actual table width when table has minWidth
 3. **Native scrollbar conflict**: Both native and custom scrollbars visible simultaneously
 4. **Overflow detection**: Default column widths too small to trigger horizontal scroll on wide monitors
-
 
 #### Solution
 **Scroll Loop Prevention:**
@@ -4920,6 +4374,745 @@ const COLUMNS = [
 ]
 ```
 
+#### Prevention
+1. **Always use ref flags** to prevent scroll loops in bidirectional sync
+2. **Measure actual table element** not container for accurate width
+3. **Hide native scrollbars** when implementing custom ones (CSS + inline styles)
+4. **Test on wide monitors** - ensure default column widths force overflow
+5. **Use ResizeObserver** to update scrollbar on column resize
+6. **Position sticky with bottom: 0** to keep scrollbar visible at viewport bottom
+
+
+
+# Chapter 20: UI/UX Standards & Patterns
+
+**Last Updated:** 2025-11-17
+
+## 🐛 Bug Hunter
+
+### ⚡ Search Boxes Missing Clear Buttons (73 components)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** High
+
+#### Summary
+**Impact:** 73 search boxes across codebase
+**Severity:** HIGH - UX regression
+**Rule Violation:** RULE #19.20 (Search Functionality Standards)
+
+**Problem:** Search inputs lack clear button (X icon) to quickly reset search
+
+**Automation:** YES - Script can add clear button to all search boxes (30-40 min)
+
+**Affected Pages:** ContactsPage, PriceBooksPage, SuppliersPage, PurchaseOrdersPage, +40 more
+
+
+### ⚡ Modals Missing Close Buttons (58 components)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** High
+
+#### Summary
+**Impact:** 58 modals across codebase
+**Severity:** HIGH - Accessibility issue
+**Rule Violation:** RULE #19.22 (Modal Rules)
+**Current State:** 78 modals have close button, 58 do not
+
+**Problem:** Modals lack visible close button in top-right corner
+
+**Automation:** YES - Template can be applied to all modals (20-30 min)
+
+**Affected Modals:** NewJobModal, EditJobModal, PurchaseOrderModal, +50 more
+
+
+### ⚡ Empty States Missing Action Buttons (66 components)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** High
+
+#### Summary
+**Impact:** 66 empty states
+**Severity:** HIGH - UX conversion issue
+**Rule Violation:** RULE #19.27 (Empty State Rules)
+**Current State:** 14 with action buttons, 66 without
+
+**Problem:** Empty states show message but no call-to-action button
+
+**Automation:** PARTIAL - Manual work required (1-2 hours total)
+
+
+### ⚡ Table Headers Not Sticky (36 tables)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** High
+
+#### Summary
+**Impact:** 36 tables
+**Severity:** HIGH - Scrolling UX
+**Rule Violation:** RULE #19.2 (Sticky Headers)
+**Current State:** 18 with sticky headers, 36 without
+
+**Problem:** Headers scroll out of view in large tables
+
+**Automation:** YES - Add `sticky top-0 z-10` to thead (15-20 min)
+
+
+### ⚡ Inline Column Filters Missing (44 tables)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+**Impact:** 44 tables
+**Severity:** MEDIUM - Feature completeness
+**Rule Violation:** RULE #19.3 (Table Standards)
+
+**Problem:** No filter inputs in column headers for power users
+
+**Automation:** NO - Manual work (3-5 hours)
+
+**Affected Pages:** PriceBooksPage (2 tables), SuppliersPage, JobDetailPage (3 tables), ContactDetailPage (3 tables)
+
+
+### ⚡ Icon Buttons Missing aria-label (50 components)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+**Impact:** ~50 icon buttons
+**Severity:** MEDIUM - Screen reader support
+**Rule Violation:** RULE #19.12 (Accessibility)
+
+**Problem:** Icon-only buttons have no label for screen readers
+
+**Automation:** PARTIAL - Requires semantic label for each button (1-2 hours)
+
+
+### ⚡ Search Results Count Not Displayed (53 components)
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+**Impact:** 53 search boxes
+**Severity:** MEDIUM - User feedback/clarity
+**Rule Violation:** RULE #19.20 (Search Standards)
+
+**Problem:** No count of results shown when user searches
+
+**Automation:** YES - Template addition (30 min)
+
+
+### ⚡ Scrollbar Overlapping Content and Header
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-11-17
+**Fixed Date:** 2025-11-17
+**Severity:** Medium
+
+#### Summary
+## Bug Summary
+
+The Bible table had two scrollbar-related visual bugs:
+
+1. **Vertical scrollbar overlapping table content** - The native scrollbar was taking up space but appearing broken
+2. **Content scrolling under sticky header** - Table rows were scrolling underneath the header instead of below it
+
+#### Scenario
+## How to Reproduce
+
+1. Open Documentation page → 📖 Bible
+2. Scroll down the table
+3. **Bug 1:** Notice right edge of table is cut off by scrollbar gutter
+4. **Bug 2:** Notice table rows scroll under the header (header z-index too low)
+
+#### Root Cause
+## Root Cause
+
+### Bug 1: Scrollbar Overlap
+
+**Problem:** Conflicting scrollbar CSS rules
+
+```css
+/* Lines 579-613: Defined custom webkit scrollbar */
+.bible-table-scroll::-webkit-scrollbar {
+  width: 16px !important;  /* Reserves 16px space */
+}
+
+/* Lines 750-751: Tried to hide scrollbar */
+style={{
+  scrollbarWidth: 'none',      /* Hides scrollbar */
+  msOverflowStyle: 'none'
+}}
+```
+
+**Result:** Space reserved but scrollbar hidden = broken layout
+
+### Bug 2: Header Overlap
+
+**Problem:** Insufficient z-index on sticky header
+
+```jsx
+<thead className="sticky top-0 z-20 ...">
+```
+
+**Result:** Content scrolling at z-index 1 (default) doesn't stay below header at z-20 properly
+
+#### Solution
+## Solution
+
+### Fix 1: Hide ALL Native Scrollbars
+
+Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
+
+```css
+/* Hide ALL native scrollbars (we use custom sticky scrollbar for horizontal) */
+.bible-table-scroll::-webkit-scrollbar {
+  display: none !important;
+}
+.bible-table-scroll {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+```
+
+**Removed:**
+- Custom webkit scrollbar width/styling (lines 579-613)
+- Inline style conflicting rules
+
+**Why:** Table uses custom sticky horizontal scrollbar at bottom (RULE #19.33). Native scrollbars should be completely hidden.
+
+### Fix 2: Increase Header Z-Index
+
+```jsx
+<thead className="sticky top-0 z-30 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-sm border-b-2 border-gray-200 dark:border-gray-700">
+```
+
+**Changes:**
+- `z-20` → `z-30` (higher stacking context)
+- Added `border-b-2` for clearer separation
+
+**Why:** Ensures header stays visually above scrolling content
+
+#### Prevention
+## Prevention
+
+**RULE:** When using custom sticky scrollbars (RULE #19.33):
+
+❌ **NEVER:**
+- Style native scrollbars with webkit/moz rules
+- Mix `scrollbarWidth: 'none'` with webkit scrollbar width
+- Use z-index < 30 for sticky headers
+
+✅ **ALWAYS:**
+- Completely hide native scrollbars with `display: none`
+- Use z-30+ for sticky headers over scrolling content
+- Add clear border separation between header and content
+
+**Related Rules:**
+- RULE #19.33: Sticky Horizontal Scrollbar Pattern
+- RULE #19.34: Modern Table Header Aesthetics
+
+**Component:** BibleTableView.jsx
+
+
+### ⚡ Scrollbar Overlapping Content and Header
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-11-17
+**Fixed Date:** 2025-11-17
+**Severity:** Medium
+
+#### Summary
+## Bug Summary
+
+The Bible table had two scrollbar-related visual bugs:
+
+1. **Vertical scrollbar overlapping table content** - The native scrollbar was taking up space but appearing broken
+2. **Content scrolling under sticky header** - Table rows were scrolling underneath the header instead of below it
+
+#### Scenario
+## How to Reproduce
+
+1. Open Documentation page → 📖 Bible
+2. Scroll down the table
+3. **Bug 1:** Notice right edge of table is cut off by scrollbar gutter
+4. **Bug 2:** Notice table rows scroll under the header (header z-index too low)
+
+#### Root Cause
+## Root Cause
+
+### Bug 1: Scrollbar Overlap
+
+**Problem:** Conflicting scrollbar CSS rules
+
+```css
+/* Lines 579-613: Defined custom webkit scrollbar */
+.bible-table-scroll::-webkit-scrollbar {
+  width: 16px !important;  /* Reserves 16px space */
+}
+
+/* Lines 750-751: Tried to hide scrollbar */
+style={{
+  scrollbarWidth: 'none',      /* Hides scrollbar */
+  msOverflowStyle: 'none'
+}}
+```
+
+**Result:** Space reserved but scrollbar hidden = broken layout
+
+### Bug 2: Header Overlap
+
+**Problem:** Insufficient z-index on sticky header
+
+```jsx
+<thead className="sticky top-0 z-20 ...">
+```
+
+**Result:** Content scrolling at z-index 1 (default) doesn't stay below header at z-20 properly
+
+#### Solution
+## Solution
+
+### Fix 1: Hide ALL Native Scrollbars
+
+Removed conflicting webkit scrollbar styles and properly hid all scrollbars:
+
+```css
+/* Hide ALL native scrollbars (we use custom sticky scrollbar for horizontal) */
+.bible-table-scroll::-webkit-scrollbar {
+  display: none !important;
+}
+.bible-table-scroll {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+```
+
+**Removed:**
+- Custom webkit scrollbar width/styling (lines 579-613)
+- Inline style conflicting rules
+
+**Why:** Table uses custom sticky horizontal scrollbar at bottom (RULE #19.33). Native scrollbars should be completely hidden.
+
+### Fix 2: Increase Header Z-Index
+
+```jsx
+<thead className="sticky top-0 z-30 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-sm border-b-2 border-gray-200 dark:border-gray-700">
+```
+
+**Changes:**
+- `z-20` → `z-30` (higher stacking context)
+- Added `border-b-2` for clearer separation
+
+**Why:** Ensures header stays visually above scrolling content
+
+#### Prevention
+## Prevention
+
+**RULE:** When using custom sticky scrollbars (RULE #19.33):
+
+❌ **NEVER:**
+- Style native scrollbars with webkit/moz rules
+- Mix `scrollbarWidth: 'none'` with webkit scrollbar width
+- Use z-index < 30 for sticky headers
+
+✅ **ALWAYS:**
+- Completely hide native scrollbars with `display: none`
+- Use z-30+ for sticky headers over scrolling content
+- Add clear border separation between header and content
+
+**Related Rules:**
+- RULE #19.33: Sticky Horizontal Scrollbar Pattern
+- RULE #19.34: Modern Table Header Aesthetics
+
+**Component:** BibleTableView.jsx
+
+
+## 🏛️ Architecture
+
+### Design Decisions & Rationale
+
+### 1. HeadlessUI + Heroicons Architecture Decision
+
+**Decision:** **Decision:** Use HeadlessUI for component composition + Heroicons for consistent icons
+
+**Rationale:**
+- Composability: HeadlessUI provides unstyled, accessible components styled with TailwindCSS
+- Accessibility Built-in: ARIA attributes handled automatically
+- Icon Consistency: Heroicons (24-outline style) across all 200+ icon usages
+- Package Integration: Both officially maintained by Tailwind Labs
+
+**Evidence:**
+- 20+ component files import HeadlessUI (Tab, Dialog, Menu, etc.)
+- All icons from `@heroicons/react/24/outline`
+- Packages: `@headlessui/react: ^2.2.9`, `@heroicons/react: ^2.2.0`
+
+**Protected Pattern:** HeadlessUI patterns must be preserved in all modals/dropdowns
+
+
+### 2. TailwindCSS Styling Strategy (No CSS-in-JS)
+
+**Decision:** **Decision:** Pure TailwindCSS with dark mode via `dark:` prefix (no CSS-in-JS)
+
+**Rationale:**
+- Performance: No runtime style generation (compiled at build time)
+- Type Safety: ClassName strings catch typos at development time
+- Dark Mode Built-In: Tailwind's `dark:` prefix requires no additional libraries
+- Predictable Output: CSS generated once, not recalculated per component
+
+**Evidence:**
+- 5,920+ `dark:` prefixed classes throughout codebase
+- Zero CSS-in-JS libraries (no styled-components, emotion)
+- Minimal tailwind.config.js (no custom plugins)
+
+**Protected Pattern:** No CSS-in-JS conversions planned
+
+
+### 3. ContactsPage as Gold Standard Reference
+
+**Decision:** **Decision:** ContactsPage.jsx designated as primary reference implementation
+
+**Rationale - Feature Complete:**
+- Sticky headers ✅
+- Column resize with drag handles ✅
+- Column reorder (drag-drop) ✅
+- Inline column filters ✅
+- Search with clear button ✅
+- Multi-level sort ✅
+- localStorage persistence ✅
+- Dark mode support ✅
+- Row actions ✅
+- Empty states with action buttons ✅
+
+**File:** `frontend/src/pages/ContactsPage.jsx` (372 lines)
+
+**Use As Reference For:**
+- Column state management patterns
+- URL-based tab sync
+- Table feature implementation
+
+
+### 4. Dark Mode Implementation Strategy
+
+**Decision:** **Decision:** CSS-first dark mode using `prefers-color-scheme` media query
+
+**Rationale:**
+- No JavaScript Overhead: Applied via CSS, not JS state
+- Respects User Preferences: Automatically responds to OS dark mode
+- Manual Toggle Possible: Can be enhanced later if needed
+- Accessibility Compliant: Respects `prefers-color-scheme` WCAG requirement
+
+**Evidence:**
+- Tailwind config uses default dark mode strategy (media query)
+- 5,920+ dark mode class usages
+- Consistent pattern: `bg-white dark:bg-gray-800`, `text-gray-900 dark:text-white`
+- COLOR_SYSTEM.md documents standardized dark colors
+
+**Protected Pattern:** All dark mode classes must be preserved
+
+
+### 5. HeadlessUI + Heroicons Architecture Decision
+
+**Decision:** **Decision:** Use HeadlessUI for component composition + Heroicons for consistent icons
+
+**Rationale:**
+- Composability: HeadlessUI provides unstyled, accessible components styled with TailwindCSS
+- Accessibility Built-in: ARIA attributes handled automatically
+- Icon Consistency: Heroicons (24-outline style) across all 200+ icon usages
+- Package Integration: Both officially maintained by Tailwind Labs
+
+**Evidence:**
+- 20+ component files import HeadlessUI (Tab, Dialog, Menu, etc.)
+- All icons from `@heroicons/react/24/outline`
+- Packages: `@headlessui/react: ^2.2.9`, `@heroicons/react: ^2.2.0`
+
+**Protected Pattern:** HeadlessUI patterns must be preserved in all modals/dropdowns
+
+
+### 6. TailwindCSS Styling Strategy (No CSS-in-JS)
+
+**Decision:** **Decision:** Pure TailwindCSS with dark mode via `dark:` prefix (no CSS-in-JS)
+
+**Rationale:**
+- Performance: No runtime style generation (compiled at build time)
+- Type Safety: ClassName strings catch typos at development time
+- Dark Mode Built-In: Tailwind's `dark:` prefix requires no additional libraries
+- Predictable Output: CSS generated once, not recalculated per component
+
+**Evidence:**
+- 5,920+ `dark:` prefixed classes throughout codebase
+- Zero CSS-in-JS libraries (no styled-components, emotion)
+- Minimal tailwind.config.js (no custom plugins)
+
+**Protected Pattern:** No CSS-in-JS conversions planned
+
+
+### 7. ContactsPage as Gold Standard Reference
+
+**Decision:** **Decision:** ContactsPage.jsx designated as primary reference implementation
+
+**Rationale - Feature Complete:**
+- Sticky headers ✅
+- Column resize with drag handles ✅
+- Column reorder (drag-drop) ✅
+- Inline column filters ✅
+- Search with clear button ✅
+- Multi-level sort ✅
+- localStorage persistence ✅
+- Dark mode support ✅
+- Row actions ✅
+- Empty states with action buttons ✅
+
+**File:** `frontend/src/pages/ContactsPage.jsx` (372 lines)
+
+**Use As Reference For:**
+- Column state management patterns
+- URL-based tab sync
+- Table feature implementation
+
+
+### 8. Dark Mode Implementation Strategy
+
+**Decision:** **Decision:** CSS-first dark mode using `prefers-color-scheme` media query
+
+**Rationale:**
+- No JavaScript Overhead: Applied via CSS, not JS state
+- Respects User Preferences: Automatically responds to OS dark mode
+- Manual Toggle Possible: Can be enhanced later if needed
+- Accessibility Compliant: Respects `prefers-color-scheme` WCAG requirement
+
+**Evidence:**
+- Tailwind config uses default dark mode strategy (media query)
+- 5,920+ dark mode class usages
+- Consistent pattern: `bg-white dark:bg-gray-800`, `text-gray-900 dark:text-white`
+- COLOR_SYSTEM.md documents standardized dark colors
+
+**Protected Pattern:** All dark mode classes must be preserved
+
+
+### 9. Chapter 19 Table Compliance Implementation
+
+**Related Rule:** Bible Bible Chapter 19 (RULES #19.2, #19.3, #19.5B, #19.7, #19.8, #19.9, #19.11A, #19.13, #19.14, #19.16)
+
+**Decision:** Implemented full Chapter 19 table compliance for Claude Code shortcuts management, including column reordering, visual drag indicators, and proper event separation.
+
+**Details:**
+**Features Implemented:**
+
+1. **Column Reordering** - HTML5 drag-and-drop API with state management
+2. **Visual Drag Indicators** - Bars3Icon (≡) on all draggable columns
+3. **Toolbar Layout** - Search left, bulk actions + edit buttons right
+4. **Event Separation** - Drag handle does not trigger sorting
+5. **Vertical Alignment** - Fixed with minHeight: 44px
+
+**Technical Implementation:**
+- Added columnOrderCommands/columnOrderSlang state arrays
+- Added draggingColumnCommands/draggingColumnSlang state
+- Implemented onDragStart, onDragOver, onDrop, onDragEnd handlers
+- Separated drag handle (Bars3Icon) from sortable area
+- Added e.stopPropagation() to prevent event conflicts
+
+**Files Modified:**
+- frontend/src/components/settings/AgentShortcutsTab.jsx (lines 14, 35-36, 49-50, 633-660, 823-850)
+
+**Trade-offs:**
+**Trade-offs:**
+- State complexity: Dual table state requires separate variables
+- Column persistence: Currently in-memory only (could add localStorage)
+- Performance: Drag-drop re-renders entire header (acceptable for small tables)
+
+**Future Enhancements:**
+- Add localStorage persistence for column order
+- Add keyboard shortcuts for column reordering
+- Add column order reset button
+
+
+## 📊 Test Catalog
+
+### UI Testing Infrastructure State
+
+**Current State:**
+
+✅ **E2E Tests:**
+- Framework: Playwright v1.56.1
+- Tests: 1 Gantt cascade test with bug-hunter diagnostics
+- Location: `frontend/tests/e2e/gantt-cascade.spec.js`
+- Features: API monitoring, state tracking, console log monitoring, screenshots
+
+✅ **Unit Test Setup:**
+- Framework: Vitest v4.0.8
+- Configuration: Exists but no tests written
+
+**Missing Tests:**
+❌ Visual regression tests (Percy, BackstopJS)
+❌ Accessibility tests (axe-core, jest-axe)
+❌ UI component unit tests (Vitest unused)
+❌ Browser compatibility (only Chromium)
+❌ Responsive/mobile tests
+❌ Dark mode screenshot tests
+❌ Performance tests (Lighthouse)
+
+**High Value Quick Wins:**
+1. Dark mode rendering (screenshot tests)
+2. Accessibility scan (axe-core automated)
+3. Responsive layouts (viewport testing)
+4. Color contrast (automated a11y check)
+5. Search clear button functionality
+6. Modal close button functionality
+
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+
+### UI/UX Enhancement Roadmap
+
+**Priority Matrix:**
+
+**Quick Wins (1-2 hours total):**
+- ✅ Fix deprecated color classes: amber→yellow, emerald→green (COMPLETED 2025-11-16)
+- [ ] Add clear buttons to 73 search boxes (30-40 min, automatable)
+- [ ] Add close buttons to 58 modals (20-30 min, automatable)
+- [ ] Add sticky headers to 36 tables (15-20 min, automatable)
+
+**High Impact (3-5 hours):**
+- [ ] Add action buttons to 66 empty states (1-2 hours, manual)
+- [ ] Add inline filters to 44 tables (3-5 hours, manual)
+- [ ] Add aria-labels to 50 icon buttons (1-2 hours, manual)
+- [ ] Add search result counts to 53 search boxes (30 min, automatable)
+
+**Medium Impact (5-10 hours):**
+- [ ] Badge icon enhancement (95 badges, 2-3 hours)
+- [ ] URL state sync for 20 tab components (2 hours)
+- [ ] Loading spinners for 12 pages (1 hour)
+- [ ] Button hierarchy audit (100 buttons, 3 hours)
+
+**Future Enhancements:**
+- [ ] Storybook integration (component showcase)
+- [ ] Accessibility scanning (axe-core in CI/CD)
+- [ ] Performance optimization (memoization audit)
+- [ ] Responsive design system documentation
+- [ ] Design tokens export (Figma integration)
+
+
+### Test Entry - Dummy Run
+
+This is a test entry to verify the unified API works correctly
+
+
+### Trinity Table Visual Updates - Blue Theme and Borders
+
+Complete visual refresh of Trinity table component with blue theme throughout
+
+CHANGES MADE:
+1. Scrollbars: Changed from gray to blue (#2563EB) matching header
+   - WebKit: Custom ::-webkit-scrollbar styling with 12px size
+   - Firefox: scrollbarColor property for cross-browser support
+   - Dark mode: Uses blue-800 (#1E40AF) for thumb
+   
+2. Table Borders: Changed from border-l border-r to full border
+   - Now has top, right, bottom, left borders
+   - Creates complete bordered box around table
+   - Maintains mx-4 margin for search bar alignment
+   
+3. Alternating Rows: Kept light blue (bg-blue-50)
+   - Even rows: white
+   - Odd rows: bg-blue-50 (light blue)
+   - Hover: bg-blue-100
+   - Initially tried bg-blue-600 matching header but too dark
+   
+4. Removed Sticky Scrollbar: 
+   - Previously had custom sticky horizontal scrollbar at bottom
+   - Caused duplicate scrollbar display issue
+   - Now uses only native browser scrollbars
+   
+SPECIFICATION UPDATES:
+- RULE #20.19: Native scrollbars with blue theme
+- RULE #20.18: Full border on all sides
+- Updated section 10 with complete CSS examples
+- Documented removal of sticky scrollbar and reasoning
+
+
+### Trinity Table Complete - Modal and All Features
+
+Complete gold standard implementation. Modal opens ONLY on Content/Title columns. Dedicated resize handles prevent conflicts. Bold 18px headers, 14px rows. All interactions work independently: resize, drag, sort, filter, select, modal.
+
+
+## 🔍 Common Issues
+
+### Sticky Horizontal Scrollbar Implementation Bugs
+
+Common issues encountered when implementing sticky horizontal scrollbars for wide tables
+
+#### Scenario
+When implementing a sticky horizontal scrollbar at the bottom of a table view (BibleTableView), multiple issues were encountered with scroll synchronization, visibility, and positioning.
+
+#### Root Cause
+1. **Scroll loop prevention**: Bidirectional scroll sync causes infinite loops without proper flags
+2. **Table width detection**: Container scrollWidth !== actual table width when table has minWidth
+3. **Native scrollbar conflict**: Both native and custom scrollbars visible simultaneously
+4. **Overflow detection**: Default column widths too small to trigger horizontal scroll on wide monitors
+
+#### Solution
+**Scroll Loop Prevention:**
+```javascript
+const isScrollingStickyRef = useRef(false)
+const isScrollingMainRef = useRef(false)
+
+const handleScroll = (e) => {
+  if (isScrollingStickyRef.current) {
+    isScrollingStickyRef.current = false
+    return
+  }
+  isScrollingMainRef.current = true
+  // Sync sticky scrollbar
+  if (stickyScrollbarRef.current) {
+    stickyScrollbarRef.current.scrollLeft = e.target.scrollLeft
+  }
+  setTimeout(() => { isScrollingMainRef.current = false }, 0)
+}
+```
+
+**Actual Table Width Detection:**
+```javascript
+const table = container.querySelector('table')
+const actualTableWidth = table ? table.offsetWidth : scrollWidth
+setTableScrollWidth(actualTableWidth)
+```
+
+**Hide Native Scrollbar:**
+```css
+.bible-table-scroll::-webkit-scrollbar:horizontal {
+  display: none !important;
+  height: 0 !important;
+}
+```
+```javascript
+style={{
+  scrollbarWidth: 'none',
+  msOverflowStyle: 'none'
+}}
+```
+
+**Force Horizontal Overflow:**
+```javascript
+const COLUMNS = [
+  { key: 'content', width: 1200 }, // Increased from 600
+  // Total: 2400px > most screens
+]
+```
 
 #### Prevention
 1. **Always use ref flags** to prevent scroll loops in bidirectional sync
@@ -4930,27 +5123,10 @@ const COLUMNS = [
 6. **Position sticky with bottom: 0** to keep scrollbar visible at viewport bottom
 
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
-
 
 # Chapter 21: Agent System & Automation
 
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 21               │
-│ 📘 USER MANUAL (HOW): Chapter 21               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
-
----
 
 ## 🐛 Bug Hunter
 
@@ -4974,7 +5150,6 @@ Add test cases for case variations
 
 **Component:** CLAUDE.md agent recognition
 
----
 
 ## 🏛️ Architecture
 
@@ -4993,7 +5168,6 @@ Created agent_definitions table with JSONB fields for metadata and run details. 
 **Trade-offs:**
 Trade-off: Requires database migration when adding new agents. Benefit: Live run tracking, success rates, recently_run? checks.
 
----
 
 ### 2. Run History Tracking with JSONB
 
@@ -5008,7 +5182,6 @@ Used JSONB columns: last_run_details and metadata for flexible storage.
 **Trade-offs:**
 Trade-off: No strict validation on JSONB structure. Benefit: Each agent can track custom metrics.
 
----
 
 ### 3. Agent Type Taxonomy (4 Types)
 
@@ -5026,7 +5199,6 @@ Created agent_type enum with 4 values. Each agent assigned single type.
 **Trade-offs:**
 Trade-off: Agents can only have one type. Benefit: Clear responsibility boundaries.
 
----
 
 ### 4. recently_run? Smart Test Skipping
 
@@ -5044,7 +5216,6 @@ AgentDefinition#recently_run?(minutes = 60) returns true if last successful run 
 **Trade-offs:**
 Trade-off: Stale results if threshold too high. Benefit: Faster iteration during development.
 
----
 
 ## 📊 Test Catalog
 
@@ -5055,7 +5226,6 @@ Testing status for Agent System components.
 **Tests:**
 Unit Tests Needed: AgentDefinition#record_success, AgentDefinition#record_failure, AgentDefinition#success_rate, AgentDefinition#recently_run? | Integration Tests Needed: POST /api/v1/agent_definitions/:id/record_run, GET /api/v1/agent_definitions (priority sorting), Agent invocation protocol (end-to-end) | Current Coverage: 0% (no tests written yet)
 
----
 
 ## 🎓 Developer Notes
 
@@ -5065,7 +5235,6 @@ Two sources of agent config: .claude/agents/*.md files and agent_definitions tab
 
 Developer updates .md file but forgets to update database, causing drift.
 
----
 
 ### Claude Code Commands Configuration
 
@@ -5097,7 +5266,6 @@ Developer updates .md file but forgets to update database, causing drift.
 - **Create service object**: /service, create service
 - **Add background job**: /job, background job
 
----
 
 ### Claude Code Slang Configuration
 
@@ -5114,7 +5282,6 @@ Developer updates .md file but forgets to update database, causing drift.
 - **gantt**: Gantt Chart
 - **sched**: Schedule
 
----
 
 ### Claude Code Slang Configuration
 
@@ -5131,7 +5298,6 @@ Developer updates .md file but forgets to update database, causing drift.
 - **gantt**: Gantt Chart
 - **sched**: Schedule
 
----
 
 ### Claude Code Slang Configuration
 
@@ -5150,7 +5316,6 @@ Developer updates .md file but forgets to update database, causing drift.
 - **ub**: Update Bible
 - **task**: Is the Actual PArt that has a duration on the Gantt
 
----
 
 ### Claude Code Slang Configuration
 
@@ -5169,7 +5334,6 @@ Developer updates .md file but forgets to update database, causing drift.
 - **ub**: Update Bible
 - **c19**: Chapter 19
 
----
 
 ### Claude Code Commands Configuration
 
@@ -5202,16 +5366,9 @@ Developer updates .md file but forgets to update database, causing drift.
 - **Add background job**: /job, background job
 - **Update the Bible , Update Teacher and UPdate Lexicon with any Bugs we fixed**: /ub, ub
 
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
 
 
-**Last Generated:** 2025-11-17 15:41 AEST
+**Last Generated:** 2025-11-17 22:26 AEST
 **Generated By:** `rake trapid:export_lexicon`
 **Maintained By:** Development Team via Database UI
 **Review Schedule:** After each bug fix or knowledge entry
