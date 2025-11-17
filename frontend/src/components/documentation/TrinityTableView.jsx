@@ -167,6 +167,7 @@ export default function TrinityTableView({
   const [showTextEditModal, setShowTextEditModal] = useState(false)
   const [textEditField, setTextEditField] = useState('') // 'title' or 'content'
   const [textEditValue, setTextEditValue] = useState('')
+  const textEditTextareaRef = useRef(null)
 
   // Chapter 19 compliance: Column state management
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
@@ -1023,8 +1024,10 @@ export default function TrinityTableView({
         }
       `}</style>
       <div className="h-full flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
-      {/* Header with Search, Filters, and Column Visibility (Chapter 20.20, #19.10) */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-4 flex-shrink-0">
+      {/* Bordered container wrapping toolbar and table */}
+      <div className="flex-1 min-h-0 flex flex-col mx-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        {/* Header with Search, Filters, and Column Visibility (Chapter 20.20, #19.10) */}
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-4 flex-shrink-0">
         {/* Quick Filter Buttons - Only show when viewing all categories */}
         {!category && (
         <div className="flex items-center gap-3 flex-wrap">
@@ -1506,10 +1509,8 @@ export default function TrinityTableView({
             Showing {filteredAndSorted.length} of {entries.length} entries
           </div>
         </div>
-      </div>
+        </div>
 
-      {/* Table Container with borders on all sides */}
-      <div className="flex-1 min-h-0 flex flex-col border border-gray-200 dark:border-gray-700 mx-4">
         {/* Table with Sticky Gradient Headers (Chapter 20.2) */}
         <div
           ref={scrollContainerRef}
@@ -1517,7 +1518,7 @@ export default function TrinityTableView({
           className="trinity-table-scroll flex-1 overflow-y-scroll overflow-x-auto relative bg-white dark:bg-gray-900"
           style={{
             scrollbarWidth: 'thin',
-            scrollbarColor: '#2563EB #E0E7FF'
+            scrollbarColor: '#2563EB #FFFFFF'
           }}
         >
           <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
@@ -1557,15 +1558,17 @@ export default function TrinityTableView({
                   >
                     {/* Select All Checkbox (Chapter 20.1) */}
                     {colKey === 'select' ? (
-                      <input
-                        type="checkbox"
-                        checked={selectedRows.size === filteredAndSorted.length && filteredAndSorted.length > 0}
-                        onChange={(e) => {
-                          e.stopPropagation()
-                          handleSelectAll()
-                        }}
-                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
-                      />
+                      <div className="flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedRows.size === filteredAndSorted.length && filteredAndSorted.length > 0}
+                          onChange={(e) => {
+                            e.stopPropagation()
+                            handleSelectAll()
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                        />
+                      </div>
                     ) : (
                       <>
                         <div className="flex items-center gap-1">
@@ -1873,7 +1876,7 @@ export default function TrinityTableView({
           </tbody>
 
           {/* Table Footer - shows sums for currency/numeric columns */}
-          <tfoot className="sticky bottom-0 z-10 bg-blue-600 dark:bg-blue-800 border-t-2 border-blue-700 dark:border-blue-900">
+          <tfoot className="sticky bottom-0 z-10 bg-blue-100 dark:bg-blue-900/30 border-t border-blue-200 dark:border-blue-800">
             <tr>
               {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
                 const column = COLUMNS.find(c => c.key === colKey)
@@ -1902,9 +1905,9 @@ export default function TrinityTableView({
                       width: columnWidths[colKey],
                       minWidth: columnWidths[colKey],
                     }}
-                    className={`${colKey === 'select' ? 'px-1 py-3' : 'px-6 py-3'} ${
+                    className={`${colKey === 'select' ? 'px-1 py-1.5' : 'px-6 py-1.5'} ${
                       colKey === 'select' ? 'text-center' : column.showSum ? 'text-right' : 'text-left'
-                    } text-sm font-semibold text-white`}
+                    } text-xs font-semibold text-gray-700 dark:text-gray-300`}
                   >
                     {colKey === 'select' ? (
                       // Empty cell for checkbox column
@@ -1912,8 +1915,8 @@ export default function TrinityTableView({
                     ) : column.showSum ? (
                       // Display sum (right-aligned) - format based on sumType
                       <div className="flex items-center justify-end gap-2">
-                        <span className="text-blue-100">{selectedRows.size > 0 ? 'Selected:' : 'Total:'}</span>
-                        <span className="font-bold text-white">
+                        <span className="text-gray-600 dark:text-gray-400">{selectedRows.size > 0 ? 'Selected:' : 'Total:'}</span>
+                        <span className="font-bold text-gray-900 dark:text-white">
                           {column.sumType === 'currency'
                             ? new Intl.NumberFormat('en-AU', {
                                 style: 'currency',
@@ -1940,6 +1943,7 @@ export default function TrinityTableView({
           </div>
         )}
       </div>
+      {/* End bordered container */}
       </div>
 
       {/* Full Entry Details Modal */}
@@ -2236,7 +2240,220 @@ export default function TrinityTableView({
 
               {/* Body */}
               <div className="flex-1 px-6 py-4 overflow-y-auto">
+                {/* Formatting Toolbar */}
+                <div className="mb-3 flex flex-wrap items-center gap-1 p-2 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                  {/* Indent/Outdent */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (!textarea) return
+                      const start = textarea.selectionStart
+                      const end = textarea.selectionEnd
+                      const selectedText = textEditValue.substring(start, end)
+                      const lines = selectedText.split('\n')
+                      const indented = lines.map(line => '  ' + line).join('\n')
+                      const newText = textEditValue.substring(0, start) + indented + textEditValue.substring(end)
+                      setTextEditValue(newText)
+                      setTimeout(() => {
+                        textarea.focus()
+                        textarea.setSelectionRange(start, start + indented.length)
+                      }, 0)
+                    }}
+                    className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Indent (add 2 spaces)"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (!textarea) return
+                      const start = textarea.selectionStart
+                      const end = textarea.selectionEnd
+                      const selectedText = textEditValue.substring(start, end)
+                      const lines = selectedText.split('\n')
+                      const outdented = lines.map(line => line.replace(/^  /, '')).join('\n')
+                      const newText = textEditValue.substring(0, start) + outdented + textEditValue.substring(end)
+                      setTextEditValue(newText)
+                      setTimeout(() => {
+                        textarea.focus()
+                        textarea.setSelectionRange(start, start + outdented.length)
+                      }, 0)
+                    }}
+                    className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Outdent (remove 2 spaces)"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+                    </svg>
+                  </button>
+
+                  {/* Separator */}
+                  <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
+
+                  {/* Numbered List */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (!textarea) return
+                      const start = textarea.selectionStart
+                      const end = textarea.selectionEnd
+                      const selectedText = textEditValue.substring(start, end)
+                      const lines = selectedText.split('\n').filter(l => l.trim())
+                      const numbered = lines.map((line, i) => `${i + 1}. ${line.trim()}`).join('\n')
+                      const newText = textEditValue.substring(0, start) + numbered + textEditValue.substring(end)
+                      setTextEditValue(newText)
+                      setTimeout(() => {
+                        textarea.focus()
+                        textarea.setSelectionRange(start, start + numbered.length)
+                      }, 0)
+                    }}
+                    className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Numbered list"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+                    </svg>
+                  </button>
+
+                  {/* Bulleted List */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (!textarea) return
+                      const start = textarea.selectionStart
+                      const end = textarea.selectionEnd
+                      const selectedText = textEditValue.substring(start, end)
+                      const lines = selectedText.split('\n').filter(l => l.trim())
+                      const bulleted = lines.map(line => `• ${line.trim()}`).join('\n')
+                      const newText = textEditValue.substring(0, start) + bulleted + textEditValue.substring(end)
+                      setTextEditValue(newText)
+                      setTimeout(() => {
+                        textarea.focus()
+                        textarea.setSelectionRange(start, start + bulleted.length)
+                      }, 0)
+                    }}
+                    className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Bullet list"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                    </svg>
+                  </button>
+
+                  {/* Separator */}
+                  <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
+
+                  {/* Uppercase */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (!textarea) return
+                      const start = textarea.selectionStart
+                      const end = textarea.selectionEnd
+                      const selectedText = textEditValue.substring(start, end)
+                      const uppercased = selectedText.toUpperCase()
+                      const newText = textEditValue.substring(0, start) + uppercased + textEditValue.substring(end)
+                      setTextEditValue(newText)
+                      setTimeout(() => {
+                        textarea.focus()
+                        textarea.setSelectionRange(start, start + uppercased.length)
+                      }, 0)
+                    }}
+                    className="px-2 py-1 text-xs font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="UPPERCASE"
+                  >
+                    ABC
+                  </button>
+
+                  {/* Lowercase */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (!textarea) return
+                      const start = textarea.selectionStart
+                      const end = textarea.selectionEnd
+                      const selectedText = textEditValue.substring(start, end)
+                      const lowercased = selectedText.toLowerCase()
+                      const newText = textEditValue.substring(0, start) + lowercased + textEditValue.substring(end)
+                      setTextEditValue(newText)
+                      setTimeout(() => {
+                        textarea.focus()
+                        textarea.setSelectionRange(start, start + lowercased.length)
+                      }, 0)
+                    }}
+                    className="px-2 py-1 text-xs font-normal text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="lowercase"
+                  >
+                    abc
+                  </button>
+
+                  {/* Title Case */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (!textarea) return
+                      const start = textarea.selectionStart
+                      const end = textarea.selectionEnd
+                      const selectedText = textEditValue.substring(start, end)
+                      const titleCased = selectedText.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase())
+                      const newText = textEditValue.substring(0, start) + titleCased + textEditValue.substring(end)
+                      setTextEditValue(newText)
+                      setTimeout(() => {
+                        textarea.focus()
+                        textarea.setSelectionRange(start, start + titleCased.length)
+                      }, 0)
+                    }}
+                    className="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Title Case"
+                  >
+                    Abc
+                  </button>
+
+                  {/* Separator */}
+                  <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
+
+                  {/* Clear Formatting */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const textarea = textEditTextareaRef.current
+                      if (!textarea) return
+                      const start = textarea.selectionStart
+                      const end = textarea.selectionEnd
+                      const selectedText = textEditValue.substring(start, end)
+                      // Remove leading numbers, bullets, and extra spaces
+                      const lines = selectedText.split('\n')
+                      const cleaned = lines.map(line =>
+                        line.replace(/^\s*(\d+\.|\•|-|\*)\s*/, '').trim()
+                      ).join('\n')
+                      const newText = textEditValue.substring(0, start) + cleaned + textEditValue.substring(end)
+                      setTextEditValue(newText)
+                      setTimeout(() => {
+                        textarea.focus()
+                        textarea.setSelectionRange(start, start + cleaned.length)
+                      }, 0)
+                    }}
+                    className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Clear formatting"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
                 <textarea
+                  ref={textEditTextareaRef}
                   value={textEditValue}
                   onChange={(e) => setTextEditValue(e.target.value)}
                   rows={textEditField === 'title' ? 4 : 12}
