@@ -152,6 +152,62 @@ module Api
         }
       end
 
+      # GET /api/v1/trinity/search?q=section+numbers
+      # Fast search using dense_index
+      # Query params:
+      #   ?q=search query (required)
+      #   ?full=true (optional - include full content in response)
+      #   ?category=bible|lexicon|teacher (optional - filter by category)
+      def search
+        query = params[:q]
+
+        if query.blank?
+          return render json: {
+            success: false,
+            error: 'Query parameter "q" is required'
+          }, status: :bad_request
+        end
+
+        # Search dense_index using PostgreSQL text search
+        @entries = Trinity.where("dense_index ILIKE ?", "%#{query.downcase}%")
+
+        # Optional category filter
+        if params[:category].present?
+          @entries = @entries.where(category: params[:category])
+        end
+
+        # Order by relevance (exact section match first, then by chapter/section)
+        @entries = @entries.order(:section_number)
+
+        # Limit results to prevent overwhelming responses
+        @entries = @entries.limit(50)
+
+        # Minimal response by default (just id, section, title)
+        detailed = params[:full] == 'true'
+
+        render json: {
+          success: true,
+          query: query,
+          count: @entries.count,
+          results: @entries.map { |entry|
+            if detailed
+              entry_json(entry, detailed: true)
+            else
+              {
+                id: entry.id,
+                section_number: entry.section_number,
+                category: entry.category,
+                title: entry.title,
+                chapter_number: entry.chapter_number,
+                chapter_name: entry.chapter_name,
+                component: entry.component,
+                entry_type: entry.entry_type
+              }
+            end
+          }
+        }
+      end
+
       # POST /api/v1/trinity/export_lexicon
       # Exports Lexicon (bug/architecture/etc) entries to TRAPID_LEXICON.md
       def export_lexicon
@@ -263,6 +319,7 @@ module Api
           entry_type: entry.entry_type,
           type_display: entry.type_display,
           type_emoji: entry.type_emoji,
+          dense_index: entry.dense_index,
           # Lexicon fields
           status: entry.status,
           status_display: entry.status_display,

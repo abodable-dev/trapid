@@ -28,8 +28,10 @@ class Trinity < ApplicationRecord
   validates :entry_type, inclusion: { in: ENTRY_TYPES }
   validates :category, inclusion: { in: CATEGORIES }
 
-  # Section number optional, but must be formatted if present (allows optional letter suffix like 19.11A)
-  validates :section_number, format: { with: /\A\d+\.\d+[A-Z]?\z/, message: "must be in format X.Y or X.YA (e.g., 19.1 or 19.11A)" }, allow_nil: true
+  # Section number optional, but must be formatted if present
+  # Accepts: B01.01, L01.02, T01.03 (category prefix + padded numbers)
+  # Legacy: 19.1, 19.11A (for backward compatibility during migration)
+  validates :section_number, format: { with: /\A([BTL]\d{2}\.\d{2}|\d+\.\d+[A-Z]?)\z/, message: "must be in format BXX.YY, LXX.YY, TXX.YY or legacy X.Y" }, allow_nil: true
   # Section number must be unique within chapter + category combination
   validates :section_number, uniqueness: { scope: [:chapter_number, :category], message: "already exists in this chapter for this category" }, allow_nil: true
 
@@ -42,6 +44,7 @@ class Trinity < ApplicationRecord
 
   # Callbacks
   before_save :update_search_text
+  before_save :update_dense_index
 
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
@@ -223,14 +226,23 @@ class Trinity < ApplicationRecord
 
   def section_display
     return nil unless section_number.present?
-    bible_entry? ? "RULE ##{section_number}" : "§#{section_number}"
+
+    # Strip category prefix for display (B01.01 → 01.01)
+    display_number = section_number.sub(/^[BTL]/, '')
+
+    bible_entry? ? "RULE ##{display_number}" : "§#{display_number}"
   end
 
   def full_title
-    if bible_entry? && section_number.present?
-      "RULE ##{section_number}: #{title}"
-    elsif section_number.present?
-      "§#{section_number}: #{title}"
+    if section_number.present?
+      # Strip category prefix for display (B01.01 → 01.01)
+      display_number = section_number.sub(/^[BTL]/, '')
+
+      if bible_entry?
+        "RULE ##{display_number}: #{title}"
+      else
+        "§#{display_number}: #{title}"
+      end
     else
       title
     end
@@ -260,5 +272,49 @@ class Trinity < ApplicationRecord
       examples,
       recommendations
     ].compact.join(' ')
+  end
+
+  def update_dense_index
+    # Create ultra-lean index: lowercase, no spaces, no formatting
+    tokens = []
+
+    # Section number (no dots): b0109
+    tokens << section_number.downcase.gsub('.', '') if section_number.present?
+
+    # Title (no spaces): sectionnumberscategoryprefix
+    tokens << title.downcase.gsub(/[^a-z0-9]/, '') if title.present?
+
+    # Type: must
+    tokens << entry_type.downcase if entry_type.present?
+
+    # Category: bible
+    tokens << category if category.present?
+
+    # Component: table
+    tokens << component.downcase if component.present?
+
+    # Extract key terms from content (remove formatting, common words)
+    content_text = [
+      description,
+      details,
+      summary,
+      scenario,
+      solution,
+      code_example
+    ].compact.join(' ')
+
+    # Remove formatting and extract meaningful words (3+ chars)
+    key_terms = content_text
+      .downcase
+      .gsub(/[*#\-_`]/, '') # Remove markdown
+      .gsub(/must|never|always|should|will|can|use|add|set|get/, '') # Remove common words
+      .scan(/\b[a-z]{3,}\b/) # Extract words 3+ chars
+      .uniq
+      .first(20) # Limit to 20 most unique terms
+
+    tokens.concat(key_terms)
+
+    # Join with spaces for simple text search
+    self.dense_index = tokens.join(' ')
   end
 end

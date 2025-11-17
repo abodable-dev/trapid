@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_17_104747) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_17_141640) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -305,6 +305,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_104747) do
     t.string "contact_types", default: [], comment: "Array of contact types: customer, supplier, sales, land_agent. Empty array = shared/universal role", array: true
     t.index ["contact_types"], name: "index_contact_roles_on_contact_types", using: :gin
     t.index ["name"], name: "index_contact_roles_on_name", unique: true
+  end
+
+  create_table "contact_types", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "display_name", null: false
+    t.string "tab_label"
+    t.text "description"
+    t.boolean "active", default: true, null: false
+    t.integer "position", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
+    t.index ["name"], name: "index_contact_types_on_name", unique: true
+    t.index ["position"], name: "index_contact_types_on_position"
   end
 
   create_table "contacts", force: :cascade do |t|
@@ -1009,6 +1022,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_104747) do
     t.index ["source"], name: "index_rain_logs_on_source"
   end
 
+  create_table "roles", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "display_name", null: false
+    t.text "description"
+    t.boolean "active", default: true, null: false
+    t.integer "position", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
+    t.index ["name"], name: "index_roles_on_name", unique: true
+    t.index ["position"], name: "index_roles_on_position"
+  end
+
   create_table "sam_quick_est_items", force: :cascade do |t|
     t.string "item_code", null: false
     t.string "item_name", null: false
@@ -1473,13 +1498,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_104747) do
     t.string "category", null: false
     t.string "created_by"
     t.string "updated_by"
+    t.boolean "exclude_from_export", default: false, null: false
+    t.text "dense_index"
     t.index ["category", "chapter_number"], name: "index_trinity_on_category_and_chapter_number"
     t.index ["category"], name: "index_trinity_on_category"
     t.index ["chapter_number", "entry_type"], name: "index_trinity_on_chapter_number_and_entry_type"
+    t.index ["chapter_number", "section_number", "category"], name: "idx_trinity_unique_section", unique: true, where: "(section_number IS NOT NULL)"
     t.index ["chapter_number", "section_number"], name: "index_trinity_on_chapter_number_and_section_number"
     t.index ["chapter_number", "status"], name: "index_trinity_on_chapter_number_and_status"
     t.index ["chapter_number"], name: "index_trinity_on_chapter_number"
+    t.index ["dense_index"], name: "index_trinity_on_dense_index"
     t.index ["entry_type"], name: "index_trinity_on_entry_type"
+    t.index ["exclude_from_export"], name: "index_trinity_on_exclude_from_export"
     t.index ["search_text"], name: "index_trinity_on_search_text", opclass: :gin_trgm_ops, using: :gin
     t.index ["section_number"], name: "index_trinity_on_section_number"
     t.index ["severity"], name: "index_trinity_on_severity"
