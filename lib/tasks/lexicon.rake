@@ -211,7 +211,6 @@ namespace :trapid do
             content << ''
           end
 
-          content << '---'
           content << ''
         end
       end
@@ -261,7 +260,6 @@ namespace :trapid do
             content << ''
           end
 
-          content << '---'
           content << ''
         end
       end
@@ -286,7 +284,6 @@ namespace :trapid do
             content << ''
           end
 
-          content << '---'
           content << ''
         end
       end
@@ -303,7 +300,6 @@ namespace :trapid do
           content << ''
           content << perf.solution if perf.solution.present?
           content << ''
-          content << '---'
           content << ''
         end
       end
@@ -327,7 +323,6 @@ namespace :trapid do
             content << ''
           end
 
-          content << '---'
           content << ''
         end
       end
@@ -370,19 +365,9 @@ namespace :trapid do
             content << ''
           end
 
-          content << '---'
           content << ''
         end
       end
-
-
-      # Related chapters
-      content << '## 📚 Related Chapters'
-      content << ''
-      content << '_Links to related chapters will be added as cross-references are identified._'
-      content << ''
-      content << '---'
-      content << ''
     end
 
     # Footer
