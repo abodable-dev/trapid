@@ -200,27 +200,28 @@ export default function BibleTableView({ content }) {
     setTimeout(() => { isScrollingStickyRef.current = false }, 0)
   }
 
-  // Fetch rules from Bible Rules API
+  // Fetch rules from Documentation Entries API (category=bible)
   const fetchRules = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:3000/api/v1/bible_rules')
+      const response = await fetch('http://localhost:3000/api/v1/documentation_entries?category=bible')
       const data = await response.json()
 
       if (data.success) {
         // Transform API data to match component structure
         const transformedRules = data.data.map(rule => ({
           id: rule.id,
-          ruleNumber: rule.rule_number,
+          ruleNumber: rule.section_number,
           chapter: rule.chapter_number,
           chapterName: rule.chapter_name,
           title: rule.title,
-          ruleType: rule.rule_type,
+          ruleType: rule.entry_type,
           typeEmoji: rule.type_emoji,
           typeDisplay: rule.type_display,
           description: rule.description || '',
           codeExample: rule.code_example || '',
-          crossReferences: rule.cross_references || '',
+          crossReferences: rule.related_rules || '',
+          relatedDocs: rule.related_rules || '',
           fullTitle: rule.full_title
         }))
         setRules(transformedRules)
@@ -582,12 +583,22 @@ export default function BibleTableView({ content }) {
     e.preventDefault()
 
     try {
-      const response = await fetch(`http://localhost:3000/api/v1/bible_rules/${editingRule.id}`, {
+      const response = await fetch(`http://localhost:3000/api/v1/documentation_entries/${editingRule.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ bible_rule: editFormData })
+        body: JSON.stringify({
+          documentation_entry: {
+            category: 'bible',
+            section_number: editFormData.rule_number,
+            title: editFormData.title,
+            entry_type: editFormData.rule_type,
+            description: editFormData.description,
+            code_example: editFormData.code_example,
+            related_rules: editFormData.cross_references
+          }
+        })
       })
 
       if (!response.ok) {
