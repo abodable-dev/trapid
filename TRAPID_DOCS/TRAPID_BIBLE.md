@@ -1,7 +1,7 @@
 # TRAPID BIBLE - Development Rules
 
 **Version:** 2.0.0
-**Last Updated:** 2025-11-17 15:46 AEST
+**Last Updated:** 2025-11-17 16:49 AEST
 **Authority Level:** ABSOLUTE
 **Audience:** Claude Code + Human Developers
 **Source of Truth:** Database table `bible_rules` (this file is auto-generated)
@@ -37,86 +37,6 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
-# Chapter 0: System-Wide Rules
-
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch0    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch0    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch0 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 15:45 AEST
-
-## RULE #0.2: Trinity is Single Source of Truth for All Documentation
-
-✅ Must
-
-All development documentation MUST be maintained in the Trinity database system, not in standalone MD files.
-
-The Trinity system (Bible, Lexicon, Teacher) is the authoritative source for all Trapid documentation. Standalone markdown files in the root directory are prohibited except for TRAPID.md (project overview), README.md (setup), and CONTRIBUTING.md (contribution guide).
-
-✅ **MUST use Trinity for:**
-- Rules and requirements (Bible entries)
-- Bug history and architecture decisions (Lexicon entries)
-- Implementation patterns and code examples (Teacher entries)
-- Feature documentation
-- API documentation
-- Testing guides
-- Migration guides
-
-❌ **NEVER create standalone MD files for:**
-- Component patterns (use Teacher entries)
-- Bug investigations (use Lexicon entries)
-- Feature implementation guides (use Teacher entries)
-- Architecture decisions (use Lexicon entries)
-
-📝 **Allowed standalone MD files:**
-- TRAPID.md - High-level project overview
-- README.md - Project setup and quick start
-- CONTRIBUTING.md - Contribution guidelines
-- rapid-rebuild-plan.md - Active planning documents (temporary)
-
-🔄 **Documentation workflow:**
-1. Create/edit documentation in Trapid app → Documentation page
-2. Assign to appropriate chapter (0-20)
-3. Choose category: Bible (rules), Lexicon (knowledge), or Teacher (how-to)
-4. Save → Done! Entry is immediately searchable and available
-
-📤 **Exporting to markdown (optional):**
-- Only needed if you want to read docs as markdown files
-- Run: `bin/rails trapid:export_bible` (or export_lexicon, export_teacher)
-- Auto-generated files go to TRAPID_DOCS/ folder
-- These are READ-ONLY generated files, never edit them directly
-
-💾 **Database as single source of truth:**
-- Trinity database table stores all entries
-- Markdown files are optional exports for reading
-- Edit via UI or API only
-- All searches, filtering, and queries use database
-- No export needed for normal documentation workflow
-
-📂 **Historical investigations:**
-- Large investigation files archived in /ARCHIVE/investigations/
-- Key findings extracted to Trinity as summary entries
-- Archive files kept for reference only
-
-🚨 **Violations:**
-If you find a standalone MD file with documentation content:
-1. Migrate content to Trinity via Documentation page
-2. Delete or move to /ARCHIVE/ if historical
-3. Update any references to point to Trinity chapters
-
-**Rationale:** 
-- Single source of truth prevents documentation drift
-- Database enables search, filtering, and relationships
-- Version control via database timestamps and updated_at
-- UI provides better documentation editing experience
-- Exports are optional, only for markdown readers
-
-
-
----
-
 # Chapter 1: Overview & System-Wide Rules
 
 ┌─────────────────────────────────────────────────┐
@@ -125,25 +45,194 @@ If you find a standalone MD file with documentation content:
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch1 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-18 02:29 AEST
 
-## RULE #0.1: Mandatory Chapter Reading Before Component Creation
+## RULE #1.1: Documentation Maintenance
+
+📖 Rule
+
+When to Update Bible:
+✅ MUST update Bible when:
+1. Adding a new coding rule (MUST/NEVER/ALWAYS pattern)
+2. Discovering a protected code pattern
+3. Adding a critical configuration value
+4. Finding a bug-causing violation
+
+❌ DO NOT update Bible for:
+- Bug discoveries (goes in Lexicon)
+- Architecture explanations (goes in Lexicon)
+- Performance optimizations (goes in Lexicon unless it creates a new RULE)
+
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
+
+---
+
+## RULE #1.2: Code Quality Standards
+
+📖 Rule
+
+❌ NEVER commit code with:
+- Console.log statements (use proper logging)
+- Commented-out code (delete it)
+- TODO comments without GitHub issues
+- Hardcoded credentials or API keys
+
+✅ ALWAYS:
+- Use environment variables for secrets
+- Write descriptive commit messages
+- Run linter before committing
+- Test locally before pushing
+
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
+
+---
+
+## RULE #1.3: API Response Format
+
+📖 Rule
+
+✅ ALWAYS return consistent JSON:
+
+Success response:
+{ success: true, data: { ... }, message: "Optional" }
+
+Error response:
+{ success: false, error: "Error message", details: { ... } }
+
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
+
+---
+
+## RULE #1.4: Database Migrations
+
+📖 Rule
+
+❌ NEVER:
+- Modify existing migrations after deployment
+- Delete migrations that have run in production
+- Add columns manually without migrations
+
+✅ ALWAYS:
+- Create new migration to fix issues
+- Test migrations with db:rollback
+- Add indexes for foreign keys
+- Create migrations for ALL schema changes
+
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
+
+---
+
+## RULE #1.5: Agent Maintenance & Learning
+
+📖 Rule
+
+When an agent fails to catch a bug:
+1. Update agent definition in .claude/agents/
+2. Document in Lexicon Chapter 0
+3. Update Bible if it reveals a new RULE
+
+✅ ALWAYS ask: "Could an agent have prevented this?"
+❌ NEVER let the same class of bug happen twice
+
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
+
+---
+
+## RULE #1.6: Documentation Authority Hierarchy
+
+📖 Rule
+
+Authority Order (Highest to Lowest):
+1. TRAPID_BIBLE.md - ABSOLUTE AUTHORITY for protected features
+2. CLAUDE.md - META INSTRUCTIONS for AI behavior
+3. TRAPID_LEXICON.md - REFERENCE for bug history
+4. Code comments - IMPLEMENTATION DETAILS
+
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
+
+---
+
+## RULE #1.7: Trinity Database Sync
 
 ✅ Must
 
 ✅ MUST
 
-✅ **MUST complete all three documents:**
+The Trinity system (Bible + Lexicon + Teacher combined) is **DATABASE-FIRST**.
 
-❌ **NEVER leave a chapter partially complete**
-- Bible without Lexicon = Rules without context (BAD)
-- Bible without User Manual = No user-facing guide (BAD)
-- Only Bible completed = INCOMPLETE Trinity (BAD)
+**Source of Truth:** Trinity database table (PostgreSQL)
+**Markdown Files:** Auto-generated exports for git history and offline reference ONLY
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §0.1](TRAPID_TEACHER.md#01-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 0](TRAPID_LEXICON.md)
+**Architecture:**
+- Database → API → Frontend UI (primary use)
+- Database → Export → Markdown files (backup/git only)
 
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
+**DO NOT:**
+- ❌ Read markdown files for rules (always use API)
+- ❌ Edit markdown files directly (use UI or database)
+- ❌ Trust markdown as source of truth (may be stale)
+
+**ALWAYS:**
+- ✅ Fetch from /api/v1/trinity APIs for real-time data
+- ✅ Edit via UI (stores in database)
+- ✅ Export to markdown for git commit backups
+
+**Fetch from Trinity API:**
+```bash
+# Get all Bible rules
+curl https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible
+
+# Get all Lexicon entries
+curl https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=lexicon
+
+# Get all Teacher guides  
+curl https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=teacher
+
+# Get specific chapter
+curl https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible&chapter=21
+```
+
+**Export to Markdown (for git backup):**
+```bash
+# Export Bible to TRAPID_BIBLE.md
+bin/rails trapid:export_bible
+
+# Export Lexicon to TRAPID_LEXICON.md
+bin/rails trapid:export_lexicon
+
+# Export Teacher to TRAPID_TEACHER.md
+bin/rails trapid:export_teacher
+```
+
+**Import from Markdown (restore from backup):**
+```bash
+# Import Bible from TRAPID_BIBLE.md
+bin/rails trapid:import_bible
+
+# Import Lexicon from TRAPID_LEXICON.md
+bin/rails trapid:import_lexicon
+
+# Import Teacher from TRAPID_TEACHER.md
+bin/rails trapid:import_teacher
+```
+
+**Workflow:**
+1. Edit via UI → Updates trinity table
+2. Run export task → Generates markdown file
+3. Commit markdown file to git (backup)
+4. Other developers: Pull → Database is already synced (no import needed)
+
+**Validation:**
+- Use /trinity-sync-validator agent to verify sync
+- Trinity table is ALWAYS authoritative
+- Markdown exports are snapshots for git history
+
 
 ---
 
@@ -157,7 +246,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #1.1: JWT Token Handling
+## RULE #2.1: JWT Token Handling
 
 ✅ Must
 
@@ -184,7 +273,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #1.2: Password Security Requirements
+## RULE #2.2: Password Security Requirements
 
 ✅ Must
 
@@ -212,7 +301,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #1.3: Role-Based Access Control
+## RULE #2.3: Role-Based Access Control
 
 ✅ Must
 
@@ -239,7 +328,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #1.4: Rate Limiting on Auth Endpoints
+## RULE #2.4: Rate Limiting on Auth Endpoints
 
 ✅ Must
 
@@ -264,7 +353,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #1.5: OAuth Integration Pattern
+## RULE #2.5: OAuth Integration Pattern
 
 ✅ Must
 
@@ -292,7 +381,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #1.6: Password Reset Flow
+## RULE #2.6: Password Reset Flow
 
 ✅ Must
 
@@ -321,7 +410,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #1.7: Portal User Separation
+## RULE #2.7: Portal User Separation
 
 ✅ Must
 
@@ -349,7 +438,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #1.8: Login Activity Tracking
+## RULE #2.8: Login Activity Tracking
 
 ✅ Must
 
@@ -385,7 +474,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #2.1: Company Settings Singleton Pattern
+## RULE #3.1: Company Settings Singleton Pattern
 
 ✅ Must
 
@@ -410,7 +499,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #2.2: Timezone Handling - Backend Time Calculations
+## RULE #3.2: Timezone Handling - Backend Time Calculations
 
 ✅ Must
 
@@ -435,7 +524,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #2.3: Timezone Handling - Frontend Time Display
+## RULE #3.3: Timezone Handling - Frontend Time Display
 
 ✅ Must
 
@@ -460,7 +549,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #2.4: Working Days Configuration & Business Day Calculations
+## RULE #3.4: Working Days Configuration & Business Day Calculations
 
 ✅ Must
 
@@ -485,7 +574,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #2.5: User Roles & Permission System
+## RULE #3.5: User Roles & Permission System
 
 ✅ Must
 
@@ -510,7 +599,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #2.6: Assignable Roles for Task Assignment
+## RULE #3.6: Assignable Roles for Task Assignment
 
 ✅ Must
 
@@ -533,7 +622,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #2.7: Password Complexity Requirements
+## RULE #3.7: Password Complexity Requirements
 
 ✅ Must
 
@@ -558,7 +647,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #2.8: Timezone Options Limitation
+## RULE #3.8: Timezone Options Limitation
 
 ✅ Must
 
@@ -583,7 +672,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #2.9: Working Days UI - Sunday Default True
+## RULE #3.9: Working Days UI - Sunday Default True
 
 ✅ Must
 
@@ -618,7 +707,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #3.1: Contact Types are Multi-Select Arrays
+## RULE #4.1: Contact Types are Multi-Select Arrays
 
 ✅ Must
 
@@ -646,7 +735,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #3.2: Bidirectional Relationships Require Reverse Sync
+## RULE #4.2: Bidirectional Relationships Require Reverse Sync
 
 ✅ Must
 
@@ -675,7 +764,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #3.3: Xero Sync Uses Priority-Based Fuzzy Matching
+## RULE #4.3: Xero Sync Uses Priority-Based Fuzzy Matching
 
 ✅ Must
 
@@ -708,7 +797,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #3.4: Contact Deletion MUST Check Purchase Order Dependencies
+## RULE #4.4: Contact Deletion MUST Check Purchase Order Dependencies
 
 ✅ Must
 
@@ -737,7 +826,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #3.5: Contact Merge MUST Consolidate All Related Records
+## RULE #4.5: Contact Merge MUST Consolidate All Related Records
 
 ✅ Must
 
@@ -768,7 +857,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #3.6: Portal Users MUST Have Secure Password Requirements
+## RULE #4.6: Portal Users MUST Have Secure Password Requirements
 
 ✅ Must
 
@@ -798,7 +887,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #3.7: Primary Contact/Address/Person MUST Be Unique Per Contact
+## RULE #4.7: Primary Contact/Address/Person MUST Be Unique Per Contact
 
 ✅ Must
 
@@ -824,7 +913,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #3.8: Contact Activity Logging MUST Track All Significant Changes
+## RULE #4.8: Contact Activity Logging MUST Track All Significant Changes
 
 ✅ Must
 
@@ -862,7 +951,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #4.1: Price Changes MUST Create Price History Automatically
+## RULE #5.1: Price Changes MUST Create Price History Automatically
 
 ✅ Must
 
@@ -890,7 +979,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #4.2: Prevent Duplicate Price History - Unique Constraint + Time Window
+## RULE #5.2: Prevent Duplicate Price History - Unique Constraint + Time Window
 
 ✅ Must
 
@@ -916,7 +1005,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #4.3: SmartPoLookupService - 6-Strategy Cascading Fallback
+## RULE #5.3: SmartPoLookupService - 6-Strategy Cascading Fallback
 
 ✅ Must
 
@@ -943,7 +1032,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #4.4: Supplier Matching - Normalized Name Comparison with Business Suffix Removal
+## RULE #5.4: Supplier Matching - Normalized Name Comparison with Business Suffix Removal
 
 ✅ Must
 
@@ -971,7 +1060,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #4.5: Price Volatility Detection - Coefficient of Variation on 6-Month Window
+## RULE #5.5: Price Volatility Detection - Coefficient of Variation on 6-Month Window
 
 ✅ Must
 
@@ -999,7 +1088,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #4.6: Risk Scoring - Multi-Factor Weighted Calculation (0-100 Scale)
+## RULE #5.6: Risk Scoring - Multi-Factor Weighted Calculation (0-100 Scale)
 
 ✅ Must
 
@@ -1027,7 +1116,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #4.7: Bulk Updates - Transaction Wrapper with Price History Batch Creation
+## RULE #5.7: Bulk Updates - Transaction Wrapper with Price History Batch Creation
 
 ✅ Must
 
@@ -1055,7 +1144,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #4.8: OneDrive Image Proxy - Cache Control with 1-Hour Expiry
+## RULE #5.8: OneDrive Image Proxy - Cache Control with 1-Hour Expiry
 
 ✅ Must
 
@@ -1093,7 +1182,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #5.1: Construction MUST Have At Least One Contact
+## RULE #6.1: Construction MUST Have At Least One Contact
 
 ✅ Must
 
@@ -1119,7 +1208,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #5.2: Live Profit Calculation - Dynamic Not Cached
+## RULE #6.2: Live Profit Calculation - Dynamic Not Cached
 
 ✅ Must
 
@@ -1145,7 +1234,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #5.3: Task Dependencies - No Circular References
+## RULE #6.3: Task Dependencies - No Circular References
 
 ✅ Must
 
@@ -1171,7 +1260,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #5.4: Task Status Transitions - Automatic Date Setting
+## RULE #6.4: Task Status Transitions - Automatic Date Setting
 
 ✅ Must
 
@@ -1197,7 +1286,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #5.5: Task Spawning - Status-Based Child Task Creation
+## RULE #6.5: Task Spawning - Status-Based Child Task Creation
 
 ✅ Must
 
@@ -1225,7 +1314,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #5.6: Schedule Cascade - Dependency-Based Date Propagation
+## RULE #6.6: Schedule Cascade - Dependency-Based Date Propagation
 
 ✅ Must
 
@@ -1254,7 +1343,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #5.7: OneDrive Folder Creation - Async with Status Tracking
+## RULE #6.7: OneDrive Folder Creation - Async with Status Tracking
 
 ✅ Must
 
@@ -1283,7 +1372,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #5.8: Schedule Template Instantiation - All-or-Nothing Transaction
+## RULE #6.8: Schedule Template Instantiation - All-or-Nothing Transaction
 
 ✅ Must
 
@@ -1320,7 +1409,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #6.1: Fuzzy Job Matching - Three-Tier Confidence Thresholds
+## RULE #7.1: Fuzzy Job Matching - Three-Tier Confidence Thresholds
 
 ✅ Must
 
@@ -1349,7 +1438,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #6.2: External API Key Security - SHA256 Hashing Only
+## RULE #7.2: External API Key Security - SHA256 Hashing Only
 
 ✅ Must
 
@@ -1377,7 +1466,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #6.3: Estimate Import - Validate Before Auto-Matching
+## RULE #7.3: Estimate Import - Validate Before Auto-Matching
 
 ✅ Must
 
@@ -1405,7 +1494,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #6.4: PO Generation from Estimate - Transaction Safety
+## RULE #7.4: PO Generation from Estimate - Transaction Safety
 
 ✅ Must
 
@@ -1433,7 +1522,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #6.5: AI Plan Review - Async Processing Required
+## RULE #7.5: AI Plan Review - Async Processing Required
 
 ✅ Must
 
@@ -1461,7 +1550,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #6.6: Line Item Categorization - Normalized Category Matching
+## RULE #7.6: Line Item Categorization - Normalized Category Matching
 
 ✅ Must
 
@@ -1489,7 +1578,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #6.7: Estimate Status State Machine - Strict Transitions
+## RULE #7.7: Estimate Status State Machine - Strict Transitions
 
 ✅ Must
 
@@ -1527,7 +1616,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #7.1: Estimate Must Be Matched to Construction
+## RULE #8.1: Estimate Must Be Matched to Construction
 
 ✅ Must
 
@@ -1551,7 +1640,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #7.2: OneDrive Plan Folder Structure
+## RULE #8.2: OneDrive Plan Folder Structure
 
 ✅ Must
 
@@ -1573,7 +1662,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #7.3: PDF File Size Limit
+## RULE #8.3: PDF File Size Limit
 
 ✅ Must
 
@@ -1598,7 +1687,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #7.4: Async Processing with Background Jobs
+## RULE #8.4: Async Processing with Background Jobs
 
 ✅ Must
 
@@ -1624,7 +1713,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #7.5: Claude API Model and Prompt Structure
+## RULE #8.5: Claude API Model and Prompt Structure
 
 ✅ Must
 
@@ -1652,7 +1741,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #7.6: Discrepancy Detection Logic
+## RULE #8.6: Discrepancy Detection Logic
 
 ✅ Must
 
@@ -1679,7 +1768,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #7.7: Confidence Score Calculation
+## RULE #8.7: Confidence Score Calculation
 
 ✅ Must
 
@@ -1708,7 +1797,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #7.8: Error Handling and Status Updates
+## RULE #8.8: Error Handling and Status Updates
 
 ✅ Must
 
@@ -1738,7 +1827,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #7.9: Prevent Duplicate Processing Reviews
+## RULE #8.9: Prevent Duplicate Processing Reviews
 
 ✅ Must
 
@@ -1772,7 +1861,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #8.1: PO Number Generation - Race Condition Protection
+## RULE #9.1: PO Number Generation - Race Condition Protection
 
 ❌ Never
 
@@ -1791,7 +1880,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #8.2: Status State Machine
+## RULE #9.2: Status State Machine
 
 ❌ Never
 
@@ -1810,7 +1899,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #8.3: Payment Status Calculation
+## RULE #9.3: Payment Status Calculation
 
 ❌ Never
 
@@ -1829,7 +1918,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #8.4: Smart Lookup - Supplier Selection Priority
+## RULE #9.4: Smart Lookup - Supplier Selection Priority
 
 ❌ Never
 
@@ -1848,7 +1937,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #8.5: Line Items - Totals Calculation
+## RULE #9.5: Line Items - Totals Calculation
 
 ❌ Never
 
@@ -1867,7 +1956,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #8.6: Schedule Task Linking
+## RULE #9.6: Schedule Task Linking
 
 ❌ Never
 
@@ -1886,7 +1975,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #8.7: Price Drift Monitoring
+## RULE #9.7: Price Drift Monitoring
 
 ❌ Never
 
@@ -1915,7 +2004,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #9.1: Predecessor ID Conversion
+## RULE #10.1: Predecessor ID Conversion
 
 ❌ Never
 
@@ -1934,7 +2023,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #9.10: Cascade Triggers
+## RULE #10.10: Cascade Triggers
 
 📖 Rule
 
@@ -1947,7 +2036,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #9.11: Debounced Render Pattern
+## RULE #10.11: Debounced Render Pattern
 
 ❌ Never
 
@@ -1966,7 +2055,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #9.12: Column Documentation - CC_UPDATE Table
+## RULE #10.12: Column Documentation - CC_UPDATE Table
 
 ❌ Never
 
@@ -1985,7 +2074,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #9.2: isLoadingData Lock Timing
+## RULE #10.2: isLoadingData Lock Timing
 
 ❌ Never
 
@@ -2004,7 +2093,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #9.3: Company Settings - Working Days & Timezone
+## RULE #10.3: Company Settings - Working Days & Timezone
 
 ❌ Never
 
@@ -2023,7 +2112,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #9.4: Lock Hierarchy
+## RULE #10.4: Lock Hierarchy
 
 ❌ Never
 
@@ -2042,7 +2131,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #9.5: Task Heights Configuration
+## RULE #10.5: Task Heights Configuration
 
 ✅ Must
 
@@ -2061,7 +2150,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #9.6: Auto-Scheduling
+## RULE #10.6: Auto-Scheduling
 
 ❌ Never
 
@@ -2080,7 +2169,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #9.7: API Pattern - Single Update + Cascade Response
+## RULE #10.7: API Pattern - Single Update + Cascade Response
 
 ❌ Never
 
@@ -2099,7 +2188,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #9.8: useRef Anti-Loop Flags
+## RULE #10.8: useRef Anti-Loop Flags
 
 ✅ Must
 
@@ -2116,7 +2205,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #9.9: Predecessor Format
+## RULE #10.9: Predecessor Format
 
 ❌ Never
 
@@ -2145,7 +2234,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #10.1: Task Status Lifecycle & Automatic Date Updates
+## RULE #11.1: Task Status Lifecycle & Automatic Date Updates
 
 ✅ Must
 
@@ -2167,7 +2256,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #10.10: Duration Days Validation
+## RULE #11.10: Duration Days Validation
 
 ✅ Must
 
@@ -2190,7 +2279,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #10.11: Tags System for Flexible Categorization
+## RULE #11.11: Tags System for Flexible Categorization
 
 ✅ Must
 
@@ -2215,7 +2304,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #10.2: Task Dependencies & Circular Dependency Prevention
+## RULE #11.2: Task Dependencies & Circular Dependency Prevention
 
 ✅ Must
 
@@ -2238,7 +2327,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #10.3: Automatic Task Spawning from Templates
+## RULE #11.3: Automatic Task Spawning from Templates
 
 ✅ Must
 
@@ -2263,7 +2352,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #10.4: Supervisor Checklist Template-to-Instance Flow
+## RULE #11.4: Supervisor Checklist Template-to-Instance Flow
 
 ✅ Must
 
@@ -2286,7 +2375,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #10.5: Response Type Validation & Photo Upload
+## RULE #11.5: Response Type Validation & Photo Upload
 
 ✅ Must
 
@@ -2311,7 +2400,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #10.6: Auto-Complete Predecessors Feature
+## RULE #11.6: Auto-Complete Predecessors Feature
 
 ✅ Must
 
@@ -2336,7 +2425,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #10.7: Materials Status Calculation
+## RULE #11.7: Materials Status Calculation
 
 ✅ Must
 
@@ -2361,7 +2450,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #10.8: Sequence Order for Task Display
+## RULE #11.8: Sequence Order for Task Display
 
 ✅ Must
 
@@ -2386,7 +2475,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #10.9: Task Update Audit Trail
+## RULE #11.9: Task Update Audit Trail
 
 📖 Rule
 
@@ -2409,7 +2498,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #11.1: Unique Holidays Per Region
+## RULE #12.1: Unique Holidays Per Region
 
 ✅ Must
 
@@ -2434,7 +2523,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #11.2: Rain Log - One Entry Per Construction Per Day
+## RULE #12.2: Rain Log - One Entry Per Construction Per Day
 
 ✅ Must
 
@@ -2459,7 +2548,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #11.3: Rainfall Severity Auto-Calculation
+## RULE #12.3: Rainfall Severity Auto-Calculation
 
 ✅ Must
 
@@ -2489,7 +2578,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #11.4: Manual Rain Logs Require Notes
+## RULE #12.4: Manual Rain Logs Require Notes
 
 ✅ Must
 
@@ -2514,7 +2603,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #11.5: Weather API - Historical Data Only
+## RULE #12.5: Weather API - Historical Data Only
 
 ✅ Must
 
@@ -2539,7 +2628,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #11.6: Location Extraction Priority
+## RULE #12.6: Location Extraction Priority
 
 ✅ Must
 
@@ -2561,7 +2650,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #11.7: Gantt Integration - Working Day Calculation
+## RULE #12.7: Gantt Integration - Working Day Calculation
 
 ✅ Must
 
@@ -2588,7 +2677,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #11.8: Weather API Response Storage
+## RULE #12.8: Weather API Response Storage
 
 ✅ Must
 
@@ -2624,7 +2713,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #12.1: Organization-Wide Authentication
+## RULE #13.1: Organization-Wide Authentication
 
 ❌ Never
 
@@ -2643,7 +2732,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #12.2: Folder Template System
+## RULE #13.2: Folder Template System
 
 ❌ Never
 
@@ -2662,7 +2751,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #12.3: Root Folder Management
+## RULE #13.3: Root Folder Management
 
 ❌ Never
 
@@ -2681,7 +2770,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #12.4: Pricebook Image Sync
+## RULE #13.4: Pricebook Image Sync
 
 ❌ Never
 
@@ -2700,7 +2789,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #12.5: File Upload Chunking
+## RULE #13.5: File Upload Chunking
 
 ❌ Never
 
@@ -2729,7 +2818,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #13.1: Organization-Wide Singleton OAuth Credential
+## RULE #14.1: Organization-Wide Singleton OAuth Credential
 
 ✅ Must
 
@@ -2754,7 +2843,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #13.2: Four-Strategy Email-to-Job Matching
+## RULE #14.2: Four-Strategy Email-to-Job Matching
 
 ✅ Must
 
@@ -2779,7 +2868,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #13.3: Microsoft Graph API Usage Pattern
+## RULE #14.3: Microsoft Graph API Usage Pattern
 
 ✅ Must
 
@@ -2804,7 +2893,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #13.4: Email Threading Support via Message-ID
+## RULE #14.4: Email Threading Support via Message-ID
 
 ✅ Must
 
@@ -2828,7 +2917,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #13.5: Webhook Support for Email Services
+## RULE #14.5: Webhook Support for Email Services
 
 ✅ Must
 
@@ -2850,7 +2939,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #13.6: Inbound-Only Architecture (Current Limitation)
+## RULE #14.6: Inbound-Only Architecture (Current Limitation)
 
 📖 Rule
 
@@ -2873,7 +2962,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #14.1: ChatMessage Multi-Channel Architecture
+## RULE #15.1: ChatMessage Multi-Channel Architecture
 
 ✅ Must
 
@@ -2892,7 +2981,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #14.10: Authentication Placeholder - CRITICAL TODO
+## RULE #15.10: Authentication Placeholder - CRITICAL TODO
 
 ✅ Must
 
@@ -2914,7 +3003,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #14.2: Message-to-Job Linking
+## RULE #15.2: Message-to-Job Linking
 
 ✅ Must
 
@@ -2935,7 +3024,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #14.3: SMS Twilio Integration
+## RULE #15.3: SMS Twilio Integration
 
 ✅ Must
 
@@ -2956,7 +3045,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #14.4: SMS Status Tracking
+## RULE #15.4: SMS Status Tracking
 
 ✅ Must
 
@@ -2977,7 +3066,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #14.5: Unread Message Tracking
+## RULE #15.5: Unread Message Tracking
 
 ✅ Must
 
@@ -2998,7 +3087,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #14.6: Message Polling (No WebSockets)
+## RULE #15.6: Message Polling (No WebSockets)
 
 ✅ Must
 
@@ -3022,7 +3111,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #14.7: Contact-SMS Fuzzy Matching
+## RULE #15.7: Contact-SMS Fuzzy Matching
 
 ✅ Must
 
@@ -3039,7 +3128,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #14.8: Message Deletion Authorization
+## RULE #15.8: Message Deletion Authorization
 
 ✅ Must
 
@@ -3061,7 +3150,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #14.9: Email Ingestion Storage
+## RULE #15.9: Email Ingestion Storage
 
 ✅ Must
 
@@ -3090,7 +3179,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #15.1: OAuth Token Management
+## RULE #16.1: OAuth Token Management
 
 ❌ Never
 
@@ -3109,7 +3198,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #15.2: Two-Way Contact Sync
+## RULE #16.2: Two-Way Contact Sync
 
 ❌ Never
 
@@ -3130,7 +3219,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #15.3: Invoice Matching
+## RULE #16.3: Invoice Matching
 
 ❌ Never
 
@@ -3151,7 +3240,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #15.4: Webhook Signature Verification
+## RULE #16.4: Webhook Signature Verification
 
 ❌ Never
 
@@ -3170,7 +3259,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #15.5: Rate Limiting & Error Handling
+## RULE #16.5: Rate Limiting & Error Handling
 
 ❌ Never
 
@@ -3191,7 +3280,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #15.6: Tax Rates & Chart of Accounts
+## RULE #16.6: Tax Rates & Chart of Accounts
 
 ❌ Never
 
@@ -3210,7 +3299,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #15.7: Background Job Processing
+## RULE #16.7: Background Job Processing
 
 ❌ Never
 
@@ -3231,7 +3320,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #15.8: Payment Sync Workflow
+## RULE #16.8: Payment Sync Workflow
 
 ❌ Never
 
@@ -3260,7 +3349,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #16.1: Payment Model Structure
+## RULE #17.1: Payment Model Structure
 
 ✅ Must
 
@@ -3279,7 +3368,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #16.10: Cascade Delete Payments
+## RULE #17.10: Cascade Delete Payments
 
 ✅ Must
 
@@ -3301,7 +3390,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #16.2: Automatic Payment Status Updates
+## RULE #17.2: Automatic Payment Status Updates
 
 ✅ Must
 
@@ -3320,7 +3409,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #16.3: Xero Invoice Fuzzy Matching
+## RULE #17.3: Xero Invoice Fuzzy Matching
 
 ✅ Must
 
@@ -3339,7 +3428,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #16.4: Xero Payment Sync
+## RULE #17.4: Xero Payment Sync
 
 ✅ Must
 
@@ -3356,7 +3445,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #16.5: Payment Method Enum
+## RULE #17.5: Payment Method Enum
 
 ✅ Must
 
@@ -3375,7 +3464,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #16.6: Financial Precision with DECIMAL(15,2)
+## RULE #17.6: Financial Precision with DECIMAL(15,2)
 
 ✅ Must
 
@@ -3399,7 +3488,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #16.7: Payment Status Badge Display
+## RULE #17.7: Payment Status Badge Display
 
 ✅ Must
 
@@ -3416,7 +3505,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #16.8: Payment Summary Calculation
+## RULE #17.8: Payment Summary Calculation
 
 ✅ Must
 
@@ -3435,7 +3524,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #16.9: Budget Variance Tracking
+## RULE #17.9: Budget Variance Tracking
 
 ✅ Must
 
@@ -3464,7 +3553,7 @@ If you find a standalone MD file with documentation content:
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #17.1: Solid Queue Background Job System
+## RULE #18.1: Solid Queue Background Job System
 
 ✅ Must
 
@@ -3483,7 +3572,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #17.2: Workflow State Machine
+## RULE #18.2: Workflow State Machine
 
 ✅ Must
 
@@ -3502,7 +3591,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #17.3: Idempotent Background Jobs
+## RULE #18.3: Idempotent Background Jobs
 
 ✅ Must
 
@@ -3521,7 +3610,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #17.4: Price Update Automation
+## RULE #18.4: Price Update Automation
 
 ✅ Must
 
@@ -3538,7 +3627,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #17.5: Model Callback Automation
+## RULE #18.5: Model Callback Automation
 
 ✅ Must
 
@@ -3559,7 +3648,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #17.6: Job Status Tracking
+## RULE #18.6: Job Status Tracking
 
 ✅ Must
 
@@ -3578,7 +3667,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #17.7: Batch Processing with Rate Limiting
+## RULE #18.7: Batch Processing with Rate Limiting
 
 ✅ Must
 
@@ -3595,7 +3684,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #17.8: Workflow Metadata Storage
+## RULE #18.8: Workflow Metadata Storage
 
 ✅ Must
 
@@ -3622,9 +3711,9 @@ If you find a standalone MD file with documentation content:
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch19 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 15:28 AEST
+**Last Updated:** 2025-11-17 11:58 AEST
 
-## RULE #18.1: Dynamic Table Creation Pattern
+## RULE #19.1: Dynamic Table Creation Pattern
 
 ✅ Must
 
@@ -3648,7 +3737,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #18.2: Column Type System
+## RULE #19.2: Column Type System
 
 ✅ Must
 
@@ -3667,7 +3756,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #18.3: Formula Evaluation System
+## RULE #19.3: Formula Evaluation System
 
 ✅ Must
 
@@ -3688,7 +3777,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #18.4: Lookup Column Pattern
+## RULE #19.4: Lookup Column Pattern
 
 ✅ Must
 
@@ -3709,7 +3798,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #18.5: Record CRUD with Formula Calculation
+## RULE #19.5: Record CRUD with Formula Calculation
 
 ✅ Must
 
@@ -3728,7 +3817,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #18.6: Table Deletion Safety
+## RULE #19.6: Table Deletion Safety
 
 ✅ Must
 
@@ -3747,7 +3836,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #18.7: Column Validation Rules
+## RULE #19.7: Column Validation Rules
 
 ✅ Must
 
@@ -3766,7 +3855,7 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #18.8: Foreign Key Constraints
+## RULE #19.8: Foreign Key Constraints
 
 ✅ Must
 
@@ -3785,50 +3874,6 @@ If you find a standalone MD file with documentation content:
 
 ---
 
-## RULE #19.38: Cascading Filter Pattern
-
-✅ Must
-
-✅ **MUST use cascading filters for multi-level hierarchical data:**
-
-**When to Use:**
-- Tables with 2+ filterable dimensions (Chapter → Type, Category → Subcategory, etc.)
-- Data has clear parent-child relationships
-- Filtering one dimension narrows options in dependent dimensions
-
-**How Cascading Works:**
-- Filters go **left-to-right** (broader → narrower)
-- Parent filter (left) affects child filter options (right)
-- Changing parent filter resets child filters to "All"
-- Show dynamic counts: "MUST (18)", "NEVER (5)", "PROTECTED (0)"
-- Disable options with 0 count
-
-**Filter Hierarchy Example:**
-```
-Chapter (Level 1) → Type (Level 2) → Status (Level 3)
-    ↓                    ↓                 ↓
-  Affects            Affects           [End]
-  Type options       Status options
-```
-
-❌ **NEVER:**
-- Use bidirectional cascading (Chapter ← → Type = circular dependency)
-- Skip memoization (causes performance issues)
-- Forget to reset downstream filters when upstream changes
-- Make filters cascade backwards (right-to-left)
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.38](TRAPID_TEACHER.md#1938-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
-**Example (BibleTableView):**
-- User selects "Chapter 9" → Type filter shows: MUST (18), NEVER (5), PROTECTED (0 - disabled)
-- User selects "MUST" → Shows only 18 Chapter 9 MUST rules
-- User changes to "Chapter 19" → Type resets to "All", recalculates for Ch 19
-
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
 # Chapter 20: UI/UX Standards & Patterns
 
 ┌─────────────────────────────────────────────────┐
@@ -3837,9 +3882,9 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch20 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 13:57 AEST
+**Last Updated:** 2025-11-17 15:28 AEST
 
-## RULE #19.1: Standard Table Component Usage
+## RULE #20.1: Standard Table Component Usage
 
 ✅ Must
 
@@ -3861,7 +3906,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.10: Column Visibility Standards
+## RULE #20.10: Column Visibility Standards
 
 ✅ Must
 
@@ -3876,7 +3921,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.11: Search & Filter UI Standards
+## RULE #20.11: Search & Filter UI Standards
 
 ✅ Must
 
@@ -3891,7 +3936,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.11A: Table Toolbar Layout Standards (REQUIRED)
+## RULE #20.11A: Table Toolbar Layout Standards (REQUIRED)
 
 ❌ Never
 
@@ -3912,7 +3957,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.12: Empty States
+## RULE #20.12: Empty States
 
 ✅ Must
 
@@ -3929,7 +3974,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.13: State Persistence Standards
+## RULE #20.13: State Persistence Standards
 
 ✅ Must
 
@@ -3951,7 +3996,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.14: Sorting Standards
+## RULE #20.14: Sorting Standards
 
 ✅ Must
 
@@ -3970,7 +4015,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.15: Dark Mode Requirements
+## RULE #20.15: Dark Mode Requirements
 
 ❌ Never
 
@@ -3989,7 +4034,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.16: Performance Standards
+## RULE #20.16: Performance Standards
 
 ✅ Must
 
@@ -4013,7 +4058,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.17: Accessibility Standards
+## RULE #20.17: Accessibility Standards
 
 ✅ Must
 
@@ -4036,7 +4081,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.18: Testing Considerations
+## RULE #20.18: Testing Considerations
 
 ✅ Must
 
@@ -4053,7 +4098,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.19: URL State Management
+## RULE #20.19: URL State Management
 
 ✅ Must
 
@@ -4079,7 +4124,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.2: Table Header Requirements
+## RULE #20.2: Table Header Requirements
 
 ✅ Must
 
@@ -4094,7 +4139,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.20: Search Functionality Standards
+## RULE #20.20: Search Functionality Standards
 
 ✅ Must
 
@@ -4109,7 +4154,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.21: Form Standards
+## RULE #20.21: Form Standards
 
 ✅ Must
 
@@ -4130,7 +4175,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.22: Modal & Drawer Standards
+## RULE #20.22: Modal & Drawer Standards
 
 ✅ Must
 
@@ -4149,7 +4194,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.23: Toast Notification Standards
+## RULE #20.23: Toast Notification Standards
 
 ✅ Must
 
@@ -4176,7 +4221,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.24: Loading State Standards
+## RULE #20.24: Loading State Standards
 
 ✅ Must
 
@@ -4191,7 +4236,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.25: Button & Action Standards
+## RULE #20.25: Button & Action Standards
 
 ✅ Must
 
@@ -4206,7 +4251,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.26: Status Badge Standards
+## RULE #20.26: Status Badge Standards
 
 ✅ Must
 
@@ -4221,7 +4266,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.27: Empty State Standards
+## RULE #20.27: Empty State Standards
 
 ✅ Must
 
@@ -4238,7 +4283,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.28: Navigation Standards
+## RULE #20.28: Navigation Standards
 
 ✅ Must
 
@@ -4253,7 +4298,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.29: Chapter 19 Documentation Maintenance (REQUIRED)
+## RULE #20.29: Chapter 19 Documentation Maintenance (REQUIRED)
 
 ✅ Must
 
@@ -4282,7 +4327,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.3: Column Search/Filter Requirements (REQUIRED)
+## RULE #20.3: Column Search/Filter Requirements (REQUIRED)
 
 ✅ Must
 
@@ -4297,7 +4342,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.30: Touch Target Sizes & Click Areas
+## RULE #20.30: Touch Target Sizes & Click Areas
 
 ❌ Never
 
@@ -4317,7 +4362,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.31: Data-Dense Table Layout Pattern
+## RULE #20.31: Data-Dense Table Layout Pattern
 
 ✅ Must
 
@@ -4341,7 +4386,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.32: Zebra Striping (Alternating Row Colors)
+## RULE #20.32: Zebra Striping (Alternating Row Colors)
 
 ✅ Must
 
@@ -4366,7 +4411,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.33: Sticky Horizontal Scrollbar Pattern
+## RULE #20.33: Sticky Horizontal Scrollbar Pattern
 
 ✅ Must
 
@@ -4415,7 +4460,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.34: Modern Table Header Aesthetics
+## RULE #20.34: Modern Table Header Aesthetics
 
 ✅ Must
 
@@ -4441,7 +4486,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.35: Table Border Framing
+## RULE #20.35: Table Border Framing
 
 ✅ Must
 
@@ -4466,7 +4511,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.36: Expand/Collapse Row Details Pattern
+## RULE #20.36: Expand/Collapse Row Details Pattern
 
 ✅ Must
 
@@ -4493,7 +4538,51 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.4: Column Resizing Standards
+## RULE #20.38: Cascading Filter Pattern
+
+✅ Must
+
+✅ **MUST use cascading filters for multi-level hierarchical data:**
+
+**When to Use:**
+- Tables with 2+ filterable dimensions (Chapter → Type, Category → Subcategory, etc.)
+- Data has clear parent-child relationships
+- Filtering one dimension narrows options in dependent dimensions
+
+**How Cascading Works:**
+- Filters go **left-to-right** (broader → narrower)
+- Parent filter (left) affects child filter options (right)
+- Changing parent filter resets child filters to "All"
+- Show dynamic counts: "MUST (18)", "NEVER (5)", "PROTECTED (0)"
+- Disable options with 0 count
+
+**Filter Hierarchy Example:**
+```
+Chapter (Level 1) → Type (Level 2) → Status (Level 3)
+    ↓                    ↓                 ↓
+  Affects            Affects           [End]
+  Type options       Status options
+```
+
+❌ **NEVER:**
+- Use bidirectional cascading (Chapter ← → Type = circular dependency)
+- Skip memoization (causes performance issues)
+- Forget to reset downstream filters when upstream changes
+- Make filters cascade backwards (right-to-left)
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.38](TRAPID_TEACHER.md#1938-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+**Example (BibleTableView):**
+- User selects "Chapter 9" → Type filter shows: MUST (18), NEVER (5), PROTECTED (0 - disabled)
+- User selects "MUST" → Shows only 18 Chapter 9 MUST rules
+- User changes to "Chapter 19" → Type resets to "All", recalculates for Ch 19
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+## RULE #20.4: Column Resizing Standards
 
 ✅ Must
 
@@ -4508,7 +4597,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.5: Column Reordering Standards
+## RULE #20.5: Column Reordering Standards
 
 ❌ Never
 
@@ -4528,7 +4617,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.5A: Column Visibility Toggle (REQUIRED)
+## RULE #20.5A: Column Visibility Toggle (REQUIRED)
 
 ❌ Never
 
@@ -4548,7 +4637,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.5B: Column Width Persistence (REQUIRED)
+## RULE #20.5B: Column Width Persistence (REQUIRED)
 
 ✅ Must
 
@@ -4563,7 +4652,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.6: Scroll Behavior Standards
+## RULE #20.6: Scroll Behavior Standards
 
 ✅ Must
 
@@ -4592,7 +4681,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.7: Column Width Standards
+## RULE #20.7: Column Width Standards
 
 ✅ Must
 
@@ -4611,7 +4700,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.8: Cell Content Standards
+## RULE #20.8: Cell Content Standards
 
 ✅ Must
 
@@ -4626,7 +4715,7 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## RULE #19.9: Row Interaction Standards
+## RULE #20.9: Row Interaction Standards
 
 ✅ Must
 
@@ -4653,13 +4742,258 @@ Chapter (Level 1) → Type (Level 2) → Status (Level 3)
 
 ---
 
-## Test Bible Rule
+# Chapter 21: Agent System & Automation
+
+┌─────────────────────────────────────────────────┐
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch21    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch21    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch21 │
+└─────────────────────────────────────────────────┘
+
+**Last Updated:** 2025-11-17 11:58 AEST
+
+## RULE #21.1: Agent Definitions Are Database-Driven
 
 ✅ Must
 
-You MUST test all documentation changes before deploying
+✅ MUST
 
+✅ **MUST:**
+- Store all agent metadata in database
+- Update run history after each agent execution
+- Use API endpoints to manage agents
+- Track success/failure rates
+- Maintain agent priority order
+
+❌ **NEVER:**
+- Hardcode agent configurations in code
+- Skip recording agent runs
+- Modify `.claude/agents/*.md` files without updating database
+- Create agents without database entries
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §20.1](TRAPID_TEACHER.md#201-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
+
+---
+
+## RULE #21.2: Agent Invocation Protocol
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST:**
+- Check if agent exists and is active
+- Record run start timestamp
+- Execute agent task
+- Record success or failure with details
+- Return comprehensive result
+
+❌ **NEVER:**
+- Invoke inactive agents
+- Skip recording run results
+- Return vague error messages
+- Execute agents without user context
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §20.2](TRAPID_TEACHER.md#202-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
+
+---
+
+## RULE #21.3: Run History Tracking
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST:**
+- Record total_runs, successful_runs, failed_runs
+- Store last_run_at timestamp
+- Save last_status and last_message
+- Include detailed last_run_details (JSONB)
+- Calculate success_rate automatically
+
+❌ **NEVER:**
+- Skip recording runs
+- Overwrite historical run data
+- Record runs for testing/debugging
+- Fake success/failure status
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §20.3](TRAPID_TEACHER.md#203-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
+
+---
+
+## RULE #21.4: Agent Types and Specialization
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST:**
+- Assign agent_type: `development`, `diagnostic`, `deployment`, or `planning`
+- Define clear focus area (e.g., "Rails API Backend Development")
+- Specify tools available to agent
+- Document when to use each agent
+- Provide example invocations
+
+❌ **NEVER:**
+- Create overlapping agent responsibilities
+- Use generic agent for specialized tasks
+- Skip documenting agent capabilities
+- Create agents without clear purpose
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §20.4](TRAPID_TEACHER.md#204-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
+
+---
+
+## RULE #21.5: Agent Priority and Display Order
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST:**
+- Set priority field (0-100)
+- Display agents sorted by: priority DESC, name ASC
+- Show active agents first
+- Hide inactive agents from main list
+
+❌ **NEVER:**
+- Display agents alphabetically only
+- Show inactive agents in main list
+- Change priority without reason
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §20.5](TRAPID_TEACHER.md#205-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
+
+---
+
+## RULE #21.6: Agent Shortcuts and Invocation
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST:**
+- Support `run {agent-id}` (e.g., `run backend-developer`)
+- Support shortened versions (e.g., `backend dev`, `gantt`)
+- Document shortcuts in `example_invocations` field
+- Parse user input case-insensitively
+
+❌ **NEVER:**
+- Require exact agent_id match
+- Skip documenting shortcuts
+- Create conflicting shortcuts
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §20.6](TRAPID_TEACHER.md#206-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
+
+---
+
+## RULE #21.7: Recently Run Check (Smart Testing)
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST:**
+- Check `last_run_at` timestamp
+- Compare to threshold (e.g., 60 minutes)
+- Skip redundant tests if recent successful run
+- ALWAYS re-run if last run failed
+- Ask user if uncertain
+
+❌ **NEVER:**
+- Skip tests without checking recency
+- Ignore failed runs in recency check
+- Use stale results without user awareness
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §20.7](TRAPID_TEACHER.md#207-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
+
+---
+
+## RULE #21.8: Shortcut Clarity - AgentShortcutsTab Updates
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST:**
+- Update `frontend/src/components/settings/AgentShortcutsTab.jsx` when adding new shortcuts
+- Add new shortcuts to the `baseCommands` array
+- Ensure shortcuts match agent file definitions exactly
+- Use sequential IDs (avoid duplicates)
+- Document the shortcut pattern in the command field
+- Follow the format: `{ id: N, command: 'What Claude executes', shortcut: 'what user types, comma-separated' }`
+
+❌ **NEVER:**
+- Leave shortcuts undocumented
+- Create duplicate IDs in baseCommands array
+- Use shortcuts that contradict agent definitions
+- Hardcode shortcuts outside the table
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §20.8](TRAPID_TEACHER.md#208-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
+
+---
+
+## RULE #21.9: Creating New Agents - Complete Checklist
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST UPDATE (4 files):**
+
+❌ **NEVER:**
+- Create an agent in only one location
+- Skip updating run-history.json
+- Forget to add to the controllers fallback list
+- Miss updating the frontend component
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §20.9](TRAPID_TEACHER.md#209-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 21](TRAPID_LEXICON.md)
 
 ---
 

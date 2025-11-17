@@ -204,14 +204,12 @@ const DEFAULT_VISIBLE_COLUMNS = COLUMNS.reduce((acc, col) => {
   return acc
 }, {})
 
-export default function TeacherTableView({ content }) {
+export default function TeacherTableView({ entries, onEdit, onDelete, stats }) {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('section')
   const [sortDir, setSortDir] = useState('asc')
   const [selectedRows, setSelectedRows] = useState(new Set())
   const [columnFilters, setColumnFilters] = useState({})
-  const [sections, setSections] = useState([]) // API data
-  const [loading, setLoading] = useState(true) // Loading state
 
   // Column state management
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
@@ -236,44 +234,26 @@ export default function TeacherTableView({ content }) {
   // Track if initial load is complete to prevent saving stale data
   const hasLoadedRef = useRef(false)
 
-  // Fetch sections from API (instead of parsing markdown)
-  useEffect(() => {
-    const fetchSections = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch('/api/v1/trinity?category=teacher')
-        const data = await response.json()
+  // Transform entries from Trinity API to match component structure
+  const sections = useMemo(() => {
+    if (!entries || entries.length === 0) return []
 
-        if (data.success) {
-          // Transform API data to match component structure
-          const transformedSections = data.data.map(entry => ({
-            id: entry.id,
-            sectionNumber: entry.section_number || '',
-            chapter: entry.chapter_number,
-            chapterName: entry.chapter_name,
-            title: entry.title,
-            relatedTo: extractRelatedTo(entry.title, entry.chapter_number),
-            content: entry.summary || entry.description || '',
-            codeExample: entry.code_example,
-            commonMistakes: entry.common_mistakes,
-            testingStrategy: entry.testing_strategy,
-            relatedRules: entry.related_rules,
-            relatedDocs: entry.related_rules || '',
-            difficulty: entry.difficulty
-          }))
-          setSections(transformedSections)
-        }
-      } catch (error) {
-        console.error('Failed to fetch Teacher entries:', error)
-        // Fallback to markdown parsing if API fails
-        setSections(parseSectionsFromMarkdown(content))
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchSections()
-  }, [content])
+    return entries.map(entry => ({
+      id: entry.id,
+      sectionNumber: entry.section_number || '',
+      chapter: entry.chapter_number,
+      chapterName: entry.chapter_name,
+      title: entry.title,
+      relatedTo: extractRelatedTo(entry.title, entry.chapter_number),
+      content: entry.summary || entry.description || '',
+      codeExample: entry.code_example,
+      commonMistakes: entry.common_mistakes,
+      testingStrategy: entry.testing_strategy,
+      relatedRules: entry.related_rules,
+      relatedDocs: entry.related_rules || '',
+      difficulty: entry.difficulty
+    }))
+  }, [entries])
 
   // RULE #19.33: Scroll handlers with loop prevention
   const handleScroll = (e) => {
@@ -1034,12 +1014,11 @@ export default function TeacherTableView({ content }) {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {loading ? (
+              {filteredAndSorted.length === 0 ? (
                 <tr>
                   <td colSpan={columnOrder.filter(key => visibleColumns[key]).length} className="text-center py-12">
                     <div className="flex items-center justify-center gap-3">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                      <span className="text-gray-600 dark:text-gray-400">Loading Teacher entries...</span>
+                      <span className="text-gray-600 dark:text-gray-400">No sections found</span>
                     </div>
                   </td>
                 </tr>

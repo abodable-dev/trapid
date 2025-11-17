@@ -2,6 +2,12 @@ import { Fragment, useState, useEffect } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 
+const CATEGORIES = [
+  { value: 'bible', label: '📖 Bible', emoji: '📖' },
+  { value: 'teacher', label: '🔧 Teacher', emoji: '🔧' },
+  { value: 'lexicon', label: '📕 Lexicon', emoji: '📕' },
+]
+
 const KNOWLEDGE_TYPES = [
   { value: 'bug', label: '🐛 Bug', emoji: '🐛' },
   { value: 'architecture', label: '🏗️ Architecture', emoji: '🏗️' },
@@ -180,6 +186,25 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
                       </ul>
                     </div>
                   )}
+
+                  {/* Category */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Category *
+                    </label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => handleChange('category', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                      required
+                    >
+                      {CATEGORIES.map((cat) => (
+                        <option key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
                   {/* Knowledge Type */}
                   <div>

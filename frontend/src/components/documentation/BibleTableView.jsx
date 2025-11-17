@@ -99,6 +99,7 @@ const parseRulesFromMarkdown = (content) => {
 
 // Define columns (RULE #19.1 compliant) - Simplified for readability
 const COLUMNS = [
+  { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 50, tooltip: 'Select rows' },
   { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200, tooltip: 'Chapter number and name' },
   { key: 'rule', label: 'Rule', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 100, tooltip: 'Rule number (e.g., 1.01, 20.37)' },
   { key: 'type', label: 'Type', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120, tooltip: 'Rule type: MUST, NEVER, ALWAYS, PROTECTED, CONFIG' },
@@ -119,7 +120,7 @@ const DEFAULT_VISIBLE_COLUMNS = COLUMNS.reduce((acc, col) => {
   return acc
 }, {})
 
-export default function BibleTableView({ content }) {
+export default function BibleTableView({ entries, onEdit, onDelete, stats }) {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('rule')
   const [sortDir, setSortDir] = useState('asc')
@@ -128,8 +129,6 @@ export default function BibleTableView({ content }) {
   const [activeTab, setActiveTab] = useState('all') // Chapter filter tabs
   const [expandedRows, setExpandedRows] = useState(new Set()) // Row expansion state
   const [selectedRule, setSelectedRule] = useState(null) // Rule selected for modal view
-  const [rules, setRules] = useState([]) // API data
-  const [loading, setLoading] = useState(true) // Loading state
   const [editingRule, setEditingRule] = useState(null) // Rule being edited
   const [editFormData, setEditFormData] = useState(null) // Edit form data
 
@@ -200,44 +199,26 @@ export default function BibleTableView({ content }) {
     setTimeout(() => { isScrollingStickyRef.current = false }, 0)
   }
 
-  // Fetch rules from Documentation Entries API (category=bible)
-  const fetchRules = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('http://localhost:3000/api/v1/trinity?category=bible')
-      const data = await response.json()
+  // Transform entries from Trinity API to match component structure
+  const rules = useMemo(() => {
+    if (!entries || entries.length === 0) return []
 
-      if (data.success) {
-        // Transform API data to match component structure
-        const transformedRules = data.data.map(rule => ({
-          id: rule.id,
-          ruleNumber: rule.section_number,
-          chapter: rule.chapter_number,
-          chapterName: rule.chapter_name,
-          title: rule.title,
-          ruleType: rule.entry_type,
-          typeEmoji: rule.type_emoji,
-          typeDisplay: rule.type_display,
-          description: rule.description || '',
-          codeExample: rule.code_example || '',
-          crossReferences: rule.related_rules || '',
-          relatedDocs: rule.related_rules || '',
-          fullTitle: rule.full_title
-        }))
-        setRules(transformedRules)
-      }
-    } catch (error) {
-      console.error('Failed to fetch Bible rules:', error)
-      // Fallback to markdown parsing if API fails
-      setRules(parseRulesFromMarkdown(content))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchRules()
-  }, [content])
+    return entries.map(rule => ({
+      id: rule.id,
+      ruleNumber: rule.section_number,
+      chapter: rule.chapter_number,
+      chapterName: rule.chapter_name,
+      title: rule.title,
+      ruleType: rule.entry_type,
+      typeEmoji: rule.type_emoji,
+      typeDisplay: rule.type_display,
+      description: rule.description || '',
+      codeExample: rule.code_example || '',
+      crossReferences: rule.related_rules || '',
+      relatedDocs: rule.related_rules || '',
+      fullTitle: rule.full_title
+    }))
+  }, [entries])
 
   // Helper function to parse rule numbers for numeric sorting
   const parseRuleNumber = (ruleNumber) => {
@@ -362,32 +343,58 @@ export default function BibleTableView({ content }) {
   }, [rules, search, columnFilters, sortBy, sortDir])
 
   // CASCADING FILTERS: Calculate available filter options based on current selections
+  // Filter hierarchy: Chapter -> Type -> Trinity
+  // Each filter only shows options available given the previous filters
   const availableFilterOptions = useMemo(() => {
-    // For Type filter: apply ONLY chapter filter (not type itself)
-    let dataForTypeFilter = rules
-    if (columnFilters.chapter) {
-      dataForTypeFilter = rules.filter(r => r.chapter === parseInt(columnFilters.chapter))
-    }
+    let currentData = rules
 
-    // Count available types
-    const typeCounts = {}
-    dataForTypeFilter.forEach(rule => {
-      const type = rule.ruleType || 'UNKNOWN'
-      typeCounts[type] = (typeCounts[type] || 0) + 1
-    })
-
-    // Count available chapters (no upstream filters, so use all rules)
+    // Step 1: Count chapters (no upstream filters)
     const chapterCounts = {}
-    rules.forEach(rule => {
+    currentData.forEach(rule => {
       const chapter = rule.chapter
       chapterCounts[chapter] = (chapterCounts[chapter] || 0) + 1
     })
 
-    return {
-      types: typeCounts,
-      chapters: chapterCounts
+    // Step 2: Apply chapter filter for type counts
+    if (columnFilters.chapter) {
+      currentData = currentData.filter(r => r.chapter === parseInt(columnFilters.chapter))
     }
-  }, [rules, columnFilters.chapter]) // Re-run when chapter filter changes
+
+    const typeCounts = {}
+    currentData.forEach(rule => {
+      const type = rule.ruleType || 'UNKNOWN'
+      typeCounts[type] = (typeCounts[type] || 0) + 1
+    })
+
+    // Step 3: Apply chapter AND type filters for trinity counts
+    if (columnFilters.type) {
+      currentData = currentData.filter(r => r.ruleType === columnFilters.type)
+    }
+
+    const trinityCounts = { Bible: 0, Teacher: 0, Lexicon: 0 }
+    currentData.forEach(rule => {
+      try {
+        if (rule.relatedDocs) {
+          const docs = JSON.parse(rule.relatedDocs)
+          if (docs && Array.isArray(docs)) {
+            docs.forEach(doc => {
+              if (doc.type && trinityCounts[doc.type] !== undefined) {
+                trinityCounts[doc.type]++
+              }
+            })
+          }
+        }
+      } catch (e) {
+        // Skip invalid JSON
+      }
+    })
+
+    return {
+      chapters: chapterCounts,
+      types: typeCounts,
+      trinity: trinityCounts
+    }
+  }, [rules, columnFilters.chapter, columnFilters.type]) // Re-run when upstream filters change
 
   // Initialize scrollbar on mount and content change
   useEffect(() => {
@@ -745,17 +752,31 @@ export default function BibleTableView({ content }) {
         )
 
       case 'trinity':
-        // Parse current trinity selection from relatedDocs field (single-select only)
+        // Parse current trinity selection from relatedDocs field
         let selectedTrinity = null
+        let hasBible = false
+        let hasTeacher = false
+        let hasLexicon = false
         try {
           if (rule.relatedDocs) {
             const docs = JSON.parse(rule.relatedDocs)
-            if (docs && Array.isArray(docs) && docs.length > 0) {
-              // Take the first entry as the selected one
-              const firstDoc = docs[0]
-              if (firstDoc.type === 'Bible') selectedTrinity = 'bible'
-              else if (firstDoc.type === 'Teacher') selectedTrinity = 'teacher'
-              else if (firstDoc.type === 'Lexicon') selectedTrinity = 'lexicon'
+            if (docs && Array.isArray(docs)) {
+              docs.forEach(doc => {
+                if (doc.type === 'Bible') hasBible = true
+                if (doc.type === 'Teacher') hasTeacher = true
+                if (doc.type === 'Lexicon') hasLexicon = true
+              })
+
+              // Check if all three are selected
+              if (hasBible && hasTeacher && hasLexicon) {
+                selectedTrinity = 'all'
+              } else if (hasBible) {
+                selectedTrinity = 'bible'
+              } else if (hasTeacher) {
+                selectedTrinity = 'teacher'
+              } else if (hasLexicon) {
+                selectedTrinity = 'lexicon'
+              }
             }
           }
         } catch (e) {
@@ -763,9 +784,14 @@ export default function BibleTableView({ content }) {
         }
 
         const handleTrinityChange = async (trinityType) => {
-          // Build new relatedDocs array with only ONE selected item
+          // Build new relatedDocs array
           const newDocs = []
-          if (trinityType === 'bible') {
+          if (trinityType === 'all') {
+            // Select all three
+            newDocs.push({ type: 'Bible', reference: `RULE #${rule.ruleNumber}` })
+            newDocs.push({ type: 'Teacher', reference: `§${rule.ruleNumber}` })
+            newDocs.push({ type: 'Lexicon', reference: `Ch${rule.chapter}` })
+          } else if (trinityType === 'bible') {
             newDocs.push({ type: 'Bible', reference: `RULE #${rule.ruleNumber}` })
           } else if (trinityType === 'teacher') {
             newDocs.push({ type: 'Teacher', reference: `§${rule.ruleNumber}` })
@@ -799,6 +825,16 @@ export default function BibleTableView({ content }) {
 
         return (
           <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
+              <input
+                type="radio"
+                name={`trinity-${rule.id}`}
+                checked={selectedTrinity === 'all'}
+                onChange={() => handleTrinityChange('all')}
+                className="h-3 w-3 border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <span className="text-indigo-700 dark:text-indigo-400 font-medium">✨ All</span>
+            </label>
             <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
               <input
                 type="radio"
@@ -1011,13 +1047,91 @@ export default function BibleTableView({ content }) {
           </Menu>
         </div>
 
-        {/* Search Results Count */}
-        {search && (
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Found {filteredAndSorted.length} of {rules.length} rules
+        {/* Active Filters Display */}
+        {(Object.values(columnFilters).some(v => v) || search) && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Filters:</span>
+
+            {search && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs rounded-md">
+                Search: "{search}"
+                <button
+                  onClick={() => setSearch('')}
+                  className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5"
+                >
+                  <XMarkIcon className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {columnFilters.chapter && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 text-xs rounded-md">
+                Chapter: {CHAPTER_NAMES[parseInt(columnFilters.chapter)]}
+                <button
+                  onClick={() => {
+                    handleColumnFilterChange('chapter', '')
+                    handleColumnFilterChange('type', '')
+                    handleColumnFilterChange('trinity', '')
+                  }}
+                  className="hover:bg-purple-200 dark:hover:bg-purple-800 rounded-full p-0.5"
+                >
+                  <XMarkIcon className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {columnFilters.type && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-xs rounded-md">
+                Type: {columnFilters.type}
+                <button
+                  onClick={() => {
+                    handleColumnFilterChange('type', '')
+                    handleColumnFilterChange('trinity', '')
+                  }}
+                  className="hover:bg-green-200 dark:hover:bg-green-800 rounded-full p-0.5"
+                >
+                  <XMarkIcon className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {columnFilters.trinity && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 text-xs rounded-md">
+                Trinity: {columnFilters.trinity}
+                <button
+                  onClick={() => handleColumnFilterChange('trinity', '')}
+                  className="hover:bg-orange-200 dark:hover:bg-orange-800 rounded-full p-0.5"
+                >
+                  <XMarkIcon className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {columnFilters.subtitle && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs rounded-md">
+                Title: "{columnFilters.subtitle}"
+                <button
+                  onClick={() => handleColumnFilterChange('subtitle', '')}
+                  className="hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full p-0.5"
+                >
+                  <XMarkIcon className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            <button
+              onClick={() => {
+                setSearch('')
+                setColumnFilters({})
+              }}
+              className="ml-2 px-3 py-1 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-xs font-medium rounded-md transition-colors"
+            >
+              Clear All Filters
+            </button>
           </div>
         )}
 
+        {/* Search Results Count */}
         <div className="text-xs text-gray-500 dark:text-gray-400">
           Showing {filteredAndSorted.length} of {rules.length} rules
         </div>
@@ -1110,9 +1224,14 @@ export default function BibleTableView({ content }) {
                               const newValue = e.target.value
                               handleColumnFilterChange(colKey, newValue)
 
-                              // CASCADE RESET: If changing chapter, reset type filter
+                              // CASCADE RESET: Clear downstream filters when an upstream filter changes
                               if (colKey === 'chapter') {
+                                // Clear type and trinity when chapter changes
                                 handleColumnFilterChange('type', '')
+                                handleColumnFilterChange('trinity', '')
+                              } else if (colKey === 'type') {
+                                // Clear trinity when type changes
+                                handleColumnFilterChange('trinity', '')
                               }
                             }}
                             onClick={(e) => e.stopPropagation()}
@@ -1141,14 +1260,23 @@ export default function BibleTableView({ content }) {
                                 </option>
                               )
                             })}
-                            {colKey === 'trinity' && ['Bible', 'Teacher', 'Lexicon'].map(doc => (
-                              <option key={doc} value={doc}>
-                                {doc === 'Bible' && '📖 '}
-                                {doc === 'Teacher' && '🔧 '}
-                                {doc === 'Lexicon' && '📕 '}
-                                {doc}
-                              </option>
-                            ))}
+                            {colKey === 'trinity' && ['Bible', 'Teacher', 'Lexicon'].map(doc => {
+                              const count = availableFilterOptions.trinity[doc] || 0
+                              const isDisabled = count === 0
+                              return (
+                                <option
+                                  key={doc}
+                                  value={doc}
+                                  disabled={isDisabled}
+                                  style={isDisabled ? { color: '#9CA3AF', fontStyle: 'italic' } : {}}
+                                >
+                                  {doc === 'Bible' && '📖 '}
+                                  {doc === 'Teacher' && '🔧 '}
+                                  {doc === 'Lexicon' && '📕 '}
+                                  {doc} ({count})
+                                </option>
+                              )
+                            })}
                           </select>
                         )}
                       </>
@@ -1170,12 +1298,11 @@ export default function BibleTableView({ content }) {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900">
-            {loading ? (
+            {filteredAndSorted.length === 0 ? (
               <tr>
                 <td colSpan={columnOrder.filter(key => visibleColumns[key]).length} className="text-center py-12">
                   <div className="flex items-center justify-center gap-3">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span className="text-gray-600 dark:text-gray-400">Loading Bible rules...</span>
+                    <span className="text-gray-600 dark:text-gray-400">No rules found</span>
                   </div>
                 </td>
               </tr>

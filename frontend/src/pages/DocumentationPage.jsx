@@ -18,6 +18,7 @@ import LexiconTableView from '../components/documentation/LexiconTableView'
 import BibleTableView from '../components/documentation/BibleTableView'
 import TeacherTableView from '../components/documentation/TeacherTableView'
 import UserManualTableView from '../components/documentation/UserManualTableView'
+import TrinityTableView from '../components/documentation/TrinityTableView'
 
 export default function DocumentationPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -59,6 +60,9 @@ export default function DocumentationPage() {
   // View mode for User Manual
   const [manualViewMode, setManualViewMode] = useState('markdown') // 'markdown' or 'table'
 
+  // View mode for Trinity (always table)
+  const [trinityViewMode, setTrinityViewMode] = useState('table') // 'table' only
+
   // Load docs list on mount
   useEffect(() => {
     loadDocs()
@@ -80,6 +84,12 @@ export default function DocumentationPage() {
 
       if (docId === 'lexicon') {
         loadLexiconData()
+      } else if (docId === 'trinity') {
+        loadTrinityData()
+      } else if (docId === 'bible') {
+        loadBibleData()
+      } else if (docId === 'teacher') {
+        loadTeacherData()
       } else {
         loadMarkdownContent(docId)
       }
@@ -196,6 +206,91 @@ export default function DocumentationPage() {
       }
     } catch (error) {
       console.error('Failed to load lexicon:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadBibleData = async () => {
+    setLoading(true)
+    try {
+      // Build query params
+      const params = new URLSearchParams()
+      if (filters.chapter !== 'all') params.append('chapter', filters.chapter)
+      if (filters.type !== 'all') params.append('type', filters.type)
+      if (searchQuery) params.append('search', searchQuery)
+
+      // Load Bible entries from Trinity API
+      params.append('category', 'bible')
+      const entriesResponse = await api.get(`/api/v1/trinity?${params}`)
+      if (entriesResponse.success) {
+        setEntries(entriesResponse.data)
+      }
+
+      // Load stats
+      const statsResponse = await api.get('/api/v1/trinity/stats')
+      if (statsResponse.success) {
+        setStats(statsResponse.data)
+      }
+    } catch (error) {
+      console.error('Failed to load bible:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadTeacherData = async () => {
+    setLoading(true)
+    try {
+      // Build query params
+      const params = new URLSearchParams()
+      if (filters.chapter !== 'all') params.append('chapter', filters.chapter)
+      if (filters.type !== 'all') params.append('type', filters.type)
+      if (searchQuery) params.append('search', searchQuery)
+
+      // Load Teacher entries from Trinity API
+      params.append('category', 'teacher')
+      const entriesResponse = await api.get(`/api/v1/trinity?${params}`)
+      if (entriesResponse.success) {
+        setEntries(entriesResponse.data)
+      }
+
+      // Load stats
+      const statsResponse = await api.get('/api/v1/trinity/stats')
+      if (statsResponse.success) {
+        setStats(statsResponse.data)
+      }
+    } catch (error) {
+      console.error('Failed to load teacher:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadTrinityData = async () => {
+    setLoading(true)
+    try {
+      // Build query params (no category filter - load ALL)
+      const params = new URLSearchParams()
+      if (filters.chapter !== 'all') params.append('chapter', filters.chapter)
+      if (filters.type !== 'all') params.append('type', filters.type)
+      if (filters.status !== 'all') params.append('status', filters.status)
+      if (filters.severity !== 'all') params.append('severity', filters.severity)
+      if (searchQuery) params.append('search', searchQuery)
+
+      // Load ALL entries (no category filter)
+      const entriesResponse = await api.get(`/api/v1/trinity?${params}`)
+      if (entriesResponse.success) {
+        setEntries(entriesResponse.data)
+      }
+
+      // Load stats
+      const statsResponse = await api.get('/api/v1/trinity/stats')
+      if (statsResponse.success) {
+        setStats(statsResponse.data)
+      }
+    } catch (error) {
+      console.error('Failed to load trinity:', error)
     } finally {
       setLoading(false)
     }
@@ -584,7 +679,12 @@ export default function DocumentationPage() {
 
           {/* Table View */}
           <div className="flex-1 min-h-0">
-            <BibleTableView content={content} />
+            <BibleTableView
+              entries={entries}
+              onEdit={handleEditEntry}
+              onDelete={handleDeleteEntry}
+              stats={stats}
+            />
           </div>
         </div>
       </div>
@@ -768,7 +868,12 @@ export default function DocumentationPage() {
 
           {/* Table View */}
           <div className="flex-1 overflow-hidden">
-            <TeacherTableView content={content} />
+            <TeacherTableView
+              entries={entries}
+              onEdit={handleEditEntry}
+              onDelete={handleDeleteEntry}
+              stats={stats}
+            />
           </div>
         </div>
       </>
@@ -847,6 +952,79 @@ export default function DocumentationPage() {
           </div>
         </div>
       </>
+    )
+  }
+
+  // If Trinity is selected, render full-width table
+  if (selectedDoc?.id === 'trinity' && trinityViewMode === 'table') {
+    return (
+      <div className="fixed inset-0 top-16 flex flex-col overflow-hidden bg-white dark:bg-gray-900" style={{ left: '18rem', bottom: '40px' }}>
+        {/* Document Tabs */}
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0">
+          <div className="flex space-x-1 px-4">
+            {docs.map((doc) => {
+              const isActive = selectedDoc?.id === doc.id
+              return (
+                <button
+                  key={doc.id}
+                  onClick={() => handleDocSelect(doc)}
+                  className={`
+                    px-4 py-3 text-sm font-medium border-b-2 transition-colors
+                    ${isActive
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                    }
+                  `}
+                >
+                  <span className="mr-2">{doc.icon}</span>
+                  {doc.name}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="flex-1 min-h-0 flex flex-col bg-white dark:bg-gray-900">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+              ✨ Trinity - Complete Database Table (Bible + Teacher + Lexicon)
+            </h1>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleAddEntry}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Add Entry
+              </button>
+            </div>
+          </div>
+
+          {/* Table View */}
+          <div className="flex-1 min-h-0">
+            <TrinityTableView
+              entries={entries}
+              onEdit={handleEditEntry}
+              onDelete={handleDeleteEntry}
+              stats={stats}
+            />
+          </div>
+        </div>
+
+        {/* Knowledge Entry Modal */}
+        <KnowledgeEntryModal
+          isOpen={showModal}
+          onClose={() => {
+            setShowModal(false)
+            setEditingEntry(null)
+          }}
+          onSave={handleSaveEntry}
+          chapterNumber={editingEntry?.chapter_number || 0}
+          chapterName={editingEntry?.chapter_name || 'Overview'}
+          entry={editingEntry}
+        />
+      </div>
     )
   }
 

@@ -22,7 +22,7 @@ class Trinity < ApplicationRecord
   DIFFICULTIES = %w[beginner intermediate advanced].freeze
 
   # Validations
-  validates :chapter_number, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 20 }
+  validates :chapter_number, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 21 }
   validates :chapter_name, presence: true
   validates :title, presence: true
   validates :entry_type, inclusion: { in: ENTRY_TYPES }
