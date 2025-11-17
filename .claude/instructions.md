@@ -10,7 +10,7 @@ This project uses a **database-backed documentation system** with three categori
 2. **📕 Lexicon (KNOWLEDGE)** - Bug history, architecture decisions
 3. **🔧 Teacher (HOW-TO)** - Implementation patterns and code examples
 
-**IMPORTANT:** All documentation lives in the `documentation_entries` table. Markdown files are auto-generated exports that may be stale.
+**IMPORTANT:** All documentation lives in the `trinity` table. Markdown files are auto-generated exports that may be stale.
 
 ### Before Working on ANY Feature
 
@@ -18,13 +18,13 @@ This project uses a **database-backed documentation system** with three categori
 
 ```bash
 # Get Bible rules for a chapter (e.g., Chapter 9 for Gantt)
-curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=bible&chapter_number=9'
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible&chapter_number=9'
 
 # Get Lexicon entries (bug history) for a chapter
-curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=lexicon&chapter_number=9'
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=lexicon&chapter_number=9'
 
 # Get Teacher entries (implementation patterns) for a chapter
-curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=teacher&chapter_number=9'
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=teacher&chapter_number=9'
 ```
 
 ### When to Fetch Documentation
@@ -54,7 +54,7 @@ curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_
 
 **When you discover a new rule:**
 1. Go to Trapid app → Documentation page
-2. Add entry via UI (stores in `documentation_entries` table)
+2. Add entry via UI (stores in `trinity` table)
 3. Run export: `bin/rails trapid:export_bible` (or export_lexicon, export_teacher)
 4. Commit the updated markdown file
 
@@ -66,7 +66,7 @@ curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_
 
 ### API Endpoints
 
-**Base URL:** `https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries`
+**Base URL:** `https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity`
 
 **Filter by category:** `?category=bible` (or lexicon, teacher)
 **Filter by chapter:** `&chapter_number=9`

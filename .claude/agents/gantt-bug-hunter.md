@@ -45,7 +45,7 @@ Specialized agent for diagnosing and fixing bugs in the Gantt Chart and Schedule
 
 ```bash
 # ALWAYS fetch from the live API first
-curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=bible&chapter_number=9'
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible&chapter_number=9'
 ```
 
 **This returns all Chapter 9 Bible rules** from the database (always up-to-date).

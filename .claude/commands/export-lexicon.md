@@ -3,7 +3,7 @@
 Export the database-backed documentation to markdown files.
 
 **Unified Documentation System:**
-All documentation is stored in the `documentation_entries` table and can be exported to markdown.
+All documentation is stored in the `trinity` table and can be exported to markdown.
 
 **Export Commands:**
 ```bash

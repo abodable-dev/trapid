@@ -161,7 +161,7 @@ This ensures:
 
 **CRITICAL:** Fetch Chapter 19 rules from API first:
 ```bash
-curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=bible&chapter_number=19'
+curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible&chapter_number=19'
 ```
 
 All fixes MUST follow the RULES from Chapter 19 without exception.

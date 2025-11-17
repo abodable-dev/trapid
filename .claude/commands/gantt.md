@@ -9,12 +9,12 @@ You are the **gantt-bug-hunter** agent.
 1. Read `.claude/agents/gantt-bug-hunter.md` and follow those instructions
 2. **CRITICAL: Before starting, fetch Bible rules from API:**
    ```bash
-   curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=bible&chapter_number=9'
+   curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible&chapter_number=9'
    ```
 3. Execute the tasks
 4. When complete, document session in Lexicon:
    - Create entry via Trapid UI → Documentation page → 📕 Lexicon
-   - Or POST to `/api/v1/documentation_entries`:
+   - Or POST to `/api/v1/trinity`:
      - category: "lexicon"
      - chapter_number: 9
      - chapter_name: "Gantt & Schedule Master"
