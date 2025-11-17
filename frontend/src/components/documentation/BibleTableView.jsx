@@ -7,8 +7,10 @@ import {
   EyeIcon,
   Bars3Icon,
   ChevronUpIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline'
+import ReactMarkdown from 'react-markdown'
 
 const CHAPTER_NAMES = {
   0: 'Overview & System-Wide Rules',
@@ -97,10 +99,11 @@ const parseRulesFromMarkdown = (content) => {
 // Define columns (RULE #19.1 compliant)
 const COLUMNS = [
   { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
+  { key: 'expand', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
   { key: 'rule', label: 'Rule #', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150 },
-  { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 400 },
-  { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 600 },
-  { key: 'content', label: 'Content', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 1200 }
+  { key: 'type', label: 'Type', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120 },
+  { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 350 },
+  { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 500 }
 ]
 
 const DEFAULT_COLUMN_WIDTHS = COLUMNS.reduce((acc, col) => {
@@ -117,11 +120,15 @@ const DEFAULT_VISIBLE_COLUMNS = COLUMNS.reduce((acc, col) => {
 
 export default function BibleTableView({ content }) {
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('') // RULE #19.20: Debounced search
   const [sortBy, setSortBy] = useState('rule')
   const [sortDir, setSortDir] = useState('asc')
   const [selectedRows, setSelectedRows] = useState(new Set())
   const [columnFilters, setColumnFilters] = useState({})
   const [activeTab, setActiveTab] = useState('all') // Chapter filter tabs
+  const [expandedRows, setExpandedRows] = useState(new Set()) // Row expansion state
+  const [rules, setRules] = useState([]) // API data
+  const [loading, setLoading] = useState(true) // Loading state
 
   // Chapter 19 compliance: Column state management
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
@@ -190,16 +197,60 @@ export default function BibleTableView({ content }) {
     setTimeout(() => { isScrollingStickyRef.current = false }, 0)
   }
 
-  // Parse rules from markdown content
-  const rules = useMemo(() => parseRulesFromMarkdown(content), [content])
+  // Fetch rules from API (instead of parsing markdown)
+  useEffect(() => {
+    const fetchRules = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/v1/bible_rules')
+        const data = await response.json()
+
+        if (data.success) {
+          // Transform API data to match component structure
+          const transformedRules = data.data.map(rule => ({
+            id: rule.id,
+            ruleNumber: rule.rule_number,
+            chapter: rule.chapter_number,
+            chapterName: rule.chapter_name,
+            title: rule.title,
+            ruleType: rule.rule_type,
+            typeEmoji: rule.type_emoji,
+            typeDisplay: rule.type_display,
+            description: rule.description,
+            codeExample: rule.code_example,
+            crossReferences: rule.cross_references,
+            fullTitle: rule.full_title
+          }))
+          setRules(transformedRules)
+        }
+      } catch (error) {
+        console.error('Failed to fetch Bible rules:', error)
+        // Fallback to markdown parsing if API fails
+        setRules(parseRulesFromMarkdown(content))
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRules()
+  }, [content])
+
+  // RULE #19.20: Debounce search input (300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [search])
 
   // Filter and sort rules
   const filteredAndSorted = useMemo(() => {
     let result = [...rules]
 
-    // Apply search
-    if (search) {
-      const query = search.toLowerCase()
+    // Apply search (using debounced value)
+    if (debouncedSearch) {
+      const query = debouncedSearch.toLowerCase()
       result = result.filter(r =>
         r.ruleNumber?.toLowerCase().includes(query) ||
         r.title?.toLowerCase().includes(query) ||
@@ -216,46 +267,55 @@ export default function BibleTableView({ content }) {
         case 'rule':
           result = result.filter(r => r.ruleNumber?.toLowerCase().includes(value.toLowerCase()))
           break
+        case 'type':
+          result = result.filter(r => r.ruleType === value)
+          break
         case 'chapter':
           result = result.filter(r => r.chapter === parseInt(value))
           break
         case 'title':
           result = result.filter(r => r.title?.toLowerCase().includes(value.toLowerCase()))
           break
-        case 'content':
-          result = result.filter(r => r.content?.toLowerCase().includes(value.toLowerCase()))
+        case 'description':
+          result = result.filter(r => r.description?.toLowerCase().includes(value.toLowerCase()))
           break
       }
     })
 
-    // Sort
-    result.sort((a, b) => {
-      let aVal, bVal
+    // Sort (RULE #19.14: 3-state sorting - asc → desc → none)
+    if (sortBy && sortDir) {
+      result.sort((a, b) => {
+        let aVal, bVal
 
-      switch (sortBy) {
-        case 'rule':
-          aVal = a.ruleNumber || ''
-          bVal = b.ruleNumber || ''
-          break
-        case 'chapter':
-          aVal = a.chapter
-          bVal = b.chapter
-          break
-        case 'title':
-          aVal = a.title || ''
-          bVal = b.title || ''
-          break
-        default:
-          return 0
-      }
+        switch (sortBy) {
+          case 'rule':
+            aVal = a.ruleNumber || ''
+            bVal = b.ruleNumber || ''
+            break
+          case 'type':
+            aVal = a.ruleType || ''
+            bVal = b.ruleType || ''
+            break
+          case 'chapter':
+            aVal = a.chapter
+            bVal = b.chapter
+            break
+          case 'title':
+            aVal = a.title || ''
+            bVal = b.title || ''
+            break
+          default:
+            return 0
+        }
 
-      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1
-      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1
-      return 0
-    })
+        if (aVal < bVal) return sortDir === 'asc' ? -1 : 1
+        if (aVal > bVal) return sortDir === 'asc' ? 1 : -1
+        return 0
+      })
+    }
 
     return result
-  }, [rules, search, columnFilters, sortBy, sortDir])
+  }, [rules, debouncedSearch, columnFilters, sortBy, sortDir])
 
   // Initialize scrollbar on mount and content change
   useEffect(() => {
@@ -412,9 +472,16 @@ export default function BibleTableView({ content }) {
     }))
   }
 
+  // RULE #19.14: 3-state sorting (asc → desc → none)
   const handleSort = (column) => {
     if (sortBy === column) {
-      setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+      if (sortDir === 'asc') {
+        setSortDir('desc')
+      } else if (sortDir === 'desc') {
+        // Third state: clear sort
+        setSortBy(null)
+        setSortDir(null)
+      }
     } else {
       setSortBy(column)
       setSortDir('asc')
@@ -434,6 +501,17 @@ export default function BibleTableView({ content }) {
     return chapters.map(num => ({ value: num, label: `Ch ${num}: ${CHAPTER_NAMES[num]}` }))
   }, [rules])
 
+  // RULE #19.36: Row expansion toggle
+  const handleToggleExpand = (ruleId) => {
+    const newExpanded = new Set(expandedRows)
+    if (newExpanded.has(ruleId)) {
+      newExpanded.delete(ruleId)
+    } else {
+      newExpanded.add(ruleId)
+    }
+    setExpandedRows(newExpanded)
+  }
+
   const renderCellContent = (rule, columnKey) => {
     switch (columnKey) {
       case 'select':
@@ -449,21 +527,49 @@ export default function BibleTableView({ content }) {
           />
         )
 
+      case 'expand':
+        return (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              handleToggleExpand(rule.id)
+            }}
+            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+          >
+            {expandedRows.has(rule.id) ? (
+              <ChevronDownIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            ) : (
+              <ChevronRightIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            )}
+          </button>
+        )
+
       case 'rule':
         return <div className="font-mono font-medium">#{rule.ruleNumber}</div>
+
+      case 'type':
+        if (!rule.ruleType) return <span className="text-gray-400 text-xs">-</span>
+
+        const typeColors = {
+          'MUST': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+          'NEVER': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+          'ALWAYS': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+          'PROTECTED': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+          'CONFIG': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+        }
+
+        return (
+          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${typeColors[rule.ruleType] || 'bg-gray-100 text-gray-800'}`}>
+            <span>{rule.typeEmoji}</span>
+            <span>{rule.ruleType}</span>
+          </span>
+        )
 
       case 'chapter':
         return <div className="font-medium">Ch {rule.chapter}: {rule.chapterName}</div>
 
       case 'title':
         return <div className="font-medium">{rule.title}</div>
-
-      case 'content':
-        return (
-          <div className="text-xs text-gray-700 dark:text-gray-300">
-            {rule.content || '-'}
-          </div>
-        )
 
       default:
         return null
@@ -480,49 +586,13 @@ export default function BibleTableView({ content }) {
         .dark .bible-table-scroll {
           scrollbar-color: #D1D5DB #374151 !important;
         }
+        /* Hide ALL native scrollbars (we use custom sticky scrollbar for horizontal) */
         .bible-table-scroll::-webkit-scrollbar {
-          -webkit-appearance: none !important;
-          width: 16px !important;
-          height: 16px !important;
-        }
-        .bible-table-scroll::-webkit-scrollbar-track {
-          background: #F3F4F6 !important;
-          border-radius: 8px !important;
-          margin: 4px !important;
-        }
-        .bible-table-scroll::-webkit-scrollbar-thumb {
-          background: #9CA3AF !important;
-          border-radius: 8px !important;
-          border: 3px solid #F3F4F6 !important;
-        }
-        .bible-table-scroll::-webkit-scrollbar-thumb:hover {
-          background: #6B7280 !important;
-        }
-        .bible-table-scroll::-webkit-scrollbar-thumb:active {
-          background: #4B5563 !important;
-        }
-        .dark .bible-table-scroll::-webkit-scrollbar-track {
-          background: #1F2937 !important;
-          border-color: #1F2937 !important;
-        }
-        .dark .bible-table-scroll::-webkit-scrollbar-thumb {
-          background: #6B7280 !important;
-          border-color: #1F2937 !important;
-        }
-        .dark .bible-table-scroll::-webkit-scrollbar-thumb:hover {
-          background: #9CA3AF !important;
-        }
-        .dark .bible-table-scroll::-webkit-scrollbar-thumb:active {
-          background: #D1D5DB !important;
-        }
-
-        /* Hide horizontal scrollbar on main container (we use custom sticky one instead) */
-        .bible-table-scroll::-webkit-scrollbar-horizontal {
           display: none !important;
         }
-        .bible-table-scroll::-webkit-scrollbar:horizontal {
-          display: none !important;
-          height: 0 !important;
+        .bible-table-scroll {
+          -ms-overflow-style: none !important;  /* IE and Edge */
+          scrollbar-width: none !important;  /* Firefox */
         }
 
         /* Sticky horizontal scrollbar styling */
@@ -650,10 +720,6 @@ export default function BibleTableView({ content }) {
           ref={scrollContainerRef}
           onScroll={handleScroll}
           className="bible-table-scroll flex-1 overflow-y-scroll overflow-x-scroll relative bg-white dark:bg-gray-900"
-          style={{
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
-          }}
         >
         <table
           className="border-collapse border-l border-r border-gray-200 dark:border-gray-700"
@@ -662,7 +728,7 @@ export default function BibleTableView({ content }) {
             width: '100%'
           }}
         >
-          <thead className="sticky top-0 z-20 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-sm">
+          <thead className="sticky top-0 z-30 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-sm border-b-2 border-gray-200 dark:border-gray-700">
             <tr className="border-b border-gray-100 dark:border-gray-800">
               {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
                 const column = COLUMNS.find(c => c.key === colKey)
@@ -729,6 +795,9 @@ export default function BibleTableView({ content }) {
                             {colKey === 'chapter' && uniqueChapters.map(ch => (
                               <option key={ch.value} value={ch.value}>{ch.label}</option>
                             ))}
+                            {colKey === 'type' && ['MUST', 'NEVER', 'ALWAYS', 'PROTECTED', 'CONFIG'].map(type => (
+                              <option key={type} value={type}>{type}</option>
+                            ))}
                           </select>
                         )}
                       </>
@@ -748,37 +817,88 @@ export default function BibleTableView({ content }) {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900">
-            {filteredAndSorted.map((rule, index) => (
-              <React.Fragment key={rule.id}>
-                <tr
-                  className={`group border-b border-gray-100 dark:border-gray-800/50 hover:bg-blue-50/40 dark:hover:bg-gray-800/30 transition-all duration-150 hover:shadow-md ${
-                    index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-100 dark:bg-gray-800/30'
-                  }`}
-                >
-                  {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
-                    const column = COLUMNS.find(c => c.key === colKey)
-                    if (!column) return null
+            {loading ? (
+              <tr>
+                <td colSpan={columnOrder.filter(key => visibleColumns[key]).length} className="text-center py-12">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="text-gray-600 dark:text-gray-400">Loading Bible rules...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              filteredAndSorted.map((rule, index) => (
+                <React.Fragment key={rule.id}>
+                  <tr
+                    onClick={() => handleToggleExpand(rule.id)}
+                    className={`group border-b border-gray-100 dark:border-gray-800/50 hover:bg-blue-50/40 dark:hover:bg-gray-800/30 transition-all duration-150 hover:shadow-md cursor-pointer ${
+                      index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-100 dark:bg-gray-800/30'
+                    } ${expandedRows.has(rule.id) ? 'bg-blue-50 dark:bg-gray-800' : ''}`}
+                  >
+                    {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
+                      const column = COLUMNS.find(c => c.key === colKey)
+                      if (!column) return null
 
-                    return (
-                      <td
-                        key={colKey}
-                        style={{
-                          width: columnWidths[colKey],
-                          minWidth: columnWidths[colKey],
-                          maxWidth: columnWidths[colKey]
-                        }}
-                        className={`${colKey === 'select' ? 'px-1' : 'px-4'} py-2.5 text-sm text-gray-900 dark:text-gray-100 ${
-                          colKey === 'select' ? 'text-center' : ''
-                        } truncate overflow-hidden whitespace-nowrap`}
-                        title={colKey === 'title' ? rule.title : colKey === 'content' ? rule.content : ''}
-                      >
-                        {renderCellContent(rule, colKey)}
+                      return (
+                        <td
+                          key={colKey}
+                          style={{
+                            width: columnWidths[colKey],
+                            minWidth: columnWidths[colKey],
+                            maxWidth: columnWidths[colKey]
+                          }}
+                          className={`${colKey === 'select' || colKey === 'expand' ? 'px-1' : 'px-4'} py-2.5 text-sm text-gray-900 dark:text-gray-100 ${
+                            colKey === 'select' || colKey === 'expand' ? 'text-center' : ''
+                          } ${colKey === 'select' || colKey === 'expand' || colKey === 'type' ? '' : 'truncate overflow-hidden whitespace-nowrap'}`}
+                          title={colKey === 'title' ? rule.title : ''}
+                        >
+                          {renderCellContent(rule, colKey)}
+                        </td>
+                      )
+                    })}
+                  </tr>
+
+                  {/* RULE #19.36: Expanded Row Details */}
+                  {expandedRows.has(rule.id) && (
+                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                      <td colSpan={columnOrder.filter(key => visibleColumns[key]).length} className="p-6">
+                        <div className="max-w-full space-y-6">
+                          {/* Full Description */}
+                          {rule.description && (
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Description</h4>
+                              <div className="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+                                <ReactMarkdown>{rule.description}</ReactMarkdown>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Code Example */}
+                          {rule.codeExample && (
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Code Example</h4>
+                              <pre className="bg-gray-900 dark:bg-gray-950 text-gray-100 p-4 rounded-lg overflow-x-auto text-xs">
+                                <code>{rule.codeExample}</code>
+                              </pre>
+                            </div>
+                          )}
+
+                          {/* Cross References */}
+                          {rule.crossReferences && (
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Cross-References</h4>
+                              <div className="text-sm text-gray-700 dark:text-gray-300">
+                                <ReactMarkdown>{rule.crossReferences}</ReactMarkdown>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </td>
-                    )
-                  })}
-                </tr>
-              </React.Fragment>
-            ))}
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))
+            )}
           </tbody>
         </table>
 

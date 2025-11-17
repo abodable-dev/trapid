@@ -1,7 +1,7 @@
 # TRAPID TEACHER - Implementation Patterns & Code Examples
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-17 10:43 AEST
+**Last Updated:** 2025-11-17 11:28 AEST
 **Authority Level:** Reference (HOW to implement Bible rules)
 **Audience:** Claude Code + Human Developers
 
@@ -7629,6 +7629,28 @@ Decision tree for choosing between DataTable.jsx (read-only, basic sorting) vs F
 
 ---
 
+## §19.10: Column Visibility Toggle Pattern
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** RULE #19.10: Column Visibility Standards
+
+### Quick Summary
+Implement column visibility toggle dropdown
+
+---
+
+## §19.11: Search & Filter UI Standards Pattern
+
+🧩 Component | 🟢 Beginner
+
+**📖 Related Bible Rules:** RULE #19.11: Search & Filter UI Standards
+
+### Quick Summary
+Implement search boxes with clear buttons
+
+---
+
 ## §19.11A: Standardized Toolbar Layout Pattern
 
 🧩 Component
@@ -7673,6 +7695,17 @@ Required header elements: sortable columns, visibility controls, sticky headers,
 
 ---
 
+## §19.20: Search Functionality Implementation Pattern
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** RULE #19.20: Search Functionality Standards
+
+### Quick Summary
+Implement performant search with debouncing
+
+---
+
 ## §19.21: Form Standards Pattern
 
 🧩 Component
@@ -7681,6 +7714,50 @@ Required header elements: sortable columns, visibility controls, sticky headers,
 
 ### Quick Summary
 Standard patterns for form layout, validation, and submission
+
+---
+
+## §19.24: Loading State Standards Pattern
+
+🧩 Component | 🟢 Beginner
+
+**📖 Related Bible Rules:** RULE #19.24: Loading State Standards
+
+### Quick Summary
+Implement loading spinners and skeleton screens
+
+---
+
+## §19.25: Button & Action Standards Pattern
+
+🧩 Component | 🟢 Beginner
+
+**📖 Related Bible Rules:** RULE #19.25: Button & Action Standards
+
+### Quick Summary
+Implement consistent button styles and states
+
+---
+
+## §19.26: Status Badge Standards Pattern
+
+🧩 Component | 🟢 Beginner
+
+**📖 Related Bible Rules:** RULE #19.26: Status Badge Standards
+
+### Quick Summary
+Implement status badges with consistent colors
+
+---
+
+## §19.28: Navigation Standards Pattern
+
+🧩 Component | 🟢 Beginner
+
+**📖 Related Bible Rules:** RULE #19.28: Navigation Standards
+
+### Quick Summary
+Implement tab navigation and breadcrumbs
 
 ---
 
@@ -8786,6 +8863,290 @@ Pattern for eye icon dropdown to show/hide columns
 
 ---
 
+## §19.5B: Column Width Persistence Pattern
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** **Related Bible Rules:**
+- RULE #19.5B: Column Width Persistence (REQUIRED)
+- RULE #19.13: State Persistence Standards
+- RULE #19.4: Column Resizing Standards
+
+### Quick Summary
+Learn how to persist column widths to localStorage so users' custom column sizing is remembered across sessions.
+
+### Code Example
+```jsx
+## Step 1: Define Default Column Widths
+
+```javascript
+const COLUMNS = [
+  { key: 'id', label: 'ID', width: 100, resizable: true },
+  { key: 'name', label: 'Name', width: 300, resizable: true },
+  { key: 'email', label: 'Email', width: 250, resizable: true },
+  { key: 'status', label: 'Status', width: 150, resizable: true }
+]
+
+const DEFAULT_COLUMN_WIDTHS = COLUMNS.reduce((acc, col) => {
+  acc[col.key] = col.width
+  return acc
+}, {})
+// Result: { id: 100, name: 300, email: 250, status: 150 }
+```
+
+## Step 2: Add State Management
+
+```javascript
+import { useState, useEffect } from 'react'
+
+export default function MyTable() {
+  const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
+  
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('myTableColumnWidths')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        setColumnWidths(parsed)
+      } catch (e) {
+        console.error('Failed to load column widths:', e)
+        // Keep defaults on error
+      }
+    }
+  }, [])
+  
+  // Save to localStorage whenever widths change
+  useEffect(() => {
+    try {
+      localStorage.setItem('myTableColumnWidths', JSON.stringify(columnWidths))
+    } catch (e) {
+      console.error('Failed to save column widths:', e)
+    }
+  }, [columnWidths])
+  
+  return (/* table JSX */)
+}
+```
+
+## Step 3: Use Widths in Table Headers and Cells
+
+```javascript
+<thead>
+  <tr>
+    {COLUMNS.map(col => (
+      <th
+        key={col.key}
+        style={{
+          width: `${columnWidths[col.key]}px`,
+          minWidth: `${columnWidths[col.key]}px`
+        }}
+      >
+        {col.label}
+        
+        {/* Resize Handle */}
+        {col.resizable && (
+          <div
+            className=resize-handle
+            onMouseDown={(e) => handleResizeStart(e, col.key)}
+          />
+        )}
+      </th>
+    ))}
+  </tr>
+</thead>
+
+<tbody>
+  {data.map(row => (
+    <tr key={row.id}>
+      {COLUMNS.map(col => (
+        <td
+          key={col.key}
+          style={{
+            width: `${columnWidths[col.key]}px`,
+            minWidth: `${columnWidths[col.key]}px`,
+            maxWidth: `${columnWidths[col.key]}px`
+          }}
+        >
+          {row[col.key]}
+        </td>
+      ))}
+    </tr>
+  ))}
+</tbody>
+```
+
+## Step 4: Implement Resize Handlers
+
+```javascript
+const [resizingColumn, setResizingColumn] = useState(null)
+const [resizeStartX, setResizeStartX] = useState(0)
+const [resizeStartWidth, setResizeStartWidth] = useState(0)
+
+const handleResizeStart = (e, columnKey) => {
+  e.stopPropagation()
+  setResizingColumn(columnKey)
+  setResizeStartX(e.clientX)
+  setResizeStartWidth(columnWidths[columnKey])
+}
+
+const handleResizeMove = (e) => {
+  if (!resizingColumn) return
+  
+  const diff = e.clientX - resizeStartX
+  const newWidth = Math.max(50, resizeStartWidth + diff) // Min 50px
+  
+  setColumnWidths(prev => ({
+    ...prev,
+    [resizingColumn]: newWidth
+  }))
+}
+
+const handleResizeEnd = () => {
+  setResizingColumn(null)
+}
+
+useEffect(() => {
+  if (resizingColumn) {
+    document.addEventListener('mousemove', handleResizeMove)
+    document.addEventListener('mouseup', handleResizeEnd)
+    
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove)
+      document.removeEventListener('mouseup', handleResizeEnd)
+    }
+  }
+}, [resizingColumn, resizeStartX, resizeStartWidth])
+```
+```
+
+### ⚠️ Common Mistakes
+## ❌ Common Mistakes
+
+### 1. Not Using Unique localStorage Keys
+
+**Wrong:**
+```javascript
+localStorage.setItem('columnWidths', JSON.stringify(widths))
+// Collision risk if multiple tables on different pages!
+```
+
+**Right:**
+```javascript
+localStorage.setItem('contactsTableColumnWidths', JSON.stringify(widths))
+localStorage.setItem('jobsTableColumnWidths', JSON.stringify(widths))
+// Unique key per table
+```
+
+### 2. No Try/Catch on Parse
+
+**Wrong:**
+```javascript
+const saved = JSON.parse(localStorage.getItem('widths'))
+setColumnWidths(saved)
+// Crashes if localStorage corrupted or empty!
+```
+
+**Right:**
+```javascript
+try {
+  const saved = JSON.parse(localStorage.getItem('widths'))
+  if (saved) setColumnWidths(saved)
+} catch (e) {
+  console.error('Failed to parse widths:', e)
+  // Falls back to defaults
+}
+```
+
+### 3. Forgetting Minimum Width
+
+**Wrong:**
+```javascript
+const newWidth = resizeStartWidth + diff
+// Can become negative or 0!
+```
+
+**Right:**
+```javascript
+const newWidth = Math.max(50, resizeStartWidth + diff)
+// Always at least 50px
+```
+
+### 4. Not Cleaning Up Event Listeners
+
+**Wrong:**
+```javascript
+useEffect(() => {
+  document.addEventListener('mousemove', handleResizeMove)
+  document.addEventListener('mouseup', handleResizeEnd)
+  // Memory leak! Never removed
+}, [resizingColumn])
+```
+
+**Right:**
+```javascript
+useEffect(() => {
+  if (resizingColumn) {
+    document.addEventListener('mousemove', handleResizeMove)
+    document.addEventListener('mouseup', handleResizeEnd)
+    
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove)
+      document.removeEventListener('mouseup', handleResizeEnd)
+    }
+  }
+}, [resizingColumn])
+```
+
+### 🧪 Testing Strategy
+## ✅ Testing Strategy
+
+### Manual Testing Checklist
+
+- [ ] Resize column → width changes
+- [ ] Reload page → width persists
+- [ ] Clear localStorage → falls back to defaults
+- [ ] Resize to very small → respects minimum (50px)
+- [ ] Multiple tables on site → no collision (unique keys)
+- [ ] Corrupted localStorage → doesn't crash, uses defaults
+
+### Automated Testing (Optional)
+
+```javascript
+describe('Column Width Persistence', () => {
+  it('saves widths to localStorage', () => {
+    const { rerender } = render(<MyTable />)
+    
+    // Simulate resize
+    fireEvent.mouseDown(screen.getByRole('columnheader', { name: 'Name' }))
+    fireEvent.mouseMove(document, { clientX: 100 })
+    fireEvent.mouseUp(document)
+    
+    // Check localStorage
+    const saved = JSON.parse(localStorage.getItem('myTableColumnWidths'))
+    expect(saved.name).toBeGreaterThan(300)
+  })
+  
+  it('restores widths from localStorage', () => {
+    localStorage.setItem('myTableColumnWidths', JSON.stringify({ name: 500 }))
+    
+    render(<MyTable />)
+    
+    const header = screen.getByRole('columnheader', { name: 'Name' })
+    expect(header).toHaveStyle({ width: '500px' })
+  })
+})
+```
+
+### Description
+## 📋 Overview
+
+The **Column Width Persistence Pattern** ensures that when users manually resize table columns, their preferences are saved to localStorage and restored on subsequent visits.
+
+This pattern is **required** for all tables with resizable columns to provide a consistent user experience.
+
+---
+
 ## §19.6: Scroll Behavior Implementation
 
 🧩 Component
@@ -8878,6 +9239,196 @@ useEffect(() => {
   scrollbar-color: #9CA3AF #E5E7EB;
 }
 ```
+
+
+---
+
+## §19.8: Cell Content Standards Pattern
+
+🧩 Component | 🟢 Beginner
+
+**📖 Related Bible Rules:** **Related Bible Rules:**
+- RULE #19.8: Cell Content Standards
+- RULE #19.15: Dark Mode Requirements
+- RULE #19.7: Column Width Standards
+
+
+### Quick Summary
+Learn how to properly format and truncate cell content with tooltips for overflow text, ensuring data remains accessible.
+
+### Code Example
+```jsx
+## Step 1: Apply Truncation Classes
+
+```javascript
+<td
+  className="px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 truncate overflow-hidden whitespace-nowrap"
+  title={row.longText} // Full text shown on hover
+>
+  {row.longText}
+</td>
+```
+
+**Key Classes:**
+- `truncate` - Adds ellipsis (...)
+- `overflow-hidden` - Prevents overflow
+- `whitespace-nowrap` - Keeps text on one line
+
+## Step 2: Column-Specific Width Constraints
+
+```javascript
+<td
+  style={{
+    width: `${columnWidths['name']}px`,
+    minWidth: `${columnWidths['name']}px`,
+    maxWidth: `${columnWidths['name']}px`
+  }}
+  className="px-4 py-2.5 truncate overflow-hidden whitespace-nowrap"
+  title={row.name}
+>
+  {row.name}
+</td>
+```
+
+## Step 3: Special Content Types
+
+### Email Addresses
+```javascript
+<td className="truncate" title={row.email}>
+  <a href={`mailto:${row.email}`} className="text-blue-600 hover:underline">
+    {row.email}
+  </a>
+</td>
+```
+
+### Dates
+```javascript
+<td className="whitespace-nowrap">
+  {new Date(row.created_at).toLocaleDateString()}
+</td>
+```
+
+### Status Badges
+```javascript
+<td>
+  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+    row.status === 'active'
+      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+  }`}>
+    {row.status}
+  </span>
+</td>
+```
+
+### Numbers/Currency
+```javascript
+<td className="text-right font-mono">
+  ${row.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+</td>
+```
+
+## Step 4: Multi-Line Content (Notes/Descriptions)
+
+For cells that need to show multiple lines:
+
+```javascript
+<td
+  className="px-4 py-2.5 text-sm max-w-md"
+  style={{ maxWidth: '400px' }}
+>
+  <div className="line-clamp-2 overflow-hidden" title={row.notes}>
+    {row.notes}
+  </div>
+</td>
+```
+
+**Line Clamp Options:**
+- `line-clamp-1` - 1 line with ellipsis
+- `line-clamp-2` - 2 lines with ellipsis
+- `line-clamp-3` - 3 lines with ellipsis
+
+```
+
+### ⚠️ Common Mistakes
+## ❌ Common Mistakes
+
+### 1. Forgetting title Attribute
+
+**Wrong:**
+```javascript
+<td className="truncate">
+  {row.longText}
+</td>
+// User can't see full text!
+```
+
+**Right:**
+```javascript
+<td className="truncate" title={row.longText}>
+  {row.longText}
+</td>
+// Hover shows full text
+```
+
+### 2. Not Setting maxWidth
+
+**Wrong:**
+```javascript
+<td className="truncate">
+  {row.longText}
+</td>
+// Truncate doesn't work without width constraint!
+```
+
+**Right:**
+```javascript
+<td
+  className="truncate"
+  style={{ maxWidth: `${columnWidths['text']}px` }}
+>
+  {row.longText}
+</td>
+```
+
+### 3. Using Truncate on Numbers
+
+**Wrong:**
+```javascript
+<td className="truncate">
+  $1,234,567.89
+</td>
+// Never truncate currency!
+```
+
+**Right:**
+```javascript
+<td className="text-right font-mono whitespace-nowrap">
+  $1,234,567.89
+</td>
+```
+
+
+### 🧪 Testing Strategy
+## ✅ Testing Strategy
+
+### Manual Testing Checklist
+
+- [ ] Long text shows ellipsis (...)
+- [ ] Hover over truncated cell → tooltip shows full text
+- [ ] Currency/numbers align right and don't truncate
+- [ ] Status badges render correctly
+- [ ] Dark mode text is readable
+- [ ] Line-clamp shows correct number of lines
+- [ ] Email links are clickable
+
+
+### Description
+## 📋 Overview
+
+The **Cell Content Standards Pattern** defines how to handle text overflow, truncation, and tooltips in table cells to maintain clean layouts while ensuring all data remains accessible to users.
+
+This pattern prevents horizontal scrolling caused by long content and provides hover tooltips for full text.
 
 
 ---
@@ -9234,7 +9785,7 @@ const getAgentIcon = (agentName) => {
 ---
 
 
-**Last Generated:** 2025-11-17 10:43 AEST
+**Last Generated:** 2025-11-17 11:28 AEST
 **Generated By:** `rake trapid:export_teacher`
 **Maintained By:** Development Team via Database UI
 **Review Schedule:** After adding new patterns or updating examples
