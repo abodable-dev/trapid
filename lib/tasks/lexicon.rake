@@ -349,8 +349,36 @@ namespace :trapid do
         common_issues.each do |issue|
           content << "### #{issue.title}"
           content << ''
-          content << issue.description if issue.description.present?
-          content << ''
+
+          if issue.description.present?
+            content << issue.description
+            content << ''
+          end
+
+          if issue.scenario.present?
+            content << '#### Scenario'
+            content << issue.scenario
+            content << ''
+          end
+
+          if issue.root_cause.present?
+            content << '#### Root Cause'
+            content << issue.root_cause
+            content << ''
+          end
+
+          if issue.solution.present?
+            content << '#### Solution'
+            content << issue.solution
+            content << ''
+          end
+
+          if issue.prevention.present?
+            content << '#### Prevention'
+            content << issue.prevention
+            content << ''
+          end
+
           content << '---'
           content << ''
         end
