@@ -8,12 +8,12 @@ class Trinity < ApplicationRecord
   ENTRY_TYPES = %w[
     bug architecture test performance dev_note common_issue
     component feature util hook integration optimization
-    MUST NEVER ALWAYS PROTECTED CONFIG rule
+    MUST NEVER ALWAYS PROTECTED CONFIG rule REFERENCE
   ].freeze
 
   LEXICON_TYPES = %w[bug architecture test performance dev_note common_issue].freeze
   TEACHER_TYPES = %w[component feature util hook integration optimization].freeze
-  BIBLE_TYPES = %w[MUST NEVER ALWAYS PROTECTED CONFIG rule].freeze
+  BIBLE_TYPES = %w[MUST NEVER ALWAYS PROTECTED CONFIG rule REFERENCE].freeze
 
   CATEGORIES = %w[bible teacher lexicon].freeze
 
@@ -114,6 +114,8 @@ class Trinity < ApplicationRecord
       '⚙️'
     when 'rule'
       '📖'
+    when 'REFERENCE'
+      '📚'
     # Lexicon types
     when 'bug'
       '🐛'

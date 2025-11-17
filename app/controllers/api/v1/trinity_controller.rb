@@ -57,6 +57,8 @@ module Api
       # POST /api/v1/trinity
       def create
         @entry = Trinity.new(entry_params)
+        @entry.created_by = current_user_identifier
+        @entry.updated_by = current_user_identifier
 
         if @entry.save
           render json: {
@@ -74,6 +76,8 @@ module Api
 
       # PATCH /api/v1/trinity/:id
       def update
+        @entry.updated_by = current_user_identifier
+
         if @entry.update(entry_params)
           render json: {
             success: true,
@@ -181,6 +185,16 @@ module Api
         }, status: :not_found
       end
 
+      def current_user_identifier
+        # Try to get user name/email from current_user (if authenticated)
+        if @current_user
+          @current_user.name || @current_user.email
+        else
+          # Fallback for unauthenticated requests (should not happen for create/update)
+          'System'
+        end
+      end
+
       def entry_params
         params.require(:trinity).permit(
           :category,
@@ -268,8 +282,11 @@ module Api
             recommendations: entry.recommendations,
             rule_reference: entry.rule_reference,
             metadata: entry.metadata,
+            # Audit trail
             created_at: entry.created_at,
-            updated_at: entry.updated_at
+            created_by: entry.created_by,
+            updated_at: entry.updated_at,
+            updated_by: entry.updated_by
           })
         else
           base

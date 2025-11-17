@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_17_051007) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_17_104747) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -1471,6 +1471,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_051007) do
     t.text "testing_strategy"
     t.text "related_rules"
     t.string "category", null: false
+    t.string "created_by"
+    t.string "updated_by"
     t.index ["category", "chapter_number"], name: "index_trinity_on_category_and_chapter_number"
     t.index ["category"], name: "index_trinity_on_category"
     t.index ["chapter_number", "entry_type"], name: "index_trinity_on_chapter_number_and_entry_type"
