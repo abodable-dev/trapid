@@ -120,12 +120,12 @@ const DEFAULT_VISIBLE_COLUMNS = COLUMNS.reduce((acc, col) => {
 
 export default function BibleTableView({ content }) {
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('') // RULE #19.20: Debounced search
   const [sortBy, setSortBy] = useState('rule')
   const [sortDir, setSortDir] = useState('asc')
   const [selectedRows, setSelectedRows] = useState(new Set())
   const [columnFilters, setColumnFilters] = useState({})
   const [activeTab, setActiveTab] = useState('all') // Chapter filter tabs
+  const [expandedRows, setExpandedRows] = useState(new Set()) // Row expansion state
   const [rules, setRules] = useState([]) // API data
   const [loading, setLoading] = useState(true) // Loading state
 
@@ -500,6 +500,17 @@ export default function BibleTableView({ content }) {
     return chapters.map(num => ({ value: num, label: `Ch ${num}: ${CHAPTER_NAMES[num]}` }))
   }, [rules])
 
+  // Row expansion toggle
+  const handleToggleExpand = (ruleId) => {
+    const newExpanded = new Set(expandedRows)
+    if (newExpanded.has(ruleId)) {
+      newExpanded.delete(ruleId)
+    } else {
+      newExpanded.add(ruleId)
+    }
+    setExpandedRows(newExpanded)
+  }
+
   const renderCellContent = (rule, columnKey) => {
     switch (columnKey) {
       case 'select':
@@ -543,11 +554,10 @@ export default function BibleTableView({ content }) {
         return <div className="font-medium">{rule.title}</div>
 
       case 'content':
+        const hasContent = rule.description || rule.codeExample || rule.crossReferences
         return (
-          <div className="text-sm text-gray-600 dark:text-gray-400 max-w-full">
-            <div className="line-clamp-3">
-              {rule.description || 'No description available'}
-            </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 italic">
+            {hasContent ? 'See Implementation Patterns...' : '-'}
           </div>
         )
 
@@ -810,9 +820,10 @@ export default function BibleTableView({ content }) {
               filteredAndSorted.map((rule, index) => (
                 <React.Fragment key={rule.id}>
                   <tr
-                    className={`group border-b border-gray-100 dark:border-gray-800/50 hover:bg-blue-50/40 dark:hover:bg-gray-800/30 transition-all duration-150 ${
+                    onClick={() => handleToggleExpand(rule.id)}
+                    className={`group border-b border-gray-100 dark:border-gray-800/50 hover:bg-blue-50/40 dark:hover:bg-gray-800/30 transition-all duration-150 cursor-pointer ${
                       index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-100 dark:bg-gray-800/30'
-                    }`}
+                    } ${expandedRows.has(rule.id) ? 'bg-blue-50 dark:bg-gray-800' : ''}`}
                   >
                     {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
                       const column = COLUMNS.find(c => c.key === colKey)
@@ -836,6 +847,45 @@ export default function BibleTableView({ content }) {
                       )
                     })}
                   </tr>
+
+                  {/* Expanded Row Details */}
+                  {expandedRows.has(rule.id) && (
+                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                      <td colSpan={columnOrder.filter(key => visibleColumns[key]).length} className="p-6">
+                        <div className="max-w-full space-y-6">
+                          {/* Full Description */}
+                          {rule.description && (
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Description</h4>
+                              <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                {rule.description}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Code Example */}
+                          {rule.codeExample && (
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Code Example</h4>
+                              <pre className="bg-gray-900 dark:bg-gray-950 text-gray-100 p-4 rounded-lg overflow-x-auto text-xs">
+                                <code>{rule.codeExample}</code>
+                              </pre>
+                            </div>
+                          )}
+
+                          {/* Cross References */}
+                          {rule.crossReferences && (
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Cross-References</h4>
+                              <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                {rule.crossReferences}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </React.Fragment>
               ))
             )}
