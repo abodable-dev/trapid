@@ -1,7 +1,7 @@
 # TRAPID TEACHER - Implementation Patterns & Code Examples
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-17 11:46 AEST
+**Last Updated:** 2025-11-17 15:41 AEST
 **Authority Level:** Reference (HOW to implement Bible rules)
 **Audience:** Claude Code + Human Developers
 
@@ -34,7 +34,7 @@ This file contains **code examples and step-by-step guides** for implementing Tr
 
 ## 💾 Database-Driven Teacher
 
-**IMPORTANT:** This file is auto-generated from the `documentation_entries` database table.
+**IMPORTANT:** This file is auto-generated from the `trinity` database table.
 
 **To edit entries:**
 1. Go to Documentation page in Trapid
@@ -48,36 +48,560 @@ This file contains **code examples and step-by-step guides** for implementing Tr
 
 ## Table of Contents
 
-- [Chapter 0: Overview & System-Wide Rules](#chapter-0-overview-system-wide-rules)
+- [Chapter 0: System-Wide Rules](#chapter-0-system-wide-rules)
 - [Chapter 1: Authentication & Users](#chapter-1-authentication-users)
-- [Chapter 2: System Administration](#chapter-2-system-administration)
+- [Chapter 1: Overview & System-Wide Rules](#chapter-1-overview-system-wide-rules)
+- [Chapter 2: Authentication & Users](#chapter-2-authentication-users)
 - [Chapter 3: Contacts & Relationships](#chapter-3-contacts-relationships)
+- [Chapter 3: System Administration](#chapter-3-system-administration)
+- [Chapter 4: Contacts & Relationships](#chapter-4-contacts-relationships)
 - [Chapter 4: Price Books & Suppliers](#chapter-4-price-books-suppliers)
-- [Chapter 5: Jobs & Construction Management](#chapter-5-jobs-construction-management)
-- [Chapter 6: Estimates & Quoting](#chapter-6-estimates-quoting)
-- [Chapter 7: AI Plan Review](#chapter-7-ai-plan-review)
-- [Chapter 8: Purchase Orders](#chapter-8-purchase-orders)
+- [Chapter 5: Price Books & Suppliers](#chapter-5-price-books-suppliers)
+- [Chapter 6: Jobs & Construction Management](#chapter-6-jobs-construction-management)
+- [Chapter 7: Estimates & Quoting](#chapter-7-estimates-quoting)
+- [Chapter 8: AI Plan Review](#chapter-8-ai-plan-review)
+- [Chapter 9: Purchase Orders](#chapter-9-purchase-orders)
 - [Chapter 9: Gantt & Schedule Master](#chapter-9-gantt-schedule-master)
-- [Chapter 10: Project Tasks & Checklists](#chapter-10-project-tasks-checklists)
-- [Chapter 11: Weather & Public Holidays](#chapter-11-weather-public-holidays)
-- [Chapter 12: OneDrive Integration](#chapter-12-onedrive-integration)
-- [Chapter 13: Outlook/Email Integration](#chapter-13-outlook-email-integration)
-- [Chapter 14: Chat & Communications](#chapter-14-chat-communications)
+- [Chapter 10: Gantt & Schedule Master](#chapter-10-gantt-schedule-master)
+- [Chapter 11: Project Tasks & Checklists](#chapter-11-project-tasks-checklists)
+- [Chapter 12: Weather & Public Holidays](#chapter-12-weather-public-holidays)
+- [Chapter 13: OneDrive Integration](#chapter-13-onedrive-integration)
+- [Chapter 14: Outlook/Email Integration](#chapter-14-outlook-email-integration)
 - [Chapter 15: Xero Accounting Integration](#chapter-15-xero-accounting-integration)
-- [Chapter 16: Payments & Financials](#chapter-16-payments-financials)
-- [Chapter 17: Workflows & Automation](#chapter-17-workflows-automation)
-- [Chapter 18: Custom Tables & Formulas](#chapter-18-custom-tables-formulas)
+- [Chapter 15: Chat & Communications](#chapter-15-chat-communications)
+- [Chapter 16: Xero Accounting Integration](#chapter-16-xero-accounting-integration)
+- [Chapter 17: Payments & Financials](#chapter-17-payments-financials)
+- [Chapter 18: Workflows & Automation](#chapter-18-workflows-automation)
+- [Chapter 19: Custom Tables & Formulas](#chapter-19-custom-tables-formulas)
 - [Chapter 19: UI/UX Standards & Patterns](#chapter-19-ui-ux-standards-patterns)
-- [Chapter 20: Agent System & Automation](#chapter-20-agent-system-automation)
+- [Chapter 20: UI/UX Standards & Patterns](#chapter-20-ui-ux-standards-patterns)
+- [Chapter 21: Agent System & Automation](#chapter-21-agent-system-automation)
 
 ---
 
 
-# Chapter 0: Overview & System-Wide Rules
+# Chapter 0: System-Wide Rules
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter  0               │
 │ 📕 LEXICON (BUGS):    Chapter  0               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Code examples, implementation patterns, and step-by-step guides
+**Last Updated:** 2025-11-17
+
+---
+
+## §0.10: Automated Testing Setup - RSpec & Minitest
+
+✨ Feature | 🟡 Intermediate
+
+### Quick Summary
+Complete setup guide for automated testing infrastructure with RSpec, FactoryBot, and CI/CD
+
+### Step-by-Step Guide
+# 🤖 Automated Testing Setup Complete!
+
+Full automation has been set up for the Gantt cascade functionality. The bug-hunter agent can now run comprehensive tests without any manual intervention.
+
+## 🎯 What Was Set Up
+
+### 1. Playwright E2E Testing ✅
+- **Installed**: `@playwright/test` package
+- **Browser**: Chromium (141.0.7390.37) downloaded and ready
+- **Config**: [frontend/playwright.config.js](frontend/playwright.config.js)
+- **Test**: [frontend/tests/e2e/gantt-cascade.spec.js](frontend/tests/e2e/gantt-cascade.spec.js)
+
+### 2. Backend Testing ✅
+- **Test**: [backend/test/gantt_drag_test.rb](backend/test/gantt_drag_test.rb)
+- **Verifies**: Cascade logic, dependency calculations, task updates
+
+### 3. Test Runner Scripts ✅
+- **Main Runner**: [test/run_gantt_tests.sh](test/run_gantt_tests.sh)
+- **Bug-Hunter Script**: [test/bug_hunter_test.sh](test/bug_hunter_test.sh)
+- **Documentation**: [test/README.md](test/README.md)
+
+## 🚀 How Bug-Hunter Can Use It
+
+### Single Command - Full Test Suite
+
+```bash
+./test/bug_hunter_test.sh
+```
+
+This runs:
+1. ✅ Backend cascade test (Rails)
+2. ✅ Frontend E2E test (Playwright)
+3. ✅ Comprehensive verification
+4. ✅ Clear pass/fail results
+
+**Exit codes:**
+- `0` = All tests passed ✅
+- `1` = Tests failed ❌
+
+### Backend Only
+
+```bash
+cd backend
+rails runner test/gantt_drag_test.rb
+```
+
+### Frontend Only
+
+```bash
+cd frontend
+npm run test:gantt
+```
+
+**Requires**: Frontend dev server running (`npm run dev`)
+
+## 📋 NPM Scripts Added
+
+In `frontend/package.json`:
+
+```json
+{
+  "test:e2e": "playwright test",
+  "test:e2e:ui": "playwright test --ui",
+  "test:e2e:headed": "playwright test --headed",
+  "test:e2e:debug": "playwright test --debug",
+  "test:gantt": "playwright test gantt-cascade"
+}
+```
+
+## 🔧 Configuration Files
+
+### Created
+
+- ✅ `frontend/playwright.config.js` - Playwright configuration
+- ✅ `frontend/.env.test` - Test environment template
+- ✅ `frontend/tests/e2e/gantt-cascade.spec.js` - E2E test
+- ✅ `frontend/tests/e2e/auth.setup.js` - Auth helper
+- ✅ `test/run_gantt_tests.sh` - Main test runner
+- ✅ `test/bug_hunter_test.sh` - Bug-hunter entry point
+- ✅ `test/README.md` - Comprehensive documentation
+
+### Test Environment
+
+Create `frontend/.env.test.local` for custom settings:
+
+```env
+FRONTEND_URL=http://localhost:5173
+TEST_EMAIL=your_email@example.com
+TEST_PASSWORD=your_password
+```
+
+## 📊 What the Tests Verify
+
+### Backend Test Verifies:
+
+- ✅ Task 1 moves from day 4 → 9
+- ✅ Task 2 cascades from day 6 → 11
+- ✅ Task 3 cascades from day 6 → 11
+- ✅ All dependency types (FS, SS, FF, SF)
+- ✅ Lag values respected
+- ✅ Manually positioned tasks skipped
+
+### Frontend Test Verifies:
+
+- ✅ **No duplicate API calls** (infinite loop indicator)
+- ✅ **Backend cascade message** detected
+- ✅ **Single batch update** applied
+- ✅ **Single Gantt reload** (no flicker)
+- ✅ All affected tasks updated together
+
+## 🎬 Test Execution Flow
+
+```
+BUG-HUNTER SCRIPT
+    ↓
+BACKEND TEST (Rails)
+    → Simulates drag operation
+    → Verifies cascade calculations
+    → Returns exit code
+    ↓
+FRONTEND TEST (Playwright)
+    → Launches browser
+    → Logs in automatically
+    → Navigates to Gantt
+    → Simulates drag
+    → Monitors API calls
+    → Analyzes console logs
+    → Returns pass/fail
+    ↓
+COMPREHENSIVE REPORT
+    → Backend: PASSED/FAILED
+    → Frontend: PASSED/FAILED
+    → Exit code for automation
+```
+
+## 🐛 Bug-Hunter Integration Example
+
+```bash
+#!/bin/bash
+# Bug-hunter can run this in the task
+
+echo "🔍 Verifying Gantt cascade fix..."
+./test/bug_hunter_test.sh
+
+if [ $? -eq 0 ]; then
+  echo "✅ Fix confirmed! Ready to deploy."
+else
+  echo "❌ Fix needs more work. Running diagnostics..."
+  # ... additional debugging
+fi
+```
+
+## 📈 Test Output Example
+
+```
+🔍 BUG-HUNTER GANTT CASCADE VERIFICATION
+============================================================
+
+This script will verify:
+  ✅ Backend cascade logic is working
+  ✅ Frontend integration has no flicker
+  ✅ No infinite loops detected
+  ✅ Single batch updates working
+
+============================================================
+
+📋 TEST 1: Backend Cascade Logic
+✅ Task 2 cascaded correctly (11)
+✅ Task 3 cascaded correctly (11)
+✅ Backend cascade test PASSED
+
+📋 TEST 2: Frontend E2E Test (Playwright)
+🌐 API Calls: 1 total
+📦 Backend Cascade: ✅ Yes
+📦 Batch Update: ✅ Yes
+🔄 Gantt Reloads: 1
+✅ Frontend E2E test PASSED
+
+============================================================
+🎉 ALL TESTS PASSED!
+
+✅ Backend cascade logic: Working
+✅ Frontend integration: No flicker
+✅ No infinite loops detected
+✅ Single batch updates working
+============================================================
+```
+
+## 🛠️ Troubleshooting
+
+### "Frontend dev server not running"
+
+**Solution:**
+```bash
+cd frontend
+npm run dev
+```
+
+### "Cannot find email input"
+
+**Solution:** Update selectors in `gantt-cascade.spec.js` if login UI changed
+
+### "Test timeout"
+
+**Solution:** Increase timeout in `playwright.config.js`:
+```js
+timeout: 120 * 1000, // 2 minutes
+```
+
+## 📚 Additional Resources
+
+- [Playwright Documentation](https://playwright.dev)
+- [Test README](test/README.md)
+- [Gantt Schedule Rules](GANTT_SCHEDULE_RULES.md)
+
+## ✅ Next Steps
+
+1. **Run the test now**:
+   ```bash
+   ./test/bug_hunter_test.sh
+   ```
+
+2. **Integrate with CI/CD** (optional):
+   ```yaml
+   - name: Test Gantt Cascade
+     run: ./test/bug_hunter_test.sh
+   ```
+
+3. **Set up test credentials**:
+   ```bash
+   cp frontend/.env.test frontend/.env.test.local
+   # Edit .env.test.local with your credentials
+   ```
+
+---
+
+**🎉 Full automation is ready! Bug-hunter can now verify Gantt fixes with a single command.**
+
+
+### Code Example
+```jsx
+```bash
+./test/bug_hunter_test.sh
+```
+
+```bash
+cd backend
+rails runner test/gantt_drag_test.rb
+```
+
+```bash
+cd frontend
+npm run test:gantt
+```
+
+```json
+{
+  "test:e2e": "playwright test",
+  "test:e2e:ui": "playwright test --ui",
+  "test:e2e:headed": "playwright test --headed",
+  "test:e2e:debug": "playwright test --debug",
+  "test:gantt": "playwright test gantt-cascade"
+}
+```
+
+```env
+FRONTEND_URL=http://localhost:5173
+TEST_EMAIL=your_email@example.com
+TEST_PASSWORD=your_password
+```
+
+```
+BUG-HUNTER SCRIPT
+    ↓
+BACKEND TEST (Rails)
+    → Simulates drag operation
+    → Verifies cascade calculations
+    → Returns exit code
+    ↓
+FRONTEND TEST (Playwright)
+    → Launches browser
+    → Logs in automatically
+    → Navigates to Gantt
+    → Simulates drag
+    → Monitors API calls
+    → Analyzes console logs
+    → Returns pass/fail
+    ↓
+COMPREHENSIVE REPORT
+    → Backend: PASSED/FAILED
+    → Frontend: PASSED/FAILED
+    → Exit code for automation
+```
+
+```bash
+#!/bin/bash
+# Bug-hunter can run this in the task
+
+echo "🔍 Verifying Gantt cascade fix..."
+./test/bug_hunter_test.sh
+
+if [ $? -eq 0 ]; then
+  echo "✅ Fix confirmed! Ready to deploy."
+else
+  echo "❌ Fix needs more work. Running diagnostics..."
+  # ... additional debugging
+fi
+```
+
+```
+🔍 BUG-HUNTER GANTT CASCADE VERIFICATION
+============================================================
+
+This script will verify:
+  ✅ Backend cascade logic is working
+  ✅ Frontend integration has no flicker
+  ✅ No infinite loops detected
+  ✅ Single batch updates working
+
+============================================================
+
+📋 TEST 1: Backend Cascade Logic
+✅ Task 2 cascaded correctly (11)
+✅ Task 3 cascaded correctly (11)
+✅ Backend cascade test PASSED
+
+📋 TEST 2: Frontend E2E Test (Playwright)
+🌐 API Calls: 1 total
+📦 Backend Cascade: ✅ Yes
+📦 Batch Update: ✅ Yes
+🔄 Gantt Reloads: 1
+✅ Frontend E2E test PASSED
+
+============================================================
+🎉 ALL TESTS PASSED!
+
+✅ Backend cascade logic: Working
+✅ Frontend integration: No flicker
+✅ No infinite loops detected
+✅ Single batch updates working
+============================================================
+```
+
+```bash
+cd frontend
+npm run dev
+```
+
+```js
+timeout: 120 * 1000, // 2 minutes
+```
+
+```bash
+   ./test/bug_hunter_test.sh
+   ```
+
+```yaml
+   - name: Test Gantt Cascade
+     run: ./test/bug_hunter_test.sh
+   ```
+
+```bash
+   cp frontend/.env.test frontend/.env.test.local
+   # Edit .env.test.local with your credentials
+   ```
+```
+
+### Examples
+```bash
+./test/bug_hunter_test.sh
+```
+
+```bash
+cd backend
+rails runner test/gantt_drag_test.rb
+```
+
+```bash
+cd frontend
+npm run test:gantt
+```
+
+```json
+{
+  "test:e2e": "playwright test",
+  "test:e2e:ui": "playwright test --ui",
+  "test:e2e:headed": "playwright test --headed",
+  "test:e2e:debug": "playwright test --debug",
+  "test:gantt": "playwright test gantt-cascade"
+}
+```
+
+```env
+FRONTEND_URL=http://localhost:5173
+TEST_EMAIL=your_email@example.com
+TEST_PASSWORD=your_password
+```
+
+```
+BUG-HUNTER SCRIPT
+    ↓
+BACKEND TEST (Rails)
+    → Simulates drag operation
+    → Verifies cascade calculations
+    → Returns exit code
+    ↓
+FRONTEND TEST (Playwright)
+    → Launches browser
+    → Logs in automatically
+    → Navigates to Gantt
+    → Simulates drag
+    → Monitors API calls
+    → Analyzes console logs
+    → Returns pass/fail
+    ↓
+COMPREHENSIVE REPORT
+    → Backend: PASSED/FAILED
+    → Frontend: PASSED/FAILED
+    → Exit code for automation
+```
+
+```bash
+#!/bin/bash
+# Bug-hunter can run this in the task
+
+echo "🔍 Verifying Gantt cascade fix..."
+./test/bug_hunter_test.sh
+
+if [ $? -eq 0 ]; then
+  echo "✅ Fix confirmed! Ready to deploy."
+else
+  echo "❌ Fix needs more work. Running diagnostics..."
+  # ... additional debugging
+fi
+```
+
+```
+🔍 BUG-HUNTER GANTT CASCADE VERIFICATION
+============================================================
+
+This script will verify:
+  ✅ Backend cascade logic is working
+  ✅ Frontend integration has no flicker
+  ✅ No infinite loops detected
+  ✅ Single batch updates working
+
+============================================================
+
+📋 TEST 1: Backend Cascade Logic
+✅ Task 2 cascaded correctly (11)
+✅ Task 3 cascaded correctly (11)
+✅ Backend cascade test PASSED
+
+📋 TEST 2: Frontend E2E Test (Playwright)
+🌐 API Calls: 1 total
+📦 Backend Cascade: ✅ Yes
+📦 Batch Update: ✅ Yes
+🔄 Gantt Reloads: 1
+✅ Frontend E2E test PASSED
+
+============================================================
+🎉 ALL TESTS PASSED!
+
+✅ Backend cascade logic: Working
+✅ Frontend integration: No flicker
+✅ No infinite loops detected
+✅ Single batch updates working
+============================================================
+```
+
+```bash
+cd frontend
+npm run dev
+```
+
+```js
+timeout: 120 * 1000, // 2 minutes
+```
+
+```bash
+   ./test/bug_hunter_test.sh
+   ```
+
+```yaml
+   - name: Test Gantt Cascade
+     run: ./test/bug_hunter_test.sh
+   ```
+
+```bash
+   cp frontend/.env.test frontend/.env.test.local
+   # Edit .env.test.local with your credentials
+   ```
+
+---
+
+
+# Chapter 1: Authentication & Users
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  1               │
+│ 📕 LEXICON (BUGS):    Chapter  1               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -501,12 +1025,465 @@ Affects: Task due dates (Ch 10), Workflow deadlines (Ch 17)
 
 ---
 
+## §1.10: Authentication & Contacts Quick Reference
 
-# Chapter 1: Authentication & Users
+🔧 Util | 🟢 Beginner
+
+### Quick Summary
+Quick reference guide for authentication flows, contact CRUD operations, and common API patterns
+
+### Recommendations
+Original file archived at: AUTH_AND_CONTACTS_QUICK_REFERENCE.md (12.1 KB)
+
+---
+
+
+# Chapter 1: Overview & System-Wide Rules
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter  1               │
 │ 📕 LEXICON (BUGS):    Chapter  1               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Code examples, implementation patterns, and step-by-step guides
+**Last Updated:** 2025-11-17
+
+---
+
+## §0.1: Lexicon Update Workflow - Database-Driven Documentation
+
+✨ Feature
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0 - Documentation Maintenance
+
+### Quick Summary
+Step-by-step workflow for updating Lexicon via database UI and exporting to markdown.
+
+### Step-by-Step Guide
+**Lexicon is database-driven** - Source of truth is `documentation_entries` table, NOT the .md file.
+
+**Update Workflow:**
+1. Go to Trapid app → Documentation page
+2. Click "📕 TRAPID Lexicon"
+3. Add/edit entries via UI (stores in documentation_entries table)
+4. Run: `bin/rails trapid:export_lexicon`
+5. Commit the updated TRAPID_LEXICON.md file
+
+**Export Command:**
+```bash
+cd backend
+bin/rails trapid:export_lexicon
+```
+
+**Git Workflow:**
+```bash
+git add TRAPID_DOCS/TRAPID_LEXICON.md
+git commit -m "docs: Update Lexicon from database export"
+```
+
+### Code Example
+```jsx
+# Example: Adding a bug entry via Rails console
+DocumentationEntry.create!(
+  chapter_number: 9,
+  chapter_name: 'Gantt & Schedule Master',
+  entry_type: 'bug',
+  title: 'Gantt Shaking During Cascade',
+  status: 'fixed',
+  severity: 'high',
+  first_reported: '2025-11-10',
+  fixed_date: '2025-11-11',
+  description: 'Visual shaking during dependency updates',
+  root_cause: 'isLoadingData not properly managing render locks',
+  solution: 'Added proper lock timing in cascade handler',
+  rule_reference: 'Chapter 9, RULE #9.2'
+)
+```
+
+---
+
+## §0.2: Database Schema Reference - documentation_entries Table
+
+🔧 Util
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0
+
+### Quick Summary
+Complete field reference for documentation_entries table structure.
+
+### Step-by-Step Guide
+**Database Schema Fields:**
+
+**Core Fields:**
+- `chapter_number` - Which chapter (0-20)
+- `chapter_name` - Chapter title
+- `entry_type` - Type: bug, architecture, test, performance, dev_note, common_issue, component, feature, util, hook, integration, optimization
+- `title` - Entry title
+
+**Lexicon-Specific (bugs):**
+- `status` - For bugs: open, fixed, by_design, monitoring
+- `severity` - For bugs: low, medium, high, critical
+- `first_reported` - Date discovered (YYYY-MM-DD)
+- `fixed_date` - Date resolved (YYYY-MM-DD)
+
+**Teacher-Specific:**
+- `section_number` - Format: X.Y or X.YA (e.g., 19.1, 19.11A)
+- `difficulty` - beginner, intermediate, advanced
+- `summary` - Quick summary/description
+- `code_example` - Full code blocks
+- `common_mistakes` - What to avoid
+- `testing_strategy` - How to test
+- `related_rules` - Link to Bible rules
+
+**Universal Content Fields:**
+- `description` - Brief summary
+- `scenario` - How it manifests
+- `root_cause` - Technical explanation
+- `solution` - How to fix/implement
+- `prevention` - How to avoid
+- `component` - Specific component name
+- `details` - Step-by-step guides
+- `examples` - Examples
+- `recommendations` - Best practices
+- `rule_reference` - Link to Bible RULE
+
+---
+
+## §0.3: API Endpoints Reference - Documentation System
+
+🔌 Integration
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0
+
+### Quick Summary
+REST API endpoints for managing documentation entries.
+
+### Step-by-Step Guide
+**Documentation Entries API:**
+
+`GET /api/v1/documentation_entries` - List entries
+  - Query params: chapter, type, status, severity, search, category (lexicon/teacher)
+  
+`POST /api/v1/documentation_entries` - Create entry
+  - Body: { documentation_entry: { chapter_number, title, entry_type, ... } }
+  
+`GET /api/v1/documentation_entries/:id` - Get single entry
+
+`PUT /api/v1/documentation_entries/:id` - Update entry
+  - Body: { documentation_entry: { ... } }
+
+`DELETE /api/v1/documentation_entries/:id` - Delete entry
+
+`GET /api/v1/documentation_entries/stats` - Get statistics
+
+`POST /api/v1/documentation_entries/export_lexicon` - Export Lexicon to markdown
+
+`POST /api/v1/documentation_entries/export_teacher` - Export Teacher to markdown
+
+**Legacy Routes (backwards compatible):**
+`/api/v1/documented_bugs/*` - Maps to documentation_entries controller
+
+### Code Example
+```jsx
+// Example: Creating a documentation entry via API
+const response = await api.post('/api/v1/documentation_entries', {
+  documentation_entry: {
+    chapter_number: 19,
+    chapter_name: 'UI/UX Standards & Patterns',
+    entry_type: 'component',
+    section_number: '19.1',
+    title: 'Table Component Selection Pattern',
+    summary: 'Decision tree for choosing table type',
+    related_rules: 'TRAPID_BIBLE.md RULE #19.1'
+  }
+})
+
+// Example: Exporting Lexicon
+await api.post('/api/v1/documentation_entries/export_lexicon')
+```
+
+---
+
+## §0.4: Component Creation Enforcement Pattern
+
+🧩 Component
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0.1
+
+### Quick Summary
+Automated workflow Claude Code must follow before creating any new component.
+
+### Step-by-Step Guide
+**Enforcement Workflow:**
+
+**Step 1: Identify Component Type**
+Check filename pattern:
+- `*Table*.jsx` → Chapter 19 (UI/UX)
+- `*Modal*.jsx` → Chapter 19 (UI/UX)
+- `*Form*.jsx` → Chapter 19 (UI/UX)
+- `*Gantt*.jsx` → Chapter 9 (Gantt) + Chapter 19 (UI/UX)
+- `*Auth*.jsx` → Chapter 1 (Authentication)
+- `*Contact*.jsx` → Chapter 3 (Contacts)
+- See RULE #0.1 for full mapping table
+
+**Step 2: Read Required Chapters**
+Use Read tool to load:
+```
+Read: /Users/rob/Projects/trapid/TRAPID_DOCS/TRAPID_BIBLE.md
+  - offset: [chapter start]
+  - limit: [chapter length]
+```
+
+**Step 3: Follow ALL Rules**
+Parse chapter for:
+- MUST directives
+- NEVER directives
+- ALWAYS directives
+- User confirmation requirements
+
+**Step 4: Ask User When Required**
+Some rules require asking (e.g., RULE #19.1 table type)
+
+**Step 5: Create Component**
+Now write the file following all discovered rules
+
+### Code Example
+```jsx
+// Example: Creating LexiconTableView.jsx (CORRECT workflow)
+
+// 1. User requests: "Create a table view for Lexicon"
+// 2. Claude recognizes: filename contains "Table" → need Chapter 19
+// 3. Claude reads: TRAPID_BIBLE.md Chapter 19
+// 4. Claude sees: RULE #19.1 requires asking user for table type
+// 5. Claude asks: "Should I use:
+  1. DataTable.jsx (read-only)
+  2. Full advanced table?"
+// 6. User responds: "2"
+// 7. Claude creates: LexiconTableView.jsx with ALL Chapter 19 features
+
+// Component mapping reference:
+const COMPONENT_CHAPTER_MAP = {
+  table: [19],
+  modal: [19],
+  form: [19],
+  gantt: [9, 19],
+  auth: [1],
+  contact: [3],
+  pricebook: [4],
+  job: [5],
+  estimate: [6],
+  po: [8],
+  xero: [15]
+}
+```
+
+### ⚠️ Common Mistakes
+**Common Mistakes:**
+
+❌ Creating component immediately without reading Bible
+❌ Skipping user confirmation when rules require it
+❌ Reading only part of the chapter
+❌ Ignoring NEVER rules because they seem optional
+❌ Assuming best practices override Bible rules
+
+**Consequences:**
+- Non-compliant component
+- Requires refactoring
+- Wastes time and tokens
+- Violates RULE #0.1
+
+---
+
+## §0.5: Bug Fix Documentation Workflow
+
+✨ Feature
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #0 - Bug Fix Documentation
+
+### Quick Summary
+Complete workflow for documenting every bug fix in the Lexicon.
+
+### Step-by-Step Guide
+**🔴 CRITICAL: Every bug fix MUST be documented**
+
+**Complete Workflow:**
+
+**1. Fix the Bug**
+- Write the code fix
+- Test locally
+- Verify fix works
+
+**2. Update Lexicon via UI**
+Navigate to Trapid app:
+- Go to Documentation page
+- Click "📕 TRAPID Lexicon"
+- Click "Add Entry"
+- Fill in all fields (see field guide below)
+- Save
+
+**3. Export Lexicon**
+```bash
+cd backend
+bin/rails trapid:export_lexicon
+```
+
+**4. Update Bible (if needed)**
+Add new RULE if bug revealed:
+- Protected code pattern
+- Configuration requirement
+- Critical validation
+
+**5. Commit Everything**
+```bash
+git add [code files] TRAPID_DOCS/TRAPID_LEXICON.md
+git commit -m "fix: [bug description]
+
+- Fixed [issue]
+- Added Lexicon entry
+- See TRAPID_LEXICON.md Chapter X"
+```
+
+### Code Example
+```jsx
+# Example Lexicon Entry Fields (via UI)
+
+**Required:**
+chapter_number: 9
+chapter_name: "Gantt & Schedule Master"
+entry_type: "bug"
+title: "Gantt Shaking During Cascade"
+
+**Bug-Specific:**
+status: "fixed"
+severity: "high"
+first_reported: "2025-11-10"
+fixed_date: "2025-11-11"
+
+**Content:**
+description: "Visual shaking observed during dependency updates in Gantt chart"
+
+scenario: "When dragging a task with dependencies, the chart would visibly shake/flicker"
+
+root_cause: "isLoadingData lock not properly set during cascade operations, causing re-renders mid-update"
+
+solution: "Added proper isLoadingData.current = true at start of cascade, set to false after 300ms timeout to allow DOM to settle"
+
+prevention: "Always use isLoadingData lock for any batch Gantt updates. See RULE #9.2 for timing requirements"
+
+component: "DHtmlxGanttView.jsx"
+
+rule_reference: "Chapter 9, RULE #9.2"
+
+# After saving, export:
+# bin/rails trapid:export_lexicon
+```
+
+### 🧪 Testing Strategy
+**Testing the Documentation:**
+
+1. Verify entry appears in UI
+2. Check export generates correct markdown
+3. Confirm cross-references link properly
+4. Test search finds the entry
+5. Validate all fields populated
+
+---
+
+## §0.6: Chapter Relationship Map - Feature Dependencies
+
+🔧 Util
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md Chapter 0 - Chapter Relationship Map
+
+### Quick Summary
+Understanding how chapters relate and depend on each other for complete context.
+
+### Step-by-Step Guide
+**Feature Dependencies Overview:**
+
+**Core Infrastructure (Used by ALL):**
+- Chapter 1: Authentication & Users
+- Chapter 2: System Administration (timezone, company settings)
+
+**Data & Content Management:**
+- Chapter 3: Contacts → Used by Ch 4 (suppliers), Ch 5 (clients), Ch 6 (quotes), Ch 8 (POs), Ch 14 (chat), Ch 15 (Xero)
+- Chapter 4: Price Books → Used by Ch 6 (estimate pricing), Ch 8 (PO pricing), Ch 17 (automation)
+- Chapter 18: Custom Tables → Standalone
+
+**Project Execution Flow:**
+1. Ch 6: Estimates & Quoting
+2. Ch 5: Jobs & Construction (central)
+3. Ch 8: Purchase Orders (from estimates)
+4. Ch 9: Gantt (visual timeline)
+5. Ch 10: Project Tasks
+6. Ch 11: Weather (affects schedule)
+
+**AI & Automation:**
+- Ch 7: AI Plan Review → Uses Ch 12 (OneDrive)
+- Ch 17: Workflows → Orchestrates Ch 4, Ch 12
+
+**Integrations:**
+- Ch 12: OneDrive → Used by Ch 5, Ch 7, Ch 17
+- Ch 13: Outlook → Links to Ch 5
+- Ch 14: Chat → For Ch 5, Ch 10
+- Ch 15: Xero → Syncs Ch 3, links Ch 8
+- Ch 16: Payments → Tracks Ch 8, reconciles Ch 15
+
+**UI/UX:**
+- Ch 19: UI/UX Standards → Applies to ALL frontend
+
+### Examples
+**Example 1: Creating a Job (Chapter 5)**
+Requires:
+- User (Ch 1)
+- Client contact (Ch 3)
+- Company timezone (Ch 2)
+
+May trigger:
+- OneDrive folders (Ch 12)
+- Gantt entry (Ch 9)
+- Tasks (Ch 10)
+- Chat channel (Ch 14)
+
+**Example 2: Generating Purchase Orders (Chapter 8)**
+Source: Estimate (Ch 6)
+Uses: Supplier contacts (Ch 3), Pricebook items (Ch 4)
+May create: Workflow approval (Ch 17), Xero bill (Ch 15), Payment tracking (Ch 16)
+
+**Example 3: Gantt Scheduling (Chapter 9)**
+Requires: Job (Ch 5), Tasks (Ch 10), Weather (Ch 11), Timezone (Ch 2)
+Affects: Task due dates (Ch 10), Workflow deadlines (Ch 17)
+
+### Recommendations
+**When Working on a Feature:**
+
+1. Identify primary chapter
+2. Check this map for dependencies
+3. Read ALL related chapters
+4. Consider cross-chapter impacts
+5. Test integration points
+
+---
+
+## §1.10: Authentication & Contacts Quick Reference
+
+🔧 Util | 🟢 Beginner
+
+### Quick Summary
+Quick reference guide for authentication flows, contact CRUD operations, and common API patterns
+
+### Recommendations
+Original file archived at: AUTH_AND_CONTACTS_QUICK_REFERENCE.md (12.1 KB)
+
+---
+
+
+# Chapter 2: Authentication & Users
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  2               │
+│ 📕 LEXICON (BUGS):    Chapter  2               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -801,11 +1778,11 @@ end
 ---
 
 
-# Chapter 2: System Administration
+# Chapter 3: Contacts & Relationships
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  2               │
-│ 📕 LEXICON (BUGS):    Chapter  2               │
+│ 📖 BIBLE (RULES):     Chapter  3               │
+│ 📕 LEXICON (BUGS):    Chapter  3               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -1221,12 +2198,3203 @@ const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
 
 ---
 
+## §3.15: Contact Detail Page - Complete Integration Guide
 
-# Chapter 3: Contacts & Relationships
+✨ Feature | 🟡 Intermediate
+
+### Quick Summary
+Step-by-step guide for integrating contact persons, addresses, and Xero fields into ContactDetailPage
+
+### Step-by-Step Guide
+# ContactDetailPage.jsx Integration Guide
+
+## Step-by-Step Implementation
+
+### 1. Add Imports (at the top of the file)
+
+Add these imports after the existing import statements:
+
+```javascript
+import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
+import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
+```
+
+### 2. Add State Variables
+
+Find the existing `useState` declarations (around line 60-70) and add:
+
+```javascript
+const [contactPersons, setContactPersons] = useState([])
+const [contactAddresses, setContactAddresses] = useState([])
+const [contactGroups, setContactGroups] = useState([])
+```
+
+### 3. Update loadContact() Function
+
+Find the `loadContact` function and after setting the contact data, add:
+
+```javascript
+const loadContact = async () => {
+  try {
+    const response = await api.get(`/api/v1/contacts/${id}`)
+    if (response.success) {
+      const contactData = response.contact
+      setContact(contactData)
+
+      // ADD THESE LINES:
+      setContactPersons(contactData.contact_persons || [])
+      setContactAddresses(contactData.contact_addresses || [])
+      setContactGroups(contactData.contact_groups || [])
+
+      // ... rest of existing code
+    }
+  } catch (error) {
+    console.error('Failed to load contact:', error)
+  } finally {
+    setLoading(false)
+  }
+}
+```
+
+### 4. Add Handler Functions
+
+Add these two new handler functions (after the existing handler functions):
+
+```javascript
+const handleContactPersonsUpdate = async (updatedPersons) => {
+  try {
+    // Build nested attributes payload
+    const contact_persons_attributes = updatedPersons.map(person => {
+      if (person.id) {
+        // Existing person
+        return {
+          id: person.id,
+          first_name: person.first_name,
+          last_name: person.last_name,
+          email: person.email,
+          include_in_emails: person.include_in_emails,
+          is_primary: person.is_primary
+        }
+      } else {
+        // New person
+        return {
+          first_name: person.first_name,
+          last_name: person.last_name,
+          email: person.email,
+          include_in_emails: person.include_in_emails,
+          is_primary: person.is_primary
+        }
+      }
+    })
+
+    const response = await api.patch(`/api/v1/contacts/${id}`, {
+      contact: { contact_persons_attributes }
+    })
+
+    if (response.success) {
+      await loadContact() // Reload to get updated data with IDs
+    }
+  } catch (error) {
+    console.error('Failed to update contact persons:', error)
+    alert('Failed to update contact persons')
+  }
+}
+
+const handleContactAddressesUpdate = async (updatedAddresses) => {
+  try {
+    // Build nested attributes payload
+    const contact_addresses_attributes = updatedAddresses.map(address => {
+      if (address.id) {
+        // Existing address
+        return {
+          id: address.id,
+          address_type: address.address_type,
+          line1: address.line1,
+          line2: address.line2,
+          line3: address.line3,
+          line4: address.line4,
+          city: address.city,
+          region: address.region,
+          postal_code: address.postal_code,
+          country: address.country,
+          attention_to: address.attention_to,
+          is_primary: address.is_primary
+        }
+      } else {
+        // New address
+        return {
+          address_type: address.address_type,
+          line1: address.line1,
+          line2: address.line2,
+          line3: address.line3,
+          line4: address.line4,
+          city: address.city,
+          region: address.region,
+          postal_code: address.postal_code,
+          country: address.country,
+          attention_to: address.attention_to,
+          is_primary: address.is_primary
+        }
+      }
+    })
+
+    const response = await api.patch(`/api/v1/contacts/${id}`, {
+      contact: { contact_addresses_attributes }
+    })
+
+    if (response.success) {
+      await loadContact() // Reload to get updated data with IDs
+    }
+  } catch (error) {
+    console.error('Failed to update contact addresses:', error)
+    alert('Failed to update contact addresses')
+  }
+}
+```
+
+### 5. Insert New Sections in JSX
+
+Find the "Contact Information" section (search for "Contact Information") and AFTER it ends (after its closing `</div>`), insert:
+
+```jsx
+{/* Contact Persons Section */}
+<ContactPersonsSection
+  contactPersons={contactPersons}
+  onUpdate={handleContactPersonsUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+
+{/* Addresses Section */}
+<ContactAddressesSection
+  contactAddresses={contactAddresses}
+  onUpdate={handleContactAddressesUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+```
+
+### 6. Add New Xero Fields to Existing Sections
+
+#### In Contact Information Section (find the office_phone field and add after it):
+
+```jsx
+{/* Fax Phone with inline editing */}
+<div className="flex items-start gap-3">
+  <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Fax Phone</p>
+    {editingXeroFields['fax_phone'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="tel"
+          value={xeroFieldValues['fax_phone'] || ''}
+          onChange={(e) => handleXeroFieldChange('fax_phone', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('fax_phone')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('fax_phone')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        {contact.fax_phone ? (
+          <a href={`tel:${contact.fax_phone}`} className="text-gray-900 dark:text-white flex-1">
+            {contact.fax_phone}
+          </a>
+        ) : (
+          <p className="text-gray-900 dark:text-white flex-1">-</p>
+        )}
+        {isPageEditMode && (
+          <button onClick={() => startEditingXeroField('fax_phone')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Company Number with inline editing */}
+<div className="flex items-start gap-3">
+  <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company Number</p>
+    {editingXeroFields['company_number'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={xeroFieldValues['company_number'] || ''}
+          onChange={(e) => handleXeroFieldChange('company_number', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('company_number')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('company_number')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.company_number || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('company_number')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+```
+
+Note: You'll need to add `BuildingOfficeIcon` to the imports if not already there.
+
+#### In Purchase & Payment Settings Section (add at the end before closing `</div>`):
+
+```jsx
+{/* Sales Payment Terms */}
+<div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sales Due Day</p>
+    {editingXeroFields['sales_due_day'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          value={xeroFieldValues['sales_due_day'] || ''}
+          onChange={(e) => handleXeroFieldChange('sales_due_day', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('sales_due_day')} className="text-green-600">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('sales_due_day')} className="text-gray-600">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.sales_due_day || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('sales_due_day')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sales Due Type</p>
+    {editingXeroFields['sales_due_type'] ? (
+      <div className="flex items-center gap-2">
+        <select
+          value={xeroFieldValues['sales_due_type'] || ''}
+          onChange={(e) => handleXeroFieldChange('sales_due_type', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        >
+          <option value="">Select type</option>
+          <option value="DAYSAFTERBILLDATE">Days After Bill Date</option>
+          <option value="DAYSAFTERBILLMONTH">Days After Bill Month</option>
+          <option value="OFCURRENTMONTH">Of Current Month</option>
+          <option value="OFFOLLOWINGMONTH">Of Following Month</option>
+        </select>
+        <button onClick={() => saveXeroField('sales_due_type')} className="text-green-600">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('sales_due_type')} className="text-gray-600">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.sales_due_type || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('sales_due_type')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Default Sales Account */}
+<div className="pt-4">
+  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Default Sales Account</p>
+  {editingXeroFields['default_sales_account'] ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        value={xeroFieldValues['default_sales_account'] || ''}
+        onChange={(e) => handleXeroFieldChange('default_sales_account', e.target.value)}
+        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        autoFocus
+      />
+      <button onClick={() => saveXeroField('default_sales_account')} className="text-green-600">
+        <CheckCircleIcon className="h-5 w-5" />
+      </button>
+      <button onClick={() => cancelEditingXeroField('default_sales_account')} className="text-gray-600">
+        <XCircleIcon className="h-5 w-5" />
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 group">
+      <p className="text-gray-900 dark:text-white flex-1">{contact.default_sales_account || '-'}</p>
+      {isPageEditMode && contact.sync_with_xero && (
+        <button onClick={() => startEditingXeroField('default_sales_account')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
+{/* Default Discount */}
+<div className="pt-4">
+  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Default Discount (%)</p>
+  {editingXeroFields['default_discount'] ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="number"
+        step="0.01"
+        value={xeroFieldValues['default_discount'] || ''}
+        onChange={(e) => handleXeroFieldChange('default_discount', e.target.value)}
+        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        autoFocus
+      />
+      <button onClick={() => saveXeroField('default_discount')} className="text-green-600">
+        <CheckCircleIcon className="h-5 w-5" />
+      </button>
+      <button onClick={() => cancelEditingXeroField('default_discount')} className="text-gray-600">
+        <XCircleIcon className="h-5 w-5" />
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 group">
+      <p className="text-gray-900 dark:text-white flex-1">
+        {contact.default_discount ? `${contact.default_discount}%` : '-'}
+      </p>
+      {isPageEditMode && contact.sync_with_xero && (
+        <button onClick={() => startEditingXeroField('default_discount')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )}
+</div>
+```
+
+### 7. Add New Read-Only Sections
+
+Add these sections anywhere after the Bank Account Details section:
+
+```jsx
+{/* Account Balances (Read-only from Xero) */}
+{contact.sync_with_xero && (contact.accounts_receivable_outstanding || contact.accounts_payable_outstanding) && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Account Balances</h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="From Xero (Read-only)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only from Xero)</span>
+    </div>
+    <div className="grid grid-cols-2 gap-6">
+      {(contact.accounts_receivable_outstanding || contact.accounts_receivable_overdue) && (
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Accounts Receivable</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Outstanding: <span className="font-medium text-gray-900 dark:text-white">
+                ${Number(contact.accounts_receivable_outstanding || 0).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Overdue: <span className="font-medium text-red-600 dark:text-red-400">
+                ${Number(contact.accounts_receivable_overdue || 0).toFixed(2)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+      {(contact.accounts_payable_outstanding || contact.accounts_payable_overdue) && (
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Accounts Payable</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Outstanding: <span className="font-medium text-gray-900 dark:text-white">
+                ${Number(contact.accounts_payable_outstanding || 0).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Overdue: <span className="font-medium text-red-600 dark:text-red-400">
+                ${Number(contact.accounts_payable_overdue || 0).toFixed(2)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+{/* Xero Contact Groups (Read-only) */}
+{contact.sync_with_xero && contactGroups && contactGroups.length > 0 && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Xero Contact Groups</h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="From Xero (Read-only)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only from Xero)</span>
+    </div>
+    <div className="flex flex-wrap gap-2">
+      {contactGroups.map(group => (
+        <span
+          key={group.id}
+          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200"
+        >
+          {group.name}
+          {group.status === 'DELETED' && (
+            <span className="ml-1 text-xs">(Deleted)</span>
+          )}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
+```
+
+## Summary
+
+After making these changes, your ContactDetailPage will:
+
+1. ✅ Display and edit contact persons (CRUD)
+2. ✅ Display and edit addresses (CRUD)
+3. ✅ Display contact groups (read-only)
+4. ✅ Display account balances (read-only)
+5. ✅ Edit all new Xero fields inline
+6. ✅ Show sync status for all Xero data
+7. ✅ Respect edit/lock mode for all sections
+
+The components handle all the complexity of adding/editing/deleting nested records, and the handler functions properly format the data for the Rails nested attributes API.
+
+
+### Code Example
+```jsx
+```javascript
+import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
+import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
+```
+
+```javascript
+const [contactPersons, setContactPersons] = useState([])
+const [contactAddresses, setContactAddresses] = useState([])
+const [contactGroups, setContactGroups] = useState([])
+```
+
+```javascript
+const loadContact = async () => {
+  try {
+    const response = await api.get(`/api/v1/contacts/${id}`)
+    if (response.success) {
+      const contactData = response.contact
+      setContact(contactData)
+
+      // ADD THESE LINES:
+      setContactPersons(contactData.contact_persons || [])
+      setContactAddresses(contactData.contact_addresses || [])
+      setContactGroups(contactData.contact_groups || [])
+
+      // ... rest of existing code
+    }
+  } catch (error) {
+    console.error('Failed to load contact:', error)
+  } finally {
+    setLoading(false)
+  }
+}
+```
+
+```javascript
+const handleContactPersonsUpdate = async (updatedPersons) => {
+  try {
+    // Build nested attributes payload
+    const contact_persons_attributes = updatedPersons.map(person => {
+      if (person.id) {
+        // Existing person
+        return {
+          id: person.id,
+          first_name: person.first_name,
+          last_name: person.last_name,
+          email: person.email,
+          include_in_emails: person.include_in_emails,
+          is_primary: person.is_primary
+        }
+      } else {
+        // New person
+        return {
+          first_name: person.first_name,
+          last_name: person.last_name,
+          email: person.email,
+          include_in_emails: person.include_in_emails,
+          is_primary: person.is_primary
+        }
+      }
+    })
+
+    const response = await api.patch(`/api/v1/contacts/${id}`, {
+      contact: { contact_persons_attributes }
+    })
+
+    if (response.success) {
+      await loadContact() // Reload to get updated data with IDs
+    }
+  } catch (error) {
+    console.error('Failed to update contact persons:', error)
+    alert('Failed to update contact persons')
+  }
+}
+
+const handleContactAddressesUpdate = async (updatedAddresses) => {
+  try {
+    // Build nested attributes payload
+    const contact_addresses_attributes = updatedAddresses.map(address => {
+      if (address.id) {
+        // Existing address
+        return {
+          id: address.id,
+          address_type: address.address_type,
+          line1: address.line1,
+          line2: address.line2,
+          line3: address.line3,
+          line4: address.line4,
+          city: address.city,
+          region: address.region,
+          postal_code: address.postal_code,
+          country: address.country,
+          attention_to: address.attention_to,
+          is_primary: address.is_primary
+        }
+      } else {
+        // New address
+        return {
+          address_type: address.address_type,
+          line1: address.line1,
+          line2: address.line2,
+          line3: address.line3,
+          line4: address.line4,
+          city: address.city,
+          region: address.region,
+          postal_code: address.postal_code,
+          country: address.country,
+          attention_to: address.attention_to,
+          is_primary: address.is_primary
+        }
+      }
+    })
+
+    const response = await api.patch(`/api/v1/contacts/${id}`, {
+      contact: { contact_addresses_attributes }
+    })
+
+    if (response.success) {
+      await loadContact() // Reload to get updated data with IDs
+    }
+  } catch (error) {
+    console.error('Failed to update contact addresses:', error)
+    alert('Failed to update contact addresses')
+  }
+}
+```
+
+```jsx
+{/* Contact Persons Section */}
+<ContactPersonsSection
+  contactPersons={contactPersons}
+  onUpdate={handleContactPersonsUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+
+{/* Addresses Section */}
+<ContactAddressesSection
+  contactAddresses={contactAddresses}
+  onUpdate={handleContactAddressesUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+```
+
+```jsx
+{/* Fax Phone with inline editing */}
+<div className="flex items-start gap-3">
+  <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Fax Phone</p>
+    {editingXeroFields['fax_phone'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="tel"
+          value={xeroFieldValues['fax_phone'] || ''}
+          onChange={(e) => handleXeroFieldChange('fax_phone', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('fax_phone')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('fax_phone')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        {contact.fax_phone ? (
+          <a href={`tel:${contact.fax_phone}`} className="text-gray-900 dark:text-white flex-1">
+            {contact.fax_phone}
+          </a>
+        ) : (
+          <p className="text-gray-900 dark:text-white flex-1">-</p>
+        )}
+        {isPageEditMode && (
+          <button onClick={() => startEditingXeroField('fax_phone')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Company Number with inline editing */}
+<div className="flex items-start gap-3">
+  <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company Number</p>
+    {editingXeroFields['company_number'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={xeroFieldValues['company_number'] || ''}
+          onChange={(e) => handleXeroFieldChange('company_number', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('company_number')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('company_number')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.company_number || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('company_number')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+```
+
+```jsx
+{/* Sales Payment Terms */}
+<div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sales Due Day</p>
+    {editingXeroFields['sales_due_day'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          value={xeroFieldValues['sales_due_day'] || ''}
+          onChange={(e) => handleXeroFieldChange('sales_due_day', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('sales_due_day')} className="text-green-600">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('sales_due_day')} className="text-gray-600">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.sales_due_day || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('sales_due_day')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sales Due Type</p>
+    {editingXeroFields['sales_due_type'] ? (
+      <div className="flex items-center gap-2">
+        <select
+          value={xeroFieldValues['sales_due_type'] || ''}
+          onChange={(e) => handleXeroFieldChange('sales_due_type', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        >
+          <option value="">Select type</option>
+          <option value="DAYSAFTERBILLDATE">Days After Bill Date</option>
+          <option value="DAYSAFTERBILLMONTH">Days After Bill Month</option>
+          <option value="OFCURRENTMONTH">Of Current Month</option>
+          <option value="OFFOLLOWINGMONTH">Of Following Month</option>
+        </select>
+        <button onClick={() => saveXeroField('sales_due_type')} className="text-green-600">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('sales_due_type')} className="text-gray-600">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.sales_due_type || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('sales_due_type')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Default Sales Account */}
+<div className="pt-4">
+  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Default Sales Account</p>
+  {editingXeroFields['default_sales_account'] ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        value={xeroFieldValues['default_sales_account'] || ''}
+        onChange={(e) => handleXeroFieldChange('default_sales_account', e.target.value)}
+        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        autoFocus
+      />
+      <button onClick={() => saveXeroField('default_sales_account')} className="text-green-600">
+        <CheckCircleIcon className="h-5 w-5" />
+      </button>
+      <button onClick={() => cancelEditingXeroField('default_sales_account')} className="text-gray-600">
+        <XCircleIcon className="h-5 w-5" />
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 group">
+      <p className="text-gray-900 dark:text-white flex-1">{contact.default_sales_account || '-'}</p>
+      {isPageEditMode && contact.sync_with_xero && (
+        <button onClick={() => startEditingXeroField('default_sales_account')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
+{/* Default Discount */}
+<div className="pt-4">
+  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Default Discount (%)</p>
+  {editingXeroFields['default_discount'] ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="number"
+        step="0.01"
+        value={xeroFieldValues['default_discount'] || ''}
+        onChange={(e) => handleXeroFieldChange('default_discount', e.target.value)}
+        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        autoFocus
+      />
+      <button onClick={() => saveXeroField('default_discount')} className="text-green-600">
+        <CheckCircleIcon className="h-5 w-5" />
+      </button>
+      <button onClick={() => cancelEditingXeroField('default_discount')} className="text-gray-600">
+        <XCircleIcon className="h-5 w-5" />
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 group">
+      <p className="text-gray-900 dark:text-white flex-1">
+        {contact.default_discount ? `${contact.default_discount}%` : '-'}
+      </p>
+      {isPageEditMode && contact.sync_with_xero && (
+        <button onClick={() => startEditingXeroField('default_discount')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )}
+</div>
+```
+
+```jsx
+{/* Account Balances (Read-only from Xero) */}
+{contact.sync_with_xero && (contact.accounts_receivable_outstanding || contact.accounts_payable_outstanding) && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Account Balances</h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="From Xero (Read-only)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only from Xero)</span>
+    </div>
+    <div className="grid grid-cols-2 gap-6">
+      {(contact.accounts_receivable_outstanding || contact.accounts_receivable_overdue) && (
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Accounts Receivable</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Outstanding: <span className="font-medium text-gray-900 dark:text-white">
+                ${Number(contact.accounts_receivable_outstanding || 0).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Overdue: <span className="font-medium text-red-600 dark:text-red-400">
+                ${Number(contact.accounts_receivable_overdue || 0).toFixed(2)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+      {(contact.accounts_payable_outstanding || contact.accounts_payable_overdue) && (
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Accounts Payable</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Outstanding: <span className="font-medium text-gray-900 dark:text-white">
+                ${Number(contact.accounts_payable_outstanding || 0).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Overdue: <span className="font-medium text-red-600 dark:text-red-400">
+                ${Number(contact.accounts_payable_overdue || 0).toFixed(2)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+{/* Xero Contact Groups (Read-only) */}
+{contact.sync_with_xero && contactGroups && contactGroups.length > 0 && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Xero Contact Groups</h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="From Xero (Read-only)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only from Xero)</span>
+    </div>
+    <div className="flex flex-wrap gap-2">
+      {contactGroups.map(group => (
+        <span
+          key={group.id}
+          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200"
+        >
+          {group.name}
+          {group.status === 'DELETED' && (
+            <span className="ml-1 text-xs">(Deleted)</span>
+          )}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
+```
+```
+
+### Examples
+```javascript
+import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
+import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
+```
+
+```javascript
+const [contactPersons, setContactPersons] = useState([])
+const [contactAddresses, setContactAddresses] = useState([])
+const [contactGroups, setContactGroups] = useState([])
+```
+
+```javascript
+const loadContact = async () => {
+  try {
+    const response = await api.get(`/api/v1/contacts/${id}`)
+    if (response.success) {
+      const contactData = response.contact
+      setContact(contactData)
+
+      // ADD THESE LINES:
+      setContactPersons(contactData.contact_persons || [])
+      setContactAddresses(contactData.contact_addresses || [])
+      setContactGroups(contactData.contact_groups || [])
+
+      // ... rest of existing code
+    }
+  } catch (error) {
+    console.error('Failed to load contact:', error)
+  } finally {
+    setLoading(false)
+  }
+}
+```
+
+```javascript
+const handleContactPersonsUpdate = async (updatedPersons) => {
+  try {
+    // Build nested attributes payload
+    const contact_persons_attributes = updatedPersons.map(person => {
+      if (person.id) {
+        // Existing person
+        return {
+          id: person.id,
+          first_name: person.first_name,
+          last_name: person.last_name,
+          email: person.email,
+          include_in_emails: person.include_in_emails,
+          is_primary: person.is_primary
+        }
+      } else {
+        // New person
+        return {
+          first_name: person.first_name,
+          last_name: person.last_name,
+          email: person.email,
+          include_in_emails: person.include_in_emails,
+          is_primary: person.is_primary
+        }
+      }
+    })
+
+    const response = await api.patch(`/api/v1/contacts/${id}`, {
+      contact: { contact_persons_attributes }
+    })
+
+    if (response.success) {
+      await loadContact() // Reload to get updated data with IDs
+    }
+  } catch (error) {
+    console.error('Failed to update contact persons:', error)
+    alert('Failed to update contact persons')
+  }
+}
+
+const handleContactAddressesUpdate = async (updatedAddresses) => {
+  try {
+    // Build nested attributes payload
+    const contact_addresses_attributes = updatedAddresses.map(address => {
+      if (address.id) {
+        // Existing address
+        return {
+          id: address.id,
+          address_type: address.address_type,
+          line1: address.line1,
+          line2: address.line2,
+          line3: address.line3,
+          line4: address.line4,
+          city: address.city,
+          region: address.region,
+          postal_code: address.postal_code,
+          country: address.country,
+          attention_to: address.attention_to,
+          is_primary: address.is_primary
+        }
+      } else {
+        // New address
+        return {
+          address_type: address.address_type,
+          line1: address.line1,
+          line2: address.line2,
+          line3: address.line3,
+          line4: address.line4,
+          city: address.city,
+          region: address.region,
+          postal_code: address.postal_code,
+          country: address.country,
+          attention_to: address.attention_to,
+          is_primary: address.is_primary
+        }
+      }
+    })
+
+    const response = await api.patch(`/api/v1/contacts/${id}`, {
+      contact: { contact_addresses_attributes }
+    })
+
+    if (response.success) {
+      await loadContact() // Reload to get updated data with IDs
+    }
+  } catch (error) {
+    console.error('Failed to update contact addresses:', error)
+    alert('Failed to update contact addresses')
+  }
+}
+```
+
+```jsx
+{/* Contact Persons Section */}
+<ContactPersonsSection
+  contactPersons={contactPersons}
+  onUpdate={handleContactPersonsUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+
+{/* Addresses Section */}
+<ContactAddressesSection
+  contactAddresses={contactAddresses}
+  onUpdate={handleContactAddressesUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+```
+
+```jsx
+{/* Fax Phone with inline editing */}
+<div className="flex items-start gap-3">
+  <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Fax Phone</p>
+    {editingXeroFields['fax_phone'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="tel"
+          value={xeroFieldValues['fax_phone'] || ''}
+          onChange={(e) => handleXeroFieldChange('fax_phone', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('fax_phone')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('fax_phone')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        {contact.fax_phone ? (
+          <a href={`tel:${contact.fax_phone}`} className="text-gray-900 dark:text-white flex-1">
+            {contact.fax_phone}
+          </a>
+        ) : (
+          <p className="text-gray-900 dark:text-white flex-1">-</p>
+        )}
+        {isPageEditMode && (
+          <button onClick={() => startEditingXeroField('fax_phone')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Company Number with inline editing */}
+<div className="flex items-start gap-3">
+  <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company Number</p>
+    {editingXeroFields['company_number'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={xeroFieldValues['company_number'] || ''}
+          onChange={(e) => handleXeroFieldChange('company_number', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('company_number')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('company_number')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.company_number || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('company_number')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+```
+
+```jsx
+{/* Sales Payment Terms */}
+<div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sales Due Day</p>
+    {editingXeroFields['sales_due_day'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          value={xeroFieldValues['sales_due_day'] || ''}
+          onChange={(e) => handleXeroFieldChange('sales_due_day', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('sales_due_day')} className="text-green-600">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('sales_due_day')} className="text-gray-600">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.sales_due_day || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('sales_due_day')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sales Due Type</p>
+    {editingXeroFields['sales_due_type'] ? (
+      <div className="flex items-center gap-2">
+        <select
+          value={xeroFieldValues['sales_due_type'] || ''}
+          onChange={(e) => handleXeroFieldChange('sales_due_type', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        >
+          <option value="">Select type</option>
+          <option value="DAYSAFTERBILLDATE">Days After Bill Date</option>
+          <option value="DAYSAFTERBILLMONTH">Days After Bill Month</option>
+          <option value="OFCURRENTMONTH">Of Current Month</option>
+          <option value="OFFOLLOWINGMONTH">Of Following Month</option>
+        </select>
+        <button onClick={() => saveXeroField('sales_due_type')} className="text-green-600">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('sales_due_type')} className="text-gray-600">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.sales_due_type || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('sales_due_type')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Default Sales Account */}
+<div className="pt-4">
+  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Default Sales Account</p>
+  {editingXeroFields['default_sales_account'] ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        value={xeroFieldValues['default_sales_account'] || ''}
+        onChange={(e) => handleXeroFieldChange('default_sales_account', e.target.value)}
+        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        autoFocus
+      />
+      <button onClick={() => saveXeroField('default_sales_account')} className="text-green-600">
+        <CheckCircleIcon className="h-5 w-5" />
+      </button>
+      <button onClick={() => cancelEditingXeroField('default_sales_account')} className="text-gray-600">
+        <XCircleIcon className="h-5 w-5" />
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 group">
+      <p className="text-gray-900 dark:text-white flex-1">{contact.default_sales_account || '-'}</p>
+      {isPageEditMode && contact.sync_with_xero && (
+        <button onClick={() => startEditingXeroField('default_sales_account')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
+{/* Default Discount */}
+<div className="pt-4">
+  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Default Discount (%)</p>
+  {editingXeroFields['default_discount'] ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="number"
+        step="0.01"
+        value={xeroFieldValues['default_discount'] || ''}
+        onChange={(e) => handleXeroFieldChange('default_discount', e.target.value)}
+        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        autoFocus
+      />
+      <button onClick={() => saveXeroField('default_discount')} className="text-green-600">
+        <CheckCircleIcon className="h-5 w-5" />
+      </button>
+      <button onClick={() => cancelEditingXeroField('default_discount')} className="text-gray-600">
+        <XCircleIcon className="h-5 w-5" />
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 group">
+      <p className="text-gray-900 dark:text-white flex-1">
+        {contact.default_discount ? `${contact.default_discount}%` : '-'}
+      </p>
+      {isPageEditMode && contact.sync_with_xero && (
+        <button onClick={() => startEditingXeroField('default_discount')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )}
+</div>
+```
+
+```jsx
+{/* Account Balances (Read-only from Xero) */}
+{contact.sync_with_xero && (contact.accounts_receivable_outstanding || contact.accounts_payable_outstanding) && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Account Balances</h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="From Xero (Read-only)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only from Xero)</span>
+    </div>
+    <div className="grid grid-cols-2 gap-6">
+      {(contact.accounts_receivable_outstanding || contact.accounts_receivable_overdue) && (
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Accounts Receivable</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Outstanding: <span className="font-medium text-gray-900 dark:text-white">
+                ${Number(contact.accounts_receivable_outstanding || 0).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Overdue: <span className="font-medium text-red-600 dark:text-red-400">
+                ${Number(contact.accounts_receivable_overdue || 0).toFixed(2)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+      {(contact.accounts_payable_outstanding || contact.accounts_payable_overdue) && (
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Accounts Payable</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Outstanding: <span className="font-medium text-gray-900 dark:text-white">
+                ${Number(contact.accounts_payable_outstanding || 0).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Overdue: <span className="font-medium text-red-600 dark:text-red-400">
+                ${Number(contact.accounts_payable_overdue || 0).toFixed(2)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+{/* Xero Contact Groups (Read-only) */}
+{contact.sync_with_xero && contactGroups && contactGroups.length > 0 && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Xero Contact Groups</h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="From Xero (Read-only)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only from Xero)</span>
+    </div>
+    <div className="flex flex-wrap gap-2">
+      {contactGroups.map(group => (
+        <span
+          key={group.id}
+          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200"
+        >
+          {group.name}
+          {group.status === 'DELETED' && (
+            <span className="ml-1 text-xs">(Deleted)</span>
+          )}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
+```
+
+---
+
+## §3.20: Timezone Migration Implementation Guide
+
+✨ Feature | 🔴 Advanced
+
+### Quick Summary
+Step-by-step guide for implementing timezone support across backend and frontend with UTC storage
+
+### Recommendations
+Original file archived at: TIMEZONE_MIGRATION_GUIDE.md (10.4 KB)
+
+---
+
+## §3.21: Timezone Testing Guide
+
+✨ Feature | 🟡 Intermediate
+
+### Quick Summary
+Testing strategies for timezone-aware features including edge cases and DST transitions
+
+### Recommendations
+Original file archived at: TIMEZONE_TESTING_GUIDE.md (10.8 KB)
+
+---
+
+
+# Chapter 3: System Administration
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter  3               │
 │ 📕 LEXICON (BUGS):    Chapter  3               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Code examples, implementation patterns, and step-by-step guides
+**Last Updated:** 2025-11-17
+
+---
+
+## §2.1: Company Settings Singleton Pattern
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.1
+
+### Code Example
+```jsx
+# app/models/company_setting.rb
+class CompanySetting < ApplicationRecord
+  def self.instance
+    first_or_create!(
+      company_name: "Trapid Construction",
+      timezone: "Australia/Brisbane",
+      working_days: {
+        "monday" => true,
+        "tuesday" => true,
+        "wednesday" => true,
+        "thursday" => true,
+        "friday" => true,
+        "saturday" => false,
+        "sunday" => true  # Note: Sunday = true by default
+      }
+    )
+  end
+end
+
+# ---
+
+# In controllers, services, models:
+settings = CompanySetting.instance
+
+# Access fields:
+timezone = settings.timezone
+working_days = settings.working_days
+company_name = settings.company_name
+```
+
+---
+
+## §2.2: Timezone Handling - Backend Time Calculations
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.2
+
+### Code Example
+```jsx
+# app/models/company_setting.rb
+def today
+  Time.use_zone(timezone) { Time.zone.today }
+end
+
+def now
+  Time.use_zone(timezone) { Time.zone.now }
+end
+
+# Usage in services/models:
+settings = CompanySetting.instance
+current_date = settings.today  # NOT Date.today!
+current_time = settings.now    # NOT Time.now!
+
+# ---
+
+# When calculating dates for a job:
+settings = CompanySetting.instance
+
+Time.use_zone(settings.timezone) do
+  job_start = Time.zone.parse("2025-01-15 08:00:00")
+  job_end = job_start + 5.days
+
+  # All calculations within this block use company timezone
+end
+```
+
+---
+
+## §2.3: Timezone Handling - Frontend Time Display
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.3
+
+### Code Example
+```jsx
+// frontend/src/utils/timezoneUtils.js
+import { companySettings } from '../contexts/CompanySettingsContext';
+
+export const formatDate = (dateString) => {
+  const timezone = companySettings.timezone; // e.g., "Australia/Brisbane"
+
+  const formatter = new Intl.DateTimeFormat('en-AU', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  return formatter.format(new Date(dateString));
+};
+
+export const formatDateTime = (dateString) => {
+  const timezone = companySettings.timezone;
+
+  const formatter = new Intl.DateTimeFormat('en-AU', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  return formatter.format(new Date(dateString));
+};
+
+# ---
+
+// GanttChart.jsx
+import { formatDate, formatDateTime } from '../utils/timezoneUtils';
+
+const TaskRow = ({ task }) => (
+  <div>
+    <span>Start: {formatDate(task.planned_start_date)}</span>
+    <span>End: {formatDate(task.planned_end_date)}</span>
+  </div>
+);
+```
+
+---
+
+## §2.4: Working Days Configuration & Business Day Calculations
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.4
+
+### Code Example
+```jsx
+# db/schema.rb
+create_table :company_settings do |t|
+  t.jsonb :working_days, default: {
+    "monday" => true,
+    "tuesday" => true,
+    "wednesday" => true,
+    "thursday" => true,
+    "friday" => true,
+    "saturday" => false,
+    "sunday" => true  # Default includes Sunday (construction industry)
+  }
+end
+
+# ---
+
+# app/models/company_setting.rb
+def working_day?(date)
+  day_name = date.strftime('%A').downcase  # "monday", "tuesday", etc.
+  working_days[day_name] == true
+end
+
+def business_day?(date)
+  # Business day = working day AND not a public holiday
+  working_day?(date) && !PublicHoliday.on_date(date).exists?
+end
+
+# ---
+
+# app/services/schedule/cascade_calculator.rb
+def next_business_day(date)
+  settings = CompanySetting.instance
+  current = date + 1.day
+
+  while !settings.business_day?(current)
+    current += 1.day
+  end
+
+  current
+end
+
+def add_business_days(start_date, days_to_add)
+  settings = CompanySetting.instance
+  current = start_date
+  days_added = 0
+
+  while days_added < days_to_add
+    current += 1.day
+    days_added += 1 if settings.business_day?(current)
+  end
+
+  current
+end
+```
+
+---
+
+## §2.5: User Roles & Permission System
+
+🧩 Component | 🟢 Beginner
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.5
+
+### Code Example
+```jsx
+# app/models/user.rb
+enum role: {
+  user: 0,           # Basic access (view-only for most features)
+  admin: 1,          # Full system access
+  product_owner: 2,  # Full access + product backlog management
+  estimator: 3,      # Estimate/quote creation and editing
+  supervisor: 4,     # Field supervisor (task completion, checklists)
+  builder: 5         # Builder/contractor (task viewing, updates)
+}
+
+# ---
+
+# app/models/user.rb
+def can_create_templates?
+  admin? || product_owner?
+end
+
+def can_edit_schedule?
+  admin? || product_owner? || estimator?
+end
+
+def can_view_supervisor_tasks?
+  supervisor? || admin? || product_owner?
+end
+
+def can_view_builder_tasks?
+  builder? || admin? || product_owner?
+end
+
+def can_manage_users?
+  admin? || product_owner?
+end
+
+# ---
+
+# app/controllers/api/v1/schedule_templates_controller.rb
+before_action :require_template_permissions, only: [:create, :update, :destroy]
+
+def require_template_permissions
+  unless current_user.can_create_templates?
+    render json: { error: "Insufficient permissions" }, status: :forbidden
+  end
+end
+```
+
+---
+
+## §2.6: Assignable Roles for Task Assignment
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.6
+
+### Code Example
+```jsx
+# app/models/user.rb
+enum assignable_role: {
+  admin: 0,
+  sales: 1,
+  site: 2,
+  supervisor: 3,
+  builder: 4,
+  estimator: 5,
+  none: 6
+}, _prefix: :assignable
+
+# ---
+
+# app/controllers/api/v1/schedule_tasks_controller.rb
+def my_tasks
+  # Filter by assignable_role, not system role
+  tasks = ScheduleTask.where(assignable_role: current_user.assignable_role)
+  render json: tasks
+end
+```
+
+---
+
+## §2.7: Password Complexity Requirements
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.7
+
+### Code Example
+```jsx
+# app/models/user.rb
+validates :password, presence: true, if: :password_required?
+validates :password, length: { minimum: 12 }, if: :password_required?
+validate :password_complexity, if: :password_required?
+
+def password_complexity
+  return if password.blank?
+
+  rules = []
+  rules << "must include at least one uppercase letter" unless password.match?(/[A-Z]/)
+  rules << "must include at least one lowercase letter" unless password.match?(/[a-z]/)
+  rules << "must include at least one digit" unless password.match?(/\d/)
+  rules << "must include at least one special character" unless password.match?(/[@$!%*?&]/)
+
+  if rules.any?
+    errors.add(:password, rules.join(", "))
+  end
+end
+
+def password_required?
+  !oauth_uid.present?  # OAuth users skip password validation
+end
+
+# ---
+
+# app/services/oauth_user_creator.rb
+def create_from_oauth(oauth_data)
+  User.create!(
+    email: oauth_data[:email],
+    name: oauth_data[:name],
+    oauth_uid: oauth_data[:uid],
+    oauth_provider: oauth_data[:provider],
+    password: SecureRandom.urlsafe_base64(32),  # Random, unused password
+    role: :user
+  )
+end
+```
+
+---
+
+## §2.8: Timezone Options Limitation
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.8
+
+### Code Example
+```jsx
+// frontend/src/components/settings/CompanySettingsTab.jsx
+const TIMEZONE_OPTIONS = [
+  'Australia/Sydney',     // NSW, VIC, TAS
+  'Australia/Melbourne',  // VIC
+  'Australia/Brisbane',   // QLD (no DST)
+  'Australia/Adelaide',   // SA
+  'Australia/Perth',      // WA
+  'Australia/Darwin',     // NT (no DST)
+  'Australia/Hobart',     // TAS
+  'Australia/Canberra',   // ACT
+  'Australia/Lord_Howe',  // Lord Howe Island
+  'Pacific/Auckland',     // NZ
+  'Pacific/Chatham',      // Chatham Islands
+  'Australia/Eucla'       // WA (rare)
+];
+
+# ---
+
+<select
+  value={settings.timezone}
+  onChange={(e) => updateTimezone(e.target.value)}
+  className="form-select"
+>
+  {TIMEZONE_OPTIONS.map(tz => (
+    <option key={tz} value={tz}>{tz}</option>
+  ))}
+</select>
+```
+
+---
+
+## §2.9: Working Days UI - Sunday Default True
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #2.9
+
+### Code Example
+```jsx
+# app/models/company_setting.rb
+DEFAULT_WORKING_DAYS = {
+  "monday" => true,
+  "tuesday" => true,
+  "wednesday" => true,
+  "thursday" => true,
+  "friday" => true,
+  "saturday" => false,   # Most crews don't work Saturdays
+  "sunday" => true       # Sunday work common in construction
+}.freeze
+
+# ---
+
+// CompanySettingsTab.jsx
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+{DAYS.map(day => (
+  <label key={day} className="flex items-center gap-2">
+    <input
+      type="checkbox"
+      checked={settings.working_days[day] || false}
+      onChange={(e) => updateWorkingDay(day, e.target.checked)}
+    />
+    <span className="capitalize">{day}</span>
+  </label>
+))}
+```
+
+---
+
+## §3.15: Contact Detail Page - Complete Integration Guide
+
+✨ Feature | 🟡 Intermediate
+
+### Quick Summary
+Step-by-step guide for integrating contact persons, addresses, and Xero fields into ContactDetailPage
+
+### Step-by-Step Guide
+# ContactDetailPage.jsx Integration Guide
+
+## Step-by-Step Implementation
+
+### 1. Add Imports (at the top of the file)
+
+Add these imports after the existing import statements:
+
+```javascript
+import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
+import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
+```
+
+### 2. Add State Variables
+
+Find the existing `useState` declarations (around line 60-70) and add:
+
+```javascript
+const [contactPersons, setContactPersons] = useState([])
+const [contactAddresses, setContactAddresses] = useState([])
+const [contactGroups, setContactGroups] = useState([])
+```
+
+### 3. Update loadContact() Function
+
+Find the `loadContact` function and after setting the contact data, add:
+
+```javascript
+const loadContact = async () => {
+  try {
+    const response = await api.get(`/api/v1/contacts/${id}`)
+    if (response.success) {
+      const contactData = response.contact
+      setContact(contactData)
+
+      // ADD THESE LINES:
+      setContactPersons(contactData.contact_persons || [])
+      setContactAddresses(contactData.contact_addresses || [])
+      setContactGroups(contactData.contact_groups || [])
+
+      // ... rest of existing code
+    }
+  } catch (error) {
+    console.error('Failed to load contact:', error)
+  } finally {
+    setLoading(false)
+  }
+}
+```
+
+### 4. Add Handler Functions
+
+Add these two new handler functions (after the existing handler functions):
+
+```javascript
+const handleContactPersonsUpdate = async (updatedPersons) => {
+  try {
+    // Build nested attributes payload
+    const contact_persons_attributes = updatedPersons.map(person => {
+      if (person.id) {
+        // Existing person
+        return {
+          id: person.id,
+          first_name: person.first_name,
+          last_name: person.last_name,
+          email: person.email,
+          include_in_emails: person.include_in_emails,
+          is_primary: person.is_primary
+        }
+      } else {
+        // New person
+        return {
+          first_name: person.first_name,
+          last_name: person.last_name,
+          email: person.email,
+          include_in_emails: person.include_in_emails,
+          is_primary: person.is_primary
+        }
+      }
+    })
+
+    const response = await api.patch(`/api/v1/contacts/${id}`, {
+      contact: { contact_persons_attributes }
+    })
+
+    if (response.success) {
+      await loadContact() // Reload to get updated data with IDs
+    }
+  } catch (error) {
+    console.error('Failed to update contact persons:', error)
+    alert('Failed to update contact persons')
+  }
+}
+
+const handleContactAddressesUpdate = async (updatedAddresses) => {
+  try {
+    // Build nested attributes payload
+    const contact_addresses_attributes = updatedAddresses.map(address => {
+      if (address.id) {
+        // Existing address
+        return {
+          id: address.id,
+          address_type: address.address_type,
+          line1: address.line1,
+          line2: address.line2,
+          line3: address.line3,
+          line4: address.line4,
+          city: address.city,
+          region: address.region,
+          postal_code: address.postal_code,
+          country: address.country,
+          attention_to: address.attention_to,
+          is_primary: address.is_primary
+        }
+      } else {
+        // New address
+        return {
+          address_type: address.address_type,
+          line1: address.line1,
+          line2: address.line2,
+          line3: address.line3,
+          line4: address.line4,
+          city: address.city,
+          region: address.region,
+          postal_code: address.postal_code,
+          country: address.country,
+          attention_to: address.attention_to,
+          is_primary: address.is_primary
+        }
+      }
+    })
+
+    const response = await api.patch(`/api/v1/contacts/${id}`, {
+      contact: { contact_addresses_attributes }
+    })
+
+    if (response.success) {
+      await loadContact() // Reload to get updated data with IDs
+    }
+  } catch (error) {
+    console.error('Failed to update contact addresses:', error)
+    alert('Failed to update contact addresses')
+  }
+}
+```
+
+### 5. Insert New Sections in JSX
+
+Find the "Contact Information" section (search for "Contact Information") and AFTER it ends (after its closing `</div>`), insert:
+
+```jsx
+{/* Contact Persons Section */}
+<ContactPersonsSection
+  contactPersons={contactPersons}
+  onUpdate={handleContactPersonsUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+
+{/* Addresses Section */}
+<ContactAddressesSection
+  contactAddresses={contactAddresses}
+  onUpdate={handleContactAddressesUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+```
+
+### 6. Add New Xero Fields to Existing Sections
+
+#### In Contact Information Section (find the office_phone field and add after it):
+
+```jsx
+{/* Fax Phone with inline editing */}
+<div className="flex items-start gap-3">
+  <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Fax Phone</p>
+    {editingXeroFields['fax_phone'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="tel"
+          value={xeroFieldValues['fax_phone'] || ''}
+          onChange={(e) => handleXeroFieldChange('fax_phone', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('fax_phone')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('fax_phone')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        {contact.fax_phone ? (
+          <a href={`tel:${contact.fax_phone}`} className="text-gray-900 dark:text-white flex-1">
+            {contact.fax_phone}
+          </a>
+        ) : (
+          <p className="text-gray-900 dark:text-white flex-1">-</p>
+        )}
+        {isPageEditMode && (
+          <button onClick={() => startEditingXeroField('fax_phone')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Company Number with inline editing */}
+<div className="flex items-start gap-3">
+  <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company Number</p>
+    {editingXeroFields['company_number'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={xeroFieldValues['company_number'] || ''}
+          onChange={(e) => handleXeroFieldChange('company_number', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('company_number')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('company_number')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.company_number || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('company_number')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+```
+
+Note: You'll need to add `BuildingOfficeIcon` to the imports if not already there.
+
+#### In Purchase & Payment Settings Section (add at the end before closing `</div>`):
+
+```jsx
+{/* Sales Payment Terms */}
+<div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sales Due Day</p>
+    {editingXeroFields['sales_due_day'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          value={xeroFieldValues['sales_due_day'] || ''}
+          onChange={(e) => handleXeroFieldChange('sales_due_day', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('sales_due_day')} className="text-green-600">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('sales_due_day')} className="text-gray-600">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.sales_due_day || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('sales_due_day')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sales Due Type</p>
+    {editingXeroFields['sales_due_type'] ? (
+      <div className="flex items-center gap-2">
+        <select
+          value={xeroFieldValues['sales_due_type'] || ''}
+          onChange={(e) => handleXeroFieldChange('sales_due_type', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        >
+          <option value="">Select type</option>
+          <option value="DAYSAFTERBILLDATE">Days After Bill Date</option>
+          <option value="DAYSAFTERBILLMONTH">Days After Bill Month</option>
+          <option value="OFCURRENTMONTH">Of Current Month</option>
+          <option value="OFFOLLOWINGMONTH">Of Following Month</option>
+        </select>
+        <button onClick={() => saveXeroField('sales_due_type')} className="text-green-600">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('sales_due_type')} className="text-gray-600">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.sales_due_type || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('sales_due_type')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Default Sales Account */}
+<div className="pt-4">
+  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Default Sales Account</p>
+  {editingXeroFields['default_sales_account'] ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        value={xeroFieldValues['default_sales_account'] || ''}
+        onChange={(e) => handleXeroFieldChange('default_sales_account', e.target.value)}
+        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        autoFocus
+      />
+      <button onClick={() => saveXeroField('default_sales_account')} className="text-green-600">
+        <CheckCircleIcon className="h-5 w-5" />
+      </button>
+      <button onClick={() => cancelEditingXeroField('default_sales_account')} className="text-gray-600">
+        <XCircleIcon className="h-5 w-5" />
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 group">
+      <p className="text-gray-900 dark:text-white flex-1">{contact.default_sales_account || '-'}</p>
+      {isPageEditMode && contact.sync_with_xero && (
+        <button onClick={() => startEditingXeroField('default_sales_account')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
+{/* Default Discount */}
+<div className="pt-4">
+  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Default Discount (%)</p>
+  {editingXeroFields['default_discount'] ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="number"
+        step="0.01"
+        value={xeroFieldValues['default_discount'] || ''}
+        onChange={(e) => handleXeroFieldChange('default_discount', e.target.value)}
+        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        autoFocus
+      />
+      <button onClick={() => saveXeroField('default_discount')} className="text-green-600">
+        <CheckCircleIcon className="h-5 w-5" />
+      </button>
+      <button onClick={() => cancelEditingXeroField('default_discount')} className="text-gray-600">
+        <XCircleIcon className="h-5 w-5" />
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 group">
+      <p className="text-gray-900 dark:text-white flex-1">
+        {contact.default_discount ? `${contact.default_discount}%` : '-'}
+      </p>
+      {isPageEditMode && contact.sync_with_xero && (
+        <button onClick={() => startEditingXeroField('default_discount')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )}
+</div>
+```
+
+### 7. Add New Read-Only Sections
+
+Add these sections anywhere after the Bank Account Details section:
+
+```jsx
+{/* Account Balances (Read-only from Xero) */}
+{contact.sync_with_xero && (contact.accounts_receivable_outstanding || contact.accounts_payable_outstanding) && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Account Balances</h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="From Xero (Read-only)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only from Xero)</span>
+    </div>
+    <div className="grid grid-cols-2 gap-6">
+      {(contact.accounts_receivable_outstanding || contact.accounts_receivable_overdue) && (
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Accounts Receivable</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Outstanding: <span className="font-medium text-gray-900 dark:text-white">
+                ${Number(contact.accounts_receivable_outstanding || 0).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Overdue: <span className="font-medium text-red-600 dark:text-red-400">
+                ${Number(contact.accounts_receivable_overdue || 0).toFixed(2)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+      {(contact.accounts_payable_outstanding || contact.accounts_payable_overdue) && (
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Accounts Payable</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Outstanding: <span className="font-medium text-gray-900 dark:text-white">
+                ${Number(contact.accounts_payable_outstanding || 0).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Overdue: <span className="font-medium text-red-600 dark:text-red-400">
+                ${Number(contact.accounts_payable_overdue || 0).toFixed(2)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+{/* Xero Contact Groups (Read-only) */}
+{contact.sync_with_xero && contactGroups && contactGroups.length > 0 && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Xero Contact Groups</h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="From Xero (Read-only)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only from Xero)</span>
+    </div>
+    <div className="flex flex-wrap gap-2">
+      {contactGroups.map(group => (
+        <span
+          key={group.id}
+          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200"
+        >
+          {group.name}
+          {group.status === 'DELETED' && (
+            <span className="ml-1 text-xs">(Deleted)</span>
+          )}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
+```
+
+## Summary
+
+After making these changes, your ContactDetailPage will:
+
+1. ✅ Display and edit contact persons (CRUD)
+2. ✅ Display and edit addresses (CRUD)
+3. ✅ Display contact groups (read-only)
+4. ✅ Display account balances (read-only)
+5. ✅ Edit all new Xero fields inline
+6. ✅ Show sync status for all Xero data
+7. ✅ Respect edit/lock mode for all sections
+
+The components handle all the complexity of adding/editing/deleting nested records, and the handler functions properly format the data for the Rails nested attributes API.
+
+
+### Code Example
+```jsx
+```javascript
+import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
+import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
+```
+
+```javascript
+const [contactPersons, setContactPersons] = useState([])
+const [contactAddresses, setContactAddresses] = useState([])
+const [contactGroups, setContactGroups] = useState([])
+```
+
+```javascript
+const loadContact = async () => {
+  try {
+    const response = await api.get(`/api/v1/contacts/${id}`)
+    if (response.success) {
+      const contactData = response.contact
+      setContact(contactData)
+
+      // ADD THESE LINES:
+      setContactPersons(contactData.contact_persons || [])
+      setContactAddresses(contactData.contact_addresses || [])
+      setContactGroups(contactData.contact_groups || [])
+
+      // ... rest of existing code
+    }
+  } catch (error) {
+    console.error('Failed to load contact:', error)
+  } finally {
+    setLoading(false)
+  }
+}
+```
+
+```javascript
+const handleContactPersonsUpdate = async (updatedPersons) => {
+  try {
+    // Build nested attributes payload
+    const contact_persons_attributes = updatedPersons.map(person => {
+      if (person.id) {
+        // Existing person
+        return {
+          id: person.id,
+          first_name: person.first_name,
+          last_name: person.last_name,
+          email: person.email,
+          include_in_emails: person.include_in_emails,
+          is_primary: person.is_primary
+        }
+      } else {
+        // New person
+        return {
+          first_name: person.first_name,
+          last_name: person.last_name,
+          email: person.email,
+          include_in_emails: person.include_in_emails,
+          is_primary: person.is_primary
+        }
+      }
+    })
+
+    const response = await api.patch(`/api/v1/contacts/${id}`, {
+      contact: { contact_persons_attributes }
+    })
+
+    if (response.success) {
+      await loadContact() // Reload to get updated data with IDs
+    }
+  } catch (error) {
+    console.error('Failed to update contact persons:', error)
+    alert('Failed to update contact persons')
+  }
+}
+
+const handleContactAddressesUpdate = async (updatedAddresses) => {
+  try {
+    // Build nested attributes payload
+    const contact_addresses_attributes = updatedAddresses.map(address => {
+      if (address.id) {
+        // Existing address
+        return {
+          id: address.id,
+          address_type: address.address_type,
+          line1: address.line1,
+          line2: address.line2,
+          line3: address.line3,
+          line4: address.line4,
+          city: address.city,
+          region: address.region,
+          postal_code: address.postal_code,
+          country: address.country,
+          attention_to: address.attention_to,
+          is_primary: address.is_primary
+        }
+      } else {
+        // New address
+        return {
+          address_type: address.address_type,
+          line1: address.line1,
+          line2: address.line2,
+          line3: address.line3,
+          line4: address.line4,
+          city: address.city,
+          region: address.region,
+          postal_code: address.postal_code,
+          country: address.country,
+          attention_to: address.attention_to,
+          is_primary: address.is_primary
+        }
+      }
+    })
+
+    const response = await api.patch(`/api/v1/contacts/${id}`, {
+      contact: { contact_addresses_attributes }
+    })
+
+    if (response.success) {
+      await loadContact() // Reload to get updated data with IDs
+    }
+  } catch (error) {
+    console.error('Failed to update contact addresses:', error)
+    alert('Failed to update contact addresses')
+  }
+}
+```
+
+```jsx
+{/* Contact Persons Section */}
+<ContactPersonsSection
+  contactPersons={contactPersons}
+  onUpdate={handleContactPersonsUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+
+{/* Addresses Section */}
+<ContactAddressesSection
+  contactAddresses={contactAddresses}
+  onUpdate={handleContactAddressesUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+```
+
+```jsx
+{/* Fax Phone with inline editing */}
+<div className="flex items-start gap-3">
+  <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Fax Phone</p>
+    {editingXeroFields['fax_phone'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="tel"
+          value={xeroFieldValues['fax_phone'] || ''}
+          onChange={(e) => handleXeroFieldChange('fax_phone', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('fax_phone')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('fax_phone')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        {contact.fax_phone ? (
+          <a href={`tel:${contact.fax_phone}`} className="text-gray-900 dark:text-white flex-1">
+            {contact.fax_phone}
+          </a>
+        ) : (
+          <p className="text-gray-900 dark:text-white flex-1">-</p>
+        )}
+        {isPageEditMode && (
+          <button onClick={() => startEditingXeroField('fax_phone')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Company Number with inline editing */}
+<div className="flex items-start gap-3">
+  <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company Number</p>
+    {editingXeroFields['company_number'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={xeroFieldValues['company_number'] || ''}
+          onChange={(e) => handleXeroFieldChange('company_number', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('company_number')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('company_number')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.company_number || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('company_number')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+```
+
+```jsx
+{/* Sales Payment Terms */}
+<div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sales Due Day</p>
+    {editingXeroFields['sales_due_day'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          value={xeroFieldValues['sales_due_day'] || ''}
+          onChange={(e) => handleXeroFieldChange('sales_due_day', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('sales_due_day')} className="text-green-600">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('sales_due_day')} className="text-gray-600">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.sales_due_day || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('sales_due_day')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sales Due Type</p>
+    {editingXeroFields['sales_due_type'] ? (
+      <div className="flex items-center gap-2">
+        <select
+          value={xeroFieldValues['sales_due_type'] || ''}
+          onChange={(e) => handleXeroFieldChange('sales_due_type', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        >
+          <option value="">Select type</option>
+          <option value="DAYSAFTERBILLDATE">Days After Bill Date</option>
+          <option value="DAYSAFTERBILLMONTH">Days After Bill Month</option>
+          <option value="OFCURRENTMONTH">Of Current Month</option>
+          <option value="OFFOLLOWINGMONTH">Of Following Month</option>
+        </select>
+        <button onClick={() => saveXeroField('sales_due_type')} className="text-green-600">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('sales_due_type')} className="text-gray-600">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.sales_due_type || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('sales_due_type')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Default Sales Account */}
+<div className="pt-4">
+  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Default Sales Account</p>
+  {editingXeroFields['default_sales_account'] ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        value={xeroFieldValues['default_sales_account'] || ''}
+        onChange={(e) => handleXeroFieldChange('default_sales_account', e.target.value)}
+        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        autoFocus
+      />
+      <button onClick={() => saveXeroField('default_sales_account')} className="text-green-600">
+        <CheckCircleIcon className="h-5 w-5" />
+      </button>
+      <button onClick={() => cancelEditingXeroField('default_sales_account')} className="text-gray-600">
+        <XCircleIcon className="h-5 w-5" />
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 group">
+      <p className="text-gray-900 dark:text-white flex-1">{contact.default_sales_account || '-'}</p>
+      {isPageEditMode && contact.sync_with_xero && (
+        <button onClick={() => startEditingXeroField('default_sales_account')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
+{/* Default Discount */}
+<div className="pt-4">
+  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Default Discount (%)</p>
+  {editingXeroFields['default_discount'] ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="number"
+        step="0.01"
+        value={xeroFieldValues['default_discount'] || ''}
+        onChange={(e) => handleXeroFieldChange('default_discount', e.target.value)}
+        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        autoFocus
+      />
+      <button onClick={() => saveXeroField('default_discount')} className="text-green-600">
+        <CheckCircleIcon className="h-5 w-5" />
+      </button>
+      <button onClick={() => cancelEditingXeroField('default_discount')} className="text-gray-600">
+        <XCircleIcon className="h-5 w-5" />
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 group">
+      <p className="text-gray-900 dark:text-white flex-1">
+        {contact.default_discount ? `${contact.default_discount}%` : '-'}
+      </p>
+      {isPageEditMode && contact.sync_with_xero && (
+        <button onClick={() => startEditingXeroField('default_discount')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )}
+</div>
+```
+
+```jsx
+{/* Account Balances (Read-only from Xero) */}
+{contact.sync_with_xero && (contact.accounts_receivable_outstanding || contact.accounts_payable_outstanding) && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Account Balances</h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="From Xero (Read-only)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only from Xero)</span>
+    </div>
+    <div className="grid grid-cols-2 gap-6">
+      {(contact.accounts_receivable_outstanding || contact.accounts_receivable_overdue) && (
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Accounts Receivable</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Outstanding: <span className="font-medium text-gray-900 dark:text-white">
+                ${Number(contact.accounts_receivable_outstanding || 0).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Overdue: <span className="font-medium text-red-600 dark:text-red-400">
+                ${Number(contact.accounts_receivable_overdue || 0).toFixed(2)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+      {(contact.accounts_payable_outstanding || contact.accounts_payable_overdue) && (
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Accounts Payable</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Outstanding: <span className="font-medium text-gray-900 dark:text-white">
+                ${Number(contact.accounts_payable_outstanding || 0).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Overdue: <span className="font-medium text-red-600 dark:text-red-400">
+                ${Number(contact.accounts_payable_overdue || 0).toFixed(2)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+{/* Xero Contact Groups (Read-only) */}
+{contact.sync_with_xero && contactGroups && contactGroups.length > 0 && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Xero Contact Groups</h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="From Xero (Read-only)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only from Xero)</span>
+    </div>
+    <div className="flex flex-wrap gap-2">
+      {contactGroups.map(group => (
+        <span
+          key={group.id}
+          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200"
+        >
+          {group.name}
+          {group.status === 'DELETED' && (
+            <span className="ml-1 text-xs">(Deleted)</span>
+          )}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
+```
+```
+
+### Examples
+```javascript
+import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
+import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
+```
+
+```javascript
+const [contactPersons, setContactPersons] = useState([])
+const [contactAddresses, setContactAddresses] = useState([])
+const [contactGroups, setContactGroups] = useState([])
+```
+
+```javascript
+const loadContact = async () => {
+  try {
+    const response = await api.get(`/api/v1/contacts/${id}`)
+    if (response.success) {
+      const contactData = response.contact
+      setContact(contactData)
+
+      // ADD THESE LINES:
+      setContactPersons(contactData.contact_persons || [])
+      setContactAddresses(contactData.contact_addresses || [])
+      setContactGroups(contactData.contact_groups || [])
+
+      // ... rest of existing code
+    }
+  } catch (error) {
+    console.error('Failed to load contact:', error)
+  } finally {
+    setLoading(false)
+  }
+}
+```
+
+```javascript
+const handleContactPersonsUpdate = async (updatedPersons) => {
+  try {
+    // Build nested attributes payload
+    const contact_persons_attributes = updatedPersons.map(person => {
+      if (person.id) {
+        // Existing person
+        return {
+          id: person.id,
+          first_name: person.first_name,
+          last_name: person.last_name,
+          email: person.email,
+          include_in_emails: person.include_in_emails,
+          is_primary: person.is_primary
+        }
+      } else {
+        // New person
+        return {
+          first_name: person.first_name,
+          last_name: person.last_name,
+          email: person.email,
+          include_in_emails: person.include_in_emails,
+          is_primary: person.is_primary
+        }
+      }
+    })
+
+    const response = await api.patch(`/api/v1/contacts/${id}`, {
+      contact: { contact_persons_attributes }
+    })
+
+    if (response.success) {
+      await loadContact() // Reload to get updated data with IDs
+    }
+  } catch (error) {
+    console.error('Failed to update contact persons:', error)
+    alert('Failed to update contact persons')
+  }
+}
+
+const handleContactAddressesUpdate = async (updatedAddresses) => {
+  try {
+    // Build nested attributes payload
+    const contact_addresses_attributes = updatedAddresses.map(address => {
+      if (address.id) {
+        // Existing address
+        return {
+          id: address.id,
+          address_type: address.address_type,
+          line1: address.line1,
+          line2: address.line2,
+          line3: address.line3,
+          line4: address.line4,
+          city: address.city,
+          region: address.region,
+          postal_code: address.postal_code,
+          country: address.country,
+          attention_to: address.attention_to,
+          is_primary: address.is_primary
+        }
+      } else {
+        // New address
+        return {
+          address_type: address.address_type,
+          line1: address.line1,
+          line2: address.line2,
+          line3: address.line3,
+          line4: address.line4,
+          city: address.city,
+          region: address.region,
+          postal_code: address.postal_code,
+          country: address.country,
+          attention_to: address.attention_to,
+          is_primary: address.is_primary
+        }
+      }
+    })
+
+    const response = await api.patch(`/api/v1/contacts/${id}`, {
+      contact: { contact_addresses_attributes }
+    })
+
+    if (response.success) {
+      await loadContact() // Reload to get updated data with IDs
+    }
+  } catch (error) {
+    console.error('Failed to update contact addresses:', error)
+    alert('Failed to update contact addresses')
+  }
+}
+```
+
+```jsx
+{/* Contact Persons Section */}
+<ContactPersonsSection
+  contactPersons={contactPersons}
+  onUpdate={handleContactPersonsUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+
+{/* Addresses Section */}
+<ContactAddressesSection
+  contactAddresses={contactAddresses}
+  onUpdate={handleContactAddressesUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+```
+
+```jsx
+{/* Fax Phone with inline editing */}
+<div className="flex items-start gap-3">
+  <PhoneIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Fax Phone</p>
+    {editingXeroFields['fax_phone'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="tel"
+          value={xeroFieldValues['fax_phone'] || ''}
+          onChange={(e) => handleXeroFieldChange('fax_phone', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('fax_phone')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('fax_phone')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        {contact.fax_phone ? (
+          <a href={`tel:${contact.fax_phone}`} className="text-gray-900 dark:text-white flex-1">
+            {contact.fax_phone}
+          </a>
+        ) : (
+          <p className="text-gray-900 dark:text-white flex-1">-</p>
+        )}
+        {isPageEditMode && (
+          <button onClick={() => startEditingXeroField('fax_phone')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Company Number with inline editing */}
+<div className="flex items-start gap-3">
+  <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Company Number</p>
+    {editingXeroFields['company_number'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={xeroFieldValues['company_number'] || ''}
+          onChange={(e) => handleXeroFieldChange('company_number', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('company_number')} className="text-green-600 hover:text-green-700 dark:text-green-400">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('company_number')} className="text-gray-600 hover:text-gray-700 dark:text-gray-400">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.company_number || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('company_number')} className="opacity-0 group-hover:opacity-100 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+```
+
+```jsx
+{/* Sales Payment Terms */}
+<div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sales Due Day</p>
+    {editingXeroFields['sales_due_day'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          value={xeroFieldValues['sales_due_day'] || ''}
+          onChange={(e) => handleXeroFieldChange('sales_due_day', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button onClick={() => saveXeroField('sales_due_day')} className="text-green-600">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('sales_due_day')} className="text-gray-600">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.sales_due_day || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('sales_due_day')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sales Due Type</p>
+    {editingXeroFields['sales_due_type'] ? (
+      <div className="flex items-center gap-2">
+        <select
+          value={xeroFieldValues['sales_due_type'] || ''}
+          onChange={(e) => handleXeroFieldChange('sales_due_type', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        >
+          <option value="">Select type</option>
+          <option value="DAYSAFTERBILLDATE">Days After Bill Date</option>
+          <option value="DAYSAFTERBILLMONTH">Days After Bill Month</option>
+          <option value="OFCURRENTMONTH">Of Current Month</option>
+          <option value="OFFOLLOWINGMONTH">Of Following Month</option>
+        </select>
+        <button onClick={() => saveXeroField('sales_due_type')} className="text-green-600">
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button onClick={() => cancelEditingXeroField('sales_due_type')} className="text-gray-600">
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
+        <p className="text-gray-900 dark:text-white flex-1">{contact.sales_due_type || '-'}</p>
+        {isPageEditMode && contact.sync_with_xero && (
+          <button onClick={() => startEditingXeroField('sales_due_type')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+            <PencilIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Default Sales Account */}
+<div className="pt-4">
+  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Default Sales Account</p>
+  {editingXeroFields['default_sales_account'] ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        value={xeroFieldValues['default_sales_account'] || ''}
+        onChange={(e) => handleXeroFieldChange('default_sales_account', e.target.value)}
+        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        autoFocus
+      />
+      <button onClick={() => saveXeroField('default_sales_account')} className="text-green-600">
+        <CheckCircleIcon className="h-5 w-5" />
+      </button>
+      <button onClick={() => cancelEditingXeroField('default_sales_account')} className="text-gray-600">
+        <XCircleIcon className="h-5 w-5" />
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 group">
+      <p className="text-gray-900 dark:text-white flex-1">{contact.default_sales_account || '-'}</p>
+      {isPageEditMode && contact.sync_with_xero && (
+        <button onClick={() => startEditingXeroField('default_sales_account')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
+{/* Default Discount */}
+<div className="pt-4">
+  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Default Discount (%)</p>
+  {editingXeroFields['default_discount'] ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="number"
+        step="0.01"
+        value={xeroFieldValues['default_discount'] || ''}
+        onChange={(e) => handleXeroFieldChange('default_discount', e.target.value)}
+        className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        autoFocus
+      />
+      <button onClick={() => saveXeroField('default_discount')} className="text-green-600">
+        <CheckCircleIcon className="h-5 w-5" />
+      </button>
+      <button onClick={() => cancelEditingXeroField('default_discount')} className="text-gray-600">
+        <XCircleIcon className="h-5 w-5" />
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 group">
+      <p className="text-gray-900 dark:text-white flex-1">
+        {contact.default_discount ? `${contact.default_discount}%` : '-'}
+      </p>
+      {isPageEditMode && contact.sync_with_xero && (
+        <button onClick={() => startEditingXeroField('default_discount')} className="opacity-0 group-hover:opacity-100 text-indigo-600">
+          <PencilIcon className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )}
+</div>
+```
+
+```jsx
+{/* Account Balances (Read-only from Xero) */}
+{contact.sync_with_xero && (contact.accounts_receivable_outstanding || contact.accounts_payable_outstanding) && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Account Balances</h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="From Xero (Read-only)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only from Xero)</span>
+    </div>
+    <div className="grid grid-cols-2 gap-6">
+      {(contact.accounts_receivable_outstanding || contact.accounts_receivable_overdue) && (
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Accounts Receivable</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Outstanding: <span className="font-medium text-gray-900 dark:text-white">
+                ${Number(contact.accounts_receivable_outstanding || 0).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Overdue: <span className="font-medium text-red-600 dark:text-red-400">
+                ${Number(contact.accounts_receivable_overdue || 0).toFixed(2)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+      {(contact.accounts_payable_outstanding || contact.accounts_payable_overdue) && (
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Accounts Payable</p>
+          <div className="space-y-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Outstanding: <span className="font-medium text-gray-900 dark:text-white">
+                ${Number(contact.accounts_payable_outstanding || 0).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Overdue: <span className="font-medium text-red-600 dark:text-red-400">
+                ${Number(contact.accounts_payable_overdue || 0).toFixed(2)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+{/* Xero Contact Groups (Read-only) */}
+{contact.sync_with_xero && contactGroups && contactGroups.length > 0 && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Xero Contact Groups</h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="From Xero (Read-only)">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+      <span className="text-xs text-gray-500 dark:text-gray-400">(Read-only from Xero)</span>
+    </div>
+    <div className="flex flex-wrap gap-2">
+      {contactGroups.map(group => (
+        <span
+          key={group.id}
+          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200"
+        >
+          {group.name}
+          {group.status === 'DELETED' && (
+            <span className="ml-1 text-xs">(Deleted)</span>
+          )}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
+```
+
+---
+
+## §3.20: Timezone Migration Implementation Guide
+
+✨ Feature | 🔴 Advanced
+
+### Quick Summary
+Step-by-step guide for implementing timezone support across backend and frontend with UTC storage
+
+### Recommendations
+Original file archived at: TIMEZONE_MIGRATION_GUIDE.md (10.4 KB)
+
+---
+
+## §3.21: Timezone Testing Guide
+
+✨ Feature | 🟡 Intermediate
+
+### Quick Summary
+Testing strategies for timezone-aware features including edge cases and DST transitions
+
+### Recommendations
+Original file archived at: TIMEZONE_TESTING_GUIDE.md (10.8 KB)
+
+---
+
+
+# Chapter 4: Contacts & Relationships
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  4               │
+│ 📕 LEXICON (BUGS):    Chapter  4               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -1467,12 +5635,2556 @@ validates :password, length: { minimum: 12 }, format: PASSWORD_REGEX, on: :creat
 
 ---
 
+## §4.20: Price Book Import from Excel/CSV
+
+✨ Feature | 🟡 Intermediate
+
+### Quick Summary
+Import supplier price books from spreadsheets with automatic supplier matching and price history creation
+
+### Step-by-Step Guide
+# Price Book Import Guide
+
+This guide explains how to import clean price book data (suppliers, items, and price history) into the system.
+
+## Overview
+
+The import script will:
+1. **Clear existing data** - Delete all current suppliers, price book items, and price history
+2. **Import suppliers** - Load supplier data with contact information and ratings
+3. **Import price book items** - Load items and link them to suppliers by name
+4. **Import price history** - Load historical price changes linked to items and suppliers
+
+## CSV File Formats
+
+### 1. Suppliers CSV (`suppliers.csv`)
+
+**Required columns:**
+- `name` - Supplier name (must be unique)
+- `contact_person` - Contact name
+- `email` - Email address
+- `phone` - Phone number
+- `address` - Physical address
+- `rating` - Rating (0-5)
+- `response_rate` - Response rate percentage (0-100)
+- `avg_response_time` - Average response time in hours
+- `notes` - Additional notes
+- `is_active` - Active status (true/false)
+
+**Example:**
+```csv
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+TL Supply,John Smith,john@tlsupply.com.au,1300 123 456,123 Trade St Sydney,4,85.5,24,Reliable electrical supplier,true
+Bunnings,Trade Desk,trade@bunnings.com.au,1300 BUNNINGS,456 Builder Ave,5,95.0,12,Hardware store,true
+```
+
+### 2. Price Book Items CSV (`pricebook_items.csv`)
+
+**Required columns:**
+- `item_code` - Unique item code
+- `item_name` - Item description
+- `category` - Category (e.g., Electrical, Plumbing)
+- `unit_of_measure` - Unit (e.g., Each, Linear Metre, m²)
+- `current_price` - Current price (decimal)
+- `supplier_name` - Supplier name (must match name in suppliers.csv)
+- `brand` - Brand name
+- `notes` - Additional notes
+- `is_active` - Active status (true/false)
+- `needs_pricing_review` - Needs review flag (true/false)
+- `price_last_updated_at` - Last price update date (YYYY-MM-DD)
+
+**Example:**
+```csv
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+DPP,Wiring Double Power Point,Electrical,Each,51.00,TL Supply,Clipsal,,true,false,2024-01-15
+SPP,Wiring Single Power Point,Electrical,Each,50.00,TL Supply,Clipsal,,true,false,2024-01-15
+TIMBER-90x45,Pine Framing Timber 90x45mm,Carpentry,Linear Metre,8.50,Bunnings,Treated Pine,,true,false,2024-02-01
+```
+
+### 3. Price History CSV (`price_history.csv`) - Optional
+
+**Required columns:**
+- `item_code` - Item code (must match item_code in pricebook_items.csv)
+- `old_price` - Previous price
+- `new_price` - New price
+- `change_reason` - Reason for change (e.g., price_increase, supplier_change)
+- `supplier_name` - Supplier name (must match name in suppliers.csv)
+- `quote_reference` - Quote reference number
+- `created_at` - Date of change (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)
+
+**Example:**
+```csv
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+DPP,48.00,51.00,price_increase,TL Supply,Q-2024-001,2024-01-15
+DPP,51.00,53.00,price_increase,TL Supply,Q-2024-045,2024-03-20
+TIMBER-90x45,7.50,8.50,material_cost_increase,Bunnings,Q-2024-023,2024-02-01
+```
+
+## How to Use
+
+### Step 1: Generate Templates (Optional)
+
+To generate sample CSV templates:
+
+```bash
+bundle exec rails pricebook:generate_templates
+```
+
+This creates three template files in `backend/tmp/`:
+- `suppliers_template.csv`
+- `pricebook_items_template.csv`
+- `price_history_template.csv`
+
+### Step 2: Prepare Your CSV Files
+
+Place your CSV files in `backend/tmp/`:
+- `backend/tmp/suppliers.csv`
+- `backend/tmp/pricebook_items.csv`
+- `backend/tmp/price_history.csv` (optional)
+
+### Step 3: Run the Import Locally
+
+```bash
+cd backend
+bundle exec rails pricebook:import_clean
+```
+
+### Step 4: Run the Import on Production (Heroku)
+
+First, upload your CSV files to the Heroku dyno:
+
+```bash
+# Create a temporary directory on Heroku
+heroku run bash --app trapid-backend
+mkdir -p tmp
+exit
+
+# Copy CSV files to Heroku (you'll need to use a different method)
+# Option 1: Add files to git temporarily and deploy
+# Option 2: Use Heroku's data import feature
+# Option 3: Store files in S3 and download them in the task
+```
+
+**Recommended approach for production:**
+
+1. Store CSV files in a secure location (S3, Google Drive, etc.)
+2. Download them to the Heroku dyno's tmp directory
+3. Run the import task
+
+Or manually copy/paste the content:
+
+```bash
+heroku run bash --app trapid-backend
+
+# In the Heroku shell:
+cat > tmp/suppliers.csv << 'EOF'
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+[paste your suppliers data here]
+EOF
+
+cat > tmp/pricebook_items.csv << 'EOF'
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+[paste your items data here]
+EOF
+
+cat > tmp/price_history.csv << 'EOF'
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+[paste your history data here]
+EOF
+
+# Run the import
+bundle exec rails pricebook:import_clean
+
+# Exit the shell
+exit
+```
+
+## Important Notes
+
+1. **Data will be deleted**: The script deletes ALL existing suppliers, price book items, and price history before importing
+2. **Supplier names must match**: The `supplier_name` in price book items and price history must exactly match the `name` in suppliers.csv
+3. **Item codes must match**: The `item_code` in price history must exactly match the `item_code` in pricebook_items.csv
+4. **Price history is optional**: If you don't have price history, the script will skip it
+5. **Backup first**: Always backup your production data before running this on production
+
+## Troubleshooting
+
+**Error: "Suppliers file not found"**
+- Make sure the CSV file is in `backend/tmp/suppliers.csv`
+- Or set the environment variable: `SUPPLIERS_CSV=/path/to/file.csv`
+
+**Error: "Validation failed"**
+- Check that required fields are filled in
+- Ensure item_code and supplier name are unique
+- Verify supplier names match exactly between files
+
+**Price history not importing**
+- Check that item_code values match exactly with pricebook_items.csv
+- Verify supplier_name values match exactly with suppliers.csv
+- Check date format is YYYY-MM-DD or YYYY-MM-DD HH:MM:SS
+
+## Example Import Output
+
+```
+============================================================
+PRICE BOOK CLEAN IMPORT
+============================================================
+
+Step 1: Clearing existing data...
+  ✓ Deleted 0 price history records
+  ✓ Deleted 10 pricebook items
+  ✓ Deleted 3 suppliers
+
+Step 2: Importing suppliers...
+  ✓ Imported 5 suppliers
+
+Step 3: Importing price book items...
+  ✓ Imported 150 price book items
+
+Step 4: Importing price history...
+  ✓ Imported 45 price history records
+
+============================================================
+IMPORT COMPLETE
+============================================================
+Suppliers: 5
+Price Book Items: 150
+Price History: 45
+
+Data successfully imported and linked!
+```
+
+
+### Code Example
+```jsx
+```csv
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+TL Supply,John Smith,john@tlsupply.com.au,1300 123 456,123 Trade St Sydney,4,85.5,24,Reliable electrical supplier,true
+Bunnings,Trade Desk,trade@bunnings.com.au,1300 BUNNINGS,456 Builder Ave,5,95.0,12,Hardware store,true
+```
+
+```csv
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+DPP,Wiring Double Power Point,Electrical,Each,51.00,TL Supply,Clipsal,,true,false,2024-01-15
+SPP,Wiring Single Power Point,Electrical,Each,50.00,TL Supply,Clipsal,,true,false,2024-01-15
+TIMBER-90x45,Pine Framing Timber 90x45mm,Carpentry,Linear Metre,8.50,Bunnings,Treated Pine,,true,false,2024-02-01
+```
+
+```csv
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+DPP,48.00,51.00,price_increase,TL Supply,Q-2024-001,2024-01-15
+DPP,51.00,53.00,price_increase,TL Supply,Q-2024-045,2024-03-20
+TIMBER-90x45,7.50,8.50,material_cost_increase,Bunnings,Q-2024-023,2024-02-01
+```
+
+```bash
+bundle exec rails pricebook:generate_templates
+```
+
+```bash
+cd backend
+bundle exec rails pricebook:import_clean
+```
+
+```bash
+# Create a temporary directory on Heroku
+heroku run bash --app trapid-backend
+mkdir -p tmp
+exit
+
+# Copy CSV files to Heroku (you'll need to use a different method)
+# Option 1: Add files to git temporarily and deploy
+# Option 2: Use Heroku's data import feature
+# Option 3: Store files in S3 and download them in the task
+```
+
+```bash
+heroku run bash --app trapid-backend
+
+# In the Heroku shell:
+cat > tmp/suppliers.csv << 'EOF'
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+[paste your suppliers data here]
+EOF
+
+cat > tmp/pricebook_items.csv << 'EOF'
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+[paste your items data here]
+EOF
+
+cat > tmp/price_history.csv << 'EOF'
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+[paste your history data here]
+EOF
+
+# Run the import
+bundle exec rails pricebook:import_clean
+
+# Exit the shell
+exit
+```
+
+```
+============================================================
+PRICE BOOK CLEAN IMPORT
+============================================================
+
+Step 1: Clearing existing data...
+  ✓ Deleted 0 price history records
+  ✓ Deleted 10 pricebook items
+  ✓ Deleted 3 suppliers
+
+Step 2: Importing suppliers...
+  ✓ Imported 5 suppliers
+
+Step 3: Importing price book items...
+  ✓ Imported 150 price book items
+
+Step 4: Importing price history...
+  ✓ Imported 45 price history records
+
+============================================================
+IMPORT COMPLETE
+============================================================
+Suppliers: 5
+Price Book Items: 150
+Price History: 45
+
+Data successfully imported and linked!
+```
+```
+
+### Examples
+```csv
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+TL Supply,John Smith,john@tlsupply.com.au,1300 123 456,123 Trade St Sydney,4,85.5,24,Reliable electrical supplier,true
+Bunnings,Trade Desk,trade@bunnings.com.au,1300 BUNNINGS,456 Builder Ave,5,95.0,12,Hardware store,true
+```
+
+```csv
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+DPP,Wiring Double Power Point,Electrical,Each,51.00,TL Supply,Clipsal,,true,false,2024-01-15
+SPP,Wiring Single Power Point,Electrical,Each,50.00,TL Supply,Clipsal,,true,false,2024-01-15
+TIMBER-90x45,Pine Framing Timber 90x45mm,Carpentry,Linear Metre,8.50,Bunnings,Treated Pine,,true,false,2024-02-01
+```
+
+```csv
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+DPP,48.00,51.00,price_increase,TL Supply,Q-2024-001,2024-01-15
+DPP,51.00,53.00,price_increase,TL Supply,Q-2024-045,2024-03-20
+TIMBER-90x45,7.50,8.50,material_cost_increase,Bunnings,Q-2024-023,2024-02-01
+```
+
+```bash
+bundle exec rails pricebook:generate_templates
+```
+
+```bash
+cd backend
+bundle exec rails pricebook:import_clean
+```
+
+```bash
+# Create a temporary directory on Heroku
+heroku run bash --app trapid-backend
+mkdir -p tmp
+exit
+
+# Copy CSV files to Heroku (you'll need to use a different method)
+# Option 1: Add files to git temporarily and deploy
+# Option 2: Use Heroku's data import feature
+# Option 3: Store files in S3 and download them in the task
+```
+
+```bash
+heroku run bash --app trapid-backend
+
+# In the Heroku shell:
+cat > tmp/suppliers.csv << 'EOF'
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+[paste your suppliers data here]
+EOF
+
+cat > tmp/pricebook_items.csv << 'EOF'
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+[paste your items data here]
+EOF
+
+cat > tmp/price_history.csv << 'EOF'
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+[paste your history data here]
+EOF
+
+# Run the import
+bundle exec rails pricebook:import_clean
+
+# Exit the shell
+exit
+```
+
+```
+============================================================
+PRICE BOOK CLEAN IMPORT
+============================================================
+
+Step 1: Clearing existing data...
+  ✓ Deleted 0 price history records
+  ✓ Deleted 10 pricebook items
+  ✓ Deleted 3 suppliers
+
+Step 2: Importing suppliers...
+  ✓ Imported 5 suppliers
+
+Step 3: Importing price book items...
+  ✓ Imported 150 price book items
+
+Step 4: Importing price history...
+  ✓ Imported 45 price history records
+
+============================================================
+IMPORT COMPLETE
+============================================================
+Suppliers: 5
+Price Book Items: 150
+Price History: 45
+
+Data successfully imported and linked!
+```
+
+---
+
+## §4.21: Price History Export/Import System
+
+✨ Feature | 🟡 Intermediate
+
+### Quick Summary
+Bulk export and import of price history data for backup and migration purposes
+
+### Step-by-Step Guide
+# Price History Export/Import Feature
+
+## Overview
+
+This feature allows users to export and import price history data for pricebook items in Excel format. Users can filter by supplier and/or category when exporting, edit the exported data in Excel, and re-import the changes.
+
+## Files Created
+
+### Services
+- `/app/services/price_history_export_service.rb` - Generates Excel files with price history data
+- `/app/services/price_history_import_service.rb` - Parses Excel files and updates price history records
+
+### Controller Updates
+- `/app/controllers/api/v1/pricebook_items_controller.rb` - Added two new endpoints:
+  - `export_price_history` (GET)
+  - `import_price_history` (POST)
+
+### Routes
+- `/config/routes.rb` - Added routes for the new endpoints
+
+## API Endpoints
+
+### Export Price History
+
+**Endpoint:** `GET /api/v1/pricebook/export_price_history`
+
+**Query Parameters:**
+- `supplier_id` (optional) - Filter by supplier ID
+- `category` (optional) - Filter by category name
+
+**Example Requests:**
+```bash
+# Export all price history
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+  -o price_history.xlsx
+
+# Export for specific supplier
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+  -o price_history_supplier_1.xlsx
+
+# Export for specific category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+  -o price_history_electrical.xlsx
+
+# Export for supplier AND category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1&category=ELECTRICAL" \
+  -o price_history_supplier_1_electrical.xlsx
+```
+
+**Response:**
+- Success: Downloads Excel file (.xlsx)
+- Error: JSON with error messages
+
+### Import Price History
+
+**Endpoint:** `POST /api/v1/pricebook/import_price_history`
+
+**Parameters:**
+- `file` (required) - The Excel file to import (multipart/form-data)
+
+**Example Request:**
+```bash
+curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+  -F "file=@/path/to/price_history.xlsx"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "stats": {
+    "total_rows": 100,
+    "processed": 100,
+    "created": 50,
+    "updated": 45,
+    "skipped": 3,
+    "errors": 2
+  },
+  "warnings": [
+    "Row 10: Item ID 999 not found - skipping",
+    "Created new supplier: New Supplier Name"
+  ]
+}
+```
+
+## Excel File Format
+
+The exported Excel file contains the following columns:
+
+| Column Name | Description | Required for Import | Editable |
+|------------|-------------|---------------------|----------|
+| Item ID | Database ID of pricebook item | Yes | No |
+| Item Code | Item code/SKU | No | No |
+| Item Name | Item name | No | No |
+| Category | Item category | No | No |
+| Unit of Measure | Item UoM | No | No |
+| Current Price | Current price of item | No | No |
+| Default Supplier | Default supplier name | No | No |
+| Price History ID | Database ID of price history record | No* | No |
+| Historical Price | The price for this history entry | Yes | Yes |
+| Previous Price | Previous price before this change | No | Yes |
+| Price Date | When this record was created | No | No |
+| Date Effective | When this price became effective | No | Yes |
+| Supplier | Supplier for this price | No | Yes |
+| LGA | Local government area | No | Yes |
+| Change Reason | Reason for price change | No | Yes |
+| Quote Reference | Reference number for quote | No | Yes |
+| Notes | Item notes | No | No |
+
+*Note: Price History ID is only required when updating existing records. Leave blank for new entries.
+
+## Valid LGA Values
+
+The following LGA values are accepted (case-insensitive):
+- Toowoomba Regional Council
+- Lockyer Valley Regional Council
+- City of Gold Coast
+- Brisbane City Council
+- Sunshine Coast Regional Council
+- Redland City Council
+- Scenic Rim Regional Council
+
+## Import Behavior
+
+### Creating New Price History Records
+1. Leave "Price History ID" column empty
+2. Provide "Item ID" and "Historical Price" (required)
+3. All other fields are optional
+
+### Updating Existing Price History Records
+1. Include the "Price History ID" value from export
+2. Update any editable fields
+3. The import will update the existing record
+
+### Supplier Handling
+- If supplier name exists in database, it will be linked
+- If supplier name doesn't exist, a new supplier will be created
+- Invalid supplier names will be ignored with a warning
+
+### Error Handling
+- The import uses database transactions (all-or-nothing)
+- If any critical error occurs, all changes are rolled back
+- Row-level errors are collected and returned in the response
+- Non-critical issues generate warnings but don't stop the import
+
+## Use Cases
+
+### Use Case 1: Export supplier-specific prices
+1. User filters pricebook by supplier "ACME Supplies"
+2. User clicks "Export to Excel" button
+3. System generates `price_history_ACME_Supplies_20250106.xlsx`
+4. File contains all items and their price history for ACME
+
+### Use Case 2: Bulk update historical prices
+1. User exports price history
+2. User opens Excel and updates several "Historical Price" values
+3. User saves the file
+4. User uploads the file back to the system
+5. System updates price_history table with new values
+
+### Use Case 3: Add new price records
+1. User exports current price history
+2. User duplicates a row and changes:
+   - Clears "Price History ID"
+   - Updates "Historical Price" to new value
+   - Updates "Date Effective" to new date
+   - Updates "Supplier" if needed
+3. User uploads the file
+4. System creates new price history record
+
+### Use Case 4: Regional pricing updates
+1. User exports price history for category "PLUMBING"
+2. User adds LGA values to records (e.g., "Brisbane City Council")
+3. User updates prices for specific regions
+4. User uploads the file
+5. System records regional pricing variations
+
+## Testing Instructions
+
+### Manual Testing Steps
+
+1. **Start Rails Server**
+   ```bash
+   cd backend
+   bin/rails server
+   ```
+
+2. **Test Export (No Filters)**
+   ```bash
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+     -o test_export_all.xlsx
+
+   # Verify file was downloaded
+   ls -lh test_export_all.xlsx
+   ```
+
+3. **Test Export (With Supplier Filter)**
+   ```bash
+   # First, get a supplier ID
+   curl -X GET "http://localhost:3000/api/v1/suppliers" | jq '.[0].id'
+
+   # Then export for that supplier
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+     -o test_export_supplier.xlsx
+   ```
+
+4. **Test Export (With Category Filter)**
+   ```bash
+   # Get available categories
+   curl -X GET "http://localhost:3000/api/v1/pricebook" | jq '.filters.categories'
+
+   # Export for a category
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+     -o test_export_category.xlsx
+   ```
+
+5. **Test Import**
+   ```bash
+   # Edit the exported file in Excel (change some prices)
+   # Then import it back
+   curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+     -F "file=@test_export_all.xlsx"
+   ```
+
+6. **Verify Changes**
+   ```bash
+   # Check a specific item's price history
+   curl -X GET "http://localhost:3000/api/v1/pricebook/1/history" | jq '.'
+   ```
+
+### Rails Console Testing
+
+```ruby
+# Start console
+bin/rails console
+
+# Test export service
+service = PriceHistoryExportService.new(supplier_id: 1)
+result = service.export
+puts result[:success] ? "Export successful" : result[:errors]
+
+# Test import service (requires a file)
+# First create a test file by running export via curl
+service = PriceHistoryImportService.new('/path/to/test_export.xlsx')
+result = service.import
+puts result
+```
+
+## Implementation Details
+
+### PriceHistoryExportService
+
+**Key Features:**
+- Filters items by supplier and/or category
+- Includes all price history records for each item
+- Items without price history are included with empty history fields
+- Excel file has styled headers and formatted currency/date columns
+- Auto-fit column widths for readability
+- Filename includes filters and date for easy organization
+
+**Performance Considerations:**
+- Uses `includes()` to eager-load associations (prevents N+1 queries)
+- Processes items in memory (suitable for up to ~10,000 items)
+- For larger datasets, consider pagination or background job processing
+
+### PriceHistoryImportService
+
+**Key Features:**
+- Validates file format (CSV, XLS, XLSX)
+- Required column validation
+- Row-by-row processing with error collection
+- Database transaction for atomicity
+- Automatic supplier creation
+- LGA validation against allowed values
+- Flexible date parsing
+- Currency parsing (handles $, commas)
+
+**Validation Rules:**
+- Item ID must exist in database
+- Historical Price must be provided
+- LGA must be in allowed list (if provided)
+- Supplier is created if doesn't exist
+- Dates are parsed flexibly
+
+**Error Recovery:**
+- Transaction rollback on critical errors
+- Row-level errors don't stop other rows
+- Detailed error messages with row numbers
+- Warning messages for non-critical issues
+
+## Frontend Integration
+
+To integrate this feature in the React frontend:
+
+### Export Button
+
+```javascript
+const exportPriceHistory = async (supplierId, category) => {
+  const params = new URLSearchParams();
+  if (supplierId) params.append('supplier_id', supplierId);
+  if (category) params.append('category', category);
+
+  const response = await fetch(
+    `/api/v1/pricebook/export_price_history?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  );
+
+  if (response.ok) {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `price_history_${Date.now()}.xlsx`;
+    a.click();
+  } else {
+    const error = await response.json();
+    console.error('Export failed:', error);
+  }
+};
+```
+
+### Import Button
+
+```javascript
+const importPriceHistory = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/v1/pricebook/import_price_history', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  const result = await response.json();
+
+  if (result.success) {
+    console.log('Import successful:', result.stats);
+    // Show success notification
+    // Refresh pricebook data
+  } else {
+    console.error('Import failed:', result.errors);
+    // Show error notification
+  }
+};
+```
+
+## Security Considerations
+
+1. **Authentication**: Endpoints should require authentication (add auth middleware)
+2. **Authorization**: Users should only export/import data they have access to
+3. **File Size Limits**: Rails has default 10MB upload limit (adjust if needed)
+4. **SQL Injection**: Using parameterized queries throughout
+5. **XSS Prevention**: Data is validated and sanitized on import
+
+## Future Enhancements
+
+1. **Background Processing**: For large exports/imports, use Solid Queue
+2. **Progress Tracking**: Show real-time import progress
+3. **Validation Preview**: Show import preview before committing changes
+4. **Diff View**: Show what will change before importing
+5. **Export Templates**: Pre-filtered export templates for common use cases
+6. **Scheduled Exports**: Automatically export and email price history reports
+7. **Audit Trail**: Track who exported/imported and when
+8. **Undo Import**: Ability to rollback an import operation
+
+## Troubleshooting
+
+### Error: "No items found for the selected filters"
+- Check that items exist with the specified supplier/category
+- Verify supplier_id is correct
+- Check category name matches exactly (case-sensitive)
+
+### Error: "Failed to parse spreadsheet"
+- Ensure file is valid Excel (.xlsx, .xls) or CSV format
+- Check file is not corrupted
+- Verify file size is under limit
+
+### Error: "Missing required columns"
+- Excel file must have headers in first row
+- Required columns: "Item ID", "Historical Price"
+- Check for typos in column headers
+
+### Import creates duplicate suppliers
+- This is expected behavior if supplier name doesn't match exactly
+- Supplier matching is case-insensitive but must match exactly
+- Check for extra spaces or special characters
+
+### Price history not visible after import
+- Refresh the pricebook page
+- Check that date_effective is set correctly
+- Verify item_id matches an existing item
+
+## Support
+
+For issues or questions, contact the development team or create an issue in the project repository.
+
+
+### Code Example
+```jsx
+```bash
+# Export all price history
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+  -o price_history.xlsx
+
+# Export for specific supplier
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+  -o price_history_supplier_1.xlsx
+
+# Export for specific category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+  -o price_history_electrical.xlsx
+
+# Export for supplier AND category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1&category=ELECTRICAL" \
+  -o price_history_supplier_1_electrical.xlsx
+```
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+  -F "file=@/path/to/price_history.xlsx"
+```
+
+```json
+{
+  "success": true,
+  "stats": {
+    "total_rows": 100,
+    "processed": 100,
+    "created": 50,
+    "updated": 45,
+    "skipped": 3,
+    "errors": 2
+  },
+  "warnings": [
+    "Row 10: Item ID 999 not found - skipping",
+    "Created new supplier: New Supplier Name"
+  ]
+}
+```
+
+```bash
+   cd backend
+   bin/rails server
+   ```
+
+```bash
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+     -o test_export_all.xlsx
+
+   # Verify file was downloaded
+   ls -lh test_export_all.xlsx
+   ```
+
+```bash
+   # First, get a supplier ID
+   curl -X GET "http://localhost:3000/api/v1/suppliers" | jq '.[0].id'
+
+   # Then export for that supplier
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+     -o test_export_supplier.xlsx
+   ```
+
+```bash
+   # Get available categories
+   curl -X GET "http://localhost:3000/api/v1/pricebook" | jq '.filters.categories'
+
+   # Export for a category
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+     -o test_export_category.xlsx
+   ```
+
+```bash
+   # Edit the exported file in Excel (change some prices)
+   # Then import it back
+   curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+     -F "file=@test_export_all.xlsx"
+   ```
+
+```bash
+   # Check a specific item's price history
+   curl -X GET "http://localhost:3000/api/v1/pricebook/1/history" | jq '.'
+   ```
+
+```ruby
+# Start console
+bin/rails console
+
+# Test export service
+service = PriceHistoryExportService.new(supplier_id: 1)
+result = service.export
+puts result[:success] ? "Export successful" : result[:errors]
+
+# Test import service (requires a file)
+# First create a test file by running export via curl
+service = PriceHistoryImportService.new('/path/to/test_export.xlsx')
+result = service.import
+puts result
+```
+
+```javascript
+const exportPriceHistory = async (supplierId, category) => {
+  const params = new URLSearchParams();
+  if (supplierId) params.append('supplier_id', supplierId);
+  if (category) params.append('category', category);
+
+  const response = await fetch(
+    `/api/v1/pricebook/export_price_history?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  );
+
+  if (response.ok) {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `price_history_${Date.now()}.xlsx`;
+    a.click();
+  } else {
+    const error = await response.json();
+    console.error('Export failed:', error);
+  }
+};
+```
+
+```javascript
+const importPriceHistory = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/v1/pricebook/import_price_history', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  const result = await response.json();
+
+  if (result.success) {
+    console.log('Import successful:', result.stats);
+    // Show success notification
+    // Refresh pricebook data
+  } else {
+    console.error('Import failed:', result.errors);
+    // Show error notification
+  }
+};
+```
+```
+
+### Examples
+```bash
+# Export all price history
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+  -o price_history.xlsx
+
+# Export for specific supplier
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+  -o price_history_supplier_1.xlsx
+
+# Export for specific category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+  -o price_history_electrical.xlsx
+
+# Export for supplier AND category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1&category=ELECTRICAL" \
+  -o price_history_supplier_1_electrical.xlsx
+```
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+  -F "file=@/path/to/price_history.xlsx"
+```
+
+```json
+{
+  "success": true,
+  "stats": {
+    "total_rows": 100,
+    "processed": 100,
+    "created": 50,
+    "updated": 45,
+    "skipped": 3,
+    "errors": 2
+  },
+  "warnings": [
+    "Row 10: Item ID 999 not found - skipping",
+    "Created new supplier: New Supplier Name"
+  ]
+}
+```
+
+```bash
+   cd backend
+   bin/rails server
+   ```
+
+```bash
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+     -o test_export_all.xlsx
+
+   # Verify file was downloaded
+   ls -lh test_export_all.xlsx
+   ```
+
+```bash
+   # First, get a supplier ID
+   curl -X GET "http://localhost:3000/api/v1/suppliers" | jq '.[0].id'
+
+   # Then export for that supplier
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+     -o test_export_supplier.xlsx
+   ```
+
+```bash
+   # Get available categories
+   curl -X GET "http://localhost:3000/api/v1/pricebook" | jq '.filters.categories'
+
+   # Export for a category
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+     -o test_export_category.xlsx
+   ```
+
+```bash
+   # Edit the exported file in Excel (change some prices)
+   # Then import it back
+   curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+     -F "file=@test_export_all.xlsx"
+   ```
+
+```bash
+   # Check a specific item's price history
+   curl -X GET "http://localhost:3000/api/v1/pricebook/1/history" | jq '.'
+   ```
+
+```ruby
+# Start console
+bin/rails console
+
+# Test export service
+service = PriceHistoryExportService.new(supplier_id: 1)
+result = service.export
+puts result[:success] ? "Export successful" : result[:errors]
+
+# Test import service (requires a file)
+# First create a test file by running export via curl
+service = PriceHistoryImportService.new('/path/to/test_export.xlsx')
+result = service.import
+puts result
+```
+
+```javascript
+const exportPriceHistory = async (supplierId, category) => {
+  const params = new URLSearchParams();
+  if (supplierId) params.append('supplier_id', supplierId);
+  if (category) params.append('category', category);
+
+  const response = await fetch(
+    `/api/v1/pricebook/export_price_history?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  );
+
+  if (response.ok) {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `price_history_${Date.now()}.xlsx`;
+    a.click();
+  } else {
+    const error = await response.json();
+    console.error('Export failed:', error);
+  }
+};
+```
+
+```javascript
+const importPriceHistory = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/v1/pricebook/import_price_history', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  const result = await response.json();
+
+  if (result.success) {
+    console.log('Import successful:', result.stats);
+    // Show success notification
+    // Refresh pricebook data
+  } else {
+    console.error('Import failed:', result.errors);
+    // Show error notification
+  }
+};
+```
+
+---
+
 
 # Chapter 4: Price Books & Suppliers
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter  4               │
 │ 📕 LEXICON (BUGS):    Chapter  4               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Code examples, implementation patterns, and step-by-step guides
+**Last Updated:** 2025-11-17
+
+---
+
+## §3.1: Contact Types are Multi-Select Arrays
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.1
+
+### Quick Summary
+- Use `contact_types` as PostgreSQL array column - Allow multiple types: `['customer', 'supplier']` for hybrid contacts - Set `primary_contact_type` automatically if blank (first type in array) - Vali
+
+### Code Example
+```jsx
+# app/models/contact.rb
+CONTACT_TYPES = ['customer', 'supplier', 'sales', 'land_agent'].freeze
+
+validates :primary_contact_type, inclusion: { in: CONTACT_TYPES }, allow_nil: true
+validate :contact_types_must_be_valid
+
+before_save :set_primary_contact_type_if_blank
+
+def is_supplier?
+  contact_types&.include?('supplier')
+end
+
+private
+
+def contact_types_must_be_valid
+  return if contact_types.blank?
+  invalid_types = contact_types - CONTACT_TYPES
+  if invalid_types.any?
+    errors.add(:contact_types, "contains invalid types: #{invalid_types.join(', ')}")
+  end
+end
+
+# ---
+
+# Find all suppliers
+Contact.where("'supplier' = ANY(contact_types)")
+
+# Find contacts that are BOTH customer AND supplier
+Contact.where("contact_types @> ARRAY['customer', 'supplier']::varchar[]")
+
+# Filter by type in controller
+case params[:type]
+when 'customers'
+  @contacts = @contacts.where("'customer' = ANY(contact_types)")
+when 'suppliers'
+  @contacts = @contacts.where("'supplier' = ANY(contact_types)")
+when 'both'
+  @contacts = @contacts.where("contact_types @> ARRAY['customer', 'supplier']::varchar[]")
+end
+```
+
+---
+
+## §3.2: Bidirectional Relationships Require Reverse Sync
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.2
+
+### Quick Summary
+- Create reverse relationship after creating forward relationship - Update reverse relationship when forward is updated - Delete reverse relationship when forward is deleted - Use Thread-local flags t
+
+### Code Example
+```jsx
+# app/models/contact_relationship.rb
+RELATIONSHIP_TYPES = [
+  'previous_client', 'parent_company', 'subsidiary', 'partner',
+  'referral', 'supplier_alternate', 'related_project', 'family_member', 'other'
+].freeze
+
+validates :relationship_type, inclusion: { in: RELATIONSHIP_TYPES }
+validate :cannot_relate_to_self
+validate :unique_relationship_pair
+
+after_create :create_reverse_relationship
+after_update :update_reverse_relationship
+after_destroy :destroy_reverse_relationship
+
+private
+
+def create_reverse_relationship
+  return if Thread.current[:creating_reverse_relationship]
+
+  Thread.current[:creating_reverse_relationship] = true
+
+  ContactRelationship.create!(
+    source_contact_id: related_contact_id,
+    related_contact_id: source_contact_id,
+    relationship_type: relationship_type,
+    notes: notes
+  )
+ensure
+  Thread.current[:creating_reverse_relationship] = false
+end
+
+def cannot_relate_to_self
+  if source_contact_id == related_contact_id
+    errors.add(:base, "Cannot create relationship to same contact")
+  end
+end
+
+def unique_relationship_pair
+  existing = ContactRelationship.where(
+    source_contact_id: source_contact_id,
+    related_contact_id: related_contact_id
+  ).where.not(id: id)
+
+  if existing.exists?
+    errors.add(:base, "Relationship already exists")
+  end
+end
+```
+
+---
+
+## §3.3: Xero Sync Uses Priority-Based Fuzzy Matching
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.3
+
+### Quick Summary
+-
+
+### Code Example
+```jsx
+# app/services/xero_contact_sync_service.rb
+def match_contact(xero_contact)
+  # Priority 1: Exact xero_id match
+  if xero_contact.contact_id.present?
+    match = Contact.find_by(xero_id: xero_contact.contact_id)
+    return { contact: match, match_type: 'xero_id' } if match
+  end
+
+  # Priority 2: Tax number match (ABN/ACN)
+  if xero_contact.tax_number.present?
+    normalized_tax = xero_contact.tax_number.gsub(/\D/, '')
+    if normalized_tax.length == 11
+      match = Contact.where("regexp_replace(tax_number, '[^0-9]', '', 'g') = ?", normalized_tax).first
+      return { contact: match, match_type: 'tax_number' } if match
+    end
+  end
+
+  # Priority 3: Email match
+  if xero_contact.email_address.present?
+    match = Contact.find_by('LOWER(email) = ?', xero_contact.email_address.downcase)
+    return { contact: match, match_type: 'email' } if match
+  end
+
+  # Priority 4: Fuzzy name match (>85% similarity)
+  if xero_contact.name.present?
+    contact_names = Contact.pluck(:full_name, :id).to_h
+    fuzzy_matcher = FuzzyMatch.new(contact_names.keys)
+    matched_name = fuzzy_matcher.find(xero_contact.name, threshold: 0.85)
+
+    if matched_name
+      match = Contact.find(contact_names[matched_name])
+      return { contact: match, match_type: 'fuzzy_name' }
+    end
+  end
+
+  { contact: nil, match_type: 'no_match' }
+end
+```
+
+---
+
+## §3.4: Contact Deletion MUST Check Purchase Order Dependencies
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.4
+
+### Quick Summary
+- Check for linked suppliers via `contact.suppliers` association - Check if suppliers have purchase orders: `suppliers.joins(:purchase_orders).distinct` - Block deletion if ANY purchase orders exist -
+
+### Code Example
+```jsx
+# app/controllers/api/v1/contacts_controller.rb
+def destroy
+  # Check for linked suppliers with purchase orders
+  if @contact.suppliers.any?
+    suppliers_with_pos = @contact.suppliers.joins(:purchase_orders).distinct
+
+    if suppliers_with_pos.any?
+      # Check for paid/invoiced POs
+      paid_pos = PurchaseOrder
+        .where(supplier_id: suppliers_with_pos.pluck(:id))
+        .where("status IN (?) OR amount_paid > 0 OR amount_invoiced > 0",
+               ['paid', 'partially_paid', 'invoiced'])
+
+      if paid_pos.exists?
+        return render json: {
+          success: false,
+          error: "Cannot delete contact with suppliers that have paid or invoiced purchase orders"
+        }, status: :unprocessable_entity
+      end
+    end
+  end
+
+  @contact.destroy
+end
+```
+
+---
+
+## §3.6: Portal Users MUST Have Secure Password Requirements
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #3.6
+
+### Quick Summary
+- Minimum 12 characters - At least one uppercase, lowercase, digit, and special character - Lock account after 5 failed login attempts - Lockout duration: 30 minutes - Reset failed attempts counter on
+
+### Code Example
+```jsx
+# app/models/portal_user.rb
+PASSWORD_REGEX = /\A
+  (?=.*[a-z])           # At least one lowercase
+  (?=.*[A-Z])           # At least one uppercase
+  (?=.*\d)              # At least one digit
+  (?=.*[!@#$%^&*()_+\-=\[\]{}|;:,.<>?])  # At least one special char
+  .{12,}                # At least 12 characters
+\z/x
+
+validates :password, length: { minimum: 12 }, format: PASSWORD_REGEX, on: :create
+```
+
+---
+
+## §4.20: Price Book Import from Excel/CSV
+
+✨ Feature | 🟡 Intermediate
+
+### Quick Summary
+Import supplier price books from spreadsheets with automatic supplier matching and price history creation
+
+### Step-by-Step Guide
+# Price Book Import Guide
+
+This guide explains how to import clean price book data (suppliers, items, and price history) into the system.
+
+## Overview
+
+The import script will:
+1. **Clear existing data** - Delete all current suppliers, price book items, and price history
+2. **Import suppliers** - Load supplier data with contact information and ratings
+3. **Import price book items** - Load items and link them to suppliers by name
+4. **Import price history** - Load historical price changes linked to items and suppliers
+
+## CSV File Formats
+
+### 1. Suppliers CSV (`suppliers.csv`)
+
+**Required columns:**
+- `name` - Supplier name (must be unique)
+- `contact_person` - Contact name
+- `email` - Email address
+- `phone` - Phone number
+- `address` - Physical address
+- `rating` - Rating (0-5)
+- `response_rate` - Response rate percentage (0-100)
+- `avg_response_time` - Average response time in hours
+- `notes` - Additional notes
+- `is_active` - Active status (true/false)
+
+**Example:**
+```csv
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+TL Supply,John Smith,john@tlsupply.com.au,1300 123 456,123 Trade St Sydney,4,85.5,24,Reliable electrical supplier,true
+Bunnings,Trade Desk,trade@bunnings.com.au,1300 BUNNINGS,456 Builder Ave,5,95.0,12,Hardware store,true
+```
+
+### 2. Price Book Items CSV (`pricebook_items.csv`)
+
+**Required columns:**
+- `item_code` - Unique item code
+- `item_name` - Item description
+- `category` - Category (e.g., Electrical, Plumbing)
+- `unit_of_measure` - Unit (e.g., Each, Linear Metre, m²)
+- `current_price` - Current price (decimal)
+- `supplier_name` - Supplier name (must match name in suppliers.csv)
+- `brand` - Brand name
+- `notes` - Additional notes
+- `is_active` - Active status (true/false)
+- `needs_pricing_review` - Needs review flag (true/false)
+- `price_last_updated_at` - Last price update date (YYYY-MM-DD)
+
+**Example:**
+```csv
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+DPP,Wiring Double Power Point,Electrical,Each,51.00,TL Supply,Clipsal,,true,false,2024-01-15
+SPP,Wiring Single Power Point,Electrical,Each,50.00,TL Supply,Clipsal,,true,false,2024-01-15
+TIMBER-90x45,Pine Framing Timber 90x45mm,Carpentry,Linear Metre,8.50,Bunnings,Treated Pine,,true,false,2024-02-01
+```
+
+### 3. Price History CSV (`price_history.csv`) - Optional
+
+**Required columns:**
+- `item_code` - Item code (must match item_code in pricebook_items.csv)
+- `old_price` - Previous price
+- `new_price` - New price
+- `change_reason` - Reason for change (e.g., price_increase, supplier_change)
+- `supplier_name` - Supplier name (must match name in suppliers.csv)
+- `quote_reference` - Quote reference number
+- `created_at` - Date of change (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)
+
+**Example:**
+```csv
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+DPP,48.00,51.00,price_increase,TL Supply,Q-2024-001,2024-01-15
+DPP,51.00,53.00,price_increase,TL Supply,Q-2024-045,2024-03-20
+TIMBER-90x45,7.50,8.50,material_cost_increase,Bunnings,Q-2024-023,2024-02-01
+```
+
+## How to Use
+
+### Step 1: Generate Templates (Optional)
+
+To generate sample CSV templates:
+
+```bash
+bundle exec rails pricebook:generate_templates
+```
+
+This creates three template files in `backend/tmp/`:
+- `suppliers_template.csv`
+- `pricebook_items_template.csv`
+- `price_history_template.csv`
+
+### Step 2: Prepare Your CSV Files
+
+Place your CSV files in `backend/tmp/`:
+- `backend/tmp/suppliers.csv`
+- `backend/tmp/pricebook_items.csv`
+- `backend/tmp/price_history.csv` (optional)
+
+### Step 3: Run the Import Locally
+
+```bash
+cd backend
+bundle exec rails pricebook:import_clean
+```
+
+### Step 4: Run the Import on Production (Heroku)
+
+First, upload your CSV files to the Heroku dyno:
+
+```bash
+# Create a temporary directory on Heroku
+heroku run bash --app trapid-backend
+mkdir -p tmp
+exit
+
+# Copy CSV files to Heroku (you'll need to use a different method)
+# Option 1: Add files to git temporarily and deploy
+# Option 2: Use Heroku's data import feature
+# Option 3: Store files in S3 and download them in the task
+```
+
+**Recommended approach for production:**
+
+1. Store CSV files in a secure location (S3, Google Drive, etc.)
+2. Download them to the Heroku dyno's tmp directory
+3. Run the import task
+
+Or manually copy/paste the content:
+
+```bash
+heroku run bash --app trapid-backend
+
+# In the Heroku shell:
+cat > tmp/suppliers.csv << 'EOF'
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+[paste your suppliers data here]
+EOF
+
+cat > tmp/pricebook_items.csv << 'EOF'
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+[paste your items data here]
+EOF
+
+cat > tmp/price_history.csv << 'EOF'
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+[paste your history data here]
+EOF
+
+# Run the import
+bundle exec rails pricebook:import_clean
+
+# Exit the shell
+exit
+```
+
+## Important Notes
+
+1. **Data will be deleted**: The script deletes ALL existing suppliers, price book items, and price history before importing
+2. **Supplier names must match**: The `supplier_name` in price book items and price history must exactly match the `name` in suppliers.csv
+3. **Item codes must match**: The `item_code` in price history must exactly match the `item_code` in pricebook_items.csv
+4. **Price history is optional**: If you don't have price history, the script will skip it
+5. **Backup first**: Always backup your production data before running this on production
+
+## Troubleshooting
+
+**Error: "Suppliers file not found"**
+- Make sure the CSV file is in `backend/tmp/suppliers.csv`
+- Or set the environment variable: `SUPPLIERS_CSV=/path/to/file.csv`
+
+**Error: "Validation failed"**
+- Check that required fields are filled in
+- Ensure item_code and supplier name are unique
+- Verify supplier names match exactly between files
+
+**Price history not importing**
+- Check that item_code values match exactly with pricebook_items.csv
+- Verify supplier_name values match exactly with suppliers.csv
+- Check date format is YYYY-MM-DD or YYYY-MM-DD HH:MM:SS
+
+## Example Import Output
+
+```
+============================================================
+PRICE BOOK CLEAN IMPORT
+============================================================
+
+Step 1: Clearing existing data...
+  ✓ Deleted 0 price history records
+  ✓ Deleted 10 pricebook items
+  ✓ Deleted 3 suppliers
+
+Step 2: Importing suppliers...
+  ✓ Imported 5 suppliers
+
+Step 3: Importing price book items...
+  ✓ Imported 150 price book items
+
+Step 4: Importing price history...
+  ✓ Imported 45 price history records
+
+============================================================
+IMPORT COMPLETE
+============================================================
+Suppliers: 5
+Price Book Items: 150
+Price History: 45
+
+Data successfully imported and linked!
+```
+
+
+### Code Example
+```jsx
+```csv
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+TL Supply,John Smith,john@tlsupply.com.au,1300 123 456,123 Trade St Sydney,4,85.5,24,Reliable electrical supplier,true
+Bunnings,Trade Desk,trade@bunnings.com.au,1300 BUNNINGS,456 Builder Ave,5,95.0,12,Hardware store,true
+```
+
+```csv
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+DPP,Wiring Double Power Point,Electrical,Each,51.00,TL Supply,Clipsal,,true,false,2024-01-15
+SPP,Wiring Single Power Point,Electrical,Each,50.00,TL Supply,Clipsal,,true,false,2024-01-15
+TIMBER-90x45,Pine Framing Timber 90x45mm,Carpentry,Linear Metre,8.50,Bunnings,Treated Pine,,true,false,2024-02-01
+```
+
+```csv
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+DPP,48.00,51.00,price_increase,TL Supply,Q-2024-001,2024-01-15
+DPP,51.00,53.00,price_increase,TL Supply,Q-2024-045,2024-03-20
+TIMBER-90x45,7.50,8.50,material_cost_increase,Bunnings,Q-2024-023,2024-02-01
+```
+
+```bash
+bundle exec rails pricebook:generate_templates
+```
+
+```bash
+cd backend
+bundle exec rails pricebook:import_clean
+```
+
+```bash
+# Create a temporary directory on Heroku
+heroku run bash --app trapid-backend
+mkdir -p tmp
+exit
+
+# Copy CSV files to Heroku (you'll need to use a different method)
+# Option 1: Add files to git temporarily and deploy
+# Option 2: Use Heroku's data import feature
+# Option 3: Store files in S3 and download them in the task
+```
+
+```bash
+heroku run bash --app trapid-backend
+
+# In the Heroku shell:
+cat > tmp/suppliers.csv << 'EOF'
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+[paste your suppliers data here]
+EOF
+
+cat > tmp/pricebook_items.csv << 'EOF'
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+[paste your items data here]
+EOF
+
+cat > tmp/price_history.csv << 'EOF'
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+[paste your history data here]
+EOF
+
+# Run the import
+bundle exec rails pricebook:import_clean
+
+# Exit the shell
+exit
+```
+
+```
+============================================================
+PRICE BOOK CLEAN IMPORT
+============================================================
+
+Step 1: Clearing existing data...
+  ✓ Deleted 0 price history records
+  ✓ Deleted 10 pricebook items
+  ✓ Deleted 3 suppliers
+
+Step 2: Importing suppliers...
+  ✓ Imported 5 suppliers
+
+Step 3: Importing price book items...
+  ✓ Imported 150 price book items
+
+Step 4: Importing price history...
+  ✓ Imported 45 price history records
+
+============================================================
+IMPORT COMPLETE
+============================================================
+Suppliers: 5
+Price Book Items: 150
+Price History: 45
+
+Data successfully imported and linked!
+```
+```
+
+### Examples
+```csv
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+TL Supply,John Smith,john@tlsupply.com.au,1300 123 456,123 Trade St Sydney,4,85.5,24,Reliable electrical supplier,true
+Bunnings,Trade Desk,trade@bunnings.com.au,1300 BUNNINGS,456 Builder Ave,5,95.0,12,Hardware store,true
+```
+
+```csv
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+DPP,Wiring Double Power Point,Electrical,Each,51.00,TL Supply,Clipsal,,true,false,2024-01-15
+SPP,Wiring Single Power Point,Electrical,Each,50.00,TL Supply,Clipsal,,true,false,2024-01-15
+TIMBER-90x45,Pine Framing Timber 90x45mm,Carpentry,Linear Metre,8.50,Bunnings,Treated Pine,,true,false,2024-02-01
+```
+
+```csv
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+DPP,48.00,51.00,price_increase,TL Supply,Q-2024-001,2024-01-15
+DPP,51.00,53.00,price_increase,TL Supply,Q-2024-045,2024-03-20
+TIMBER-90x45,7.50,8.50,material_cost_increase,Bunnings,Q-2024-023,2024-02-01
+```
+
+```bash
+bundle exec rails pricebook:generate_templates
+```
+
+```bash
+cd backend
+bundle exec rails pricebook:import_clean
+```
+
+```bash
+# Create a temporary directory on Heroku
+heroku run bash --app trapid-backend
+mkdir -p tmp
+exit
+
+# Copy CSV files to Heroku (you'll need to use a different method)
+# Option 1: Add files to git temporarily and deploy
+# Option 2: Use Heroku's data import feature
+# Option 3: Store files in S3 and download them in the task
+```
+
+```bash
+heroku run bash --app trapid-backend
+
+# In the Heroku shell:
+cat > tmp/suppliers.csv << 'EOF'
+name,contact_person,email,phone,address,rating,response_rate,avg_response_time,notes,is_active
+[paste your suppliers data here]
+EOF
+
+cat > tmp/pricebook_items.csv << 'EOF'
+item_code,item_name,category,unit_of_measure,current_price,supplier_name,brand,notes,is_active,needs_pricing_review,price_last_updated_at
+[paste your items data here]
+EOF
+
+cat > tmp/price_history.csv << 'EOF'
+item_code,old_price,new_price,change_reason,supplier_name,quote_reference,created_at
+[paste your history data here]
+EOF
+
+# Run the import
+bundle exec rails pricebook:import_clean
+
+# Exit the shell
+exit
+```
+
+```
+============================================================
+PRICE BOOK CLEAN IMPORT
+============================================================
+
+Step 1: Clearing existing data...
+  ✓ Deleted 0 price history records
+  ✓ Deleted 10 pricebook items
+  ✓ Deleted 3 suppliers
+
+Step 2: Importing suppliers...
+  ✓ Imported 5 suppliers
+
+Step 3: Importing price book items...
+  ✓ Imported 150 price book items
+
+Step 4: Importing price history...
+  ✓ Imported 45 price history records
+
+============================================================
+IMPORT COMPLETE
+============================================================
+Suppliers: 5
+Price Book Items: 150
+Price History: 45
+
+Data successfully imported and linked!
+```
+
+---
+
+## §4.21: Price History Export/Import System
+
+✨ Feature | 🟡 Intermediate
+
+### Quick Summary
+Bulk export and import of price history data for backup and migration purposes
+
+### Step-by-Step Guide
+# Price History Export/Import Feature
+
+## Overview
+
+This feature allows users to export and import price history data for pricebook items in Excel format. Users can filter by supplier and/or category when exporting, edit the exported data in Excel, and re-import the changes.
+
+## Files Created
+
+### Services
+- `/app/services/price_history_export_service.rb` - Generates Excel files with price history data
+- `/app/services/price_history_import_service.rb` - Parses Excel files and updates price history records
+
+### Controller Updates
+- `/app/controllers/api/v1/pricebook_items_controller.rb` - Added two new endpoints:
+  - `export_price_history` (GET)
+  - `import_price_history` (POST)
+
+### Routes
+- `/config/routes.rb` - Added routes for the new endpoints
+
+## API Endpoints
+
+### Export Price History
+
+**Endpoint:** `GET /api/v1/pricebook/export_price_history`
+
+**Query Parameters:**
+- `supplier_id` (optional) - Filter by supplier ID
+- `category` (optional) - Filter by category name
+
+**Example Requests:**
+```bash
+# Export all price history
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+  -o price_history.xlsx
+
+# Export for specific supplier
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+  -o price_history_supplier_1.xlsx
+
+# Export for specific category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+  -o price_history_electrical.xlsx
+
+# Export for supplier AND category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1&category=ELECTRICAL" \
+  -o price_history_supplier_1_electrical.xlsx
+```
+
+**Response:**
+- Success: Downloads Excel file (.xlsx)
+- Error: JSON with error messages
+
+### Import Price History
+
+**Endpoint:** `POST /api/v1/pricebook/import_price_history`
+
+**Parameters:**
+- `file` (required) - The Excel file to import (multipart/form-data)
+
+**Example Request:**
+```bash
+curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+  -F "file=@/path/to/price_history.xlsx"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "stats": {
+    "total_rows": 100,
+    "processed": 100,
+    "created": 50,
+    "updated": 45,
+    "skipped": 3,
+    "errors": 2
+  },
+  "warnings": [
+    "Row 10: Item ID 999 not found - skipping",
+    "Created new supplier: New Supplier Name"
+  ]
+}
+```
+
+## Excel File Format
+
+The exported Excel file contains the following columns:
+
+| Column Name | Description | Required for Import | Editable |
+|------------|-------------|---------------------|----------|
+| Item ID | Database ID of pricebook item | Yes | No |
+| Item Code | Item code/SKU | No | No |
+| Item Name | Item name | No | No |
+| Category | Item category | No | No |
+| Unit of Measure | Item UoM | No | No |
+| Current Price | Current price of item | No | No |
+| Default Supplier | Default supplier name | No | No |
+| Price History ID | Database ID of price history record | No* | No |
+| Historical Price | The price for this history entry | Yes | Yes |
+| Previous Price | Previous price before this change | No | Yes |
+| Price Date | When this record was created | No | No |
+| Date Effective | When this price became effective | No | Yes |
+| Supplier | Supplier for this price | No | Yes |
+| LGA | Local government area | No | Yes |
+| Change Reason | Reason for price change | No | Yes |
+| Quote Reference | Reference number for quote | No | Yes |
+| Notes | Item notes | No | No |
+
+*Note: Price History ID is only required when updating existing records. Leave blank for new entries.
+
+## Valid LGA Values
+
+The following LGA values are accepted (case-insensitive):
+- Toowoomba Regional Council
+- Lockyer Valley Regional Council
+- City of Gold Coast
+- Brisbane City Council
+- Sunshine Coast Regional Council
+- Redland City Council
+- Scenic Rim Regional Council
+
+## Import Behavior
+
+### Creating New Price History Records
+1. Leave "Price History ID" column empty
+2. Provide "Item ID" and "Historical Price" (required)
+3. All other fields are optional
+
+### Updating Existing Price History Records
+1. Include the "Price History ID" value from export
+2. Update any editable fields
+3. The import will update the existing record
+
+### Supplier Handling
+- If supplier name exists in database, it will be linked
+- If supplier name doesn't exist, a new supplier will be created
+- Invalid supplier names will be ignored with a warning
+
+### Error Handling
+- The import uses database transactions (all-or-nothing)
+- If any critical error occurs, all changes are rolled back
+- Row-level errors are collected and returned in the response
+- Non-critical issues generate warnings but don't stop the import
+
+## Use Cases
+
+### Use Case 1: Export supplier-specific prices
+1. User filters pricebook by supplier "ACME Supplies"
+2. User clicks "Export to Excel" button
+3. System generates `price_history_ACME_Supplies_20250106.xlsx`
+4. File contains all items and their price history for ACME
+
+### Use Case 2: Bulk update historical prices
+1. User exports price history
+2. User opens Excel and updates several "Historical Price" values
+3. User saves the file
+4. User uploads the file back to the system
+5. System updates price_history table with new values
+
+### Use Case 3: Add new price records
+1. User exports current price history
+2. User duplicates a row and changes:
+   - Clears "Price History ID"
+   - Updates "Historical Price" to new value
+   - Updates "Date Effective" to new date
+   - Updates "Supplier" if needed
+3. User uploads the file
+4. System creates new price history record
+
+### Use Case 4: Regional pricing updates
+1. User exports price history for category "PLUMBING"
+2. User adds LGA values to records (e.g., "Brisbane City Council")
+3. User updates prices for specific regions
+4. User uploads the file
+5. System records regional pricing variations
+
+## Testing Instructions
+
+### Manual Testing Steps
+
+1. **Start Rails Server**
+   ```bash
+   cd backend
+   bin/rails server
+   ```
+
+2. **Test Export (No Filters)**
+   ```bash
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+     -o test_export_all.xlsx
+
+   # Verify file was downloaded
+   ls -lh test_export_all.xlsx
+   ```
+
+3. **Test Export (With Supplier Filter)**
+   ```bash
+   # First, get a supplier ID
+   curl -X GET "http://localhost:3000/api/v1/suppliers" | jq '.[0].id'
+
+   # Then export for that supplier
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+     -o test_export_supplier.xlsx
+   ```
+
+4. **Test Export (With Category Filter)**
+   ```bash
+   # Get available categories
+   curl -X GET "http://localhost:3000/api/v1/pricebook" | jq '.filters.categories'
+
+   # Export for a category
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+     -o test_export_category.xlsx
+   ```
+
+5. **Test Import**
+   ```bash
+   # Edit the exported file in Excel (change some prices)
+   # Then import it back
+   curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+     -F "file=@test_export_all.xlsx"
+   ```
+
+6. **Verify Changes**
+   ```bash
+   # Check a specific item's price history
+   curl -X GET "http://localhost:3000/api/v1/pricebook/1/history" | jq '.'
+   ```
+
+### Rails Console Testing
+
+```ruby
+# Start console
+bin/rails console
+
+# Test export service
+service = PriceHistoryExportService.new(supplier_id: 1)
+result = service.export
+puts result[:success] ? "Export successful" : result[:errors]
+
+# Test import service (requires a file)
+# First create a test file by running export via curl
+service = PriceHistoryImportService.new('/path/to/test_export.xlsx')
+result = service.import
+puts result
+```
+
+## Implementation Details
+
+### PriceHistoryExportService
+
+**Key Features:**
+- Filters items by supplier and/or category
+- Includes all price history records for each item
+- Items without price history are included with empty history fields
+- Excel file has styled headers and formatted currency/date columns
+- Auto-fit column widths for readability
+- Filename includes filters and date for easy organization
+
+**Performance Considerations:**
+- Uses `includes()` to eager-load associations (prevents N+1 queries)
+- Processes items in memory (suitable for up to ~10,000 items)
+- For larger datasets, consider pagination or background job processing
+
+### PriceHistoryImportService
+
+**Key Features:**
+- Validates file format (CSV, XLS, XLSX)
+- Required column validation
+- Row-by-row processing with error collection
+- Database transaction for atomicity
+- Automatic supplier creation
+- LGA validation against allowed values
+- Flexible date parsing
+- Currency parsing (handles $, commas)
+
+**Validation Rules:**
+- Item ID must exist in database
+- Historical Price must be provided
+- LGA must be in allowed list (if provided)
+- Supplier is created if doesn't exist
+- Dates are parsed flexibly
+
+**Error Recovery:**
+- Transaction rollback on critical errors
+- Row-level errors don't stop other rows
+- Detailed error messages with row numbers
+- Warning messages for non-critical issues
+
+## Frontend Integration
+
+To integrate this feature in the React frontend:
+
+### Export Button
+
+```javascript
+const exportPriceHistory = async (supplierId, category) => {
+  const params = new URLSearchParams();
+  if (supplierId) params.append('supplier_id', supplierId);
+  if (category) params.append('category', category);
+
+  const response = await fetch(
+    `/api/v1/pricebook/export_price_history?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  );
+
+  if (response.ok) {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `price_history_${Date.now()}.xlsx`;
+    a.click();
+  } else {
+    const error = await response.json();
+    console.error('Export failed:', error);
+  }
+};
+```
+
+### Import Button
+
+```javascript
+const importPriceHistory = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/v1/pricebook/import_price_history', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  const result = await response.json();
+
+  if (result.success) {
+    console.log('Import successful:', result.stats);
+    // Show success notification
+    // Refresh pricebook data
+  } else {
+    console.error('Import failed:', result.errors);
+    // Show error notification
+  }
+};
+```
+
+## Security Considerations
+
+1. **Authentication**: Endpoints should require authentication (add auth middleware)
+2. **Authorization**: Users should only export/import data they have access to
+3. **File Size Limits**: Rails has default 10MB upload limit (adjust if needed)
+4. **SQL Injection**: Using parameterized queries throughout
+5. **XSS Prevention**: Data is validated and sanitized on import
+
+## Future Enhancements
+
+1. **Background Processing**: For large exports/imports, use Solid Queue
+2. **Progress Tracking**: Show real-time import progress
+3. **Validation Preview**: Show import preview before committing changes
+4. **Diff View**: Show what will change before importing
+5. **Export Templates**: Pre-filtered export templates for common use cases
+6. **Scheduled Exports**: Automatically export and email price history reports
+7. **Audit Trail**: Track who exported/imported and when
+8. **Undo Import**: Ability to rollback an import operation
+
+## Troubleshooting
+
+### Error: "No items found for the selected filters"
+- Check that items exist with the specified supplier/category
+- Verify supplier_id is correct
+- Check category name matches exactly (case-sensitive)
+
+### Error: "Failed to parse spreadsheet"
+- Ensure file is valid Excel (.xlsx, .xls) or CSV format
+- Check file is not corrupted
+- Verify file size is under limit
+
+### Error: "Missing required columns"
+- Excel file must have headers in first row
+- Required columns: "Item ID", "Historical Price"
+- Check for typos in column headers
+
+### Import creates duplicate suppliers
+- This is expected behavior if supplier name doesn't match exactly
+- Supplier matching is case-insensitive but must match exactly
+- Check for extra spaces or special characters
+
+### Price history not visible after import
+- Refresh the pricebook page
+- Check that date_effective is set correctly
+- Verify item_id matches an existing item
+
+## Support
+
+For issues or questions, contact the development team or create an issue in the project repository.
+
+
+### Code Example
+```jsx
+```bash
+# Export all price history
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+  -o price_history.xlsx
+
+# Export for specific supplier
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+  -o price_history_supplier_1.xlsx
+
+# Export for specific category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+  -o price_history_electrical.xlsx
+
+# Export for supplier AND category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1&category=ELECTRICAL" \
+  -o price_history_supplier_1_electrical.xlsx
+```
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+  -F "file=@/path/to/price_history.xlsx"
+```
+
+```json
+{
+  "success": true,
+  "stats": {
+    "total_rows": 100,
+    "processed": 100,
+    "created": 50,
+    "updated": 45,
+    "skipped": 3,
+    "errors": 2
+  },
+  "warnings": [
+    "Row 10: Item ID 999 not found - skipping",
+    "Created new supplier: New Supplier Name"
+  ]
+}
+```
+
+```bash
+   cd backend
+   bin/rails server
+   ```
+
+```bash
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+     -o test_export_all.xlsx
+
+   # Verify file was downloaded
+   ls -lh test_export_all.xlsx
+   ```
+
+```bash
+   # First, get a supplier ID
+   curl -X GET "http://localhost:3000/api/v1/suppliers" | jq '.[0].id'
+
+   # Then export for that supplier
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+     -o test_export_supplier.xlsx
+   ```
+
+```bash
+   # Get available categories
+   curl -X GET "http://localhost:3000/api/v1/pricebook" | jq '.filters.categories'
+
+   # Export for a category
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+     -o test_export_category.xlsx
+   ```
+
+```bash
+   # Edit the exported file in Excel (change some prices)
+   # Then import it back
+   curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+     -F "file=@test_export_all.xlsx"
+   ```
+
+```bash
+   # Check a specific item's price history
+   curl -X GET "http://localhost:3000/api/v1/pricebook/1/history" | jq '.'
+   ```
+
+```ruby
+# Start console
+bin/rails console
+
+# Test export service
+service = PriceHistoryExportService.new(supplier_id: 1)
+result = service.export
+puts result[:success] ? "Export successful" : result[:errors]
+
+# Test import service (requires a file)
+# First create a test file by running export via curl
+service = PriceHistoryImportService.new('/path/to/test_export.xlsx')
+result = service.import
+puts result
+```
+
+```javascript
+const exportPriceHistory = async (supplierId, category) => {
+  const params = new URLSearchParams();
+  if (supplierId) params.append('supplier_id', supplierId);
+  if (category) params.append('category', category);
+
+  const response = await fetch(
+    `/api/v1/pricebook/export_price_history?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  );
+
+  if (response.ok) {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `price_history_${Date.now()}.xlsx`;
+    a.click();
+  } else {
+    const error = await response.json();
+    console.error('Export failed:', error);
+  }
+};
+```
+
+```javascript
+const importPriceHistory = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/v1/pricebook/import_price_history', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  const result = await response.json();
+
+  if (result.success) {
+    console.log('Import successful:', result.stats);
+    // Show success notification
+    // Refresh pricebook data
+  } else {
+    console.error('Import failed:', result.errors);
+    // Show error notification
+  }
+};
+```
+```
+
+### Examples
+```bash
+# Export all price history
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+  -o price_history.xlsx
+
+# Export for specific supplier
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+  -o price_history_supplier_1.xlsx
+
+# Export for specific category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+  -o price_history_electrical.xlsx
+
+# Export for supplier AND category
+curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1&category=ELECTRICAL" \
+  -o price_history_supplier_1_electrical.xlsx
+```
+
+```bash
+curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+  -F "file=@/path/to/price_history.xlsx"
+```
+
+```json
+{
+  "success": true,
+  "stats": {
+    "total_rows": 100,
+    "processed": 100,
+    "created": 50,
+    "updated": 45,
+    "skipped": 3,
+    "errors": 2
+  },
+  "warnings": [
+    "Row 10: Item ID 999 not found - skipping",
+    "Created new supplier: New Supplier Name"
+  ]
+}
+```
+
+```bash
+   cd backend
+   bin/rails server
+   ```
+
+```bash
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history" \
+     -o test_export_all.xlsx
+
+   # Verify file was downloaded
+   ls -lh test_export_all.xlsx
+   ```
+
+```bash
+   # First, get a supplier ID
+   curl -X GET "http://localhost:3000/api/v1/suppliers" | jq '.[0].id'
+
+   # Then export for that supplier
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?supplier_id=1" \
+     -o test_export_supplier.xlsx
+   ```
+
+```bash
+   # Get available categories
+   curl -X GET "http://localhost:3000/api/v1/pricebook" | jq '.filters.categories'
+
+   # Export for a category
+   curl -X GET "http://localhost:3000/api/v1/pricebook/export_price_history?category=ELECTRICAL" \
+     -o test_export_category.xlsx
+   ```
+
+```bash
+   # Edit the exported file in Excel (change some prices)
+   # Then import it back
+   curl -X POST "http://localhost:3000/api/v1/pricebook/import_price_history" \
+     -F "file=@test_export_all.xlsx"
+   ```
+
+```bash
+   # Check a specific item's price history
+   curl -X GET "http://localhost:3000/api/v1/pricebook/1/history" | jq '.'
+   ```
+
+```ruby
+# Start console
+bin/rails console
+
+# Test export service
+service = PriceHistoryExportService.new(supplier_id: 1)
+result = service.export
+puts result[:success] ? "Export successful" : result[:errors]
+
+# Test import service (requires a file)
+# First create a test file by running export via curl
+service = PriceHistoryImportService.new('/path/to/test_export.xlsx')
+result = service.import
+puts result
+```
+
+```javascript
+const exportPriceHistory = async (supplierId, category) => {
+  const params = new URLSearchParams();
+  if (supplierId) params.append('supplier_id', supplierId);
+  if (category) params.append('category', category);
+
+  const response = await fetch(
+    `/api/v1/pricebook/export_price_history?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  );
+
+  if (response.ok) {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `price_history_${Date.now()}.xlsx`;
+    a.click();
+  } else {
+    const error = await response.json();
+    console.error('Export failed:', error);
+  }
+};
+```
+
+```javascript
+const importPriceHistory = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/v1/pricebook/import_price_history', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  const result = await response.json();
+
+  if (result.success) {
+    console.log('Import successful:', result.stats);
+    // Show success notification
+    // Refresh pricebook data
+  } else {
+    console.error('Import failed:', result.errors);
+    // Show error notification
+  }
+};
+```
+
+---
+
+
+# Chapter 5: Price Books & Suppliers
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  5               │
+│ 📕 LEXICON (BUGS):    Chapter  5               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -2153,11 +8865,11 @@ get 'pricebook/:id/proxy_image/:file_type', to: 'pricebook_items#proxy_image'
 ---
 
 
-# Chapter 5: Jobs & Construction Management
+# Chapter 6: Jobs & Construction Management
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  5               │
-│ 📕 LEXICON (BUGS):    Chapter  5               │
+│ 📖 BIBLE (RULES):     Chapter  6               │
+│ 📕 LEXICON (BUGS):    Chapter  6               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -2727,11 +9439,11 @@ end
 ---
 
 
-# Chapter 6: Estimates & Quoting
+# Chapter 7: Estimates & Quoting
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  6               │
-│ 📕 LEXICON (BUGS):    Chapter  6               │
+│ 📖 BIBLE (RULES):     Chapter  7               │
+│ 📕 LEXICON (BUGS):    Chapter  7               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -3400,11 +10112,11 @@ end
 ---
 
 
-# Chapter 7: AI Plan Review
+# Chapter 8: AI Plan Review
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  7               │
-│ 📕 LEXICON (BUGS):    Chapter  7               │
+│ 📖 BIBLE (RULES):     Chapter  8               │
+│ 📕 LEXICON (BUGS):    Chapter  8               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -3810,11 +10522,11 @@ end
 ---
 
 
-# Chapter 8: Purchase Orders
+# Chapter 9: Purchase Orders
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  8               │
-│ 📕 LEXICON (BUGS):    Chapter  8               │
+│ 📖 BIBLE (RULES):     Chapter  9               │
+│ 📕 LEXICON (BUGS):    Chapter  9               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -3962,12 +10674,4133 @@ end
 
 ---
 
+## §9.1: Task Management Quick Reference
+
+✨ Feature | 🟢 Beginner
+
+### Quick Summary
+Quick reference for task management: two task systems, API endpoints, and common operations
+
+### Step-by-Step Guide
+# Trapid Task Management - Quick Reference Guide
+
+## Two Task Systems
+
+### 1. ProjectTask - Master Schedule (Detailed Planning)
+- **Used For:** Internal project planning with dependencies and critical path
+- **Main Fields:** status, progress_percentage, planned/actual dates, assigned_to_id
+- **Key Feature:** Task dependencies with 4 relationship types
+- **User Assignment:** Yes, to individual User objects
+- **Database:** `project_tasks` table
+
+### 2. ScheduleTask - Supplier Schedule (Delivery Tracking)
+- **Used For:** Tracking supplier deliveries and matching to purchase orders
+- **Main Fields:** title, status, start_date, complete_date, supplier_name
+- **Key Feature:** Link to purchase orders for delivery timing
+- **User Assignment:** No (tracks supplier info instead)
+- **Database:** `schedule_tasks` table
+
+---
+
+## Key Models & Files
+
+```
+Models:
+  ProjectTask          → /backend/app/models/project_task.rb
+  ScheduleTask         → /backend/app/models/schedule_task.rb
+  TaskTemplate         → /backend/app/models/task_template.rb
+  TaskDependency       → /backend/app/models/task_dependency.rb
+  TaskUpdate           → /backend/app/models/task_update.rb
+  Project              → /backend/app/models/project.rb
+  Construction         → /backend/app/models/construction.rb
+  User                 → /backend/app/models/user.rb
+
+Controllers:
+  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
+  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
+  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
+
+Services:
+  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
+
+Frontend Pages:
+  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
+  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
+
+Frontend Components:
+  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
+  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
+  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
+```
+
+---
+
+## API Endpoints
+
+### Task Management
+```
+GET    /api/v1/projects/:project_id/tasks                 - List all tasks
+POST   /api/v1/projects/:project_id/tasks                 - Create task
+GET    /api/v1/projects/:project_id/tasks/:id             - Get task
+PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
+DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
+GET    /api/v1/projects/:id/gantt                         - Get Gantt data
+```
+
+### Schedule Tasks
+```
+GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
+POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
+GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
+PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
+DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
+```
+
+---
+
+## Task Status States
+
+```
+not_started  → Initial state (default)
+in_progress  → Task has started
+complete     → Task finished
+on_hold      → Paused/blocked
+```
+
+---
+
+## Task Properties
+
+| Property | Type | Usage |
+|----------|------|-------|
+| name | string | Task title |
+| status | enum | Current state |
+| progress_percentage | 0-100 | Completion % |
+| planned_start_date | date | Scheduled start |
+| planned_end_date | date | Scheduled end |
+| actual_start_date | date | When work started |
+| actual_end_date | date | When work completed |
+| duration_days | integer | Task length in days |
+| is_milestone | boolean | Mark important milestone |
+| is_critical_path | boolean | On longest path |
+| assigned_to_id | foreign key | User assignment |
+| supplier_name | string | External supplier |
+| purchase_order_id | foreign key | Linked PO |
+
+---
+
+## User Assignment (Current Limitation)
+
+Frontend uses hardcoded team members:
+```javascript
+[
+  'Rob Harder',
+  'Andrew Clement',
+  'Sam Harder',
+  'Sophie Harder',
+  'Jake Baird'
+]
+```
+
+**Problem:** Not dynamically fetched from database
+**Solution Needed:** Create `/api/v1/users` endpoint
+
+---
+
+## Dependency Types
+
+```
+finish_to_start (FS)  → Task A finishes, Task B starts (default)
+start_to_start (SS)   → Task A starts, Task B starts
+finish_to_finish (FF) → Task A finishes, Task B finishes
+start_to_finish (SF)  → Task A starts, Task B finishes (rare)
+```
+
+All support optional lag_days for overlap.
+
+---
+
+## Gantt Chart Features
+
+**Zoom Levels:**
+- Day view: 40px per day
+- Week view: 6px per day
+- Month view: 2px per day
+
+**Color By:**
+- Status (not_started=gray, in_progress=blue, complete=green)
+- Category (CONCRETE, CARPENTER, ELECTRICAL, etc.)
+- Type (DO, ORDER, GET, CLAIM, etc.)
+
+**Navigation:**
+- Previous/Next period buttons
+- "Today" button
+- Date range customizable
+
+---
+
+## Data Flow
+
+```
+User creates/imports tasks
+        ↓
+ProjectTask or ScheduleTask created
+        ↓
+Dependencies established
+        ↓
+Schedule::GeneratorService runs (for ProjectTasks)
+        ↓
+Timeline calculated (forward pass)
+        ↓
+Critical path identified
+        ↓
+Gantt chart displays tasks & bars
+        ↓
+User updates status/progress
+        ↓
+TaskUpdate record created (history)
+```
+
+---
+
+## Common Operations
+
+### Create a Task
+```bash
+POST /api/v1/projects/:project_id/tasks
+{
+  "project_task": {
+    "name": "Pour Concrete",
+    "task_type": "DO",
+    "category": "CONCRETE",
+    "duration_days": 5,
+    "assigned_to_id": 1
+  }
+}
+```
+
+### Update Task Progress
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "status": "in_progress",
+    "progress_percentage": 50
+  }
+}
+```
+
+### Link Task to Purchase Order
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "purchase_order_id": 42,
+    "required_on_site_date": "2025-01-20"
+  }
+}
+```
+
+### Import Schedule from Excel
+```bash
+POST /api/v1/constructions/:id/schedule_tasks/import
+Content-Type: multipart/form-data
+file: <Excel file>
+```
+
+---
+
+## What's Missing & Needs Work
+
+### High Priority
+- [ ] Dynamic user list (hardcoded → database)
+- [ ] User roles/permissions
+- [ ] Backward pass for accurate float calculation
+
+### Medium Priority
+- [ ] Task comments/discussions
+- [ ] Change notifications
+- [ ] Export to PDF/PNG
+- [ ] Resource workload tracking
+
+### Nice to Have
+- [ ] Mobile support
+- [ ] Real-time WebSocket sync
+- [ ] Multi-project portfolios
+- [ ] Risk management integration
+
+---
+
+## Performance Notes
+
+- Project progress cached for 5 minutes
+- Gantt data includes all task relationships
+- ScheduleTask import processes row-by-row (can slow with 1000+ rows)
+- No pagination on task lists (could be issue at scale)
+
+---
+
+## Testing Checklist
+
+- [ ] Create task with all fields
+- [ ] Update task status (all 4 states)
+- [ ] Assign/unassign user
+- [ ] Create dependency between tasks
+- [ ] Verify circular dependency prevention
+- [ ] Import Excel schedule
+- [ ] Match schedule task to PO
+- [ ] View Gantt chart at different zoom levels
+- [ ] Edit task in table view
+- [ ] Sort table columns
+- [ ] Verify critical path calculation
+- [ ] Check materials_status (on_time/delayed)
+
+---
+
+## Database Indexes
+
+Task-related indexes for performance:
+- project_id, status
+- planned_start_date, planned_end_date
+- is_critical_path
+- construction_id, matched_to_po
+
+---
+
+## Related Documentation
+
+See `/Users/jakebaird/trapid/TASK_MANAGEMENT_ARCHITECTURE.md` for detailed investigation.
+
+
+
+### Code Example
+```jsx
+```
+Models:
+  ProjectTask          → /backend/app/models/project_task.rb
+  ScheduleTask         → /backend/app/models/schedule_task.rb
+  TaskTemplate         → /backend/app/models/task_template.rb
+  TaskDependency       → /backend/app/models/task_dependency.rb
+  TaskUpdate           → /backend/app/models/task_update.rb
+  Project              → /backend/app/models/project.rb
+  Construction         → /backend/app/models/construction.rb
+  User                 → /backend/app/models/user.rb
+
+Controllers:
+  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
+  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
+  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
+
+Services:
+  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
+
+Frontend Pages:
+  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
+  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
+
+Frontend Components:
+  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
+  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
+  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
+```
+
+```
+GET    /api/v1/projects/:project_id/tasks                 - List all tasks
+POST   /api/v1/projects/:project_id/tasks                 - Create task
+GET    /api/v1/projects/:project_id/tasks/:id             - Get task
+PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
+DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
+GET    /api/v1/projects/:id/gantt                         - Get Gantt data
+```
+
+```
+GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
+POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
+GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
+PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
+DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
+```
+
+```
+not_started  → Initial state (default)
+in_progress  → Task has started
+complete     → Task finished
+on_hold      → Paused/blocked
+```
+
+```javascript
+[
+  'Rob Harder',
+  'Andrew Clement',
+  'Sam Harder',
+  'Sophie Harder',
+  'Jake Baird'
+]
+```
+
+```
+finish_to_start (FS)  → Task A finishes, Task B starts (default)
+start_to_start (SS)   → Task A starts, Task B starts
+finish_to_finish (FF) → Task A finishes, Task B finishes
+start_to_finish (SF)  → Task A starts, Task B finishes (rare)
+```
+
+```
+User creates/imports tasks
+        ↓
+ProjectTask or ScheduleTask created
+        ↓
+Dependencies established
+        ↓
+Schedule::GeneratorService runs (for ProjectTasks)
+        ↓
+Timeline calculated (forward pass)
+        ↓
+Critical path identified
+        ↓
+Gantt chart displays tasks & bars
+        ↓
+User updates status/progress
+        ↓
+TaskUpdate record created (history)
+```
+
+```bash
+POST /api/v1/projects/:project_id/tasks
+{
+  "project_task": {
+    "name": "Pour Concrete",
+    "task_type": "DO",
+    "category": "CONCRETE",
+    "duration_days": 5,
+    "assigned_to_id": 1
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "status": "in_progress",
+    "progress_percentage": 50
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "purchase_order_id": 42,
+    "required_on_site_date": "2025-01-20"
+  }
+}
+```
+
+```bash
+POST /api/v1/constructions/:id/schedule_tasks/import
+Content-Type: multipart/form-data
+file: <Excel file>
+```
+```
+
+### Examples
+```
+Models:
+  ProjectTask          → /backend/app/models/project_task.rb
+  ScheduleTask         → /backend/app/models/schedule_task.rb
+  TaskTemplate         → /backend/app/models/task_template.rb
+  TaskDependency       → /backend/app/models/task_dependency.rb
+  TaskUpdate           → /backend/app/models/task_update.rb
+  Project              → /backend/app/models/project.rb
+  Construction         → /backend/app/models/construction.rb
+  User                 → /backend/app/models/user.rb
+
+Controllers:
+  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
+  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
+  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
+
+Services:
+  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
+
+Frontend Pages:
+  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
+  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
+
+Frontend Components:
+  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
+  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
+  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
+```
+
+```
+GET    /api/v1/projects/:project_id/tasks                 - List all tasks
+POST   /api/v1/projects/:project_id/tasks                 - Create task
+GET    /api/v1/projects/:project_id/tasks/:id             - Get task
+PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
+DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
+GET    /api/v1/projects/:id/gantt                         - Get Gantt data
+```
+
+```
+GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
+POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
+GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
+PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
+DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
+```
+
+```
+not_started  → Initial state (default)
+in_progress  → Task has started
+complete     → Task finished
+on_hold      → Paused/blocked
+```
+
+```javascript
+[
+  'Rob Harder',
+  'Andrew Clement',
+  'Sam Harder',
+  'Sophie Harder',
+  'Jake Baird'
+]
+```
+
+```
+finish_to_start (FS)  → Task A finishes, Task B starts (default)
+start_to_start (SS)   → Task A starts, Task B starts
+finish_to_finish (FF) → Task A finishes, Task B finishes
+start_to_finish (SF)  → Task A starts, Task B finishes (rare)
+```
+
+```
+User creates/imports tasks
+        ↓
+ProjectTask or ScheduleTask created
+        ↓
+Dependencies established
+        ↓
+Schedule::GeneratorService runs (for ProjectTasks)
+        ↓
+Timeline calculated (forward pass)
+        ↓
+Critical path identified
+        ↓
+Gantt chart displays tasks & bars
+        ↓
+User updates status/progress
+        ↓
+TaskUpdate record created (history)
+```
+
+```bash
+POST /api/v1/projects/:project_id/tasks
+{
+  "project_task": {
+    "name": "Pour Concrete",
+    "task_type": "DO",
+    "category": "CONCRETE",
+    "duration_days": 5,
+    "assigned_to_id": 1
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "status": "in_progress",
+    "progress_percentage": 50
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "purchase_order_id": 42,
+    "required_on_site_date": "2025-01-20"
+  }
+}
+```
+
+```bash
+POST /api/v1/constructions/:id/schedule_tasks/import
+Content-Type: multipart/form-data
+file: <Excel file>
+```
+
+---
+
+## §9.2: Gantt Chart Developer Setup
+
+✨ Feature | 🟡 Intermediate
+
+### Quick Summary
+Development environment setup for Gantt chart features including dependencies and data seeding
+
+### Step-by-Step Guide
+# Gantt Developer Setup & Enforcement
+
+This document explains how to set up and enforce the Gantt onboarding process for all developers.
+
+---
+
+## 🎯 Goals
+
+1. Ensure all developers read the Gantt Bible before modifying code
+2. Prevent reintroduction of bugs that took 8+ iterations to fix
+3. Maintain code quality through automated checks
+4. Create a culture of documentation-first development
+
+---
+
+## 📚 Documentation Structure
+
+```
+trapid/
+├── GANTT_SCHEDULE_RULES.md          ← The Bible (development rules)
+├── GANTT_BIBLE_COLUMNS.md           ← Column implementation reference
+├── GANTT_BUGS_AND_FIXES.md          ← Bug history and Bug Hunter
+├── GANTT_ONBOARDING_CHECKLIST.md    ← Mandatory onboarding checklist
+├── GANTT_DEVELOPER_SETUP.md         ← This file
+└── scripts/
+    └── check-gantt-onboarding.sh    ← Pre-commit hook
+```
+
+All documentation is also available in `/frontend/public/` for the UI "Gantt Bible" button.
+
+---
+
+## 🚀 Setup for New Developers
+
+### Step 1: Install Pre-Commit Hook
+
+```bash
+# Navigate to project root
+cd /Users/rob/Projects/trapid
+
+# Make the script executable
+chmod +x scripts/check-gantt-onboarding.sh
+
+# Install the hook
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+
+# Make the hook executable
+chmod +x .git/hooks/pre-commit
+```
+
+### Step 2: Complete Onboarding
+
+New developers must complete the onboarding checklist:
+
+```bash
+# Open the checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+
+# Follow all steps:
+# 1. Read GANTT_SCHEDULE_RULES.md (focus on 🚨 CRITICAL section)
+# 2. Read GANTT_BIBLE_COLUMNS.md
+# 3. Read GANTT_BUGS_AND_FIXES.md
+# 4. Answer all questions in the checklist
+# 5. Get checklist reviewed and signed by senior dev
+```
+
+**Estimated time:** 45-60 minutes
+
+### Step 3: Verify Setup
+
+Try to commit a change to Gantt code:
+
+```bash
+# Make a test change
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+
+# Try to commit (should trigger the check)
+git add .
+git commit -m "test"
+
+# You should see the onboarding warning
+# If checklist is not signed, commit will be blocked
+```
+
+---
+
+## 🛡️ Enforcement Mechanisms
+
+### 1. Pre-Commit Hook (Automated)
+
+**What it does:**
+- Detects when Gantt/Schedule files are modified
+- Checks if onboarding checklist has been completed (signed)
+- Blocks commits if checklist not signed
+- Shows reminders even after onboarding completed
+
+**Files that trigger the check:**
+- `frontend/src/components/schedule-master/DHtmlxGanttView.jsx`
+- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx`
+- `frontend/src/components/schedule-master/CascadeDependenciesModal.jsx`
+- `frontend/src/utils/ganttDebugger.js`
+- `backend/app/services/schedule_cascade_service.rb`
+- `backend/app/controllers/api/v1/schedule_template_rows_controller.rb`
+- `backend/app/models/schedule_template_row.rb`
+
+**Bypass (NOT RECOMMENDED):**
+```bash
+git commit --no-verify  # Skips the hook
+```
+
+### 2. Code Review Checklist (Manual)
+
+During code reviews, reviewers must verify:
+
+- [ ] Developer has completed onboarding (check signature in checklist)
+- [ ] Bug Hunter tests pass (screenshot in PR)
+- [ ] No Protected Code Patterns modified without justification
+- [ ] Changes documented if they affect The Bible
+
+**Template for PR description:**
+```markdown
+## Gantt Changes
+
+- [ ] Onboarding completed: ✅ Signed by [Name] on [Date]
+- [ ] Bug Hunter status: ✅ All tests passing (see screenshot)
+- [ ] Protected patterns: ✅ Not modified OR ✅ Approved by [Name]
+- [ ] Bible updated: ✅ Yes OR ⬜ N/A (no architectural changes)
+
+### Bug Hunter Results
+[Paste screenshot or output from `window.printBugHunterReport()`]
+
+### Changes Summary
+[Describe what you changed and why]
+```
+
+### 3. CI/CD Integration (Optional)
+
+Add to your CI pipeline (`.github/workflows/` or similar):
+
+```yaml
+- name: Check Gantt Bug Hunter Tests
+  run: |
+    cd frontend
+    npm run test:e2e -- gantt-cascade.spec.js
+```
+
+### 4. Slack/Teams Bot (Optional)
+
+Create a bot that:
+- Posts reminder when Gantt PR is opened
+- Links to onboarding checklist
+- Requires Bug Hunter screenshot before approval
+
+---
+
+## 👥 Onboarding Process for Teams
+
+### For New Hires
+
+1. **Week 1:** General codebase onboarding
+2. **Week 2:** Complete Gantt onboarding checklist
+3. **Week 3:** Pair with senior dev on small Gantt fix
+4. **Week 4:** Independent Gantt work with code review
+
+### For External Contractors
+
+**Before starting work:**
+1. Send GANTT_SCHEDULE_RULES.md, GANTT_BIBLE_COLUMNS.md
+2. Schedule 30-minute video call to walk through critical sections
+3. Require signed onboarding checklist before granting repo access
+4. First 3 Gantt PRs require senior dev approval
+
+### For Senior Developers
+
+Even senior devs should:
+1. Re-read 🚨 CRITICAL section before working on Gantt
+2. Run Bug Hunter before and after changes
+3. Update The Bible when discovering new patterns
+
+---
+
+## 📊 Tracking Onboarding Completion
+
+### Onboarding Log
+
+Maintain a log in your team wiki or project management tool:
+
+| Developer | Start Date | Completion Date | Reviewer | Status |
+|-----------|------------|-----------------|----------|--------|
+| Alice Dev | 2025-11-10 | 2025-11-10 | Bob Senior | ✅ Complete |
+| Charlie   | 2025-11-12 | Pending | - | 🟡 In Progress |
+
+### Metrics to Track
+
+- **Time to complete onboarding:** Target < 1 hour
+- **Gantt bugs introduced:** Target = 0 in first 90 days
+- **Bug Hunter test failures:** Target < 5% of commits
+- **Documentation updates:** Target = 1 per month
+
+---
+
+## 🔧 Maintaining The System
+
+### Monthly Review
+
+Once per month:
+- Review all Gantt-related PRs from past month
+- Check if any bugs were reintroduced
+- Update The Bible with new patterns discovered
+- Review onboarding times and adjust checklist if needed
+
+### Updating The Hook
+
+If you add new Gantt files, update the hook:
+
+```bash
+# Edit scripts/check-gantt-onboarding.sh
+# Add new files to GANTT_FRONTEND_FILES or GANTT_BACKEND_FILES arrays
+
+# Reinstall
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+### When Onboarding Takes Too Long
+
+If developers report onboarding takes > 1 hour:
+- Review the checklist for unnecessary steps
+- Create a video walkthrough of critical sections (15 min)
+- Add more examples/diagrams
+- Consider splitting into "Essential" and "Advanced" checklists
+
+---
+
+## 🚨 Handling Violations
+
+### First Offense
+
+**Scenario:** Developer commits Gantt code without completing onboarding
+
+**Action:**
+1. Politely point to GANTT_ONBOARDING_CHECKLIST.md
+2. Ask them to complete it before next Gantt change
+3. Review their changes for common bugs
+4. Add their name to onboarding log as "Pending"
+
+### Repeated Offenses
+
+**Scenario:** Developer repeatedly bypasses onboarding or introduces known bugs
+
+**Action:**
+1. Schedule 1-on-1 meeting to understand blockers
+2. Pair with senior dev for next 3 Gantt changes
+3. Restrict Gantt file access until onboarding complete
+4. Consider adding mandatory PR template
+
+### Critical Bug Introduced
+
+**Scenario:** Developer reintroduces a bug from GANTT_BUGS_AND_FIXES.md
+
+**Action:**
+1. Immediate rollback if in production
+2. Root cause analysis: Did they read The Bible?
+3. Update The Bible to make that section more prominent
+4. Consider adding that bug to the pre-commit hook check
+5. All-hands meeting to review the incident
+
+---
+
+## 📞 Support & Escalation
+
+### When Developers Get Stuck
+
+**"The Bible is too long, I don't have time"**
+- Direct them to 🚨 CRITICAL section only (15 minutes)
+- Offer to schedule 15-minute walkthrough
+- Emphasize time savings: 15 min reading vs 2+ hours debugging
+
+**"I don't understand the predecessor ID mismatch"**
+- Point to GANTT_SCHEDULE_RULES.md line 161 (example code)
+- Show them backend: schedule_cascade_service.rb:88
+- Pair program: Make a test change together
+
+**"Bug Hunter is failing but I don't know why"**
+- Run `window.printBugHunterReport()` in browser console
+- Check which specific test is failing (1-10)
+- Cross-reference test # to GANTT_BIBLE_COLUMNS.md
+
+### Escalation Path
+
+1. **Level 1:** Check The Bible (GANTT_SCHEDULE_RULES.md)
+2. **Level 2:** Run Bug Hunter diagnostics
+3. **Level 3:** Check bug history (GANTT_BUGS_AND_FIXES.md)
+4. **Level 4:** Ask in team chat #gantt-help
+5. **Level 5:** Schedule pairing session with Gantt expert
+
+---
+
+## 🎓 Advanced: Creating Training Materials
+
+### Video Walkthrough (Recommended)
+
+Create a 15-minute video covering:
+- **Minute 0-5:** Why this onboarding exists (8 iterations story)
+- **Minute 5-10:** The #1 and #2 killer bugs with examples
+- **Minute 10-15:** How to use Bug Hunter and verify your changes
+
+### Interactive Workshop (Optional)
+
+Host a 1-hour workshop:
+- **0-15 min:** Overview of Gantt architecture
+- **15-30 min:** Live demo of common bugs
+- **30-45 min:** Hands-on: Each dev makes a test change
+- **45-60 min:** Code review simulation
+
+### Quiz/Certification (Optional)
+
+Create a 10-question quiz:
+- Predecessor ID conversion question
+- Lock hierarchy ordering
+- useRef flag purposes
+- Bug Hunter interpretation
+- Require 90% to pass
+
+---
+
+## 📈 Success Metrics
+
+Track these KPIs to measure onboarding effectiveness:
+
+| Metric | Target | Current | Trend |
+|--------|--------|---------|-------|
+| Bugs reintroduced | 0 | - | - |
+| Onboarding time | < 60 min | - | - |
+| Bug Hunter pass rate | > 95% | - | - |
+| Time to first Gantt commit | < 2 weeks | - | - |
+| Developer satisfaction | > 4/5 | - | - |
+
+---
+
+## 🔄 Feedback Loop
+
+**Monthly developer feedback survey:**
+
+1. Was the onboarding helpful? (1-5 scale)
+2. What section was most valuable?
+3. What was confusing or could be improved?
+4. How long did onboarding take?
+5. Have you reintroduced any bugs? Which ones?
+
+**Use feedback to:**
+- Update The Bible with better examples
+- Revise checklist questions
+- Create additional training materials
+- Identify knowledge gaps
+
+---
+
+## ✅ Setup Verification
+
+Run this checklist to verify your setup:
+
+- [ ] Pre-commit hook installed in `.git/hooks/pre-commit`
+- [ ] Hook is executable (`chmod +x`)
+- [ ] All 4 documentation files exist and are up to date
+- [ ] Onboarding checklist has template for new devs
+- [ ] Team has been notified about new onboarding process
+- [ ] At least one senior dev familiar with The Bible
+- [ ] Bug Hunter accessible via UI (Gantt Bible button)
+- [ ] Process documented in team wiki
+- [ ] Metrics tracking set up (optional)
+
+---
+
+## 📞 Questions?
+
+If you have questions about this setup:
+
+1. Read GANTT_SCHEDULE_RULES.md (might already be answered)
+2. Check GANTT_BUGS_AND_FIXES.md for historical context
+3. Open an issue or discussion in your team's process
+4. Schedule time with the team lead
+
+**Remember:** The goal is to prevent bugs, not to create bureaucracy. If something isn't working, let's improve it together!
+
+
+### Code Example
+```jsx
+```
+trapid/
+├── GANTT_SCHEDULE_RULES.md          ← The Bible (development rules)
+├── GANTT_BIBLE_COLUMNS.md           ← Column implementation reference
+├── GANTT_BUGS_AND_FIXES.md          ← Bug history and Bug Hunter
+├── GANTT_ONBOARDING_CHECKLIST.md    ← Mandatory onboarding checklist
+├── GANTT_DEVELOPER_SETUP.md         ← This file
+└── scripts/
+    └── check-gantt-onboarding.sh    ← Pre-commit hook
+```
+
+```bash
+# Navigate to project root
+cd /Users/rob/Projects/trapid
+
+# Make the script executable
+chmod +x scripts/check-gantt-onboarding.sh
+
+# Install the hook
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+
+# Make the hook executable
+chmod +x .git/hooks/pre-commit
+```
+
+```bash
+# Open the checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+
+# Follow all steps:
+# 1. Read GANTT_SCHEDULE_RULES.md (focus on 🚨 CRITICAL section)
+# 2. Read GANTT_BIBLE_COLUMNS.md
+# 3. Read GANTT_BUGS_AND_FIXES.md
+# 4. Answer all questions in the checklist
+# 5. Get checklist reviewed and signed by senior dev
+```
+
+```bash
+# Make a test change
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+
+# Try to commit (should trigger the check)
+git add .
+git commit -m "test"
+
+# You should see the onboarding warning
+# If checklist is not signed, commit will be blocked
+```
+
+```bash
+git commit --no-verify  # Skips the hook
+```
+
+```markdown
+## Gantt Changes
+
+- [ ] Onboarding completed: ✅ Signed by [Name] on [Date]
+- [ ] Bug Hunter status: ✅ All tests passing (see screenshot)
+- [ ] Protected patterns: ✅ Not modified OR ✅ Approved by [Name]
+- [ ] Bible updated: ✅ Yes OR ⬜ N/A (no architectural changes)
+
+### Bug Hunter Results
+[Paste screenshot or output from `window.printBugHunterReport()`]
+
+### Changes Summary
+[Describe what you changed and why]
+```
+
+```yaml
+- name: Check Gantt Bug Hunter Tests
+  run: |
+    cd frontend
+    npm run test:e2e -- gantt-cascade.spec.js
+```
+
+```bash
+# Edit scripts/check-gantt-onboarding.sh
+# Add new files to GANTT_FRONTEND_FILES or GANTT_BACKEND_FILES arrays
+
+# Reinstall
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+```
+
+### Examples
+```
+trapid/
+├── GANTT_SCHEDULE_RULES.md          ← The Bible (development rules)
+├── GANTT_BIBLE_COLUMNS.md           ← Column implementation reference
+├── GANTT_BUGS_AND_FIXES.md          ← Bug history and Bug Hunter
+├── GANTT_ONBOARDING_CHECKLIST.md    ← Mandatory onboarding checklist
+├── GANTT_DEVELOPER_SETUP.md         ← This file
+└── scripts/
+    └── check-gantt-onboarding.sh    ← Pre-commit hook
+```
+
+```bash
+# Navigate to project root
+cd /Users/rob/Projects/trapid
+
+# Make the script executable
+chmod +x scripts/check-gantt-onboarding.sh
+
+# Install the hook
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+
+# Make the hook executable
+chmod +x .git/hooks/pre-commit
+```
+
+```bash
+# Open the checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+
+# Follow all steps:
+# 1. Read GANTT_SCHEDULE_RULES.md (focus on 🚨 CRITICAL section)
+# 2. Read GANTT_BIBLE_COLUMNS.md
+# 3. Read GANTT_BUGS_AND_FIXES.md
+# 4. Answer all questions in the checklist
+# 5. Get checklist reviewed and signed by senior dev
+```
+
+```bash
+# Make a test change
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+
+# Try to commit (should trigger the check)
+git add .
+git commit -m "test"
+
+# You should see the onboarding warning
+# If checklist is not signed, commit will be blocked
+```
+
+```bash
+git commit --no-verify  # Skips the hook
+```
+
+```markdown
+## Gantt Changes
+
+- [ ] Onboarding completed: ✅ Signed by [Name] on [Date]
+- [ ] Bug Hunter status: ✅ All tests passing (see screenshot)
+- [ ] Protected patterns: ✅ Not modified OR ✅ Approved by [Name]
+- [ ] Bible updated: ✅ Yes OR ⬜ N/A (no architectural changes)
+
+### Bug Hunter Results
+[Paste screenshot or output from `window.printBugHunterReport()`]
+
+### Changes Summary
+[Describe what you changed and why]
+```
+
+```yaml
+- name: Check Gantt Bug Hunter Tests
+  run: |
+    cd frontend
+    npm run test:e2e -- gantt-cascade.spec.js
+```
+
+```bash
+# Edit scripts/check-gantt-onboarding.sh
+# Add new files to GANTT_FRONTEND_FILES or GANTT_BACKEND_FILES arrays
+
+# Reinstall
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+---
+
+## §9.3: Gantt Feature Onboarding Checklist
+
+✨ Feature | 🟢 Beginner
+
+### Quick Summary
+New developer onboarding checklist for understanding Gantt chart implementation
+
+### Step-by-Step Guide
+# Gantt Development Onboarding Checklist
+
+**⚠️ MANDATORY: Complete this checklist before making any changes to Gantt/Schedule code**
+
+## Why This Checklist Exists
+
+The Gantt and Schedule Master codebase contains subtle patterns that took **8+ iterations and many hours** to get right. This checklist ensures you understand these patterns before introducing bugs that we've already fixed.
+
+---
+
+## Step 1: Read The Documentation
+
+Read these files IN ORDER (estimated time: 45 minutes):
+
+- [ ] **GANTT_SCHEDULE_RULES.md (The Bible)** - Start with the "🚨 CRITICAL" section
+  - [ ] Understand Predecessor ID Mismatch (1-based vs 0-based)
+  - [ ] Understand Infinite Render Loop prevention
+  - [ ] Know all 3 useRef anti-loop flags (isDragging, isLoadingData, isSaving)
+  - [ ] Know all 5 lock types and their priority order
+  - [ ] Read all "Common Gotchas" section
+
+- [ ] **GANTT_BIBLE_COLUMNS.md** - Column implementation reference
+  - [ ] Understand which columns are Active vs Inactive
+  - [ ] Know where each column is implemented (file:line)
+  - [ ] Understand lock hierarchy
+
+- [ ] **GANTT_BUGS_AND_FIXES.md** - Bug history and Bug Hunter
+  - [ ] Read BUG-001 (Drag Flickering) case study
+  - [ ] Understand why each fix attempt failed
+  - [ ] Know how to use Bug Hunter diagnostic tool
+
+---
+
+## Step 2: Understand The Architecture
+
+Answer these questions (write your answers, they will be checked):
+
+### Backend Questions
+
+**Q1:** Why are predecessor IDs 1-based but sequence_order is 0-based?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q2:** Why does `ScheduleCascadeService` use `update_column()` instead of `update()`?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q3:** Which tasks does the cascade service skip? Why?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+### Frontend Questions
+
+**Q4:** What triggers spurious `onAfterTaskDrag` events in DHtmlx Gantt?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q5:** Why must `isLoadingData` timeout be exactly 500ms (not less)?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q6:** Name all 5 lock types in priority order (highest to lowest):
+
+**Your Answer:**
+```
+1.
+2.
+3.
+4.
+5.
+```
+
+---
+
+## Step 3: Set Up Your Environment
+
+Complete these setup tasks:
+
+- [ ] Enable DIAGNOSTIC_MODE in DHtmlxGanttView.jsx line 26
+- [ ] Open browser DevTools console
+- [ ] Run `window.printBugHunterReport()` to verify Bug Hunter works
+- [ ] Verify you can see diagnostic emoji logs (🔵 📊 ✅ ❌)
+
+---
+
+## Step 4: Practice With The Code
+
+Complete these hands-on exercises:
+
+### Exercise 1: Predecessor ID Conversion
+
+- [ ] Open `schedule_cascade_service.rb`
+- [ ] Find line 88: `predecessor_id = predecessor_task.sequence_order + 1`
+- [ ] Explain why the `+ 1` is necessary:
+```
+[Write answer here]
+```
+
+### Exercise 2: Anti-Loop Flags
+
+- [ ] Open `DHtmlxGanttView.jsx`
+- [ ] Find line 1357: `isDragging.current = true`
+- [ ] Find line 3477: `if (isLoadingData.current) return`
+- [ ] Explain what would happen if line 3477 was removed:
+```
+[Write answer here]
+```
+
+### Exercise 3: Lock Checking
+
+- [ ] Open `DHtmlxGanttView.jsx`
+- [ ] Find the cascade modal logic around line 1700
+- [ ] Write the correct code to check if a task is locked:
+```javascript
+const isLocked = (task) => {
+  // Write your code here
+
+
+}
+```
+
+---
+
+## Step 5: Run The Tests
+
+Before making any changes:
+
+- [ ] Run backend tests: `cd backend && bundle exec rspec spec/services/schedule_cascade_service_spec.rb`
+- [ ] Run E2E tests: `cd frontend && npm run test:e2e -- gantt-cascade.spec.js`
+- [ ] Verify Bug Hunter reports HEALTHY status
+- [ ] Verify all 10 Bug Hunter tests pass
+
+---
+
+## Step 6: Make A Small Test Change
+
+Practice the workflow with a safe change:
+
+- [ ] Add a console.log to DHtmlxGanttView.jsx in handleTaskUpdate
+- [ ] Drag a task in the Gantt chart
+- [ ] Verify your log appears exactly ONCE (not multiple times)
+- [ ] Run `window.printBugHunterReport()` and verify:
+  - [ ] Test #1 passes (≤ 2 API calls per task)
+  - [ ] Test #2 passes (≤ 5 reloads per drag)
+- [ ] Remove your console.log
+
+---
+
+## Step 7: Verify Comprehension
+
+Have a senior developer review your answers to the questions above.
+
+**Reviewer Name:** ________________
+
+**Review Date:** ________________
+
+**Reviewer Signature:** ________________
+
+---
+
+## Step 8: Sign The Pledge
+
+By signing below, I certify that:
+
+1. I have read and understood GANTT_SCHEDULE_RULES.md (The Bible)
+2. I understand the Predecessor ID Mismatch bug and how to avoid it
+3. I understand the useRef anti-loop flags and will not "optimize" them away
+4. I will run Bug Hunter after every change to Gantt code
+5. I will not remove or modify Protected Code Patterns without explicit approval
+6. If I don't understand something, I will ask BEFORE making changes
+
+**Developer Name:** ________________
+
+**Date Completed:** ________________
+
+**Signature:** ________________
+
+---
+
+## Emergency Contacts
+
+If you encounter issues or have questions:
+
+1. **Check The Bible First:** GANTT_SCHEDULE_RULES.md has the answer
+2. **Run Bug Hunter:** `window.printBugHunterReport()` for diagnostics
+3. **Check Bug History:** GANTT_BUGS_AND_FIXES.md may have your answer
+4. **Ask Senior Dev:** [Your team's escalation process here]
+
+---
+
+## After Onboarding
+
+**Every time you work on Gantt code:**
+
+- [ ] Re-read the "🚨 CRITICAL" section of The Bible
+- [ ] Enable DIAGNOSTIC_MODE
+- [ ] Run Bug Hunter before and after your changes
+- [ ] Verify all 10 tests still pass
+- [ ] Update The Bible if you discover new patterns or gotchas
+
+---
+
+## Onboarding Record
+
+**Developer:** ________________
+**Start Date:** ________________
+**Completion Date:** ________________
+**Time Spent:** _______ hours
+**Reviewer:** ________________
+**Status:** [ ] In Progress  [ ] Completed  [ ] Needs Revision
+
+---
+
+## Common Onboarding Mistakes
+
+After completing this checklist, developers commonly make these mistakes:
+
+1. **"I'll just make a quick fix"** - No such thing with Gantt code. Read The Bible first.
+2. **"This code looks messy, I'll clean it up"** - Every line exists for a reason. Ask first.
+3. **"500ms is too long, I'll optimize to 100ms"** - Tested value. Don't change it.
+4. **"I don't need to run Bug Hunter, it's a small change"** - Bug Hunter catches issues you can't see.
+5. **"I understand loops, I don't need to read about the flags"** - The loops are NOT obvious.
+
+**If you skip this checklist and introduce a bug, you will spend HOURS debugging issues that are already documented here.**
+
+
+### Code Example
+```jsx
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+1.
+2.
+3.
+4.
+5.
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```javascript
+const isLocked = (task) => {
+  // Write your code here
+
+
+}
+```
+```
+
+### Examples
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+1.
+2.
+3.
+4.
+5.
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```javascript
+const isLocked = (task) => {
+  // Write your code here
+
+
+}
+```
+
+---
+
+## §9.4: Gantt Chart README - Feature Overview
+
+✨ Feature | 🟢 Beginner
+
+### Quick Summary
+High-level overview of Gantt chart features, components, and usage
+
+### Step-by-Step Guide
+# Gantt & Schedule Master Documentation
+
+**Complete documentation system for Gantt and Schedule Master features**
+
+---
+
+## 🚨 STOP! Read This First
+
+**Are you about to modify Gantt or Schedule code?**
+
+👉 **YOU MUST complete the onboarding checklist FIRST:** [GANTT_ONBOARDING_CHECKLIST.md](GANTT_ONBOARDING_CHECKLIST.md)
+
+**Why?** This code has subtle patterns that took **8+ iterations** to get right. Skip onboarding = hours of debugging bugs we've already fixed.
+
+---
+
+## 📚 Documentation Files
+
+### 1. The Bible (Development Rules)
+**File:** [GANTT_SCHEDULE_RULES.md](GANTT_SCHEDULE_RULES.md) (114KB, 3715 lines)
+
+**What it contains:**
+- 🚨 **CRITICAL section** - Must-read before touching code (15 min)
+- Protected Code Patterns (do NOT modify)
+- Complete development rules
+- Performance patterns
+- Anti-loop mechanisms
+
+**When to read:**
+- Before making ANY changes to Gantt code
+- When debugging Gantt issues
+- Before code reviews
+
+**Start here:** Line 161 - "🚨 CRITICAL: Read Before Touching Gantt Code"
+
+---
+
+### 2. Column Reference
+**File:** [GANTT_BIBLE_COLUMNS.md](GANTT_BIBLE_COLUMNS.md) (25KB)
+
+**What it contains:**
+- All 33 Schedule Master table columns
+- All 11 Gantt modal columns
+- Implementation details (file:line references)
+- Database field mappings
+- Active/Inactive status
+- Lock hierarchy and priorities
+- Test coverage map
+
+**When to read:**
+- Adding or modifying column functionality
+- Understanding what a column does
+- Finding which service processes a column
+
+---
+
+### 3. Bug Tracking & Bug Hunter
+**File:** [GANTT_BUGS_AND_FIXES.md](frontend/public/GANTT_BUGS_AND_FIXES.md) (23KB)
+
+**What it contains:**
+- All resolved bugs with case studies
+- BUG-001: Drag Flickering (8 iterations to fix!)
+- Bug Hunter diagnostic tool usage
+- 10 automated test descriptions
+- Test results history
+
+**When to read:**
+- Debugging Gantt issues
+- Running performance diagnostics
+- Understanding why code is written a certain way
+
+---
+
+### 4. Onboarding Checklist
+**File:** [GANTT_ONBOARDING_CHECKLIST.md](GANTT_ONBOARDING_CHECKLIST.md) (6.3KB)
+
+**What it contains:**
+- Step-by-step onboarding process
+- Questions to test comprehension
+- Hands-on exercises
+- Sign-off section for accountability
+
+**When to complete:**
+- Before your first Gantt code change
+- When onboarding new team members
+- As a refresher (re-read critical sections)
+
+**Time required:** 45-60 minutes
+
+---
+
+### 5. Developer Setup & Enforcement
+**File:** [GANTT_DEVELOPER_SETUP.md](GANTT_DEVELOPER_SETUP.md) (11KB)
+
+**What it contains:**
+- How to install pre-commit hooks
+- Enforcement mechanisms
+- Team onboarding process
+- Tracking metrics
+- Support & escalation paths
+
+**When to read:**
+- Setting up a new developer
+- Configuring CI/CD
+- Team lead responsibilities
+
+---
+
+## 🚀 Quick Start
+
+### For New Developers
+
+```bash
+# 1. Read the Critical section (15 min)
+open GANTT_SCHEDULE_RULES.md
+# → Jump to line 161: "🚨 CRITICAL: Read Before Touching Gantt Code"
+
+# 2. Install pre-commit hook
+chmod +x scripts/check-gantt-onboarding.sh
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
+# 3. Complete onboarding checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+# → Answer all questions, get it reviewed and signed
+
+# 4. Verify Bug Hunter works
+# Open app, go to Schedule Master, click "Gantt Bible"
+# In browser console: window.printBugHunterReport()
+```
+
+### For Quick Reference
+
+**Looking for a specific topic?**
+
+| Topic | File | Section |
+|-------|------|---------|
+| Predecessor ID bug | GANTT_SCHEDULE_RULES.md | Line 163 |
+| Infinite render loops | GANTT_SCHEDULE_RULES.md | Line 206 |
+| useRef anti-loop flags | GANTT_SCHEDULE_RULES.md | Line 276 |
+| Lock hierarchy | GANTT_SCHEDULE_RULES.md | Line 352 |
+| Column details | GANTT_BIBLE_COLUMNS.md | All columns listed |
+| Bug Hunter usage | GANTT_BUGS_AND_FIXES.md | Line 58 |
+| Common gotchas | GANTT_SCHEDULE_RULES.md | Line 524 |
+
+---
+
+## 🔍 Bug Hunter Quick Reference
+
+**In browser console:**
+
+```javascript
+// Generate diagnostic report
+window.printBugHunterReport()
+
+// Enable debug categories
+window.enableGanttDebug(['drag', 'api', 'cascade'])
+
+// Export report for bug ticket
+window.exportBugHunterReport()
+
+// Reset for new test
+window.resetBugHunter()
+```
+
+**10 Automated Tests:**
+1. Duplicate API Call Detection (≤ 2 per task)
+2. Excessive Gantt Reload Detection (≤ 5 per drag)
+3. Slow Drag Operation Detection (< 5000ms)
+4. API Call Pattern Analysis
+5. Cascade Event Tracking
+6. State Update Batching (≤ 3 per drag)
+7. Lock State Monitoring
+8. Performance Timing Analysis
+9. Health Status Assessment
+10. Actionable Recommendations
+
+---
+
+## 🏗️ Architecture Overview
+
+### Frontend (React)
+- **DHtmlxGanttView.jsx** (5276 lines) - Main Gantt component
+- **ScheduleTemplateEditor.jsx** (2500+ lines) - Schedule editor
+- **CascadeDependenciesModal.jsx** - User cascade choices
+- **ganttDebugger.js** - Bug Hunter diagnostic tool
+
+### Backend (Ruby on Rails)
+- **ScheduleCascadeService** - Dependency cascade logic
+- **ScheduleTemplateRowsController** - API endpoints
+- **ScheduleTemplateRow** (model) - With after_update cascade callback
+
+### Key Patterns
+- **Predecessor IDs:** 1-based (UI) vs 0-based (sequence_order)
+- **Anti-Loop Flags:** `isDragging`, `isLoadingData`, `isSaving`
+- **Lock Priority:** supplier_confirm > confirm > start > complete > manually_positioned
+- **API Pattern:** Single update + cascade response (not N calls)
+
+---
+
+## ⚠️ The Two Killer Bugs
+
+### #1: Predecessor ID Mismatch
+
+**Problem:** Predecessor IDs are 1-based but sequence_order is 0-based
+
+**Fix:** Always convert with `+ 1`:
+```javascript
+const predecessorId = task.sequence_order + 1
+```
+
+**Impact:** Wrong tasks cascade, hours of debugging
+
+### #2: Infinite Render Loops
+
+**Problem:** `gantt.parse()` fires spurious drag events
+
+**Fix:** Three useRef flags with 500ms timeout:
+```javascript
+const isDragging = useRef(false)
+const isLoadingData = useRef(false)  // Reset by useEffect only!
+const isSaving = useRef(false)
+```
+
+**Impact:** Screen flickering, 8-16 reloads per drag
+
+---
+
+## 📋 Before Every Commit Checklist
+
+- [ ] Re-read 🚨 CRITICAL section of The Bible
+- [ ] DIAGNOSTIC_MODE enabled during testing
+- [ ] Bug Hunter run: `window.printBugHunterReport()`
+- [ ] All 10 Bug Hunter tests pass
+- [ ] Test #2 passes (≤ 5 reloads per drag)
+- [ ] No screen flickering
+- [ ] Tested with locked AND unlocked tasks
+- [ ] Tested 3+ levels of dependencies
+- [ ] Did NOT modify Protected Code Patterns
+
+---
+
+## 🆘 Getting Help
+
+### Level 1: Check The Docs
+- **GANTT_SCHEDULE_RULES.md** - Development patterns
+- **GANTT_BUGS_AND_FIXES.md** - Known issues
+- **GANTT_BIBLE_COLUMNS.md** - Column reference
+
+### Level 2: Run Diagnostics
+```javascript
+window.printBugHunterReport()
+```
+
+### Level 3: Ask Team
+- Check which specific test is failing (1-10)
+- Cross-reference test # to documentation
+- Share Bug Hunter output in team chat
+
+### Level 4: Escalate
+- Schedule pairing with Gantt expert
+- Review historical bugs for similar issues
+- Consider if Bible needs updating
+
+---
+
+## 📊 File Sizes
+
+| File | Size | Lines | Purpose |
+|------|------|-------|---------|
+| GANTT_SCHEDULE_RULES.md | 114KB | 3715 | The Bible - all rules |
+| GANTT_BIBLE_COLUMNS.md | 25KB | - | Column reference |
+| GANTT_BUGS_AND_FIXES.md | 23KB | - | Bug history |
+| GANTT_ONBOARDING_CHECKLIST.md | 6.3KB | - | Onboarding steps |
+| GANTT_DEVELOPER_SETUP.md | 11KB | - | Setup & enforcement |
+| check-gantt-onboarding.sh | 6.7KB | - | Pre-commit hook |
+
+**Total documentation:** ~186KB
+
+**Time investment:**
+- Initial reading: 45-60 minutes
+- Time saved: Hours of debugging per developer
+
+---
+
+## 🎯 Success Metrics
+
+**Goals:**
+- ✅ Zero reintroduced bugs
+- ✅ 100% onboarding completion
+- ✅ < 1 hour onboarding time
+- ✅ > 95% Bug Hunter pass rate
+
+**Current Status:** [Track in your project management tool]
+
+---
+
+## 🔄 Keeping Documentation Updated
+
+**When to update:**
+- New bug discovered and fixed
+- New Protected Code Pattern identified
+- Architecture changes
+- Performance optimizations
+- New column added
+
+**How to update:**
+1. Make code changes
+2. Update relevant documentation file(s)
+3. Increment version number in The Bible
+4. Update timestamp
+5. Add changelog entry
+6. Sync to `/frontend/public/` if needed
+
+**Update process:** See GANTT_SCHEDULE_RULES.md lines 30-98
+
+---
+
+## ✅ Installation Complete?
+
+Verify your setup:
+
+```bash
+# Check all files exist
+ls -lh GANTT*.md scripts/check-gantt-onboarding.sh
+
+# Check hook is installed
+ls -lh .git/hooks/pre-commit
+
+# Test the hook
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+git add .
+git commit -m "test"
+# Should show onboarding warning
+
+# Revert test change
+git reset HEAD~1
+git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+```
+
+---
+
+## 📞 Questions?
+
+1. Read GANTT_SCHEDULE_RULES.md (probably already answered)
+2. Check GANTT_BUGS_AND_FIXES.md (historical context)
+3. Ask in team chat
+4. Schedule time with team lead
+
+**Remember:** The goal is preventing bugs, not creating bureaucracy. If something isn't working, let's improve it together!
+
+---
+
+## Version History
+
+| Date | Version | Changes |
+|------|---------|---------|
+| 2025-11-15 | 1.0 | Initial comprehensive documentation system created |
+
+---
+
+**Last Updated:** November 15, 2025
+**Maintained By:** Development Team
+**Contact:** [Your team's contact info]
+
+
+### Code Example
+```jsx
+```bash
+# 1. Read the Critical section (15 min)
+open GANTT_SCHEDULE_RULES.md
+# → Jump to line 161: "🚨 CRITICAL: Read Before Touching Gantt Code"
+
+# 2. Install pre-commit hook
+chmod +x scripts/check-gantt-onboarding.sh
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
+# 3. Complete onboarding checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+# → Answer all questions, get it reviewed and signed
+
+# 4. Verify Bug Hunter works
+# Open app, go to Schedule Master, click "Gantt Bible"
+# In browser console: window.printBugHunterReport()
+```
+
+```javascript
+// Generate diagnostic report
+window.printBugHunterReport()
+
+// Enable debug categories
+window.enableGanttDebug(['drag', 'api', 'cascade'])
+
+// Export report for bug ticket
+window.exportBugHunterReport()
+
+// Reset for new test
+window.resetBugHunter()
+```
+
+```javascript
+const predecessorId = task.sequence_order + 1
+```
+
+```javascript
+const isDragging = useRef(false)
+const isLoadingData = useRef(false)  // Reset by useEffect only!
+const isSaving = useRef(false)
+```
+
+```javascript
+window.printBugHunterReport()
+```
+
+```bash
+# Check all files exist
+ls -lh GANTT*.md scripts/check-gantt-onboarding.sh
+
+# Check hook is installed
+ls -lh .git/hooks/pre-commit
+
+# Test the hook
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+git add .
+git commit -m "test"
+# Should show onboarding warning
+
+# Revert test change
+git reset HEAD~1
+git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+```
+```
+
+### Examples
+```bash
+# 1. Read the Critical section (15 min)
+open GANTT_SCHEDULE_RULES.md
+# → Jump to line 161: "🚨 CRITICAL: Read Before Touching Gantt Code"
+
+# 2. Install pre-commit hook
+chmod +x scripts/check-gantt-onboarding.sh
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
+# 3. Complete onboarding checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+# → Answer all questions, get it reviewed and signed
+
+# 4. Verify Bug Hunter works
+# Open app, go to Schedule Master, click "Gantt Bible"
+# In browser console: window.printBugHunterReport()
+```
+
+```javascript
+// Generate diagnostic report
+window.printBugHunterReport()
+
+// Enable debug categories
+window.enableGanttDebug(['drag', 'api', 'cascade'])
+
+// Export report for bug ticket
+window.exportBugHunterReport()
+
+// Reset for new test
+window.resetBugHunter()
+```
+
+```javascript
+const predecessorId = task.sequence_order + 1
+```
+
+```javascript
+const isDragging = useRef(false)
+const isLoadingData = useRef(false)  // Reset by useEffect only!
+const isSaving = useRef(false)
+```
+
+```javascript
+window.printBugHunterReport()
+```
+
+```bash
+# Check all files exist
+ls -lh GANTT*.md scripts/check-gantt-onboarding.sh
+
+# Check hook is installed
+ls -lh .git/hooks/pre-commit
+
+# Test the hook
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+git add .
+git commit -m "test"
+# Should show onboarding warning
+
+# Revert test change
+git reset HEAD~1
+git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+```
+
+---
+
 
 # Chapter 9: Gantt & Schedule Master
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter  9               │
 │ 📕 LEXICON (BUGS):    Chapter  9               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Code examples, implementation patterns, and step-by-step guides
+**Last Updated:** 2025-11-17
+
+---
+
+## §8.1: PO Number Generation - Race Condition Protection
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.1
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+def generate_purchase_order_number
+  ActiveRecord::Base.transaction do
+    ActiveRecord::Base.connection.execute('SELECT pg_advisory_xact_lock(123456789)')
+
+    last_po = PurchaseOrder.order(:purchase_order_number).last
+    next_number = last_po ? last_po.purchase_order_number.gsub(/\D/, '').to_i + 1 : 1
+    self.purchase_order_number = format('PO-%06d', next_number)
+  end
+end
+```
+
+---
+
+## §8.2: Status State Machine
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.2
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+draft → pending → approved → sent → received → invoiced → paid
+  ↘                                                         ↗
+   cancelled (can cancel any non-paid status)
+
+# ---
+
+def can_edit?         # Only draft/pending
+def can_approve?      # Only pending
+def can_cancel?       # Any except paid/cancelled
+```
+
+---
+
+## §8.3: Payment Status Calculation
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.3
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+def determine_payment_status(invoice_amount)
+  return :manual_review if total.zero? || invoice_amount > total + 1
+  return :pending if invoice_amount.zero?
+
+  percentage = (invoice_amount / total) * 100
+  return :complete if percentage >= 95 && percentage <= 105
+  return :part_payment
+end
+```
+
+---
+
+## §8.5: Line Items - Totals Calculation
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.5
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+before_save :calculate_totals
+
+def calculate_totals
+  self.sub_total = line_items.sum { |li| li.quantity * li.unit_price }
+  self.tax = sub_total * 0.10  # 10% GST
+  self.total = sub_total + tax
+end
+```
+
+---
+
+## §8.6: Schedule Task Linking
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.6
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+ActiveRecord::Base.transaction do
+  # Unlink old task
+  if old_task = purchase_order.schedule_task
+    old_task.update!(purchase_order_id: nil)
+  end
+
+  # Link new task
+  if new_task_id.present?
+    new_task = ScheduleTask.find(new_task_id)
+    new_task.update!(purchase_order_id: purchase_order.id)
+  end
+end
+```
+
+---
+
+## §8.7: Price Drift Monitoring
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #8.7
+
+### Quick Summary
+✅
+
+### Code Example
+```jsx
+def price_drift
+  return 0 if pricebook_item.nil?
+  ((unit_price - pricebook_item.price) / pricebook_item.price) * 100
+end
+```
+
+---
+
+## §9.1: Task Management Quick Reference
+
+✨ Feature | 🟢 Beginner
+
+### Quick Summary
+Quick reference for task management: two task systems, API endpoints, and common operations
+
+### Step-by-Step Guide
+# Trapid Task Management - Quick Reference Guide
+
+## Two Task Systems
+
+### 1. ProjectTask - Master Schedule (Detailed Planning)
+- **Used For:** Internal project planning with dependencies and critical path
+- **Main Fields:** status, progress_percentage, planned/actual dates, assigned_to_id
+- **Key Feature:** Task dependencies with 4 relationship types
+- **User Assignment:** Yes, to individual User objects
+- **Database:** `project_tasks` table
+
+### 2. ScheduleTask - Supplier Schedule (Delivery Tracking)
+- **Used For:** Tracking supplier deliveries and matching to purchase orders
+- **Main Fields:** title, status, start_date, complete_date, supplier_name
+- **Key Feature:** Link to purchase orders for delivery timing
+- **User Assignment:** No (tracks supplier info instead)
+- **Database:** `schedule_tasks` table
+
+---
+
+## Key Models & Files
+
+```
+Models:
+  ProjectTask          → /backend/app/models/project_task.rb
+  ScheduleTask         → /backend/app/models/schedule_task.rb
+  TaskTemplate         → /backend/app/models/task_template.rb
+  TaskDependency       → /backend/app/models/task_dependency.rb
+  TaskUpdate           → /backend/app/models/task_update.rb
+  Project              → /backend/app/models/project.rb
+  Construction         → /backend/app/models/construction.rb
+  User                 → /backend/app/models/user.rb
+
+Controllers:
+  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
+  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
+  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
+
+Services:
+  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
+
+Frontend Pages:
+  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
+  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
+
+Frontend Components:
+  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
+  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
+  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
+```
+
+---
+
+## API Endpoints
+
+### Task Management
+```
+GET    /api/v1/projects/:project_id/tasks                 - List all tasks
+POST   /api/v1/projects/:project_id/tasks                 - Create task
+GET    /api/v1/projects/:project_id/tasks/:id             - Get task
+PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
+DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
+GET    /api/v1/projects/:id/gantt                         - Get Gantt data
+```
+
+### Schedule Tasks
+```
+GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
+POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
+GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
+PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
+DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
+```
+
+---
+
+## Task Status States
+
+```
+not_started  → Initial state (default)
+in_progress  → Task has started
+complete     → Task finished
+on_hold      → Paused/blocked
+```
+
+---
+
+## Task Properties
+
+| Property | Type | Usage |
+|----------|------|-------|
+| name | string | Task title |
+| status | enum | Current state |
+| progress_percentage | 0-100 | Completion % |
+| planned_start_date | date | Scheduled start |
+| planned_end_date | date | Scheduled end |
+| actual_start_date | date | When work started |
+| actual_end_date | date | When work completed |
+| duration_days | integer | Task length in days |
+| is_milestone | boolean | Mark important milestone |
+| is_critical_path | boolean | On longest path |
+| assigned_to_id | foreign key | User assignment |
+| supplier_name | string | External supplier |
+| purchase_order_id | foreign key | Linked PO |
+
+---
+
+## User Assignment (Current Limitation)
+
+Frontend uses hardcoded team members:
+```javascript
+[
+  'Rob Harder',
+  'Andrew Clement',
+  'Sam Harder',
+  'Sophie Harder',
+  'Jake Baird'
+]
+```
+
+**Problem:** Not dynamically fetched from database
+**Solution Needed:** Create `/api/v1/users` endpoint
+
+---
+
+## Dependency Types
+
+```
+finish_to_start (FS)  → Task A finishes, Task B starts (default)
+start_to_start (SS)   → Task A starts, Task B starts
+finish_to_finish (FF) → Task A finishes, Task B finishes
+start_to_finish (SF)  → Task A starts, Task B finishes (rare)
+```
+
+All support optional lag_days for overlap.
+
+---
+
+## Gantt Chart Features
+
+**Zoom Levels:**
+- Day view: 40px per day
+- Week view: 6px per day
+- Month view: 2px per day
+
+**Color By:**
+- Status (not_started=gray, in_progress=blue, complete=green)
+- Category (CONCRETE, CARPENTER, ELECTRICAL, etc.)
+- Type (DO, ORDER, GET, CLAIM, etc.)
+
+**Navigation:**
+- Previous/Next period buttons
+- "Today" button
+- Date range customizable
+
+---
+
+## Data Flow
+
+```
+User creates/imports tasks
+        ↓
+ProjectTask or ScheduleTask created
+        ↓
+Dependencies established
+        ↓
+Schedule::GeneratorService runs (for ProjectTasks)
+        ↓
+Timeline calculated (forward pass)
+        ↓
+Critical path identified
+        ↓
+Gantt chart displays tasks & bars
+        ↓
+User updates status/progress
+        ↓
+TaskUpdate record created (history)
+```
+
+---
+
+## Common Operations
+
+### Create a Task
+```bash
+POST /api/v1/projects/:project_id/tasks
+{
+  "project_task": {
+    "name": "Pour Concrete",
+    "task_type": "DO",
+    "category": "CONCRETE",
+    "duration_days": 5,
+    "assigned_to_id": 1
+  }
+}
+```
+
+### Update Task Progress
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "status": "in_progress",
+    "progress_percentage": 50
+  }
+}
+```
+
+### Link Task to Purchase Order
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "purchase_order_id": 42,
+    "required_on_site_date": "2025-01-20"
+  }
+}
+```
+
+### Import Schedule from Excel
+```bash
+POST /api/v1/constructions/:id/schedule_tasks/import
+Content-Type: multipart/form-data
+file: <Excel file>
+```
+
+---
+
+## What's Missing & Needs Work
+
+### High Priority
+- [ ] Dynamic user list (hardcoded → database)
+- [ ] User roles/permissions
+- [ ] Backward pass for accurate float calculation
+
+### Medium Priority
+- [ ] Task comments/discussions
+- [ ] Change notifications
+- [ ] Export to PDF/PNG
+- [ ] Resource workload tracking
+
+### Nice to Have
+- [ ] Mobile support
+- [ ] Real-time WebSocket sync
+- [ ] Multi-project portfolios
+- [ ] Risk management integration
+
+---
+
+## Performance Notes
+
+- Project progress cached for 5 minutes
+- Gantt data includes all task relationships
+- ScheduleTask import processes row-by-row (can slow with 1000+ rows)
+- No pagination on task lists (could be issue at scale)
+
+---
+
+## Testing Checklist
+
+- [ ] Create task with all fields
+- [ ] Update task status (all 4 states)
+- [ ] Assign/unassign user
+- [ ] Create dependency between tasks
+- [ ] Verify circular dependency prevention
+- [ ] Import Excel schedule
+- [ ] Match schedule task to PO
+- [ ] View Gantt chart at different zoom levels
+- [ ] Edit task in table view
+- [ ] Sort table columns
+- [ ] Verify critical path calculation
+- [ ] Check materials_status (on_time/delayed)
+
+---
+
+## Database Indexes
+
+Task-related indexes for performance:
+- project_id, status
+- planned_start_date, planned_end_date
+- is_critical_path
+- construction_id, matched_to_po
+
+---
+
+## Related Documentation
+
+See `/Users/jakebaird/trapid/TASK_MANAGEMENT_ARCHITECTURE.md` for detailed investigation.
+
+
+
+### Code Example
+```jsx
+```
+Models:
+  ProjectTask          → /backend/app/models/project_task.rb
+  ScheduleTask         → /backend/app/models/schedule_task.rb
+  TaskTemplate         → /backend/app/models/task_template.rb
+  TaskDependency       → /backend/app/models/task_dependency.rb
+  TaskUpdate           → /backend/app/models/task_update.rb
+  Project              → /backend/app/models/project.rb
+  Construction         → /backend/app/models/construction.rb
+  User                 → /backend/app/models/user.rb
+
+Controllers:
+  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
+  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
+  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
+
+Services:
+  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
+
+Frontend Pages:
+  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
+  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
+
+Frontend Components:
+  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
+  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
+  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
+```
+
+```
+GET    /api/v1/projects/:project_id/tasks                 - List all tasks
+POST   /api/v1/projects/:project_id/tasks                 - Create task
+GET    /api/v1/projects/:project_id/tasks/:id             - Get task
+PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
+DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
+GET    /api/v1/projects/:id/gantt                         - Get Gantt data
+```
+
+```
+GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
+POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
+GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
+PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
+DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
+```
+
+```
+not_started  → Initial state (default)
+in_progress  → Task has started
+complete     → Task finished
+on_hold      → Paused/blocked
+```
+
+```javascript
+[
+  'Rob Harder',
+  'Andrew Clement',
+  'Sam Harder',
+  'Sophie Harder',
+  'Jake Baird'
+]
+```
+
+```
+finish_to_start (FS)  → Task A finishes, Task B starts (default)
+start_to_start (SS)   → Task A starts, Task B starts
+finish_to_finish (FF) → Task A finishes, Task B finishes
+start_to_finish (SF)  → Task A starts, Task B finishes (rare)
+```
+
+```
+User creates/imports tasks
+        ↓
+ProjectTask or ScheduleTask created
+        ↓
+Dependencies established
+        ↓
+Schedule::GeneratorService runs (for ProjectTasks)
+        ↓
+Timeline calculated (forward pass)
+        ↓
+Critical path identified
+        ↓
+Gantt chart displays tasks & bars
+        ↓
+User updates status/progress
+        ↓
+TaskUpdate record created (history)
+```
+
+```bash
+POST /api/v1/projects/:project_id/tasks
+{
+  "project_task": {
+    "name": "Pour Concrete",
+    "task_type": "DO",
+    "category": "CONCRETE",
+    "duration_days": 5,
+    "assigned_to_id": 1
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "status": "in_progress",
+    "progress_percentage": 50
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "purchase_order_id": 42,
+    "required_on_site_date": "2025-01-20"
+  }
+}
+```
+
+```bash
+POST /api/v1/constructions/:id/schedule_tasks/import
+Content-Type: multipart/form-data
+file: <Excel file>
+```
+```
+
+### Examples
+```
+Models:
+  ProjectTask          → /backend/app/models/project_task.rb
+  ScheduleTask         → /backend/app/models/schedule_task.rb
+  TaskTemplate         → /backend/app/models/task_template.rb
+  TaskDependency       → /backend/app/models/task_dependency.rb
+  TaskUpdate           → /backend/app/models/task_update.rb
+  Project              → /backend/app/models/project.rb
+  Construction         → /backend/app/models/construction.rb
+  User                 → /backend/app/models/user.rb
+
+Controllers:
+  ProjectTasksController   → /backend/app/controllers/api/v1/project_tasks_controller.rb
+  ScheduleTasksController  → /backend/app/controllers/api/v1/schedule_tasks_controller.rb
+  ProjectsController       → /backend/app/controllers/api/v1/projects_controller.rb
+
+Services:
+  Schedule::GeneratorService → /backend/app/services/schedule/generator_service.rb
+
+Frontend Pages:
+  MasterSchedulePage       → /frontend/src/pages/MasterSchedulePage.jsx
+  JobDetailPage            → /frontend/src/pages/JobDetailPage.jsx
+
+Frontend Components:
+  GanttChart               → /frontend/src/components/gantt/GanttChart.jsx
+  TaskTable                → /frontend/src/components/gantt/TaskTable.jsx
+  ScheduleMasterTab        → /frontend/src/components/schedule-master/ScheduleMasterTab.jsx
+```
+
+```
+GET    /api/v1/projects/:project_id/tasks                 - List all tasks
+POST   /api/v1/projects/:project_id/tasks                 - Create task
+GET    /api/v1/projects/:project_id/tasks/:id             - Get task
+PATCH  /api/v1/projects/:project_id/tasks/:id             - Update task
+DELETE /api/v1/projects/:project_id/tasks/:id             - Delete task
+GET    /api/v1/projects/:id/gantt                         - Get Gantt data
+```
+
+```
+GET    /api/v1/constructions/:id/schedule_tasks           - List schedule tasks
+POST   /api/v1/constructions/:id/schedule_tasks/import    - Import from Excel
+GET    /api/v1/constructions/:id/schedule_tasks/gantt_data - Get Gantt view
+PATCH  /api/v1/schedule_tasks/:id/match_po                - Link to PO
+DELETE /api/v1/schedule_tasks/:id/unmatch_po              - Unlink from PO
+```
+
+```
+not_started  → Initial state (default)
+in_progress  → Task has started
+complete     → Task finished
+on_hold      → Paused/blocked
+```
+
+```javascript
+[
+  'Rob Harder',
+  'Andrew Clement',
+  'Sam Harder',
+  'Sophie Harder',
+  'Jake Baird'
+]
+```
+
+```
+finish_to_start (FS)  → Task A finishes, Task B starts (default)
+start_to_start (SS)   → Task A starts, Task B starts
+finish_to_finish (FF) → Task A finishes, Task B finishes
+start_to_finish (SF)  → Task A starts, Task B finishes (rare)
+```
+
+```
+User creates/imports tasks
+        ↓
+ProjectTask or ScheduleTask created
+        ↓
+Dependencies established
+        ↓
+Schedule::GeneratorService runs (for ProjectTasks)
+        ↓
+Timeline calculated (forward pass)
+        ↓
+Critical path identified
+        ↓
+Gantt chart displays tasks & bars
+        ↓
+User updates status/progress
+        ↓
+TaskUpdate record created (history)
+```
+
+```bash
+POST /api/v1/projects/:project_id/tasks
+{
+  "project_task": {
+    "name": "Pour Concrete",
+    "task_type": "DO",
+    "category": "CONCRETE",
+    "duration_days": 5,
+    "assigned_to_id": 1
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "status": "in_progress",
+    "progress_percentage": 50
+  }
+}
+```
+
+```bash
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "purchase_order_id": 42,
+    "required_on_site_date": "2025-01-20"
+  }
+}
+```
+
+```bash
+POST /api/v1/constructions/:id/schedule_tasks/import
+Content-Type: multipart/form-data
+file: <Excel file>
+```
+
+---
+
+## §9.2: Gantt Chart Developer Setup
+
+✨ Feature | 🟡 Intermediate
+
+### Quick Summary
+Development environment setup for Gantt chart features including dependencies and data seeding
+
+### Step-by-Step Guide
+# Gantt Developer Setup & Enforcement
+
+This document explains how to set up and enforce the Gantt onboarding process for all developers.
+
+---
+
+## 🎯 Goals
+
+1. Ensure all developers read the Gantt Bible before modifying code
+2. Prevent reintroduction of bugs that took 8+ iterations to fix
+3. Maintain code quality through automated checks
+4. Create a culture of documentation-first development
+
+---
+
+## 📚 Documentation Structure
+
+```
+trapid/
+├── GANTT_SCHEDULE_RULES.md          ← The Bible (development rules)
+├── GANTT_BIBLE_COLUMNS.md           ← Column implementation reference
+├── GANTT_BUGS_AND_FIXES.md          ← Bug history and Bug Hunter
+├── GANTT_ONBOARDING_CHECKLIST.md    ← Mandatory onboarding checklist
+├── GANTT_DEVELOPER_SETUP.md         ← This file
+└── scripts/
+    └── check-gantt-onboarding.sh    ← Pre-commit hook
+```
+
+All documentation is also available in `/frontend/public/` for the UI "Gantt Bible" button.
+
+---
+
+## 🚀 Setup for New Developers
+
+### Step 1: Install Pre-Commit Hook
+
+```bash
+# Navigate to project root
+cd /Users/rob/Projects/trapid
+
+# Make the script executable
+chmod +x scripts/check-gantt-onboarding.sh
+
+# Install the hook
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+
+# Make the hook executable
+chmod +x .git/hooks/pre-commit
+```
+
+### Step 2: Complete Onboarding
+
+New developers must complete the onboarding checklist:
+
+```bash
+# Open the checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+
+# Follow all steps:
+# 1. Read GANTT_SCHEDULE_RULES.md (focus on 🚨 CRITICAL section)
+# 2. Read GANTT_BIBLE_COLUMNS.md
+# 3. Read GANTT_BUGS_AND_FIXES.md
+# 4. Answer all questions in the checklist
+# 5. Get checklist reviewed and signed by senior dev
+```
+
+**Estimated time:** 45-60 minutes
+
+### Step 3: Verify Setup
+
+Try to commit a change to Gantt code:
+
+```bash
+# Make a test change
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+
+# Try to commit (should trigger the check)
+git add .
+git commit -m "test"
+
+# You should see the onboarding warning
+# If checklist is not signed, commit will be blocked
+```
+
+---
+
+## 🛡️ Enforcement Mechanisms
+
+### 1. Pre-Commit Hook (Automated)
+
+**What it does:**
+- Detects when Gantt/Schedule files are modified
+- Checks if onboarding checklist has been completed (signed)
+- Blocks commits if checklist not signed
+- Shows reminders even after onboarding completed
+
+**Files that trigger the check:**
+- `frontend/src/components/schedule-master/DHtmlxGanttView.jsx`
+- `frontend/src/components/schedule-master/ScheduleTemplateEditor.jsx`
+- `frontend/src/components/schedule-master/CascadeDependenciesModal.jsx`
+- `frontend/src/utils/ganttDebugger.js`
+- `backend/app/services/schedule_cascade_service.rb`
+- `backend/app/controllers/api/v1/schedule_template_rows_controller.rb`
+- `backend/app/models/schedule_template_row.rb`
+
+**Bypass (NOT RECOMMENDED):**
+```bash
+git commit --no-verify  # Skips the hook
+```
+
+### 2. Code Review Checklist (Manual)
+
+During code reviews, reviewers must verify:
+
+- [ ] Developer has completed onboarding (check signature in checklist)
+- [ ] Bug Hunter tests pass (screenshot in PR)
+- [ ] No Protected Code Patterns modified without justification
+- [ ] Changes documented if they affect The Bible
+
+**Template for PR description:**
+```markdown
+## Gantt Changes
+
+- [ ] Onboarding completed: ✅ Signed by [Name] on [Date]
+- [ ] Bug Hunter status: ✅ All tests passing (see screenshot)
+- [ ] Protected patterns: ✅ Not modified OR ✅ Approved by [Name]
+- [ ] Bible updated: ✅ Yes OR ⬜ N/A (no architectural changes)
+
+### Bug Hunter Results
+[Paste screenshot or output from `window.printBugHunterReport()`]
+
+### Changes Summary
+[Describe what you changed and why]
+```
+
+### 3. CI/CD Integration (Optional)
+
+Add to your CI pipeline (`.github/workflows/` or similar):
+
+```yaml
+- name: Check Gantt Bug Hunter Tests
+  run: |
+    cd frontend
+    npm run test:e2e -- gantt-cascade.spec.js
+```
+
+### 4. Slack/Teams Bot (Optional)
+
+Create a bot that:
+- Posts reminder when Gantt PR is opened
+- Links to onboarding checklist
+- Requires Bug Hunter screenshot before approval
+
+---
+
+## 👥 Onboarding Process for Teams
+
+### For New Hires
+
+1. **Week 1:** General codebase onboarding
+2. **Week 2:** Complete Gantt onboarding checklist
+3. **Week 3:** Pair with senior dev on small Gantt fix
+4. **Week 4:** Independent Gantt work with code review
+
+### For External Contractors
+
+**Before starting work:**
+1. Send GANTT_SCHEDULE_RULES.md, GANTT_BIBLE_COLUMNS.md
+2. Schedule 30-minute video call to walk through critical sections
+3. Require signed onboarding checklist before granting repo access
+4. First 3 Gantt PRs require senior dev approval
+
+### For Senior Developers
+
+Even senior devs should:
+1. Re-read 🚨 CRITICAL section before working on Gantt
+2. Run Bug Hunter before and after changes
+3. Update The Bible when discovering new patterns
+
+---
+
+## 📊 Tracking Onboarding Completion
+
+### Onboarding Log
+
+Maintain a log in your team wiki or project management tool:
+
+| Developer | Start Date | Completion Date | Reviewer | Status |
+|-----------|------------|-----------------|----------|--------|
+| Alice Dev | 2025-11-10 | 2025-11-10 | Bob Senior | ✅ Complete |
+| Charlie   | 2025-11-12 | Pending | - | 🟡 In Progress |
+
+### Metrics to Track
+
+- **Time to complete onboarding:** Target < 1 hour
+- **Gantt bugs introduced:** Target = 0 in first 90 days
+- **Bug Hunter test failures:** Target < 5% of commits
+- **Documentation updates:** Target = 1 per month
+
+---
+
+## 🔧 Maintaining The System
+
+### Monthly Review
+
+Once per month:
+- Review all Gantt-related PRs from past month
+- Check if any bugs were reintroduced
+- Update The Bible with new patterns discovered
+- Review onboarding times and adjust checklist if needed
+
+### Updating The Hook
+
+If you add new Gantt files, update the hook:
+
+```bash
+# Edit scripts/check-gantt-onboarding.sh
+# Add new files to GANTT_FRONTEND_FILES or GANTT_BACKEND_FILES arrays
+
+# Reinstall
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+### When Onboarding Takes Too Long
+
+If developers report onboarding takes > 1 hour:
+- Review the checklist for unnecessary steps
+- Create a video walkthrough of critical sections (15 min)
+- Add more examples/diagrams
+- Consider splitting into "Essential" and "Advanced" checklists
+
+---
+
+## 🚨 Handling Violations
+
+### First Offense
+
+**Scenario:** Developer commits Gantt code without completing onboarding
+
+**Action:**
+1. Politely point to GANTT_ONBOARDING_CHECKLIST.md
+2. Ask them to complete it before next Gantt change
+3. Review their changes for common bugs
+4. Add their name to onboarding log as "Pending"
+
+### Repeated Offenses
+
+**Scenario:** Developer repeatedly bypasses onboarding or introduces known bugs
+
+**Action:**
+1. Schedule 1-on-1 meeting to understand blockers
+2. Pair with senior dev for next 3 Gantt changes
+3. Restrict Gantt file access until onboarding complete
+4. Consider adding mandatory PR template
+
+### Critical Bug Introduced
+
+**Scenario:** Developer reintroduces a bug from GANTT_BUGS_AND_FIXES.md
+
+**Action:**
+1. Immediate rollback if in production
+2. Root cause analysis: Did they read The Bible?
+3. Update The Bible to make that section more prominent
+4. Consider adding that bug to the pre-commit hook check
+5. All-hands meeting to review the incident
+
+---
+
+## 📞 Support & Escalation
+
+### When Developers Get Stuck
+
+**"The Bible is too long, I don't have time"**
+- Direct them to 🚨 CRITICAL section only (15 minutes)
+- Offer to schedule 15-minute walkthrough
+- Emphasize time savings: 15 min reading vs 2+ hours debugging
+
+**"I don't understand the predecessor ID mismatch"**
+- Point to GANTT_SCHEDULE_RULES.md line 161 (example code)
+- Show them backend: schedule_cascade_service.rb:88
+- Pair program: Make a test change together
+
+**"Bug Hunter is failing but I don't know why"**
+- Run `window.printBugHunterReport()` in browser console
+- Check which specific test is failing (1-10)
+- Cross-reference test # to GANTT_BIBLE_COLUMNS.md
+
+### Escalation Path
+
+1. **Level 1:** Check The Bible (GANTT_SCHEDULE_RULES.md)
+2. **Level 2:** Run Bug Hunter diagnostics
+3. **Level 3:** Check bug history (GANTT_BUGS_AND_FIXES.md)
+4. **Level 4:** Ask in team chat #gantt-help
+5. **Level 5:** Schedule pairing session with Gantt expert
+
+---
+
+## 🎓 Advanced: Creating Training Materials
+
+### Video Walkthrough (Recommended)
+
+Create a 15-minute video covering:
+- **Minute 0-5:** Why this onboarding exists (8 iterations story)
+- **Minute 5-10:** The #1 and #2 killer bugs with examples
+- **Minute 10-15:** How to use Bug Hunter and verify your changes
+
+### Interactive Workshop (Optional)
+
+Host a 1-hour workshop:
+- **0-15 min:** Overview of Gantt architecture
+- **15-30 min:** Live demo of common bugs
+- **30-45 min:** Hands-on: Each dev makes a test change
+- **45-60 min:** Code review simulation
+
+### Quiz/Certification (Optional)
+
+Create a 10-question quiz:
+- Predecessor ID conversion question
+- Lock hierarchy ordering
+- useRef flag purposes
+- Bug Hunter interpretation
+- Require 90% to pass
+
+---
+
+## 📈 Success Metrics
+
+Track these KPIs to measure onboarding effectiveness:
+
+| Metric | Target | Current | Trend |
+|--------|--------|---------|-------|
+| Bugs reintroduced | 0 | - | - |
+| Onboarding time | < 60 min | - | - |
+| Bug Hunter pass rate | > 95% | - | - |
+| Time to first Gantt commit | < 2 weeks | - | - |
+| Developer satisfaction | > 4/5 | - | - |
+
+---
+
+## 🔄 Feedback Loop
+
+**Monthly developer feedback survey:**
+
+1. Was the onboarding helpful? (1-5 scale)
+2. What section was most valuable?
+3. What was confusing or could be improved?
+4. How long did onboarding take?
+5. Have you reintroduced any bugs? Which ones?
+
+**Use feedback to:**
+- Update The Bible with better examples
+- Revise checklist questions
+- Create additional training materials
+- Identify knowledge gaps
+
+---
+
+## ✅ Setup Verification
+
+Run this checklist to verify your setup:
+
+- [ ] Pre-commit hook installed in `.git/hooks/pre-commit`
+- [ ] Hook is executable (`chmod +x`)
+- [ ] All 4 documentation files exist and are up to date
+- [ ] Onboarding checklist has template for new devs
+- [ ] Team has been notified about new onboarding process
+- [ ] At least one senior dev familiar with The Bible
+- [ ] Bug Hunter accessible via UI (Gantt Bible button)
+- [ ] Process documented in team wiki
+- [ ] Metrics tracking set up (optional)
+
+---
+
+## 📞 Questions?
+
+If you have questions about this setup:
+
+1. Read GANTT_SCHEDULE_RULES.md (might already be answered)
+2. Check GANTT_BUGS_AND_FIXES.md for historical context
+3. Open an issue or discussion in your team's process
+4. Schedule time with the team lead
+
+**Remember:** The goal is to prevent bugs, not to create bureaucracy. If something isn't working, let's improve it together!
+
+
+### Code Example
+```jsx
+```
+trapid/
+├── GANTT_SCHEDULE_RULES.md          ← The Bible (development rules)
+├── GANTT_BIBLE_COLUMNS.md           ← Column implementation reference
+├── GANTT_BUGS_AND_FIXES.md          ← Bug history and Bug Hunter
+├── GANTT_ONBOARDING_CHECKLIST.md    ← Mandatory onboarding checklist
+├── GANTT_DEVELOPER_SETUP.md         ← This file
+└── scripts/
+    └── check-gantt-onboarding.sh    ← Pre-commit hook
+```
+
+```bash
+# Navigate to project root
+cd /Users/rob/Projects/trapid
+
+# Make the script executable
+chmod +x scripts/check-gantt-onboarding.sh
+
+# Install the hook
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+
+# Make the hook executable
+chmod +x .git/hooks/pre-commit
+```
+
+```bash
+# Open the checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+
+# Follow all steps:
+# 1. Read GANTT_SCHEDULE_RULES.md (focus on 🚨 CRITICAL section)
+# 2. Read GANTT_BIBLE_COLUMNS.md
+# 3. Read GANTT_BUGS_AND_FIXES.md
+# 4. Answer all questions in the checklist
+# 5. Get checklist reviewed and signed by senior dev
+```
+
+```bash
+# Make a test change
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+
+# Try to commit (should trigger the check)
+git add .
+git commit -m "test"
+
+# You should see the onboarding warning
+# If checklist is not signed, commit will be blocked
+```
+
+```bash
+git commit --no-verify  # Skips the hook
+```
+
+```markdown
+## Gantt Changes
+
+- [ ] Onboarding completed: ✅ Signed by [Name] on [Date]
+- [ ] Bug Hunter status: ✅ All tests passing (see screenshot)
+- [ ] Protected patterns: ✅ Not modified OR ✅ Approved by [Name]
+- [ ] Bible updated: ✅ Yes OR ⬜ N/A (no architectural changes)
+
+### Bug Hunter Results
+[Paste screenshot or output from `window.printBugHunterReport()`]
+
+### Changes Summary
+[Describe what you changed and why]
+```
+
+```yaml
+- name: Check Gantt Bug Hunter Tests
+  run: |
+    cd frontend
+    npm run test:e2e -- gantt-cascade.spec.js
+```
+
+```bash
+# Edit scripts/check-gantt-onboarding.sh
+# Add new files to GANTT_FRONTEND_FILES or GANTT_BACKEND_FILES arrays
+
+# Reinstall
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+```
+
+### Examples
+```
+trapid/
+├── GANTT_SCHEDULE_RULES.md          ← The Bible (development rules)
+├── GANTT_BIBLE_COLUMNS.md           ← Column implementation reference
+├── GANTT_BUGS_AND_FIXES.md          ← Bug history and Bug Hunter
+├── GANTT_ONBOARDING_CHECKLIST.md    ← Mandatory onboarding checklist
+├── GANTT_DEVELOPER_SETUP.md         ← This file
+└── scripts/
+    └── check-gantt-onboarding.sh    ← Pre-commit hook
+```
+
+```bash
+# Navigate to project root
+cd /Users/rob/Projects/trapid
+
+# Make the script executable
+chmod +x scripts/check-gantt-onboarding.sh
+
+# Install the hook
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+
+# Make the hook executable
+chmod +x .git/hooks/pre-commit
+```
+
+```bash
+# Open the checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+
+# Follow all steps:
+# 1. Read GANTT_SCHEDULE_RULES.md (focus on 🚨 CRITICAL section)
+# 2. Read GANTT_BIBLE_COLUMNS.md
+# 3. Read GANTT_BUGS_AND_FIXES.md
+# 4. Answer all questions in the checklist
+# 5. Get checklist reviewed and signed by senior dev
+```
+
+```bash
+# Make a test change
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+
+# Try to commit (should trigger the check)
+git add .
+git commit -m "test"
+
+# You should see the onboarding warning
+# If checklist is not signed, commit will be blocked
+```
+
+```bash
+git commit --no-verify  # Skips the hook
+```
+
+```markdown
+## Gantt Changes
+
+- [ ] Onboarding completed: ✅ Signed by [Name] on [Date]
+- [ ] Bug Hunter status: ✅ All tests passing (see screenshot)
+- [ ] Protected patterns: ✅ Not modified OR ✅ Approved by [Name]
+- [ ] Bible updated: ✅ Yes OR ⬜ N/A (no architectural changes)
+
+### Bug Hunter Results
+[Paste screenshot or output from `window.printBugHunterReport()`]
+
+### Changes Summary
+[Describe what you changed and why]
+```
+
+```yaml
+- name: Check Gantt Bug Hunter Tests
+  run: |
+    cd frontend
+    npm run test:e2e -- gantt-cascade.spec.js
+```
+
+```bash
+# Edit scripts/check-gantt-onboarding.sh
+# Add new files to GANTT_FRONTEND_FILES or GANTT_BACKEND_FILES arrays
+
+# Reinstall
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+---
+
+## §9.3: Gantt Feature Onboarding Checklist
+
+✨ Feature | 🟢 Beginner
+
+### Quick Summary
+New developer onboarding checklist for understanding Gantt chart implementation
+
+### Step-by-Step Guide
+# Gantt Development Onboarding Checklist
+
+**⚠️ MANDATORY: Complete this checklist before making any changes to Gantt/Schedule code**
+
+## Why This Checklist Exists
+
+The Gantt and Schedule Master codebase contains subtle patterns that took **8+ iterations and many hours** to get right. This checklist ensures you understand these patterns before introducing bugs that we've already fixed.
+
+---
+
+## Step 1: Read The Documentation
+
+Read these files IN ORDER (estimated time: 45 minutes):
+
+- [ ] **GANTT_SCHEDULE_RULES.md (The Bible)** - Start with the "🚨 CRITICAL" section
+  - [ ] Understand Predecessor ID Mismatch (1-based vs 0-based)
+  - [ ] Understand Infinite Render Loop prevention
+  - [ ] Know all 3 useRef anti-loop flags (isDragging, isLoadingData, isSaving)
+  - [ ] Know all 5 lock types and their priority order
+  - [ ] Read all "Common Gotchas" section
+
+- [ ] **GANTT_BIBLE_COLUMNS.md** - Column implementation reference
+  - [ ] Understand which columns are Active vs Inactive
+  - [ ] Know where each column is implemented (file:line)
+  - [ ] Understand lock hierarchy
+
+- [ ] **GANTT_BUGS_AND_FIXES.md** - Bug history and Bug Hunter
+  - [ ] Read BUG-001 (Drag Flickering) case study
+  - [ ] Understand why each fix attempt failed
+  - [ ] Know how to use Bug Hunter diagnostic tool
+
+---
+
+## Step 2: Understand The Architecture
+
+Answer these questions (write your answers, they will be checked):
+
+### Backend Questions
+
+**Q1:** Why are predecessor IDs 1-based but sequence_order is 0-based?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q2:** Why does `ScheduleCascadeService` use `update_column()` instead of `update()`?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q3:** Which tasks does the cascade service skip? Why?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+### Frontend Questions
+
+**Q4:** What triggers spurious `onAfterTaskDrag` events in DHtmlx Gantt?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q5:** Why must `isLoadingData` timeout be exactly 500ms (not less)?
+
+**Your Answer:**
+```
+[Write answer here]
+```
+
+**Q6:** Name all 5 lock types in priority order (highest to lowest):
+
+**Your Answer:**
+```
+1.
+2.
+3.
+4.
+5.
+```
+
+---
+
+## Step 3: Set Up Your Environment
+
+Complete these setup tasks:
+
+- [ ] Enable DIAGNOSTIC_MODE in DHtmlxGanttView.jsx line 26
+- [ ] Open browser DevTools console
+- [ ] Run `window.printBugHunterReport()` to verify Bug Hunter works
+- [ ] Verify you can see diagnostic emoji logs (🔵 📊 ✅ ❌)
+
+---
+
+## Step 4: Practice With The Code
+
+Complete these hands-on exercises:
+
+### Exercise 1: Predecessor ID Conversion
+
+- [ ] Open `schedule_cascade_service.rb`
+- [ ] Find line 88: `predecessor_id = predecessor_task.sequence_order + 1`
+- [ ] Explain why the `+ 1` is necessary:
+```
+[Write answer here]
+```
+
+### Exercise 2: Anti-Loop Flags
+
+- [ ] Open `DHtmlxGanttView.jsx`
+- [ ] Find line 1357: `isDragging.current = true`
+- [ ] Find line 3477: `if (isLoadingData.current) return`
+- [ ] Explain what would happen if line 3477 was removed:
+```
+[Write answer here]
+```
+
+### Exercise 3: Lock Checking
+
+- [ ] Open `DHtmlxGanttView.jsx`
+- [ ] Find the cascade modal logic around line 1700
+- [ ] Write the correct code to check if a task is locked:
+```javascript
+const isLocked = (task) => {
+  // Write your code here
+
+
+}
+```
+
+---
+
+## Step 5: Run The Tests
+
+Before making any changes:
+
+- [ ] Run backend tests: `cd backend && bundle exec rspec spec/services/schedule_cascade_service_spec.rb`
+- [ ] Run E2E tests: `cd frontend && npm run test:e2e -- gantt-cascade.spec.js`
+- [ ] Verify Bug Hunter reports HEALTHY status
+- [ ] Verify all 10 Bug Hunter tests pass
+
+---
+
+## Step 6: Make A Small Test Change
+
+Practice the workflow with a safe change:
+
+- [ ] Add a console.log to DHtmlxGanttView.jsx in handleTaskUpdate
+- [ ] Drag a task in the Gantt chart
+- [ ] Verify your log appears exactly ONCE (not multiple times)
+- [ ] Run `window.printBugHunterReport()` and verify:
+  - [ ] Test #1 passes (≤ 2 API calls per task)
+  - [ ] Test #2 passes (≤ 5 reloads per drag)
+- [ ] Remove your console.log
+
+---
+
+## Step 7: Verify Comprehension
+
+Have a senior developer review your answers to the questions above.
+
+**Reviewer Name:** ________________
+
+**Review Date:** ________________
+
+**Reviewer Signature:** ________________
+
+---
+
+## Step 8: Sign The Pledge
+
+By signing below, I certify that:
+
+1. I have read and understood GANTT_SCHEDULE_RULES.md (The Bible)
+2. I understand the Predecessor ID Mismatch bug and how to avoid it
+3. I understand the useRef anti-loop flags and will not "optimize" them away
+4. I will run Bug Hunter after every change to Gantt code
+5. I will not remove or modify Protected Code Patterns without explicit approval
+6. If I don't understand something, I will ask BEFORE making changes
+
+**Developer Name:** ________________
+
+**Date Completed:** ________________
+
+**Signature:** ________________
+
+---
+
+## Emergency Contacts
+
+If you encounter issues or have questions:
+
+1. **Check The Bible First:** GANTT_SCHEDULE_RULES.md has the answer
+2. **Run Bug Hunter:** `window.printBugHunterReport()` for diagnostics
+3. **Check Bug History:** GANTT_BUGS_AND_FIXES.md may have your answer
+4. **Ask Senior Dev:** [Your team's escalation process here]
+
+---
+
+## After Onboarding
+
+**Every time you work on Gantt code:**
+
+- [ ] Re-read the "🚨 CRITICAL" section of The Bible
+- [ ] Enable DIAGNOSTIC_MODE
+- [ ] Run Bug Hunter before and after your changes
+- [ ] Verify all 10 tests still pass
+- [ ] Update The Bible if you discover new patterns or gotchas
+
+---
+
+## Onboarding Record
+
+**Developer:** ________________
+**Start Date:** ________________
+**Completion Date:** ________________
+**Time Spent:** _______ hours
+**Reviewer:** ________________
+**Status:** [ ] In Progress  [ ] Completed  [ ] Needs Revision
+
+---
+
+## Common Onboarding Mistakes
+
+After completing this checklist, developers commonly make these mistakes:
+
+1. **"I'll just make a quick fix"** - No such thing with Gantt code. Read The Bible first.
+2. **"This code looks messy, I'll clean it up"** - Every line exists for a reason. Ask first.
+3. **"500ms is too long, I'll optimize to 100ms"** - Tested value. Don't change it.
+4. **"I don't need to run Bug Hunter, it's a small change"** - Bug Hunter catches issues you can't see.
+5. **"I understand loops, I don't need to read about the flags"** - The loops are NOT obvious.
+
+**If you skip this checklist and introduce a bug, you will spend HOURS debugging issues that are already documented here.**
+
+
+### Code Example
+```jsx
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+1.
+2.
+3.
+4.
+5.
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```javascript
+const isLocked = (task) => {
+  // Write your code here
+
+
+}
+```
+```
+
+### Examples
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```
+1.
+2.
+3.
+4.
+5.
+```
+
+```
+[Write answer here]
+```
+
+```
+[Write answer here]
+```
+
+```javascript
+const isLocked = (task) => {
+  // Write your code here
+
+
+}
+```
+
+---
+
+## §9.4: Gantt Chart README - Feature Overview
+
+✨ Feature | 🟢 Beginner
+
+### Quick Summary
+High-level overview of Gantt chart features, components, and usage
+
+### Step-by-Step Guide
+# Gantt & Schedule Master Documentation
+
+**Complete documentation system for Gantt and Schedule Master features**
+
+---
+
+## 🚨 STOP! Read This First
+
+**Are you about to modify Gantt or Schedule code?**
+
+👉 **YOU MUST complete the onboarding checklist FIRST:** [GANTT_ONBOARDING_CHECKLIST.md](GANTT_ONBOARDING_CHECKLIST.md)
+
+**Why?** This code has subtle patterns that took **8+ iterations** to get right. Skip onboarding = hours of debugging bugs we've already fixed.
+
+---
+
+## 📚 Documentation Files
+
+### 1. The Bible (Development Rules)
+**File:** [GANTT_SCHEDULE_RULES.md](GANTT_SCHEDULE_RULES.md) (114KB, 3715 lines)
+
+**What it contains:**
+- 🚨 **CRITICAL section** - Must-read before touching code (15 min)
+- Protected Code Patterns (do NOT modify)
+- Complete development rules
+- Performance patterns
+- Anti-loop mechanisms
+
+**When to read:**
+- Before making ANY changes to Gantt code
+- When debugging Gantt issues
+- Before code reviews
+
+**Start here:** Line 161 - "🚨 CRITICAL: Read Before Touching Gantt Code"
+
+---
+
+### 2. Column Reference
+**File:** [GANTT_BIBLE_COLUMNS.md](GANTT_BIBLE_COLUMNS.md) (25KB)
+
+**What it contains:**
+- All 33 Schedule Master table columns
+- All 11 Gantt modal columns
+- Implementation details (file:line references)
+- Database field mappings
+- Active/Inactive status
+- Lock hierarchy and priorities
+- Test coverage map
+
+**When to read:**
+- Adding or modifying column functionality
+- Understanding what a column does
+- Finding which service processes a column
+
+---
+
+### 3. Bug Tracking & Bug Hunter
+**File:** [GANTT_BUGS_AND_FIXES.md](frontend/public/GANTT_BUGS_AND_FIXES.md) (23KB)
+
+**What it contains:**
+- All resolved bugs with case studies
+- BUG-001: Drag Flickering (8 iterations to fix!)
+- Bug Hunter diagnostic tool usage
+- 10 automated test descriptions
+- Test results history
+
+**When to read:**
+- Debugging Gantt issues
+- Running performance diagnostics
+- Understanding why code is written a certain way
+
+---
+
+### 4. Onboarding Checklist
+**File:** [GANTT_ONBOARDING_CHECKLIST.md](GANTT_ONBOARDING_CHECKLIST.md) (6.3KB)
+
+**What it contains:**
+- Step-by-step onboarding process
+- Questions to test comprehension
+- Hands-on exercises
+- Sign-off section for accountability
+
+**When to complete:**
+- Before your first Gantt code change
+- When onboarding new team members
+- As a refresher (re-read critical sections)
+
+**Time required:** 45-60 minutes
+
+---
+
+### 5. Developer Setup & Enforcement
+**File:** [GANTT_DEVELOPER_SETUP.md](GANTT_DEVELOPER_SETUP.md) (11KB)
+
+**What it contains:**
+- How to install pre-commit hooks
+- Enforcement mechanisms
+- Team onboarding process
+- Tracking metrics
+- Support & escalation paths
+
+**When to read:**
+- Setting up a new developer
+- Configuring CI/CD
+- Team lead responsibilities
+
+---
+
+## 🚀 Quick Start
+
+### For New Developers
+
+```bash
+# 1. Read the Critical section (15 min)
+open GANTT_SCHEDULE_RULES.md
+# → Jump to line 161: "🚨 CRITICAL: Read Before Touching Gantt Code"
+
+# 2. Install pre-commit hook
+chmod +x scripts/check-gantt-onboarding.sh
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
+# 3. Complete onboarding checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+# → Answer all questions, get it reviewed and signed
+
+# 4. Verify Bug Hunter works
+# Open app, go to Schedule Master, click "Gantt Bible"
+# In browser console: window.printBugHunterReport()
+```
+
+### For Quick Reference
+
+**Looking for a specific topic?**
+
+| Topic | File | Section |
+|-------|------|---------|
+| Predecessor ID bug | GANTT_SCHEDULE_RULES.md | Line 163 |
+| Infinite render loops | GANTT_SCHEDULE_RULES.md | Line 206 |
+| useRef anti-loop flags | GANTT_SCHEDULE_RULES.md | Line 276 |
+| Lock hierarchy | GANTT_SCHEDULE_RULES.md | Line 352 |
+| Column details | GANTT_BIBLE_COLUMNS.md | All columns listed |
+| Bug Hunter usage | GANTT_BUGS_AND_FIXES.md | Line 58 |
+| Common gotchas | GANTT_SCHEDULE_RULES.md | Line 524 |
+
+---
+
+## 🔍 Bug Hunter Quick Reference
+
+**In browser console:**
+
+```javascript
+// Generate diagnostic report
+window.printBugHunterReport()
+
+// Enable debug categories
+window.enableGanttDebug(['drag', 'api', 'cascade'])
+
+// Export report for bug ticket
+window.exportBugHunterReport()
+
+// Reset for new test
+window.resetBugHunter()
+```
+
+**10 Automated Tests:**
+1. Duplicate API Call Detection (≤ 2 per task)
+2. Excessive Gantt Reload Detection (≤ 5 per drag)
+3. Slow Drag Operation Detection (< 5000ms)
+4. API Call Pattern Analysis
+5. Cascade Event Tracking
+6. State Update Batching (≤ 3 per drag)
+7. Lock State Monitoring
+8. Performance Timing Analysis
+9. Health Status Assessment
+10. Actionable Recommendations
+
+---
+
+## 🏗️ Architecture Overview
+
+### Frontend (React)
+- **DHtmlxGanttView.jsx** (5276 lines) - Main Gantt component
+- **ScheduleTemplateEditor.jsx** (2500+ lines) - Schedule editor
+- **CascadeDependenciesModal.jsx** - User cascade choices
+- **ganttDebugger.js** - Bug Hunter diagnostic tool
+
+### Backend (Ruby on Rails)
+- **ScheduleCascadeService** - Dependency cascade logic
+- **ScheduleTemplateRowsController** - API endpoints
+- **ScheduleTemplateRow** (model) - With after_update cascade callback
+
+### Key Patterns
+- **Predecessor IDs:** 1-based (UI) vs 0-based (sequence_order)
+- **Anti-Loop Flags:** `isDragging`, `isLoadingData`, `isSaving`
+- **Lock Priority:** supplier_confirm > confirm > start > complete > manually_positioned
+- **API Pattern:** Single update + cascade response (not N calls)
+
+---
+
+## ⚠️ The Two Killer Bugs
+
+### #1: Predecessor ID Mismatch
+
+**Problem:** Predecessor IDs are 1-based but sequence_order is 0-based
+
+**Fix:** Always convert with `+ 1`:
+```javascript
+const predecessorId = task.sequence_order + 1
+```
+
+**Impact:** Wrong tasks cascade, hours of debugging
+
+### #2: Infinite Render Loops
+
+**Problem:** `gantt.parse()` fires spurious drag events
+
+**Fix:** Three useRef flags with 500ms timeout:
+```javascript
+const isDragging = useRef(false)
+const isLoadingData = useRef(false)  // Reset by useEffect only!
+const isSaving = useRef(false)
+```
+
+**Impact:** Screen flickering, 8-16 reloads per drag
+
+---
+
+## 📋 Before Every Commit Checklist
+
+- [ ] Re-read 🚨 CRITICAL section of The Bible
+- [ ] DIAGNOSTIC_MODE enabled during testing
+- [ ] Bug Hunter run: `window.printBugHunterReport()`
+- [ ] All 10 Bug Hunter tests pass
+- [ ] Test #2 passes (≤ 5 reloads per drag)
+- [ ] No screen flickering
+- [ ] Tested with locked AND unlocked tasks
+- [ ] Tested 3+ levels of dependencies
+- [ ] Did NOT modify Protected Code Patterns
+
+---
+
+## 🆘 Getting Help
+
+### Level 1: Check The Docs
+- **GANTT_SCHEDULE_RULES.md** - Development patterns
+- **GANTT_BUGS_AND_FIXES.md** - Known issues
+- **GANTT_BIBLE_COLUMNS.md** - Column reference
+
+### Level 2: Run Diagnostics
+```javascript
+window.printBugHunterReport()
+```
+
+### Level 3: Ask Team
+- Check which specific test is failing (1-10)
+- Cross-reference test # to documentation
+- Share Bug Hunter output in team chat
+
+### Level 4: Escalate
+- Schedule pairing with Gantt expert
+- Review historical bugs for similar issues
+- Consider if Bible needs updating
+
+---
+
+## 📊 File Sizes
+
+| File | Size | Lines | Purpose |
+|------|------|-------|---------|
+| GANTT_SCHEDULE_RULES.md | 114KB | 3715 | The Bible - all rules |
+| GANTT_BIBLE_COLUMNS.md | 25KB | - | Column reference |
+| GANTT_BUGS_AND_FIXES.md | 23KB | - | Bug history |
+| GANTT_ONBOARDING_CHECKLIST.md | 6.3KB | - | Onboarding steps |
+| GANTT_DEVELOPER_SETUP.md | 11KB | - | Setup & enforcement |
+| check-gantt-onboarding.sh | 6.7KB | - | Pre-commit hook |
+
+**Total documentation:** ~186KB
+
+**Time investment:**
+- Initial reading: 45-60 minutes
+- Time saved: Hours of debugging per developer
+
+---
+
+## 🎯 Success Metrics
+
+**Goals:**
+- ✅ Zero reintroduced bugs
+- ✅ 100% onboarding completion
+- ✅ < 1 hour onboarding time
+- ✅ > 95% Bug Hunter pass rate
+
+**Current Status:** [Track in your project management tool]
+
+---
+
+## 🔄 Keeping Documentation Updated
+
+**When to update:**
+- New bug discovered and fixed
+- New Protected Code Pattern identified
+- Architecture changes
+- Performance optimizations
+- New column added
+
+**How to update:**
+1. Make code changes
+2. Update relevant documentation file(s)
+3. Increment version number in The Bible
+4. Update timestamp
+5. Add changelog entry
+6. Sync to `/frontend/public/` if needed
+
+**Update process:** See GANTT_SCHEDULE_RULES.md lines 30-98
+
+---
+
+## ✅ Installation Complete?
+
+Verify your setup:
+
+```bash
+# Check all files exist
+ls -lh GANTT*.md scripts/check-gantt-onboarding.sh
+
+# Check hook is installed
+ls -lh .git/hooks/pre-commit
+
+# Test the hook
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+git add .
+git commit -m "test"
+# Should show onboarding warning
+
+# Revert test change
+git reset HEAD~1
+git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+```
+
+---
+
+## 📞 Questions?
+
+1. Read GANTT_SCHEDULE_RULES.md (probably already answered)
+2. Check GANTT_BUGS_AND_FIXES.md (historical context)
+3. Ask in team chat
+4. Schedule time with team lead
+
+**Remember:** The goal is preventing bugs, not creating bureaucracy. If something isn't working, let's improve it together!
+
+---
+
+## Version History
+
+| Date | Version | Changes |
+|------|---------|---------|
+| 2025-11-15 | 1.0 | Initial comprehensive documentation system created |
+
+---
+
+**Last Updated:** November 15, 2025
+**Maintained By:** Development Team
+**Contact:** [Your team's contact info]
+
+
+### Code Example
+```jsx
+```bash
+# 1. Read the Critical section (15 min)
+open GANTT_SCHEDULE_RULES.md
+# → Jump to line 161: "🚨 CRITICAL: Read Before Touching Gantt Code"
+
+# 2. Install pre-commit hook
+chmod +x scripts/check-gantt-onboarding.sh
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
+# 3. Complete onboarding checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+# → Answer all questions, get it reviewed and signed
+
+# 4. Verify Bug Hunter works
+# Open app, go to Schedule Master, click "Gantt Bible"
+# In browser console: window.printBugHunterReport()
+```
+
+```javascript
+// Generate diagnostic report
+window.printBugHunterReport()
+
+// Enable debug categories
+window.enableGanttDebug(['drag', 'api', 'cascade'])
+
+// Export report for bug ticket
+window.exportBugHunterReport()
+
+// Reset for new test
+window.resetBugHunter()
+```
+
+```javascript
+const predecessorId = task.sequence_order + 1
+```
+
+```javascript
+const isDragging = useRef(false)
+const isLoadingData = useRef(false)  // Reset by useEffect only!
+const isSaving = useRef(false)
+```
+
+```javascript
+window.printBugHunterReport()
+```
+
+```bash
+# Check all files exist
+ls -lh GANTT*.md scripts/check-gantt-onboarding.sh
+
+# Check hook is installed
+ls -lh .git/hooks/pre-commit
+
+# Test the hook
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+git add .
+git commit -m "test"
+# Should show onboarding warning
+
+# Revert test change
+git reset HEAD~1
+git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+```
+```
+
+### Examples
+```bash
+# 1. Read the Critical section (15 min)
+open GANTT_SCHEDULE_RULES.md
+# → Jump to line 161: "🚨 CRITICAL: Read Before Touching Gantt Code"
+
+# 2. Install pre-commit hook
+chmod +x scripts/check-gantt-onboarding.sh
+cp scripts/check-gantt-onboarding.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
+# 3. Complete onboarding checklist
+open GANTT_ONBOARDING_CHECKLIST.md
+# → Answer all questions, get it reviewed and signed
+
+# 4. Verify Bug Hunter works
+# Open app, go to Schedule Master, click "Gantt Bible"
+# In browser console: window.printBugHunterReport()
+```
+
+```javascript
+// Generate diagnostic report
+window.printBugHunterReport()
+
+// Enable debug categories
+window.enableGanttDebug(['drag', 'api', 'cascade'])
+
+// Export report for bug ticket
+window.exportBugHunterReport()
+
+// Reset for new test
+window.resetBugHunter()
+```
+
+```javascript
+const predecessorId = task.sequence_order + 1
+```
+
+```javascript
+const isDragging = useRef(false)
+const isLoadingData = useRef(false)  // Reset by useEffect only!
+const isSaving = useRef(false)
+```
+
+```javascript
+window.printBugHunterReport()
+```
+
+```bash
+# Check all files exist
+ls -lh GANTT*.md scripts/check-gantt-onboarding.sh
+
+# Check hook is installed
+ls -lh .git/hooks/pre-commit
+
+# Test the hook
+echo "// test" >> frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+git add .
+git commit -m "test"
+# Should show onboarding warning
+
+# Revert test change
+git reset HEAD~1
+git checkout -- frontend/src/components/schedule-master/DHtmlxGanttView.jsx
+```
+
+---
+
+
+# Chapter 10: Gantt & Schedule Master
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 10               │
+│ 📕 LEXICON (BUGS):    Chapter 10               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -4175,11 +15008,11 @@ PATCH /api/v1/schedule_templates/:id/rows/:row_id
 ---
 
 
-# Chapter 10: Project Tasks & Checklists
+# Chapter 11: Project Tasks & Checklists
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 10               │
-│ 📕 LEXICON (BUGS):    Chapter 10               │
+│ 📖 BIBLE (RULES):     Chapter 11               │
+│ 📕 LEXICON (BUGS):    Chapter 11               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -4766,11 +15599,11 @@ end
 ---
 
 
-# Chapter 11: Weather & Public Holidays
+# Chapter 12: Weather & Public Holidays
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 11               │
-│ 📕 LEXICON (BUGS):    Chapter 11               │
+│ 📖 BIBLE (RULES):     Chapter 12               │
+│ 📕 LEXICON (BUGS):    Chapter 12               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -5024,11 +15857,11 @@ rain_log = construction.rain_logs.create!(
 ---
 
 
-# Chapter 12: OneDrive Integration
+# Chapter 13: OneDrive Integration
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 12               │
-│ 📕 LEXICON (BUGS):    Chapter 12               │
+│ 📖 BIBLE (RULES):     Chapter 13               │
+│ 📕 LEXICON (BUGS):    Chapter 13               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -5061,11 +15894,11 @@ Trapid Jobs/
 ---
 
 
-# Chapter 13: Outlook/Email Integration
+# Chapter 14: Outlook/Email Integration
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 13               │
-│ 📕 LEXICON (BUGS):    Chapter 13               │
+│ 📖 BIBLE (RULES):     Chapter 14               │
+│ 📕 LEXICON (BUGS):    Chapter 14               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -5392,11 +16225,11 @@ JobMailer.quote_sent(job.id, contact.id).deliver_later
 ---
 
 
-# Chapter 14: Chat & Communications
+# Chapter 15: Xero Accounting Integration
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 14               │
-│ 📕 LEXICON (BUGS):    Chapter 14               │
+│ 📖 BIBLE (RULES):     Chapter 15               │
+│ 📕 LEXICON (BUGS):    Chapter 15               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -5963,12 +16796,2742 @@ add_index :emails, :construction_id
 
 ---
 
+## §15.10: Xero Sync Status Badges Implementation
 
-# Chapter 15: Xero Accounting Integration
+🧩 Component | 🟢 Beginner
+
+### Quick Summary
+Visual status indicators for Xero-synced fields with color-coded badges
+
+### Step-by-Step Guide
+# Sync Status Badges Implementation Guide
+
+## Status Logic
+
+For each Xero-synced field, determine status based on:
+
+```javascript
+const getSyncStatus = (contact) => {
+  if (!contact.sync_with_xero) {
+    return 'not_enabled' // Gray badge or no badge
+  }
+
+  if (contact.xero_sync_error) {
+    return 'failed' // Red badge with X icon
+  }
+
+  if (contact.last_synced_at && contact.xero_id) {
+    return 'synced' // Green badge with check icon
+  }
+
+  if (contact.sync_with_xero && !contact.xero_id) {
+    return 'pending' // Yellow badge
+  }
+
+  return 'unknown'
+}
+```
+
+## Badge Components
+
+### Helper Function (add to ContactDetailPage.jsx):
+
+```javascript
+const renderSyncStatusBadge = () => {
+  if (!contact.sync_with_xero) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        Not Syncing
+      </span>
+    )
+  }
+
+  if (contact.xero_sync_error) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200">
+        <XCircleIcon className="h-3 w-3" />
+        Sync Failed
+      </span>
+    )
+  }
+
+  if (contact.last_synced_at && contact.xero_id) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
+        <CheckCircleIcon className="h-3 w-3" />
+        Synced
+      </span>
+    )
+  }
+
+  if (contact.sync_with_xero && !contact.xero_id) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200">
+        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        Pending Sync
+      </span>
+    )
+  }
+
+  return null
+}
+```
+
+## Where to Display Badges
+
+### 1. Next to Section Titles
+
+For sections that sync with Xero (Bank Account Details, Purchase & Payment Settings):
+
+```jsx
+<div className="flex items-center gap-2 mb-4">
+  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+    Bank Account Details
+  </h3>
+  <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+  </svg>
+  {renderSyncStatusBadge()}
+</div>
+```
+
+### 2. In Contact Information Section (Top)
+
+Add a prominent sync status indicator at the top of the page:
+
+```jsx
+{contact.sync_with_xero && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-4 mb-6">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <div>
+          <p className="font-medium text-gray-900 dark:text-white">Xero Integration</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {contact.last_synced_at
+              ? `Last synced: ${new Date(contact.last_synced_at).toLocaleString()}`
+              : 'Not yet synced'
+            }
+          </p>
+        </div>
+      </div>
+      {renderSyncStatusBadge()}
+    </div>
+
+    {contact.xero_sync_error && (
+      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
+        <p className="text-sm text-red-800 dark:text-red-200 font-medium">Sync Error:</p>
+        <p className="text-sm text-red-700 dark:text-red-300 mt-1">{contact.xero_sync_error}</p>
+      </div>
+    )}
+
+    {contact.xero_id && (
+      <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        Xero ID: {contact.xero_id}
+      </div>
+    )}
+  </div>
+)}
+```
+
+## Example with Bank Account Details Section
+
+```jsx
+<div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+  <div className="flex items-center justify-between mb-4">
+    <div className="flex items-center gap-2">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+        Bank Account Details
+      </h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+    </div>
+    {renderSyncStatusBadge()}
+  </div>
+
+  {/* Field content here */}
+</div>
+```
+
+## Status Badge Colors
+
+| Status | Background | Text | Icon |
+|--------|------------|------|------|
+| Synced | Green (`bg-green-100`) | Dark Green | CheckCircleIcon ✓ |
+| Failed | Red (`bg-red-100`) | Dark Red | XCircleIcon ✗ |
+| Pending | Yellow (`bg-yellow-100`) | Dark Yellow | Clock/Info icon |
+| Not Syncing | Gray (`bg-gray-100`) | Gray | Info icon |
+
+## Testing the Badges
+
+To test different states:
+
+### 1. Enable Xero Sync (Pending State):
+```bash
+curl -X PATCH http://localhost:3001/api/v1/contacts/382 \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"sync_with_xero": true}}'
+```
+
+### 2. Run Xero Sync (Synced State):
+```bash
+bin/rails runner "XeroContactSyncJob.perform_now"
+```
+
+### 3. Simulate Error (Failed State):
+```bash
+# Manually set error in Rails console
+Contact.find(382).update(xero_sync_error: "Failed to connect to Xero API")
+```
+
+### 4. Disable Sync (Not Syncing State):
+```bash
+curl -X PATCH http://localhost:3001/api/v1/contacts/382 \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"sync_with_xero": false}}'
+```
+
+## Import Required Icons
+
+Make sure these are imported at the top of ContactDetailPage.jsx:
+
+```javascript
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  // ... other icons
+} from '@heroicons/react/24/outline'
+```
+
+## Summary
+
+The sync status badges will:
+- ✅ Show green check when successfully synced
+- ✅ Show red X when sync failed with error message
+- ✅ Show yellow pending when enabled but not yet synced
+- ✅ Show gray "not syncing" when sync_with_xero is false/null
+- ✅ Display last sync time when available
+- ✅ Display Xero ID when linked
+- ✅ Display error details when sync fails
+
+
+### Code Example
+```jsx
+```javascript
+const getSyncStatus = (contact) => {
+  if (!contact.sync_with_xero) {
+    return 'not_enabled' // Gray badge or no badge
+  }
+
+  if (contact.xero_sync_error) {
+    return 'failed' // Red badge with X icon
+  }
+
+  if (contact.last_synced_at && contact.xero_id) {
+    return 'synced' // Green badge with check icon
+  }
+
+  if (contact.sync_with_xero && !contact.xero_id) {
+    return 'pending' // Yellow badge
+  }
+
+  return 'unknown'
+}
+```
+
+```javascript
+const renderSyncStatusBadge = () => {
+  if (!contact.sync_with_xero) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        Not Syncing
+      </span>
+    )
+  }
+
+  if (contact.xero_sync_error) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200">
+        <XCircleIcon className="h-3 w-3" />
+        Sync Failed
+      </span>
+    )
+  }
+
+  if (contact.last_synced_at && contact.xero_id) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
+        <CheckCircleIcon className="h-3 w-3" />
+        Synced
+      </span>
+    )
+  }
+
+  if (contact.sync_with_xero && !contact.xero_id) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200">
+        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        Pending Sync
+      </span>
+    )
+  }
+
+  return null
+}
+```
+
+```jsx
+<div className="flex items-center gap-2 mb-4">
+  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+    Bank Account Details
+  </h3>
+  <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+  </svg>
+  {renderSyncStatusBadge()}
+</div>
+```
+
+```jsx
+{contact.sync_with_xero && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-4 mb-6">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <div>
+          <p className="font-medium text-gray-900 dark:text-white">Xero Integration</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {contact.last_synced_at
+              ? `Last synced: ${new Date(contact.last_synced_at).toLocaleString()}`
+              : 'Not yet synced'
+            }
+          </p>
+        </div>
+      </div>
+      {renderSyncStatusBadge()}
+    </div>
+
+    {contact.xero_sync_error && (
+      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
+        <p className="text-sm text-red-800 dark:text-red-200 font-medium">Sync Error:</p>
+        <p className="text-sm text-red-700 dark:text-red-300 mt-1">{contact.xero_sync_error}</p>
+      </div>
+    )}
+
+    {contact.xero_id && (
+      <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        Xero ID: {contact.xero_id}
+      </div>
+    )}
+  </div>
+)}
+```
+
+```jsx
+<div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+  <div className="flex items-center justify-between mb-4">
+    <div className="flex items-center gap-2">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+        Bank Account Details
+      </h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+    </div>
+    {renderSyncStatusBadge()}
+  </div>
+
+  {/* Field content here */}
+</div>
+```
+
+```bash
+curl -X PATCH http://localhost:3001/api/v1/contacts/382 \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"sync_with_xero": true}}'
+```
+
+```bash
+bin/rails runner "XeroContactSyncJob.perform_now"
+```
+
+```bash
+# Manually set error in Rails console
+Contact.find(382).update(xero_sync_error: "Failed to connect to Xero API")
+```
+
+```bash
+curl -X PATCH http://localhost:3001/api/v1/contacts/382 \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"sync_with_xero": false}}'
+```
+
+```javascript
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  // ... other icons
+} from '@heroicons/react/24/outline'
+```
+```
+
+### Examples
+```javascript
+const getSyncStatus = (contact) => {
+  if (!contact.sync_with_xero) {
+    return 'not_enabled' // Gray badge or no badge
+  }
+
+  if (contact.xero_sync_error) {
+    return 'failed' // Red badge with X icon
+  }
+
+  if (contact.last_synced_at && contact.xero_id) {
+    return 'synced' // Green badge with check icon
+  }
+
+  if (contact.sync_with_xero && !contact.xero_id) {
+    return 'pending' // Yellow badge
+  }
+
+  return 'unknown'
+}
+```
+
+```javascript
+const renderSyncStatusBadge = () => {
+  if (!contact.sync_with_xero) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        Not Syncing
+      </span>
+    )
+  }
+
+  if (contact.xero_sync_error) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200">
+        <XCircleIcon className="h-3 w-3" />
+        Sync Failed
+      </span>
+    )
+  }
+
+  if (contact.last_synced_at && contact.xero_id) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
+        <CheckCircleIcon className="h-3 w-3" />
+        Synced
+      </span>
+    )
+  }
+
+  if (contact.sync_with_xero && !contact.xero_id) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200">
+        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        Pending Sync
+      </span>
+    )
+  }
+
+  return null
+}
+```
+
+```jsx
+<div className="flex items-center gap-2 mb-4">
+  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+    Bank Account Details
+  </h3>
+  <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+  </svg>
+  {renderSyncStatusBadge()}
+</div>
+```
+
+```jsx
+{contact.sync_with_xero && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-4 mb-6">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <div>
+          <p className="font-medium text-gray-900 dark:text-white">Xero Integration</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {contact.last_synced_at
+              ? `Last synced: ${new Date(contact.last_synced_at).toLocaleString()}`
+              : 'Not yet synced'
+            }
+          </p>
+        </div>
+      </div>
+      {renderSyncStatusBadge()}
+    </div>
+
+    {contact.xero_sync_error && (
+      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
+        <p className="text-sm text-red-800 dark:text-red-200 font-medium">Sync Error:</p>
+        <p className="text-sm text-red-700 dark:text-red-300 mt-1">{contact.xero_sync_error}</p>
+      </div>
+    )}
+
+    {contact.xero_id && (
+      <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        Xero ID: {contact.xero_id}
+      </div>
+    )}
+  </div>
+)}
+```
+
+```jsx
+<div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+  <div className="flex items-center justify-between mb-4">
+    <div className="flex items-center gap-2">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+        Bank Account Details
+      </h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+    </div>
+    {renderSyncStatusBadge()}
+  </div>
+
+  {/* Field content here */}
+</div>
+```
+
+```bash
+curl -X PATCH http://localhost:3001/api/v1/contacts/382 \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"sync_with_xero": true}}'
+```
+
+```bash
+bin/rails runner "XeroContactSyncJob.perform_now"
+```
+
+```bash
+# Manually set error in Rails console
+Contact.find(382).update(xero_sync_error: "Failed to connect to Xero API")
+```
+
+```bash
+curl -X PATCH http://localhost:3001/api/v1/contacts/382 \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"sync_with_xero": false}}'
+```
+
+```javascript
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  // ... other icons
+} from '@heroicons/react/24/outline'
+```
+
+---
+
+## §15.11: Invoice Matching Enhancement - PO to Xero Bill Linking
+
+✨ Feature | 🔴 Advanced
+
+### Quick Summary
+Enhanced invoice matching between Purchase Orders and Xero Bills with confidence scoring
+
+### Step-by-Step Guide
+# Invoice Matching Service Enhancement
+
+## Summary
+
+Enhanced the `InvoiceMatchingService` to support fuzzy PO number matching across multiple Xero invoice fields. The service now handles various PO number formats that suppliers commonly use, significantly improving the automatic matching success rate.
+
+## Changes Made
+
+### 1. Enhanced `/backend/app/services/invoice_matching_service.rb`
+
+#### Added PO Number Extraction Patterns
+```ruby
+PO_PATTERNS = [
+  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
+  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
+  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
+  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
+  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
+].freeze
+```
+
+#### Six Matching Strategies (in priority order)
+
+1. **Reference Field** (Highest priority)
+   - Checks Xero invoice `Reference` field
+   - Most reliable - suppliers often put PO numbers here
+   - Performs exact match first, then fuzzy extraction
+
+2. **InvoiceNumber Field**
+   - Extracts PO numbers from invoice number using patterns
+   - Handles formats like "PO-123456", "Invoice for PO-123456", "PO123456"
+
+3. **LineItems Descriptions**
+   - Scans line item descriptions for PO numbers
+   - Useful when suppliers embed PO# in item descriptions
+
+4. **Normalized Matching**
+   - Compares numeric portions only
+   - Handles different zero-padding: "PO-001" matches "PO-000001"
+
+5. **Supplier + Amount Fallback**
+   - Matches by supplier name and approximate amount (±10%)
+   - Only for pending POs without existing invoices
+
+6. **Exact Invoice Reference** (Legacy)
+   - Matches by invoice reference stored in PO
+
+#### New Helper Methods
+
+**`extract_po_numbers(text)`**
+- Scans text with all PO patterns
+- Returns array of formatted candidates
+- Normalizes to standard format: "PO-XXXXXX"
+
+**`normalize_po_number(text)`**
+- Strips non-digits and converts to integer
+- Removes leading zeros for comparison
+- "PO-001" → 1, "PO-000123" → 123
+
+**`find_po_by_candidate(candidate)`**
+- Tries exact match first
+- Falls back to normalized matching
+
+**`find_po_by_normalized_number(number)`**
+- Compares numeric portions across all POs
+- Handles edge cases with different padding
+
+### 2. Enhanced `/backend/app/models/purchase_order.rb`
+
+Added payment tracking methods required by the invoice matching service:
+
+**`payment_status` enum**
+```ruby
+enum :payment_status, {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}, prefix: :payment
+```
+
+**`payment_percentage`**
+- Calculates percentage of PO total that has been invoiced
+
+**`determine_payment_status(invoice_amount)`**
+- Returns appropriate status based on invoice vs PO total
+- `complete`: 95% - 105% of total
+- `part_payment`: Less than 95%
+- `manual_review`: Exceeds total by $1 or more
+
+**`apply_invoice!(invoice_amount:, invoice_date:, invoice_reference:)`**
+- Updates PO with invoice details
+- Automatically sets payment status
+- Updates xero_invoice_id if applicable
+
+### 3. Test Files Created
+
+#### `/backend/lib/tasks/test_invoice_matching.rake`
+Comprehensive automated test suite covering:
+- Exact PO number matching
+- PO number without dash (PO123456)
+- Lowercase PO numbers
+- PO numbers with spaces
+- P.O. with periods
+- "Purchase Order" spelled out
+- PO numbers embedded in text
+- PO in Reference field
+- Different zero-padding normalization
+- PO numbers in LineItem descriptions
+- Supplier + amount fallback
+- No match scenarios
+
+**Run with:** `rails test:invoice_matching`
+
+#### `/backend/test/invoice_matching_demo.rb`
+Interactive demo showing:
+- PO number extraction examples
+- Normalization examples
+- Pattern matching demonstrations
+- Real-world invoice scenario testing
+
+**Run with:** `rails runner "load 'test/invoice_matching_demo.rb'"`
+
+## Test Results
+
+All 13 test cases pass successfully (100% pass rate):
+
+```
+Test Results:
+✓ Exact PO number
+✓ PO number without dash
+✓ Lowercase PO number
+✓ PO number with space
+✓ P.O. with periods
+✓ Purchase Order spelled out
+✓ PO number embedded in text
+✓ PO in Reference field
+✓ Different zero-padding (PO-1 → PO-000001)
+✓ Different zero-padding (PO-123 → PO-000123)
+✓ PO number in LineItem description
+✓ Supplier + amount matching (fallback)
+✓ No matching PO found
+```
+
+## Usage Examples
+
+### Before Enhancement
+Only matched exact "PO-123456" format in InvoiceNumber field.
+
+### After Enhancement
+
+**Example 1: Reference Field**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-98765',
+  'Reference' => 'PO-123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+**Example 2: Different Format**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'P.O. 123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+**Example 3: Zero-Padding**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'PO-1',
+  'Total' => 1000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-000001 via normalized matching
+```
+
+**Example 4: Line Item Description**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-12345',
+  'LineItems' => [
+    { 'Description' => 'Materials for Purchase Order 123456' }
+  ],
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+## Confidence Levels
+
+The matching strategies provide different confidence levels:
+
+- **High Confidence**: Exact match in Reference or InvoiceNumber
+- **Medium Confidence**: Fuzzy pattern extraction, normalized matching
+- **Low Confidence**: Supplier + amount matching (fallback)
+
+## Performance Considerations
+
+### Normalized Matching Performance
+The `find_po_by_normalized_number` method uses `find_each` to iterate through all POs. This is intentionally simple but may be slow with thousands of POs.
+
+**Future Optimization Option:**
+Add a `normalized_po_number` integer column to the `purchase_orders` table:
+
+```ruby
+# Migration
+add_column :purchase_orders, :normalized_po_number, :integer
+add_index :purchase_orders, :normalized_po_number
+
+# In PurchaseOrder model:
+before_save :set_normalized_po_number
+
+def set_normalized_po_number
+  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
+end
+```
+
+Then update the service to use: `PurchaseOrder.find_by(normalized_po_number: number)`
+
+## Files Modified
+
+1. `/Users/jakebaird/trapid/backend/app/services/invoice_matching_service.rb` - Enhanced matching logic
+2. `/Users/jakebaird/trapid/backend/app/models/purchase_order.rb` - Added payment tracking methods
+3. `/Users/jakebaird/trapid/backend/lib/tasks/test_invoice_matching.rake` - Comprehensive test suite
+4. `/Users/jakebaird/trapid/backend/test/invoice_matching_demo.rb` - Interactive demo
+
+## Next Steps
+
+1. ✅ Test locally (completed - 100% pass rate)
+2. Deploy to Heroku
+3. Monitor Xero invoice sync logs for matching success rate
+4. Consider adding normalized_po_number column if performance becomes an issue
+5. Potentially add machine learning for fuzzy supplier name matching
+
+## Deployment Instructions
+
+```bash
+cd /Users/jakebaird/trapid
+git add -A
+git commit -m "Enhance invoice matching with fuzzy PO number extraction
+
+- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
+- Check Reference field, InvoiceNumber, and LineItems
+- Implement normalized matching for different zero-padding
+- Add comprehensive test suite with 13 test cases
+- Add payment tracking methods to PurchaseOrder model
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+git subtree push --prefix backend heroku main
+```
+
+## Security Notes
+
+- All pattern matching uses safe regex (no eval)
+- SQL injection prevented by ActiveRecord parameterization
+- No external API calls in matching logic
+
+## Backward Compatibility
+
+All existing functionality preserved. The enhancement only adds new matching strategies that run before the original fallback logic.
+
+---
+
+**Generated:** November 5, 2025
+**Version:** 1.0
+**Status:** Tested and ready for deployment
+
+
+### Code Example
+```jsx
+```ruby
+PO_PATTERNS = [
+  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
+  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
+  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
+  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
+  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
+].freeze
+```
+
+```ruby
+enum :payment_status, {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}, prefix: :payment
+```
+
+```
+Test Results:
+✓ Exact PO number
+✓ PO number without dash
+✓ Lowercase PO number
+✓ PO number with space
+✓ P.O. with periods
+✓ Purchase Order spelled out
+✓ PO number embedded in text
+✓ PO in Reference field
+✓ Different zero-padding (PO-1 → PO-000001)
+✓ Different zero-padding (PO-123 → PO-000123)
+✓ PO number in LineItem description
+✓ Supplier + amount matching (fallback)
+✓ No matching PO found
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-98765',
+  'Reference' => 'PO-123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'P.O. 123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'PO-1',
+  'Total' => 1000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-000001 via normalized matching
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-12345',
+  'LineItems' => [
+    { 'Description' => 'Materials for Purchase Order 123456' }
+  ],
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+# Migration
+add_column :purchase_orders, :normalized_po_number, :integer
+add_index :purchase_orders, :normalized_po_number
+
+# In PurchaseOrder model:
+before_save :set_normalized_po_number
+
+def set_normalized_po_number
+  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
+end
+```
+
+```bash
+cd /Users/jakebaird/trapid
+git add -A
+git commit -m "Enhance invoice matching with fuzzy PO number extraction
+
+- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
+- Check Reference field, InvoiceNumber, and LineItems
+- Implement normalized matching for different zero-padding
+- Add comprehensive test suite with 13 test cases
+- Add payment tracking methods to PurchaseOrder model
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+git subtree push --prefix backend heroku main
+```
+```
+
+### Examples
+```ruby
+PO_PATTERNS = [
+  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
+  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
+  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
+  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
+  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
+].freeze
+```
+
+```ruby
+enum :payment_status, {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}, prefix: :payment
+```
+
+```
+Test Results:
+✓ Exact PO number
+✓ PO number without dash
+✓ Lowercase PO number
+✓ PO number with space
+✓ P.O. with periods
+✓ Purchase Order spelled out
+✓ PO number embedded in text
+✓ PO in Reference field
+✓ Different zero-padding (PO-1 → PO-000001)
+✓ Different zero-padding (PO-123 → PO-000123)
+✓ PO number in LineItem description
+✓ Supplier + amount matching (fallback)
+✓ No matching PO found
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-98765',
+  'Reference' => 'PO-123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'P.O. 123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'PO-1',
+  'Total' => 1000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-000001 via normalized matching
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-12345',
+  'LineItems' => [
+    { 'Description' => 'Materials for Purchase Order 123456' }
+  ],
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+# Migration
+add_column :purchase_orders, :normalized_po_number, :integer
+add_index :purchase_orders, :normalized_po_number
+
+# In PurchaseOrder model:
+before_save :set_normalized_po_number
+
+def set_normalized_po_number
+  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
+end
+```
+
+```bash
+cd /Users/jakebaird/trapid
+git add -A
+git commit -m "Enhance invoice matching with fuzzy PO number extraction
+
+- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
+- Check Reference field, InvoiceNumber, and LineItems
+- Implement normalized matching for different zero-padding
+- Add comprehensive test suite with 13 test cases
+- Add payment tracking methods to PurchaseOrder model
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+git subtree push --prefix backend heroku main
+```
+
+---
+
+
+# Chapter 15: Chat & Communications
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter 15               │
 │ 📕 LEXICON (BUGS):    Chapter 15               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Code examples, implementation patterns, and step-by-step guides
+**Last Updated:** 2025-11-17
+
+---
+
+## §14.1: ChatMessage Multi-Channel Architecture
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.1
+
+### Code Example
+```jsx
+# app/models/chat_message.rb
+class ChatMessage < ApplicationRecord
+  belongs_to :user
+  belongs_to :project, optional: true
+  belongs_to :recipient_user, class_name: 'User', optional: true
+  belongs_to :construction, optional: true
+
+  validates :content, presence: true
+
+  # Channel messages (team-wide)
+  scope :in_channel, ->(channel) {
+    where(channel: channel, project_id: nil, recipient_user_id: nil)
+      .order(created_at: :asc)
+  }
+
+  # Project/job messages
+  scope :for_project, ->(project_id) {
+    where(project_id: project_id).order(created_at: :asc)
+  }
+
+  # Direct messages between users
+  scope :between_users, ->(user1_id, user2_id) {
+    where(
+      '(user_id = ? AND recipient_user_id = ?) OR (user_id = ? AND recipient_user_id = ?)',
+      user1_id, user2_id, user2_id, user1_id
+    ).order(created_at: :asc)
+  }
+
+  # General channel (default)
+  scope :general, -> {
+    where(channel: 'general', project_id: nil, recipient_user_id: nil)
+      .order(created_at: :asc)
+  }
+end
+
+# ---
+
+# app/controllers/api/v1/chat_messages_controller.rb
+def index
+  if params[:user_id].present?
+    # Direct message query
+    @messages = ChatMessage.between_users(@current_user.id, params[:user_id])
+  elsif params[:project_id].present?
+    # Project message query
+    @messages = ChatMessage.for_project(params[:project_id])
+  else
+    # Channel query (default: general)
+    channel = params[:channel] || 'general'
+    @messages = ChatMessage.in_channel(channel)
+  end
+
+  @messages = @messages.recent(100)
+  render json: @messages.as_json(include_user: true)
+end
+```
+
+---
+
+## §14.10: Authentication Placeholder - CRITICAL TODO
+
+🔧 Util | 🔴 Advanced
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.10
+
+### Code Example
+```jsx
+# app/controllers/api/v1/chat_messages_controller.rb (Line 110)
+def set_current_user
+  @current_user = User.first # TODO: Replace with actual current_user logic
+end
+
+# ---
+
+# app/controllers/api/v1/chat_messages_controller.rb
+before_action :authenticate_user!
+
+def set_current_user
+  @current_user = current_user # From Devise or JWT auth
+end
+```
+
+---
+
+## §14.2: Message-to-Job Linking
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.2
+
+### Code Example
+```jsx
+# app/controllers/api/v1/chat_messages_controller.rb
+def save_to_job
+  @message = ChatMessage.find(params[:id])
+  construction = Construction.find(params[:construction_id])
+
+  @message.update!(
+    construction_id: construction.id,
+    saved_to_job: true
+  )
+
+  render json: { message: 'Message saved to job', chat_message: @message }
+end
+
+def save_conversation_to_job
+  construction = Construction.find(params[:construction_id])
+  message_ids = params[:message_ids]
+
+  ChatMessage.where(id: message_ids).update_all(
+    construction_id: construction.id,
+    saved_to_job: true
+  )
+
+  render json: {
+    message: "#{message_ids.length} messages saved to job",
+    construction_id: construction.id
+  }
+end
+
+# ---
+
+# db/migrate/20251111021538_add_construction_to_chat_messages.rb
+add_reference :chat_messages, :construction, foreign_key: true
+add_column :chat_messages, :saved_to_job, :boolean, default: false
+add_index :chat_messages, [:construction_id, :channel, :created_at]
+
+# ---
+
+// frontend/src/components/chat/ChatBox.jsx
+const saveConversationToJob = async () => {
+  const messageIds = messages.map(m => m.id);
+
+  await fetch('/api/v1/chat_messages/save_conversation_to_job', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      construction_id: selectedConstruction,
+      message_ids: messageIds
+    })
+  });
+};
+```
+
+---
+
+## §14.3: SMS Twilio Integration
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.3
+
+### Code Example
+```jsx
+# app/services/twilio_service.rb
+class TwilioService
+  def self.send_sms(to:, body:, contact:, user: nil)
+    settings = CompanySetting.current
+    raise 'Twilio not enabled' unless settings.twilio_enabled
+
+    client = Twilio::REST::Client.new(
+      settings.twilio_account_sid,
+      settings.twilio_auth_token
+    )
+
+    normalized_to = normalize_phone_number(to)
+
+    twilio_message = client.messages.create(
+      from: settings.twilio_phone_number,
+      to: normalized_to,
+      body: body
+    )
+
+    sms = SmsMessage.create!(
+      contact: contact,
+      user: user,
+      from_phone: settings.twilio_phone_number,
+      to_phone: normalized_to,
+      body: body,
+      direction: 'outbound',
+      status: 'sent',
+      twilio_sid: twilio_message.sid,
+      sent_at: Time.current
+    )
+
+    { success: true, sms: sms, twilio_message: twilio_message }
+  rescue Twilio::REST::RestError => e
+    { success: false, error: e.message }
+  end
+end
+
+# ---
+
+# app/controllers/api/v1/sms_messages_controller.rb
+def webhook
+  from_phone = params['From']
+  body = params['Body']
+  message_sid = params['MessageSid']
+
+  result = TwilioService.process_incoming_sms(params)
+
+  # Return TwiML response
+  response = Twilio::TwiML::MessagingResponse.new do |r|
+    r.message(body: 'Message received') if result[:success]
+  end
+
+  render xml: response.to_s
+end
+
+# ---
+
+# app/services/twilio_service.rb
+def self.normalize_phone_number(phone)
+  clean = phone.gsub(/\D/, '') # Remove non-digits
+
+  # Australian mobile starting with 04
+  if clean.start_with?('04') && clean.length == 10
+    return "+61#{clean[1..-1]}" # Convert to +61
+  end
+
+  # Already international format
+  return "+#{clean}" if clean.start_with?('61')
+
+  phone # Return as-is if unrecognized
+end
+```
+
+---
+
+## §14.4: SMS Status Tracking
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.4
+
+### Code Example
+```jsx
+# app/models/sms_message.rb
+class SmsMessage < ApplicationRecord
+  belongs_to :contact
+  belongs_to :user, optional: true # null for inbound messages
+
+  validates :from_phone, :to_phone, :body, :direction, presence: true
+  validates :direction, inclusion: { in: %w[inbound outbound] }
+
+  scope :inbound, -> { where(direction: 'inbound') }
+  scope :outbound, -> { where(direction: 'outbound') }
+  scope :recent, -> { order(created_at: :desc) }
+
+  # Status helpers
+  def delivered?
+    status == 'delivered'
+  end
+
+  def failed?
+    status == 'failed'
+  end
+
+  def inbound?
+    direction == 'inbound'
+  end
+
+  def outbound?
+    direction == 'outbound'
+  end
+end
+
+# ---
+
+# app/controllers/api/v1/sms_messages_controller.rb
+def status_webhook
+  message_sid = params['MessageSid']
+  status = params['MessageStatus'] # queued, sent, delivered, failed
+
+  TwilioService.update_message_status(message_sid, status)
+
+  head :ok
+end
+
+# app/services/twilio_service.rb
+def self.update_message_status(message_sid, status)
+  sms = SmsMessage.find_by(twilio_sid: message_sid)
+  return unless sms
+
+  sms.update!(status: status)
+end
+
+# ---
+
+// frontend/src/components/contacts/SmsConversation.jsx
+const getStatusIcon = (message) => {
+  if (message.direction === 'inbound') return null;
+
+  switch (message.status) {
+    case 'delivered': return <CheckIcon className="text-green-500" />;
+    case 'sent': return <CheckIcon className="text-blue-500" />;
+    case 'failed': return <XMarkIcon className="text-red-500" />;
+    case 'queued': return <ClockIcon className="text-gray-400" />;
+    default: return null;
+  }
+};
+```
+
+---
+
+## §14.5: Unread Message Tracking
+
+🔌 Integration | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.5
+
+### Code Example
+```jsx
+# app/models/user.rb
+class User < ApplicationRecord
+  has_many :chat_messages
+
+  # Timestamp when user last viewed chat
+  # Used to calculate unread count
+  # Migration: add_column :users, :last_chat_read_at, :datetime
+end
+
+# ---
+
+# app/controllers/api/v1/chat_messages_controller.rb
+def unread_count
+  if @current_user.last_chat_read_at.present?
+    count = ChatMessage.where('created_at > ?', @current_user.last_chat_read_at).count
+  else
+    count = ChatMessage.count
+  end
+
+  render json: { unread_count: count }
+end
+
+def mark_as_read
+  @current_user.update!(last_chat_read_at: Time.current)
+  render json: { message: 'Messages marked as read' }
+end
+
+# ---
+
+// frontend/src/components/AppLayout.jsx
+useEffect(() => {
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/v1/chat_messages/unread_count');
+      const data = await response.json();
+      setUnreadCount(data.unread_count);
+    } catch (error) {
+      console.error('Failed to fetch unread count:', error);
+    }
+  };
+
+  fetchUnreadCount();
+  const interval = setInterval(fetchUnreadCount, 5000); // Poll every 5 seconds
+
+  return () => clearInterval(interval);
+}, []);
+```
+
+---
+
+## §14.6: Message Polling (No WebSockets)
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.6
+
+### Code Example
+```jsx
+// frontend/src/components/chat/ChatBox.jsx
+useEffect(() => {
+  loadMessages();
+
+  const interval = setInterval(() => {
+    loadMessages();
+  }, 3000); // Poll every 3 seconds
+
+  return () => clearInterval(interval);
+}, [channel, projectId, userId]);
+
+const loadMessages = async () => {
+  let url = '/api/v1/chat_messages';
+
+  if (userId) {
+    url += `?user_id=${userId}`;
+  } else if (projectId) {
+    url += `?project_id=${projectId}`;
+  } else {
+    url += `?channel=${channel}`;
+  }
+
+  const response = await fetch(url);
+  const data = await response.json();
+  setMessages(data);
+};
+
+# ---
+
+// frontend/src/components/communications/SmsTab.jsx
+useEffect(() => {
+  loadMessages();
+
+  const interval = setInterval(() => {
+    loadMessages();
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [contactId, jobId]);
+```
+
+---
+
+## §14.7: Contact-SMS Fuzzy Matching
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.7
+
+### Code Example
+```jsx
+# app/services/twilio_service.rb
+def self.find_contact_by_phone(phone_number)
+  normalized = normalize_phone_number(phone_number)
+
+  # Try exact match first
+  contact = Contact.find_by(mobile_phone: normalized)
+  return contact if contact
+
+  # Try partial match (last 9 digits for AU)
+  # 0412 345 678 → 412345678
+  last_9_digits = normalized.gsub(/\D/, '')[-9..-1]
+
+  Contact.where(
+    "regexp_replace(mobile_phone, '[^0-9]', '', 'g') LIKE ?",
+    "%#{last_9_digits}"
+  ).first
+end
+
+def self.process_incoming_sms(params)
+  from_phone = params['From']
+  body = params['Body']
+  message_sid = params['MessageSid']
+
+  contact = find_contact_by_phone(from_phone)
+
+  unless contact
+    Rails.logger.warn "Incoming SMS from unknown number: #{from_phone}"
+    return { success: false, error: 'Contact not found' }
+  end
+
+  sms = SmsMessage.create!(
+    contact: contact,
+    from_phone: from_phone,
+    to_phone: params['To'],
+    body: body,
+    direction: 'inbound',
+    status: 'received',
+    twilio_sid: message_sid,
+    received_at: Time.current
+  )
+
+  { success: true, sms: sms, contact: contact }
+end
+```
+
+---
+
+## §14.8: Message Deletion Authorization
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.8
+
+### Code Example
+```jsx
+# app/controllers/api/v1/chat_messages_controller.rb
+def destroy
+  @message = ChatMessage.find(params[:id])
+
+  # Authorization: only creator can delete
+  unless @message.user_id == @current_user.id
+    return render json: { error: 'Unauthorized' }, status: :forbidden
+  end
+
+  @message.destroy
+  render json: { message: 'Message deleted' }
+end
+```
+
+---
+
+## §14.9: Email Ingestion Storage
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #14.9
+
+### Code Example
+```jsx
+# app/models/email.rb
+class Email < ApplicationRecord
+  belongs_to :construction, optional: true
+  belongs_to :user, optional: true
+
+  validates :from_email, :subject, :body, presence: true
+  validates :message_id, uniqueness: true, allow_nil: true
+
+  scope :recent, -> { order(received_at: :desc) }
+  scope :for_construction, ->(construction_id) {
+    where(construction_id: construction_id).order(received_at: :desc)
+  }
+  scope :unassigned, -> { where(construction_id: nil) }
+  scope :with_attachments, -> { where(has_attachments: true) }
+
+  def formatted_received_at
+    return 'N/A' unless received_at
+    received_at.strftime('%b %d, %Y %I:%M %p')
+  end
+
+  def short_subject
+    return 'No Subject' if subject.blank?
+    subject.length > 50 ? "#{subject[0..47]}..." : subject
+  end
+end
+
+# ---
+
+# db/schema.rb (emails table)
+create_table :emails do |t|
+  t.references :construction, foreign_key: true, null: true
+  t.references :user, foreign_key: true, null: true
+  t.string :from_email, null: false
+  t.json :to_emails, default: []
+  t.json :cc_emails, default: []
+  t.json :bcc_emails, default: []
+  t.string :subject
+  t.text :body
+  t.datetime :received_at
+  t.string :message_id # Microsoft Graph message ID
+  t.boolean :has_attachments, default: false
+  t.timestamps
+end
+
+add_index :emails, :message_id, unique: true
+add_index :emails, :construction_id
+```
+
+---
+
+## §15.10: Xero Sync Status Badges Implementation
+
+🧩 Component | 🟢 Beginner
+
+### Quick Summary
+Visual status indicators for Xero-synced fields with color-coded badges
+
+### Step-by-Step Guide
+# Sync Status Badges Implementation Guide
+
+## Status Logic
+
+For each Xero-synced field, determine status based on:
+
+```javascript
+const getSyncStatus = (contact) => {
+  if (!contact.sync_with_xero) {
+    return 'not_enabled' // Gray badge or no badge
+  }
+
+  if (contact.xero_sync_error) {
+    return 'failed' // Red badge with X icon
+  }
+
+  if (contact.last_synced_at && contact.xero_id) {
+    return 'synced' // Green badge with check icon
+  }
+
+  if (contact.sync_with_xero && !contact.xero_id) {
+    return 'pending' // Yellow badge
+  }
+
+  return 'unknown'
+}
+```
+
+## Badge Components
+
+### Helper Function (add to ContactDetailPage.jsx):
+
+```javascript
+const renderSyncStatusBadge = () => {
+  if (!contact.sync_with_xero) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        Not Syncing
+      </span>
+    )
+  }
+
+  if (contact.xero_sync_error) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200">
+        <XCircleIcon className="h-3 w-3" />
+        Sync Failed
+      </span>
+    )
+  }
+
+  if (contact.last_synced_at && contact.xero_id) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
+        <CheckCircleIcon className="h-3 w-3" />
+        Synced
+      </span>
+    )
+  }
+
+  if (contact.sync_with_xero && !contact.xero_id) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200">
+        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        Pending Sync
+      </span>
+    )
+  }
+
+  return null
+}
+```
+
+## Where to Display Badges
+
+### 1. Next to Section Titles
+
+For sections that sync with Xero (Bank Account Details, Purchase & Payment Settings):
+
+```jsx
+<div className="flex items-center gap-2 mb-4">
+  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+    Bank Account Details
+  </h3>
+  <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+  </svg>
+  {renderSyncStatusBadge()}
+</div>
+```
+
+### 2. In Contact Information Section (Top)
+
+Add a prominent sync status indicator at the top of the page:
+
+```jsx
+{contact.sync_with_xero && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-4 mb-6">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <div>
+          <p className="font-medium text-gray-900 dark:text-white">Xero Integration</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {contact.last_synced_at
+              ? `Last synced: ${new Date(contact.last_synced_at).toLocaleString()}`
+              : 'Not yet synced'
+            }
+          </p>
+        </div>
+      </div>
+      {renderSyncStatusBadge()}
+    </div>
+
+    {contact.xero_sync_error && (
+      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
+        <p className="text-sm text-red-800 dark:text-red-200 font-medium">Sync Error:</p>
+        <p className="text-sm text-red-700 dark:text-red-300 mt-1">{contact.xero_sync_error}</p>
+      </div>
+    )}
+
+    {contact.xero_id && (
+      <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        Xero ID: {contact.xero_id}
+      </div>
+    )}
+  </div>
+)}
+```
+
+## Example with Bank Account Details Section
+
+```jsx
+<div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+  <div className="flex items-center justify-between mb-4">
+    <div className="flex items-center gap-2">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+        Bank Account Details
+      </h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+    </div>
+    {renderSyncStatusBadge()}
+  </div>
+
+  {/* Field content here */}
+</div>
+```
+
+## Status Badge Colors
+
+| Status | Background | Text | Icon |
+|--------|------------|------|------|
+| Synced | Green (`bg-green-100`) | Dark Green | CheckCircleIcon ✓ |
+| Failed | Red (`bg-red-100`) | Dark Red | XCircleIcon ✗ |
+| Pending | Yellow (`bg-yellow-100`) | Dark Yellow | Clock/Info icon |
+| Not Syncing | Gray (`bg-gray-100`) | Gray | Info icon |
+
+## Testing the Badges
+
+To test different states:
+
+### 1. Enable Xero Sync (Pending State):
+```bash
+curl -X PATCH http://localhost:3001/api/v1/contacts/382 \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"sync_with_xero": true}}'
+```
+
+### 2. Run Xero Sync (Synced State):
+```bash
+bin/rails runner "XeroContactSyncJob.perform_now"
+```
+
+### 3. Simulate Error (Failed State):
+```bash
+# Manually set error in Rails console
+Contact.find(382).update(xero_sync_error: "Failed to connect to Xero API")
+```
+
+### 4. Disable Sync (Not Syncing State):
+```bash
+curl -X PATCH http://localhost:3001/api/v1/contacts/382 \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"sync_with_xero": false}}'
+```
+
+## Import Required Icons
+
+Make sure these are imported at the top of ContactDetailPage.jsx:
+
+```javascript
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  // ... other icons
+} from '@heroicons/react/24/outline'
+```
+
+## Summary
+
+The sync status badges will:
+- ✅ Show green check when successfully synced
+- ✅ Show red X when sync failed with error message
+- ✅ Show yellow pending when enabled but not yet synced
+- ✅ Show gray "not syncing" when sync_with_xero is false/null
+- ✅ Display last sync time when available
+- ✅ Display Xero ID when linked
+- ✅ Display error details when sync fails
+
+
+### Code Example
+```jsx
+```javascript
+const getSyncStatus = (contact) => {
+  if (!contact.sync_with_xero) {
+    return 'not_enabled' // Gray badge or no badge
+  }
+
+  if (contact.xero_sync_error) {
+    return 'failed' // Red badge with X icon
+  }
+
+  if (contact.last_synced_at && contact.xero_id) {
+    return 'synced' // Green badge with check icon
+  }
+
+  if (contact.sync_with_xero && !contact.xero_id) {
+    return 'pending' // Yellow badge
+  }
+
+  return 'unknown'
+}
+```
+
+```javascript
+const renderSyncStatusBadge = () => {
+  if (!contact.sync_with_xero) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        Not Syncing
+      </span>
+    )
+  }
+
+  if (contact.xero_sync_error) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200">
+        <XCircleIcon className="h-3 w-3" />
+        Sync Failed
+      </span>
+    )
+  }
+
+  if (contact.last_synced_at && contact.xero_id) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
+        <CheckCircleIcon className="h-3 w-3" />
+        Synced
+      </span>
+    )
+  }
+
+  if (contact.sync_with_xero && !contact.xero_id) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200">
+        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        Pending Sync
+      </span>
+    )
+  }
+
+  return null
+}
+```
+
+```jsx
+<div className="flex items-center gap-2 mb-4">
+  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+    Bank Account Details
+  </h3>
+  <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+  </svg>
+  {renderSyncStatusBadge()}
+</div>
+```
+
+```jsx
+{contact.sync_with_xero && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-4 mb-6">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <div>
+          <p className="font-medium text-gray-900 dark:text-white">Xero Integration</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {contact.last_synced_at
+              ? `Last synced: ${new Date(contact.last_synced_at).toLocaleString()}`
+              : 'Not yet synced'
+            }
+          </p>
+        </div>
+      </div>
+      {renderSyncStatusBadge()}
+    </div>
+
+    {contact.xero_sync_error && (
+      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
+        <p className="text-sm text-red-800 dark:text-red-200 font-medium">Sync Error:</p>
+        <p className="text-sm text-red-700 dark:text-red-300 mt-1">{contact.xero_sync_error}</p>
+      </div>
+    )}
+
+    {contact.xero_id && (
+      <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        Xero ID: {contact.xero_id}
+      </div>
+    )}
+  </div>
+)}
+```
+
+```jsx
+<div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+  <div className="flex items-center justify-between mb-4">
+    <div className="flex items-center gap-2">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+        Bank Account Details
+      </h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+    </div>
+    {renderSyncStatusBadge()}
+  </div>
+
+  {/* Field content here */}
+</div>
+```
+
+```bash
+curl -X PATCH http://localhost:3001/api/v1/contacts/382 \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"sync_with_xero": true}}'
+```
+
+```bash
+bin/rails runner "XeroContactSyncJob.perform_now"
+```
+
+```bash
+# Manually set error in Rails console
+Contact.find(382).update(xero_sync_error: "Failed to connect to Xero API")
+```
+
+```bash
+curl -X PATCH http://localhost:3001/api/v1/contacts/382 \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"sync_with_xero": false}}'
+```
+
+```javascript
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  // ... other icons
+} from '@heroicons/react/24/outline'
+```
+```
+
+### Examples
+```javascript
+const getSyncStatus = (contact) => {
+  if (!contact.sync_with_xero) {
+    return 'not_enabled' // Gray badge or no badge
+  }
+
+  if (contact.xero_sync_error) {
+    return 'failed' // Red badge with X icon
+  }
+
+  if (contact.last_synced_at && contact.xero_id) {
+    return 'synced' // Green badge with check icon
+  }
+
+  if (contact.sync_with_xero && !contact.xero_id) {
+    return 'pending' // Yellow badge
+  }
+
+  return 'unknown'
+}
+```
+
+```javascript
+const renderSyncStatusBadge = () => {
+  if (!contact.sync_with_xero) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        Not Syncing
+      </span>
+    )
+  }
+
+  if (contact.xero_sync_error) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200">
+        <XCircleIcon className="h-3 w-3" />
+        Sync Failed
+      </span>
+    )
+  }
+
+  if (contact.last_synced_at && contact.xero_id) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
+        <CheckCircleIcon className="h-3 w-3" />
+        Synced
+      </span>
+    )
+  }
+
+  if (contact.sync_with_xero && !contact.xero_id) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200">
+        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        Pending Sync
+      </span>
+    )
+  }
+
+  return null
+}
+```
+
+```jsx
+<div className="flex items-center gap-2 mb-4">
+  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+    Bank Account Details
+  </h3>
+  <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+  </svg>
+  {renderSyncStatusBadge()}
+</div>
+```
+
+```jsx
+{contact.sync_with_xero && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-4 mb-6">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <div>
+          <p className="font-medium text-gray-900 dark:text-white">Xero Integration</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {contact.last_synced_at
+              ? `Last synced: ${new Date(contact.last_synced_at).toLocaleString()}`
+              : 'Not yet synced'
+            }
+          </p>
+        </div>
+      </div>
+      {renderSyncStatusBadge()}
+    </div>
+
+    {contact.xero_sync_error && (
+      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
+        <p className="text-sm text-red-800 dark:text-red-200 font-medium">Sync Error:</p>
+        <p className="text-sm text-red-700 dark:text-red-300 mt-1">{contact.xero_sync_error}</p>
+      </div>
+    )}
+
+    {contact.xero_id && (
+      <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        Xero ID: {contact.xero_id}
+      </div>
+    )}
+  </div>
+)}
+```
+
+```jsx
+<div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+  <div className="flex items-center justify-between mb-4">
+    <div className="flex items-center gap-2">
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+        Bank Account Details
+      </h3>
+      <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 24 24" title="Syncs with Xero">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+    </div>
+    {renderSyncStatusBadge()}
+  </div>
+
+  {/* Field content here */}
+</div>
+```
+
+```bash
+curl -X PATCH http://localhost:3001/api/v1/contacts/382 \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"sync_with_xero": true}}'
+```
+
+```bash
+bin/rails runner "XeroContactSyncJob.perform_now"
+```
+
+```bash
+# Manually set error in Rails console
+Contact.find(382).update(xero_sync_error: "Failed to connect to Xero API")
+```
+
+```bash
+curl -X PATCH http://localhost:3001/api/v1/contacts/382 \
+  -H "Content-Type: application/json" \
+  -d '{"contact": {"sync_with_xero": false}}'
+```
+
+```javascript
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  // ... other icons
+} from '@heroicons/react/24/outline'
+```
+
+---
+
+## §15.11: Invoice Matching Enhancement - PO to Xero Bill Linking
+
+✨ Feature | 🔴 Advanced
+
+### Quick Summary
+Enhanced invoice matching between Purchase Orders and Xero Bills with confidence scoring
+
+### Step-by-Step Guide
+# Invoice Matching Service Enhancement
+
+## Summary
+
+Enhanced the `InvoiceMatchingService` to support fuzzy PO number matching across multiple Xero invoice fields. The service now handles various PO number formats that suppliers commonly use, significantly improving the automatic matching success rate.
+
+## Changes Made
+
+### 1. Enhanced `/backend/app/services/invoice_matching_service.rb`
+
+#### Added PO Number Extraction Patterns
+```ruby
+PO_PATTERNS = [
+  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
+  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
+  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
+  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
+  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
+].freeze
+```
+
+#### Six Matching Strategies (in priority order)
+
+1. **Reference Field** (Highest priority)
+   - Checks Xero invoice `Reference` field
+   - Most reliable - suppliers often put PO numbers here
+   - Performs exact match first, then fuzzy extraction
+
+2. **InvoiceNumber Field**
+   - Extracts PO numbers from invoice number using patterns
+   - Handles formats like "PO-123456", "Invoice for PO-123456", "PO123456"
+
+3. **LineItems Descriptions**
+   - Scans line item descriptions for PO numbers
+   - Useful when suppliers embed PO# in item descriptions
+
+4. **Normalized Matching**
+   - Compares numeric portions only
+   - Handles different zero-padding: "PO-001" matches "PO-000001"
+
+5. **Supplier + Amount Fallback**
+   - Matches by supplier name and approximate amount (±10%)
+   - Only for pending POs without existing invoices
+
+6. **Exact Invoice Reference** (Legacy)
+   - Matches by invoice reference stored in PO
+
+#### New Helper Methods
+
+**`extract_po_numbers(text)`**
+- Scans text with all PO patterns
+- Returns array of formatted candidates
+- Normalizes to standard format: "PO-XXXXXX"
+
+**`normalize_po_number(text)`**
+- Strips non-digits and converts to integer
+- Removes leading zeros for comparison
+- "PO-001" → 1, "PO-000123" → 123
+
+**`find_po_by_candidate(candidate)`**
+- Tries exact match first
+- Falls back to normalized matching
+
+**`find_po_by_normalized_number(number)`**
+- Compares numeric portions across all POs
+- Handles edge cases with different padding
+
+### 2. Enhanced `/backend/app/models/purchase_order.rb`
+
+Added payment tracking methods required by the invoice matching service:
+
+**`payment_status` enum**
+```ruby
+enum :payment_status, {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}, prefix: :payment
+```
+
+**`payment_percentage`**
+- Calculates percentage of PO total that has been invoiced
+
+**`determine_payment_status(invoice_amount)`**
+- Returns appropriate status based on invoice vs PO total
+- `complete`: 95% - 105% of total
+- `part_payment`: Less than 95%
+- `manual_review`: Exceeds total by $1 or more
+
+**`apply_invoice!(invoice_amount:, invoice_date:, invoice_reference:)`**
+- Updates PO with invoice details
+- Automatically sets payment status
+- Updates xero_invoice_id if applicable
+
+### 3. Test Files Created
+
+#### `/backend/lib/tasks/test_invoice_matching.rake`
+Comprehensive automated test suite covering:
+- Exact PO number matching
+- PO number without dash (PO123456)
+- Lowercase PO numbers
+- PO numbers with spaces
+- P.O. with periods
+- "Purchase Order" spelled out
+- PO numbers embedded in text
+- PO in Reference field
+- Different zero-padding normalization
+- PO numbers in LineItem descriptions
+- Supplier + amount fallback
+- No match scenarios
+
+**Run with:** `rails test:invoice_matching`
+
+#### `/backend/test/invoice_matching_demo.rb`
+Interactive demo showing:
+- PO number extraction examples
+- Normalization examples
+- Pattern matching demonstrations
+- Real-world invoice scenario testing
+
+**Run with:** `rails runner "load 'test/invoice_matching_demo.rb'"`
+
+## Test Results
+
+All 13 test cases pass successfully (100% pass rate):
+
+```
+Test Results:
+✓ Exact PO number
+✓ PO number without dash
+✓ Lowercase PO number
+✓ PO number with space
+✓ P.O. with periods
+✓ Purchase Order spelled out
+✓ PO number embedded in text
+✓ PO in Reference field
+✓ Different zero-padding (PO-1 → PO-000001)
+✓ Different zero-padding (PO-123 → PO-000123)
+✓ PO number in LineItem description
+✓ Supplier + amount matching (fallback)
+✓ No matching PO found
+```
+
+## Usage Examples
+
+### Before Enhancement
+Only matched exact "PO-123456" format in InvoiceNumber field.
+
+### After Enhancement
+
+**Example 1: Reference Field**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-98765',
+  'Reference' => 'PO-123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+**Example 2: Different Format**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'P.O. 123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+**Example 3: Zero-Padding**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'PO-1',
+  'Total' => 1000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-000001 via normalized matching
+```
+
+**Example 4: Line Item Description**
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-12345',
+  'LineItems' => [
+    { 'Description' => 'Materials for Purchase Order 123456' }
+  ],
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+## Confidence Levels
+
+The matching strategies provide different confidence levels:
+
+- **High Confidence**: Exact match in Reference or InvoiceNumber
+- **Medium Confidence**: Fuzzy pattern extraction, normalized matching
+- **Low Confidence**: Supplier + amount matching (fallback)
+
+## Performance Considerations
+
+### Normalized Matching Performance
+The `find_po_by_normalized_number` method uses `find_each` to iterate through all POs. This is intentionally simple but may be slow with thousands of POs.
+
+**Future Optimization Option:**
+Add a `normalized_po_number` integer column to the `purchase_orders` table:
+
+```ruby
+# Migration
+add_column :purchase_orders, :normalized_po_number, :integer
+add_index :purchase_orders, :normalized_po_number
+
+# In PurchaseOrder model:
+before_save :set_normalized_po_number
+
+def set_normalized_po_number
+  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
+end
+```
+
+Then update the service to use: `PurchaseOrder.find_by(normalized_po_number: number)`
+
+## Files Modified
+
+1. `/Users/jakebaird/trapid/backend/app/services/invoice_matching_service.rb` - Enhanced matching logic
+2. `/Users/jakebaird/trapid/backend/app/models/purchase_order.rb` - Added payment tracking methods
+3. `/Users/jakebaird/trapid/backend/lib/tasks/test_invoice_matching.rake` - Comprehensive test suite
+4. `/Users/jakebaird/trapid/backend/test/invoice_matching_demo.rb` - Interactive demo
+
+## Next Steps
+
+1. ✅ Test locally (completed - 100% pass rate)
+2. Deploy to Heroku
+3. Monitor Xero invoice sync logs for matching success rate
+4. Consider adding normalized_po_number column if performance becomes an issue
+5. Potentially add machine learning for fuzzy supplier name matching
+
+## Deployment Instructions
+
+```bash
+cd /Users/jakebaird/trapid
+git add -A
+git commit -m "Enhance invoice matching with fuzzy PO number extraction
+
+- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
+- Check Reference field, InvoiceNumber, and LineItems
+- Implement normalized matching for different zero-padding
+- Add comprehensive test suite with 13 test cases
+- Add payment tracking methods to PurchaseOrder model
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+git subtree push --prefix backend heroku main
+```
+
+## Security Notes
+
+- All pattern matching uses safe regex (no eval)
+- SQL injection prevented by ActiveRecord parameterization
+- No external API calls in matching logic
+
+## Backward Compatibility
+
+All existing functionality preserved. The enhancement only adds new matching strategies that run before the original fallback logic.
+
+---
+
+**Generated:** November 5, 2025
+**Version:** 1.0
+**Status:** Tested and ready for deployment
+
+
+### Code Example
+```jsx
+```ruby
+PO_PATTERNS = [
+  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
+  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
+  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
+  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
+  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
+].freeze
+```
+
+```ruby
+enum :payment_status, {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}, prefix: :payment
+```
+
+```
+Test Results:
+✓ Exact PO number
+✓ PO number without dash
+✓ Lowercase PO number
+✓ PO number with space
+✓ P.O. with periods
+✓ Purchase Order spelled out
+✓ PO number embedded in text
+✓ PO in Reference field
+✓ Different zero-padding (PO-1 → PO-000001)
+✓ Different zero-padding (PO-123 → PO-000123)
+✓ PO number in LineItem description
+✓ Supplier + amount matching (fallback)
+✓ No matching PO found
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-98765',
+  'Reference' => 'PO-123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'P.O. 123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'PO-1',
+  'Total' => 1000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-000001 via normalized matching
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-12345',
+  'LineItems' => [
+    { 'Description' => 'Materials for Purchase Order 123456' }
+  ],
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+# Migration
+add_column :purchase_orders, :normalized_po_number, :integer
+add_index :purchase_orders, :normalized_po_number
+
+# In PurchaseOrder model:
+before_save :set_normalized_po_number
+
+def set_normalized_po_number
+  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
+end
+```
+
+```bash
+cd /Users/jakebaird/trapid
+git add -A
+git commit -m "Enhance invoice matching with fuzzy PO number extraction
+
+- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
+- Check Reference field, InvoiceNumber, and LineItems
+- Implement normalized matching for different zero-padding
+- Add comprehensive test suite with 13 test cases
+- Add payment tracking methods to PurchaseOrder model
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+git subtree push --prefix backend heroku main
+```
+```
+
+### Examples
+```ruby
+PO_PATTERNS = [
+  /PO[-\s]?\d+/i,                    # PO-123, PO 123, PO123
+  /P\.O\.?[-\s]?\d+/i,               # P.O. 123, P.O.-123, P.O.123
+  /Purchase\s+Order[-\s]?\d+/i,      # Purchase Order 123, Purchase Order-123
+  /P\/O[-\s]?\d+/i,                  # P/O-123, P/O 123
+  /Order\s+Ref:?\s*\d+/i             # Order Ref: 123, Order Ref 123
+].freeze
+```
+
+```ruby
+enum :payment_status, {
+  pending: 'pending',
+  part_payment: 'part_payment',
+  complete: 'complete',
+  manual_review: 'manual_review'
+}, prefix: :payment
+```
+
+```
+Test Results:
+✓ Exact PO number
+✓ PO number without dash
+✓ Lowercase PO number
+✓ PO number with space
+✓ P.O. with periods
+✓ Purchase Order spelled out
+✓ PO number embedded in text
+✓ PO in Reference field
+✓ Different zero-padding (PO-1 → PO-000001)
+✓ Different zero-padding (PO-123 → PO-000123)
+✓ PO number in LineItem description
+✓ Supplier + amount matching (fallback)
+✓ No matching PO found
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-98765',
+  'Reference' => 'PO-123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'P.O. 123456',
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'PO-1',
+  'Total' => 1000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-000001 via normalized matching
+```
+
+```ruby
+invoice = {
+  'InvoiceNumber' => 'INV-12345',
+  'LineItems' => [
+    { 'Description' => 'Materials for Purchase Order 123456' }
+  ],
+  'Total' => 5000.00,
+  'Contact' => { 'Name' => 'ABC Supplier' }
+}
+result = InvoiceMatchingService.call(invoice_data: invoice)
+# ✓ Matches PO-123456
+```
+
+```ruby
+# Migration
+add_column :purchase_orders, :normalized_po_number, :integer
+add_index :purchase_orders, :normalized_po_number
+
+# In PurchaseOrder model:
+before_save :set_normalized_po_number
+
+def set_normalized_po_number
+  self.normalized_po_number = purchase_order_number.gsub(/[^\d]/, '').to_i
+end
+```
+
+```bash
+cd /Users/jakebaird/trapid
+git add -A
+git commit -m "Enhance invoice matching with fuzzy PO number extraction
+
+- Add support for multiple PO number formats (PO123, P.O. 123, etc.)
+- Check Reference field, InvoiceNumber, and LineItems
+- Implement normalized matching for different zero-padding
+- Add comprehensive test suite with 13 test cases
+- Add payment tracking methods to PurchaseOrder model
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+git subtree push --prefix backend heroku main
+```
+
+---
+
+
+# Chapter 16: Xero Accounting Integration
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 16               │
+│ 📕 LEXICON (BUGS):    Chapter 16               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -6088,11 +19651,11 @@ add_column :payments, :synced_to_xero_at, :datetime
 ---
 
 
-# Chapter 16: Payments & Financials
+# Chapter 17: Payments & Financials
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 16               │
-│ 📕 LEXICON (BUGS):    Chapter 16               │
+│ 📖 BIBLE (RULES):     Chapter 17               │
+│ 📕 LEXICON (BUGS):    Chapter 17               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -6658,11 +20221,11 @@ end
 ---
 
 
-# Chapter 17: Workflows & Automation
+# Chapter 18: Workflows & Automation
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 17               │
-│ 📕 LEXICON (BUGS):    Chapter 17               │
+│ 📖 BIBLE (RULES):     Chapter 18               │
+│ 📕 LEXICON (BUGS):    Chapter 18               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -7106,11 +20669,11 @@ await api.post('/workflow_instances', {
 ---
 
 
-# Chapter 18: Custom Tables & Formulas
+# Chapter 19: Custom Tables & Formulas
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 18               │
-│ 📕 LEXICON (BUGS):    Chapter 18               │
+│ 📖 BIBLE (RULES):     Chapter 19               │
+│ 📕 LEXICON (BUGS):    Chapter 19               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -7604,12 +21167,4377 @@ end
 
 ---
 
+## §19.20: Standard Table UI Pattern - Column Management
+
+🧩 Component | 🟡 Intermediate
+
+### Quick Summary
+Complete pattern for table components with column drag/drop, sorting, filtering, resize, and bulk actions
+
+### Step-by-Step Guide
+# Unified Table Pattern - Trapid Application
+
+This document defines the standard pattern for all table components in the Trapid application.
+
+## Overview
+
+All tables (ContactsPage, PriceBooksPage, POTable, etc.) should follow this unified pattern for consistency, maintainability, and better UX.
+
+## Column Configuration Structure
+
+```javascript
+const defaultColumnConfig = {
+  columnKey: {
+    key: 'columnKey',           // Unique identifier (matches object key)
+    label: 'Column Name',        // Display name in header
+    visible: true,               // Show/hide column
+    minWidth: '150px',           // Minimum column width
+    order: 0,                    // Display order (0, 1, 2, ...)
+    sortable: true,              // Enable sorting via ColumnHeaderMenu
+    searchable: true,            // Enable filtering via ColumnHeaderMenu
+    filterType: 'search'         // 'search' | 'select' | 'price-range' | 'boolean'
+  }
+}
+```
+
+## State Management
+
+### 1. Column Order with localStorage Persistence
+
+```javascript
+const [columnOrder, setColumnOrder] = useState(() => {
+  const saved = localStorage.getItem('tableName_columnOrder')
+  return saved ? JSON.parse(saved) : ['column1', 'column2', 'column3', 'actions']
+})
+
+// Auto-save to localStorage whenever order changes
+useEffect(() => {
+  localStorage.setItem('tableName_columnOrder', JSON.stringify(columnOrder))
+}, [columnOrder])
+```
+
+### 2. Column Widths with localStorage Persistence
+
+```javascript
+const [columnWidths, setColumnWidths] = useState(() => {
+  const saved = localStorage.getItem('tableName_columnWidths')
+  return saved ? JSON.parse(saved) : {
+    column1: 200,
+    column2: 150,
+    column3: 250,
+    actions: 100
+  }
+})
+
+// Auto-save to localStorage whenever widths change
+useEffect(() => {
+  localStorage.setItem('tableName_columnWidths', JSON.stringify(columnWidths))
+}, [columnWidths])
+```
+
+### 3. Other State Variables
+
+```javascript
+const [draggedColumn, setDraggedColumn] = useState(null)
+const [sortBy, setSortBy] = useState('default_column')
+const [sortDirection, setSortDirection] = useState('asc')
+const [secondarySortBy, setSecondarySortBy] = useState('secondary_column')
+const [secondarySortDirection, setSecondarySortDirection] = useState('asc')
+const [columnFilters, setColumnFilters] = useState({})
+const [showColumnSettings, setShowColumnSettings] = useState(false)
+const [selectedItems, setSelectedItems] = useState(new Set())
+
+// Column resize state
+const [resizingColumn, setResizingColumn] = useState(null)
+const [resizeStartX, setResizeStartX] = useState(0)
+const [resizeStartWidth, setResizeStartWidth] = useState(0)
+```
+
+## Helper Functions
+
+### Get Sorted Columns
+
+```javascript
+const getSortedColumns = () => {
+  return Object.entries(columnConfig)
+    .sort(([, a], [, b]) => a.order - b.order)
+    .filter(([, config]) => config.visible)
+}
+```
+
+### Column Visibility Toggle
+
+```javascript
+const toggleColumnVisibility = (columnKey) => {
+  setColumnConfig(prev => ({
+    ...prev,
+    [columnKey]: {
+      ...prev[columnKey],
+      visible: !prev[columnKey].visible
+    }
+  }))
+}
+```
+
+### Drag and Drop Handlers
+
+```javascript
+const handleDragStart = (e, columnKey) => {
+  setDraggedColumn(columnKey)
+  e.dataTransfer.effectAllowed = 'move'
+}
+
+const handleDragOver = (e) => {
+  e.preventDefault()
+  e.dataTransfer.dropEffect = 'move'
+}
+
+const handleDrop = (e, targetColumnKey) => {
+  e.preventDefault()
+
+  if (!draggedColumn || draggedColumn === targetColumnKey) {
+    setDraggedColumn(null)
+    return
+  }
+
+  const draggedOrder = columnConfig[draggedColumn].order
+  const targetOrder = columnConfig[targetColumnKey].order
+
+  const newConfig = { ...columnConfig }
+
+  // Swap orders
+  Object.keys(newConfig).forEach(key => {
+    if (key === draggedColumn) {
+      newConfig[key] = { ...newConfig[key], order: targetOrder }
+    } else if (key === targetColumnKey) {
+      newConfig[key] = { ...newConfig[key], order: draggedOrder }
+    }
+  })
+
+  setColumnConfig(newConfig)
+  setDraggedColumn(null)
+}
+```
+
+### Sort Handler
+
+```javascript
+const handleSort = (column) => {
+  if (sortBy === column) {
+    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+  } else {
+    setSortBy(column)
+    setSortDirection('asc')
+  }
+}
+```
+
+### Column Resize Handlers
+
+```javascript
+const handleResizeStart = (e, columnKey) => {
+  e.preventDefault()
+  e.stopPropagation()
+  setResizingColumn(columnKey)
+  setResizeStartX(e.clientX)
+  setResizeStartWidth(columnWidths[columnKey])
+}
+
+const handleResizeMove = (e) => {
+  if (!resizingColumn) return
+  const diff = e.clientX - resizeStartX
+  const newWidth = Math.max(100, resizeStartWidth + diff)
+  setColumnWidths(prev => ({
+    ...prev,
+    [resizingColumn]: newWidth
+  }))
+}
+
+const handleResizeEnd = () => {
+  setResizingColumn(null)
+}
+
+// Add mouse move and mouse up listeners for column resizing
+useEffect(() => {
+  if (resizingColumn) {
+    window.addEventListener('mousemove', handleResizeMove)
+    window.addEventListener('mouseup', handleResizeEnd)
+    return () => {
+      window.removeEventListener('mousemove', handleResizeMove)
+      window.removeEventListener('mouseup', handleResizeEnd)
+    }
+  }
+}, [resizingColumn, resizeStartX, resizeStartWidth])
+```
+
+### Filter Handler
+
+```javascript
+const handleColumnFilter = (column, value) => {
+  setColumnFilters(prev => ({
+    ...prev,
+    [column]: value
+  }))
+}
+```
+
+### Reset to Defaults
+
+```javascript
+const resetColumnSettings = () => {
+  setColumnConfig(defaultColumnConfig)
+  localStorage.removeItem('tableName_columnConfig')
+}
+```
+
+## Table Header Structure
+
+```jsx
+<thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+  <tr>
+    {/* Checkbox column (if bulk actions enabled) */}
+    <th style={{ minWidth: '50px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left">
+      <input
+        type="checkbox"
+        checked={selectedItems.size === items.length && items.length > 0}
+        onChange={(e) => handleSelectAll(e.target.checked)}
+        className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
+      />
+    </th>
+
+    {/* Dynamic columns */}
+    {columns.map((column) => {
+      if (!visibleColumns[column.key]) return null
+      const width = columnWidths[column.key]
+      const isSortable = column.key !== 'actions'
+      const isSorted = sortBy === column.key
+
+      return (
+        <th
+          key={column.key}
+          style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+          className={`px-6 py-2 border-r border-gray-200 dark:border-gray-700 ${
+            column.key === 'actions' ? 'text-right' : 'text-left'
+          } ${draggedColumn === column.key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+          draggable
+          onDragStart={(e) => handleDragStart(e, column.key)}
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, column.key)}
+        >
+          <div
+            className={`flex items-center gap-2 ${isSortable ? 'cursor-pointer' : 'cursor-move'}`}
+            onClick={() => isSortable && handleSort(column.key)}
+          >
+            {/* Drag handle */}
+            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+
+            {/* Column label */}
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {column.label}
+            </span>
+
+            {/* Sort indicators */}
+            {isSortable && isSorted && (
+              sortDirection === 'asc' ?
+                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            )}
+          </div>
+
+          {/* Inline filter (search input or dropdown) */}
+          {column.searchable && (
+            column.filterType === 'dropdown' ? (
+              <select
+                value={columnFilters[column.key] || ''}
+                onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              >
+                {/* Dropdown options specific to column */}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="Search..."
+                value={columnFilters[column.key] || ''}
+                onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            )
+          )}
+
+          {/* Resize handle */}
+          <div
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+            onMouseDown={(e) => handleResizeStart(e, column.key)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </th>
+      )
+    })}
+  </tr>
+</thead>
+```
+
+## Column Settings Button (Toolbar)
+
+```jsx
+<button
+  onClick={() => setShowColumnSettings(true)}
+  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+>
+  <AdjustmentsHorizontalIcon className="h-5 w-5" />
+  Columns
+</button>
+```
+
+## Column Settings Modal
+
+```jsx
+{showColumnSettings && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center">
+    {/* Backdrop */}
+    <div
+      className="fixed inset-0 bg-black/30"
+      onClick={() => setShowColumnSettings(false)}
+    />
+
+    {/* Modal */}
+    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6 m-4">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+        Column Settings
+      </h2>
+
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        Toggle column visibility and drag to reorder
+      </p>
+
+      {/* Column list */}
+      <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
+        {getSortedColumns(true).map(([key, config]) => (
+          <label
+            key={key}
+            className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors"
+          >
+            <input
+              type="checkbox"
+              checked={config.visible}
+              onChange={() => toggleColumnVisibility(key)}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <Bars3Icon className="h-4 w-4 text-gray-400" />
+            <span className="text-sm text-gray-900 dark:text-white flex-1">
+              {config.label}
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={resetColumnSettings}
+          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+        >
+          Reset to defaults
+        </button>
+        <button
+          onClick={() => setShowColumnSettings(false)}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+```
+
+## Bulk Actions Toolbar Pattern
+
+```jsx
+{selectedItems.size > 0 && (
+  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
+    <div className="flex items-center gap-4 flex-1">
+      <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+        {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+      </span>
+
+      {/* Bulk action controls (dropdowns, inputs, etc.) */}
+    </div>
+
+    <div className="flex items-center gap-2">
+      {/* Destructive actions first (red) */}
+      <button
+        onClick={handleBulkDelete}
+        disabled={updating}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+      >
+        <TrashIcon className="h-5 w-5" />
+        Delete
+      </button>
+
+      {/* Other actions (orange, indigo, etc.) */}
+      <button
+        onClick={handleBulkAction}
+        disabled={updating}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+      >
+        {updating ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            Processing...
+          </>
+        ) : (
+          <>
+            <CheckCircleIcon className="h-5 w-5" />
+            Apply
+          </>
+        )}
+      </button>
+
+      {/* Cancel always last */}
+      <button
+        onClick={() => setSelectedItems(new Set())}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
+```
+
+## ColumnHeaderMenu Component
+
+The `ColumnHeaderMenu` component provides integrated sort and filter functionality. It's already implemented in the codebase at:
+
+`/Users/rob/Projects/trapid/frontend/src/components/pricebook/ColumnHeaderMenu.jsx`
+
+**Props:**
+- `label` - Column display name
+- `column` - Column key for API/sort
+- `sortBy` - Current sort column
+- `sortDirection` - 'asc' or 'desc'
+- `onSort` - Sort handler function (null if not sortable)
+- `onFilter` - Filter handler function (null if not searchable)
+- `filterValue` - Current filter value
+- `filterType` - 'search' | 'select' | 'price-range' | 'boolean'
+- `filterOptions` - Array of options for 'select' type: `[{ label, value, count }]`
+
+## Table Wrapper Structure
+
+```jsx
+<div className="flex-1 overflow-auto bg-white dark:bg-gray-900" style={{
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#9CA3AF #E5E7EB'
+}}>
+  <div className="w-full h-full">
+    <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+      <thead>...</thead>
+      <tbody>...</tbody>
+    </table>
+  </div>
+</div>
+```
+
+## Benefits of This Pattern
+
+1. **Consistent UX** - Same experience across all tables
+2. **Feature-Rich** - Sort, filter, reorder, visibility controls
+3. **Persistent** - User preferences saved to localStorage
+4. **Discoverable** - Clear settings button, not hidden features
+5. **Maintainable** - Single source of truth for column config
+6. **Extensible** - Easy to add new columns or features
+7. **Mobile-Friendly** - Modal-based settings work better on small screens
+8. **Clean Headers** - No cluttered inline inputs
+9. **Drag-and-Drop** - Visual feedback during column reordering
+10. **Accessible** - Proper keyboard navigation and screen reader support
+
+## Migration Checklist
+
+When migrating an existing table to this pattern:
+
+- [ ] Define `defaultColumnConfig` with all columns
+- [ ] Add localStorage state management with persistence
+- [ ] Implement `getSortedColumns()` helper
+- [ ] Add drag-and-drop handlers
+- [ ] Replace table headers with new pattern
+- [ ] Add ColumnHeaderMenu for sortable/searchable columns
+- [ ] Add "Columns" button to toolbar
+- [ ] Implement column settings modal
+- [ ] Add bulk actions toolbar (if needed)
+- [ ] Update cell rendering to respect column order
+- [ ] Test drag-and-drop reordering
+- [ ] Test column visibility toggles
+- [ ] Test sort and filter functionality
+- [ ] Test localStorage persistence
+- [ ] Verify reset to defaults works
+
+## Example Implementation
+
+See `ContactsPage.jsx` and `PriceBooksPage.jsx` for reference implementations.
+
+
+### Code Example
+```jsx
+```javascript
+const defaultColumnConfig = {
+  columnKey: {
+    key: 'columnKey',           // Unique identifier (matches object key)
+    label: 'Column Name',        // Display name in header
+    visible: true,               // Show/hide column
+    minWidth: '150px',           // Minimum column width
+    order: 0,                    // Display order (0, 1, 2, ...)
+    sortable: true,              // Enable sorting via ColumnHeaderMenu
+    searchable: true,            // Enable filtering via ColumnHeaderMenu
+    filterType: 'search'         // 'search' | 'select' | 'price-range' | 'boolean'
+  }
+}
+```
+
+```javascript
+const [columnOrder, setColumnOrder] = useState(() => {
+  const saved = localStorage.getItem('tableName_columnOrder')
+  return saved ? JSON.parse(saved) : ['column1', 'column2', 'column3', 'actions']
+})
+
+// Auto-save to localStorage whenever order changes
+useEffect(() => {
+  localStorage.setItem('tableName_columnOrder', JSON.stringify(columnOrder))
+}, [columnOrder])
+```
+
+```javascript
+const [columnWidths, setColumnWidths] = useState(() => {
+  const saved = localStorage.getItem('tableName_columnWidths')
+  return saved ? JSON.parse(saved) : {
+    column1: 200,
+    column2: 150,
+    column3: 250,
+    actions: 100
+  }
+})
+
+// Auto-save to localStorage whenever widths change
+useEffect(() => {
+  localStorage.setItem('tableName_columnWidths', JSON.stringify(columnWidths))
+}, [columnWidths])
+```
+
+```javascript
+const [draggedColumn, setDraggedColumn] = useState(null)
+const [sortBy, setSortBy] = useState('default_column')
+const [sortDirection, setSortDirection] = useState('asc')
+const [secondarySortBy, setSecondarySortBy] = useState('secondary_column')
+const [secondarySortDirection, setSecondarySortDirection] = useState('asc')
+const [columnFilters, setColumnFilters] = useState({})
+const [showColumnSettings, setShowColumnSettings] = useState(false)
+const [selectedItems, setSelectedItems] = useState(new Set())
+
+// Column resize state
+const [resizingColumn, setResizingColumn] = useState(null)
+const [resizeStartX, setResizeStartX] = useState(0)
+const [resizeStartWidth, setResizeStartWidth] = useState(0)
+```
+
+```javascript
+const getSortedColumns = () => {
+  return Object.entries(columnConfig)
+    .sort(([, a], [, b]) => a.order - b.order)
+    .filter(([, config]) => config.visible)
+}
+```
+
+```javascript
+const toggleColumnVisibility = (columnKey) => {
+  setColumnConfig(prev => ({
+    ...prev,
+    [columnKey]: {
+      ...prev[columnKey],
+      visible: !prev[columnKey].visible
+    }
+  }))
+}
+```
+
+```javascript
+const handleDragStart = (e, columnKey) => {
+  setDraggedColumn(columnKey)
+  e.dataTransfer.effectAllowed = 'move'
+}
+
+const handleDragOver = (e) => {
+  e.preventDefault()
+  e.dataTransfer.dropEffect = 'move'
+}
+
+const handleDrop = (e, targetColumnKey) => {
+  e.preventDefault()
+
+  if (!draggedColumn || draggedColumn === targetColumnKey) {
+    setDraggedColumn(null)
+    return
+  }
+
+  const draggedOrder = columnConfig[draggedColumn].order
+  const targetOrder = columnConfig[targetColumnKey].order
+
+  const newConfig = { ...columnConfig }
+
+  // Swap orders
+  Object.keys(newConfig).forEach(key => {
+    if (key === draggedColumn) {
+      newConfig[key] = { ...newConfig[key], order: targetOrder }
+    } else if (key === targetColumnKey) {
+      newConfig[key] = { ...newConfig[key], order: draggedOrder }
+    }
+  })
+
+  setColumnConfig(newConfig)
+  setDraggedColumn(null)
+}
+```
+
+```javascript
+const handleSort = (column) => {
+  if (sortBy === column) {
+    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+  } else {
+    setSortBy(column)
+    setSortDirection('asc')
+  }
+}
+```
+
+```javascript
+const handleResizeStart = (e, columnKey) => {
+  e.preventDefault()
+  e.stopPropagation()
+  setResizingColumn(columnKey)
+  setResizeStartX(e.clientX)
+  setResizeStartWidth(columnWidths[columnKey])
+}
+
+const handleResizeMove = (e) => {
+  if (!resizingColumn) return
+  const diff = e.clientX - resizeStartX
+  const newWidth = Math.max(100, resizeStartWidth + diff)
+  setColumnWidths(prev => ({
+    ...prev,
+    [resizingColumn]: newWidth
+  }))
+}
+
+const handleResizeEnd = () => {
+  setResizingColumn(null)
+}
+
+// Add mouse move and mouse up listeners for column resizing
+useEffect(() => {
+  if (resizingColumn) {
+    window.addEventListener('mousemove', handleResizeMove)
+    window.addEventListener('mouseup', handleResizeEnd)
+    return () => {
+      window.removeEventListener('mousemove', handleResizeMove)
+      window.removeEventListener('mouseup', handleResizeEnd)
+    }
+  }
+}, [resizingColumn, resizeStartX, resizeStartWidth])
+```
+
+```javascript
+const handleColumnFilter = (column, value) => {
+  setColumnFilters(prev => ({
+    ...prev,
+    [column]: value
+  }))
+}
+```
+
+```javascript
+const resetColumnSettings = () => {
+  setColumnConfig(defaultColumnConfig)
+  localStorage.removeItem('tableName_columnConfig')
+}
+```
+
+```jsx
+<thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+  <tr>
+    {/* Checkbox column (if bulk actions enabled) */}
+    <th style={{ minWidth: '50px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left">
+      <input
+        type="checkbox"
+        checked={selectedItems.size === items.length && items.length > 0}
+        onChange={(e) => handleSelectAll(e.target.checked)}
+        className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
+      />
+    </th>
+
+    {/* Dynamic columns */}
+    {columns.map((column) => {
+      if (!visibleColumns[column.key]) return null
+      const width = columnWidths[column.key]
+      const isSortable = column.key !== 'actions'
+      const isSorted = sortBy === column.key
+
+      return (
+        <th
+          key={column.key}
+          style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+          className={`px-6 py-2 border-r border-gray-200 dark:border-gray-700 ${
+            column.key === 'actions' ? 'text-right' : 'text-left'
+          } ${draggedColumn === column.key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+          draggable
+          onDragStart={(e) => handleDragStart(e, column.key)}
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, column.key)}
+        >
+          <div
+            className={`flex items-center gap-2 ${isSortable ? 'cursor-pointer' : 'cursor-move'}`}
+            onClick={() => isSortable && handleSort(column.key)}
+          >
+            {/* Drag handle */}
+            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+
+            {/* Column label */}
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {column.label}
+            </span>
+
+            {/* Sort indicators */}
+            {isSortable && isSorted && (
+              sortDirection === 'asc' ?
+                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            )}
+          </div>
+
+          {/* Inline filter (search input or dropdown) */}
+          {column.searchable && (
+            column.filterType === 'dropdown' ? (
+              <select
+                value={columnFilters[column.key] || ''}
+                onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              >
+                {/* Dropdown options specific to column */}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="Search..."
+                value={columnFilters[column.key] || ''}
+                onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            )
+          )}
+
+          {/* Resize handle */}
+          <div
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+            onMouseDown={(e) => handleResizeStart(e, column.key)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </th>
+      )
+    })}
+  </tr>
+</thead>
+```
+
+```jsx
+<button
+  onClick={() => setShowColumnSettings(true)}
+  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+>
+  <AdjustmentsHorizontalIcon className="h-5 w-5" />
+  Columns
+</button>
+```
+
+```jsx
+{showColumnSettings && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center">
+    {/* Backdrop */}
+    <div
+      className="fixed inset-0 bg-black/30"
+      onClick={() => setShowColumnSettings(false)}
+    />
+
+    {/* Modal */}
+    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6 m-4">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+        Column Settings
+      </h2>
+
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        Toggle column visibility and drag to reorder
+      </p>
+
+      {/* Column list */}
+      <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
+        {getSortedColumns(true).map(([key, config]) => (
+          <label
+            key={key}
+            className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors"
+          >
+            <input
+              type="checkbox"
+              checked={config.visible}
+              onChange={() => toggleColumnVisibility(key)}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <Bars3Icon className="h-4 w-4 text-gray-400" />
+            <span className="text-sm text-gray-900 dark:text-white flex-1">
+              {config.label}
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={resetColumnSettings}
+          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+        >
+          Reset to defaults
+        </button>
+        <button
+          onClick={() => setShowColumnSettings(false)}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+```
+
+```jsx
+{selectedItems.size > 0 && (
+  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
+    <div className="flex items-center gap-4 flex-1">
+      <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+        {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+      </span>
+
+      {/* Bulk action controls (dropdowns, inputs, etc.) */}
+    </div>
+
+    <div className="flex items-center gap-2">
+      {/* Destructive actions first (red) */}
+      <button
+        onClick={handleBulkDelete}
+        disabled={updating}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+      >
+        <TrashIcon className="h-5 w-5" />
+        Delete
+      </button>
+
+      {/* Other actions (orange, indigo, etc.) */}
+      <button
+        onClick={handleBulkAction}
+        disabled={updating}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+      >
+        {updating ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            Processing...
+          </>
+        ) : (
+          <>
+            <CheckCircleIcon className="h-5 w-5" />
+            Apply
+          </>
+        )}
+      </button>
+
+      {/* Cancel always last */}
+      <button
+        onClick={() => setSelectedItems(new Set())}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
+```
+
+```jsx
+<div className="flex-1 overflow-auto bg-white dark:bg-gray-900" style={{
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#9CA3AF #E5E7EB'
+}}>
+  <div className="w-full h-full">
+    <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+      <thead>...</thead>
+      <tbody>...</tbody>
+    </table>
+  </div>
+</div>
+```
+```
+
+### Examples
+```javascript
+const defaultColumnConfig = {
+  columnKey: {
+    key: 'columnKey',           // Unique identifier (matches object key)
+    label: 'Column Name',        // Display name in header
+    visible: true,               // Show/hide column
+    minWidth: '150px',           // Minimum column width
+    order: 0,                    // Display order (0, 1, 2, ...)
+    sortable: true,              // Enable sorting via ColumnHeaderMenu
+    searchable: true,            // Enable filtering via ColumnHeaderMenu
+    filterType: 'search'         // 'search' | 'select' | 'price-range' | 'boolean'
+  }
+}
+```
+
+```javascript
+const [columnOrder, setColumnOrder] = useState(() => {
+  const saved = localStorage.getItem('tableName_columnOrder')
+  return saved ? JSON.parse(saved) : ['column1', 'column2', 'column3', 'actions']
+})
+
+// Auto-save to localStorage whenever order changes
+useEffect(() => {
+  localStorage.setItem('tableName_columnOrder', JSON.stringify(columnOrder))
+}, [columnOrder])
+```
+
+```javascript
+const [columnWidths, setColumnWidths] = useState(() => {
+  const saved = localStorage.getItem('tableName_columnWidths')
+  return saved ? JSON.parse(saved) : {
+    column1: 200,
+    column2: 150,
+    column3: 250,
+    actions: 100
+  }
+})
+
+// Auto-save to localStorage whenever widths change
+useEffect(() => {
+  localStorage.setItem('tableName_columnWidths', JSON.stringify(columnWidths))
+}, [columnWidths])
+```
+
+```javascript
+const [draggedColumn, setDraggedColumn] = useState(null)
+const [sortBy, setSortBy] = useState('default_column')
+const [sortDirection, setSortDirection] = useState('asc')
+const [secondarySortBy, setSecondarySortBy] = useState('secondary_column')
+const [secondarySortDirection, setSecondarySortDirection] = useState('asc')
+const [columnFilters, setColumnFilters] = useState({})
+const [showColumnSettings, setShowColumnSettings] = useState(false)
+const [selectedItems, setSelectedItems] = useState(new Set())
+
+// Column resize state
+const [resizingColumn, setResizingColumn] = useState(null)
+const [resizeStartX, setResizeStartX] = useState(0)
+const [resizeStartWidth, setResizeStartWidth] = useState(0)
+```
+
+```javascript
+const getSortedColumns = () => {
+  return Object.entries(columnConfig)
+    .sort(([, a], [, b]) => a.order - b.order)
+    .filter(([, config]) => config.visible)
+}
+```
+
+```javascript
+const toggleColumnVisibility = (columnKey) => {
+  setColumnConfig(prev => ({
+    ...prev,
+    [columnKey]: {
+      ...prev[columnKey],
+      visible: !prev[columnKey].visible
+    }
+  }))
+}
+```
+
+```javascript
+const handleDragStart = (e, columnKey) => {
+  setDraggedColumn(columnKey)
+  e.dataTransfer.effectAllowed = 'move'
+}
+
+const handleDragOver = (e) => {
+  e.preventDefault()
+  e.dataTransfer.dropEffect = 'move'
+}
+
+const handleDrop = (e, targetColumnKey) => {
+  e.preventDefault()
+
+  if (!draggedColumn || draggedColumn === targetColumnKey) {
+    setDraggedColumn(null)
+    return
+  }
+
+  const draggedOrder = columnConfig[draggedColumn].order
+  const targetOrder = columnConfig[targetColumnKey].order
+
+  const newConfig = { ...columnConfig }
+
+  // Swap orders
+  Object.keys(newConfig).forEach(key => {
+    if (key === draggedColumn) {
+      newConfig[key] = { ...newConfig[key], order: targetOrder }
+    } else if (key === targetColumnKey) {
+      newConfig[key] = { ...newConfig[key], order: draggedOrder }
+    }
+  })
+
+  setColumnConfig(newConfig)
+  setDraggedColumn(null)
+}
+```
+
+```javascript
+const handleSort = (column) => {
+  if (sortBy === column) {
+    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+  } else {
+    setSortBy(column)
+    setSortDirection('asc')
+  }
+}
+```
+
+```javascript
+const handleResizeStart = (e, columnKey) => {
+  e.preventDefault()
+  e.stopPropagation()
+  setResizingColumn(columnKey)
+  setResizeStartX(e.clientX)
+  setResizeStartWidth(columnWidths[columnKey])
+}
+
+const handleResizeMove = (e) => {
+  if (!resizingColumn) return
+  const diff = e.clientX - resizeStartX
+  const newWidth = Math.max(100, resizeStartWidth + diff)
+  setColumnWidths(prev => ({
+    ...prev,
+    [resizingColumn]: newWidth
+  }))
+}
+
+const handleResizeEnd = () => {
+  setResizingColumn(null)
+}
+
+// Add mouse move and mouse up listeners for column resizing
+useEffect(() => {
+  if (resizingColumn) {
+    window.addEventListener('mousemove', handleResizeMove)
+    window.addEventListener('mouseup', handleResizeEnd)
+    return () => {
+      window.removeEventListener('mousemove', handleResizeMove)
+      window.removeEventListener('mouseup', handleResizeEnd)
+    }
+  }
+}, [resizingColumn, resizeStartX, resizeStartWidth])
+```
+
+```javascript
+const handleColumnFilter = (column, value) => {
+  setColumnFilters(prev => ({
+    ...prev,
+    [column]: value
+  }))
+}
+```
+
+```javascript
+const resetColumnSettings = () => {
+  setColumnConfig(defaultColumnConfig)
+  localStorage.removeItem('tableName_columnConfig')
+}
+```
+
+```jsx
+<thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+  <tr>
+    {/* Checkbox column (if bulk actions enabled) */}
+    <th style={{ minWidth: '50px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left">
+      <input
+        type="checkbox"
+        checked={selectedItems.size === items.length && items.length > 0}
+        onChange={(e) => handleSelectAll(e.target.checked)}
+        className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
+      />
+    </th>
+
+    {/* Dynamic columns */}
+    {columns.map((column) => {
+      if (!visibleColumns[column.key]) return null
+      const width = columnWidths[column.key]
+      const isSortable = column.key !== 'actions'
+      const isSorted = sortBy === column.key
+
+      return (
+        <th
+          key={column.key}
+          style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+          className={`px-6 py-2 border-r border-gray-200 dark:border-gray-700 ${
+            column.key === 'actions' ? 'text-right' : 'text-left'
+          } ${draggedColumn === column.key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+          draggable
+          onDragStart={(e) => handleDragStart(e, column.key)}
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, column.key)}
+        >
+          <div
+            className={`flex items-center gap-2 ${isSortable ? 'cursor-pointer' : 'cursor-move'}`}
+            onClick={() => isSortable && handleSort(column.key)}
+          >
+            {/* Drag handle */}
+            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+
+            {/* Column label */}
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {column.label}
+            </span>
+
+            {/* Sort indicators */}
+            {isSortable && isSorted && (
+              sortDirection === 'asc' ?
+                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            )}
+          </div>
+
+          {/* Inline filter (search input or dropdown) */}
+          {column.searchable && (
+            column.filterType === 'dropdown' ? (
+              <select
+                value={columnFilters[column.key] || ''}
+                onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              >
+                {/* Dropdown options specific to column */}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="Search..."
+                value={columnFilters[column.key] || ''}
+                onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            )
+          )}
+
+          {/* Resize handle */}
+          <div
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+            onMouseDown={(e) => handleResizeStart(e, column.key)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </th>
+      )
+    })}
+  </tr>
+</thead>
+```
+
+```jsx
+<button
+  onClick={() => setShowColumnSettings(true)}
+  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+>
+  <AdjustmentsHorizontalIcon className="h-5 w-5" />
+  Columns
+</button>
+```
+
+```jsx
+{showColumnSettings && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center">
+    {/* Backdrop */}
+    <div
+      className="fixed inset-0 bg-black/30"
+      onClick={() => setShowColumnSettings(false)}
+    />
+
+    {/* Modal */}
+    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6 m-4">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+        Column Settings
+      </h2>
+
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        Toggle column visibility and drag to reorder
+      </p>
+
+      {/* Column list */}
+      <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
+        {getSortedColumns(true).map(([key, config]) => (
+          <label
+            key={key}
+            className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors"
+          >
+            <input
+              type="checkbox"
+              checked={config.visible}
+              onChange={() => toggleColumnVisibility(key)}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <Bars3Icon className="h-4 w-4 text-gray-400" />
+            <span className="text-sm text-gray-900 dark:text-white flex-1">
+              {config.label}
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={resetColumnSettings}
+          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+        >
+          Reset to defaults
+        </button>
+        <button
+          onClick={() => setShowColumnSettings(false)}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+```
+
+```jsx
+{selectedItems.size > 0 && (
+  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
+    <div className="flex items-center gap-4 flex-1">
+      <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+        {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+      </span>
+
+      {/* Bulk action controls (dropdowns, inputs, etc.) */}
+    </div>
+
+    <div className="flex items-center gap-2">
+      {/* Destructive actions first (red) */}
+      <button
+        onClick={handleBulkDelete}
+        disabled={updating}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+      >
+        <TrashIcon className="h-5 w-5" />
+        Delete
+      </button>
+
+      {/* Other actions (orange, indigo, etc.) */}
+      <button
+        onClick={handleBulkAction}
+        disabled={updating}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+      >
+        {updating ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            Processing...
+          </>
+        ) : (
+          <>
+            <CheckCircleIcon className="h-5 w-5" />
+            Apply
+          </>
+        )}
+      </button>
+
+      {/* Cancel always last */}
+      <button
+        onClick={() => setSelectedItems(new Set())}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
+```
+
+```jsx
+<div className="flex-1 overflow-auto bg-white dark:bg-gray-900" style={{
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#9CA3AF #E5E7EB'
+}}>
+  <div className="w-full h-full">
+    <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+      <thead>...</thead>
+      <tbody>...</tbody>
+    </table>
+  </div>
+</div>
+```
+
+---
+
+## §19.21: Inline Editing Pattern - Click to Edit with Visual Indicators
+
+🧩 Component | 🟢 Beginner
+
+### Quick Summary
+Single-level editing pattern with click-to-edit fields and visual borders instead of pencil icons
+
+### Step-by-Step Guide
+# Updated Inline Editing Pattern
+
+## Remove Double-Layer Editing
+
+Instead of having an "Edit" button AND pencil icons on each field, we should:
+
+1. When page is **locked** (not in edit mode):
+   - Show all fields as read-only
+   - Show single "Edit" button at top
+   - NO pencil icons visible
+
+2. When page is **unlocked** (in edit mode):
+   - Add visible border to all editable fields
+   - Click directly on field to edit
+   - NO pencil icons needed
+   - Show "Save & Lock" and "Cancel" buttons at top
+
+## Updated Field Pattern
+
+### OLD Pattern (with pencil icons):
+```jsx
+{editingXeroFields['email'] ? (
+  // Edit mode with input
+) : (
+  <div className="flex items-center gap-2 group">
+    {contact.email}
+    {isPageEditMode && (
+      <button onClick={() => startEditingXeroField('email')}>
+        <PencilIcon className="h-4 w-4" />  ❌ REMOVE THIS
+      </button>
+    )}
+  </div>
+)}
+```
+
+### NEW Pattern (click to edit with border):
+```jsx
+{editingXeroFields['email'] ? (
+  // Edit mode with input and save/cancel buttons
+  <div className="flex items-center gap-2">
+    <input
+      type="email"
+      value={xeroFieldValues['email'] || ''}
+      onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+      className="flex-1 px-2 py-1 text-sm rounded border border-gray-300"
+      autoFocus
+    />
+    <button onClick={() => saveXeroField('email')}>
+      <CheckCircleIcon className="h-5 w-5" />
+    </button>
+    <button onClick={() => cancelEditingXeroField('email')}>
+      <XCircleIcon className="h-5 w-5" />
+    </button>
+  </div>
+) : (
+  // Display mode - clickable when unlocked
+  <div
+    onClick={() => isPageEditMode && startEditingXeroField('email')}
+    className={`
+      ${isPageEditMode ? 'cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-500 rounded px-2 py-1' : ''}
+    `}
+  >
+    {contact.email ? (
+      <a href={`mailto:${contact.email}`} className="text-blue-600">
+        {contact.email}
+      </a>
+    ) : (
+      <span className="text-gray-500">Click to add</span>
+    )}
+  </div>
+)}
+```
+
+## Visual Indicator CSS Classes
+
+When `isPageEditMode` is true, add these classes to editable fields:
+
+```jsx
+className={`
+  ${isPageEditMode
+    ? 'cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-500 rounded px-2 py-1 transition-colors'
+    : ''
+  }
+`}
+```
+
+This gives:
+- ✅ Dashed blue border indicating "click to edit"
+- ✅ Cursor changes to pointer on hover
+- ✅ Border highlights on hover
+- ✅ No extra pencil icon clutter
+
+## Example Implementation
+
+### Email Field (Complete):
+
+```jsx
+<div className="flex items-start gap-3">
+  <EnvelopeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Email</p>
+    {editingXeroFields['email'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="email"
+          value={xeroFieldValues['email'] || ''}
+          onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button
+          onClick={() => saveXeroField('email')}
+          className="text-green-600 hover:text-green-700 dark:text-green-400"
+        >
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => cancelEditingXeroField('email')}
+          className="text-gray-600 hover:text-gray-700 dark:text-gray-400"
+        >
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div
+        onClick={() => isPageEditMode && startEditingXeroField('email')}
+        className={`
+          ${isPageEditMode
+            ? 'cursor-pointer border-2 border-dashed border-blue-300 dark:border-blue-600 hover:border-blue-500 dark:hover:border-blue-400 rounded px-2 py-1 transition-colors'
+            : ''
+          }
+        `}
+      >
+        {contact.email ? (
+          <a
+            href={`mailto:${contact.email}`}
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+            onClick={(e) => {
+              if (isPageEditMode) {
+                e.preventDefault() // Prevent email link when in edit mode
+              }
+            }}
+          >
+            {contact.email}
+          </a>
+        ) : (
+          <span className="text-gray-400 italic">Click to add email</span>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+```
+
+## Apply to All Editable Fields
+
+Apply this pattern to:
+- ✅ email
+- ✅ mobile_phone
+- ✅ office_phone
+- ✅ fax_phone
+- ✅ address (text field)
+- ✅ tax_number (ABN)
+- ✅ company_number
+- ✅ bank_bsb
+- ✅ bank_account_number
+- ✅ bank_account_name
+- ✅ default_purchase_account
+- ✅ default_sales_account
+- ✅ bill_due_day
+- ✅ bill_due_type
+- ✅ sales_due_day
+- ✅ sales_due_type
+- ✅ default_discount
+
+## Benefits
+
+1. ✅ Single level of editing (page-level unlock)
+2. ✅ Cleaner UI without pencil icon clutter
+3. ✅ Visual borders clearly show editable fields
+4. ✅ Direct click to edit is more intuitive
+5. ✅ Consistent with global edit/lock pattern
+
+## ContactPersonsSection & ContactAddressesSection
+
+These components are already correct! They:
+- ✅ Only show edit/delete icons when `isEditMode={true}`
+- ✅ No double-layer editing
+- ✅ Have "Add Person" / "Add Address" buttons that only appear in edit mode
+
+No changes needed for those components.
+
+
+### Code Example
+```jsx
+```jsx
+{editingXeroFields['email'] ? (
+  // Edit mode with input
+) : (
+  <div className="flex items-center gap-2 group">
+    {contact.email}
+    {isPageEditMode && (
+      <button onClick={() => startEditingXeroField('email')}>
+        <PencilIcon className="h-4 w-4" />  ❌ REMOVE THIS
+      </button>
+    )}
+  </div>
+)}
+```
+
+```jsx
+{editingXeroFields['email'] ? (
+  // Edit mode with input and save/cancel buttons
+  <div className="flex items-center gap-2">
+    <input
+      type="email"
+      value={xeroFieldValues['email'] || ''}
+      onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+      className="flex-1 px-2 py-1 text-sm rounded border border-gray-300"
+      autoFocus
+    />
+    <button onClick={() => saveXeroField('email')}>
+      <CheckCircleIcon className="h-5 w-5" />
+    </button>
+    <button onClick={() => cancelEditingXeroField('email')}>
+      <XCircleIcon className="h-5 w-5" />
+    </button>
+  </div>
+) : (
+  // Display mode - clickable when unlocked
+  <div
+    onClick={() => isPageEditMode && startEditingXeroField('email')}
+    className={`
+      ${isPageEditMode ? 'cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-500 rounded px-2 py-1' : ''}
+    `}
+  >
+    {contact.email ? (
+      <a href={`mailto:${contact.email}`} className="text-blue-600">
+        {contact.email}
+      </a>
+    ) : (
+      <span className="text-gray-500">Click to add</span>
+    )}
+  </div>
+)}
+```
+
+```jsx
+className={`
+  ${isPageEditMode
+    ? 'cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-500 rounded px-2 py-1 transition-colors'
+    : ''
+  }
+`}
+```
+
+```jsx
+<div className="flex items-start gap-3">
+  <EnvelopeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Email</p>
+    {editingXeroFields['email'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="email"
+          value={xeroFieldValues['email'] || ''}
+          onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button
+          onClick={() => saveXeroField('email')}
+          className="text-green-600 hover:text-green-700 dark:text-green-400"
+        >
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => cancelEditingXeroField('email')}
+          className="text-gray-600 hover:text-gray-700 dark:text-gray-400"
+        >
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div
+        onClick={() => isPageEditMode && startEditingXeroField('email')}
+        className={`
+          ${isPageEditMode
+            ? 'cursor-pointer border-2 border-dashed border-blue-300 dark:border-blue-600 hover:border-blue-500 dark:hover:border-blue-400 rounded px-2 py-1 transition-colors'
+            : ''
+          }
+        `}
+      >
+        {contact.email ? (
+          <a
+            href={`mailto:${contact.email}`}
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+            onClick={(e) => {
+              if (isPageEditMode) {
+                e.preventDefault() // Prevent email link when in edit mode
+              }
+            }}
+          >
+            {contact.email}
+          </a>
+        ) : (
+          <span className="text-gray-400 italic">Click to add email</span>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+```
+```
+
+### Examples
+```jsx
+{editingXeroFields['email'] ? (
+  // Edit mode with input
+) : (
+  <div className="flex items-center gap-2 group">
+    {contact.email}
+    {isPageEditMode && (
+      <button onClick={() => startEditingXeroField('email')}>
+        <PencilIcon className="h-4 w-4" />  ❌ REMOVE THIS
+      </button>
+    )}
+  </div>
+)}
+```
+
+```jsx
+{editingXeroFields['email'] ? (
+  // Edit mode with input and save/cancel buttons
+  <div className="flex items-center gap-2">
+    <input
+      type="email"
+      value={xeroFieldValues['email'] || ''}
+      onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+      className="flex-1 px-2 py-1 text-sm rounded border border-gray-300"
+      autoFocus
+    />
+    <button onClick={() => saveXeroField('email')}>
+      <CheckCircleIcon className="h-5 w-5" />
+    </button>
+    <button onClick={() => cancelEditingXeroField('email')}>
+      <XCircleIcon className="h-5 w-5" />
+    </button>
+  </div>
+) : (
+  // Display mode - clickable when unlocked
+  <div
+    onClick={() => isPageEditMode && startEditingXeroField('email')}
+    className={`
+      ${isPageEditMode ? 'cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-500 rounded px-2 py-1' : ''}
+    `}
+  >
+    {contact.email ? (
+      <a href={`mailto:${contact.email}`} className="text-blue-600">
+        {contact.email}
+      </a>
+    ) : (
+      <span className="text-gray-500">Click to add</span>
+    )}
+  </div>
+)}
+```
+
+```jsx
+className={`
+  ${isPageEditMode
+    ? 'cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-500 rounded px-2 py-1 transition-colors'
+    : ''
+  }
+`}
+```
+
+```jsx
+<div className="flex items-start gap-3">
+  <EnvelopeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Email</p>
+    {editingXeroFields['email'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="email"
+          value={xeroFieldValues['email'] || ''}
+          onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button
+          onClick={() => saveXeroField('email')}
+          className="text-green-600 hover:text-green-700 dark:text-green-400"
+        >
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => cancelEditingXeroField('email')}
+          className="text-gray-600 hover:text-gray-700 dark:text-gray-400"
+        >
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div
+        onClick={() => isPageEditMode && startEditingXeroField('email')}
+        className={`
+          ${isPageEditMode
+            ? 'cursor-pointer border-2 border-dashed border-blue-300 dark:border-blue-600 hover:border-blue-500 dark:hover:border-blue-400 rounded px-2 py-1 transition-colors'
+            : ''
+          }
+        `}
+      >
+        {contact.email ? (
+          <a
+            href={`mailto:${contact.email}`}
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+            onClick={(e) => {
+              if (isPageEditMode) {
+                e.preventDefault() // Prevent email link when in edit mode
+              }
+            }}
+          >
+            {contact.email}
+          </a>
+        ) : (
+          <span className="text-gray-400 italic">Click to add email</span>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+```
+
+---
+
+## §19.38: Cascading Filter Implementation Pattern
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Bible","reference":"RULE #19.38"}]
+
+### Quick Summary
+Complete guide to implementing cascading filters in tables where one filter's selection dynamically updates available options in dependent filters.
+
+### Code Example
+```jsx
+// STEP 1: Add cascading filter calculation (after your main filter logic)
+const availableFilterOptions = useMemo(() => {
+  // For Type filter: apply ONLY chapter filter (not type itself)
+  let dataForTypeFilter = allData
+  if (filters.chapter) {
+    dataForTypeFilter = allData.filter(item => item.chapter === parseInt(filters.chapter))
+  }
+
+  // Count available types in filtered data
+  const typeCounts = {}
+  dataForTypeFilter.forEach(item => {
+    const type = item.type || 'UNKNOWN'
+    typeCounts[type] = (typeCounts[type] || 0) + 1
+  })
+
+  // Count chapters (no upstream filters)
+  const chapterCounts = {}
+  allData.forEach(item => {
+    chapterCounts[item.chapter] = (chapterCounts[item.chapter] || 0) + 1
+  })
+
+  return { types: typeCounts, chapters: chapterCounts }
+}, [allData, filters.chapter]) // Re-run only when chapter changes
+
+// STEP 2: Update filter dropdown with dynamic counts and cascade reset
+<select
+  value={filters.type || ''}
+  onChange={(e) => {
+    const newValue = e.target.value
+    setFilters(prev => ({ ...prev, type: newValue }))
+    
+    // CASCADE RESET: If changing chapter, reset type
+    if (filterKey === 'chapter') {
+      setFilters(prev => ({ ...prev, type: '' }))
+    }
+  }}
+>
+  <option value="">All</option>
+  {['MUST', 'NEVER', 'ALWAYS'].map(type => {
+    const count = availableFilterOptions.types[type] || 0
+    const isDisabled = count === 0
+    return (
+      <option
+        key={type}
+        value={type}
+        disabled={isDisabled}
+        style={isDisabled ? { color: '#9CA3AF', fontStyle: 'italic' } : {}}
+      >
+        {type} ({count})
+      </option>
+    )
+  })}
+</select>
+
+// STEP 3: Apply all filters to get final data
+const filteredData = useMemo(() => {
+  return allData.filter(item => {
+    if (filters.chapter && item.chapter !== parseInt(filters.chapter)) return false
+    if (filters.type && item.type !== filters.type) return false
+    return true
+  })
+}, [allData, filters])
+```
+
+### ⚠️ Common Mistakes
+❌ **Mistake 1: Circular Dependencies**
+```javascript
+// BAD: Type filter depends on itself
+const typeOptions = useMemo(() => {
+  const filtered = data.filter(item => {
+    if (filters.chapter && item.chapter !== filters.chapter) return false
+    if (filters.type && item.type !== filters.type) return false // WRONG!
+    return true
+  })
+  return countTypes(filtered)
+}, [data, filters.chapter, filters.type]) // Type affects itself!
+```
+
+❌ **Mistake 2: Not Resetting Downstream Filters**
+```javascript
+// BAD: Chapter changes but Type stays selected
+const handleChapterChange = (chapter) => {
+  setFilters({ ...filters, chapter })
+  // Type filter still shows old value - confusing!
+}
+
+// GOOD: Reset downstream filters
+const handleChapterChange = (chapter) => {
+  setFilters({ chapter, type: '' }) // Reset type
+}
+```
+
+❌ **Mistake 3: Missing Memoization**
+```javascript
+// BAD: Recalculates on every render
+const availableTypes = calculateTypes(data, filters.chapter)
+
+// GOOD: Only recalculates when dependencies change
+const availableTypes = useMemo(
+  () => calculateTypes(data, filters.chapter),
+  [data, filters.chapter]
+)
+```
+
+### 🧪 Testing Strategy
+**Test Case 1: Initial State**
+- All filter options should show total counts
+- No options should be disabled
+
+**Test Case 2: Select Parent Filter**
+- Child filter should update to show only values in parent's filtered data
+- Values with 0 count should be disabled
+- Counts should reflect parent filter selection
+
+**Test Case 3: Change Parent Filter**
+- Child filter should reset to "All"
+- Child counts should update to new parent's values
+- Previously disabled options should become available if they exist in new parent
+
+**Test Case 4: Performance**
+- Changing filters should be instant (< 100ms)
+- No console errors
+- useMemo should prevent unnecessary recalculations
+
+**Example Test:**
+```javascript
+// Select Chapter 9
+fireEvent.change(chapterFilter, { target: { value: '9' } })
+
+// Verify Type filter shows only Chapter 9 types
+const typeOptions = screen.getAllByRole('option')
+expect(typeOptions.find(o => o.value === 'MUST')).toHaveTextContent('MUST (18)')
+expect(typeOptions.find(o => o.value === 'PROTECTED')).toBeDisabled()
+
+// Change to Chapter 19
+fireEvent.change(chapterFilter, { target: { value: '19' } })
+
+// Verify Type filter reset
+expect(typeFilter.value).toBe('')
+```
+
+### Description
+Cascading filters create a hierarchical filtering experience where selecting a value in one filter (e.g., Chapter) automatically updates the available options in dependent filters (e.g., Type), showing only values that exist in the filtered dataset with dynamic counts.
+
+---
+
 
 # Chapter 19: UI/UX Standards & Patterns
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter 19               │
 │ 📕 LEXICON (BUGS):    Chapter 19               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Code examples, implementation patterns, and step-by-step guides
+**Last Updated:** 2025-11-17
+
+---
+
+## §18.1: Dynamic Table Creation Pattern
+
+✨ Feature | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.1
+
+### Code Example
+```jsx
+# app/models/table.rb
+before_validation :set_database_table_name, on: :create
+
+def set_database_table_name
+  return if database_table_name.present?
+
+  safe_name = name.parameterize.underscore
+  unique_suffix = SecureRandom.hex(3)
+  self.database_table_name = "user_#{safe_name}_#{unique_suffix}"
+end
+
+# ---
+
+# app/models/table.rb
+def dynamic_model
+  return @dynamic_model if @dynamic_model
+
+  class_name = name.gsub(/[^a-zA-Z0-9_]/, '').classify
+
+  @dynamic_model = Object.const_set(class_name, Class.new(ApplicationRecord) do
+    self.table_name = database_table_name
+  end)
+
+  # Auto-inject lookup associations
+  columns.where(column_type: 'lookup').each do |column|
+    inject_lookup_association(column)
+  end
+
+  @dynamic_model
+end
+```
+
+---
+
+## §18.2: Column Type System
+
+✨ Feature | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.2
+
+### Code Example
+```jsx
+# Column Types → Database Types
+COLUMN_TYPE_MAPPINGS = {
+  'single_line_text' => :string,        # VARCHAR(255)
+  'multiple_lines_text' => :text,       # TEXT
+  'email' => :string,                   # VARCHAR with email validation
+  'phone' => :string,                   # VARCHAR with phone format
+  'url' => :string,                     # VARCHAR with URL validation
+  'number' => :decimal,                 # DECIMAL(15,2)
+  'whole_number' => :integer,           # INTEGER
+  'currency' => :decimal,               # DECIMAL(15,2)
+  'percentage' => :decimal,             # DECIMAL(15,2)
+  'date' => :date,                      # DATE
+  'date_and_time' => :datetime,         # TIMESTAMP
+  'boolean' => :boolean,                # BOOLEAN
+  'choice' => :string,                  # VARCHAR (single select)
+  'lookup' => :integer,                 # INTEGER (foreign key)
+  'multiple_lookups' => :text,          # TEXT (JSON array)
+  'user' => :integer,                   # INTEGER (FK to users)
+  'computed' => :string                 # VARCHAR (formula result)
+}
+
+# ---
+
+# app/services/table_builder.rb
+def add_column(column)
+  db_type = COLUMN_TYPE_MAPPINGS[column.column_type]
+
+  ActiveRecord::Migration.suppress_messages do
+    ActiveRecord::Migration.add_column(
+      table.database_table_name,
+      column.column_name,
+      db_type,
+      **column_options(column)
+    )
+  end
+
+  # Add indexes for lookups
+  add_lookup_index(column) if column.column_type.in?(['lookup', 'user'])
+
+  # Add foreign key constraints
+  add_foreign_key(column) if column.column_type == 'lookup'
+end
+
+def column_options(column)
+  opts = {}
+  opts[:limit] = column.max_length if column.column_type.ends_with?('text')
+  opts[:precision] = 15 if column.column_type.in?(['number', 'currency', 'percentage'])
+  opts[:scale] = 2 if column.column_type.in?(['number', 'currency', 'percentage'])
+  opts[:null] = !column.required
+  opts[:default] = column.default_value if column.default_value.present?
+  opts
+end
+```
+
+---
+
+## §18.3: Formula Evaluation System
+
+⚡ Optimization | 🟢 Beginner
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.3
+
+### Code Example
+```jsx
+# Valid formula examples:
+"{quantity} * {unit_price}"                    # Simple calculation
+"({cost} + {tax}) * {quantity}"                # Grouping
+"{amount} / {units}"                           # Division with decimal result
+"{supplier.tax_rate} * {amount}"               # Cross-table lookup
+"IF({quantity} > 100, {bulk_price}, {unit_price})" # Conditional (Dentaku function)
+
+# ---
+
+# app/services/formula_evaluator.rb
+def evaluate(formula_expression, record_data, record_instance = nil)
+  # Step 1: Replace {field_name} with variable placeholders
+  variables = {}
+  processed_formula = formula_expression.gsub(/\{([^}]+)\}/) do |match|
+    field_ref = $1
+
+    if field_ref.include?('.')
+      # Cross-table reference: {lookup_column.target_field}
+      value = resolve_cross_table_reference(field_ref, record_instance)
+    else
+      # Direct field reference
+      value = record_data[field_ref] || 0
+    end
+
+    var_name = field_ref.gsub('.', '_')
+    variables[var_name] = value.to_f
+    var_name
+  end
+
+  # Step 2: Evaluate with Dentaku
+  calculator = Dentaku::Calculator.new
+  result = calculator.evaluate(processed_formula, variables)
+
+  # Step 3: Round floats to 2 decimals
+  result.is_a?(Float) ? result.round(2) : result
+rescue => e
+  "ERROR: #{e.message}"
+end
+
+def resolve_cross_table_reference(field_ref, record_instance)
+  lookup_column_name, target_field = field_ref.split('.')
+
+  # Get related record via association
+  related_record = record_instance.send(lookup_column_name.to_sym)
+  return 0 unless related_record
+
+  related_record.send(target_field.to_sym) || 0
+end
+
+# ---
+
+# app/models/column.rb
+before_save :detect_cross_table_references, if: -> { column_type == 'computed' }
+
+def detect_cross_table_references
+  formula = settings&.dig('formula') || ''
+  self.has_cross_table_refs = FormulaEvaluator.uses_cross_table_references?(formula)
+end
+
+# app/services/formula_evaluator.rb
+def self.uses_cross_table_references?(formula_expression)
+  formula_expression.match?(/\{[^}]+\.[^}]+\}/)
+end
+```
+
+---
+
+## §18.4: Lookup Column Pattern
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.4
+
+### Code Example
+```jsx
+# app/models/table.rb
+def inject_lookup_association(column)
+  return unless column.lookup_table_id.present?
+
+  target_table = Table.find(column.lookup_table_id)
+  target_class = target_table.name.classify
+
+  @dynamic_model.belongs_to column.column_name.to_sym,
+    class_name: target_class,
+    foreign_key: "#{column.column_name}_id",
+    optional: !column.required
+end
+
+# ---
+
+# app/controllers/api/v1/records_controller.rb
+def build_lookup_cache(records, table)
+  cache = {}
+
+  table.columns.where(column_type: 'lookup').each do |column|
+    next unless column.lookup_table_id.present?
+
+    target_table = Table.find(column.lookup_table_id)
+    foreign_key = "#{column.column_name}_id"
+
+    # Collect all foreign key IDs
+    ids = records.map { |r| r.send(foreign_key) }.compact.uniq
+    next if ids.empty?
+
+    # Batch load related records
+    related_records = target_table.dynamic_model.where(id: ids).index_by(&:id)
+
+    cache[column.id] = {
+      records: related_records,
+      display_column: column.lookup_display_column || target_table.title_column
+    }
+  end
+
+  cache
+end
+
+# ---
+
+{
+  "supplier": {
+    "id": 5,
+    "display": "ABC Building Supplies"
+  }
+}
+```
+
+---
+
+## §18.5: Record CRUD with Formula Calculation
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.5
+
+### Code Example
+```jsx
+# app/controllers/api/v1/records_controller.rb
+def create
+  record = @table.dynamic_model.new(record_params)
+
+  if record.save
+    # Calculate computed columns AFTER save (so ID exists for lookups)
+    update_computed_columns(record)
+
+    render json: record_to_json(record), status: :created
+  else
+    render json: { errors: record.errors.full_messages }, status: :unprocessable_entity
+  end
+end
+
+def update_computed_columns(record)
+  computed_columns = @table.columns.where(column_type: 'computed')
+
+  computed_columns.each do |column|
+    formula = column.settings&.dig('formula')
+    next unless formula.present?
+
+    # Get current record data
+    record_data = record.attributes
+
+    # Evaluate formula
+    result = FormulaEvaluator.new.evaluate(
+      formula,
+      record_data,
+      column.has_cross_table_refs? ? record : nil
+    )
+
+    # Update computed field
+    record.update_column(column.column_name, result.to_s)
+  end
+end
+
+# ---
+
+# app/controllers/api/v1/records_controller.rb
+def record_to_json(record)
+  json = record.attributes
+
+  @table.columns.each do |column|
+    case column.column_type
+    when 'computed'
+      # Parse string back to number
+      value = json[column.column_name]
+      json[column.column_name] = value.present? ? value.to_f : 0
+
+    when 'lookup'
+      # Replace FK with {id, display}
+      if lookup_cache[column.id]
+        id = json["#{column.column_name}_id"]
+        related = lookup_cache[column.id][:records][id]
+        display_col = lookup_cache[column.id][:display_column]
+
+        json[column.column_name] = {
+          id: id,
+          display: related&.send(display_col) || 'Unknown'
+        }
+      end
+    end
+  end
+
+  json
+end
+```
+
+---
+
+## §18.6: Table Deletion Safety
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.6
+
+### Code Example
+```jsx
+# app/controllers/api/v1/tables_controller.rb
+def destroy
+  # Check 1: Is table marked as live?
+  if @table.is_live?
+    return render json: {
+      error: 'Cannot delete live table. Set is_live to false first.'
+    }, status: :unprocessable_entity
+  end
+
+  # Check 2: Does table have records?
+  record_count = @table.dynamic_model.count
+  if record_count > 0
+    return render json: {
+      error: "Cannot delete table with #{record_count} records. Delete records first."
+    }, status: :unprocessable_entity
+  end
+
+  # Check 3: Do other tables reference this table?
+  referencing_columns = Column.where(lookup_table_id: @table.id)
+  if referencing_columns.any?
+    table_names = referencing_columns.map { |c| c.table.name }.uniq.join(', ')
+    return render json: {
+      error: "Cannot delete. Referenced by lookup columns in: #{table_names}"
+    }, status: :unprocessable_entity
+  end
+
+  # Safe to delete
+  TableBuilder.new(@table).drop_database_table
+  @table.destroy
+
+  head :no_content
+end
+
+# ---
+
+# app/services/table_builder.rb
+def drop_database_table
+  ActiveRecord::Migration.suppress_messages do
+    ActiveRecord::Migration.drop_table(table.database_table_name, if_exists: true)
+  end
+
+  # Remove dynamic model from memory
+  class_name = table.name.classify
+  Object.send(:remove_const, class_name) if Object.const_defined?(class_name)
+end
+```
+
+---
+
+## §18.7: Column Validation Rules
+
+🔧 Util | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.7
+
+### Code Example
+```jsx
+# app/models/column.rb
+validates :name, presence: true
+validates :column_name, presence: true, uniqueness: { scope: :table_id }
+validates :column_type, inclusion: { in: COLUMN_TYPES }
+
+# Type-specific validations
+validate :validate_max_length_for_text_columns
+validate :validate_min_max_for_numeric_columns
+validate :validate_lookup_table_exists
+
+def validate_max_length_for_text_columns
+  return unless column_type.ends_with?('text')
+
+  if max_length.present? && max_length > 65535
+    errors.add(:max_length, 'cannot exceed 65,535 for text columns')
+  end
+end
+
+def validate_min_max_for_numeric_columns
+  return unless column_type.in?(%w[number whole_number currency percentage])
+
+  if min_value.present? && max_value.present? && min_value > max_value
+    errors.add(:min_value, 'cannot be greater than max_value')
+  end
+end
+
+def validate_lookup_table_exists
+  return unless column_type.in?(%w[lookup multiple_lookups])
+
+  if lookup_table_id.blank?
+    errors.add(:lookup_table_id, 'is required for lookup columns')
+  elsif !Table.exists?(lookup_table_id)
+    errors.add(:lookup_table_id, 'references non-existent table')
+  end
+end
+
+# ---
+
+# app/controllers/api/v1/records_controller.rb
+def validate_record_data(record, params)
+  @table.columns.each do |column|
+    value = params[column.column_name]
+
+    # Required check
+    if column.required && value.blank?
+      record.errors.add(column.column_name, column.validation_message || 'is required')
+    end
+
+    # Type-specific validation
+    case column.column_type
+    when 'email'
+      unless value =~ URI::MailTo::EMAIL_REGEXP
+        record.errors.add(column.column_name, 'is not a valid email')
+      end
+    when 'url'
+      unless value =~ URI::DEFAULT_PARSER.make_regexp
+        record.errors.add(column.column_name, 'is not a valid URL')
+      end
+    when 'number', 'currency', 'percentage'
+      if column.min_value && value.to_f < column.min_value
+        record.errors.add(column.column_name, "must be at least #{column.min_value}")
+      end
+      if column.max_value && value.to_f > column.max_value
+        record.errors.add(column.column_name, "cannot exceed #{column.max_value}")
+      end
+    end
+  end
+end
+```
+
+---
+
+## §18.8: Foreign Key Constraints
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #18.8
+
+### Code Example
+```jsx
+# app/services/table_builder.rb
+def add_foreign_key(column)
+  return unless column.column_type == 'lookup'
+  return unless column.lookup_table_id.present?
+
+  target_table = Table.find(column.lookup_table_id)
+
+  ActiveRecord::Migration.suppress_messages do
+    ActiveRecord::Migration.add_foreign_key(
+      table.database_table_name,
+      target_table.database_table_name,
+      column: "#{column.column_name}_id",
+      on_delete: :nullify  # Don't cascade delete
+    )
+  end
+end
+```
+
+---
+
+## §19.20: Standard Table UI Pattern - Column Management
+
+🧩 Component | 🟡 Intermediate
+
+### Quick Summary
+Complete pattern for table components with column drag/drop, sorting, filtering, resize, and bulk actions
+
+### Step-by-Step Guide
+# Unified Table Pattern - Trapid Application
+
+This document defines the standard pattern for all table components in the Trapid application.
+
+## Overview
+
+All tables (ContactsPage, PriceBooksPage, POTable, etc.) should follow this unified pattern for consistency, maintainability, and better UX.
+
+## Column Configuration Structure
+
+```javascript
+const defaultColumnConfig = {
+  columnKey: {
+    key: 'columnKey',           // Unique identifier (matches object key)
+    label: 'Column Name',        // Display name in header
+    visible: true,               // Show/hide column
+    minWidth: '150px',           // Minimum column width
+    order: 0,                    // Display order (0, 1, 2, ...)
+    sortable: true,              // Enable sorting via ColumnHeaderMenu
+    searchable: true,            // Enable filtering via ColumnHeaderMenu
+    filterType: 'search'         // 'search' | 'select' | 'price-range' | 'boolean'
+  }
+}
+```
+
+## State Management
+
+### 1. Column Order with localStorage Persistence
+
+```javascript
+const [columnOrder, setColumnOrder] = useState(() => {
+  const saved = localStorage.getItem('tableName_columnOrder')
+  return saved ? JSON.parse(saved) : ['column1', 'column2', 'column3', 'actions']
+})
+
+// Auto-save to localStorage whenever order changes
+useEffect(() => {
+  localStorage.setItem('tableName_columnOrder', JSON.stringify(columnOrder))
+}, [columnOrder])
+```
+
+### 2. Column Widths with localStorage Persistence
+
+```javascript
+const [columnWidths, setColumnWidths] = useState(() => {
+  const saved = localStorage.getItem('tableName_columnWidths')
+  return saved ? JSON.parse(saved) : {
+    column1: 200,
+    column2: 150,
+    column3: 250,
+    actions: 100
+  }
+})
+
+// Auto-save to localStorage whenever widths change
+useEffect(() => {
+  localStorage.setItem('tableName_columnWidths', JSON.stringify(columnWidths))
+}, [columnWidths])
+```
+
+### 3. Other State Variables
+
+```javascript
+const [draggedColumn, setDraggedColumn] = useState(null)
+const [sortBy, setSortBy] = useState('default_column')
+const [sortDirection, setSortDirection] = useState('asc')
+const [secondarySortBy, setSecondarySortBy] = useState('secondary_column')
+const [secondarySortDirection, setSecondarySortDirection] = useState('asc')
+const [columnFilters, setColumnFilters] = useState({})
+const [showColumnSettings, setShowColumnSettings] = useState(false)
+const [selectedItems, setSelectedItems] = useState(new Set())
+
+// Column resize state
+const [resizingColumn, setResizingColumn] = useState(null)
+const [resizeStartX, setResizeStartX] = useState(0)
+const [resizeStartWidth, setResizeStartWidth] = useState(0)
+```
+
+## Helper Functions
+
+### Get Sorted Columns
+
+```javascript
+const getSortedColumns = () => {
+  return Object.entries(columnConfig)
+    .sort(([, a], [, b]) => a.order - b.order)
+    .filter(([, config]) => config.visible)
+}
+```
+
+### Column Visibility Toggle
+
+```javascript
+const toggleColumnVisibility = (columnKey) => {
+  setColumnConfig(prev => ({
+    ...prev,
+    [columnKey]: {
+      ...prev[columnKey],
+      visible: !prev[columnKey].visible
+    }
+  }))
+}
+```
+
+### Drag and Drop Handlers
+
+```javascript
+const handleDragStart = (e, columnKey) => {
+  setDraggedColumn(columnKey)
+  e.dataTransfer.effectAllowed = 'move'
+}
+
+const handleDragOver = (e) => {
+  e.preventDefault()
+  e.dataTransfer.dropEffect = 'move'
+}
+
+const handleDrop = (e, targetColumnKey) => {
+  e.preventDefault()
+
+  if (!draggedColumn || draggedColumn === targetColumnKey) {
+    setDraggedColumn(null)
+    return
+  }
+
+  const draggedOrder = columnConfig[draggedColumn].order
+  const targetOrder = columnConfig[targetColumnKey].order
+
+  const newConfig = { ...columnConfig }
+
+  // Swap orders
+  Object.keys(newConfig).forEach(key => {
+    if (key === draggedColumn) {
+      newConfig[key] = { ...newConfig[key], order: targetOrder }
+    } else if (key === targetColumnKey) {
+      newConfig[key] = { ...newConfig[key], order: draggedOrder }
+    }
+  })
+
+  setColumnConfig(newConfig)
+  setDraggedColumn(null)
+}
+```
+
+### Sort Handler
+
+```javascript
+const handleSort = (column) => {
+  if (sortBy === column) {
+    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+  } else {
+    setSortBy(column)
+    setSortDirection('asc')
+  }
+}
+```
+
+### Column Resize Handlers
+
+```javascript
+const handleResizeStart = (e, columnKey) => {
+  e.preventDefault()
+  e.stopPropagation()
+  setResizingColumn(columnKey)
+  setResizeStartX(e.clientX)
+  setResizeStartWidth(columnWidths[columnKey])
+}
+
+const handleResizeMove = (e) => {
+  if (!resizingColumn) return
+  const diff = e.clientX - resizeStartX
+  const newWidth = Math.max(100, resizeStartWidth + diff)
+  setColumnWidths(prev => ({
+    ...prev,
+    [resizingColumn]: newWidth
+  }))
+}
+
+const handleResizeEnd = () => {
+  setResizingColumn(null)
+}
+
+// Add mouse move and mouse up listeners for column resizing
+useEffect(() => {
+  if (resizingColumn) {
+    window.addEventListener('mousemove', handleResizeMove)
+    window.addEventListener('mouseup', handleResizeEnd)
+    return () => {
+      window.removeEventListener('mousemove', handleResizeMove)
+      window.removeEventListener('mouseup', handleResizeEnd)
+    }
+  }
+}, [resizingColumn, resizeStartX, resizeStartWidth])
+```
+
+### Filter Handler
+
+```javascript
+const handleColumnFilter = (column, value) => {
+  setColumnFilters(prev => ({
+    ...prev,
+    [column]: value
+  }))
+}
+```
+
+### Reset to Defaults
+
+```javascript
+const resetColumnSettings = () => {
+  setColumnConfig(defaultColumnConfig)
+  localStorage.removeItem('tableName_columnConfig')
+}
+```
+
+## Table Header Structure
+
+```jsx
+<thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+  <tr>
+    {/* Checkbox column (if bulk actions enabled) */}
+    <th style={{ minWidth: '50px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left">
+      <input
+        type="checkbox"
+        checked={selectedItems.size === items.length && items.length > 0}
+        onChange={(e) => handleSelectAll(e.target.checked)}
+        className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
+      />
+    </th>
+
+    {/* Dynamic columns */}
+    {columns.map((column) => {
+      if (!visibleColumns[column.key]) return null
+      const width = columnWidths[column.key]
+      const isSortable = column.key !== 'actions'
+      const isSorted = sortBy === column.key
+
+      return (
+        <th
+          key={column.key}
+          style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+          className={`px-6 py-2 border-r border-gray-200 dark:border-gray-700 ${
+            column.key === 'actions' ? 'text-right' : 'text-left'
+          } ${draggedColumn === column.key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+          draggable
+          onDragStart={(e) => handleDragStart(e, column.key)}
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, column.key)}
+        >
+          <div
+            className={`flex items-center gap-2 ${isSortable ? 'cursor-pointer' : 'cursor-move'}`}
+            onClick={() => isSortable && handleSort(column.key)}
+          >
+            {/* Drag handle */}
+            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+
+            {/* Column label */}
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {column.label}
+            </span>
+
+            {/* Sort indicators */}
+            {isSortable && isSorted && (
+              sortDirection === 'asc' ?
+                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            )}
+          </div>
+
+          {/* Inline filter (search input or dropdown) */}
+          {column.searchable && (
+            column.filterType === 'dropdown' ? (
+              <select
+                value={columnFilters[column.key] || ''}
+                onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              >
+                {/* Dropdown options specific to column */}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="Search..."
+                value={columnFilters[column.key] || ''}
+                onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            )
+          )}
+
+          {/* Resize handle */}
+          <div
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+            onMouseDown={(e) => handleResizeStart(e, column.key)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </th>
+      )
+    })}
+  </tr>
+</thead>
+```
+
+## Column Settings Button (Toolbar)
+
+```jsx
+<button
+  onClick={() => setShowColumnSettings(true)}
+  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+>
+  <AdjustmentsHorizontalIcon className="h-5 w-5" />
+  Columns
+</button>
+```
+
+## Column Settings Modal
+
+```jsx
+{showColumnSettings && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center">
+    {/* Backdrop */}
+    <div
+      className="fixed inset-0 bg-black/30"
+      onClick={() => setShowColumnSettings(false)}
+    />
+
+    {/* Modal */}
+    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6 m-4">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+        Column Settings
+      </h2>
+
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        Toggle column visibility and drag to reorder
+      </p>
+
+      {/* Column list */}
+      <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
+        {getSortedColumns(true).map(([key, config]) => (
+          <label
+            key={key}
+            className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors"
+          >
+            <input
+              type="checkbox"
+              checked={config.visible}
+              onChange={() => toggleColumnVisibility(key)}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <Bars3Icon className="h-4 w-4 text-gray-400" />
+            <span className="text-sm text-gray-900 dark:text-white flex-1">
+              {config.label}
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={resetColumnSettings}
+          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+        >
+          Reset to defaults
+        </button>
+        <button
+          onClick={() => setShowColumnSettings(false)}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+```
+
+## Bulk Actions Toolbar Pattern
+
+```jsx
+{selectedItems.size > 0 && (
+  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
+    <div className="flex items-center gap-4 flex-1">
+      <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+        {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+      </span>
+
+      {/* Bulk action controls (dropdowns, inputs, etc.) */}
+    </div>
+
+    <div className="flex items-center gap-2">
+      {/* Destructive actions first (red) */}
+      <button
+        onClick={handleBulkDelete}
+        disabled={updating}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+      >
+        <TrashIcon className="h-5 w-5" />
+        Delete
+      </button>
+
+      {/* Other actions (orange, indigo, etc.) */}
+      <button
+        onClick={handleBulkAction}
+        disabled={updating}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+      >
+        {updating ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            Processing...
+          </>
+        ) : (
+          <>
+            <CheckCircleIcon className="h-5 w-5" />
+            Apply
+          </>
+        )}
+      </button>
+
+      {/* Cancel always last */}
+      <button
+        onClick={() => setSelectedItems(new Set())}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
+```
+
+## ColumnHeaderMenu Component
+
+The `ColumnHeaderMenu` component provides integrated sort and filter functionality. It's already implemented in the codebase at:
+
+`/Users/rob/Projects/trapid/frontend/src/components/pricebook/ColumnHeaderMenu.jsx`
+
+**Props:**
+- `label` - Column display name
+- `column` - Column key for API/sort
+- `sortBy` - Current sort column
+- `sortDirection` - 'asc' or 'desc'
+- `onSort` - Sort handler function (null if not sortable)
+- `onFilter` - Filter handler function (null if not searchable)
+- `filterValue` - Current filter value
+- `filterType` - 'search' | 'select' | 'price-range' | 'boolean'
+- `filterOptions` - Array of options for 'select' type: `[{ label, value, count }]`
+
+## Table Wrapper Structure
+
+```jsx
+<div className="flex-1 overflow-auto bg-white dark:bg-gray-900" style={{
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#9CA3AF #E5E7EB'
+}}>
+  <div className="w-full h-full">
+    <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+      <thead>...</thead>
+      <tbody>...</tbody>
+    </table>
+  </div>
+</div>
+```
+
+## Benefits of This Pattern
+
+1. **Consistent UX** - Same experience across all tables
+2. **Feature-Rich** - Sort, filter, reorder, visibility controls
+3. **Persistent** - User preferences saved to localStorage
+4. **Discoverable** - Clear settings button, not hidden features
+5. **Maintainable** - Single source of truth for column config
+6. **Extensible** - Easy to add new columns or features
+7. **Mobile-Friendly** - Modal-based settings work better on small screens
+8. **Clean Headers** - No cluttered inline inputs
+9. **Drag-and-Drop** - Visual feedback during column reordering
+10. **Accessible** - Proper keyboard navigation and screen reader support
+
+## Migration Checklist
+
+When migrating an existing table to this pattern:
+
+- [ ] Define `defaultColumnConfig` with all columns
+- [ ] Add localStorage state management with persistence
+- [ ] Implement `getSortedColumns()` helper
+- [ ] Add drag-and-drop handlers
+- [ ] Replace table headers with new pattern
+- [ ] Add ColumnHeaderMenu for sortable/searchable columns
+- [ ] Add "Columns" button to toolbar
+- [ ] Implement column settings modal
+- [ ] Add bulk actions toolbar (if needed)
+- [ ] Update cell rendering to respect column order
+- [ ] Test drag-and-drop reordering
+- [ ] Test column visibility toggles
+- [ ] Test sort and filter functionality
+- [ ] Test localStorage persistence
+- [ ] Verify reset to defaults works
+
+## Example Implementation
+
+See `ContactsPage.jsx` and `PriceBooksPage.jsx` for reference implementations.
+
+
+### Code Example
+```jsx
+```javascript
+const defaultColumnConfig = {
+  columnKey: {
+    key: 'columnKey',           // Unique identifier (matches object key)
+    label: 'Column Name',        // Display name in header
+    visible: true,               // Show/hide column
+    minWidth: '150px',           // Minimum column width
+    order: 0,                    // Display order (0, 1, 2, ...)
+    sortable: true,              // Enable sorting via ColumnHeaderMenu
+    searchable: true,            // Enable filtering via ColumnHeaderMenu
+    filterType: 'search'         // 'search' | 'select' | 'price-range' | 'boolean'
+  }
+}
+```
+
+```javascript
+const [columnOrder, setColumnOrder] = useState(() => {
+  const saved = localStorage.getItem('tableName_columnOrder')
+  return saved ? JSON.parse(saved) : ['column1', 'column2', 'column3', 'actions']
+})
+
+// Auto-save to localStorage whenever order changes
+useEffect(() => {
+  localStorage.setItem('tableName_columnOrder', JSON.stringify(columnOrder))
+}, [columnOrder])
+```
+
+```javascript
+const [columnWidths, setColumnWidths] = useState(() => {
+  const saved = localStorage.getItem('tableName_columnWidths')
+  return saved ? JSON.parse(saved) : {
+    column1: 200,
+    column2: 150,
+    column3: 250,
+    actions: 100
+  }
+})
+
+// Auto-save to localStorage whenever widths change
+useEffect(() => {
+  localStorage.setItem('tableName_columnWidths', JSON.stringify(columnWidths))
+}, [columnWidths])
+```
+
+```javascript
+const [draggedColumn, setDraggedColumn] = useState(null)
+const [sortBy, setSortBy] = useState('default_column')
+const [sortDirection, setSortDirection] = useState('asc')
+const [secondarySortBy, setSecondarySortBy] = useState('secondary_column')
+const [secondarySortDirection, setSecondarySortDirection] = useState('asc')
+const [columnFilters, setColumnFilters] = useState({})
+const [showColumnSettings, setShowColumnSettings] = useState(false)
+const [selectedItems, setSelectedItems] = useState(new Set())
+
+// Column resize state
+const [resizingColumn, setResizingColumn] = useState(null)
+const [resizeStartX, setResizeStartX] = useState(0)
+const [resizeStartWidth, setResizeStartWidth] = useState(0)
+```
+
+```javascript
+const getSortedColumns = () => {
+  return Object.entries(columnConfig)
+    .sort(([, a], [, b]) => a.order - b.order)
+    .filter(([, config]) => config.visible)
+}
+```
+
+```javascript
+const toggleColumnVisibility = (columnKey) => {
+  setColumnConfig(prev => ({
+    ...prev,
+    [columnKey]: {
+      ...prev[columnKey],
+      visible: !prev[columnKey].visible
+    }
+  }))
+}
+```
+
+```javascript
+const handleDragStart = (e, columnKey) => {
+  setDraggedColumn(columnKey)
+  e.dataTransfer.effectAllowed = 'move'
+}
+
+const handleDragOver = (e) => {
+  e.preventDefault()
+  e.dataTransfer.dropEffect = 'move'
+}
+
+const handleDrop = (e, targetColumnKey) => {
+  e.preventDefault()
+
+  if (!draggedColumn || draggedColumn === targetColumnKey) {
+    setDraggedColumn(null)
+    return
+  }
+
+  const draggedOrder = columnConfig[draggedColumn].order
+  const targetOrder = columnConfig[targetColumnKey].order
+
+  const newConfig = { ...columnConfig }
+
+  // Swap orders
+  Object.keys(newConfig).forEach(key => {
+    if (key === draggedColumn) {
+      newConfig[key] = { ...newConfig[key], order: targetOrder }
+    } else if (key === targetColumnKey) {
+      newConfig[key] = { ...newConfig[key], order: draggedOrder }
+    }
+  })
+
+  setColumnConfig(newConfig)
+  setDraggedColumn(null)
+}
+```
+
+```javascript
+const handleSort = (column) => {
+  if (sortBy === column) {
+    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+  } else {
+    setSortBy(column)
+    setSortDirection('asc')
+  }
+}
+```
+
+```javascript
+const handleResizeStart = (e, columnKey) => {
+  e.preventDefault()
+  e.stopPropagation()
+  setResizingColumn(columnKey)
+  setResizeStartX(e.clientX)
+  setResizeStartWidth(columnWidths[columnKey])
+}
+
+const handleResizeMove = (e) => {
+  if (!resizingColumn) return
+  const diff = e.clientX - resizeStartX
+  const newWidth = Math.max(100, resizeStartWidth + diff)
+  setColumnWidths(prev => ({
+    ...prev,
+    [resizingColumn]: newWidth
+  }))
+}
+
+const handleResizeEnd = () => {
+  setResizingColumn(null)
+}
+
+// Add mouse move and mouse up listeners for column resizing
+useEffect(() => {
+  if (resizingColumn) {
+    window.addEventListener('mousemove', handleResizeMove)
+    window.addEventListener('mouseup', handleResizeEnd)
+    return () => {
+      window.removeEventListener('mousemove', handleResizeMove)
+      window.removeEventListener('mouseup', handleResizeEnd)
+    }
+  }
+}, [resizingColumn, resizeStartX, resizeStartWidth])
+```
+
+```javascript
+const handleColumnFilter = (column, value) => {
+  setColumnFilters(prev => ({
+    ...prev,
+    [column]: value
+  }))
+}
+```
+
+```javascript
+const resetColumnSettings = () => {
+  setColumnConfig(defaultColumnConfig)
+  localStorage.removeItem('tableName_columnConfig')
+}
+```
+
+```jsx
+<thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+  <tr>
+    {/* Checkbox column (if bulk actions enabled) */}
+    <th style={{ minWidth: '50px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left">
+      <input
+        type="checkbox"
+        checked={selectedItems.size === items.length && items.length > 0}
+        onChange={(e) => handleSelectAll(e.target.checked)}
+        className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
+      />
+    </th>
+
+    {/* Dynamic columns */}
+    {columns.map((column) => {
+      if (!visibleColumns[column.key]) return null
+      const width = columnWidths[column.key]
+      const isSortable = column.key !== 'actions'
+      const isSorted = sortBy === column.key
+
+      return (
+        <th
+          key={column.key}
+          style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+          className={`px-6 py-2 border-r border-gray-200 dark:border-gray-700 ${
+            column.key === 'actions' ? 'text-right' : 'text-left'
+          } ${draggedColumn === column.key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+          draggable
+          onDragStart={(e) => handleDragStart(e, column.key)}
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, column.key)}
+        >
+          <div
+            className={`flex items-center gap-2 ${isSortable ? 'cursor-pointer' : 'cursor-move'}`}
+            onClick={() => isSortable && handleSort(column.key)}
+          >
+            {/* Drag handle */}
+            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+
+            {/* Column label */}
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {column.label}
+            </span>
+
+            {/* Sort indicators */}
+            {isSortable && isSorted && (
+              sortDirection === 'asc' ?
+                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            )}
+          </div>
+
+          {/* Inline filter (search input or dropdown) */}
+          {column.searchable && (
+            column.filterType === 'dropdown' ? (
+              <select
+                value={columnFilters[column.key] || ''}
+                onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              >
+                {/* Dropdown options specific to column */}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="Search..."
+                value={columnFilters[column.key] || ''}
+                onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            )
+          )}
+
+          {/* Resize handle */}
+          <div
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+            onMouseDown={(e) => handleResizeStart(e, column.key)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </th>
+      )
+    })}
+  </tr>
+</thead>
+```
+
+```jsx
+<button
+  onClick={() => setShowColumnSettings(true)}
+  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+>
+  <AdjustmentsHorizontalIcon className="h-5 w-5" />
+  Columns
+</button>
+```
+
+```jsx
+{showColumnSettings && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center">
+    {/* Backdrop */}
+    <div
+      className="fixed inset-0 bg-black/30"
+      onClick={() => setShowColumnSettings(false)}
+    />
+
+    {/* Modal */}
+    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6 m-4">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+        Column Settings
+      </h2>
+
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        Toggle column visibility and drag to reorder
+      </p>
+
+      {/* Column list */}
+      <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
+        {getSortedColumns(true).map(([key, config]) => (
+          <label
+            key={key}
+            className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors"
+          >
+            <input
+              type="checkbox"
+              checked={config.visible}
+              onChange={() => toggleColumnVisibility(key)}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <Bars3Icon className="h-4 w-4 text-gray-400" />
+            <span className="text-sm text-gray-900 dark:text-white flex-1">
+              {config.label}
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={resetColumnSettings}
+          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+        >
+          Reset to defaults
+        </button>
+        <button
+          onClick={() => setShowColumnSettings(false)}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+```
+
+```jsx
+{selectedItems.size > 0 && (
+  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
+    <div className="flex items-center gap-4 flex-1">
+      <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+        {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+      </span>
+
+      {/* Bulk action controls (dropdowns, inputs, etc.) */}
+    </div>
+
+    <div className="flex items-center gap-2">
+      {/* Destructive actions first (red) */}
+      <button
+        onClick={handleBulkDelete}
+        disabled={updating}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+      >
+        <TrashIcon className="h-5 w-5" />
+        Delete
+      </button>
+
+      {/* Other actions (orange, indigo, etc.) */}
+      <button
+        onClick={handleBulkAction}
+        disabled={updating}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+      >
+        {updating ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            Processing...
+          </>
+        ) : (
+          <>
+            <CheckCircleIcon className="h-5 w-5" />
+            Apply
+          </>
+        )}
+      </button>
+
+      {/* Cancel always last */}
+      <button
+        onClick={() => setSelectedItems(new Set())}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
+```
+
+```jsx
+<div className="flex-1 overflow-auto bg-white dark:bg-gray-900" style={{
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#9CA3AF #E5E7EB'
+}}>
+  <div className="w-full h-full">
+    <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+      <thead>...</thead>
+      <tbody>...</tbody>
+    </table>
+  </div>
+</div>
+```
+```
+
+### Examples
+```javascript
+const defaultColumnConfig = {
+  columnKey: {
+    key: 'columnKey',           // Unique identifier (matches object key)
+    label: 'Column Name',        // Display name in header
+    visible: true,               // Show/hide column
+    minWidth: '150px',           // Minimum column width
+    order: 0,                    // Display order (0, 1, 2, ...)
+    sortable: true,              // Enable sorting via ColumnHeaderMenu
+    searchable: true,            // Enable filtering via ColumnHeaderMenu
+    filterType: 'search'         // 'search' | 'select' | 'price-range' | 'boolean'
+  }
+}
+```
+
+```javascript
+const [columnOrder, setColumnOrder] = useState(() => {
+  const saved = localStorage.getItem('tableName_columnOrder')
+  return saved ? JSON.parse(saved) : ['column1', 'column2', 'column3', 'actions']
+})
+
+// Auto-save to localStorage whenever order changes
+useEffect(() => {
+  localStorage.setItem('tableName_columnOrder', JSON.stringify(columnOrder))
+}, [columnOrder])
+```
+
+```javascript
+const [columnWidths, setColumnWidths] = useState(() => {
+  const saved = localStorage.getItem('tableName_columnWidths')
+  return saved ? JSON.parse(saved) : {
+    column1: 200,
+    column2: 150,
+    column3: 250,
+    actions: 100
+  }
+})
+
+// Auto-save to localStorage whenever widths change
+useEffect(() => {
+  localStorage.setItem('tableName_columnWidths', JSON.stringify(columnWidths))
+}, [columnWidths])
+```
+
+```javascript
+const [draggedColumn, setDraggedColumn] = useState(null)
+const [sortBy, setSortBy] = useState('default_column')
+const [sortDirection, setSortDirection] = useState('asc')
+const [secondarySortBy, setSecondarySortBy] = useState('secondary_column')
+const [secondarySortDirection, setSecondarySortDirection] = useState('asc')
+const [columnFilters, setColumnFilters] = useState({})
+const [showColumnSettings, setShowColumnSettings] = useState(false)
+const [selectedItems, setSelectedItems] = useState(new Set())
+
+// Column resize state
+const [resizingColumn, setResizingColumn] = useState(null)
+const [resizeStartX, setResizeStartX] = useState(0)
+const [resizeStartWidth, setResizeStartWidth] = useState(0)
+```
+
+```javascript
+const getSortedColumns = () => {
+  return Object.entries(columnConfig)
+    .sort(([, a], [, b]) => a.order - b.order)
+    .filter(([, config]) => config.visible)
+}
+```
+
+```javascript
+const toggleColumnVisibility = (columnKey) => {
+  setColumnConfig(prev => ({
+    ...prev,
+    [columnKey]: {
+      ...prev[columnKey],
+      visible: !prev[columnKey].visible
+    }
+  }))
+}
+```
+
+```javascript
+const handleDragStart = (e, columnKey) => {
+  setDraggedColumn(columnKey)
+  e.dataTransfer.effectAllowed = 'move'
+}
+
+const handleDragOver = (e) => {
+  e.preventDefault()
+  e.dataTransfer.dropEffect = 'move'
+}
+
+const handleDrop = (e, targetColumnKey) => {
+  e.preventDefault()
+
+  if (!draggedColumn || draggedColumn === targetColumnKey) {
+    setDraggedColumn(null)
+    return
+  }
+
+  const draggedOrder = columnConfig[draggedColumn].order
+  const targetOrder = columnConfig[targetColumnKey].order
+
+  const newConfig = { ...columnConfig }
+
+  // Swap orders
+  Object.keys(newConfig).forEach(key => {
+    if (key === draggedColumn) {
+      newConfig[key] = { ...newConfig[key], order: targetOrder }
+    } else if (key === targetColumnKey) {
+      newConfig[key] = { ...newConfig[key], order: draggedOrder }
+    }
+  })
+
+  setColumnConfig(newConfig)
+  setDraggedColumn(null)
+}
+```
+
+```javascript
+const handleSort = (column) => {
+  if (sortBy === column) {
+    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+  } else {
+    setSortBy(column)
+    setSortDirection('asc')
+  }
+}
+```
+
+```javascript
+const handleResizeStart = (e, columnKey) => {
+  e.preventDefault()
+  e.stopPropagation()
+  setResizingColumn(columnKey)
+  setResizeStartX(e.clientX)
+  setResizeStartWidth(columnWidths[columnKey])
+}
+
+const handleResizeMove = (e) => {
+  if (!resizingColumn) return
+  const diff = e.clientX - resizeStartX
+  const newWidth = Math.max(100, resizeStartWidth + diff)
+  setColumnWidths(prev => ({
+    ...prev,
+    [resizingColumn]: newWidth
+  }))
+}
+
+const handleResizeEnd = () => {
+  setResizingColumn(null)
+}
+
+// Add mouse move and mouse up listeners for column resizing
+useEffect(() => {
+  if (resizingColumn) {
+    window.addEventListener('mousemove', handleResizeMove)
+    window.addEventListener('mouseup', handleResizeEnd)
+    return () => {
+      window.removeEventListener('mousemove', handleResizeMove)
+      window.removeEventListener('mouseup', handleResizeEnd)
+    }
+  }
+}, [resizingColumn, resizeStartX, resizeStartWidth])
+```
+
+```javascript
+const handleColumnFilter = (column, value) => {
+  setColumnFilters(prev => ({
+    ...prev,
+    [column]: value
+  }))
+}
+```
+
+```javascript
+const resetColumnSettings = () => {
+  setColumnConfig(defaultColumnConfig)
+  localStorage.removeItem('tableName_columnConfig')
+}
+```
+
+```jsx
+<thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+  <tr>
+    {/* Checkbox column (if bulk actions enabled) */}
+    <th style={{ minWidth: '50px' }} className="px-6 py-3 border-r border-gray-200 dark:border-gray-700 text-left">
+      <input
+        type="checkbox"
+        checked={selectedItems.size === items.length && items.length > 0}
+        onChange={(e) => handleSelectAll(e.target.checked)}
+        className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-600 dark:bg-gray-700 cursor-pointer"
+      />
+    </th>
+
+    {/* Dynamic columns */}
+    {columns.map((column) => {
+      if (!visibleColumns[column.key]) return null
+      const width = columnWidths[column.key]
+      const isSortable = column.key !== 'actions'
+      const isSorted = sortBy === column.key
+
+      return (
+        <th
+          key={column.key}
+          style={{ width: `${width}px`, minWidth: `${width}px`, position: 'relative' }}
+          className={`px-6 py-2 border-r border-gray-200 dark:border-gray-700 ${
+            column.key === 'actions' ? 'text-right' : 'text-left'
+          } ${draggedColumn === column.key ? 'bg-indigo-100 dark:bg-indigo-900/20' : ''}`}
+          draggable
+          onDragStart={(e) => handleDragStart(e, column.key)}
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, column.key)}
+        >
+          <div
+            className={`flex items-center gap-2 ${isSortable ? 'cursor-pointer' : 'cursor-move'}`}
+            onClick={() => isSortable && handleSort(column.key)}
+          >
+            {/* Drag handle */}
+            <Bars3Icon className="h-4 w-4 text-gray-400 cursor-move" />
+
+            {/* Column label */}
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {column.label}
+            </span>
+
+            {/* Sort indicators */}
+            {isSortable && isSorted && (
+              sortDirection === 'asc' ?
+                <ChevronUpIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> :
+                <ChevronDownIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            )}
+          </div>
+
+          {/* Inline filter (search input or dropdown) */}
+          {column.searchable && (
+            column.filterType === 'dropdown' ? (
+              <select
+                value={columnFilters[column.key] || ''}
+                onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              >
+                {/* Dropdown options specific to column */}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="Search..."
+                value={columnFilters[column.key] || ''}
+                onChange={(e) => handleColumnFilter(column.key, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 w-full text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+              />
+            )
+          )}
+
+          {/* Resize handle */}
+          <div
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-400 dark:hover:bg-indigo-600 transition-colors z-20"
+            onMouseDown={(e) => handleResizeStart(e, column.key)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </th>
+      )
+    })}
+  </tr>
+</thead>
+```
+
+```jsx
+<button
+  onClick={() => setShowColumnSettings(true)}
+  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+>
+  <AdjustmentsHorizontalIcon className="h-5 w-5" />
+  Columns
+</button>
+```
+
+```jsx
+{showColumnSettings && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center">
+    {/* Backdrop */}
+    <div
+      className="fixed inset-0 bg-black/30"
+      onClick={() => setShowColumnSettings(false)}
+    />
+
+    {/* Modal */}
+    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6 m-4">
+      <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+        Column Settings
+      </h2>
+
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        Toggle column visibility and drag to reorder
+      </p>
+
+      {/* Column list */}
+      <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
+        {getSortedColumns(true).map(([key, config]) => (
+          <label
+            key={key}
+            className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors"
+          >
+            <input
+              type="checkbox"
+              checked={config.visible}
+              onChange={() => toggleColumnVisibility(key)}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <Bars3Icon className="h-4 w-4 text-gray-400" />
+            <span className="text-sm text-gray-900 dark:text-white flex-1">
+              {config.label}
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={resetColumnSettings}
+          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+        >
+          Reset to defaults
+        </button>
+        <button
+          onClick={() => setShowColumnSettings(false)}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+```
+
+```jsx
+{selectedItems.size > 0 && (
+  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
+    <div className="flex items-center gap-4 flex-1">
+      <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+        {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+      </span>
+
+      {/* Bulk action controls (dropdowns, inputs, etc.) */}
+    </div>
+
+    <div className="flex items-center gap-2">
+      {/* Destructive actions first (red) */}
+      <button
+        onClick={handleBulkDelete}
+        disabled={updating}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+      >
+        <TrashIcon className="h-5 w-5" />
+        Delete
+      </button>
+
+      {/* Other actions (orange, indigo, etc.) */}
+      <button
+        onClick={handleBulkAction}
+        disabled={updating}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
+      >
+        {updating ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            Processing...
+          </>
+        ) : (
+          <>
+            <CheckCircleIcon className="h-5 w-5" />
+            Apply
+          </>
+        )}
+      </button>
+
+      {/* Cancel always last */}
+      <button
+        onClick={() => setSelectedItems(new Set())}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
+```
+
+```jsx
+<div className="flex-1 overflow-auto bg-white dark:bg-gray-900" style={{
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#9CA3AF #E5E7EB'
+}}>
+  <div className="w-full h-full">
+    <table className="border-collapse" style={{ minWidth: '100%', width: 'max-content' }}>
+      <thead>...</thead>
+      <tbody>...</tbody>
+    </table>
+  </div>
+</div>
+```
+
+---
+
+## §19.21: Inline Editing Pattern - Click to Edit with Visual Indicators
+
+🧩 Component | 🟢 Beginner
+
+### Quick Summary
+Single-level editing pattern with click-to-edit fields and visual borders instead of pencil icons
+
+### Step-by-Step Guide
+# Updated Inline Editing Pattern
+
+## Remove Double-Layer Editing
+
+Instead of having an "Edit" button AND pencil icons on each field, we should:
+
+1. When page is **locked** (not in edit mode):
+   - Show all fields as read-only
+   - Show single "Edit" button at top
+   - NO pencil icons visible
+
+2. When page is **unlocked** (in edit mode):
+   - Add visible border to all editable fields
+   - Click directly on field to edit
+   - NO pencil icons needed
+   - Show "Save & Lock" and "Cancel" buttons at top
+
+## Updated Field Pattern
+
+### OLD Pattern (with pencil icons):
+```jsx
+{editingXeroFields['email'] ? (
+  // Edit mode with input
+) : (
+  <div className="flex items-center gap-2 group">
+    {contact.email}
+    {isPageEditMode && (
+      <button onClick={() => startEditingXeroField('email')}>
+        <PencilIcon className="h-4 w-4" />  ❌ REMOVE THIS
+      </button>
+    )}
+  </div>
+)}
+```
+
+### NEW Pattern (click to edit with border):
+```jsx
+{editingXeroFields['email'] ? (
+  // Edit mode with input and save/cancel buttons
+  <div className="flex items-center gap-2">
+    <input
+      type="email"
+      value={xeroFieldValues['email'] || ''}
+      onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+      className="flex-1 px-2 py-1 text-sm rounded border border-gray-300"
+      autoFocus
+    />
+    <button onClick={() => saveXeroField('email')}>
+      <CheckCircleIcon className="h-5 w-5" />
+    </button>
+    <button onClick={() => cancelEditingXeroField('email')}>
+      <XCircleIcon className="h-5 w-5" />
+    </button>
+  </div>
+) : (
+  // Display mode - clickable when unlocked
+  <div
+    onClick={() => isPageEditMode && startEditingXeroField('email')}
+    className={`
+      ${isPageEditMode ? 'cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-500 rounded px-2 py-1' : ''}
+    `}
+  >
+    {contact.email ? (
+      <a href={`mailto:${contact.email}`} className="text-blue-600">
+        {contact.email}
+      </a>
+    ) : (
+      <span className="text-gray-500">Click to add</span>
+    )}
+  </div>
+)}
+```
+
+## Visual Indicator CSS Classes
+
+When `isPageEditMode` is true, add these classes to editable fields:
+
+```jsx
+className={`
+  ${isPageEditMode
+    ? 'cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-500 rounded px-2 py-1 transition-colors'
+    : ''
+  }
+`}
+```
+
+This gives:
+- ✅ Dashed blue border indicating "click to edit"
+- ✅ Cursor changes to pointer on hover
+- ✅ Border highlights on hover
+- ✅ No extra pencil icon clutter
+
+## Example Implementation
+
+### Email Field (Complete):
+
+```jsx
+<div className="flex items-start gap-3">
+  <EnvelopeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Email</p>
+    {editingXeroFields['email'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="email"
+          value={xeroFieldValues['email'] || ''}
+          onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button
+          onClick={() => saveXeroField('email')}
+          className="text-green-600 hover:text-green-700 dark:text-green-400"
+        >
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => cancelEditingXeroField('email')}
+          className="text-gray-600 hover:text-gray-700 dark:text-gray-400"
+        >
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div
+        onClick={() => isPageEditMode && startEditingXeroField('email')}
+        className={`
+          ${isPageEditMode
+            ? 'cursor-pointer border-2 border-dashed border-blue-300 dark:border-blue-600 hover:border-blue-500 dark:hover:border-blue-400 rounded px-2 py-1 transition-colors'
+            : ''
+          }
+        `}
+      >
+        {contact.email ? (
+          <a
+            href={`mailto:${contact.email}`}
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+            onClick={(e) => {
+              if (isPageEditMode) {
+                e.preventDefault() // Prevent email link when in edit mode
+              }
+            }}
+          >
+            {contact.email}
+          </a>
+        ) : (
+          <span className="text-gray-400 italic">Click to add email</span>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+```
+
+## Apply to All Editable Fields
+
+Apply this pattern to:
+- ✅ email
+- ✅ mobile_phone
+- ✅ office_phone
+- ✅ fax_phone
+- ✅ address (text field)
+- ✅ tax_number (ABN)
+- ✅ company_number
+- ✅ bank_bsb
+- ✅ bank_account_number
+- ✅ bank_account_name
+- ✅ default_purchase_account
+- ✅ default_sales_account
+- ✅ bill_due_day
+- ✅ bill_due_type
+- ✅ sales_due_day
+- ✅ sales_due_type
+- ✅ default_discount
+
+## Benefits
+
+1. ✅ Single level of editing (page-level unlock)
+2. ✅ Cleaner UI without pencil icon clutter
+3. ✅ Visual borders clearly show editable fields
+4. ✅ Direct click to edit is more intuitive
+5. ✅ Consistent with global edit/lock pattern
+
+## ContactPersonsSection & ContactAddressesSection
+
+These components are already correct! They:
+- ✅ Only show edit/delete icons when `isEditMode={true}`
+- ✅ No double-layer editing
+- ✅ Have "Add Person" / "Add Address" buttons that only appear in edit mode
+
+No changes needed for those components.
+
+
+### Code Example
+```jsx
+```jsx
+{editingXeroFields['email'] ? (
+  // Edit mode with input
+) : (
+  <div className="flex items-center gap-2 group">
+    {contact.email}
+    {isPageEditMode && (
+      <button onClick={() => startEditingXeroField('email')}>
+        <PencilIcon className="h-4 w-4" />  ❌ REMOVE THIS
+      </button>
+    )}
+  </div>
+)}
+```
+
+```jsx
+{editingXeroFields['email'] ? (
+  // Edit mode with input and save/cancel buttons
+  <div className="flex items-center gap-2">
+    <input
+      type="email"
+      value={xeroFieldValues['email'] || ''}
+      onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+      className="flex-1 px-2 py-1 text-sm rounded border border-gray-300"
+      autoFocus
+    />
+    <button onClick={() => saveXeroField('email')}>
+      <CheckCircleIcon className="h-5 w-5" />
+    </button>
+    <button onClick={() => cancelEditingXeroField('email')}>
+      <XCircleIcon className="h-5 w-5" />
+    </button>
+  </div>
+) : (
+  // Display mode - clickable when unlocked
+  <div
+    onClick={() => isPageEditMode && startEditingXeroField('email')}
+    className={`
+      ${isPageEditMode ? 'cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-500 rounded px-2 py-1' : ''}
+    `}
+  >
+    {contact.email ? (
+      <a href={`mailto:${contact.email}`} className="text-blue-600">
+        {contact.email}
+      </a>
+    ) : (
+      <span className="text-gray-500">Click to add</span>
+    )}
+  </div>
+)}
+```
+
+```jsx
+className={`
+  ${isPageEditMode
+    ? 'cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-500 rounded px-2 py-1 transition-colors'
+    : ''
+  }
+`}
+```
+
+```jsx
+<div className="flex items-start gap-3">
+  <EnvelopeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Email</p>
+    {editingXeroFields['email'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="email"
+          value={xeroFieldValues['email'] || ''}
+          onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button
+          onClick={() => saveXeroField('email')}
+          className="text-green-600 hover:text-green-700 dark:text-green-400"
+        >
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => cancelEditingXeroField('email')}
+          className="text-gray-600 hover:text-gray-700 dark:text-gray-400"
+        >
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div
+        onClick={() => isPageEditMode && startEditingXeroField('email')}
+        className={`
+          ${isPageEditMode
+            ? 'cursor-pointer border-2 border-dashed border-blue-300 dark:border-blue-600 hover:border-blue-500 dark:hover:border-blue-400 rounded px-2 py-1 transition-colors'
+            : ''
+          }
+        `}
+      >
+        {contact.email ? (
+          <a
+            href={`mailto:${contact.email}`}
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+            onClick={(e) => {
+              if (isPageEditMode) {
+                e.preventDefault() // Prevent email link when in edit mode
+              }
+            }}
+          >
+            {contact.email}
+          </a>
+        ) : (
+          <span className="text-gray-400 italic">Click to add email</span>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+```
+```
+
+### Examples
+```jsx
+{editingXeroFields['email'] ? (
+  // Edit mode with input
+) : (
+  <div className="flex items-center gap-2 group">
+    {contact.email}
+    {isPageEditMode && (
+      <button onClick={() => startEditingXeroField('email')}>
+        <PencilIcon className="h-4 w-4" />  ❌ REMOVE THIS
+      </button>
+    )}
+  </div>
+)}
+```
+
+```jsx
+{editingXeroFields['email'] ? (
+  // Edit mode with input and save/cancel buttons
+  <div className="flex items-center gap-2">
+    <input
+      type="email"
+      value={xeroFieldValues['email'] || ''}
+      onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+      className="flex-1 px-2 py-1 text-sm rounded border border-gray-300"
+      autoFocus
+    />
+    <button onClick={() => saveXeroField('email')}>
+      <CheckCircleIcon className="h-5 w-5" />
+    </button>
+    <button onClick={() => cancelEditingXeroField('email')}>
+      <XCircleIcon className="h-5 w-5" />
+    </button>
+  </div>
+) : (
+  // Display mode - clickable when unlocked
+  <div
+    onClick={() => isPageEditMode && startEditingXeroField('email')}
+    className={`
+      ${isPageEditMode ? 'cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-500 rounded px-2 py-1' : ''}
+    `}
+  >
+    {contact.email ? (
+      <a href={`mailto:${contact.email}`} className="text-blue-600">
+        {contact.email}
+      </a>
+    ) : (
+      <span className="text-gray-500">Click to add</span>
+    )}
+  </div>
+)}
+```
+
+```jsx
+className={`
+  ${isPageEditMode
+    ? 'cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-500 rounded px-2 py-1 transition-colors'
+    : ''
+  }
+`}
+```
+
+```jsx
+<div className="flex items-start gap-3">
+  <EnvelopeIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+  <div className="flex-1">
+    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Email</p>
+    {editingXeroFields['email'] ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="email"
+          value={xeroFieldValues['email'] || ''}
+          onChange={(e) => handleXeroFieldChange('email', e.target.value)}
+          className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          autoFocus
+        />
+        <button
+          onClick={() => saveXeroField('email')}
+          className="text-green-600 hover:text-green-700 dark:text-green-400"
+        >
+          <CheckCircleIcon className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => cancelEditingXeroField('email')}
+          className="text-gray-600 hover:text-gray-700 dark:text-gray-400"
+        >
+          <XCircleIcon className="h-5 w-5" />
+        </button>
+      </div>
+    ) : (
+      <div
+        onClick={() => isPageEditMode && startEditingXeroField('email')}
+        className={`
+          ${isPageEditMode
+            ? 'cursor-pointer border-2 border-dashed border-blue-300 dark:border-blue-600 hover:border-blue-500 dark:hover:border-blue-400 rounded px-2 py-1 transition-colors'
+            : ''
+          }
+        `}
+      >
+        {contact.email ? (
+          <a
+            href={`mailto:${contact.email}`}
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+            onClick={(e) => {
+              if (isPageEditMode) {
+                e.preventDefault() // Prevent email link when in edit mode
+              }
+            }}
+          >
+            {contact.email}
+          </a>
+        ) : (
+          <span className="text-gray-400 italic">Click to add email</span>
+        )}
+      </div>
+    )}
+  </div>
+</div>
+```
+
+---
+
+## §19.38: Cascading Filter Implementation Pattern
+
+🧩 Component | 🟡 Intermediate
+
+**📖 Related Bible Rules:** [{"type":"Bible","reference":"RULE #19.38"}]
+
+### Quick Summary
+Complete guide to implementing cascading filters in tables where one filter's selection dynamically updates available options in dependent filters.
+
+### Code Example
+```jsx
+// STEP 1: Add cascading filter calculation (after your main filter logic)
+const availableFilterOptions = useMemo(() => {
+  // For Type filter: apply ONLY chapter filter (not type itself)
+  let dataForTypeFilter = allData
+  if (filters.chapter) {
+    dataForTypeFilter = allData.filter(item => item.chapter === parseInt(filters.chapter))
+  }
+
+  // Count available types in filtered data
+  const typeCounts = {}
+  dataForTypeFilter.forEach(item => {
+    const type = item.type || 'UNKNOWN'
+    typeCounts[type] = (typeCounts[type] || 0) + 1
+  })
+
+  // Count chapters (no upstream filters)
+  const chapterCounts = {}
+  allData.forEach(item => {
+    chapterCounts[item.chapter] = (chapterCounts[item.chapter] || 0) + 1
+  })
+
+  return { types: typeCounts, chapters: chapterCounts }
+}, [allData, filters.chapter]) // Re-run only when chapter changes
+
+// STEP 2: Update filter dropdown with dynamic counts and cascade reset
+<select
+  value={filters.type || ''}
+  onChange={(e) => {
+    const newValue = e.target.value
+    setFilters(prev => ({ ...prev, type: newValue }))
+    
+    // CASCADE RESET: If changing chapter, reset type
+    if (filterKey === 'chapter') {
+      setFilters(prev => ({ ...prev, type: '' }))
+    }
+  }}
+>
+  <option value="">All</option>
+  {['MUST', 'NEVER', 'ALWAYS'].map(type => {
+    const count = availableFilterOptions.types[type] || 0
+    const isDisabled = count === 0
+    return (
+      <option
+        key={type}
+        value={type}
+        disabled={isDisabled}
+        style={isDisabled ? { color: '#9CA3AF', fontStyle: 'italic' } : {}}
+      >
+        {type} ({count})
+      </option>
+    )
+  })}
+</select>
+
+// STEP 3: Apply all filters to get final data
+const filteredData = useMemo(() => {
+  return allData.filter(item => {
+    if (filters.chapter && item.chapter !== parseInt(filters.chapter)) return false
+    if (filters.type && item.type !== filters.type) return false
+    return true
+  })
+}, [allData, filters])
+```
+
+### ⚠️ Common Mistakes
+❌ **Mistake 1: Circular Dependencies**
+```javascript
+// BAD: Type filter depends on itself
+const typeOptions = useMemo(() => {
+  const filtered = data.filter(item => {
+    if (filters.chapter && item.chapter !== filters.chapter) return false
+    if (filters.type && item.type !== filters.type) return false // WRONG!
+    return true
+  })
+  return countTypes(filtered)
+}, [data, filters.chapter, filters.type]) // Type affects itself!
+```
+
+❌ **Mistake 2: Not Resetting Downstream Filters**
+```javascript
+// BAD: Chapter changes but Type stays selected
+const handleChapterChange = (chapter) => {
+  setFilters({ ...filters, chapter })
+  // Type filter still shows old value - confusing!
+}
+
+// GOOD: Reset downstream filters
+const handleChapterChange = (chapter) => {
+  setFilters({ chapter, type: '' }) // Reset type
+}
+```
+
+❌ **Mistake 3: Missing Memoization**
+```javascript
+// BAD: Recalculates on every render
+const availableTypes = calculateTypes(data, filters.chapter)
+
+// GOOD: Only recalculates when dependencies change
+const availableTypes = useMemo(
+  () => calculateTypes(data, filters.chapter),
+  [data, filters.chapter]
+)
+```
+
+### 🧪 Testing Strategy
+**Test Case 1: Initial State**
+- All filter options should show total counts
+- No options should be disabled
+
+**Test Case 2: Select Parent Filter**
+- Child filter should update to show only values in parent's filtered data
+- Values with 0 count should be disabled
+- Counts should reflect parent filter selection
+
+**Test Case 3: Change Parent Filter**
+- Child filter should reset to "All"
+- Child counts should update to new parent's values
+- Previously disabled options should become available if they exist in new parent
+
+**Test Case 4: Performance**
+- Changing filters should be instant (< 100ms)
+- No console errors
+- useMemo should prevent unnecessary recalculations
+
+**Example Test:**
+```javascript
+// Select Chapter 9
+fireEvent.change(chapterFilter, { target: { value: '9' } })
+
+// Verify Type filter shows only Chapter 9 types
+const typeOptions = screen.getAllByRole('option')
+expect(typeOptions.find(o => o.value === 'MUST')).toHaveTextContent('MUST (18)')
+expect(typeOptions.find(o => o.value === 'PROTECTED')).toBeDisabled()
+
+// Change to Chapter 19
+fireEvent.change(chapterFilter, { target: { value: '19' } })
+
+// Verify Type filter reset
+expect(typeFilter.value).toBe('')
+```
+
+### Description
+Cascading filters create a hierarchical filtering experience where selecting a value in one filter (e.g., Chapter) automatically updates the available options in dependent filters (e.g., Type), showing only values that exist in the filtered dataset with dynamic counts.
+
+---
+
+
+# Chapter 20: UI/UX Standards & Patterns
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 20               │
+│ 📕 LEXICON (BUGS):    Chapter 20               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -9444,12 +27372,21 @@ Pattern for checkbox-based row selection with bulk actions
 
 ---
 
+## Test Teacher Pattern
 
-# Chapter 20: Agent System & Automation
+🧩 Component | 🟢 Beginner
+
+### Description
+How to create a new documentation component
+
+---
+
+
+# Chapter 21: Agent System & Automation
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 20               │
-│ 📕 LEXICON (BUGS):    Chapter 20               │
+│ 📖 BIBLE (RULES):     Chapter 21               │
+│ 📕 LEXICON (BUGS):    Chapter 21               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -9785,7 +27722,7 @@ const getAgentIcon = (agentName) => {
 ---
 
 
-**Last Generated:** 2025-11-17 11:46 AEST
+**Last Generated:** 2025-11-17 15:41 AEST
 **Generated By:** `rake trapid:export_teacher`
 **Maintained By:** Development Team via Database UI
 **Review Schedule:** After adding new patterns or updating examples

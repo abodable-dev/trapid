@@ -1,7 +1,7 @@
 # TRAPID LEXICON - Bug History & Knowledge Base
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-17 13:37 AEST
+**Last Updated:** 2025-11-17 15:41 AEST
 **Authority Level:** Reference (supplements Bible)
 **Audience:** Claude Code + Human Developers
 
@@ -29,7 +29,7 @@ This file is the **knowledge base** for all Trapid development.
 
 ## 💾 Database-Driven Lexicon
 
-**IMPORTANT:** This file is auto-generated from the `documentation_entries` database table.
+**IMPORTANT:** This file is auto-generated from the `trinity` database table.
 
 **To edit entries:**
 1. Go to Documentation page in Trapid
@@ -43,36 +43,330 @@ This file is the **knowledge base** for all Trapid development.
 
 ## Table of Contents
 
-- [Chapter 0: System-Wide Knowledge](#chapter-0-system-wide-knowledge)
+- [Chapter 0: System-Wide Rules](#chapter-0-system-wide-rules)
+- [Chapter 1: Overview & System-Wide Rules](#chapter-1-overview-system-wide-rules)
 - [Chapter 1: Authentication & Users](#chapter-1-authentication-users)
-- [Chapter 2: System Administration](#chapter-2-system-administration)
+- [Chapter 2: Authentication & Users](#chapter-2-authentication-users)
+- [Chapter 3: System Administration](#chapter-3-system-administration)
 - [Chapter 3: Contacts & Relationships](#chapter-3-contacts-relationships)
 - [Chapter 4: Price Books & Suppliers](#chapter-4-price-books-suppliers)
-- [Chapter 5: Jobs & Construction Management](#chapter-5-jobs-construction-management)
-- [Chapter 6: Estimates & Quoting](#chapter-6-estimates-quoting)
-- [Chapter 7: AI Plan Review](#chapter-7-ai-plan-review)
-- [Chapter 8: Purchase Orders](#chapter-8-purchase-orders)
+- [Chapter 4: Contacts & Relationships](#chapter-4-contacts-relationships)
+- [Chapter 5: Price Books & Suppliers](#chapter-5-price-books-suppliers)
+- [Chapter 6: Jobs & Construction Management](#chapter-6-jobs-construction-management)
+- [Chapter 7: Estimates & Quoting](#chapter-7-estimates-quoting)
+- [Chapter 8: AI Plan Review](#chapter-8-ai-plan-review)
+- [Chapter 9: Purchase Orders](#chapter-9-purchase-orders)
 - [Chapter 9: Gantt & Schedule Master](#chapter-9-gantt-schedule-master)
-- [Chapter 10: Project Tasks & Checklists](#chapter-10-project-tasks-checklists)
-- [Chapter 11: Weather & Public Holidays](#chapter-11-weather-public-holidays)
-- [Chapter 12: OneDrive Integration](#chapter-12-onedrive-integration)
-- [Chapter 13: Outlook/Email Integration](#chapter-13-outlook-email-integration)
-- [Chapter 14: Chat & Communications](#chapter-14-chat-communications)
-- [Chapter 15: Xero Accounting Integration](#chapter-15-xero-accounting-integration)
-- [Chapter 16: Payments & Financials](#chapter-16-payments-financials)
-- [Chapter 17: Workflows & Automation](#chapter-17-workflows-automation)
-- [Chapter 18: Custom Tables & Formulas](#chapter-18-custom-tables-formulas)
+- [Chapter 10: Gantt & Schedule Master](#chapter-10-gantt-schedule-master)
+- [Chapter 11: Project Tasks & Checklists](#chapter-11-project-tasks-checklists)
+- [Chapter 12: Weather & Public Holidays](#chapter-12-weather-public-holidays)
+- [Chapter 13: OneDrive Integration](#chapter-13-onedrive-integration)
+- [Chapter 14: Outlook/Email Integration](#chapter-14-outlook-email-integration)
+- [Chapter 15: Chat & Communications](#chapter-15-chat-communications)
+- [Chapter 16: Xero Accounting Integration](#chapter-16-xero-accounting-integration)
+- [Chapter 17: Payments & Financials](#chapter-17-payments-financials)
+- [Chapter 18: Workflows & Automation](#chapter-18-workflows-automation)
 - [Chapter 19: UI/UX Standards & Patterns](#chapter-19-ui-ux-standards-patterns)
-- [Chapter 20: Agent System & Automation](#chapter-20-agent-system-automation)
+- [Chapter 19: Custom Tables & Formulas](#chapter-19-custom-tables-formulas)
+- [Chapter 20: UI/UX Standards & Patterns](#chapter-20-ui-ux-standards-patterns)
+- [Chapter 21: Agent System & Automation](#chapter-21-agent-system-automation)
 
 ---
 
 
-# Chapter 0: System-Wide Knowledge
+# Chapter 0: System-Wide Rules
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter  0               │
 │ 📘 USER MANUAL (HOW): Chapter  0               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-17
+
+---
+
+## 🎓 Developer Notes
+
+### Frontend Implementation Status - Historical Snapshot
+
+Historical record of frontend implementation progress and completed features
+
+# Frontend Implementation Status
+
+## ✅ Completed
+
+### Backend
+- ✅ All database migrations created and run
+- ✅ ContactPerson, ContactAddress, ContactGroup, ContactGroupMembership models created
+- ✅ Contact model updated with associations
+- ✅ XeroContactSyncJob fully updated to sync all fields including nested structures
+- ✅ contacts_controller.rb updated with nested attributes
+- ✅ Contact serialization includes nested data
+
+### Frontend
+- ✅ ContactPersonsSection component created at `frontend/src/components/contacts/ContactPersonsSection.jsx`
+
+## 🚧 Remaining Frontend Work
+
+### 1. Create ContactAddressesSection Component
+File: `frontend/src/components/contacts/ContactAddressesSection.jsx`
+
+Similar to ContactPersonsSection but for addresses with fields:
+- address_type (STREET, POBOX, DELIVERY)
+- line1, line2, line3, line4
+- city, region, postal_code, country
+- attention_to
+- is_primary checkbox
+
+### 2. Update ContactDetailPage.jsx
+
+**Import new components:**
+```javascript
+import ContactPersonsSection from '../components/contacts/ContactPersonsSection'
+import ContactAddressesSection from '../components/contacts/ContactAddressesSection'
+```
+
+**Add new state for nested data:**
+```javascript
+const [contactPersons, setContactPersons] = useState([])
+const [contactAddresses, setContactAddresses] = useState([])
+```
+
+**In loadContact(), extract nested data:**
+```javascript
+setContactPersons(contactData.contact_persons || [])
+setContactAddresses(contactData.contact_addresses || [])
+```
+
+**Add handler functions:**
+```javascript
+const handleContactPersonsUpdate = async (updatedPersons) => {
+  // Send PATCH request with contact_persons_attributes
+}
+
+const handleContactAddressesUpdate = async (updatedAddresses) => {
+  // Send PATCH request with contact_addresses_attributes
+}
+```
+
+**Add new sections in JSX (after Contact Information section):**
+```jsx
+<ContactPersonsSection
+  contactPersons={contactPersons}
+  onUpdate={handleContactPersonsUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+
+<ContactAddressesSection
+  contactAddresses={contactAddresses}
+  onUpdate={handleContactAddressesUpdate}
+  isEditMode={isPageEditMode}
+  contactId={id}
+/>
+```
+
+**Add new Xero fields to Purchase & Payment Settings section:**
+- fax_phone (inline editable)
+- sales_due_day, sales_due_type (inline editable)
+- default_sales_account (inline editable)
+- default_discount (inline editable)
+- company_number (inline editable)
+- xero_contact_number (read-only display)
+- xero_account_number (inline editable)
+
+**Add Account Balances section (read-only display):**
+```jsx
+{contact.accounts_receivable_outstanding && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <h3>Account Balances (From Xero)</h3>
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <p>Accounts Receivable Outstanding: ${contact.accounts_receivable_outstanding}</p>
+        <p>Accounts Receivable Overdue: ${contact.accounts_receivable_overdue}</p>
+      </div>
+      <div>
+        <p>Accounts Payable Outstanding: ${contact.accounts_payable_outstanding}</p>
+        <p>Accounts Payable Overdue: ${contact.accounts_payable_overdue}</p>
+      </div>
+    </div>
+  </div>
+)}
+```
+
+**Add Contact Groups display (read-only):**
+```jsx
+{contact.contact_groups && contact.contact_groups.length > 0 && (
+  <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg p-6 mb-6">
+    <h3>Xero Contact Groups</h3>
+    <div className="flex flex-wrap gap-2">
+      {contact.contact_groups.map(group => (
+        <span key={group.id} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded-full text-sm">
+          {group.name}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
+```
+
+## Testing Checklist
+
+1. Test Xero sync with contact that has multiple contact persons
+2. Test Xero sync with contact that has multiple addresses
+3. Test adding/editing/deleting contact persons in UI
+4. Test adding/editing/deleting addresses in UI
+5. Test all new inline editable fields
+6. Test that sync status indicators work for nested data
+7. Test primary person/address toggle
+8. Verify data persists after page reload
+9. Test with contacts that have no nested data (empty arrays)
+10. Test contact groups display
+
+## Quick Implementation Guide
+
+Due to the large size of ContactDetailPage.jsx, the easiest approach is:
+
+1. Create ContactAddressesSection component (similar to ContactPersonsSection)
+2. Import both new components into ContactDetailPage
+3. Add state and handlers for nested data
+4. Insert the two new section components after the Contact Information section
+5. Add new scalar fields to existing sections using the same inline editing pattern
+6. Add read-only sections for balances and groups
+
+The inline editing pattern is already established in the file - just follow the same pattern for new fields.
+
+
+---
+
+### Claude Code Update - Complete Documentation
+
+Documentation of Claude Code configuration updates and improvements
+
+# Schedule Master - Complete CC_UPDATE Documentation
+**Generated:** 2025-11-15
+**Purpose:** Complete implementation documentation for all 24 Schedule Master table columns
+**Source:** Code review of ScheduleTemplateEditor.jsx + backend models
+**Use:** Reference for updating NewFeaturesTab CC_UPDATE table
+
+---
+
+## How to Use This Document
+
+This document contains the complete, accurate CC_UPDATE documentation for all columns based on actual code implementation.
+
+**To update NewFeaturesTab.jsx:**
+1. Navigate to: http://localhost:5173/settings?tab=schedule-master&subtab=new-features
+2. For each column below, click the "CC Update" cell
+3. Copy/paste the documentation from this file
+4. Click Save
+
+**Or:** Use the script at bottom of this file to programmatically update localStorage
+
+---
+
+## Column -1: select (Multi-Select Checkbox)
+
+```markdown
+**Status:** Fully functional ✅
+
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2388-2398
+- Rendering: Checkbox input, 40px width, center-aligned, order: -1 (first column)
+- Event handlers:
+  - onChange: `onSelectRow(row.id)` toggles individual row selection
+  - State: Managed via `isSelected` prop passed from parent
+  - Styling: h-4 w-4, indigo-600 color, rounded, cursor-pointer
+
+**Backend:**
+- Field: N/A (frontend-only state management)
+- Type: Client-side selection tracking (Set of row IDs in parent component)
+
+**How It Works:**
+Enables multi-row selection for bulk operations. Users click checkboxes to select multiple rows, triggering bulk actions toolbar. Parent component manages selection state via Set data structure for O(1) lookup performance. Header checkbox (not in this cell) enables select-all/deselect-all functionality.
+
+**Interdependencies:**
+- Bulk operations toolbar visibility depends on selection count > 0
+- Bulk update actions: Set PO Required, Enable Auto PO, Disable Auto PO, Delete Selected
+
+**Current Limitations:**
+- Selection state lost when filters/sorts applied
+- No shift-click range selection
+- No ctrl-click multi-select
+- Selection not persisted across page reloads
+```
+
+---
+
+## Column 0: sequence (Task Sequence Number)
+
+```markdown
+**Status:** Fully functional ✅
+
+**Frontend Implementation:**
+- Location: ScheduleTemplateEditor.jsx:2400-2405
+- Rendering: Read-only text display, 40px width, center-aligned, order: 0
+- Display: `{index + 1}` - converts 0-based index to 1-based display
+- Styling: text-gray-500 dark:text-gray-400, no input (display only)
+
+**Backend:**
+- Field: schedule_template_rows.sequence_order
+- Type: integer (NOT NULL, >= 0)
+- Validation: Presence required (model line 14), numericality >= 0 (model line 15)
+- Scope: in_sequence orders by sequence_order asc (model line 28)
+
+**How It Works:**
+Auto-generated task sequence number representing row position in template. Database stores 0-based (0, 1, 2...), frontend displays 1-based (#1, #2, #3...). Critical for predecessor dependency system which references tasks by sequence number. Updated automatically when rows reordered via move up/down buttons (lines 2734-2741).
+
+**CRITICAL - Dependency System Integration:**
+- **Storage**: sequence_order is 0-based in DB (0, 1, 2, 3, ...)
+- **Display**: Frontend shows 1-based (#1, #2, #3, #4, ...)
+- **Dependencies**: predecessor_ids use 1-based references (task #1 = sequence_order 0)
+- **Conversion**: See Bible RULE #1 for mandatory conversion logic
+
+**Interdependencies:**
+- Predecessor Editor modal references tasks by displayed sequence number
+- Move up/down actions recalculate all sequence_order values
+- Sorting by sequence maintains template task order
+
+**Current Limitations:**
+- No automatic dependency update when tasks reordered
+- Manual verification needed after reordering to ensure deps still valid
+- No visual warning if dependencies broken by reordering
+- 0-based/1-based conversion can cause confusion for developers
+```
+
+---
+
+**[Document continues with all 24 columns - truncated for length. Would you like me to continue with the full document, or would you prefer a different approach?]**
+
+Due to the massive size of this update (498 lines of detailed documentation × 24 columns), I have three options for you:
+
+**Option A:** I create the complete markdown file (like above) with all 24 columns, and you manually copy/paste into the UI
+
+**Option B:** I create a JavaScript script that directly updates the localStorage where CC_UPDATE data is stored
+
+**Option C:** I update the NewFeaturesTab.jsx file directly with all new content (will be a very large edit)
+
+Which approach would you prefer?
+
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 1: Overview & System-Wide Rules
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  1               │
+│ 📘 USER MANUAL (HOW): Chapter  1               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -103,6 +397,19 @@ The `working_days` column was added manually to `company_settings` table without
 
 ---
 
+## 🏛️ Architecture
+
+### Design Decisions & Rationale
+
+### 1. Authentication & Contacts System - Complete Investigation
+
+**Decision:** Comprehensive investigation of authentication flow and contact management system. Key Findings: JWT token-based authentication with 24-hour expiration, User model with bcrypt password hashing, Contact system with Xero sync integration, Portal users (separate from admin users), Nested contact persons and addresses. Architecture Decisions: Chose JWT over session-based auth for API flexibility, Separate portal_users table for customer access, Contact sync with Xero using fuzzy matching, Bidirectional relationship management. Full investigation archived in: AUTHENTICATION_AND_CONTACTS_INVESTIGATION.md
+
+**Trade-offs:**
+Original file archived at: AUTHENTICATION_AND_CONTACTS_INVESTIGATION.md (38.5 KB)
+
+---
+
 ## 📚 Related Chapters
 
 _Links to related chapters will be added as cross-references are identified._
@@ -115,6 +422,61 @@ _Links to related chapters will be added as cross-references are identified._
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter  1               │
 │ 📘 USER MANUAL (HOW): Chapter  1               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-17
+
+---
+
+## 🐛 Bug Hunter
+
+### ⚡ Unmigrated Schema Changes (working_days column)
+
+**Status:** ⚡ FIXED
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+The `working_days` column was added manually to `company_settings` table without creating a migration file. When the test tried to use `working_days`, it failed with "undefined method" despite the column existing in the database.
+
+#### Scenario
+The `working_days` column was added manually to `company_settings` table without creating a migration file. When the test tried to use `working_days`, it failed with "undefined method" despite the column existing in the database.
+
+#### Root Cause
+1. Column was added directly to staging database (via console or manual SQL)
+2. No migration file created to track this schema change
+3. ActiveRecord's schema cache didn't recognize the column
+4. Test failed: `undefined method 'working_days' for an instance of CompanySetting`
+
+---
+
+## 🏛️ Architecture
+
+### Design Decisions & Rationale
+
+### 1. Authentication & Contacts System - Complete Investigation
+
+**Decision:** Comprehensive investigation of authentication flow and contact management system. Key Findings: JWT token-based authentication with 24-hour expiration, User model with bcrypt password hashing, Contact system with Xero sync integration, Portal users (separate from admin users), Nested contact persons and addresses. Architecture Decisions: Chose JWT over session-based auth for API flexibility, Separate portal_users table for customer access, Contact sync with Xero using fuzzy matching, Bidirectional relationship management. Full investigation archived in: AUTHENTICATION_AND_CONTACTS_INVESTIGATION.md
+
+**Trade-offs:**
+Original file archived at: AUTHENTICATION_AND_CONTACTS_INVESTIGATION.md (38.5 KB)
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 2: Authentication & Users
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  2               │
+│ 📘 USER MANUAL (HOW): Chapter  2               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -260,16 +622,29 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 2: System Administration
+# Chapter 3: System Administration
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  2               │
-│ 📘 USER MANUAL (HOW): Chapter  2               │
+│ 📖 BIBLE (RULES):     Chapter  3               │
+│ 📘 USER MANUAL (HOW): Chapter  3               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
 **Purpose:** Bug history, architecture decisions, and test catalog
 **Last Updated:** 2025-11-17
+
+---
+
+## 🏛️ Architecture
+
+### Design Decisions & Rationale
+
+### 1. Timezone Support Migration - Architecture Decision
+
+**Decision:** Decision to add timezone support to company_settings and handle all dates in UTC with timezone conversion. Migration Approach: Added timezone column to company_settings, Default: Australia/Brisbane, Frontend converts to local timezone, Backend stores all times in UTC, Working days respect business timezone. Impact: All scheduling features now timezone-aware, Gantt chart displays in business hours, Reports use correct business day boundaries. Full migration guide: TIMEZONE_MIGRATION_GUIDE.md, Testing guide: TIMEZONE_TESTING_GUIDE.md
+
+**Trade-offs:**
+Original file archived at: TIMEZONE_MIGRATION_SUMMARY.md (7.9 KB)
 
 ---
 
@@ -293,6 +668,47 @@ _Links to related chapters will be added as cross-references are identified._
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter  3               │
 │ 📘 USER MANUAL (HOW): Chapter  3               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-17
+
+---
+
+## 🏛️ Architecture
+
+### Design Decisions & Rationale
+
+### 1. Timezone Support Migration - Architecture Decision
+
+**Decision:** Decision to add timezone support to company_settings and handle all dates in UTC with timezone conversion. Migration Approach: Added timezone column to company_settings, Default: Australia/Brisbane, Frontend converts to local timezone, Backend stores all times in UTC, Working days respect business timezone. Impact: All scheduling features now timezone-aware, Gantt chart displays in business hours, Reports use correct business day boundaries. Full migration guide: TIMEZONE_MIGRATION_GUIDE.md, Testing guide: TIMEZONE_TESTING_GUIDE.md
+
+**Trade-offs:**
+Original file archived at: TIMEZONE_MIGRATION_SUMMARY.md (7.9 KB)
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 4: Price Books & Suppliers
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  4               │
+│ 📘 USER MANUAL (HOW): Chapter  4               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -576,6 +992,23 @@ Uses varchar[] to allow contacts to be both customers and suppliers simultaneous
 
 ---
 
+### 2. Supplier Portal - Implementation Plan & Architecture
+
+**Decision:** Complete plan for building supplier portal allowing external access to quotes, POs, and invoices. Features Planned: Separate portal_users authentication, Scoped access to contact data only, Quote approval workflow, PO confirmation, Invoice status tracking. Security Considerations: Separate auth tokens from admin, Row-level security checks, Email verification required, Password complexity requirements. Full plan archived in: PORTAL_IMPLEMENTATION_PLAN.md
+
+**Trade-offs:**
+Original file archived at: PORTAL_IMPLEMENTATION_PLAN.md (26.9 KB)
+
+---
+
+## 🎓 Developer Notes
+
+### Supplier Portal Phase 1 - Completion Summary
+
+Phase 1 completion report for supplier portal. Completed Features: Portal user authentication, Contact association, Quote viewing, Basic dashboard. Pending Features: PO confirmation workflow, Invoice upload, Email notifications, Advanced permissions. Full details in: PORTAL_PHASE1_COMPLETE.md
+
+---
+
 ## 📚 Related Chapters
 
 _Links to related chapters will be added as cross-references are identified._
@@ -583,11 +1016,323 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 4: Price Books & Suppliers
+# Chapter 4: Contacts & Relationships
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter  4               │
 │ 📘 USER MANUAL (HOW): Chapter  4               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-17
+
+---
+
+## 🐛 Bug Hunter
+
+### ⚠️ Xero Sync Creates Duplicate Contacts for Name Variations
+
+**Status:** ⚠️ BY_DESIGN
+**First Reported:** 2025-09-20
+**Last Occurred:** 2025-11-10
+**Severity:** Medium
+
+#### Summary
+Xero contact "ABC Plumbing Pty Ltd" and existing local contact "ABC Plumbing" are treated as different contacts during sync, creating duplicates.
+
+#### Scenario
+Xero contact "ABC Plumbing Pty Ltd" and existing local contact "ABC Plumbing" are treated as different contacts during sync, creating duplicates.
+
+#### Root Cause
+Fuzzy match threshold set at 85% similarity doesn't catch common business suffix variations like "Pty Ltd" vs no suffix, "Trading As" vs legal name, ampersand vs "and".
+
+#### Solution
+1. Manual Merge: Use POST /api/v1/contacts/merge. 2. Preventive: Set tax_number (ABN/ACN) - Priority 2 matching catches these. 3. Workaround: Manually link via POST /api/v1/contacts/:id/link_xero_contact
+
+#### Prevention
+Always set ABN for Australian businesses to enable Priority 2 matching
+
+**Component:** XeroContactSync
+
+---
+
+### ⚡ Contact Merge Fails When Supplier Has Active Purchase Orders
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-11-04
+**Last Occurred:** 2025-11-04
+**Fixed Date:** 2025-11-05
+**Severity:** High
+
+#### Summary
+Attempting to merge two supplier contacts fails with foreign key constraint error when source supplier has purchase orders.
+
+#### Scenario
+Attempting to merge two supplier contacts fails with foreign key constraint error when source supplier has purchase orders.
+
+#### Root Cause
+Merge controller was updating PricebookItem and PriceHistory foreign keys, but forgot to update PurchaseOrder.supplier_id.
+
+#### Solution
+Added missing PurchaseOrder update: PurchaseOrder.where(supplier_id: source.id).update_all(supplier_id: target.id)
+
+#### Prevention
+Always check ALL foreign key relationships when implementing merge features
+
+**Component:** ContactMerge
+
+---
+
+### ⚡ Primary Contact Person Not Enforced on Xero Sync
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-10-12
+**Last Occurred:** 2025-10-12
+**Fixed Date:** 2025-10-15
+**Severity:** Low
+
+#### Summary
+After Xero contact sync, contacts end up with multiple is_primary = true contact persons.
+
+#### Scenario
+After Xero contact sync, contacts end up with multiple is_primary = true contact persons.
+
+#### Root Cause
+XeroContactSyncService was creating ContactPerson records directly without triggering callbacks
+
+#### Solution
+Changed to use single record creation which triggers callbacks
+
+#### Prevention
+Added validation test in contact_person_spec.rb
+
+**Component:** XeroContactSync
+
+---
+
+### ⚡ Portal Password Reset Loop for Locked Accounts
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-10-28
+**Last Occurred:** 2025-10-28
+**Fixed Date:** 2025-11-01
+**Severity:** Medium
+
+#### Summary
+Portal users locked out after 5 failed attempts cannot reset password because password reset endpoint also checks locked? status.
+
+#### Scenario
+Portal users locked out after 5 failed attempts cannot reset password because password reset endpoint also checks locked? status.
+
+#### Root Cause
+Password reset endpoint was checking lockout status, preventing locked users from resetting passwords
+
+#### Solution
+Modified password reset endpoint to skip lockout check and clear locked_until and failed_login_attempts on successful reset
+
+#### Prevention
+Only check lockout on login attempts, not password resets
+
+**Component:** PortalAuth
+
+---
+
+### ⚠️ Bidirectional Relationship Cascade Causes Infinite Loop
+
+**Status:** ⚠️ BY_DESIGN
+**First Reported:** 2025-09-15
+**Severity:** Critical
+
+#### Summary
+Creating a relationship triggers after_create which creates the reverse, which triggers another after_create, leading to infinite recursion.
+
+#### Scenario
+Creating a relationship triggers after_create which creates the reverse, which triggers another after_create, leading to infinite recursion.
+
+#### Root Cause
+Bidirectional relationships need to create reverse relationships automatically without protection
+
+#### Solution
+Use Thread-local flag to prevent recursion: Thread.current[:creating_reverse_relationship]
+
+#### Prevention
+This pattern MUST be used for all bidirectional associations. See BIBLE RULE #3.2
+
+**Component:** ContactRelationship
+
+---
+
+### 🔄 Contact Activity Log Growing Too Large (>10k Records)
+
+**Status:** 🔄 MONITORING
+**First Reported:** 2025-10-20
+**Severity:** Low
+
+#### Summary
+Contacts with high Xero sync frequency accumulate thousands of ContactActivity records, slowing down activities endpoint
+
+#### Scenario
+Contacts with high Xero sync frequency accumulate thousands of ContactActivity records, slowing down activities endpoint
+
+#### Root Cause
+No archival or pagination for activity logs
+
+#### Solution
+Activities endpoint limits to 50 most recent records
+
+#### Prevention
+Consider adding archival for activities older than 6 months, implement pagination
+
+**Component:** ContactActivity
+
+---
+
+### ⚡ Portal User Email Validation Too Strict
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-10-22
+**Fixed Date:** 2025-10-25
+**Severity:** Low
+
+#### Summary
+Portal user creation fails for valid email addresses with plus addressing or subdomains
+
+#### Scenario
+Portal user creation fails for valid email addresses with plus addressing or subdomains
+
+#### Root Cause
+Email validation regex was overly restrictive
+
+#### Solution
+Changed to use Ruby's built-in URI::MailTo::EMAIL_REGEXP
+
+#### Prevention
+Use standard email validation libraries instead of custom regex
+
+**Component:** PortalUser
+
+---
+
+### ⚡ Contact Type Filter Returns Wrong Results for "Both"
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-10-15
+**Fixed Date:** 2025-10-18
+**Severity:** Medium
+
+#### Summary
+Filtering contacts with ?type=both returns contacts that are customer OR supplier instead of customer AND supplier
+
+#### Scenario
+Filtering contacts with ?type=both returns contacts that are customer OR supplier instead of customer AND supplier
+
+#### Root Cause
+Controller was using array overlap check (&&) instead of array containment (@>)
+
+#### Solution
+Changed to array containment operator: contact_types @> ARRAY['customer', 'supplier']::varchar[]
+
+#### Prevention
+Use @> for AND logic on PostgreSQL arrays, && for OR logic
+
+**Component:** ContactsController
+
+---
+
+### ⚡ Deleting Contact Doesn't Clear Related Supplier References
+
+**Status:** ⚡ FIXED
+**First Reported:** 2025-09-25
+**Fixed Date:** 2025-09-28
+**Severity:** High
+
+#### Summary
+Deleting a contact that has linked suppliers leaves orphaned SupplierContact records
+
+#### Scenario
+Deleting a contact that has linked suppliers leaves orphaned SupplierContact records
+
+#### Root Cause
+Missing dependent: :destroy on has_many :supplier_contacts association
+
+#### Solution
+Added cascade delete: has_many :supplier_contacts, dependent: :destroy
+
+#### Prevention
+Added model test to verify cascade deletion
+
+**Component:** Contact
+
+---
+
+### ⚠️ Xero Sync Rate Limiting Causes Timeout on Large Contact Lists
+
+**Status:** ⚠️ BY_DESIGN
+**First Reported:** 2025-11-08
+**Severity:** Low
+
+#### Summary
+Syncing 500+ contacts from Xero takes over 10 minutes due to 1.2-second delay, causing Heroku timeout
+
+#### Scenario
+Syncing 500+ contacts from Xero takes over 10 minutes due to 1.2-second delay, causing Heroku timeout
+
+#### Root Cause
+Xero API has 60 requests/minute limit. With 500 contacts sync takes 600 seconds
+
+#### Solution
+Run Xero sync as background job: XeroContactSyncJob.perform_later
+
+#### Prevention
+Large syncs must use background jobs
+
+**Component:** XeroContactSync
+
+---
+
+## 🏛️ Architecture
+
+### Design Decisions & Rationale
+
+### 1. Contact Type System
+
+**Decision:** PostgreSQL array column for contact_types to support hybrid entities
+
+**Details:**
+Uses varchar[] to allow contacts to be both customers and suppliers simultaneously. GIN indexes provide fast querying.
+
+---
+
+### 2. Supplier Portal - Implementation Plan & Architecture
+
+**Decision:** Complete plan for building supplier portal allowing external access to quotes, POs, and invoices. Features Planned: Separate portal_users authentication, Scoped access to contact data only, Quote approval workflow, PO confirmation, Invoice status tracking. Security Considerations: Separate auth tokens from admin, Row-level security checks, Email verification required, Password complexity requirements. Full plan archived in: PORTAL_IMPLEMENTATION_PLAN.md
+
+**Trade-offs:**
+Original file archived at: PORTAL_IMPLEMENTATION_PLAN.md (26.9 KB)
+
+---
+
+## 🎓 Developer Notes
+
+### Supplier Portal Phase 1 - Completion Summary
+
+Phase 1 completion report for supplier portal. Completed Features: Portal user authentication, Contact association, Quote viewing, Basic dashboard. Pending Features: PO confirmation workflow, Invoice upload, Email notifications, Advanced permissions. Full details in: PORTAL_PHASE1_COMPLETE.md
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 5: Price Books & Suppliers
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter  5               │
+│ 📘 USER MANUAL (HOW): Chapter  5               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -711,11 +1456,11 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 5: Jobs & Construction Management
+# Chapter 6: Jobs & Construction Management
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  5               │
-│ 📘 USER MANUAL (HOW): Chapter  5               │
+│ 📖 BIBLE (RULES):     Chapter  6               │
+│ 📘 USER MANUAL (HOW): Chapter  6               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -822,11 +1567,11 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 6: Estimates & Quoting
+# Chapter 7: Estimates & Quoting
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  6               │
-│ 📘 USER MANUAL (HOW): Chapter  6               │
+│ 📖 BIBLE (RULES):     Chapter  7               │
+│ 📘 USER MANUAL (HOW): Chapter  7               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -952,11 +1697,11 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 7: AI Plan Review
+# Chapter 8: AI Plan Review
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  7               │
-│ 📘 USER MANUAL (HOW): Chapter  7               │
+│ 📖 BIBLE (RULES):     Chapter  8               │
+│ 📘 USER MANUAL (HOW): Chapter  8               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -980,11 +1725,11 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 8: Purchase Orders
+# Chapter 9: Purchase Orders
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter  8               │
-│ 📘 USER MANUAL (HOW): Chapter  8               │
+│ 📖 BIBLE (RULES):     Chapter  9               │
+│ 📘 USER MANUAL (HOW): Chapter  9               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -1073,6 +1818,945 @@ end
 
 ---
 
+## 🏛️ Architecture
+
+### Design Decisions & Rationale
+
+### 1. Task Management System - Comprehensive Architecture Investigation
+
+**Decision:** Complete investigation of ProjectTask and ScheduleTask models, Gantt visualization, and user assignment system
+
+**Details:**
+# Trapid Task Management, Gantt Chart & User Assignment - Comprehensive Investigation Report
+
+## Executive Summary
+
+The Trapid application has a **comprehensive task management and scheduling system** with two distinct architectures:
+
+1. **Project Tasks (Master Schedule)** - For detailed project planning with dependencies, critical path analysis, and granular user assignment
+2. **Schedule Tasks (Construction Schedule)** - For tracking supplier deliveries and linking to purchase orders
+
+Both systems include Gantt chart visualizations and task status tracking. The application is architecturally sound with clear separation between frontend components and backend models.
+
+---
+
+## 1. TASK/TODO MODELS
+
+### 1.1 ProjectTask Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/project_task.rb`
+
+**Key Attributes:**
+- `name` (string, required) - Task name
+- `task_type` (string, required) - Task classification (ORDER, DO, GET, CLAIM, CERTIFICATE, PHOTO, FIT)
+- `category` (string, required) - Trade/category (ADMIN, CARPENTER, ELECTRICAL, PLUMBER, etc.)
+- `status` (string, default: 'not_started') - States: `not_started`, `in_progress`, `complete`, `on_hold`
+- `progress_percentage` (integer, 0-100, default: 0)
+- `duration_days` (integer, required) - Task duration in days
+- `planned_start_date` (date) - Scheduled start
+- `planned_end_date` (date) - Scheduled end
+- `actual_start_date` (date) - Actual start when moved to in_progress
+- `actual_end_date` (date) - Actual completion date
+- `is_milestone` (boolean, default: false) - Mark as project milestone
+- `is_critical_path` (boolean, default: false) - On critical path
+- `task_code` (string) - Code for dependency references
+- `supplier_name` (string) - External supplier name
+
+**Relationships:**
+```ruby
+belongs_to :project
+belongs_to :task_template, optional: true
+belongs_to :purchase_order, optional: true
+belongs_to :assigned_to, class_name: 'User', optional: true  # User assignment
+
+has_many :successor_dependencies    # Tasks that depend on this
+has_many :predecessor_dependencies  # Tasks this depends on
+has_many :successor_tasks, through: :successor_dependencies
+has_many :predecessor_tasks, through: :predecessor_dependencies
+has_many :task_updates, dependent: :destroy  # Status history
+```
+
+**Key Methods:**
+- `complete!` - Mark task as complete with 100% progress
+- `start!` - Move task to in_progress
+- `can_start?` - Check if all predecessors are complete
+- `blocked_by` - Returns incomplete predecessor tasks
+- `total_float` - Calculates slack time (simplified)
+- `is_on_critical_path?` - Check critical path status
+- `materials_status` - Returns 'no_po', 'on_time', or 'delayed'
+- `materials_on_time?` - Check if linked PO will arrive before task start
+
+**Database:** `/Users/jakebaird/trapid/backend/db/migrate/20251104053318_create_project_tasks.rb`
+
+---
+
+### 1.2 ScheduleTask Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/schedule_task.rb`
+
+**Key Attributes:**
+- `title` (string, required) - Task name
+- `status` (string) - Task status
+- `start_date` (datetime) - Start date
+- `complete_date` (datetime) - Completion date
+- `duration` (string) - Duration string (e.g., "5d", "21d")
+- `duration_days` (integer) - Parsed duration in days
+- `supplier_category` (string) - Supplier category
+- `supplier_name` (string) - Supplier name
+- `paid_internal` (boolean)
+- `confirm` (boolean) - Confirmation flag
+- `supplier_confirm` (boolean) - Supplier confirmation
+- `task_started` (datetime)
+- `completed` (datetime)
+- `predecessors` (jsonb, array) - Task dependencies as IDs
+- `attachments` (text) - File attachments
+- `matched_to_po` (boolean) - Is matched to a purchase order
+- `sequence_order` (integer) - Original order from spreadsheet import
+
+**Relationships:**
+```ruby
+belongs_to :construction
+belongs_to :purchase_order, optional: true
+```
+
+**Key Methods:**
+- `match_to_purchase_order!(po)` - Link to a purchase order
+- `unmatch_from_purchase_order!` - Remove purchase order link
+- `to_gantt_format` - Returns data formatted for Gantt chart display
+- `calculate_end_date` - Computes end date from start + duration
+- `calculate_progress` - Returns progress percentage (0, 50, or 100)
+- `suggested_purchase_orders(limit = 5)` - Suggests matching POs based on title
+
+**Database:** `/Users/jakebaird/trapid/backend/db/migrate/20251105051002_create_schedule_tasks.rb`
+
+---
+
+### 1.3 TaskTemplate Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/task_template.rb`
+
+**Purpose:** Standard NDIS construction task templates used to create ProjectTasks
+
+**Key Attributes:**
+- `name` (string) - Template name
+- `task_type` (string) - Task type code
+- `category` (string) - Trade category
+- `default_duration_days` (integer) - Default duration
+- `sequence_order` (integer) - Execution sequence
+- `predecessor_template_codes` (integer array) - Dependency references
+- `is_milestone` (boolean)
+- `requires_photo` (boolean)
+- `is_standard` (boolean) - Standard vs custom template
+
+**Relationships:**
+```ruby
+has_many :project_tasks
+```
+
+**Scopes:**
+- `standard` - Filter to standard templates
+- `custom` - Filter to custom templates
+- `by_sequence` - Order by sequence
+- `milestones` - Templates marked as milestones
+
+**Database:** `/Users/jakebaird/trapid/backend/db/migrate/20251104053317_create_task_templates.rb`
+
+---
+
+### 1.4 TaskDependency Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/task_dependency.rb`
+
+**Purpose:** Define task relationships and constraints
+
+**Key Attributes:**
+- `successor_task_id` (required) - Task that depends on predecessor
+- `predecessor_task_id` (required) - Task that must complete first
+- `dependency_type` (string) - Relationship type
+- `lag_days` (integer, default: 0) - Time gap between tasks
+
+**Dependency Types:**
+```ruby
+DEPENDENCY_TYPES = {
+  'fs' => 'finish_to_start',    # Standard: predecessor finishes, successor starts
+  'ss' => 'start_to_start',     # Tasks start together
+  'ff' => 'finish_to_finish',   # Tasks finish together
+  'sf' => 'start_to_finish'     # Rare: predecessor starts, successor finishes
+}
+```
+
+**Validations:**
+- Prevents circular dependencies
+- Prevents self-dependencies
+- Ensures tasks are in same project
+- Unique constraint on (successor_task_id, predecessor_task_id) pair
+
+**Key Methods:**
+- `creates_circular_dependency?` - DFS-based cycle detection
+
+**Database:** `/Users/jakebaird/trapid/backend/db/migrate/20251104053320_create_task_dependencies.rb`
+
+---
+
+### 1.5 TaskUpdate Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/task_update.rb`
+
+**Purpose:** Track task status changes and progress updates over time
+
+**Key Attributes:**
+- `project_task_id` (required) - Associated task
+- `user_id` (required) - User who made update
+- `status_before` (string) - Previous status
+- `status_after` (string) - New status
+- `progress_before` (integer) - Previous progress %
+- `progress_after` (integer) - New progress %
+- `notes` (text) - Update notes
+- `photo_urls` (text array) - Attached photos
+- `update_date` (date) - When update occurred
+
+**Relationships:**
+```ruby
+belongs_to :project_task
+belongs_to :user
+```
+
+**Key Methods:**
+- `status_changed?` - Check if status changed
+- `progress_changed?` - Check if progress changed
+- `has_photos?` - Check if photos attached
+- `summary` - Generate update summary
+
+**Database:** `/Users/jakebaird/trapid/backend/db/migrate/20251104053321_create_task_updates.rb`
+
+---
+
+### 1.6 User Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/user.rb`
+
+**Key Attributes:**
+- `email` (string, unique)
+- `name` (string)
+- `password_digest` - bcrypt hashed password
+
+**Relationships:**
+```ruby
+has_many :grok_plans, dependent: :destroy
+```
+
+**Note:** User model is minimal. Frontend maintains hardcoded team members for assignment UI.
+
+---
+
+## 2. GANTT CHART IMPLEMENTATION
+
+### 2.1 Backend API Endpoints
+
+#### ProjectTasks Gantt Data
+**Route:** `GET /api/v1/projects/:id/gantt`  
+**File:** `/Users/jakebaird/trapid/backend/app/controllers/api/v1/projects_controller.rb`
+
+**Response:**
+```json
+{
+  "project": {
+    "id": 1,
+    "name": "Project Name",
+    "start_date": "2025-01-01",
+    "end_date": "2025-12-31",
+    "status": "active"
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "name": "Task Name",
+      "task_type": "DO",
+      "category": "CONCRETE",
+      "status": "not_started",
+      "progress": 0,
+      "start_date": "2025-01-15",
+      "end_date": "2025-01-20",
+      "actual_start": null,
+      "actual_end": null,
+      "duration": 5,
+      "is_milestone": false,
+      "is_critical_path": false,
+      "assigned_to": "Rob Harder",
+      "supplier": "Supplier Name",
+      "predecessors": [5, 6],
+      "successors": [10, 11],
+      "purchase_order": {
+        "id": 42,
+        "number": "PO-001",
+        "total": 5000.00
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "id": 1,
+      "source": 5,
+      "target": 1,
+      "type": "finish_to_start",
+      "lag": 0
+    }
+  ]
+}
+```
+
+**Controller:** `ProjectTasksController#index`
+- Includes task_template, purchase_order, assigned_to
+- Ordered by planned_start_date, sequence_order
+- Returns materials_status for each task
+
+---
+
+#### ScheduleTasks Gantt Data
+**Route:** `GET /api/v1/constructions/:construction_id/schedule_tasks/gantt_data`  
+**File:** `/Users/jakebaird/trapid/backend/app/controllers/api/v1/schedule_tasks_controller.rb`
+
+**Response:**
+```json
+{
+  "success": true,
+  "gantt_tasks": [
+    {
+      "id": 1,
+      "title": "Pour Concrete",
+      "start_date": "2025-01-15",
+      "end_date": "2025-01-20",
+      "duration_days": 5,
+      "status": "in_progress",
+      "supplier_category": "CONCRETE",
+      "supplier_name": "ABC Concrete",
+      "purchase_order_id": 42,
+      "purchase_order_number": "PO-001",
+      "predecessors": [5, 6],
+      "progress": 50
+    }
+  ],
+  "count": 15
+}
+```
+
+---
+
+### 2.2 Frontend Components
+
+#### GanttChart Component
+**Location:** `/Users/jakebaird/trapid/frontend/src/components/gantt/GanttChart.jsx`
+
+**Props:**
+```javascript
+{
+  tasks: Array,           // Task data array
+  projectInfo: Object,    // Project metadata
+  colorBy: String,        // 'status', 'category', or 'type'
+  colorConfig: Object     // Color scheme customization
+}
+```
+
+**Features:**
+- **Zoom Levels:** Days, weeks, months
+- **Date Navigation:** Previous/Next period, "Today" button
+- **Dynamic Pixels Per Day:**
+  - Days: 40px/day
+  - Weeks: 6px/day
+  - Months: 2px/day
+- **Components Used:**
+  - `GanttHeader` - Date headers
+  - `GanttGrid` - Background grid
+  - `TaskRow` - Individual task bars
+
+**State Management:**
+- `zoomLevel` - Current zoom
+- `showWeekends` - Weekend visibility toggle
+- `currentDate` - Navigation date
+
+---
+
+#### TaskTable Component
+**Location:** `/Users/jakebaird/trapid/frontend/src/components/gantt/TaskTable.jsx`
+
+**Features:**
+- **Inline Editing:** Click any field to edit
+- **Sortable Columns:** Click headers to sort (asc/desc/unsorted)
+- **Dropdowns:** Team member and supplier assignment
+- **Progress Bars:** Visual representation with percentage
+- **Color Coding:** By status, category, or type
+- **Special Badges:** Milestone (M) and Critical Path indicators
+
+**Columns:**
+1. Task Name
+2. Status
+3. Category
+4. Start Date
+5. End Date
+6. Duration
+7. Progress (bar + percentage)
+8. Assigned To (dropdown)
+9. Supplier (dropdown)
+10. Type
+
+**Supported Edits:**
+- Text fields: name, notes
+- Date fields: planned_start_date, planned_end_date
+- Number fields: duration_days, progress_percentage
+- Dropdowns: assigned_to, supplier_name
+
+---
+
+#### ScheduleGanttChart Component
+**Location:** `/Users/jakebaird/trapid/frontend/src/components/schedule-master/ScheduleGanttChart.jsx`
+
+**Purpose:** Displays supplier delivery schedule Gantt view  
+**Props:** `ganttData` (from backend)
+
+---
+
+#### ScheduleMasterTab Component
+**Location:** `/Users/jakebaird/trapid/frontend/src/components/schedule-master/ScheduleMasterTab.jsx`
+
+**Features:**
+- **Task Import:** Excel file upload for schedule
+- **Task Matching:** Link schedule tasks to purchase orders
+- **Statistics:** Matched vs unmatched task counts
+- **Gantt Display:** Only shows matched tasks in timeline view
+
+**Sub-components:**
+- `ScheduleImporter` - File upload
+- `ScheduleStats` - Summary cards
+- `ScheduleTaskList` - Task listing and matching UI
+- `ScheduleGanttChart` - Timeline view
+- `TaskMatchModal` - PO selection dialog
+
+---
+
+### 2.3 Color Schemes
+**File:** `/Users/jakebaird/trapid/frontend/src/components/gantt/utils/colorSchemes.js`
+
+**Status Colors:**
+- Not Started: #C4C4C4 (Gray)
+- In Progress: #579BFC (Blue)
+- Complete: #00C875 (Green)
+- On Hold/Blocked: #E44258 (Red)
+
+**Customizable Color Config:**
+```javascript
+{
+  status: {
+    'not_started': { badge: 'bg-gray-100 text-gray-900', bar: '#C4C4C4' },
+    'in_progress': { badge: 'bg-blue-100 text-blue-900', bar: '#579BFC' },
+    'complete': { badge: 'bg-green-100 text-green-900', bar: '#00C875' },
+    // ... more
+  },
+  category: { /* colors by category */ },
+  type: { /* colors by type */ }
+}
+```
+
+---
+
+## 3. USER ASSIGNMENT
+
+### 3.1 Current Implementation
+
+#### Backend Assignment
+**Model:** `ProjectTask` has `assigned_to_id` foreign key to User
+
+**Field:**
+```ruby
+belongs_to :assigned_to, class_name: 'User', optional: true
+```
+
+**API Update:**
+```
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "assigned_to_id": 5  # User ID
+  }
+}
+```
+
+---
+
+#### Frontend Team Selection
+**Location:** `/Users/jakebaird/trapid/frontend/src/components/gantt/TaskTable.jsx`
+
+**Hardcoded Team Members:**
+```javascript
+const teamMembers = [
+  { name: 'Rob Harder', avatar: 'https://images.unsplash.com/...' },
+  { name: 'Andrew Clement', avatar: 'https://images.unsplash.com/...' },
+  { name: 'Sam Harder', avatar: 'https://images.unsplash.com/...' },
+  { name: 'Sophie Harder', avatar: 'https://images.unsplash.com/...' },
+  { name: 'Jake Baird', avatar: 'https://images.unsplash.com/...' },
+]
+```
+
+**Component:** `AssignedUserDropdown`
+- Headless UI Listbox
+- Avatar display
+- Unassigned option
+- Calls `onTaskUpdate(taskId, 'assigned_to', memberName)`
+
+---
+
+### 3.2 What's Missing
+
+1. **Dynamic User Fetching** - Users hardcoded in frontend
+2. **User API Endpoint** - No endpoint to fetch active team members
+3. **User Roles/Permissions** - No role-based assignments
+4. **Workload Tracking** - No capacity planning
+5. **Team Structure** - No team/department organization
+6. **Assignment Notifications** - No notification system
+
+---
+
+## 4. PROJECT/SCHEDULE MANAGEMENT ARCHITECTURE
+
+### 4.1 Hierarchy
+```
+Organization
+  └─ Construction (Job)
+      ├─ Project (Master Schedule)
+      │   └─ ProjectTasks (with dependencies, users, POs)
+      ├─ ScheduleTasks (supplier deliveries)
+      └─ PurchaseOrders
+```
+
+---
+
+### 4.2 Construction Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/construction.rb`
+
+**Key Attributes:**
+- `title` (string, required)
+- `status` (string)
+- `contract_value` (decimal)
+- `site_supervisor_name` (string)
+- `site_supervisor_email` (string)
+- `site_supervisor_phone` (string)
+- `profit_percentage` (decimal)
+- `live_profit` (decimal)
+
+**Relationships:**
+```ruby
+has_many :purchase_orders, dependent: :destroy
+has_many :schedule_tasks, dependent: :destroy
+has_many :estimates, dependent: :nullify
+has_one :project, dependent: :destroy
+has_one :one_drive_credential, dependent: :destroy
+belongs_to :design, optional: true
+```
+
+**Key Methods:**
+- `create_project!(project_manager:, name: nil)` - Create Master Schedule
+- `schedule_ready?` - Check if has POs for schedule
+- `calculate_live_profit` - Contract value minus all POs
+- `create_folders_if_needed!` - Trigger OneDrive folder creation
+
+---
+
+### 4.3 Project Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/project.rb`
+
+**Key Attributes:**
+- `name` (string)
+- `project_code` (string, unique)
+- `status` (string, one of: planning, active, complete, on_hold)
+- `start_date` (date)
+- `planned_end_date` (date)
+- `actual_end_date` (date)
+- `project_manager_id` (references User)
+
+**Relationships:**
+```ruby
+belongs_to :project_manager, class_name: 'User'
+belongs_to :construction
+has_many :project_tasks, dependent: :destroy
+has_many :purchase_orders, through: :construction
+```
+
+**Key Methods:**
+- `progress_percentage` - Average of all task progress (cached 5 min)
+- `days_remaining` - Days until planned_end_date
+- `on_schedule?` - Critical path vs. planned end
+- `critical_path_tasks` - Tasks on critical path
+- `overdue_tasks` - Past end date, not complete
+- `upcoming_tasks` - Due within 1 week, not started
+
+---
+
+### 4.4 Schedule Generation Service
+**Location:** `/Users/jakebaird/trapid/backend/app/services/schedule/generator_service.rb`
+
+**Purpose:** Generate complete Master Schedule from templates and purchase orders
+
+**Workflow:**
+1. **Create Tasks from Templates** - Instantiate all NDIS task templates
+2. **Map Purchase Orders** - Link POs to matching tasks by category
+3. **Establish Dependencies** - Create task relationships from template hierarchy
+4. **Calculate Timeline** - Forward pass algorithm for dates
+5. **Identify Critical Path** - Find longest path through network
+6. **Update Project Status** - Mark as active with generation timestamp
+
+**Category Mapping:**
+```ruby
+{
+  'CONCRETE' => { categories: ['CONCRETE'], types: ['DO', 'ORDER'] },
+  'CARPENTER' => { categories: ['CARPENTER'], types: ['DO', 'ORDER'] },
+  # ... 20+ trades mapped
+}
+```
+
+**Timeline Calculation:**
+- Topological sort for execution order
+- Forward pass for earliest start/finish
+- Supports all 4 dependency types
+- Lag days for task overlap
+
+**Critical Path:**
+- Uses longest path algorithm
+- Currently simplified (needs backward pass for accuracy)
+
+---
+
+## 5. EXISTING FEATURES
+
+### 5.1 What's Working
+
+#### Task Creation & Management
+- [x] Create tasks from templates
+- [x] Manual task creation
+- [x] Duplicate/clone tasks
+- [x] Delete tasks
+- [x] Task status tracking (4 states)
+- [x] Progress percentage (0-100)
+- [x] Duration planning in days
+
+#### Scheduling & Planning
+- [x] Planned start/end dates
+- [x] Actual start/end dates (auto-set on status change)
+- [x] Task dependencies (4 types)
+- [x] Circular dependency prevention
+- [x] Dependency lag/overlap support
+- [x] Critical path identification
+- [x] Milestone marking
+
+#### User Assignment
+- [x] Assign users to tasks
+- [x] Unassigned state
+- [x] User display with name
+
+#### Purchase Order Linking
+- [x] Link PO to task
+- [x] Materials status tracking (no_po/on_time/delayed)
+- [x] Delivery timing validation
+- [x] On-site date requirements
+
+#### Gantt Visualization
+- [x] Grid-based visual timeline
+- [x] Zoom levels (day/week/month)
+- [x] Date navigation
+- [x] Color by status/category/type
+- [x] Custom color schemes
+- [x] Task bar for each activity
+- [x] Legend display
+
+#### Table View
+- [x] Spreadsheet-like interface
+- [x] Inline editing (click-to-edit)
+- [x] Sortable columns
+- [x] User dropdown selection
+- [x] Date picker inputs
+- [x] Progress bars with percentage
+- [x] Special badges (milestone, critical)
+
+#### Schedule Import
+- [x] Excel file upload
+- [x] Automatic schedule task creation
+- [x] Match to purchase orders
+- [x] Supplier tracking
+- [x] Task linking (predecessors)
+
+#### Status Tracking
+- [x] Task updates with history
+- [x] Status change logging
+- [x] Progress tracking
+- [x] Photo attachments
+- [x] Notes/comments
+
+---
+
+### 5.2 What Needs Development
+
+#### User Management
+- [ ] Dynamic user list from database (currently hardcoded)
+- [ ] User roles and permissions
+- [ ] Team management
+- [ ] User workload/capacity planning
+- [ ] User availability calendar
+
+#### Advanced Scheduling
+- [ ] Backward pass for accurate float calculation
+- [ ] True critical path with float values
+- [ ] Resource-leveling
+- [ ] Constraint handling (external, mandatory milestones)
+- [ ] Multi-project scheduling
+- [ ] Schedule optimization
+
+#### Collaboration
+- [ ] Task comments/discussions
+- [ ] @mentions and notifications
+- [ ] Change tracking (who changed what, when)
+- [ ] Real-time updates (WebSockets)
+- [ ] Document attachments per task
+
+#### Analytics & Reporting
+- [ ] Schedule variance (planned vs actual)
+- [ ] Performance metrics
+- [ ] Burn-down charts
+- [ ] Resource utilization reports
+- [ ] Cost-to-schedule tracking
+
+#### Mobile Support
+- [ ] Mobile Gantt view
+- [ ] Task updates from site
+- [ ] Photo uploads from mobile
+- [ ] Offline capability
+
+#### Advanced Features
+- [ ] Template task dependencies (for reuse)
+- [ ] Recurring tasks
+- [ ] Task allocation to multiple users
+- [ ] Sub-task hierarchies
+- [ ] Effort/cost estimation
+- [ ] Risk register integration
+
+---
+
+## 6. KEY FILE LOCATIONS REFERENCE
+
+### Backend Models
+| File | Purpose |
+|------|---------|
+| `/Users/jakebaird/trapid/backend/app/models/project_task.rb` | Main task model |
+| `/Users/jakebaird/trapid/backend/app/models/schedule_task.rb` | Supplier schedule model |
+| `/Users/jakebaird/trapid/backend/app/models/task_template.rb` | Template base |
+| `/Users/jakebaird/trapid/backend/app/models/task_dependency.rb` | Task relationships |
+| `/Users/jakebaird/trapid/backend/app/models/task_update.rb` | Change history |
+| `/Users/jakebaird/trapid/backend/app/models/project.rb` | Master schedule container |
+| `/Users/jakebaird/trapid/backend/app/models/construction.rb` | Job/project container |
+| `/Users/jakebaird/trapid/backend/app/models/user.rb` | User accounts |
+
+### Backend Controllers
+| File | Purpose |
+|------|---------|
+| `/Users/jakebaird/trapid/backend/app/controllers/api/v1/project_tasks_controller.rb` | Task CRUD API |
+| `/Users/jakebaird/trapid/backend/app/controllers/api/v1/schedule_tasks_controller.rb` | Schedule task API |
+| `/Users/jakebaird/trapid/backend/app/controllers/api/v1/projects_controller.rb` | Project & Gantt API |
+
+### Backend Services
+| File | Purpose |
+|------|---------|
+| `/Users/jakebaird/trapid/backend/app/services/schedule/generator_service.rb` | Schedule generation |
+| `/Users/jakebaird/trapid/backend/app/services/spreadsheet_parser.rb` | Excel import |
+
+### Frontend Components
+| File | Purpose |
+|------|---------|
+| `/Users/jakebaird/trapid/frontend/src/components/gantt/GanttChart.jsx` | Main Gantt visualization |
+| `/Users/jakebaird/trapid/frontend/src/components/gantt/TaskTable.jsx` | Task table with inline edit |
+| `/Users/jakebaird/trapid/frontend/src/components/gantt/TaskRow.jsx` | Individual task bar |
+| `/Users/jakebaird/trapid/frontend/src/components/gantt/GanttHeader.jsx` | Date header |
+| `/Users/jakebaird/trapid/frontend/src/components/gantt/GanttGrid.jsx` | Background grid |
+| `/Users/jakebaird/trapid/frontend/src/components/schedule-master/ScheduleMasterTab.jsx` | Schedule UI container |
+| `/Users/jakebaird/trapid/frontend/src/components/schedule-master/ScheduleGanttChart.jsx` | Supplier Gantt |
+| `/Users/jakebaird/trapid/frontend/src/components/schedule-master/ScheduleImporter.jsx` | Excel upload |
+| `/Users/jakebaird/trapid/frontend/src/components/schedule-master/TaskMatchModal.jsx` | PO matching dialog |
+| `/Users/jakebaird/trapid/frontend/src/pages/MasterSchedulePage.jsx` | Master schedule page |
+| `/Users/jakebaird/trapid/frontend/src/pages/JobDetailPage.jsx` | Job detail tabs |
+
+### Frontend Pages
+| File | Purpose |
+|------|---------|
+| `/Users/jakebaird/trapid/frontend/src/pages/MasterSchedulePage.jsx` | Full schedule view |
+| `/Users/jakebaird/trapid/frontend/src/pages/JobDetailPage.jsx` | Job with "Schedule Master" tab |
+
+### Database Migrations
+| File | Tables |
+|------|--------|
+| `20251104053317_create_task_templates.rb` | task_templates |
+| `20251104053318_create_project_tasks.rb` | project_tasks |
+| `20251104053320_create_task_dependencies.rb` | task_dependencies |
+| `20251104053321_create_task_updates.rb` | task_updates |
+| `20251105051002_create_schedule_tasks.rb` | schedule_tasks |
+
+### Routes
+**Main Routes:** `/Users/jakebaird/trapid/backend/config/routes.rb`
+
+**Task Endpoints:**
+```
+GET     /api/v1/projects/:project_id/tasks               (index)
+POST    /api/v1/projects/:project_id/tasks               (create)
+GET     /api/v1/projects/:project_id/tasks/:id           (show)
+PATCH   /api/v1/projects/:project_id/tasks/:id           (update)
+DELETE  /api/v1/projects/:project_id/tasks/:id           (destroy)
+GET     /api/v1/projects/:id/gantt                       (gantt data)
+
+GET     /api/v1/constructions/:construction_id/schedule_tasks
+POST    /api/v1/constructions/:construction_id/schedule_tasks/import
+GET     /api/v1/constructions/:construction_id/schedule_tasks/gantt_data
+PATCH   /api/v1/schedule_tasks/:id/match_po
+DELETE  /api/v1/schedule_tasks/:id/unmatch_po
+```
+
+---
+
+## 7. DATA RELATIONSHIPS DIAGRAM
+
+```
+User
+  ├── created projects (project_manager_id)
+  └── created task_updates
+
+Construction (Job)
+  ├── has one Project (Master Schedule)
+  │   ├── has many ProjectTasks
+  │   │   ├── assigned_to → User
+  │   │   ├── task_template → TaskTemplate
+  │   │   ├── purchase_order → PurchaseOrder
+  │   │   ├── has many successor_dependencies (as predecessor)
+  │   │   ├── has many predecessor_dependencies (as successor)
+  │   │   ├── has many successor_tasks
+  │   │   ├── has many predecessor_tasks
+  │   │   └── has many task_updates
+  │   └── has many purchase_orders (through construction)
+  │
+  ├── has many ScheduleTasks
+  │   └── purchase_order → PurchaseOrder
+  │
+  └── has many PurchaseOrders
+      └── required_on_site_date (delivery date)
+
+TaskTemplate
+  ├── has many ProjectTasks
+  └── predecessor_template_codes (references other templates)
+
+TaskDependency
+  ├── successor_task → ProjectTask
+  └── predecessor_task → ProjectTask
+```
+
+---
+
+## 8. API CONTRACT SUMMARY
+
+### ProjectTask Update
+```
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "name": "string",
+    "status": "not_started|in_progress|complete|on_hold",
+    "planned_start_date": "2025-01-15",
+    "planned_end_date": "2025-01-20",
+    "duration_days": 5,
+    "progress_percentage": 50,
+    "assigned_to_id": 3,
+    "supplier_name": "string",
+    "is_milestone": false,
+    "is_critical_path": false,
+    "notes": "string"
+  }
+}
+```
+
+### ScheduleTask Import
+```
+POST /api/v1/constructions/:construction_id/schedule_tasks/import
+Content-Type: multipart/form-data
+{
+  "file": <Excel file>
+}
+```
+
+**Expected Excel Columns:**
+- Title, Status, Start, Complete, Duration
+- Supplier Category, Supplier, Paid Internal
+- Approx Date, Confirm, Supplier Confirm
+- Task Started, Completed, Predecessors, Attachments
+
+---
+
+## 9. KEY STATISTICS
+
+### Database Tables
+- **Total Task-Related Tables:** 5 (ProjectTask, ScheduleTask, TaskTemplate, TaskDependency, TaskUpdate)
+- **Total Relationships:** 12+
+- **Supported Dependency Types:** 4
+- **Task Statuses:** 4
+- **Task Types:** 7+
+- **Trade Categories:** 20+
+
+### Frontend Components
+- **Gantt-Related:** 8 components
+- **Schedule Management:** 5 components
+- **UI Pages:** 2 main pages for scheduling
+
+### Code Statistics
+- **Backend Models:** ~500 lines
+- **Backend Controllers:** ~300 lines
+- **Backend Services:** ~350 lines
+- **Frontend Components:** ~2000+ lines
+- **Migrations:** 5 task-related migrations
+
+---
+
+## 10. RECOMMENDATIONS & NEXT STEPS
+
+### Immediate (High Priority)
+1. **Fetch Users Dynamically** - Create `/api/v1/users` endpoint to populate team dropdown
+2. **User Profiles** - Add avatar URLs to User model
+3. **Task CRUD Forms** - Create modal for adding/editing tasks instead of inline edit
+
+### Short-term (Medium Priority)
+1. **Backward Pass Algorithm** - Implement for accurate critical path calculation
+2. **Float Calculation** - Calculate slack time per task
+3. **Export Functionality** - Export Gantt chart as PDF/PNG
+4. **Notifications** - Task assignment notifications to users
+5. **Comments/Notes** - Per-task discussion threads
+
+### Medium-term (Nice to Have)
+1. **Resource Leveling** - Optimize schedule for resource constraints
+2. **Cost Integration** - Track task costs and budget
+3. **Mobile App** - Responsive Gantt view
+4. **Real-time Sync** - WebSocket updates for multi-user editing
+5. **Advanced Analytics** - Schedule variance reports
+
+### Long-term (Strategic)
+1. **Multi-project Management** - Portfolio-level scheduling
+2. **Risk Management** - Risk register integration
+3. **AI Assistant** - Schedule optimization recommendations
+4. **Third-party Integration** - MS Project, Primavera import
+5. **Capacity Planning** - Resource pool management
+
+---
+
+## CONCLUSION
+
+Trapid has a **solid, well-architected task management foundation** with:
+- ✅ Comprehensive data models with proper relationships
+- ✅ Working Gantt chart visualization with multiple zoom levels
+- ✅ Task dependency tracking with circular dependency prevention
+- ✅ Critical path identification
+- ✅ Purchase order integration
+- ✅ Excel schedule import capability
+- ✅ Flexible inline editing UI
+
+The system is **production-ready for basic to intermediate project scheduling** but needs enhancement for advanced resource management and multi-project portfolio planning. The separation between ProjectTasks (detailed planning) and ScheduleTasks (supplier tracking) is well-designed and allows for flexible use cases.
+
+
+
+---
+
 ## 📚 Related Chapters
 
 _Links to related chapters will be added as cross-references are identified._
@@ -1085,6 +2769,1045 @@ _Links to related chapters will be added as cross-references are identified._
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter  9               │
 │ 📘 USER MANUAL (HOW): Chapter  9               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-17
+
+---
+
+## 🐛 Bug Hunter
+
+### ⚡ Race Condition in PO Number Generation
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+Two users create POs simultaneously → potential for duplicate PO numbers.
+
+#### Scenario
+Two users create POs simultaneously → potential for duplicate PO numbers.
+
+---
+
+### ⚡ Payment Status Calculation Confusion
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+User sets `amount_paid = $990` on PO with `total = $1000`.
+Payment status shows "Part Payment" instead of "Complete".
+
+#### Scenario
+User sets `amount_paid = $990` on PO with `total = $1000`.
+Payment status shows "Part Payment" instead of "Complete".
+
+---
+
+### ⚡ Smart Lookup Returns Wrong Supplier
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Medium
+
+#### Summary
+User expects "ABC Supplier" but system selects "XYZ Supplier" for item.
+
+#### Scenario
+User expects "ABC Supplier" but system selects "XYZ Supplier" for item.
+
+#### Solution
+1. Check category default: Settings → Price Books → Categories
+2. Update default supplier if needed
+3. Or manually override after smart lookup
+
+---
+
+### ⚡ Price Drift Warning on First-Time Items
+
+**Status:** ⚡ OPEN
+**First Reported:** Unknown
+**Severity:** Low
+
+#### Summary
+New item has no pricebook entry → shows "N/A" drift → confusing to users.
+
+#### Scenario
+New item has no pricebook entry → shows "N/A" drift → confusing to users.
+
+#### Solution
+```ruby
+ActiveRecord::Base.transaction do
+  # Step 1: Unlink old task
+  if old_task = purchase_order.schedule_task
+    old_task.update!(purchase_order_id: nil)
+  end
+
+  # Step 2: Link new task
+  if new_task_id.present?
+    new_task = ScheduleTask.find(new_task_id)
+    new_task.update!(purchase_order_id: purchase_order.id)
+  end
+end
+
+---
+
+## 🏛️ Architecture
+
+### Design Decisions & Rationale
+
+### 1. Task Management System - Comprehensive Architecture Investigation
+
+**Decision:** Complete investigation of ProjectTask and ScheduleTask models, Gantt visualization, and user assignment system
+
+**Details:**
+# Trapid Task Management, Gantt Chart & User Assignment - Comprehensive Investigation Report
+
+## Executive Summary
+
+The Trapid application has a **comprehensive task management and scheduling system** with two distinct architectures:
+
+1. **Project Tasks (Master Schedule)** - For detailed project planning with dependencies, critical path analysis, and granular user assignment
+2. **Schedule Tasks (Construction Schedule)** - For tracking supplier deliveries and linking to purchase orders
+
+Both systems include Gantt chart visualizations and task status tracking. The application is architecturally sound with clear separation between frontend components and backend models.
+
+---
+
+## 1. TASK/TODO MODELS
+
+### 1.1 ProjectTask Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/project_task.rb`
+
+**Key Attributes:**
+- `name` (string, required) - Task name
+- `task_type` (string, required) - Task classification (ORDER, DO, GET, CLAIM, CERTIFICATE, PHOTO, FIT)
+- `category` (string, required) - Trade/category (ADMIN, CARPENTER, ELECTRICAL, PLUMBER, etc.)
+- `status` (string, default: 'not_started') - States: `not_started`, `in_progress`, `complete`, `on_hold`
+- `progress_percentage` (integer, 0-100, default: 0)
+- `duration_days` (integer, required) - Task duration in days
+- `planned_start_date` (date) - Scheduled start
+- `planned_end_date` (date) - Scheduled end
+- `actual_start_date` (date) - Actual start when moved to in_progress
+- `actual_end_date` (date) - Actual completion date
+- `is_milestone` (boolean, default: false) - Mark as project milestone
+- `is_critical_path` (boolean, default: false) - On critical path
+- `task_code` (string) - Code for dependency references
+- `supplier_name` (string) - External supplier name
+
+**Relationships:**
+```ruby
+belongs_to :project
+belongs_to :task_template, optional: true
+belongs_to :purchase_order, optional: true
+belongs_to :assigned_to, class_name: 'User', optional: true  # User assignment
+
+has_many :successor_dependencies    # Tasks that depend on this
+has_many :predecessor_dependencies  # Tasks this depends on
+has_many :successor_tasks, through: :successor_dependencies
+has_many :predecessor_tasks, through: :predecessor_dependencies
+has_many :task_updates, dependent: :destroy  # Status history
+```
+
+**Key Methods:**
+- `complete!` - Mark task as complete with 100% progress
+- `start!` - Move task to in_progress
+- `can_start?` - Check if all predecessors are complete
+- `blocked_by` - Returns incomplete predecessor tasks
+- `total_float` - Calculates slack time (simplified)
+- `is_on_critical_path?` - Check critical path status
+- `materials_status` - Returns 'no_po', 'on_time', or 'delayed'
+- `materials_on_time?` - Check if linked PO will arrive before task start
+
+**Database:** `/Users/jakebaird/trapid/backend/db/migrate/20251104053318_create_project_tasks.rb`
+
+---
+
+### 1.2 ScheduleTask Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/schedule_task.rb`
+
+**Key Attributes:**
+- `title` (string, required) - Task name
+- `status` (string) - Task status
+- `start_date` (datetime) - Start date
+- `complete_date` (datetime) - Completion date
+- `duration` (string) - Duration string (e.g., "5d", "21d")
+- `duration_days` (integer) - Parsed duration in days
+- `supplier_category` (string) - Supplier category
+- `supplier_name` (string) - Supplier name
+- `paid_internal` (boolean)
+- `confirm` (boolean) - Confirmation flag
+- `supplier_confirm` (boolean) - Supplier confirmation
+- `task_started` (datetime)
+- `completed` (datetime)
+- `predecessors` (jsonb, array) - Task dependencies as IDs
+- `attachments` (text) - File attachments
+- `matched_to_po` (boolean) - Is matched to a purchase order
+- `sequence_order` (integer) - Original order from spreadsheet import
+
+**Relationships:**
+```ruby
+belongs_to :construction
+belongs_to :purchase_order, optional: true
+```
+
+**Key Methods:**
+- `match_to_purchase_order!(po)` - Link to a purchase order
+- `unmatch_from_purchase_order!` - Remove purchase order link
+- `to_gantt_format` - Returns data formatted for Gantt chart display
+- `calculate_end_date` - Computes end date from start + duration
+- `calculate_progress` - Returns progress percentage (0, 50, or 100)
+- `suggested_purchase_orders(limit = 5)` - Suggests matching POs based on title
+
+**Database:** `/Users/jakebaird/trapid/backend/db/migrate/20251105051002_create_schedule_tasks.rb`
+
+---
+
+### 1.3 TaskTemplate Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/task_template.rb`
+
+**Purpose:** Standard NDIS construction task templates used to create ProjectTasks
+
+**Key Attributes:**
+- `name` (string) - Template name
+- `task_type` (string) - Task type code
+- `category` (string) - Trade category
+- `default_duration_days` (integer) - Default duration
+- `sequence_order` (integer) - Execution sequence
+- `predecessor_template_codes` (integer array) - Dependency references
+- `is_milestone` (boolean)
+- `requires_photo` (boolean)
+- `is_standard` (boolean) - Standard vs custom template
+
+**Relationships:**
+```ruby
+has_many :project_tasks
+```
+
+**Scopes:**
+- `standard` - Filter to standard templates
+- `custom` - Filter to custom templates
+- `by_sequence` - Order by sequence
+- `milestones` - Templates marked as milestones
+
+**Database:** `/Users/jakebaird/trapid/backend/db/migrate/20251104053317_create_task_templates.rb`
+
+---
+
+### 1.4 TaskDependency Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/task_dependency.rb`
+
+**Purpose:** Define task relationships and constraints
+
+**Key Attributes:**
+- `successor_task_id` (required) - Task that depends on predecessor
+- `predecessor_task_id` (required) - Task that must complete first
+- `dependency_type` (string) - Relationship type
+- `lag_days` (integer, default: 0) - Time gap between tasks
+
+**Dependency Types:**
+```ruby
+DEPENDENCY_TYPES = {
+  'fs' => 'finish_to_start',    # Standard: predecessor finishes, successor starts
+  'ss' => 'start_to_start',     # Tasks start together
+  'ff' => 'finish_to_finish',   # Tasks finish together
+  'sf' => 'start_to_finish'     # Rare: predecessor starts, successor finishes
+}
+```
+
+**Validations:**
+- Prevents circular dependencies
+- Prevents self-dependencies
+- Ensures tasks are in same project
+- Unique constraint on (successor_task_id, predecessor_task_id) pair
+
+**Key Methods:**
+- `creates_circular_dependency?` - DFS-based cycle detection
+
+**Database:** `/Users/jakebaird/trapid/backend/db/migrate/20251104053320_create_task_dependencies.rb`
+
+---
+
+### 1.5 TaskUpdate Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/task_update.rb`
+
+**Purpose:** Track task status changes and progress updates over time
+
+**Key Attributes:**
+- `project_task_id` (required) - Associated task
+- `user_id` (required) - User who made update
+- `status_before` (string) - Previous status
+- `status_after` (string) - New status
+- `progress_before` (integer) - Previous progress %
+- `progress_after` (integer) - New progress %
+- `notes` (text) - Update notes
+- `photo_urls` (text array) - Attached photos
+- `update_date` (date) - When update occurred
+
+**Relationships:**
+```ruby
+belongs_to :project_task
+belongs_to :user
+```
+
+**Key Methods:**
+- `status_changed?` - Check if status changed
+- `progress_changed?` - Check if progress changed
+- `has_photos?` - Check if photos attached
+- `summary` - Generate update summary
+
+**Database:** `/Users/jakebaird/trapid/backend/db/migrate/20251104053321_create_task_updates.rb`
+
+---
+
+### 1.6 User Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/user.rb`
+
+**Key Attributes:**
+- `email` (string, unique)
+- `name` (string)
+- `password_digest` - bcrypt hashed password
+
+**Relationships:**
+```ruby
+has_many :grok_plans, dependent: :destroy
+```
+
+**Note:** User model is minimal. Frontend maintains hardcoded team members for assignment UI.
+
+---
+
+## 2. GANTT CHART IMPLEMENTATION
+
+### 2.1 Backend API Endpoints
+
+#### ProjectTasks Gantt Data
+**Route:** `GET /api/v1/projects/:id/gantt`  
+**File:** `/Users/jakebaird/trapid/backend/app/controllers/api/v1/projects_controller.rb`
+
+**Response:**
+```json
+{
+  "project": {
+    "id": 1,
+    "name": "Project Name",
+    "start_date": "2025-01-01",
+    "end_date": "2025-12-31",
+    "status": "active"
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "name": "Task Name",
+      "task_type": "DO",
+      "category": "CONCRETE",
+      "status": "not_started",
+      "progress": 0,
+      "start_date": "2025-01-15",
+      "end_date": "2025-01-20",
+      "actual_start": null,
+      "actual_end": null,
+      "duration": 5,
+      "is_milestone": false,
+      "is_critical_path": false,
+      "assigned_to": "Rob Harder",
+      "supplier": "Supplier Name",
+      "predecessors": [5, 6],
+      "successors": [10, 11],
+      "purchase_order": {
+        "id": 42,
+        "number": "PO-001",
+        "total": 5000.00
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "id": 1,
+      "source": 5,
+      "target": 1,
+      "type": "finish_to_start",
+      "lag": 0
+    }
+  ]
+}
+```
+
+**Controller:** `ProjectTasksController#index`
+- Includes task_template, purchase_order, assigned_to
+- Ordered by planned_start_date, sequence_order
+- Returns materials_status for each task
+
+---
+
+#### ScheduleTasks Gantt Data
+**Route:** `GET /api/v1/constructions/:construction_id/schedule_tasks/gantt_data`  
+**File:** `/Users/jakebaird/trapid/backend/app/controllers/api/v1/schedule_tasks_controller.rb`
+
+**Response:**
+```json
+{
+  "success": true,
+  "gantt_tasks": [
+    {
+      "id": 1,
+      "title": "Pour Concrete",
+      "start_date": "2025-01-15",
+      "end_date": "2025-01-20",
+      "duration_days": 5,
+      "status": "in_progress",
+      "supplier_category": "CONCRETE",
+      "supplier_name": "ABC Concrete",
+      "purchase_order_id": 42,
+      "purchase_order_number": "PO-001",
+      "predecessors": [5, 6],
+      "progress": 50
+    }
+  ],
+  "count": 15
+}
+```
+
+---
+
+### 2.2 Frontend Components
+
+#### GanttChart Component
+**Location:** `/Users/jakebaird/trapid/frontend/src/components/gantt/GanttChart.jsx`
+
+**Props:**
+```javascript
+{
+  tasks: Array,           // Task data array
+  projectInfo: Object,    // Project metadata
+  colorBy: String,        // 'status', 'category', or 'type'
+  colorConfig: Object     // Color scheme customization
+}
+```
+
+**Features:**
+- **Zoom Levels:** Days, weeks, months
+- **Date Navigation:** Previous/Next period, "Today" button
+- **Dynamic Pixels Per Day:**
+  - Days: 40px/day
+  - Weeks: 6px/day
+  - Months: 2px/day
+- **Components Used:**
+  - `GanttHeader` - Date headers
+  - `GanttGrid` - Background grid
+  - `TaskRow` - Individual task bars
+
+**State Management:**
+- `zoomLevel` - Current zoom
+- `showWeekends` - Weekend visibility toggle
+- `currentDate` - Navigation date
+
+---
+
+#### TaskTable Component
+**Location:** `/Users/jakebaird/trapid/frontend/src/components/gantt/TaskTable.jsx`
+
+**Features:**
+- **Inline Editing:** Click any field to edit
+- **Sortable Columns:** Click headers to sort (asc/desc/unsorted)
+- **Dropdowns:** Team member and supplier assignment
+- **Progress Bars:** Visual representation with percentage
+- **Color Coding:** By status, category, or type
+- **Special Badges:** Milestone (M) and Critical Path indicators
+
+**Columns:**
+1. Task Name
+2. Status
+3. Category
+4. Start Date
+5. End Date
+6. Duration
+7. Progress (bar + percentage)
+8. Assigned To (dropdown)
+9. Supplier (dropdown)
+10. Type
+
+**Supported Edits:**
+- Text fields: name, notes
+- Date fields: planned_start_date, planned_end_date
+- Number fields: duration_days, progress_percentage
+- Dropdowns: assigned_to, supplier_name
+
+---
+
+#### ScheduleGanttChart Component
+**Location:** `/Users/jakebaird/trapid/frontend/src/components/schedule-master/ScheduleGanttChart.jsx`
+
+**Purpose:** Displays supplier delivery schedule Gantt view  
+**Props:** `ganttData` (from backend)
+
+---
+
+#### ScheduleMasterTab Component
+**Location:** `/Users/jakebaird/trapid/frontend/src/components/schedule-master/ScheduleMasterTab.jsx`
+
+**Features:**
+- **Task Import:** Excel file upload for schedule
+- **Task Matching:** Link schedule tasks to purchase orders
+- **Statistics:** Matched vs unmatched task counts
+- **Gantt Display:** Only shows matched tasks in timeline view
+
+**Sub-components:**
+- `ScheduleImporter` - File upload
+- `ScheduleStats` - Summary cards
+- `ScheduleTaskList` - Task listing and matching UI
+- `ScheduleGanttChart` - Timeline view
+- `TaskMatchModal` - PO selection dialog
+
+---
+
+### 2.3 Color Schemes
+**File:** `/Users/jakebaird/trapid/frontend/src/components/gantt/utils/colorSchemes.js`
+
+**Status Colors:**
+- Not Started: #C4C4C4 (Gray)
+- In Progress: #579BFC (Blue)
+- Complete: #00C875 (Green)
+- On Hold/Blocked: #E44258 (Red)
+
+**Customizable Color Config:**
+```javascript
+{
+  status: {
+    'not_started': { badge: 'bg-gray-100 text-gray-900', bar: '#C4C4C4' },
+    'in_progress': { badge: 'bg-blue-100 text-blue-900', bar: '#579BFC' },
+    'complete': { badge: 'bg-green-100 text-green-900', bar: '#00C875' },
+    // ... more
+  },
+  category: { /* colors by category */ },
+  type: { /* colors by type */ }
+}
+```
+
+---
+
+## 3. USER ASSIGNMENT
+
+### 3.1 Current Implementation
+
+#### Backend Assignment
+**Model:** `ProjectTask` has `assigned_to_id` foreign key to User
+
+**Field:**
+```ruby
+belongs_to :assigned_to, class_name: 'User', optional: true
+```
+
+**API Update:**
+```
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "assigned_to_id": 5  # User ID
+  }
+}
+```
+
+---
+
+#### Frontend Team Selection
+**Location:** `/Users/jakebaird/trapid/frontend/src/components/gantt/TaskTable.jsx`
+
+**Hardcoded Team Members:**
+```javascript
+const teamMembers = [
+  { name: 'Rob Harder', avatar: 'https://images.unsplash.com/...' },
+  { name: 'Andrew Clement', avatar: 'https://images.unsplash.com/...' },
+  { name: 'Sam Harder', avatar: 'https://images.unsplash.com/...' },
+  { name: 'Sophie Harder', avatar: 'https://images.unsplash.com/...' },
+  { name: 'Jake Baird', avatar: 'https://images.unsplash.com/...' },
+]
+```
+
+**Component:** `AssignedUserDropdown`
+- Headless UI Listbox
+- Avatar display
+- Unassigned option
+- Calls `onTaskUpdate(taskId, 'assigned_to', memberName)`
+
+---
+
+### 3.2 What's Missing
+
+1. **Dynamic User Fetching** - Users hardcoded in frontend
+2. **User API Endpoint** - No endpoint to fetch active team members
+3. **User Roles/Permissions** - No role-based assignments
+4. **Workload Tracking** - No capacity planning
+5. **Team Structure** - No team/department organization
+6. **Assignment Notifications** - No notification system
+
+---
+
+## 4. PROJECT/SCHEDULE MANAGEMENT ARCHITECTURE
+
+### 4.1 Hierarchy
+```
+Organization
+  └─ Construction (Job)
+      ├─ Project (Master Schedule)
+      │   └─ ProjectTasks (with dependencies, users, POs)
+      ├─ ScheduleTasks (supplier deliveries)
+      └─ PurchaseOrders
+```
+
+---
+
+### 4.2 Construction Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/construction.rb`
+
+**Key Attributes:**
+- `title` (string, required)
+- `status` (string)
+- `contract_value` (decimal)
+- `site_supervisor_name` (string)
+- `site_supervisor_email` (string)
+- `site_supervisor_phone` (string)
+- `profit_percentage` (decimal)
+- `live_profit` (decimal)
+
+**Relationships:**
+```ruby
+has_many :purchase_orders, dependent: :destroy
+has_many :schedule_tasks, dependent: :destroy
+has_many :estimates, dependent: :nullify
+has_one :project, dependent: :destroy
+has_one :one_drive_credential, dependent: :destroy
+belongs_to :design, optional: true
+```
+
+**Key Methods:**
+- `create_project!(project_manager:, name: nil)` - Create Master Schedule
+- `schedule_ready?` - Check if has POs for schedule
+- `calculate_live_profit` - Contract value minus all POs
+- `create_folders_if_needed!` - Trigger OneDrive folder creation
+
+---
+
+### 4.3 Project Model
+**Location:** `/Users/jakebaird/trapid/backend/app/models/project.rb`
+
+**Key Attributes:**
+- `name` (string)
+- `project_code` (string, unique)
+- `status` (string, one of: planning, active, complete, on_hold)
+- `start_date` (date)
+- `planned_end_date` (date)
+- `actual_end_date` (date)
+- `project_manager_id` (references User)
+
+**Relationships:**
+```ruby
+belongs_to :project_manager, class_name: 'User'
+belongs_to :construction
+has_many :project_tasks, dependent: :destroy
+has_many :purchase_orders, through: :construction
+```
+
+**Key Methods:**
+- `progress_percentage` - Average of all task progress (cached 5 min)
+- `days_remaining` - Days until planned_end_date
+- `on_schedule?` - Critical path vs. planned end
+- `critical_path_tasks` - Tasks on critical path
+- `overdue_tasks` - Past end date, not complete
+- `upcoming_tasks` - Due within 1 week, not started
+
+---
+
+### 4.4 Schedule Generation Service
+**Location:** `/Users/jakebaird/trapid/backend/app/services/schedule/generator_service.rb`
+
+**Purpose:** Generate complete Master Schedule from templates and purchase orders
+
+**Workflow:**
+1. **Create Tasks from Templates** - Instantiate all NDIS task templates
+2. **Map Purchase Orders** - Link POs to matching tasks by category
+3. **Establish Dependencies** - Create task relationships from template hierarchy
+4. **Calculate Timeline** - Forward pass algorithm for dates
+5. **Identify Critical Path** - Find longest path through network
+6. **Update Project Status** - Mark as active with generation timestamp
+
+**Category Mapping:**
+```ruby
+{
+  'CONCRETE' => { categories: ['CONCRETE'], types: ['DO', 'ORDER'] },
+  'CARPENTER' => { categories: ['CARPENTER'], types: ['DO', 'ORDER'] },
+  # ... 20+ trades mapped
+}
+```
+
+**Timeline Calculation:**
+- Topological sort for execution order
+- Forward pass for earliest start/finish
+- Supports all 4 dependency types
+- Lag days for task overlap
+
+**Critical Path:**
+- Uses longest path algorithm
+- Currently simplified (needs backward pass for accuracy)
+
+---
+
+## 5. EXISTING FEATURES
+
+### 5.1 What's Working
+
+#### Task Creation & Management
+- [x] Create tasks from templates
+- [x] Manual task creation
+- [x] Duplicate/clone tasks
+- [x] Delete tasks
+- [x] Task status tracking (4 states)
+- [x] Progress percentage (0-100)
+- [x] Duration planning in days
+
+#### Scheduling & Planning
+- [x] Planned start/end dates
+- [x] Actual start/end dates (auto-set on status change)
+- [x] Task dependencies (4 types)
+- [x] Circular dependency prevention
+- [x] Dependency lag/overlap support
+- [x] Critical path identification
+- [x] Milestone marking
+
+#### User Assignment
+- [x] Assign users to tasks
+- [x] Unassigned state
+- [x] User display with name
+
+#### Purchase Order Linking
+- [x] Link PO to task
+- [x] Materials status tracking (no_po/on_time/delayed)
+- [x] Delivery timing validation
+- [x] On-site date requirements
+
+#### Gantt Visualization
+- [x] Grid-based visual timeline
+- [x] Zoom levels (day/week/month)
+- [x] Date navigation
+- [x] Color by status/category/type
+- [x] Custom color schemes
+- [x] Task bar for each activity
+- [x] Legend display
+
+#### Table View
+- [x] Spreadsheet-like interface
+- [x] Inline editing (click-to-edit)
+- [x] Sortable columns
+- [x] User dropdown selection
+- [x] Date picker inputs
+- [x] Progress bars with percentage
+- [x] Special badges (milestone, critical)
+
+#### Schedule Import
+- [x] Excel file upload
+- [x] Automatic schedule task creation
+- [x] Match to purchase orders
+- [x] Supplier tracking
+- [x] Task linking (predecessors)
+
+#### Status Tracking
+- [x] Task updates with history
+- [x] Status change logging
+- [x] Progress tracking
+- [x] Photo attachments
+- [x] Notes/comments
+
+---
+
+### 5.2 What Needs Development
+
+#### User Management
+- [ ] Dynamic user list from database (currently hardcoded)
+- [ ] User roles and permissions
+- [ ] Team management
+- [ ] User workload/capacity planning
+- [ ] User availability calendar
+
+#### Advanced Scheduling
+- [ ] Backward pass for accurate float calculation
+- [ ] True critical path with float values
+- [ ] Resource-leveling
+- [ ] Constraint handling (external, mandatory milestones)
+- [ ] Multi-project scheduling
+- [ ] Schedule optimization
+
+#### Collaboration
+- [ ] Task comments/discussions
+- [ ] @mentions and notifications
+- [ ] Change tracking (who changed what, when)
+- [ ] Real-time updates (WebSockets)
+- [ ] Document attachments per task
+
+#### Analytics & Reporting
+- [ ] Schedule variance (planned vs actual)
+- [ ] Performance metrics
+- [ ] Burn-down charts
+- [ ] Resource utilization reports
+- [ ] Cost-to-schedule tracking
+
+#### Mobile Support
+- [ ] Mobile Gantt view
+- [ ] Task updates from site
+- [ ] Photo uploads from mobile
+- [ ] Offline capability
+
+#### Advanced Features
+- [ ] Template task dependencies (for reuse)
+- [ ] Recurring tasks
+- [ ] Task allocation to multiple users
+- [ ] Sub-task hierarchies
+- [ ] Effort/cost estimation
+- [ ] Risk register integration
+
+---
+
+## 6. KEY FILE LOCATIONS REFERENCE
+
+### Backend Models
+| File | Purpose |
+|------|---------|
+| `/Users/jakebaird/trapid/backend/app/models/project_task.rb` | Main task model |
+| `/Users/jakebaird/trapid/backend/app/models/schedule_task.rb` | Supplier schedule model |
+| `/Users/jakebaird/trapid/backend/app/models/task_template.rb` | Template base |
+| `/Users/jakebaird/trapid/backend/app/models/task_dependency.rb` | Task relationships |
+| `/Users/jakebaird/trapid/backend/app/models/task_update.rb` | Change history |
+| `/Users/jakebaird/trapid/backend/app/models/project.rb` | Master schedule container |
+| `/Users/jakebaird/trapid/backend/app/models/construction.rb` | Job/project container |
+| `/Users/jakebaird/trapid/backend/app/models/user.rb` | User accounts |
+
+### Backend Controllers
+| File | Purpose |
+|------|---------|
+| `/Users/jakebaird/trapid/backend/app/controllers/api/v1/project_tasks_controller.rb` | Task CRUD API |
+| `/Users/jakebaird/trapid/backend/app/controllers/api/v1/schedule_tasks_controller.rb` | Schedule task API |
+| `/Users/jakebaird/trapid/backend/app/controllers/api/v1/projects_controller.rb` | Project & Gantt API |
+
+### Backend Services
+| File | Purpose |
+|------|---------|
+| `/Users/jakebaird/trapid/backend/app/services/schedule/generator_service.rb` | Schedule generation |
+| `/Users/jakebaird/trapid/backend/app/services/spreadsheet_parser.rb` | Excel import |
+
+### Frontend Components
+| File | Purpose |
+|------|---------|
+| `/Users/jakebaird/trapid/frontend/src/components/gantt/GanttChart.jsx` | Main Gantt visualization |
+| `/Users/jakebaird/trapid/frontend/src/components/gantt/TaskTable.jsx` | Task table with inline edit |
+| `/Users/jakebaird/trapid/frontend/src/components/gantt/TaskRow.jsx` | Individual task bar |
+| `/Users/jakebaird/trapid/frontend/src/components/gantt/GanttHeader.jsx` | Date header |
+| `/Users/jakebaird/trapid/frontend/src/components/gantt/GanttGrid.jsx` | Background grid |
+| `/Users/jakebaird/trapid/frontend/src/components/schedule-master/ScheduleMasterTab.jsx` | Schedule UI container |
+| `/Users/jakebaird/trapid/frontend/src/components/schedule-master/ScheduleGanttChart.jsx` | Supplier Gantt |
+| `/Users/jakebaird/trapid/frontend/src/components/schedule-master/ScheduleImporter.jsx` | Excel upload |
+| `/Users/jakebaird/trapid/frontend/src/components/schedule-master/TaskMatchModal.jsx` | PO matching dialog |
+| `/Users/jakebaird/trapid/frontend/src/pages/MasterSchedulePage.jsx` | Master schedule page |
+| `/Users/jakebaird/trapid/frontend/src/pages/JobDetailPage.jsx` | Job detail tabs |
+
+### Frontend Pages
+| File | Purpose |
+|------|---------|
+| `/Users/jakebaird/trapid/frontend/src/pages/MasterSchedulePage.jsx` | Full schedule view |
+| `/Users/jakebaird/trapid/frontend/src/pages/JobDetailPage.jsx` | Job with "Schedule Master" tab |
+
+### Database Migrations
+| File | Tables |
+|------|--------|
+| `20251104053317_create_task_templates.rb` | task_templates |
+| `20251104053318_create_project_tasks.rb` | project_tasks |
+| `20251104053320_create_task_dependencies.rb` | task_dependencies |
+| `20251104053321_create_task_updates.rb` | task_updates |
+| `20251105051002_create_schedule_tasks.rb` | schedule_tasks |
+
+### Routes
+**Main Routes:** `/Users/jakebaird/trapid/backend/config/routes.rb`
+
+**Task Endpoints:**
+```
+GET     /api/v1/projects/:project_id/tasks               (index)
+POST    /api/v1/projects/:project_id/tasks               (create)
+GET     /api/v1/projects/:project_id/tasks/:id           (show)
+PATCH   /api/v1/projects/:project_id/tasks/:id           (update)
+DELETE  /api/v1/projects/:project_id/tasks/:id           (destroy)
+GET     /api/v1/projects/:id/gantt                       (gantt data)
+
+GET     /api/v1/constructions/:construction_id/schedule_tasks
+POST    /api/v1/constructions/:construction_id/schedule_tasks/import
+GET     /api/v1/constructions/:construction_id/schedule_tasks/gantt_data
+PATCH   /api/v1/schedule_tasks/:id/match_po
+DELETE  /api/v1/schedule_tasks/:id/unmatch_po
+```
+
+---
+
+## 7. DATA RELATIONSHIPS DIAGRAM
+
+```
+User
+  ├── created projects (project_manager_id)
+  └── created task_updates
+
+Construction (Job)
+  ├── has one Project (Master Schedule)
+  │   ├── has many ProjectTasks
+  │   │   ├── assigned_to → User
+  │   │   ├── task_template → TaskTemplate
+  │   │   ├── purchase_order → PurchaseOrder
+  │   │   ├── has many successor_dependencies (as predecessor)
+  │   │   ├── has many predecessor_dependencies (as successor)
+  │   │   ├── has many successor_tasks
+  │   │   ├── has many predecessor_tasks
+  │   │   └── has many task_updates
+  │   └── has many purchase_orders (through construction)
+  │
+  ├── has many ScheduleTasks
+  │   └── purchase_order → PurchaseOrder
+  │
+  └── has many PurchaseOrders
+      └── required_on_site_date (delivery date)
+
+TaskTemplate
+  ├── has many ProjectTasks
+  └── predecessor_template_codes (references other templates)
+
+TaskDependency
+  ├── successor_task → ProjectTask
+  └── predecessor_task → ProjectTask
+```
+
+---
+
+## 8. API CONTRACT SUMMARY
+
+### ProjectTask Update
+```
+PATCH /api/v1/projects/:project_id/tasks/:id
+{
+  "project_task": {
+    "name": "string",
+    "status": "not_started|in_progress|complete|on_hold",
+    "planned_start_date": "2025-01-15",
+    "planned_end_date": "2025-01-20",
+    "duration_days": 5,
+    "progress_percentage": 50,
+    "assigned_to_id": 3,
+    "supplier_name": "string",
+    "is_milestone": false,
+    "is_critical_path": false,
+    "notes": "string"
+  }
+}
+```
+
+### ScheduleTask Import
+```
+POST /api/v1/constructions/:construction_id/schedule_tasks/import
+Content-Type: multipart/form-data
+{
+  "file": <Excel file>
+}
+```
+
+**Expected Excel Columns:**
+- Title, Status, Start, Complete, Duration
+- Supplier Category, Supplier, Paid Internal
+- Approx Date, Confirm, Supplier Confirm
+- Task Started, Completed, Predecessors, Attachments
+
+---
+
+## 9. KEY STATISTICS
+
+### Database Tables
+- **Total Task-Related Tables:** 5 (ProjectTask, ScheduleTask, TaskTemplate, TaskDependency, TaskUpdate)
+- **Total Relationships:** 12+
+- **Supported Dependency Types:** 4
+- **Task Statuses:** 4
+- **Task Types:** 7+
+- **Trade Categories:** 20+
+
+### Frontend Components
+- **Gantt-Related:** 8 components
+- **Schedule Management:** 5 components
+- **UI Pages:** 2 main pages for scheduling
+
+### Code Statistics
+- **Backend Models:** ~500 lines
+- **Backend Controllers:** ~300 lines
+- **Backend Services:** ~350 lines
+- **Frontend Components:** ~2000+ lines
+- **Migrations:** 5 task-related migrations
+
+---
+
+## 10. RECOMMENDATIONS & NEXT STEPS
+
+### Immediate (High Priority)
+1. **Fetch Users Dynamically** - Create `/api/v1/users` endpoint to populate team dropdown
+2. **User Profiles** - Add avatar URLs to User model
+3. **Task CRUD Forms** - Create modal for adding/editing tasks instead of inline edit
+
+### Short-term (Medium Priority)
+1. **Backward Pass Algorithm** - Implement for accurate critical path calculation
+2. **Float Calculation** - Calculate slack time per task
+3. **Export Functionality** - Export Gantt chart as PDF/PNG
+4. **Notifications** - Task assignment notifications to users
+5. **Comments/Notes** - Per-task discussion threads
+
+### Medium-term (Nice to Have)
+1. **Resource Leveling** - Optimize schedule for resource constraints
+2. **Cost Integration** - Track task costs and budget
+3. **Mobile App** - Responsive Gantt view
+4. **Real-time Sync** - WebSocket updates for multi-user editing
+5. **Advanced Analytics** - Schedule variance reports
+
+### Long-term (Strategic)
+1. **Multi-project Management** - Portfolio-level scheduling
+2. **Risk Management** - Risk register integration
+3. **AI Assistant** - Schedule optimization recommendations
+4. **Third-party Integration** - MS Project, Primavera import
+5. **Capacity Planning** - Resource pool management
+
+---
+
+## CONCLUSION
+
+Trapid has a **solid, well-architected task management foundation** with:
+- ✅ Comprehensive data models with proper relationships
+- ✅ Working Gantt chart visualization with multiple zoom levels
+- ✅ Task dependency tracking with circular dependency prevention
+- ✅ Critical path identification
+- ✅ Purchase order integration
+- ✅ Excel schedule import capability
+- ✅ Flexible inline editing UI
+
+The system is **production-ready for basic to intermediate project scheduling** but needs enhancement for advanced resource management and multi-project portfolio planning. The separation between ProjectTasks (detailed planning) and ScheduleTasks (supplier tracking) is well-designed and allows for flexible use cases.
+
+
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 10: Gantt & Schedule Master
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 10               │
+│ 📘 USER MANUAL (HOW): Chapter 10               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -1128,35 +3851,7 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 10: Project Tasks & Checklists
-
-┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 10               │
-│ 📘 USER MANUAL (HOW): Chapter 10               │
-└─────────────────────────────────────────────────┘
-
-**Audience:** Claude Code + Human Developers
-**Purpose:** Bug history, architecture decisions, and test catalog
-**Last Updated:** 2025-11-17
-
----
-
-## 🎓 Developer Notes
-
-### Chapter Documentation Pending
-
-This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
-
----
-
-## 📚 Related Chapters
-
-_Links to related chapters will be added as cross-references are identified._
-
----
-
-
-# Chapter 11: Weather & Public Holidays
+# Chapter 11: Project Tasks & Checklists
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter 11               │
@@ -1184,7 +3879,7 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 12: OneDrive Integration
+# Chapter 12: Weather & Public Holidays
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter 12               │
@@ -1212,7 +3907,7 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 13: Outlook/Email Integration
+# Chapter 13: OneDrive Integration
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter 13               │
@@ -1240,7 +3935,7 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 14: Chat & Communications
+# Chapter 14: Outlook/Email Integration
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter 14               │
@@ -1268,7 +3963,7 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 15: Xero Accounting Integration
+# Chapter 15: Chat & Communications
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter 15               │
@@ -1296,7 +3991,7 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 16: Payments & Financials
+# Chapter 16: Xero Accounting Integration
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter 16               │
@@ -1324,7 +4019,7 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 17: Workflows & Automation
+# Chapter 17: Payments & Financials
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter 17               │
@@ -1352,7 +4047,7 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 18: Custom Tables & Formulas
+# Chapter 18: Workflows & Automation
 
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter 18               │
@@ -1385,6 +4080,100 @@ _Links to related chapters will be added as cross-references are identified._
 ┌─────────────────────────────────────────────────┐
 │ 📖 BIBLE (RULES):     Chapter 19               │
 │ 📘 USER MANUAL (HOW): Chapter 19               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-17
+
+---
+
+## 🐛 Bug Hunter
+
+### ⚡ Table Deletion Bug Investigation - Complete Analysis
+
+**Status:** ⚡ FIXED
+**First Reported:** Unknown
+**Severity:** High
+
+#### Scenario
+Custom table deletion was failing with cascade errors and orphaned records. Investigation uncovered multiple issues in deletion flow.
+
+#### Root Cause
+1. Foreign key constraints not properly handled. 2. Records component not clearing deleted table from state. 3. Cascade deletion not following dependency chain. 4. Formula columns referencing deleted tables.
+
+#### Solution
+1. Added proper dependency checking before deletion. 2. Implemented cascade deletion for all related records. 3. Updated Records component to remove deleted table. 4. Added validation to prevent deletion of referenced tables. Full investigation in 5 files: TABLE_DELETION_ANALYSIS_*.md
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 19: Custom Tables & Formulas
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 19               │
+│ 📘 USER MANUAL (HOW): Chapter 19               │
+└─────────────────────────────────────────────────┘
+
+**Audience:** Claude Code + Human Developers
+**Purpose:** Bug history, architecture decisions, and test catalog
+**Last Updated:** 2025-11-17
+
+---
+
+## 🐛 Bug Hunter
+
+### ⚡ Table Deletion Bug Investigation - Complete Analysis
+
+**Status:** ⚡ FIXED
+**First Reported:** Unknown
+**Severity:** High
+
+#### Scenario
+Custom table deletion was failing with cascade errors and orphaned records. Investigation uncovered multiple issues in deletion flow.
+
+#### Root Cause
+1. Foreign key constraints not properly handled. 2. Records component not clearing deleted table from state. 3. Cascade deletion not following dependency chain. 4. Formula columns referencing deleted tables.
+
+#### Solution
+1. Added proper dependency checking before deletion. 2. Implemented cascade deletion for all related records. 3. Updated Records component to remove deleted table. 4. Added validation to prevent deletion of referenced tables. Full investigation in 5 files: TABLE_DELETION_ANALYSIS_*.md
+
+---
+
+## 🎓 Developer Notes
+
+### Chapter Documentation Pending
+
+This chapter requires comprehensive documentation. Bug fixes and architecture decisions should be added as they are discovered.
+
+---
+
+## 📚 Related Chapters
+
+_Links to related chapters will be added as cross-references are identified._
+
+---
+
+
+# Chapter 20: UI/UX Standards & Patterns
+
+┌─────────────────────────────────────────────────┐
+│ 📖 BIBLE (RULES):     Chapter 20               │
+│ 📘 USER MANUAL (HOW): Chapter 20               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -2060,6 +4849,12 @@ This chapter requires comprehensive documentation. Bug fixes and architecture de
 
 ---
 
+### Test Entry - Dummy Run
+
+This is a test entry to verify the unified API works correctly
+
+---
+
 ## 🔍 Common Issues
 
 ### Sticky Horizontal Scrollbar Implementation Bugs
@@ -2144,11 +4939,11 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-# Chapter 20: Agent System & Automation
+# Chapter 21: Agent System & Automation
 
 ┌─────────────────────────────────────────────────┐
-│ 📖 BIBLE (RULES):     Chapter 20               │
-│ 📘 USER MANUAL (HOW): Chapter 20               │
+│ 📖 BIBLE (RULES):     Chapter 21               │
+│ 📘 USER MANUAL (HOW): Chapter 21               │
 └─────────────────────────────────────────────────┘
 
 **Audience:** Claude Code + Human Developers
@@ -2416,7 +5211,7 @@ _Links to related chapters will be added as cross-references are identified._
 ---
 
 
-**Last Generated:** 2025-11-17 13:37 AEST
+**Last Generated:** 2025-11-17 15:41 AEST
 **Generated By:** `rake trapid:export_lexicon`
 **Maintained By:** Development Team via Database UI
 **Review Schedule:** After each bug fix or knowledge entry

@@ -65,6 +65,7 @@ const COLUMNS = [
   { key: 'expand', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
   { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200, tooltip: 'Chapter number and name' },
   { key: 'type', label: 'Type', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120 },
+  { key: 'trinity', label: 'Trinity', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 180 },
   { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 300 },
   { key: 'component', label: 'Component', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 180 },
   { key: 'status', label: 'Status', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 140 },
@@ -334,6 +335,19 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
         case 'type':
           result = result.filter(e => e.entry_type === value)
           break
+        case 'trinity':
+          result = result.filter(e => {
+            try {
+              if (!e.related_rules) return false
+              const docs = JSON.parse(e.related_rules)
+              if (!docs || !Array.isArray(docs) || docs.length === 0) return false
+              const trinityType = docs[0].type?.toLowerCase()
+              return trinityType === value
+            } catch (error) {
+              return false
+            }
+          })
+          break
         case 'title':
           result = result.filter(e => e.title?.toLowerCase().includes(value.toLowerCase()))
           break
@@ -487,6 +501,88 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
             <span className="ml-1 text-xs">{entry.entry_type}</span>
           </>
         )
+
+      case 'trinity': {
+        // Parse current trinity selection from related_rules field (single-select only)
+        let selectedTrinity = null
+        try {
+          if (entry.related_rules) {
+            const docs = JSON.parse(entry.related_rules)
+            if (docs && Array.isArray(docs) && docs.length > 0) {
+              const firstDoc = docs[0]
+              if (firstDoc.type === 'Bible') selectedTrinity = 'bible'
+              else if (firstDoc.type === 'Teacher') selectedTrinity = 'teacher'
+              else if (firstDoc.type === 'Lexicon') selectedTrinity = 'lexicon'
+            }
+          }
+        } catch (e) {
+          // Invalid JSON, use null
+        }
+
+        const handleTrinityChange = async (trinityType) => {
+          // Build new related_rules array with only ONE selected item
+          const newDocs = []
+          if (trinityType === 'bible') {
+            newDocs.push({ type: 'Bible', reference: `Ch${entry.chapter_number}` })
+          } else if (trinityType === 'teacher') {
+            newDocs.push({ type: 'Teacher', reference: `Ch${entry.chapter_number}` })
+          } else if (trinityType === 'lexicon') {
+            newDocs.push({ type: 'Lexicon', reference: `Ch${entry.chapter_number}` })
+          }
+
+          // Save to API
+          try {
+            await fetch(`http://localhost:3000/api/v1/trinity/${entry.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                trinity: {
+                  related_rules: JSON.stringify(newDocs)
+                }
+              })
+            })
+            // Force parent to reload data
+            window.location.reload()
+          } catch (error) {
+            console.error('Failed to update Trinity:', error)
+          }
+        }
+
+        return (
+          <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
+              <input
+                type="radio"
+                name={`trinity-${entry.id}`}
+                checked={selectedTrinity === 'bible'}
+                onChange={() => handleTrinityChange('bible')}
+                className="h-3 w-3 border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <span className="text-purple-700 dark:text-purple-400 font-medium">📖 Bible</span>
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
+              <input
+                type="radio"
+                name={`trinity-${entry.id}`}
+                checked={selectedTrinity === 'teacher'}
+                onChange={() => handleTrinityChange('teacher')}
+                className="h-3 w-3 border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <span className="text-blue-700 dark:text-blue-400 font-medium">🔧 Teacher</span>
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
+              <input
+                type="radio"
+                name={`trinity-${entry.id}`}
+                checked={selectedTrinity === 'lexicon'}
+                onChange={() => handleTrinityChange('lexicon')}
+                className="h-3 w-3 border-gray-300 text-green-600 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <span className="text-green-700 dark:text-green-400 font-medium">📕 Lexicon</span>
+            </label>
+          </div>
+        )
+      }
 
       case 'title':
         return <div className="max-w-md truncate font-medium">{entry.title}</div>
@@ -826,6 +922,13 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
                                 <option value="medium">Medium</option>
                                 <option value="high">High</option>
                                 <option value="critical">Critical</option>
+                              </>
+                            )}
+                            {colKey === 'trinity' && (
+                              <>
+                                <option value="bible">📖 Bible</option>
+                                <option value="teacher">🔧 Teacher</option>
+                                <option value="lexicon">📕 Lexicon</option>
                               </>
                             )}
                           </select>

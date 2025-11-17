@@ -745,35 +745,33 @@ export default function BibleTableView({ content }) {
         )
 
       case 'trinity':
-        // Parse current trinity relationships from relatedDocs field
-        let currentTrinity = { bible: false, teacher: false, lexicon: false }
+        // Parse current trinity selection from relatedDocs field (single-select only)
+        let selectedTrinity = null
         try {
           if (rule.relatedDocs) {
             const docs = JSON.parse(rule.relatedDocs)
-            if (docs && Array.isArray(docs)) {
-              docs.forEach(doc => {
-                if (doc.type === 'Bible') currentTrinity.bible = true
-                if (doc.type === 'Teacher') currentTrinity.teacher = true
-                if (doc.type === 'Lexicon') currentTrinity.lexicon = true
-              })
+            if (docs && Array.isArray(docs) && docs.length > 0) {
+              // Take the first entry as the selected one
+              const firstDoc = docs[0]
+              if (firstDoc.type === 'Bible') selectedTrinity = 'bible'
+              else if (firstDoc.type === 'Teacher') selectedTrinity = 'teacher'
+              else if (firstDoc.type === 'Lexicon') selectedTrinity = 'lexicon'
             }
           }
         } catch (e) {
-          // Invalid JSON, use defaults
+          // Invalid JSON, use null
         }
 
-        const handleTrinityChange = async (e, trinityType) => {
-          e.stopPropagation()
-          const isChecked = e.target.checked
-
-          // Update local state
-          const newTrinity = { ...currentTrinity, [trinityType]: isChecked }
-
-          // Build new relatedDocs array
+        const handleTrinityChange = async (trinityType) => {
+          // Build new relatedDocs array with only ONE selected item
           const newDocs = []
-          if (newTrinity.bible) newDocs.push({ type: 'Bible', reference: `RULE #${rule.ruleNumber}` })
-          if (newTrinity.teacher) newDocs.push({ type: 'Teacher', reference: `§${rule.ruleNumber}` })
-          if (newTrinity.lexicon) newDocs.push({ type: 'Lexicon', reference: `Ch${rule.chapter}` })
+          if (trinityType === 'bible') {
+            newDocs.push({ type: 'Bible', reference: `RULE #${rule.ruleNumber}` })
+          } else if (trinityType === 'teacher') {
+            newDocs.push({ type: 'Teacher', reference: `§${rule.ruleNumber}` })
+          } else if (trinityType === 'lexicon') {
+            newDocs.push({ type: 'Lexicon', reference: `Ch${rule.chapter}` })
+          }
 
           // Save to API
           try {
@@ -788,14 +786,14 @@ export default function BibleTableView({ content }) {
             })
 
             if (response.ok) {
-              // Refresh data to show updated checkboxes
+              // Refresh data to show updated selection
               fetchRules()
             } else {
-              alert('Failed to update Trinity relationships')
+              alert('Failed to update Trinity relationship')
             }
           } catch (error) {
             console.error('Error updating Trinity:', error)
-            alert('Error updating Trinity relationships')
+            alert('Error updating Trinity relationship')
           }
         }
 
@@ -803,28 +801,31 @@ export default function BibleTableView({ content }) {
           <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
             <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
               <input
-                type="checkbox"
-                checked={currentTrinity.bible}
-                onChange={(e) => handleTrinityChange(e, 'bible')}
-                className="h-3 w-3 rounded border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700"
+                type="radio"
+                name={`trinity-${rule.id}`}
+                checked={selectedTrinity === 'bible'}
+                onChange={() => handleTrinityChange('bible')}
+                className="h-3 w-3 border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700"
               />
               <span className="text-purple-700 dark:text-purple-400 font-medium">📖 Bible</span>
             </label>
             <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
               <input
-                type="checkbox"
-                checked={currentTrinity.teacher}
-                onChange={(e) => handleTrinityChange(e, 'teacher')}
-                className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                type="radio"
+                name={`trinity-${rule.id}`}
+                checked={selectedTrinity === 'teacher'}
+                onChange={() => handleTrinityChange('teacher')}
+                className="h-3 w-3 border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
               />
               <span className="text-blue-700 dark:text-blue-400 font-medium">🔧 Teacher</span>
             </label>
             <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
               <input
-                type="checkbox"
-                checked={currentTrinity.lexicon}
-                onChange={(e) => handleTrinityChange(e, 'lexicon')}
-                className="h-3 w-3 rounded border-gray-300 text-orange-600 focus:ring-orange-500 dark:border-gray-600 dark:bg-gray-700"
+                type="radio"
+                name={`trinity-${rule.id}`}
+                checked={selectedTrinity === 'lexicon'}
+                onChange={() => handleTrinityChange('lexicon')}
+                className="h-3 w-3 border-gray-300 text-orange-600 focus:ring-orange-500 dark:border-gray-600 dark:bg-gray-700"
               />
               <span className="text-orange-700 dark:text-orange-400 font-medium">📕 Lexicon</span>
             </label>

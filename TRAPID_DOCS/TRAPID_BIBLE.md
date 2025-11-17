@@ -1,7 +1,7 @@
 # TRAPID BIBLE - Development Rules
 
 **Version:** 2.0.0
-**Last Updated:** 2025-11-17 13:26 AEST
+**Last Updated:** 2025-11-17 15:46 AEST
 **Authority Level:** ABSOLUTE
 **Audience:** Claude Code + Human Developers
 **Source of Truth:** Database table `bible_rules` (this file is auto-generated)
@@ -45,11 +45,91 @@ This file is the **absolute authority** for all Trapid development where chapter
 │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch0 │
 └─────────────────────────────────────────────────┘
 
+**Last Updated:** 2025-11-17 15:45 AEST
+
+## RULE #0.2: Trinity is Single Source of Truth for All Documentation
+
+✅ Must
+
+All development documentation MUST be maintained in the Trinity database system, not in standalone MD files.
+
+The Trinity system (Bible, Lexicon, Teacher) is the authoritative source for all Trapid documentation. Standalone markdown files in the root directory are prohibited except for TRAPID.md (project overview), README.md (setup), and CONTRIBUTING.md (contribution guide).
+
+✅ **MUST use Trinity for:**
+- Rules and requirements (Bible entries)
+- Bug history and architecture decisions (Lexicon entries)
+- Implementation patterns and code examples (Teacher entries)
+- Feature documentation
+- API documentation
+- Testing guides
+- Migration guides
+
+❌ **NEVER create standalone MD files for:**
+- Component patterns (use Teacher entries)
+- Bug investigations (use Lexicon entries)
+- Feature implementation guides (use Teacher entries)
+- Architecture decisions (use Lexicon entries)
+
+📝 **Allowed standalone MD files:**
+- TRAPID.md - High-level project overview
+- README.md - Project setup and quick start
+- CONTRIBUTING.md - Contribution guidelines
+- rapid-rebuild-plan.md - Active planning documents (temporary)
+
+🔄 **Documentation workflow:**
+1. Create/edit documentation in Trapid app → Documentation page
+2. Assign to appropriate chapter (0-20)
+3. Choose category: Bible (rules), Lexicon (knowledge), or Teacher (how-to)
+4. Save → Done! Entry is immediately searchable and available
+
+📤 **Exporting to markdown (optional):**
+- Only needed if you want to read docs as markdown files
+- Run: `bin/rails trapid:export_bible` (or export_lexicon, export_teacher)
+- Auto-generated files go to TRAPID_DOCS/ folder
+- These are READ-ONLY generated files, never edit them directly
+
+💾 **Database as single source of truth:**
+- Trinity database table stores all entries
+- Markdown files are optional exports for reading
+- Edit via UI or API only
+- All searches, filtering, and queries use database
+- No export needed for normal documentation workflow
+
+📂 **Historical investigations:**
+- Large investigation files archived in /ARCHIVE/investigations/
+- Key findings extracted to Trinity as summary entries
+- Archive files kept for reference only
+
+🚨 **Violations:**
+If you find a standalone MD file with documentation content:
+1. Migrate content to Trinity via Documentation page
+2. Delete or move to /ARCHIVE/ if historical
+3. Update any references to point to Trinity chapters
+
+**Rationale:** 
+- Single source of truth prevents documentation drift
+- Database enables search, filtering, and relationships
+- Version control via database timestamps and updated_at
+- UI provides better documentation editing experience
+- Exports are optional, only for markdown readers
+
+
+
+---
+
+# Chapter 1: Overview & System-Wide Rules
+
+┌─────────────────────────────────────────────────┐
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch1    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch1    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch1 │
+└─────────────────────────────────────────────────┘
+
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #0.1: Mandatory Chapter Reading Before Component Creation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -63,21 +143,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 **📖 Implementation:** See [TRAPID_TEACHER.md §0.1](TRAPID_TEACHER.md#01-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 0](TRAPID_LEXICON.md)
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 1](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 1: Authentication
+# Chapter 2: Authentication & Users
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch1    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch1    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch1 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch2    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch2    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch2 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #1.1: JWT Token Handling
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -98,11 +180,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #1.2: Password Security Requirements
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -124,11 +208,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #1.3: Role-Based Access Control
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -149,11 +235,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #1.4: Rate Limiting on Auth Endpoints
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -172,11 +260,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #1.5: OAuth Integration Pattern
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -198,11 +288,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #1.6: Password Reset Flow
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -225,11 +317,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #1.7: Portal User Separation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -251,11 +345,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #1.8: Login Activity Tracking
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -275,21 +371,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 2](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 2: System Admin
+# Chapter 3: System Administration
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch2    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch2    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch2 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch3    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch3    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch3 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #2.1: Company Settings Singleton Pattern
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -308,11 +406,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #2.2: Timezone Handling - Backend Time Calculations
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -331,11 +431,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #2.3: Timezone Handling - Frontend Time Display
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -354,11 +456,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #2.4: Working Days Configuration & Business Day Calculations
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -377,11 +481,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #2.5: User Roles & Permission System
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -400,11 +506,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #2.6: Assignable Roles for Task Assignment
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -421,11 +529,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #2.7: Password Complexity Requirements
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -444,11 +554,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #2.8: Timezone Options Limitation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -467,11 +579,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #2.9: Working Days UI - Sunday Default True
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -490,21 +604,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 3](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 3: Contacts
+# Chapter 4: Contacts & Relationships
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch3    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch3    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch3 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch4    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch4    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch4 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #3.1: Contact Types are Multi-Select Arrays
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -526,11 +642,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #3.2: Bidirectional Relationships Require Reverse Sync
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -553,11 +671,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #3.3: Xero Sync Uses Priority-Based Fuzzy Matching
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -584,11 +704,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #3.4: Contact Deletion MUST Check Purchase Order Dependencies
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -611,11 +733,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #3.5: Contact Merge MUST Consolidate All Related Records
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -640,11 +764,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #3.6: Portal Users MUST Have Secure Password Requirements
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -668,11 +794,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #3.7: Primary Contact/Address/Person MUST Be Unique Per Contact
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -692,11 +820,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #3.8: Contact Activity Logging MUST Track All Significant Changes
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -718,21 +848,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 4](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 4: Price Books
+# Chapter 5: Price Books & Suppliers
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch4    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch4    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch4 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch5    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch5    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch5 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #4.1: Price Changes MUST Create Price History Automatically
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -754,11 +886,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #4.2: Prevent Duplicate Price History - Unique Constraint + Time Window
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -778,11 +912,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #4.3: SmartPoLookupService - 6-Strategy Cascading Fallback
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -803,11 +939,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #4.4: Supplier Matching - Normalized Name Comparison with Business Suffix Removal
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -829,11 +967,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #4.5: Price Volatility Detection - Coefficient of Variation on 6-Month Window
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -855,11 +995,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #4.6: Risk Scoring - Multi-Factor Weighted Calculation (0-100 Scale)
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -881,11 +1023,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #4.7: Bulk Updates - Transaction Wrapper with Price History Batch Creation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -907,11 +1051,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #4.8: OneDrive Image Proxy - Cache Control with 1-Hour Expiry
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -933,21 +1079,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 5](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 5: Jobs
+# Chapter 6: Jobs & Construction Management
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch5    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch5    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch5 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch6    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch6    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch6 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #5.1: Construction MUST Have At Least One Contact
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -967,11 +1115,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #5.2: Live Profit Calculation - Dynamic Not Cached
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -991,11 +1141,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #5.3: Task Dependencies - No Circular References
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1015,11 +1167,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #5.4: Task Status Transitions - Automatic Date Setting
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1039,11 +1193,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #5.5: Task Spawning - Status-Based Child Task Creation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1065,11 +1221,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #5.6: Schedule Cascade - Dependency-Based Date Propagation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1092,11 +1250,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #5.7: OneDrive Folder Creation - Async with Status Tracking
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1119,11 +1279,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #5.8: Schedule Template Instantiation - All-or-Nothing Transaction
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1144,21 +1306,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 6](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 6: Estimates
+# Chapter 7: Estimates & Quoting
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch6    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch6    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch6 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch7    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch7    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch7 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #6.1: Fuzzy Job Matching - Three-Tier Confidence Thresholds
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1181,11 +1345,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #6.2: External API Key Security - SHA256 Hashing Only
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1207,11 +1373,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #6.3: Estimate Import - Validate Before Auto-Matching
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1233,11 +1401,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #6.4: PO Generation from Estimate - Transaction Safety
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1259,11 +1429,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #6.5: AI Plan Review - Async Processing Required
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1285,11 +1457,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #6.6: Line Item Categorization - Normalized Category Matching
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1311,11 +1485,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #6.7: Estimate Status State Machine - Strict Transitions
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1337,21 +1513,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 7](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 7: AI Plan Review
+# Chapter 8: AI Plan Review
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch7    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch7    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch7 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch8    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch8    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch8 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #7.1: Estimate Must Be Matched to Construction
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1369,11 +1547,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #7.2: OneDrive Plan Folder Structure
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1389,11 +1569,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #7.3: PDF File Size Limit
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1412,11 +1594,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #7.4: Async Processing with Background Jobs
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1436,11 +1620,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #7.5: Claude API Model and Prompt Structure
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1462,11 +1648,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #7.6: Discrepancy Detection Logic
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1487,11 +1675,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #7.7: Confidence Score Calculation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1514,11 +1704,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #7.8: Error Handling and Status Updates
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1542,11 +1734,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #7.9: Prevent Duplicate Processing Reviews
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1564,21 +1758,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 8](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 8: Purchase Orders
+# Chapter 9: Purchase Orders
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch8    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch8    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch8 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch9    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch9    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch9 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #8.1: PO Number Generation - Race Condition Protection
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -1591,11 +1787,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #8.2: Status State Machine
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -1608,11 +1806,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #8.3: Payment Status Calculation
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -1625,11 +1825,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #8.4: Smart Lookup - Supplier Selection Priority
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -1642,11 +1844,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #8.5: Line Items - Totals Calculation
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -1659,11 +1863,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #8.6: Schedule Task Linking
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -1676,11 +1882,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #8.7: Price Drift Monitoring
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -1693,21 +1901,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 9: Gantt
+# Chapter 10: Gantt & Schedule Master
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch9    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch9    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch9 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch10    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch10    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch10 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #9.1: Predecessor ID Conversion
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -1720,154 +1930,26 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
----
-
-## RULE #9.2: isLoadingData Lock Timing
-
-❌ NEVER
-
-❌ NEVER
-
-❌ **NEVER reset isLoadingData in drag handler**
-
-✅ **ALWAYS reset in useEffect with 1000ms timeout**
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.2](TRAPID_TEACHER.md#92-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #9.3: Company Settings - Working Days & Timezone
-
-❌ NEVER
-
-❌ NEVER
-
-❌ **NEVER hardcode working days or ignore company timezone**
-
-✅ **ALWAYS read from:** `company_settings.working_days` and `company_settings.timezone`
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.3](TRAPID_TEACHER.md#93-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #9.4: Lock Hierarchy
-
-❌ NEVER
-
-❌ NEVER
-
-❌ **NEVER cascade to locked tasks**
-
-✅ **ALWAYS check all 5 locks before cascade**
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.4](TRAPID_TEACHER.md#94-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #9.5: Task Heights Configuration
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST set all three to same value:**
-
-❌ **NEVER have mismatched height values**
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.5](TRAPID_TEACHER.md#95-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #9.6: Auto-Scheduling
-
-❌ NEVER
-
-❌ NEVER
-
-❌ **NEVER enable:** `gantt.config.auto_scheduling = true`
-
-✅ **ALWAYS set:** `gantt.config.auto_scheduling = false`
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.6](TRAPID_TEACHER.md#96-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #9.7: API Pattern - Single Update + Cascade Response
-
-❌ NEVER
-
-❌ NEVER
-
-❌ **NEVER make multiple API calls for cascade updates**
-
-✅ **ALWAYS use:** Single update + cascade response pattern
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.7](TRAPID_TEACHER.md#97-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #9.8: useRef Anti-Loop Flags
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST use all 7 useRef flags correctly:**
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.8](TRAPID_TEACHER.md#98-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #9.9: Predecessor Format
-
-❌ NEVER
-
-❌ NEVER
-
-❌ **NEVER save without predecessor_ids**
-
-✅ **ALWAYS include predecessor_ids in every update**
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §9.9](TRAPID_TEACHER.md#99-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
-
----
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
 
 ---
 
 ## RULE #9.10: Cascade Triggers
+
+📖 Rule
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §9.10](TRAPID_TEACHER.md#910-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #9.11: Debounced Render Pattern
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -1880,11 +1962,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #9.12: Column Documentation - CC_UPDATE Table
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -1897,21 +1981,173 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 10: Tasks
+## RULE #9.2: isLoadingData Lock Timing
+
+❌ Never
+
+❌ NEVER
+
+❌ **NEVER reset isLoadingData in drag handler**
+
+✅ **ALWAYS reset in useEffect with 1000ms timeout**
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §9.2](TRAPID_TEACHER.md#92-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+## RULE #9.3: Company Settings - Working Days & Timezone
+
+❌ Never
+
+❌ NEVER
+
+❌ **NEVER hardcode working days or ignore company timezone**
+
+✅ **ALWAYS read from:** `company_settings.working_days` and `company_settings.timezone`
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §9.3](TRAPID_TEACHER.md#93-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+## RULE #9.4: Lock Hierarchy
+
+❌ Never
+
+❌ NEVER
+
+❌ **NEVER cascade to locked tasks**
+
+✅ **ALWAYS check all 5 locks before cascade**
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §9.4](TRAPID_TEACHER.md#94-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+## RULE #9.5: Task Heights Configuration
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST set all three to same value:**
+
+❌ **NEVER have mismatched height values**
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §9.5](TRAPID_TEACHER.md#95-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+## RULE #9.6: Auto-Scheduling
+
+❌ Never
+
+❌ NEVER
+
+❌ **NEVER enable:** `gantt.config.auto_scheduling = true`
+
+✅ **ALWAYS set:** `gantt.config.auto_scheduling = false`
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §9.6](TRAPID_TEACHER.md#96-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+## RULE #9.7: API Pattern - Single Update + Cascade Response
+
+❌ Never
+
+❌ NEVER
+
+❌ **NEVER make multiple API calls for cascade updates**
+
+✅ **ALWAYS use:** Single update + cascade response pattern
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §9.7](TRAPID_TEACHER.md#97-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+## RULE #9.8: useRef Anti-Loop Flags
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST use all 7 useRef flags correctly:**
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §9.8](TRAPID_TEACHER.md#98-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+## RULE #9.9: Predecessor Format
+
+❌ Never
+
+❌ NEVER
+
+❌ **NEVER save without predecessor_ids**
+
+✅ **ALWAYS include predecessor_ids in every update**
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §9.9](TRAPID_TEACHER.md#99-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 9](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+# Chapter 11: Project Tasks & Checklists
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch10    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch10    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch10 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch11    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch11    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch11 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #10.1: Task Status Lifecycle & Automatic Date Updates
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -1927,177 +2163,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
----
-
-## RULE #10.2: Task Dependencies & Circular Dependency Prevention
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST validate:**
-
-❌ **NEVER:**
-- Allow task to depend on itself (self-dependency)
-- Allow circular chains (A depends on B, B depends on C, C depends on A)
-- Allow cross-project dependencies
-- Allow duplicate dependencies (same predecessor + successor pair)
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.2](TRAPID_TEACHER.md#102-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #10.3: Automatic Task Spawning from Templates
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST implement via TaskSpawner service:**
-
-✅ **MUST trigger spawning on status changes:**
-
-❌ **NEVER:**
-- Spawn tasks multiple times (check if already spawned)
-- Spawn tasks without checking template configuration
-- Create circular parent-child relationships
-- Skip sequence ordering for subtasks (causes display chaos)
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.3](TRAPID_TEACHER.md#103-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #10.4: Supervisor Checklist Template-to-Instance Flow
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST copy templates to instances during job instantiation:**
-
-❌ **NEVER:**
-- Share checklist items across tasks (each task gets own copies)
-- Allow checklist item deletion after task starts
-- Skip category validation (required for filtering)
-- Store User FK for completed_by (store username string for flexibility)
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.4](TRAPID_TEACHER.md#104-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #10.5: Response Type Validation & Photo Upload
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST validate before marking complete:**
-
-✅ **MUST use Cloudinary for photo storage:**
-
-❌ **NEVER:**
-- Allow completion without required response data
-- Store photos in Rails backend (use Cloudinary)
-- Skip folder organization in Cloudinary (use job-specific folders)
-- Allow checklist item updates after completion (completed_at is immutable)
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.5](TRAPID_TEACHER.md#105-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #10.6: Auto-Complete Predecessors Feature
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST implement via callback:**
-
-✅ **MUST show checkbox in task form:**
-
-❌ **NEVER:**
-- Auto-complete tasks with incomplete subtasks (check has_subtasks)
-- Skip audit trail (add completion_notes explaining auto-completion)
-- Allow infinite recursion (predecessors don't trigger their own predecessors)
-- Auto-complete milestones (they should be explicitly completed)
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.6](TRAPID_TEACHER.md#106-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #10.7: Materials Status Calculation
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST include in task serialization:**
-
-✅ **MUST show status badges:**
-
-❌ **NEVER:**
-- Store materials_status in database (always calculate)
-- Show materials status for tasks without critical_po flag
-- Allow task to start if materials_status = 'delayed' (warn user)
-- Skip materials check during schedule cascade calculations
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.7](TRAPID_TEACHER.md#107-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #10.8: Sequence Order for Task Display
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST set sequence on creation:**
-
-✅ **MUST index for efficient sorting:**
-
-❌ **NEVER:**
-- Use random sequence numbers (breaks visual grouping)
-- Allow gaps larger than 1.0 between top-level tasks
-- Use sequence > 9.9 for subtasks (use 9 or fewer subtasks per parent)
-- Resort entire project when adding one task (use smart insertion)
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.8](TRAPID_TEACHER.md#108-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #10.9: Task Update Audit Trail
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §10.9](TRAPID_TEACHER.md#109-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
-
----
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
 
 ---
 
 ## RULE #10.10: Duration Days Validation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2114,11 +2186,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #10.11: Tags System for Flexible Categorization
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2137,21 +2211,207 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 11: Weather
+## RULE #10.2: Task Dependencies & Circular Dependency Prevention
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST validate:**
+
+❌ **NEVER:**
+- Allow task to depend on itself (self-dependency)
+- Allow circular chains (A depends on B, B depends on C, C depends on A)
+- Allow cross-project dependencies
+- Allow duplicate dependencies (same predecessor + successor pair)
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §10.2](TRAPID_TEACHER.md#102-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
+
+---
+
+## RULE #10.3: Automatic Task Spawning from Templates
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST implement via TaskSpawner service:**
+
+✅ **MUST trigger spawning on status changes:**
+
+❌ **NEVER:**
+- Spawn tasks multiple times (check if already spawned)
+- Spawn tasks without checking template configuration
+- Create circular parent-child relationships
+- Skip sequence ordering for subtasks (causes display chaos)
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §10.3](TRAPID_TEACHER.md#103-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
+
+---
+
+## RULE #10.4: Supervisor Checklist Template-to-Instance Flow
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST copy templates to instances during job instantiation:**
+
+❌ **NEVER:**
+- Share checklist items across tasks (each task gets own copies)
+- Allow checklist item deletion after task starts
+- Skip category validation (required for filtering)
+- Store User FK for completed_by (store username string for flexibility)
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §10.4](TRAPID_TEACHER.md#104-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
+
+---
+
+## RULE #10.5: Response Type Validation & Photo Upload
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST validate before marking complete:**
+
+✅ **MUST use Cloudinary for photo storage:**
+
+❌ **NEVER:**
+- Allow completion without required response data
+- Store photos in Rails backend (use Cloudinary)
+- Skip folder organization in Cloudinary (use job-specific folders)
+- Allow checklist item updates after completion (completed_at is immutable)
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §10.5](TRAPID_TEACHER.md#105-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
+
+---
+
+## RULE #10.6: Auto-Complete Predecessors Feature
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST implement via callback:**
+
+✅ **MUST show checkbox in task form:**
+
+❌ **NEVER:**
+- Auto-complete tasks with incomplete subtasks (check has_subtasks)
+- Skip audit trail (add completion_notes explaining auto-completion)
+- Allow infinite recursion (predecessors don't trigger their own predecessors)
+- Auto-complete milestones (they should be explicitly completed)
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §10.6](TRAPID_TEACHER.md#106-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
+
+---
+
+## RULE #10.7: Materials Status Calculation
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST include in task serialization:**
+
+✅ **MUST show status badges:**
+
+❌ **NEVER:**
+- Store materials_status in database (always calculate)
+- Show materials status for tasks without critical_po flag
+- Allow task to start if materials_status = 'delayed' (warn user)
+- Skip materials check during schedule cascade calculations
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §10.7](TRAPID_TEACHER.md#107-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
+
+---
+
+## RULE #10.8: Sequence Order for Task Display
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST set sequence on creation:**
+
+✅ **MUST index for efficient sorting:**
+
+❌ **NEVER:**
+- Use random sequence numbers (breaks visual grouping)
+- Allow gaps larger than 1.0 between top-level tasks
+- Use sequence > 9.9 for subtasks (use 9 or fewer subtasks per parent)
+- Resort entire project when adding one task (use smart insertion)
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §10.8](TRAPID_TEACHER.md#108-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
+
+---
+
+## RULE #10.9: Task Update Audit Trail
+
+📖 Rule
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §10.9](TRAPID_TEACHER.md#109-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 10](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 11](TRAPID_LEXICON.md)
+
+---
+
+# Chapter 12: Weather & Public Holidays
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch11    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch11    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch11 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch12    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch12    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch12 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #11.1: Unique Holidays Per Region
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2170,11 +2430,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #11.2: Rain Log - One Entry Per Construction Per Day
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2193,11 +2455,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #11.3: Rainfall Severity Auto-Calculation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2221,11 +2485,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #11.4: Manual Rain Logs Require Notes
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2244,11 +2510,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #11.5: Weather API - Historical Data Only
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2267,11 +2535,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #11.6: Location Extraction Priority
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2287,11 +2557,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #11.7: Gantt Integration - Working Day Calculation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2312,11 +2584,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #11.8: Weather API Response Storage
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2336,21 +2610,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 12](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 12: OneDrive
+# Chapter 13: OneDrive Integration
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch12    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch12    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch12 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch13    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch13    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch13 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #12.1: Organization-Wide Authentication
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2363,11 +2639,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #12.2: Folder Template System
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2380,11 +2658,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #12.3: Root Folder Management
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2397,11 +2677,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #12.4: Pricebook Image Sync
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2414,11 +2696,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #12.5: File Upload Chunking
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2431,21 +2715,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 13: Outlook
+# Chapter 14: Outlook/Email Integration
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch13    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch13    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch13 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch14    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch14    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch14 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #13.1: Organization-Wide Singleton OAuth Credential
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2464,11 +2750,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #13.2: Four-Strategy Email-to-Job Matching
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2487,11 +2775,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #13.3: Microsoft Graph API Usage Pattern
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2510,11 +2800,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #13.4: Email Threading Support via Message-ID
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2532,11 +2824,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #13.5: Webhook Support for Email Services
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2552,30 +2846,36 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #13.6: Inbound-Only Architecture (Current Limitation)
+
+📖 Rule
 
 **📖 Implementation:** See [TRAPID_TEACHER.md §13.6](TRAPID_TEACHER.md#136-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 13](TRAPID_LEXICON.md)
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 14: Chat
+# Chapter 15: Chat & Communications
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch14    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch14    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch14 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch15    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch15    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch15 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #14.1: ChatMessage Multi-Channel Architecture
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2588,11 +2888,35 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
+
+---
+
+## RULE #14.10: Authentication Placeholder - CRITICAL TODO
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST implement proper authentication:**
+
+❌ **NEVER use in production:**
+- `User.first` placeholder
+- Hardcoded user IDs
+- Session-less chat without auth
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §14.10](TRAPID_TEACHER.md#1410-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #14.2: Message-to-Job Linking
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2607,11 +2931,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #14.3: SMS Twilio Integration
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2626,11 +2952,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #14.4: SMS Status Tracking
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2645,11 +2973,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #14.5: Unread Message Tracking
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2664,11 +2994,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #14.6: Message Polling (No WebSockets)
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2686,11 +3018,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #14.7: Contact-SMS Fuzzy Matching
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2701,11 +3035,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #14.8: Message Deletion Authorization
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2721,11 +3057,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #14.9: Email Ingestion Storage
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2738,41 +3076,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
----
-
-## RULE #14.10: Authentication Placeholder - CRITICAL TODO
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST implement proper authentication:**
-
-❌ **NEVER use in production:**
-- `User.first` placeholder
-- Hardcoded user IDs
-- Session-less chat without auth
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §14.10](TRAPID_TEACHER.md#1410-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 14](TRAPID_LEXICON.md)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 15](TRAPID_LEXICON.md)
 
 ---
 
----
-
-# Chapter 15: Xero
+# Chapter 16: Xero Accounting Integration
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch15    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch15    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch15 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch16    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch16    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch16 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #15.1: OAuth Token Management
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2785,11 +3105,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #15.2: Two-Way Contact Sync
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2804,11 +3126,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #15.3: Invoice Matching
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2823,11 +3147,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #15.4: Webhook Signature Verification
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2840,11 +3166,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #15.5: Rate Limiting & Error Handling
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2859,11 +3187,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #15.6: Tax Rates & Chart of Accounts
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2876,11 +3206,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #15.7: Background Job Processing
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2895,11 +3227,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #15.8: Payment Sync Workflow
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -2912,21 +3246,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 16: Payments
+# Chapter 17: Payments & Financials
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch16    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch16    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch16 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch17    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch17    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch17 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #16.1: Payment Model Structure
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2939,11 +3275,35 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
+
+---
+
+## RULE #16.10: Cascade Delete Payments
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST set dependent: :destroy:**
+
+❌ **NEVER orphan payments:**
+- Deleting PO without deleting payments breaks referential integrity
+- Payment without PO is meaningless
+- Use `dependent: :destroy` not `dependent: :nullify`
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §16.10](TRAPID_TEACHER.md#1610-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #16.2: Automatic Payment Status Updates
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2956,11 +3316,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #16.3: Xero Invoice Fuzzy Matching
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2973,11 +3335,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #16.4: Xero Payment Sync
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -2988,11 +3352,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #16.5: Payment Method Enum
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3005,11 +3371,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #16.6: Financial Precision with DECIMAL(15,2)
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3027,11 +3395,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #16.7: Payment Status Badge Display
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3042,11 +3412,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #16.8: Payment Summary Calculation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3059,11 +3431,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #16.9: Budget Variance Tracking
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3076,41 +3450,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
----
-
-## RULE #16.10: Cascade Delete Payments
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST set dependent: :destroy:**
-
-❌ **NEVER orphan payments:**
-- Deleting PO without deleting payments breaks referential integrity
-- Payment without PO is meaningless
-- Use `dependent: :destroy` not `dependent: :nullify`
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §16.10](TRAPID_TEACHER.md#1610-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 16](TRAPID_LEXICON.md)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 17](TRAPID_LEXICON.md)
 
 ---
 
----
-
-# Chapter 17: Workflows
+# Chapter 18: Workflows & Automation
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch17    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch17    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch17 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch18    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch18    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch18 │
 └─────────────────────────────────────────────────┘
 
 **Last Updated:** 2025-11-17 11:58 AEST
 
 ## RULE #17.1: Solid Queue Background Job System
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3123,11 +3479,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #17.2: Workflow State Machine
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3140,11 +3498,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #17.3: Idempotent Background Jobs
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3157,11 +3517,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #17.4: Price Update Automation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3172,11 +3534,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #17.5: Model Callback Automation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3191,11 +3555,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #17.6: Job Status Tracking
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3208,11 +3574,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #17.7: Batch Processing with Rate Limiting
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3223,11 +3591,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #17.8: Workflow Metadata Storage
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3240,21 +3610,23 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 18](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 18: Custom Tables
+# Chapter 19: Custom Tables & Formulas
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch18    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch18    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch18 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch19    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch19    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch19 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 11:58 AEST
+**Last Updated:** 2025-11-17 15:28 AEST
 
 ## RULE #18.1: Dynamic Table Creation Pattern
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3272,11 +3644,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #18.2: Column Type System
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3289,11 +3663,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #18.3: Formula Evaluation System
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3308,11 +3684,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #18.4: Lookup Column Pattern
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3327,11 +3705,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #18.5: Record CRUD with Formula Calculation
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3344,11 +3724,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #18.6: Table Deletion Safety
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3361,11 +3743,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #18.7: Column Validation Rules
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3378,11 +3762,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #18.8: Foreign Key Constraints
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3395,21 +3781,67 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
 ---
 
-# Chapter 19: UI/UX
+## RULE #19.38: Cascading Filter Pattern
+
+✅ Must
+
+✅ **MUST use cascading filters for multi-level hierarchical data:**
+
+**When to Use:**
+- Tables with 2+ filterable dimensions (Chapter → Type, Category → Subcategory, etc.)
+- Data has clear parent-child relationships
+- Filtering one dimension narrows options in dependent dimensions
+
+**How Cascading Works:**
+- Filters go **left-to-right** (broader → narrower)
+- Parent filter (left) affects child filter options (right)
+- Changing parent filter resets child filters to "All"
+- Show dynamic counts: "MUST (18)", "NEVER (5)", "PROTECTED (0)"
+- Disable options with 0 count
+
+**Filter Hierarchy Example:**
+```
+Chapter (Level 1) → Type (Level 2) → Status (Level 3)
+    ↓                    ↓                 ↓
+  Affects            Affects           [End]
+  Type options       Status options
+```
+
+❌ **NEVER:**
+- Use bidirectional cascading (Chapter ← → Type = circular dependency)
+- Skip memoization (causes performance issues)
+- Forget to reset downstream filters when upstream changes
+- Make filters cascade backwards (right-to-left)
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.38](TRAPID_TEACHER.md#1938-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+**Example (BibleTableView):**
+- User selects "Chapter 9" → Type filter shows: MUST (18), NEVER (5), PROTECTED (0 - disabled)
+- User selects "MUST" → Shows only 18 Chapter 9 MUST rules
+- User changes to "Chapter 19" → Type resets to "All", recalculates for Ch 19
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
+# Chapter 20: UI/UX Standards & Patterns
 
 ┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch19    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch19    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch19 │
+│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch20    │
+│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch20    │
+│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch20 │
 └─────────────────────────────────────────────────┘
 
-**Last Updated:** 2025-11-17 13:24 AEST
+**Last Updated:** 2025-11-17 13:57 AEST
 
 ## RULE #19.1: Standard Table Component Usage
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3425,176 +3857,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
----
-
-## RULE #19.2: Table Header Requirements
-
-✅ MUST
-
-✅ MUST
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.2](TRAPID_TEACHER.md#192-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #19.3: Column Search/Filter Requirements (REQUIRED)
-
-✅ MUST
-
-✅ MUST
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.3](TRAPID_TEACHER.md#193-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #19.4: Column Resizing Standards
-
-✅ MUST
-
-✅ MUST
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.4](TRAPID_TEACHER.md#194-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #19.5: Column Reordering Standards
-
-❌ NEVER
-
-✅ MUST
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.5](TRAPID_TEACHER.md#195-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #19.37: Column Visibility Toggle (REQUIRED)
-
-❌ NEVER
-
-❌ NEVER
-
-❌ **NEVER:**
-- Allow hiding ALL columns
-- Hide actions column
-- Forget localStorage persistence
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.5A](TRAPID_TEACHER.md#195a-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #19.38: Column Width Persistence (REQUIRED)
-
-✅ MUST
-
-✅ MUST
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.5B](TRAPID_TEACHER.md#195b-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #19.6: Scroll Behavior Standards
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST implement for scrollable tables:**
-- Use `flex` layout with `flex-1 min-h-0 flex flex-col` on container
-- Scrollable area: `overflow-y-scroll overflow-x-auto`
-- Sync horizontal scroll between main container and sticky scrollbar via refs
-- Track scrollWidth with `ResizeObserver` for dynamic updates
-- Custom scrollbar styling via webkit pseudo-elements
-- Thin scrollbars: `scrollbar-width: thin` for Firefox
-
-❌ **NEVER:**
-- Use `overflow: hidden` on flex containers (prevents scrolling)
-- Forget `min-h-0` on flex children (causes overflow issues)
-- Skip scroll sync between container and sticky scrollbar
-- Use inline scroll handlers without refs (performance issue)
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.6](TRAPID_TEACHER.md#196-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #19.7: Column Width Standards
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST set widths consistently:**
-- `<th>`: `style={{ width: `${width}px`, minWidth: `${width}px` }}`
-- `<td>`: `style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}`
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.7](TRAPID_TEACHER.md#197-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #19.8: Cell Content Standards
-
-✅ MUST
-
-✅ MUST
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.8](TRAPID_TEACHER.md#198-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
-
----
-
-## RULE #19.9: Row Interaction Standards
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST implement:**
-- Selection column minimum width: 50px (never smaller)
-- Selection column always visible (exclude from visibility toggles)
-- Selection column excluded from column reordering (always leftmost)
-
-❌ **NEVER:**
-- Add explicit size classes to checkboxes (`h-4 w-4` OK, but browser default preferred)
-- Make selection column draggable
-- Include selection column in columnOrder state
-- Allow selection column to be hidden via visibility toggles
-- Allow selection column to be reordered (must stay leftmost)
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §19.9](TRAPID_TEACHER.md#199-)
-**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
-
----
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
 ## RULE #19.10: Column Visibility Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3603,11 +3872,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.11: Search & Filter UI Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3616,11 +3887,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
-## RULE #19.39: Table Toolbar Layout Standards (REQUIRED)
+## RULE #19.11A: Table Toolbar Layout Standards (REQUIRED)
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -3635,11 +3908,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.12: Empty States
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3650,11 +3925,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.13: State Persistence Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3670,11 +3947,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.14: Sorting Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3687,11 +3966,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.15: Dark Mode Requirements
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -3704,11 +3985,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.16: Performance Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3726,11 +4009,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.17: Accessibility Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3747,11 +4032,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.18: Testing Considerations
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3762,11 +4049,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.19: URL State Management
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3786,11 +4075,28 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+## RULE #19.2: Table Header Requirements
+
+✅ Must
+
+✅ MUST
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.2](TRAPID_TEACHER.md#192-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.20: Search Functionality Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3799,11 +4105,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.21: Form Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3818,11 +4126,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.22: Modal & Drawer Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3835,11 +4145,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.23: Toast Notification Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3860,11 +4172,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.24: Loading State Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3873,11 +4187,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.25: Button & Action Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3886,11 +4202,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.26: Status Badge Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3899,11 +4217,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.27: Empty State Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3914,11 +4234,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.28: Navigation Standards
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3927,11 +4249,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.29: Chapter 19 Documentation Maintenance (REQUIRED)
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3954,11 +4278,28 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
+---
+
+## RULE #19.3: Column Search/Filter Requirements (REQUIRED)
+
+✅ Must
+
+✅ MUST
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.3](TRAPID_TEACHER.md#193-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.30: Touch Target Sizes & Click Areas
 
-❌ NEVER
+❌ Never
 
 ❌ NEVER
 
@@ -3972,11 +4313,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.31: Data-Dense Table Layout Pattern
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -3994,11 +4337,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.32: Zebra Striping (Alternating Row Colors)
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -4017,11 +4362,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.33: Sticky Horizontal Scrollbar Pattern
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -4064,11 +4411,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 **📖 Implementation:** See [TRAPID_TEACHER.md §19.33](TRAPID_TEACHER.md#1933-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19, §19.33](TRAPID_LEXICON.md)
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.34: Modern Table Header Aesthetics
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -4088,11 +4437,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.35: Table Border Framing
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -4111,11 +4462,13 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
+
 ---
 
 ## RULE #19.36: Expand/Collapse Row Details Pattern
 
-✅ MUST
+✅ Must
 
 ✅ MUST
 
@@ -4136,242 +4489,177 @@ This file is the **absolute authority** for all Trapid development where chapter
 
 ---
 
----
-
-# Chapter 20: Agents
-
-┌─────────────────────────────────────────────────┐
-│ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch20    │
-│ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch20    │
-│ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch20 │
-└─────────────────────────────────────────────────┘
-
-**Last Updated:** 2025-11-17 11:58 AEST
-
-## RULE #20.1: Agent Definitions Are Database-Driven
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST:**
-- Store all agent metadata in database
-- Update run history after each agent execution
-- Use API endpoints to manage agents
-- Track success/failure rates
-- Maintain agent priority order
-
-❌ **NEVER:**
-- Hardcode agent configurations in code
-- Skip recording agent runs
-- Modify `.claude/agents/*.md` files without updating database
-- Create agents without database entries
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.1](TRAPID_TEACHER.md#201-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
+## RULE #19.4: Column Resizing Standards
+
+✅ Must
+
+✅ MUST
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.4](TRAPID_TEACHER.md#194-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
 ---
 
-## RULE #20.2: Agent Invocation Protocol
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST:**
-- Check if agent exists and is active
-- Record run start timestamp
-- Execute agent task
-- Record success or failure with details
-- Return comprehensive result
-
-❌ **NEVER:**
-- Invoke inactive agents
-- Skip recording run results
-- Return vague error messages
-- Execute agents without user context
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.2](TRAPID_TEACHER.md#202-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
----
+## RULE #19.5: Column Reordering Standards
 
-## RULE #20.3: Run History Tracking
+❌ Never
 
-✅ MUST
-
-✅ MUST
-
-✅ **MUST:**
-- Record total_runs, successful_runs, failed_runs
-- Store last_run_at timestamp
-- Save last_status and last_message
-- Include detailed last_run_details (JSONB)
-- Calculate success_rate automatically
+❌ NEVER
 
 ❌ **NEVER:**
-- Skip recording runs
-- Overwrite historical run data
-- Record runs for testing/debugging
-- Fake success/failure status
+- Put entire header in one onClick handler
+- Make drag handle sortable
+- Forget `e.stopPropagation()` on drag handle
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.3](TRAPID_TEACHER.md#203-)
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.5](TRAPID_TEACHER.md#195-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
----
+## RULE #19.5A: Column Visibility Toggle (REQUIRED)
 
-## RULE #20.4: Agent Types and Specialization
+❌ Never
 
-✅ MUST
-
-✅ MUST
-
-✅ **MUST:**
-- Assign agent_type: `development`, `diagnostic`, `deployment`, or `planning`
-- Define clear focus area (e.g., "Rails API Backend Development")
-- Specify tools available to agent
-- Document when to use each agent
-- Provide example invocations
+❌ NEVER
 
 ❌ **NEVER:**
-- Create overlapping agent responsibilities
-- Use generic agent for specialized tasks
-- Skip documenting agent capabilities
-- Create agents without clear purpose
+- Allow hiding ALL columns
+- Hide actions column
+- Forget localStorage persistence
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.4](TRAPID_TEACHER.md#204-)
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.5A](TRAPID_TEACHER.md#195a-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
+## RULE #19.5B: Column Width Persistence (REQUIRED)
+
+✅ Must
+
+✅ MUST
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.5B](TRAPID_TEACHER.md#195b-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
 ---
 
-## RULE #20.5: Agent Priority and Display Order
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST:**
-- Set priority field (0-100)
-- Display agents sorted by: priority DESC, name ASC
-- Show active agents first
-- Hide inactive agents from main list
-
-❌ **NEVER:**
-- Display agents alphabetically only
-- Show inactive agents in main list
-- Change priority without reason
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.5](TRAPID_TEACHER.md#205-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
----
+## RULE #19.6: Scroll Behavior Standards
 
-## RULE #20.6: Agent Shortcuts and Invocation
-
-✅ MUST
+✅ Must
 
 ✅ MUST
 
-✅ **MUST:**
-- Support `run {agent-id}` (e.g., `run backend-developer`)
-- Support shortened versions (e.g., `backend dev`, `gantt`)
-- Document shortcuts in `example_invocations` field
-- Parse user input case-insensitively
+✅ **MUST implement for scrollable tables:**
+- Use `flex` layout with `flex-1 min-h-0 flex flex-col` on container
+- Scrollable area: `overflow-y-scroll overflow-x-auto`
+- Sync horizontal scroll between main container and sticky scrollbar via refs
+- Track scrollWidth with `ResizeObserver` for dynamic updates
+- Custom scrollbar styling via webkit pseudo-elements
+- Thin scrollbars: `scrollbar-width: thin` for Firefox
 
 ❌ **NEVER:**
-- Require exact agent_id match
-- Skip documenting shortcuts
-- Create conflicting shortcuts
+- Use `overflow: hidden` on flex containers (prevents scrolling)
+- Forget `min-h-0` on flex children (causes overflow issues)
+- Skip scroll sync between container and sticky scrollbar
+- Use inline scroll handlers without refs (performance issue)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.6](TRAPID_TEACHER.md#206-)
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.6](TRAPID_TEACHER.md#196-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
+## RULE #19.7: Column Width Standards
+
+✅ Must
+
+✅ MUST
+
+✅ **MUST set widths consistently:**
+- `<th>`: `style={{ width: `${width}px`, minWidth: `${width}px` }}`
+- `<td>`: `style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}`
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.7](TRAPID_TEACHER.md#197-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
 ---
 
-## RULE #20.7: Recently Run Check (Smart Testing)
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST:**
-- Check `last_run_at` timestamp
-- Compare to threshold (e.g., 60 minutes)
-- Skip redundant tests if recent successful run
-- ALWAYS re-run if last run failed
-- Ask user if uncertain
-
-❌ **NEVER:**
-- Skip tests without checking recency
-- Ignore failed runs in recency check
-- Use stale results without user awareness
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.7](TRAPID_TEACHER.md#207-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
+## RULE #19.8: Cell Content Standards
+
+✅ Must
+
+✅ MUST
+
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.8](TRAPID_TEACHER.md#198-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
 ---
 
-## RULE #20.8: Shortcut Clarity - AgentShortcutsTab Updates
-
-✅ MUST
-
-✅ MUST
-
-✅ **MUST:**
-- Update `frontend/src/components/settings/AgentShortcutsTab.jsx` when adding new shortcuts
-- Add new shortcuts to the `baseCommands` array
-- Ensure shortcuts match agent file definitions exactly
-- Use sequential IDs (avoid duplicates)
-- Document the shortcut pattern in the command field
-- Follow the format: `{ id: N, command: 'What Claude executes', shortcut: 'what user types, comma-separated' }`
-
-❌ **NEVER:**
-- Leave shortcuts undocumented
-- Create duplicate IDs in baseCommands array
-- Use shortcuts that contradict agent definitions
-- Hardcode shortcuts outside the table
-
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.8](TRAPID_TEACHER.md#208-)
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
----
+## RULE #19.9: Row Interaction Standards
 
-## RULE #20.9: Creating New Agents - Complete Checklist
-
-✅ MUST
+✅ Must
 
 ✅ MUST
 
-✅ **MUST UPDATE (4 files):**
+✅ **MUST implement:**
+- Selection column minimum width: 50px (never smaller)
+- Selection column always visible (exclude from visibility toggles)
+- Selection column excluded from column reordering (always leftmost)
 
 ❌ **NEVER:**
-- Create an agent in only one location
-- Skip updating run-history.json
-- Forget to add to the controllers fallback list
-- Miss updating the frontend component
+- Add explicit size classes to checkboxes (`h-4 w-4` OK, but browser default preferred)
+- Make selection column draggable
+- Include selection column in columnOrder state
+- Allow selection column to be hidden via visibility toggles
+- Allow selection column to be reordered (must stay leftmost)
 
-**📖 Implementation:** See [TRAPID_TEACHER.md §20.9](TRAPID_TEACHER.md#209-)
+**📖 Implementation:** See [TRAPID_TEACHER.md §19.9](TRAPID_TEACHER.md#199-)
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 19](TRAPID_LEXICON.md)
+
+---
+
 **📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 
----
+## Test Bible Rule
+
+✅ Must
+
+You MUST test all documentation changes before deploying
+
+**📕 Bug History:** See [TRAPID_LEXICON.md Chapter 20](TRAPID_LEXICON.md)
 
 ---
 

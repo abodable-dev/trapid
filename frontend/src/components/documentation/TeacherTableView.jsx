@@ -186,10 +186,11 @@ const COLUMNS = [
   { key: 'section', label: 'Section §', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150 },
   { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200, tooltip: 'Chapter number and name' },
   { key: 'relatedTo', label: 'Related To', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200 },
+  { key: 'trinity', label: 'Trinity', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 180 },
   { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 600 },
   { key: 'content', label: 'Content', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 1200 }
 ]
-// Total: 2600px - ensures horizontal overflow on most screens
+// Total: 2780px - ensures horizontal overflow on most screens
 
 const DEFAULT_COLUMN_WIDTHS = COLUMNS.reduce((acc, col) => {
   acc[col.key] = col.width
@@ -257,6 +258,7 @@ export default function TeacherTableView({ content }) {
             commonMistakes: entry.common_mistakes,
             testingStrategy: entry.testing_strategy,
             relatedRules: entry.related_rules,
+            relatedDocs: entry.related_rules || '',
             difficulty: entry.difficulty
           }))
           setSections(transformedSections)
@@ -478,6 +480,19 @@ export default function TeacherTableView({ content }) {
         case 'relatedTo':
           result = result.filter(s => s.relatedTo === value)
           break
+        case 'trinity':
+          result = result.filter(s => {
+            try {
+              if (!s.relatedDocs) return false
+              const docs = JSON.parse(s.relatedDocs)
+              if (!docs || !Array.isArray(docs) || docs.length === 0) return false
+              const trinityType = docs[0].type?.toLowerCase()
+              return trinityType === value
+            } catch (e) {
+              return false
+            }
+          })
+          break
         case 'title':
           result = result.filter(s => s.title?.toLowerCase().includes(value.toLowerCase()))
           break
@@ -613,6 +628,107 @@ export default function TeacherTableView({ content }) {
         ) : (
           <span className="text-gray-400 dark:text-gray-600">-</span>
         )
+
+      case 'trinity': {
+        // Parse current trinity selection from relatedDocs field (single-select only)
+        let selectedTrinity = null
+        try {
+          if (section.relatedDocs) {
+            const docs = JSON.parse(section.relatedDocs)
+            if (docs && Array.isArray(docs) && docs.length > 0) {
+              const firstDoc = docs[0]
+              if (firstDoc.type === 'Bible') selectedTrinity = 'bible'
+              else if (firstDoc.type === 'Teacher') selectedTrinity = 'teacher'
+              else if (firstDoc.type === 'Lexicon') selectedTrinity = 'lexicon'
+            }
+          }
+        } catch (e) {
+          // Invalid JSON, use null
+        }
+
+        const handleTrinityChange = async (trinityType) => {
+          // Build new relatedDocs array with only ONE selected item
+          const newDocs = []
+          if (trinityType === 'bible') {
+            newDocs.push({ type: 'Bible', reference: `§${section.sectionNumber}` })
+          } else if (trinityType === 'teacher') {
+            newDocs.push({ type: 'Teacher', reference: `§${section.sectionNumber}` })
+          } else if (trinityType === 'lexicon') {
+            newDocs.push({ type: 'Lexicon', reference: `Ch${section.chapter}` })
+          }
+
+          // Save to API
+          try {
+            await fetch(`http://localhost:3000/api/v1/trinity/${section.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                trinity: {
+                  related_rules: JSON.stringify(newDocs)
+                }
+              })
+            })
+            // Refetch data to update UI
+            const response = await fetch('/api/v1/trinity?category=teacher')
+            const data = await response.json()
+            if (data.success) {
+              const transformedSections = data.data.map(entry => ({
+                id: entry.id,
+                sectionNumber: entry.section_number || '',
+                chapter: entry.chapter_number,
+                chapterName: entry.chapter_name,
+                title: entry.title,
+                relatedTo: extractRelatedTo(entry.title, entry.chapter_number),
+                content: entry.summary || entry.description || '',
+                codeExample: entry.code_example,
+                commonMistakes: entry.common_mistakes,
+                testingStrategy: entry.testing_strategy,
+                relatedRules: entry.related_rules,
+                relatedDocs: entry.related_rules || '',
+                difficulty: entry.difficulty
+              }))
+              setSections(transformedSections)
+            }
+          } catch (error) {
+            console.error('Failed to update Trinity:', error)
+          }
+        }
+
+        return (
+          <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
+              <input
+                type="radio"
+                name={`trinity-${section.id}`}
+                checked={selectedTrinity === 'bible'}
+                onChange={() => handleTrinityChange('bible')}
+                className="h-3 w-3 border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <span className="text-purple-700 dark:text-purple-400 font-medium">📖 Bible</span>
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
+              <input
+                type="radio"
+                name={`trinity-${section.id}`}
+                checked={selectedTrinity === 'teacher'}
+                onChange={() => handleTrinityChange('teacher')}
+                className="h-3 w-3 border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <span className="text-blue-700 dark:text-blue-400 font-medium">🔧 Teacher</span>
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-1 py-0.5 rounded">
+              <input
+                type="radio"
+                name={`trinity-${section.id}`}
+                checked={selectedTrinity === 'lexicon'}
+                onChange={() => handleTrinityChange('lexicon')}
+                className="h-3 w-3 border-gray-300 text-green-600 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <span className="text-green-700 dark:text-green-400 font-medium">📕 Lexicon</span>
+            </label>
+          </div>
+        )
+      }
 
       case 'title':
         return <div className="font-medium">{section.title}</div>
@@ -892,6 +1008,13 @@ export default function TeacherTableView({ content }) {
                               {colKey === 'relatedTo' && uniqueRelatedTo.map(val => (
                                 <option key={val} value={val}>{val}</option>
                               ))}
+                              {colKey === 'trinity' && (
+                                <>
+                                  <option value="bible">📖 Bible</option>
+                                  <option value="teacher">🔧 Teacher</option>
+                                  <option value="lexicon">📕 Lexicon</option>
+                                </>
+                              )}
                             </select>
                           )}
                         </>

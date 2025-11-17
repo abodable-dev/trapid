@@ -180,7 +180,7 @@ namespace :trapid do
 
     # Group rules by chapter
     (0..20).each do |chapter_num|
-      rules = BibleRule.by_chapter(chapter_num).ordered
+      rules = Trinity.bible_entries.by_chapter(chapter_num).ordered
       next if rules.empty?
 
       chapter_name = rules.first.chapter_name
@@ -201,21 +201,22 @@ namespace :trapid do
       CHAPTER
 
       rules.each do |rule|
-        content += "## RULE ##{rule.rule_number}: #{rule.title}\n\n"
-        content += "#{rule.type_display}\n\n" if rule.rule_type.present?
-        content += "#{rule.description}\n\n"
+        content += "## #{rule.section_display}: #{rule.title}\n\n" if rule.section_number.present?
+        content += "## #{rule.title}\n\n" unless rule.section_number.present?
+        content += "#{rule.type_display}\n\n"
+        content += "#{rule.summary}\n\n" if rule.summary.present?
+        content += "#{rule.description}\n\n" if rule.description.present?
+        content += "#{rule.details}\n\n" if rule.details.present?
 
         if rule.code_example.present?
-          content += "### Code Example\n\n"
-          content += "```\n#{rule.code_example}\n```\n\n"
+          content += "**📖 Implementation:** See [TRAPID_TEACHER.md §#{rule.section_number}](TRAPID_TEACHER.md##{rule.section_number.to_s.gsub('.', '')}-)\n"
         end
 
-        if rule.cross_references.present?
-          content += "### Cross-References\n\n"
-          content += "#{rule.cross_references}\n\n"
+        if rule.related_rules.present?
+          content += "**📕 Bug History:** See [TRAPID_LEXICON.md Chapter #{rule.chapter_number}](TRAPID_LEXICON.md)\n"
         end
 
-        content += "---\n\n"
+        content += "\n---\n\n"
       end
     end
 
@@ -225,7 +226,7 @@ namespace :trapid do
     puts "\n" + "=" * 60
     puts "✅ Export complete!"
     puts "   File: #{bible_path}"
-    puts "   Rules exported: #{BibleRule.count}"
+    puts "   Rules exported: #{Trinity.bible_entries.count}"
     puts "=" * 60
   end
 
@@ -235,8 +236,8 @@ namespace :trapid do
     confirmation = STDIN.gets.chomp
 
     if confirmation.downcase == 'y'
-      count = BibleRule.count
-      BibleRule.destroy_all
+      count = Trinity.bible_entries.count
+      Trinity.bible_entries.destroy_all
       puts "✅ Deleted #{count} Bible rules"
     else
       puts "❌ Cancelled"
