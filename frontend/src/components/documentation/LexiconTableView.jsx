@@ -231,7 +231,7 @@ export default function LexiconTableView({ entries, onEdit, onDelete, stats }) {
     resizeObserver.observe(container)
 
     return () => resizeObserver.disconnect()
-  }, [filteredAndSorted, columnWidths])
+  }, [columnWidths])
 
   // Column reordering handlers (RULE #19.5)
   const handleDragStart = (e, columnKey) => {

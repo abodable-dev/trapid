@@ -5,10 +5,14 @@ class DocumentationEntry < ApplicationRecord
   ENTRY_TYPES = %w[
     bug architecture test performance dev_note common_issue
     component feature util hook integration optimization
+    MUST NEVER ALWAYS PROTECTED CONFIG rule
   ].freeze
 
   LEXICON_TYPES = %w[bug architecture test performance dev_note common_issue].freeze
   TEACHER_TYPES = %w[component feature util hook integration optimization].freeze
+  BIBLE_TYPES = %w[MUST NEVER ALWAYS PROTECTED CONFIG rule].freeze
+
+  CATEGORIES = %w[bible teacher lexicon].freeze
 
   STATUSES = %w[open fixed by_design wont_fix monitoring].freeze
   SEVERITIES = %w[critical high medium low].freeze
@@ -19,6 +23,7 @@ class DocumentationEntry < ApplicationRecord
   validates :chapter_name, presence: true
   validates :title, presence: true
   validates :entry_type, inclusion: { in: ENTRY_TYPES }
+  validates :category, inclusion: { in: CATEGORIES }
 
   # Section number optional, but must be formatted if present (allows optional letter suffix like 19.11A)
   validates :section_number, format: { with: /\A\d+\.\d+[A-Z]?\z/, message: "must be in format X.Y or X.YA (e.g., 19.1 or 19.11A)" }, allow_nil: true
@@ -43,9 +48,10 @@ class DocumentationEntry < ApplicationRecord
   scope :by_difficulty, ->(difficulty) { where(difficulty: difficulty) }
   scope :ordered, -> { order(:chapter_number, :section_number, :created_at) }
 
-  # Lexicon vs Teacher scopes
-  scope :lexicon_entries, -> { where(entry_type: LEXICON_TYPES) }
-  scope :teacher_entries, -> { where(entry_type: TEACHER_TYPES) }
+  # Category scopes
+  scope :bible_entries, -> { where(category: 'bible') }
+  scope :lexicon_entries, -> { where(category: 'lexicon') }
+  scope :teacher_entries, -> { where(category: 'teacher') }
 
   # Convenience scopes - Lexicon
   scope :bugs, -> { where(entry_type: 'bug') }
@@ -77,17 +83,34 @@ class DocumentationEntry < ApplicationRecord
   end
 
   # Helper methods
+  def bible_entry?
+    category == 'bible'
+  end
+
   def lexicon_entry?
-    LEXICON_TYPES.include?(entry_type)
+    category == 'lexicon'
   end
 
   def teacher_entry?
-    TEACHER_TYPES.include?(entry_type)
+    category == 'teacher'
   end
 
   # Display methods
   def type_emoji
     case entry_type
+    # Bible types
+    when 'MUST'
+      '✅'
+    when 'NEVER'
+      '❌'
+    when 'ALWAYS'
+      '🔄'
+    when 'PROTECTED'
+      '🔒'
+    when 'CONFIG'
+      '⚙️'
+    when 'rule'
+      '📖'
     # Lexicon types
     when 'bug'
       '🐛'
@@ -191,7 +214,17 @@ class DocumentationEntry < ApplicationRecord
 
   def section_display
     return nil unless section_number.present?
-    "§#{section_number}"
+    bible_entry? ? "RULE ##{section_number}" : "§#{section_number}"
+  end
+
+  def full_title
+    if bible_entry? && section_number.present?
+      "RULE ##{section_number}: #{title}"
+    elsif section_number.present?
+      "§#{section_number}: #{title}"
+    else
+      title
+    end
   end
 
   private

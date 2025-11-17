@@ -2,23 +2,27 @@
 
 ## 🔴 READ THESE FIRST
 
-Before doing ANY work on this project, **fetch documentation from the live database APIs**:
+Before doing ANY work on this project, **fetch documentation from the live database API**:
+
+### 🌐 Unified Documentation API
+**Base URL:** `https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries`
 
 ### 📖 Bible (RULES) - ABSOLUTE AUTHORITY
-**API:** `https://trapid-backend-447058022b51.herokuapp.com/api/v1/bible_rules`
-- Fetch all Bible rules from database
+**API:** `/api/v1/documentation_entries?category=bible`
+- Fetch all Bible rules from unified database
 - Always up-to-date, no export needed
 - Contains: MUST/NEVER/ALWAYS rules, protected patterns, config values
+- Entry types: MUST, NEVER, ALWAYS, PROTECTED, CONFIG, rule
 
 ### 🔧 Teacher (HOW-TO) - Implementation Patterns
-**API:** `https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=teacher`
-- Fetch all Teacher entries from database
+**API:** `/api/v1/documentation_entries?category=teacher`
+- Fetch all Teacher entries from unified database
 - Full code examples, step-by-step guides
 - Entry types: component, feature, util, hook, integration, optimization
 
 ### 📕 Lexicon (KNOWLEDGE) - Bug History & Architecture
-**API:** `https://trapid-backend-447058022b51.herokuapp.com/api/v1/documentation_entries?category=lexicon`
-- Fetch all Lexicon entries from database
+**API:** `/api/v1/documentation_entries?category=lexicon`
+- Fetch all Lexicon entries from unified database
 - Bug discoveries, architecture decisions, performance notes
 - Entry types: bug, architecture, test, performance, dev_note, common_issue
 
@@ -47,7 +51,7 @@ Trapid uses a **four-document system** to separate concerns and eliminate redund
 **What:** MUST/NEVER/ALWAYS directives only
 **Authority:** ABSOLUTE
 
-**Source of Truth:** Database table `bible_rules` (NOT the .md file)
+**Source of Truth:** Database table `documentation_entries` with `category='bible'` (NOT the .md file)
 **Exported to:** `TRAPID_BIBLE.md` (auto-generated via `bin/rails trapid:export_bible`)
 
 **Contains:**
@@ -63,7 +67,7 @@ Trapid uses a **four-document system** to separate concerns and eliminate redund
 
 **Update Workflow:**
 1. Go to Trapid app → Documentation page → 📖 Bible
-2. Add/edit rules via UI (stores in `bible_rules` table)
+2. Add/edit rules via UI (stores in `documentation_entries` table with `category='bible'`)
 3. Run: `bin/rails trapid:export_bible`
 4. Commit the updated `TRAPID_BIBLE.md` file
 
@@ -273,38 +277,39 @@ All four documents use the **same chapter structure** (0-20):
 
 **"I'm fixing a bug"**
 1. Fetch Lexicon: `GET /api/v1/documentation_entries?category=lexicon` (has it been seen before?)
-2. Fetch Bible: `GET /api/v1/bible_rules` (are there protected patterns?)
+2. Fetch Bible: `GET /api/v1/documentation_entries?category=bible` (are there protected patterns?)
 3. Fix code following Bible rules
 4. Update Lexicon via Trapid UI (database auto-updates)
 
 **"I'm creating a new component"**
-1. Fetch Bible rules for relevant chapter: `GET /api/v1/bible_rules`
+1. Fetch Bible rules: `GET /api/v1/documentation_entries?category=bible`
 2. Fetch Teacher entries: `GET /api/v1/documentation_entries?category=teacher`
 3. Fetch Lexicon: `GET /api/v1/documentation_entries?category=lexicon` for known issues
 4. Implement following all three
 
 **"I'm optimizing performance"**
 1. Fetch Lexicon: `GET /api/v1/documentation_entries?category=lexicon&entry_type=performance`
-2. Fetch Bible: `GET /api/v1/bible_rules` for protected code warnings
+2. Fetch Bible: `GET /api/v1/documentation_entries?category=bible` for protected code warnings
 3. Fetch Teacher: `GET /api/v1/documentation_entries?category=teacher&entry_type=optimization`
 4. Document optimization via Trapid UI
 
 **"User can't use a feature"**
 1. Send them to User Manual (still markdown-based)
 2. If it's broken, fetch Lexicon: `GET /api/v1/documentation_entries?category=lexicon`
-3. If needs fixing, fetch Bible: `GET /api/v1/bible_rules`
+3. If needs fixing, fetch Bible: `GET /api/v1/documentation_entries?category=bible`
 
 ---
 
 ## 💾 Database-Driven Documentation System
 
-Both Lexicon and Teacher are backed by a unified `documentation_entries` table. The markdown files are auto-generated exports.
+**All three** (Bible, Lexicon, and Teacher) are backed by a unified `documentation_entries` table. The markdown files are auto-generated exports.
 
 ### Table Structure: `documentation_entries`
 
 ```ruby
-# Unified table for both Lexicon and Teacher entries
+# Unified table for Bible, Lexicon, and Teacher entries
 create_table :documentation_entries do |t|
+  t.string :category, null: false        # bible, lexicon, teacher
   t.integer :chapter_number, null: false  # 0-20
   t.string :chapter_name, null: false
   t.string :section_number               # e.g., "19.1", "19.11A" (optional)
@@ -322,9 +327,21 @@ create_table :documentation_entries do |t|
 
   t.timestamps
 end
+
+# Indexes
+add_index :documentation_entries, :category
+add_index :documentation_entries, [:category, :chapter_number]
 ```
 
 ### Entry Types
+
+**Bible Types** (rules):
+- `MUST` - Must do this
+- `NEVER` - Never do that
+- `ALWAYS` - Always check X before Y
+- `PROTECTED` - Protected code patterns
+- `CONFIG` - Configuration values
+- `rule` - General rule
 
 **Lexicon Types** (knowledge/bugs):
 - `bug` - Bug discoveries and fixes
@@ -346,8 +363,9 @@ end
 
 ```ruby
 # app/models/documentation_entry.rb
-scope :lexicon_entries, -> { where(entry_type: LEXICON_TYPES) }
-scope :teacher_entries, -> { where(entry_type: TEACHER_TYPES) }
+scope :bible_entries, -> { where(category: 'bible') }
+scope :lexicon_entries, -> { where(category: 'lexicon') }
+scope :teacher_entries, -> { where(category: 'teacher') }
 ```
 
 ### Export Commands
