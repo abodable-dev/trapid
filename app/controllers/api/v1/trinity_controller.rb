@@ -3,7 +3,7 @@
 module Api
   module V1
     class TrinityController < ApplicationController
-      skip_before_action :authorize_request, only: [:index, :show, :stats]
+      skip_before_action :authorize_request, only: [:index, :show, :stats, :constants]
       before_action :set_trinity_entry, only: [:show, :update, :destroy]
 
       # GET /api/v1/trinity
@@ -131,6 +131,24 @@ module Api
         render json: {
           success: true,
           data: stats
+        }
+      end
+
+      # GET /api/v1/trinity/constants
+      # Returns Trinity model constants for use in UI filters/selects
+      def constants
+        render json: {
+          success: true,
+          data: {
+            entry_types: Trinity::ENTRY_TYPES,
+            lexicon_types: Trinity::LEXICON_TYPES,
+            teacher_types: Trinity::TEACHER_TYPES,
+            bible_types: Trinity::BIBLE_TYPES,
+            categories: Trinity::CATEGORIES,
+            statuses: Trinity::STATUSES,
+            severities: Trinity::SEVERITIES,
+            difficulties: Trinity::DIFFICULTIES
+          }
         }
       end
 

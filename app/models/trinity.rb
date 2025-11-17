@@ -7,12 +7,12 @@ class Trinity < ApplicationRecord
   # Constants
   ENTRY_TYPES = %w[
     bug architecture test performance dev_note common_issue
-    component feature util hook integration optimization
+    component feature util hook integration optimization dropdown_md
     MUST NEVER ALWAYS PROTECTED CONFIG rule REFERENCE
   ].freeze
 
   LEXICON_TYPES = %w[bug architecture test performance dev_note common_issue].freeze
-  TEACHER_TYPES = %w[component feature util hook integration optimization].freeze
+  TEACHER_TYPES = %w[component feature util hook integration optimization dropdown_md].freeze
   BIBLE_TYPES = %w[MUST NEVER ALWAYS PROTECTED CONFIG rule REFERENCE].freeze
 
   CATEGORIES = %w[bible teacher lexicon].freeze
@@ -22,7 +22,7 @@ class Trinity < ApplicationRecord
   DIFFICULTIES = %w[beginner intermediate advanced].freeze
 
   # Validations
-  validates :chapter_number, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 21 }
+  validates :chapter_number, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: 21 }
   validates :chapter_name, presence: true
   validates :title, presence: true
   validates :entry_type, inclusion: { in: ENTRY_TYPES }
@@ -30,6 +30,8 @@ class Trinity < ApplicationRecord
 
   # Section number optional, but must be formatted if present (allows optional letter suffix like 19.11A)
   validates :section_number, format: { with: /\A\d+\.\d+[A-Z]?\z/, message: "must be in format X.Y or X.YA (e.g., 19.1 or 19.11A)" }, allow_nil: true
+  # Section number must be unique within chapter + category combination
+  validates :section_number, uniqueness: { scope: [:chapter_number, :category], message: "already exists in this chapter for this category" }, allow_nil: true
 
   # Bug-specific validations (only when entry_type = 'bug')
   validates :status, inclusion: { in: STATUSES }, if: -> { entry_type == 'bug' }
@@ -142,6 +144,8 @@ class Trinity < ApplicationRecord
       '🔌'
     when 'optimization'
       '⚡'
+    when 'dropdown_md'
+      '📋'
     else
       '📝'
     end

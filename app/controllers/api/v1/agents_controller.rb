@@ -3,45 +3,68 @@
 module Api
   module V1
     class AgentsController < ApplicationController
-      def status
-        file_path = Rails.root.join('..', '.claude', 'agents', 'run-history.json')
-
-        if File.exist?(file_path)
-          file_content = File.read(file_path)
-          agent_data = JSON.parse(file_content)
-          render json: agent_data
-        else
-          render json: {
-            agents: {
-              'backend-developer': default_agent_stats,
-              'frontend-developer': default_agent_stats,
-              'production-bug-hunter': default_agent_stats,
-              'deploy-manager': default_agent_stats,
-              'planning-collaborator': default_agent_stats,
-              'gantt-bug-hunter': default_agent_stats,
-              'ui-compliance-auditor': default_agent_stats
-            },
-            metadata: {
-              created: Time.current.iso8601,
-              last_updated: Time.current.iso8601,
-              version: '1.0'
-            }
+      # GET /api/v1/agents
+      # Returns all agent definitions with shortcuts and display info
+      def index
+        agents = AgentDefinition.where(active: true).order(priority: :desc, name: :asc)
+        
+        render json: agents.map { |agent|
+          {
+            agent_id: agent.agent_id,
+            name: agent.name,
+            agent_type: agent.agent_type,
+            focus: agent.focus,
+            shortcuts: parse_shortcuts(agent.example_invocations),
+            icon: get_agent_icon(agent.agent_id),
+            description: agent.purpose || agent.focus,
+            priority: agent.priority,
+            last_run_at: agent.last_run_at,
+            last_status: agent.last_status,
+            success_rate: calculate_success_rate(agent)
+          }
+        }
+      end
+      
+      # GET /api/v1/agents/shortcuts
+      # Returns formatted shortcuts for AgentShortcutsTab
+      def shortcuts
+        agents = AgentDefinition.where(active: true).order(priority: :desc)
+        
+        shortcuts = agents.map.with_index do |agent, index|
+          {
+            id: index + 1,
+            command: "Run #{agent.name}",
+            shortcut: agent.example_invocations
           }
         end
+        
+        render json: shortcuts
       end
-
+      
       private
-
-      def default_agent_stats
-        {
-          total_runs: 0,
-          successful_runs: 0,
-          failed_runs: 0,
-          last_run: nil,
-          last_status: nil,
-          last_message: nil,
-          runs: []
+      
+      def parse_shortcuts(invocations)
+        return [] unless invocations
+        invocations.split('|').map(&:strip)
+      end
+      
+      def get_agent_icon(agent_id)
+        icons = {
+          'backend-developer' => '🔧',
+          'frontend-developer' => '🎨',
+          'production-bug-hunter' => '🐛',
+          'gantt-bug-hunter' => '📊',
+          'deploy-manager' => '🚀',
+          'planning-collaborator' => '📋',
+          'trinity-sync-validator' => '✅',
+          'ui-compliance-auditor' => '🎨'
         }
+        icons[agent_id] || '🤖'
+      end
+      
+      def calculate_success_rate(agent)
+        return 0 if agent.total_runs.zero?
+        ((agent.successful_runs.to_f / agent.total_runs) * 100).round(1)
       end
     end
   end

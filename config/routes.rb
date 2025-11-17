@@ -300,11 +300,24 @@ Rails.application.routes.draw do
       resources :trinity do
         collection do
           get :stats
+          get :constants
           post :export_lexicon
           post :export_teacher
         end
       end
 
+      # Agent definitions
+      resources :agents, only: [:index] do
+        collection do
+          get :shortcuts
+        end
+      end
+
+      # User roles
+      resources :roles, only: [:index]
+
+      # Contact types
+      resources :contact_types, only: [:index]
 
       # Legacy routes for backwards compatibility
       resources :documentation_entries, controller: 'trinity' do
