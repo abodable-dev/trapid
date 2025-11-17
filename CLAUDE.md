@@ -22,6 +22,9 @@ Trapid uses a **four-document system** to separate concerns and eliminate redund
 **What:** MUST/NEVER/ALWAYS directives only
 **Authority:** ABSOLUTE
 
+**Source of Truth:** Database table `bible_rules` (NOT the .md file)
+**Exported to:** `TRAPID_BIBLE.md` (auto-generated via `bin/rails trapid:export_bible`)
+
 **Contains:**
 - ✅ Coding rules (MUST/NEVER/ALWAYS)
 - ✅ Protected code patterns
@@ -32,6 +35,12 @@ Trapid uses a **four-document system** to separate concerns and eliminate redund
 - ❌ Code examples (see Implementation Patterns)
 - ❌ Bug history (see Lexicon)
 - ❌ Architecture explanations (see Lexicon)
+
+**Update Workflow:**
+1. Go to Trapid app → Documentation page → 📖 Bible
+2. Add/edit rules via UI (stores in `bible_rules` table)
+3. Run: `bin/rails trapid:export_bible`
+4. Commit the updated `TRAPID_BIBLE.md` file
 
 **Example:**
 ```markdown
@@ -324,12 +333,54 @@ bin/rails trapid:export_teacher
 
 ### Why Database-Driven?
 
-1. **Scalability**: Both Lexicon and Teacher can grow infinitely without file size limits
+1. **Scalability**: All three (Bible, Lexicon, Teacher) can grow infinitely without file size limits
 2. **Searchability**: Database queries are faster than grepping markdown files
 3. **UI Management**: Non-technical users can add entries via Trapid app
 4. **Version Control**: Markdown exports are still committed to Git for diffs
 5. **Single Source of Truth**: Database is authoritative, markdown is generated
 6. **Structured Data**: Enforced schema prevents inconsistent formatting
+7. **Multi-Agent Safety**: Database prevents concurrent edit conflicts (see below)
+
+---
+
+## 🔒 Multi-Agent Safety: Preventing Concurrent Edit Conflicts
+
+**Problem:** Multiple Claude agents (or agent + human) editing the same markdown file simultaneously = **data loss guaranteed**
+
+**Solution:** All documentation is now database-backed with atomic operations.
+
+### Protected Documentation (Database-Backed)
+
+✅ **SAFE for concurrent edits:**
+- **Bible** → `bible_rules` table → `TRAPID_BIBLE.md` (auto-generated)
+- **Lexicon** → `documentation_entries` table (Lexicon types) → `TRAPID_LEXICON.md` (auto-generated)
+- **Teacher** → `documentation_entries` table (Teacher types) → `TRAPID_TEACHER.md` (auto-generated)
+
+### How It Works
+
+1. **Agent A** wants to add Bible rule → Creates `BibleRule` record in database
+2. **Agent B** wants to add different rule → Creates separate `BibleRule` record in database
+3. **Both succeed** → Database handles concurrency via transactions
+4. **Export runs** → Generates complete `TRAPID_BIBLE.md` with both rules
+
+### Update Commands
+
+```bash
+# Bible
+bin/rails trapid:export_bible
+
+# Lexicon
+bin/rails trapid:export_lexicon
+
+# Teacher
+bin/rails trapid:export_teacher
+```
+
+### ⚠️ User Manual Still At Risk
+
+**TRAPID_USER_MANUAL.md** is NOT database-backed yet. If running multiple agents:
+- Coordinate User Manual edits manually
+- Consider moving to database in future
 
 ---
 

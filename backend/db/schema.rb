@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_16_211635) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_17_005456) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -72,6 +72,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_16_211635) do
     t.index ["active"], name: "index_agent_definitions_on_active"
     t.index ["agent_id"], name: "index_agent_definitions_on_agent_id", unique: true
     t.index ["agent_type"], name: "index_agent_definitions_on_agent_type"
+  end
+
+  create_table "bible_rules", force: :cascade do |t|
+    t.integer "chapter_number", null: false
+    t.string "chapter_name", null: false
+    t.string "rule_number", null: false
+    t.string "title", null: false
+    t.string "rule_type"
+    t.text "description", null: false
+    t.text "code_example"
+    t.text "cross_references"
+    t.integer "sort_order", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "search_text"
+    t.index ["chapter_number", "rule_number"], name: "index_bible_rules_on_chapter_number_and_rule_number", unique: true
+    t.index ["chapter_number"], name: "index_bible_rules_on_chapter_number"
   end
 
   create_table "bug_hunter_test_runs", force: :cascade do |t|
