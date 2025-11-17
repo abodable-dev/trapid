@@ -24,19 +24,21 @@ export default function AgentShortcutsTab() {
   const [isEditingCommands, setIsEditingCommands] = useState(false)
   const [isEditingSlang, setIsEditingSlang] = useState(false)
   const [currentUser, setCurrentUser] = useState(null)
+  const [agents, setAgents] = useState([])
+  const [agentsLoading, setAgentsLoading] = useState(true)
 
   // Table state for Commands table - RULE #19 compliance
   const [globalSearchCommands, setGlobalSearchCommands] = useState('')
   const [columnFiltersCommands, setColumnFiltersCommands] = useState({})
   const [sortConfigCommands, setSortConfigCommands] = useState({ key: null, direction: 'asc' })
-  const [columnWidthsCommands, setColumnWidthsCommands] = useState({ command: 400, shortcut: 450, audit: 200 })
+  const [columnWidthsCommands, setColumnWidthsCommands] = useState({ shortcut: 400, command: 450, audit: 200 })
   const [resizingColumnCommands, setResizingColumnCommands] = useState(null)
   const [resizeStartXCommands, setResizeStartXCommands] = useState(0)
   const [resizeStartWidthCommands, setResizeStartWidthCommands] = useState(0)
-  const [visibleColumnsCommands, setVisibleColumnsCommands] = useState({ command: true, shortcut: true, audit: true })
+  const [visibleColumnsCommands, setVisibleColumnsCommands] = useState({ shortcut: true, command: true, audit: true })
   const [showColumnPickerCommands, setShowColumnPickerCommands] = useState(false)
   const [selectedCommandsIds, setSelectedCommandsIds] = useState(new Set())
-  const [columnOrderCommands, setColumnOrderCommands] = useState(['command', 'shortcut', 'audit'])
+  const [columnOrderCommands, setColumnOrderCommands] = useState(['shortcut', 'command', 'audit'])
   const [draggingColumnCommands, setDraggingColumnCommands] = useState(null)
 
   // Table state for Slang table - RULE #19 compliance
@@ -56,33 +58,27 @@ export default function AgentShortcutsTab() {
   // Pre-populated Commands (what Claude executes)
   const now = new Date().toISOString()
   const baseCommands = [
-    { id: 1, command: 'Run all agents in parallel', shortcut: '/ag, allagent, all agents, run all agents' },
-    { id: 2, command: 'Run Backend Developer agent', shortcut: 'backend dev, run backend-developer, backend' },
-    { id: 3, command: 'Run Frontend Developer agent', shortcut: 'frontend dev, run frontend-developer, frontend' },
-    { id: 4, command: 'Run Production Bug Hunter agent', shortcut: 'bug hunter, run production-bug-hunter, run prod-bug' },
-    { id: 5, command: 'Run Deploy Manager agent', shortcut: 'deploy, run deploy-manager, deployment' },
-    { id: 6, command: 'Run Planning Collaborator agent', shortcut: 'planning, run planning-collaborator, run planner' },
-    { id: 7, command: 'Run Gantt Bug Hunter agent', shortcut: 'gantt, run gantt-bug-hunter, gantt bug hunter' },
-    { id: 8, command: 'Run Trinity Sync Validator agent', shortcut: 'trinity, run trinity-sync-validator, trinity sync' },
-    { id: 9, command: 'Run UI Compliance Auditor agent', shortcut: 'ui audit, run ui-compliance-auditor, ui compliance' },
-    { id: 10, command: 'Create new API endpoint', shortcut: '/api, create api' },
-    { id: 11, command: 'Add database migration', shortcut: '/migration, add migration' },
-    { id: 12, command: 'Fix N+1 query', shortcut: '/n+1, fix n+1' },
-    { id: 13, command: 'Create new React component', shortcut: '/component, create component' },
-    { id: 14, command: 'Add dark mode support', shortcut: '/darkmode, dark mode' },
-    { id: 15, command: 'Fix responsive layout', shortcut: '/responsive, fix responsive' },
-    { id: 16, command: 'Analyze Heroku logs', shortcut: '/logs, heroku logs' },
-    { id: 17, command: 'Debug production error', shortcut: '/debug, debug error' },
-    { id: 18, command: 'Check deployment health', shortcut: '/health, check health' },
-    { id: 19, command: 'Run database migrations on staging', shortcut: '/migrate, run migrations' },
-    { id: 20, command: 'Plan new feature', shortcut: '/feature, plan feature' },
-    { id: 21, command: 'Design database schema', shortcut: '/schema, design schema' },
-    { id: 22, command: 'Run Gantt visual tests', shortcut: '/gantt-test, test gantt' },
-    { id: 23, command: 'Verify timezone compliance', shortcut: '/timezone, check timezone' },
-    { id: 24, command: 'Test cascade behavior', shortcut: '/cascade, test cascade' },
-    { id: 25, command: 'Check working days enforcement', shortcut: '/workdays, working days' },
-    { id: 26, command: 'Create service object', shortcut: '/service, create service' },
-    { id: 27, command: 'Add background job', shortcut: '/job, background job' }
+    // Agent Shortcuts
+    { id: 1, command: 'Run all agents in parallel', shortcut: '/all-agents, /ag, allagent, all agents' },
+    { id: 2, command: 'Run Backend Developer agent', shortcut: '/backend, backend dev, backend' },
+    { id: 3, command: 'Run Frontend Developer agent', shortcut: '/frontend, frontend dev, frontend' },
+    { id: 4, command: 'Run Production Bug Hunter agent', shortcut: '/bug-hunter, bug hunter, run prod-bug' },
+    { id: 5, command: 'Run Deploy Manager agent', shortcut: '/deploy, deploy, deployment' },
+    { id: 6, command: 'Run Planning Collaborator agent', shortcut: '/plan, planning, run planner' },
+    { id: 7, command: 'Run Gantt Bug Hunter agent', shortcut: '/gantt, gantt, gantt bug hunter' },
+    { id: 8, command: 'Run Trinity Sync Validator agent', shortcut: '/trinity, trinity, trinity sync' },
+    { id: 9, command: 'Run UI Compliance Auditor agent', shortcut: '/ui-audit, ui audit, ui compliance' },
+
+    // Slash Commands
+    { id: 10, command: 'Read Bible chapter and get development rules', shortcut: '/bible' },
+    { id: 11, command: 'Search Lexicon database for bugs and architecture', shortcut: '/lexicon' },
+    { id: 12, command: 'Work on feature by chapter number (reads Bible + Lexicon)', shortcut: '/chapter' },
+    { id: 13, command: 'Fix bug with proper Lexicon documentation', shortcut: '/fix-bug' },
+    { id: 14, command: 'Run tests with auto-debug on failures', shortcut: '/test' },
+    { id: 15, command: 'Create git commit with conventional format', shortcut: '/commit' },
+    { id: 16, command: 'Get comprehensive project status report', shortcut: '/status' },
+    { id: 17, command: 'Export Lexicon database to markdown file', shortcut: '/export-lexicon' },
+    { id: 18, command: 'Update Bible (Unified Bible update workflow)', shortcut: '/ub' }
   ]
 
   // Pre-populated Slang (shortcuts like "sm" for Schedule Master)
@@ -115,7 +111,51 @@ export default function AgentShortcutsTab() {
   useEffect(() => {
     loadCurrentUser()
     loadData()
+    loadAgents()
   }, [])
+
+  const loadAgents = async () => {
+    try {
+      const response = await api.get('/trinity?category=bible&chapter=21')
+      if (response.data.success) {
+        setAgents(response.data.data)
+      }
+    } catch (error) {
+      console.error('Failed to load agent data from Trinity:', error)
+    } finally {
+      setAgentsLoading(false)
+    }
+  }
+
+  // Helper function to parse agent description
+  const parseAgentDescription = (description) => {
+    const lines = description.split('\n')
+    const triggers = lines.find(l => l.startsWith('**Triggers:**'))?.replace('**Triggers:**', '').trim() || ''
+    const steps = []
+    let inSteps = false
+
+    for (const line of lines) {
+      if (line.match(/^\d+\./)) {
+        inSteps = true
+        steps.push(line.replace(/^\d+\.\s*/, ''))
+      }
+    }
+
+    return { triggers, steps }
+  }
+
+  // Color mapping for agents
+  const colorClasses = {
+    purple: 'border-purple-500 text-purple-700 dark:text-purple-400',
+    blue: 'border-blue-500 text-blue-700 dark:text-blue-400',
+    red: 'border-red-500 text-red-700 dark:text-red-400',
+    green: 'border-green-500 text-green-700 dark:text-green-400',
+    yellow: 'border-yellow-500 text-yellow-700 dark:text-yellow-400',
+    orange: 'border-orange-500 text-orange-700 dark:text-orange-400',
+    cyan: 'border-cyan-500 text-cyan-700 dark:text-cyan-400',
+    pink: 'border-pink-500 text-pink-700 dark:text-pink-400',
+    'purple-gradient': 'border-purple-700 text-purple-900 dark:text-purple-300'
+  }
 
   // Column resize handlers for Commands table
   useEffect(() => {
@@ -545,8 +585,8 @@ export default function AgentShortcutsTab() {
   }
 
   const commandsColumns = [
-    { key: 'command', label: 'Command', sublabel: '(Claude will execute this)', sortable: true, searchable: true },
-    { key: 'shortcut', label: 'Shortcut', sublabel: '(User types this)', sortable: true, searchable: true },
+    { key: 'shortcut', label: 'Command', sublabel: '(What user types)', sortable: true, searchable: true },
+    { key: 'command', label: 'Action', sublabel: '(What Claude executes)', sortable: true, searchable: true },
     { key: 'audit', label: 'Last Updated', sortable: false, searchable: false }
   ]
 
@@ -572,6 +612,79 @@ export default function AgentShortcutsTab() {
         </p>
       </div>
 
+      {/* What Each Agent Does - Detailed Step-by-Step */}
+      <div className="mb-8 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-4 flex items-center gap-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          What Each Agent Does (Step-by-Step)
+          {agentsLoading && <span className="text-sm font-normal text-gray-500">(Loading from Trinity...)</span>}
+        </h3>
+
+        {agentsLoading ? (
+          <div className="animate-pulse space-y-4">
+            <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+            <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+            <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+          </div>
+        ) : agents.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <p>No agent documentation found in Trinity Chapter 21.</p>
+            <p className="text-sm mt-2">Deploy to production to see agent descriptions.</p>
+          </div>
+        ) : (
+          <>
+            {agents.filter(agent => agent.section_number !== '21.9').map((agent) => {
+              const { triggers, steps } = parseAgentDescription(agent.description || '')
+              const color = agent.metadata?.color || 'gray'
+              const colorClass = colorClasses[color] || 'border-gray-500 text-gray-700 dark:text-gray-400'
+              const emoji = agent.metadata?.emoji || '📚'
+
+              return (
+                <div key={agent.id} className={`mb-6 bg-white dark:bg-gray-800 rounded-lg p-4 border-l-4 ${colorClass.split(' ')[0]}`}>
+                  <h4 className={`font-bold ${colorClass.split(' ').slice(1).join(' ')} mb-2 flex items-center gap-2`}>
+                    <span className="text-lg">{emoji}</span> {agent.title}
+                    {triggers && <span className="text-xs font-normal text-gray-500">({triggers})</span>}
+                  </h4>
+                  {steps.length > 0 && (
+                    <ol className="text-sm space-y-1.5 text-gray-700 dark:text-gray-300 ml-6 list-decimal">
+                      {steps.map((step, idx) => (
+                        <li key={idx}>{step}</li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* All Agents Parallel - Special handling for section 21.9 */}
+            {agents.filter(agent => agent.section_number === '21.9').map((agent) => {
+              const { triggers } = parseAgentDescription(agent.description || '')
+              const descriptionWithoutTriggers = agent.description?.split('\n').filter(l => !l.startsWith('**Triggers:**') && !l.startsWith('**What it does:**') && l.trim()).join('\n\n') || ''
+
+              return (
+                <div key={agent.id} className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-lg p-4 border-l-4 border-purple-700">
+                  <h4 className="font-bold text-purple-900 dark:text-purple-300 mb-2 flex items-center gap-2">
+                    <span className="text-lg">{agent.metadata?.emoji || '⚡'}</span> {agent.title}
+                    {triggers && <span className="text-xs font-normal text-gray-500">({triggers})</span>}
+                  </h4>
+                  <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                    {descriptionWithoutTriggers}
+                  </div>
+                </div>
+              )
+            })}
+          </>
+        )}
+
+        <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
+          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            <strong>Pro Tip:</strong> You can customize these shortcuts in the table below! Add new agents, change trigger words, or create your own workflow automations.
+          </p>
+        </div>
+      </div>
+
       {/* Status Message */}
       {exportStatus && (
         <div className={`mb-4 p-3 rounded-lg text-sm ${
@@ -587,9 +700,9 @@ export default function AgentShortcutsTab() {
       <div className="mb-12">
         <div className="mb-4">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Commands
+            Agent Shortcuts
             <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
-              (What Claude will execute)
+              (Commands to trigger agents)
             </span>
           </h3>
         </div>
@@ -872,25 +985,7 @@ export default function AgentShortcutsTab() {
                     {columnOrderCommands
                       .filter(key => visibleColumnsCommands[key])
                       .map(key => {
-                        if (key === 'command') {
-                          return (
-                            <td key="command" className="px-6 py-4">
-                              {isEditingCommands ? (
-                                <input
-                                  type="text"
-                                  value={cmd.command}
-                                  onChange={(e) => updateCommand(cmd.id, 'command', e.target.value)}
-                                  placeholder="What Claude will do..."
-                                  className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700"
-                                />
-                              ) : (
-                                <div className="text-sm text-gray-900 dark:text-white">
-                                  {cmd.command || <span className="text-gray-400 italic">No command</span>}
-                                </div>
-                              )}
-                            </td>
-                          )
-                        } else if (key === 'shortcut') {
+                        if (key === 'shortcut') {
                           return (
                             <td key="shortcut" className="px-6 py-4">
                               {isEditingCommands ? (
@@ -898,12 +993,30 @@ export default function AgentShortcutsTab() {
                                   type="text"
                                   value={cmd.shortcut}
                                   onChange={(e) => updateCommand(cmd.id, 'shortcut', e.target.value)}
-                                  placeholder="What user types (comma-separated)..."
+                                  placeholder="e.g., /deploy, gantt, backend dev"
+                                  className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700"
+                                />
+                              ) : (
+                                <div className="text-sm font-mono text-indigo-600 dark:text-indigo-400">
+                                  {cmd.shortcut || <span className="text-gray-400 italic">No command</span>}
+                                </div>
+                              )}
+                            </td>
+                          )
+                        } else if (key === 'command') {
+                          return (
+                            <td key="command" className="px-6 py-4">
+                              {isEditingCommands ? (
+                                <input
+                                  type="text"
+                                  value={cmd.command}
+                                  onChange={(e) => updateCommand(cmd.id, 'command', e.target.value)}
+                                  placeholder="What Claude executes..."
                                   className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700"
                                 />
                               ) : (
                                 <div className="text-sm text-gray-900 dark:text-white">
-                                  {cmd.shortcut || <span className="text-gray-400 italic">No shortcut</span>}
+                                  {cmd.command || <span className="text-gray-400 italic">No action</span>}
                                 </div>
                               )}
                             </td>

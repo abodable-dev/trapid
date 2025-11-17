@@ -70,7 +70,8 @@ const COLUMNS = [
   { key: 'content', label: 'Content', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 400 },
   { key: 'component', label: 'Component', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 180 },
   { key: 'status', label: 'Status', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 140 },
-  { key: 'severity', label: 'Severity', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120 }
+  { key: 'severity', label: 'Severity', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120 },
+  { key: 'audit', label: 'Audit', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Last modification date and user' }
 ]
 
 const DEFAULT_COLUMN_WIDTHS = COLUMNS.reduce((acc, col) => {
@@ -97,6 +98,20 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
     status: 'all',
     severity: 'all'
   })
+
+  // Get current user for audit trail
+  const getCurrentUser = () => {
+    try {
+      const user = localStorage.getItem('user')
+      if (user) {
+        const userData = JSON.parse(user)
+        return userData.name || userData.email || 'User'
+      }
+    } catch (e) {
+      console.error('Failed to parse user from localStorage:', e)
+    }
+    return 'User'
+  }
 
   // Row selection state (Chapter 20: Always enabled for multi-select)
   const [selectedRows, setSelectedRows] = useState(new Set())
@@ -441,6 +456,10 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
           aVal = a.entry_type || ''
           bVal = b.entry_type || ''
           break
+        case 'audit':
+          aVal = a.updated_at ? new Date(a.updated_at).getTime() : 0
+          bVal = b.updated_at ? new Date(b.updated_at).getTime() : 0
+          break
         default:
           return 0
       }
@@ -510,10 +529,25 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
         }
 
         // Format section number as X.YY (e.g., 2.01, 2.10, 19.11)
-        const parts = entry.section_number.split('.')
-        const formattedSection = parts.length === 2
-          ? `${parts[0]}.${parts[1].padStart(2, '0')}`
-          : entry.section_number
+        // Handle both "X.Y" format and "X-Y" format (which should be converted to "X.Y")
+        let formattedSection = entry.section_number
+
+        if (entry.section_number.includes('.')) {
+          // Already has dot notation - just ensure padding
+          const parts = entry.section_number.split('.')
+          if (parts.length === 2) {
+            const [chapter, section] = parts
+            // Only pad if section is a number (not already padded or formatted)
+            const sectionNum = section.trim()
+            formattedSection = sectionNum.length === 1
+              ? `${chapter}.${sectionNum.padStart(2, '0')}`
+              : `${chapter}.${sectionNum}`
+          }
+        } else if (entry.section_number.includes('-')) {
+          // Has hyphen - this is likely a range that was incorrectly stored
+          // For now, display as-is but this indicates data quality issue
+          formattedSection = entry.section_number
+        }
 
         return (
           <div className="font-mono font-medium text-indigo-700 dark:text-indigo-400">
@@ -652,6 +686,37 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
           >
             {entry.severity}
           </span>
+        )
+
+      case 'audit':
+        if (!entry.updated_at) {
+          return <span className="text-gray-400 text-xs">Never</span>
+        }
+
+        // Format timestamp to Australian format
+        const updatedDate = new Date(entry.updated_at)
+        const formattedDate = updatedDate.toLocaleDateString('en-AU', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        })
+        const formattedTime = updatedDate.toLocaleTimeString('en-AU', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        })
+
+        // Show who made the update from the database, or fallback to current user
+        const updatedBy = entry.updated_by
+          ? `by ${entry.updated_by}`
+          : `by ${getCurrentUser()} via Claude`
+
+        return (
+          <div className="text-xs text-gray-600 dark:text-gray-400">
+            <div className="font-medium">{formattedDate}</div>
+            <div className="text-gray-500 dark:text-gray-500">{formattedTime}</div>
+            <div className="text-gray-500 dark:text-gray-500 italic">{updatedBy}</div>
+          </div>
         )
 
       default:
