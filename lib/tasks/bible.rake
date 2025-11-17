@@ -191,12 +191,6 @@ namespace :trapid do
       content += <<~CHAPTER
         # Chapter #{chapter_num}: #{chapter_name}
 
-        ┌─────────────────────────────────────────────────┐
-        │ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch#{chapter_num}    │
-        │ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch#{chapter_num}    │
-        │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch#{chapter_num} │
-        └─────────────────────────────────────────────────┘
-
         **Last Updated:** #{rules.maximum(:updated_at).strftime("%Y-%m-%d %H:%M %Z")}
 
       CHAPTER
@@ -208,16 +202,7 @@ namespace :trapid do
         content += "#{rule.summary}\n\n" if rule.summary.present?
         content += "#{rule.description}\n\n" if rule.description.present?
         content += "#{rule.details}\n\n" if rule.details.present?
-
-        if rule.code_example.present?
-          content += "**📖 Implementation:** See [TRAPID_TEACHER.md §#{rule.section_number}](TRAPID_TEACHER.md##{rule.section_number.to_s.gsub('.', '')}-)\n"
-        end
-
-        if rule.related_rules.present?
-          content += "**📕 Bug History:** See [TRAPID_LEXICON.md Chapter #{rule.chapter_number}](TRAPID_LEXICON.md)\n"
-        end
-
-        content += "\n---\n\n"
+        content += "\n"
       end
     end
 
