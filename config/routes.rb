@@ -296,8 +296,8 @@ Rails.application.routes.draw do
       get 'documentation/search', to: 'documentation#search'
       get 'documentation/:id', to: 'documentation#show'
 
-      # Documentation Entries (Lexicon + Teacher combined)
-      resources :documentation_entries do
+      # Trinity (Bible + Lexicon + Teacher combined)
+      resources :trinity do
         collection do
           get :stats
           post :export_lexicon
@@ -307,7 +307,15 @@ Rails.application.routes.draw do
 
 
       # Legacy routes for backwards compatibility
-      resources :documented_bugs, controller: 'documentation_entries' do
+      resources :documentation_entries, controller: 'trinity' do
+        collection do
+          get :stats
+          post :export_lexicon
+          post :export_teacher
+        end
+      end
+
+      resources :documented_bugs, controller: 'trinity' do
         collection do
           get :stats
           post :export_to_markdown, action: :export_lexicon

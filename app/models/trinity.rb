@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
-class DocumentationEntry < ApplicationRecord
+class Trinity < ApplicationRecord
+  # Tell Rails to use 'trinity' as the table name (not 'trinities')
+  self.table_name = 'trinity'
+
   # Constants
   ENTRY_TYPES = %w[
     bug architecture test performance dev_note common_issue
