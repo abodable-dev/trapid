@@ -58,6 +58,14 @@ export default function CopyConsoleButton() {
       const canvas = await html2canvas(document.body, {
         logging: false,
         useCORS: true,
+        allowTaint: true,
+        ignoreElements: (element) => {
+          // Skip external images that cause CORS issues
+          if (element.tagName === 'IMG' && element.src.startsWith('https://tailwindcss.com')) {
+            return true
+          }
+          return false
+        },
         scale: 0.3, // 30% scale - very small but still readable for Claude
         width: window.innerWidth,
         height: window.innerHeight,

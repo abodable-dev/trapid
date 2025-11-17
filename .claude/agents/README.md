@@ -45,9 +45,25 @@ This directory contains specialized agent definitions for the Trapid project.
 **Focus:** Gantt Chart & Schedule Master Bug Diagnosis
 - Gantt/Schedule Master bug diagnosis
 - Run 12 automated visual tests
-- Verify all 13 RULES from GANTT_BIBLE.md
+- Verify all 13 RULES from Trinity Chapter 9
 - Check Protected Code Patterns
 - Analyze cascade behavior
+
+### 7. trinity-sync-validator
+**Focus:** Trinity Database & Markdown Sync Validation
+- Validates Trinity database integrity
+- Ensures markdown exports are up-to-date backups
+- Prevents stale markdown files
+- Ensures documentation integrity
+- Trinity database is source of truth
+
+### 8. ui-compliance-auditor
+**Focus:** UI/UX Standards Compliance (Chapter 19)
+- Audits all frontend code against Chapter 19 UI/UX standards
+- Identifies missing features (resize, reorder, filters, search)
+- Checks for incorrect icon usage
+- Verifies dark mode support across all components
+- Generates detailed compliance reports
 
 ## How to Use
 
@@ -61,6 +77,8 @@ This directory contains specialized agent definitions for the Trapid project.
 "run deploy-manager"
 "run planning-collaborator"
 "run gantt-bug-hunter"
+"run trinity-sync-validator"
+"run ui-compliance-auditor"
 
 # Shorter versions
 "backend dev"
@@ -69,15 +87,19 @@ This directory contains specialized agent definitions for the Trapid project.
 "deploy"
 "plan"
 "gantt"
+"trinity"
+"ui audit"
 ```
 
 ### Run All Agents
 
 ```bash
 "run all agents"
+"/ag"
+"allagent"
 ```
 
-This will run all 6 agents in parallel with health check tasks.
+This will run all 8 agents in parallel with health check tasks.
 
 ## Run History
 
@@ -125,4 +147,5 @@ To modify an agent:
 - Agents are stateless (each run is independent)
 - Run history persists across sessions
 - Agent definitions are version-controlled
-- See TRAPID_DOCS/TRAPID_BIBLE.md and TRAPID_LEXICON.md for full project documentation
+- Agents should fetch from Trinity API (`/api/v1/trinity`), never read markdown files
+- Trinity database is the source of truth for all documentation

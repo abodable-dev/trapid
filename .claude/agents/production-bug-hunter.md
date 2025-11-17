@@ -65,7 +65,7 @@ This ensures:
 
 **For Gantt/Schedule Master bugs:**
 
-1. **ALWAYS read Gantt Bible first:** `/Users/rob/Projects/trapid/GANTT_BIBLE.md`
+1. **ALWAYS fetch Trinity API first:** `curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?category=bible&chapter=9'`
 2. **Run static code analysis:**
    - Verify all 13 RULES compliance
    - Check 3 Protected Code Patterns
@@ -74,7 +74,7 @@ This ensures:
 3. **Run automated test suite** (if time < 3 min)
 4. **Generate diagnostic report**
 
-See GANTT_BIBLE.md RULE #0.9.1 for full workflow.
+See Trinity Chapter 9 RULE #9.1 for full workflow. Never read markdown files - use Trinity API.
 
 ## Shortcuts
 

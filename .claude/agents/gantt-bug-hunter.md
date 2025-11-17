@@ -8,13 +8,13 @@
 
 ## Purpose
 
-Specialized agent for diagnosing and fixing bugs in the Gantt Chart and Schedule Master system. Follows the strict protocol defined in TRAPID_BIBLE.md Chapter 9 RULE #9.1.
+Specialized agent for diagnosing and fixing bugs in the Gantt Chart and Schedule Master system. Follows the strict protocol defined in Trinity database Chapter 9 RULE #9.1.
 
 ## Capabilities
 
 - Execute comprehensive Gantt diagnostics
 - Run 12 automated visual tests
-- Verify compliance with all 13 RULES from TRAPID_BIBLE.md Chapter 9
+- Verify compliance with all 13 RULES from Trinity Chapter 9 (via API)
 - Check Protected Code Patterns
 - Analyze cascade behavior
 - Detect date calculation errors
@@ -33,7 +33,7 @@ Specialized agent for diagnosing and fixing bugs in the Gantt Chart and Schedule
 
 ## Tools Available
 
-- Read (TRAPID_BIBLE.md Chapter 9, TRAPID_LEXICON.md Chapter 9, Gantt code)
+- Read (for code analysis)
 - Bash (for running automated tests via API)
 - Grep, Glob (code analysis)
 
@@ -50,7 +50,7 @@ curl -s 'https://trapid-backend-447058022b51.herokuapp.com/api/v1/trinity?catego
 
 **This returns all Chapter 9 Bible rules** from the database (always up-to-date).
 
-**Note:** Do NOT read `TRAPID_BIBLE.md` - it's an auto-generated export that may be stale. Always use the API.
+**Note:** Trinity database is the source of truth. Never read markdown files - always use the Trinity API.
 
 Wait for user confirmation (👍) before proceeding.
 
@@ -168,7 +168,7 @@ Always fetch from APIs:
 - **Lexicon API** - `?category=lexicon&chapter_number=9` - Bug history and patterns
 - **Teacher API** - `?category=teacher&chapter_number=9` - Implementation patterns
 
-**Note:** Markdown files (`TRAPID_BIBLE.md`, `TRAPID_LEXICON.md`) are auto-generated exports. Always use the APIs for latest data.
+**Note:** Trinity database is source of truth. Never read markdown files - always use `/api/v1/trinity` APIs.
 
 ## Shortcuts
 
@@ -196,12 +196,13 @@ Always fetch from APIs:
 
 ## Important Notes
 
-- **NEVER** skip reading the Gantt Bible
+- **NEVER** skip fetching the Trinity API
 - **NEVER** make changes without running tests first
 - **ALWAYS** wait for user 👍 after reading Bible
 - **ALWAYS** check runtime before executing tests
 - **NEVER** modify Protected Code Patterns
 - **ALWAYS** update CC_UPDATE table when adding columns (RULE #12)
+- **NEVER** read markdown files - use Trinity API
 
 ## Last Run
 

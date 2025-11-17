@@ -14,9 +14,6 @@ import MarkdownRenderer from '../components/MarkdownRenderer'
 import KnowledgeEntryModal from '../components/KnowledgeEntryModal'
 import LoadingSkeleton from '../components/documentation/LoadingSkeleton'
 import Breadcrumb from '../components/documentation/Breadcrumb'
-import LexiconTableView from '../components/documentation/LexiconTableView'
-import BibleTableView from '../components/documentation/BibleTableView'
-import TeacherTableView from '../components/documentation/TeacherTableView'
 import UserManualTableView from '../components/documentation/UserManualTableView'
 import TrinityTableView from '../components/documentation/TrinityTableView'
 
@@ -679,7 +676,8 @@ export default function DocumentationPage() {
 
           {/* Table View */}
           <div className="flex-1 min-h-0">
-            <BibleTableView
+            <TrinityTableView
+              category="bible"
               entries={entries}
               onEdit={handleEditEntry}
               onDelete={handleDeleteEntry}
@@ -775,7 +773,8 @@ export default function DocumentationPage() {
 
           {/* Table View */}
           <div className="flex-1 min-h-0">
-            <LexiconTableView
+            <TrinityTableView
+              category="lexicon"
               entries={entries}
               onEdit={handleEditEntry}
               onDelete={handleDeleteEntry}
@@ -868,7 +867,8 @@ export default function DocumentationPage() {
 
           {/* Table View */}
           <div className="flex-1 overflow-hidden">
-            <TeacherTableView
+            <TrinityTableView
+              category="teacher"
               entries={entries}
               onEdit={handleEditEntry}
               onDelete={handleDeleteEntry}

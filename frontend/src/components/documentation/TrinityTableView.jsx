@@ -63,8 +63,8 @@ const SEVERITY_COLORS = {
 const COLUMNS = [
   { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
   { key: 'expand', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
-  { key: 'category', label: 'Category', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120, tooltip: 'Bible, Teacher, or Lexicon' },
   { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200, tooltip: 'Chapter number and name' },
+  { key: 'section', label: 'Section', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 100, tooltip: 'Section number (e.g., 2.01)' },
   { key: 'type', label: 'Type', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120 },
   { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 300 },
   { key: 'component', label: 'Component', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 180 },
@@ -85,7 +85,8 @@ const DEFAULT_VISIBLE_COLUMNS = COLUMNS.reduce((acc, col) => {
   return acc
 }, {})
 
-export default function TrinityTableView({ entries, onEdit, onDelete, stats }) {
+export default function TrinityTableView({ entries, onEdit, onDelete, stats, category = null }) {
+  // category can be: null (show all), 'bible', 'teacher', or 'lexicon'
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('chapter')
   const [sortDir, setSortDir] = useState('asc')
@@ -311,6 +312,11 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats }) {
   const filteredAndSorted = useMemo(() => {
     let result = [...entries]
 
+    // Apply category filter if specified
+    if (category) {
+      result = result.filter(e => e.category === category)
+    }
+
     // Apply search (RULE #19.20)
     if (search) {
       const query = search.toLowerCase()
@@ -334,6 +340,9 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats }) {
           break
         case 'chapter':
           result = result.filter(e => e.chapter_number === parseInt(value))
+          break
+        case 'section':
+          result = result.filter(e => e.section_number?.toLowerCase().includes(value.toLowerCase()) || e.section_display?.toLowerCase().includes(value.toLowerCase()))
           break
         case 'type':
           result = result.filter(e => e.entry_type === value)
@@ -380,6 +389,10 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats }) {
           aVal = a.chapter_number
           bVal = b.chapter_number
           break
+        case 'section':
+          aVal = a.section_number || ''
+          bVal = b.section_number || ''
+          break
         case 'title':
           aVal = a.title || ''
           bVal = b.title || ''
@@ -411,7 +424,7 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats }) {
     })
 
     return result
-  }, [entries, search, filters, sortBy, sortDir, columnFilters])
+  }, [entries, search, filters, sortBy, sortDir, columnFilters, category])
 
   const handleSort = (column) => {
     if (sortBy === column) {
@@ -471,20 +484,6 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats }) {
           </span>
         )
 
-      case 'category':
-        // Display category badge with appropriate icon and color
-        const categoryBadges = {
-          bible: { icon: '📖', label: 'Bible', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
-          teacher: { icon: '🔧', label: 'Teacher', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
-          lexicon: { icon: '📕', label: 'Lexicon', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' }
-        }
-        const badge = categoryBadges[entry.category] || { icon: '❓', label: entry.category, color: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' }
-        return (
-          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}>
-            {badge.icon} {badge.label}
-          </span>
-        )
-
       case 'chapter':
         return (
           <>
@@ -497,6 +496,23 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats }) {
                 : 'Unknown Chapter'}
             </div>
           </>
+        )
+
+      case 'section':
+        if (!entry.section_number) {
+          return <span className="text-gray-400 text-xs">-</span>
+        }
+
+        // Format section number as X.YY (e.g., 2.01, 2.10, 19.11)
+        const parts = entry.section_number.split('.')
+        const formattedSection = parts.length === 2
+          ? `${parts[0]}.${parts[1].padStart(2, '0')}`
+          : entry.section_number
+
+        return (
+          <div className="font-mono font-medium text-indigo-700 dark:text-indigo-400">
+            {formattedSection}
+          </div>
         )
 
       case 'type':
@@ -624,7 +640,8 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats }) {
 
       {/* Header with Search, Filters, and Column Visibility (RULE #19.20, #19.10) */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-4 flex-shrink-0">
-        {/* Quick Filter Buttons */}
+        {/* Quick Filter Buttons - Only show when viewing all categories */}
+        {!category && (
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Filters:</span>
 
@@ -682,6 +699,7 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats }) {
             </button>
           )}
         </div>
+        )}
 
         {/* Search Box with Clear Button (RULE #19.20) */}
         <div className="flex items-center gap-3">

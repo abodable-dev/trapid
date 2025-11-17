@@ -12,7 +12,9 @@ This document guides Claude Code on how to invoke agents based on user input.
 | `production bug hunter`, `run production-bug-hunter`, `bug hunter` | production-bug-hunter | `.claude/agents/production-bug-hunter.md` |
 | `plan`, `run planning-collaborator`, `planning` | planning-collaborator | `.claude/agents/planning-collaborator.md` |
 | `gantt`, `run gantt-bug-hunter`, `gantt bug hunter` | gantt-bug-hunter | `.claude/agents/gantt-bug-hunter.md` |
-| `run all agents` | ALL | Run all 6 agents in parallel |
+| `trinity`, `run trinity-sync-validator`, `trinity sync` | trinity-sync-validator | `.claude/agents/trinity-sync-validator.md` |
+| `ui audit`, `run ui-compliance-auditor`, `ui compliance` | ui-compliance-auditor | `.claude/agents/ui-compliance-auditor.md` |
+| `run all agents`, `/ag`, `allagent`, `all agents` | ALL | Run all 8 agents in parallel |
 
 ## How to Invoke an Agent
 
@@ -99,9 +101,9 @@ After each agent run, update `.claude/agents/run-history.json`:
 
 ## Run All Agents
 
-When user requests "run all agents":
+When user requests "run all agents", "/ag", "allagent", or "all agents":
 
-1. Launch all 6 agents **in parallel** using a single message with 6 Task tool calls
+1. Launch all 8 agents **in parallel** using a single message with 8 Task tool calls
 2. Give each agent a health check task appropriate to their specialty
 3. Wait for all agents to complete
 4. Update run history for all agents
