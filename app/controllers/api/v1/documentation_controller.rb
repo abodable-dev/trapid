@@ -73,11 +73,14 @@ module Api
                       return render json: { success: false, error: 'Documentation not found' }, status: :not_found
                     end
 
-        unless File.exist?(file_path)
+        # If markdown file doesn't exist and it's Bible, generate from database
+        if !File.exist?(file_path) && doc_id == 'bible'
+          content = generate_bible_markdown
+        elsif !File.exist?(file_path)
           return render json: { success: false, error: 'File not found' }, status: :not_found
+        else
+          content = File.read(file_path)
         end
-
-        content = File.read(file_path)
 
         # If chapter specified, extract that chapter only
         if chapter.present?
@@ -145,6 +148,89 @@ module Api
       end
 
       private
+
+      def generate_bible_markdown
+        # Generate markdown content from database (matches export_bible rake task format)
+        content = <<~HEADER
+          # TRAPID BIBLE - Development Rules
+
+          **Version:** 2.0.0
+          **Last Updated:** #{Time.current.strftime("%Y-%m-%d %H:%M %Z")}
+          **Authority Level:** ABSOLUTE
+          **Audience:** Claude Code + Human Developers
+          **Source of Truth:** Database table `bible_rules` (this content is auto-generated)
+
+          ---
+
+          ## 🔴 CRITICAL: Read This First
+
+          ### This Document is "The Bible"
+
+          This file is the **absolute authority** for all Trapid development where chapters exist.
+
+          **This Bible Contains RULES ONLY:**
+          - ✅ MUST do this
+          - ❌ NEVER do that
+          - 🔄 ALWAYS check X before Y
+          - 🔒 Protected code patterns
+          - ⚙️ Configuration values that must match
+
+          **This content is AUTO-GENERATED from the database.**
+
+          **For IMPLEMENTATION PATTERNS (code examples, how-to guides):**
+          - 🔧 See [TRAPID_TEACHER.md](TRAPID_TEACHER.md)
+
+          **For KNOWLEDGE (how things work, bug history, why we chose X):**
+          - 📕 See [TRAPID_LEXICON.md](TRAPID_LEXICON.md)
+
+          **For USER GUIDES (how to use features):**
+          - 📘 See [TRAPID_USER_MANUAL.md](TRAPID_USER_MANUAL.md)
+
+          ---
+
+        HEADER
+
+        # Group rules by chapter
+        (0..20).each do |chapter_num|
+          rules = BibleRule.by_chapter(chapter_num).ordered
+          next if rules.empty?
+
+          chapter_name = rules.first.chapter_name
+
+          content += <<~CHAPTER
+            # Chapter #{chapter_num}: #{chapter_name}
+
+            ┌─────────────────────────────────────────────────┐
+            │ 🔧 TEACHER (HOW):     TRAPID_TEACHER.md Ch#{chapter_num}    │
+            │ 📕 LEXICON (BUGS):    TRAPID_LEXICON.md Ch#{chapter_num}    │
+            │ 📘 USER MANUAL (USE): TRAPID_USER_MANUAL.md Ch#{chapter_num} │
+            └─────────────────────────────────────────────────┘
+
+            **Last Updated:** #{rules.maximum(:updated_at).strftime("%Y-%m-%d %H:%M %Z")}
+
+          CHAPTER
+
+          rules.each do |rule|
+            content += "## RULE ##{rule.rule_number}: #{rule.title}\n\n"
+            content += "#{rule.type_display}\n\n" if rule.rule_type.present?
+            content += "#{rule.description}\n\n"
+
+            if rule.code_example.present?
+              content += "### Code Example\n\n"
+              content += "```\n#{rule.code_example}\n```\n\n"
+            end
+
+            if rule.cross_references.present?
+              content += "### Cross-References\n\n"
+              content += "#{rule.cross_references}\n\n"
+            end
+
+            content += "---\n\n"
+          end
+        end
+
+        content
+      end
 
       def extract_chapter(content, chapter_num)
         # Extract specific chapter from markdown
