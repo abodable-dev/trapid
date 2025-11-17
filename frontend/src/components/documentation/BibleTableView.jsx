@@ -96,11 +96,11 @@ const parseRulesFromMarkdown = (content) => {
 
 // Define columns (RULE #19.1 compliant)
 const COLUMNS = [
-  { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 40 },
-  { key: 'rule', label: 'Rule #', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 100 },
-  { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200 },
-  { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 300 },
-  { key: 'content', label: 'Content', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 400 }
+  { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
+  { key: 'rule', label: 'Rule #', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150 },
+  { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 400 },
+  { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 600 },
+  { key: 'content', label: 'Content', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 1200 }
 ]
 
 const DEFAULT_COLUMN_WIDTHS = COLUMNS.reduce((acc, col) => {
@@ -142,9 +142,17 @@ export default function BibleTableView({ content }) {
   const [tableScrollWidth, setTableScrollWidth] = useState(0)
   const scrollContainerRef = useRef(null)
   const stickyScrollbarRef = useRef(null)
+  const isScrollingStickyRef = useRef(false)
+  const isScrollingMainRef = useRef(false)
 
   // Update custom scrollbar on scroll
   const handleScroll = (e) => {
+    if (isScrollingStickyRef.current) {
+      isScrollingStickyRef.current = false
+      return
+    }
+
+    isScrollingMainRef.current = true
     const container = e.target
     const { scrollTop, scrollHeight, clientHeight, scrollLeft } = container
 
@@ -162,13 +170,24 @@ export default function BibleTableView({ content }) {
     if (stickyScrollbarRef.current) {
       stickyScrollbarRef.current.scrollLeft = scrollLeft
     }
+
+    setTimeout(() => { isScrollingMainRef.current = false }, 0)
   }
 
   // Handle sticky scrollbar scroll
   const handleStickyScroll = (e) => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollLeft = e.target.scrollLeft
+    if (isScrollingMainRef.current) {
+      isScrollingMainRef.current = false
+      return
     }
+
+    isScrollingStickyRef.current = true
+    const scrollLeft = e.target.scrollLeft
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = scrollLeft
+    }
+
+    setTimeout(() => { isScrollingStickyRef.current = false }, 0)
   }
 
   // Parse rules from markdown content
@@ -241,13 +260,14 @@ export default function BibleTableView({ content }) {
   // Initialize scrollbar on mount and content change
   useEffect(() => {
     const container = scrollContainerRef.current
-    if (!container) {
-      console.log('📊 Bible: No scroll container ref')
-      return
-    }
+    if (!container) return
 
     const updateScrollbar = () => {
       const { scrollHeight, clientHeight, scrollWidth, clientWidth } = container
+
+      // Find the actual table element to get its true width
+      const table = container.querySelector('table')
+      const actualTableWidth = table ? table.offsetWidth : scrollWidth
 
       // Update vertical scrollbar
       if (scrollHeight <= clientHeight) {
@@ -257,34 +277,8 @@ export default function BibleTableView({ content }) {
         setScrollbarThumbHeight(thumbHeight)
       }
 
-      // Update horizontal scroll width
-      console.log('📊 Bible table dimensions:', {
-        scrollWidth,
-        clientWidth,
-        offsetWidth: container.offsetWidth,
-        needsHorizontalScroll: scrollWidth > clientWidth,
-        overflow: scrollWidth - clientWidth
-      })
-      setTableScrollWidth(scrollWidth)
-
-      // Log sticky scrollbar info after a tick
-      setTimeout(() => {
-        if (stickyScrollbarRef.current) {
-          console.log('📊 Bible sticky scrollbar:', {
-            container: {
-              height: stickyScrollbarRef.current.offsetHeight,
-              width: stickyScrollbarRef.current.offsetWidth,
-              scrollWidth: stickyScrollbarRef.current.scrollWidth,
-              visible: stickyScrollbarRef.current.offsetHeight > 0,
-              backgroundColor: window.getComputedStyle(stickyScrollbarRef.current).backgroundColor
-            },
-            innerDiv: stickyScrollbarRef.current.firstChild ? {
-              width: stickyScrollbarRef.current.firstChild.style.width,
-              height: stickyScrollbarRef.current.firstChild.style.height
-            } : null
-          })
-        }
-      }, 100)
+      // Update horizontal scroll width - use actual table width
+      setTableScrollWidth(actualTableWidth)
     }
 
     updateScrollbar()
@@ -466,7 +460,7 @@ export default function BibleTableView({ content }) {
 
       case 'content':
         return (
-          <div className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+          <div className="text-xs text-gray-700 dark:text-gray-300">
             {rule.content || '-'}
           </div>
         )
@@ -522,10 +516,23 @@ export default function BibleTableView({ content }) {
           background: #D1D5DB !important;
         }
 
+        /* Hide horizontal scrollbar on main container (we use custom sticky one instead) */
+        .bible-table-scroll::-webkit-scrollbar-horizontal {
+          display: none !important;
+        }
+        .bible-table-scroll::-webkit-scrollbar:horizontal {
+          display: none !important;
+          height: 0 !important;
+        }
+
         /* Sticky horizontal scrollbar styling */
+        .sticky-horizontal-scroll {
+          overflow-x: scroll !important;
+          overflow-y: hidden !important;
+        }
         .sticky-horizontal-scroll::-webkit-scrollbar {
           -webkit-appearance: none !important;
-          height: 14px !important;
+          height: 16px !important;
         }
         .sticky-horizontal-scroll::-webkit-scrollbar-track {
           background: #E5E7EB !important;
@@ -642,9 +649,19 @@ export default function BibleTableView({ content }) {
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="bible-table-scroll flex-1 overflow-y-scroll overflow-x-auto relative bg-white dark:bg-gray-900"
+          className="bible-table-scroll flex-1 overflow-y-scroll overflow-x-scroll relative bg-white dark:bg-gray-900"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}
         >
-        <table className="w-full border-collapse border-l border-r border-gray-200 dark:border-gray-700">
+        <table
+          className="border-collapse border-l border-r border-gray-200 dark:border-gray-700"
+          style={{
+            minWidth: `${Object.values(columnWidths).reduce((sum, w) => sum + w, 0)}px`,
+            width: '100%'
+          }}
+        >
           <thead className="sticky top-0 z-20 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-sm">
             <tr className="border-b border-gray-100 dark:border-gray-800">
               {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
@@ -665,7 +682,7 @@ export default function BibleTableView({ content }) {
                       maxWidth: columnWidths[colKey],
                       position: 'relative'
                     }}
-                    className={`group ${colKey === 'select' ? 'px-1' : 'px-4'} py-2.5 text-left text-xs font-medium text-gray-600 dark:text-gray-400 tracking-wider transition-all ${
+                    className={`group ${colKey === 'select' || colKey === 'expand' ? 'px-1' : 'px-4'} py-2.5 ${colKey === 'select' || colKey === 'expand' ? 'text-center' : 'text-left'} text-xs font-medium text-gray-600 dark:text-gray-400 tracking-wider transition-all ${
                       column.sortable ? 'cursor-pointer hover:bg-blue-50/50 dark:hover:bg-gray-800/30 hover:text-gray-900 dark:hover:text-gray-100' : ''
                     } ${draggedColumn === colKey ? 'bg-blue-50 dark:bg-indigo-900/20' : ''}`}
                   >
@@ -752,7 +769,7 @@ export default function BibleTableView({ content }) {
                         }}
                         className={`${colKey === 'select' ? 'px-1' : 'px-4'} py-2.5 text-sm text-gray-900 dark:text-gray-100 ${
                           colKey === 'select' ? 'text-center' : ''
-                        } ${colKey === 'content' ? 'align-top' : 'truncate overflow-hidden whitespace-nowrap'}`}
+                        } truncate overflow-hidden whitespace-nowrap`}
                         title={colKey === 'title' ? rule.title : colKey === 'content' ? rule.content : ''}
                       >
                         {renderCellContent(rule, colKey)}
@@ -776,15 +793,20 @@ export default function BibleTableView({ content }) {
         <div
           ref={stickyScrollbarRef}
           onScroll={handleStickyScroll}
-          className="sticky-horizontal-scroll overflow-x-scroll overflow-y-hidden border-t-2 border-gray-400 dark:border-gray-500 flex-shrink-0"
+          className="sticky-horizontal-scroll border-t-2 border-gray-400 dark:border-gray-500 flex-shrink-0"
           style={{
-            height: '16px',
+            position: 'sticky',
+            bottom: 0,
+            zIndex: 10,
+            height: '20px',
+            overflowX: 'scroll',
+            overflowY: 'hidden',
             scrollbarWidth: 'auto',
             scrollbarColor: '#6B7280 #E5E7EB',
-            backgroundColor: '#F3F4F6'
+            backgroundColor: '#E5E7EB'
           }}
         >
-          <div style={{ width: `${Math.max(tableScrollWidth, 100)}px`, height: '100%' }} />
+          <div style={{ width: `${tableScrollWidth}px`, height: '100%', backgroundColor: 'transparent' }} />
         </div>
       </div>
       </div>

@@ -1,7 +1,7 @@
 # TRAPID TEACHER - Implementation Patterns & Code Examples
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-17 09:16 AEST
+**Last Updated:** 2025-11-17 10:43 AEST
 **Authority Level:** Reference (HOW to implement Bible rules)
 **Audience:** Claude Code + Human Developers
 
@@ -7886,175 +7886,395 @@ bg-gray-100 // Solid color, good contrast
 
 ---
 
-## §19.33: Sticky Horizontal Scrollbar
+## §19.33: Sticky Horizontal Scrollbar Component Pattern
 
-🧩 Component
+🧩 Component | 🟡 Intermediate
 
-### Description
-## §19.33: Sticky Horizontal Scrollbar Implementation
+**📖 Related Bible Rules:** **Related Bible Rules:**
+- RULE #19.1: Table Type Selection (Advanced vs DataTable)
+- RULE #19.2: Sticky Gradient Headers
+- RULE #19.10: Column Visibility Toggle
 
-📖 **Bible Rule:** TRAPID_BIBLE.md RULE #19.33
+**Related Lexicon Entries:**
+- §19.12: Sticky Horizontal Scrollbar Implementation Bugs
 
-### Quick Start
+**Example Implementation:**
+- frontend/src/components/documentation/BibleTableView.jsx
+- frontend/src/components/documentation/LexiconTableView.jsx
 
+
+### Quick Summary
+Learn how to implement a custom sticky horizontal scrollbar that stays visible at the bottom of wide tables, with bidirectional scroll synchronization.
+
+### Code Example
 ```jsx
-const [tableScrollWidth, setTableScrollWidth] = useState(0)
-const scrollContainerRef = useRef(null)
-const stickyScrollbarRef = useRef(null)
+## Step 1: Add State and Refs
 
-// Scroll sync handlers
-const handleScroll = (e) => {
-  if (stickyScrollbarRef.current) {
-    stickyScrollbarRef.current.scrollLeft = e.target.scrollLeft
-  }
-}
+```javascript
+import { useState, useRef, useEffect } from 'react'
 
-const handleStickyScroll = (e) => {
-  if (scrollContainerRef.current) {
-    scrollContainerRef.current.scrollLeft = e.target.scrollLeft
-  }
-}
-
-return (
-  <div className="flex-1 min-h-0 flex flex-col">
-    {/* Scrollable table */}
-    <div ref={scrollContainerRef} onScroll={handleScroll}>
-      <table>...</table>
-    </div>
-
-    {/* Sticky scrollbar */}
-    <div
-      ref={stickyScrollbarRef}
-      onScroll={handleStickyScroll}
-      className="overflow-x-scroll border-t-2 flex-shrink-0"
-      style={{ height: '16px' }}
-    >
-      <div style={{ width: `${tableScrollWidth}px`, height: '100%' }} />
-    </div>
-  </div>
-)
-```
-
-### Full Implementation with ResizeObserver
-
-```jsx
-const StickyScrollbarTable = ({ data }) => {
-  const [tableScrollWidth, setTableScrollWidth] = useState(0)
+export default function BibleTableView({ content }) {
+  // Refs for containers
   const scrollContainerRef = useRef(null)
   const stickyScrollbarRef = useRef(null)
 
-  // Track table scroll width dynamically
-  useEffect(() => {
-    const container = scrollContainerRef.current
-    if (!container) return
+  // Scroll loop prevention flags
+  const isScrollingStickyRef = useRef(false)
+  const isScrollingMainRef = useRef(false)
 
-    const updateScrollbar = () => {
-      setTableScrollWidth(container.scrollWidth)
-    }
+  // Track table width
+  const [tableScrollWidth, setTableScrollWidth] = useState(0)
 
-    updateScrollbar()
-    const resizeObserver = new ResizeObserver(updateScrollbar)
-    resizeObserver.observe(container)
+  // ... other state
+}
+```
 
-    return () => resizeObserver.disconnect()
-  }, [data])
+## Step 2: Implement Scroll Handlers
 
-  const handleScroll = (e) => {
-    if (stickyScrollbarRef.current) {
-      stickyScrollbarRef.current.scrollLeft = e.target.scrollLeft
-    }
+```javascript
+// Main container scroll handler
+const handleScroll = (e) => {
+  // Prevent loop: If sticky scrollbar triggered this, return early
+  if (isScrollingStickyRef.current) {
+    isScrollingStickyRef.current = false
+    return
   }
 
-  const handleStickyScroll = (e) => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollLeft = e.target.scrollLeft
-    }
+  // Mark that main container is scrolling
+  isScrollingMainRef.current = true
+
+  const container = e.target
+  const { scrollLeft } = container
+
+  // Sync horizontal sticky scrollbar
+  if (stickyScrollbarRef.current) {
+    stickyScrollbarRef.current.scrollLeft = scrollLeft
   }
 
-  return (
-    <div className="flex-1 min-h-0 flex flex-col">
-      {/* Scrollable table container */}
-      <div
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-scroll overflow-x-auto"
-      >
-        <table className="w-full">
-          {/* Table content */}
-        </table>
-      </div>
+  // Clear flag after sync
+  setTimeout(() => { isScrollingMainRef.current = false }, 0)
+}
 
-      {/* Sticky horizontal scrollbar */}
-      <div
-        ref={stickyScrollbarRef}
-        onScroll={handleStickyScroll}
-        className="sticky-scroll overflow-x-scroll overflow-y-hidden border-t-2 border-gray-400 flex-shrink-0"
-        style={{
-          height: '16px',
-          backgroundColor: '#F3F4F6'
-        }}
-      >
-        <div style={{ width: `${Math.max(tableScrollWidth, 100)}px`, height: '100%' }} />
-      </div>
-    </div>
-  )
+// Sticky scrollbar scroll handler
+const handleStickyScroll = (e) => {
+  // Prevent loop: If main container triggered this, return early
+  if (isScrollingMainRef.current) {
+    isScrollingMainRef.current = false
+    return
+  }
+
+  // Mark that sticky scrollbar is scrolling
+  isScrollingStickyRef.current = true
+
+  const scrollLeft = e.target.scrollLeft
+
+  // Sync main container
+  if (scrollContainerRef.current) {
+    scrollContainerRef.current.scrollLeft = scrollLeft
+  }
+
+  // Clear flag after sync
+  setTimeout(() => { isScrollingStickyRef.current = false }, 0)
 }
 ```
 
-### Custom Scrollbar Styling
+## Step 3: Track Table Width with ResizeObserver
 
-```css
-.sticky-scroll::-webkit-scrollbar {
-  -webkit-appearance: none !important;
-  height: 14px !important;
-}
-.sticky-scroll::-webkit-scrollbar-track {
-  background: #E5E7EB !important;
-  border-radius: 0 !important;
-}
-.sticky-scroll::-webkit-scrollbar-thumb {
-  background: #6B7280 !important;
-  border-radius: 4px !important;
-  border: 2px solid #E5E7EB !important;
-}
-.sticky-scroll::-webkit-scrollbar-thumb:hover {
-  background: #4B5563 !important;
-}
+```javascript
+useEffect(() => {
+  const container = scrollContainerRef.current
+  if (!container) return
+
+  const updateScrollbar = () => {
+    // IMPORTANT: Measure actual table element, not container
+    const table = container.querySelector('table')
+    const actualTableWidth = table ? table.offsetWidth : container.scrollWidth
+
+    setTableScrollWidth(actualTableWidth)
+  }
+
+  updateScrollbar()
+
+  // Update on resize (column resize, window resize, etc.)
+  const resizeObserver = new ResizeObserver(updateScrollbar)
+  resizeObserver.observe(container)
+
+  return () => resizeObserver.disconnect()
+}, [filteredData, columnWidths])
 ```
 
-### Height Guidelines
+## Step 4: Ensure Horizontal Overflow
 
-| Height | Use Case |
-|--------|----------|
-| 14px   | Minimum (hard to grab) |
-| 16px   | **Recommended** (balance) |
-| 20px   | Maximum (wastes space) |
+```javascript
+// Define columns with sufficient width to force horizontal scroll
+const COLUMNS = [
+  { key: 'select', width: 50 },
+  { key: 'rule', width: 150 },
+  { key: 'chapter', width: 400 },
+  { key: 'title', width: 600 },
+  { key: 'content', width: 1200 }  // Wide column
+]
+// Total: 2400px - forces overflow on most screens
 
-### Common Issues
-
-**Problem:** Scrollbar doesn't update width when columns resize
-
-**Solution:** Use ResizeObserver
-```jsx
-const resizeObserver = new ResizeObserver(() => {
-  setTableScrollWidth(container.scrollWidth)
-})
+// Apply to table element
+<table
+  style={{
+    minWidth: `${Object.values(columnWidths).reduce((sum, w) => sum + w, 0)}px`,
+    width: '100%'
+  }}
+>
 ```
 
-**Problem:** Scrollbar and table out of sync
+## Step 5: Hide Native Horizontal Scrollbar
 
-**Solution:** Use refs and sync both directions
-```jsx
-// Main → Sticky
+```javascript
+<style>{`
+  /* Hide horizontal scrollbar on main container */
+  .bible-table-scroll::-webkit-scrollbar:horizontal {
+    display: none !important;
+    height: 0 !important;
+  }
+`}</style>
+
+<div
+  ref={scrollContainerRef}
+  onScroll={handleScroll}
+  className="bible-table-scroll flex-1 overflow-y-scroll overflow-x-scroll"
+  style={{
+    scrollbarWidth: 'none',        // Firefox
+    msOverflowStyle: 'none'         // IE/Edge
+  }}
+>
+  <table>...</table>
+</div>
+```
+
+## Step 6: Render Sticky Scrollbar
+
+```javascript
+{/* Sticky Horizontal Scrollbar - Always visible at bottom */}
+<div
+  ref={stickyScrollbarRef}
+  onScroll={handleStickyScroll}
+  className="sticky-horizontal-scroll"
+  style={{
+    position: 'sticky',              // Stick to viewport
+    bottom: 0,                       // Bottom of viewport
+    zIndex: 10,                      // Above table content
+    height: '20px',
+    overflowX: 'scroll',
+    overflowY: 'hidden',
+    scrollbarWidth: 'auto',
+    scrollbarColor: '#6B7280 #E5E7EB',
+    backgroundColor: '#E5E7EB'
+  }}
+>
+  {/* Inner div creates scrollable width */}
+  <div style={{
+    width: `${tableScrollWidth}px`,
+    height: '100%',
+    backgroundColor: 'transparent'
+  }} />
+</div>
+```
+
+## Complete Flex Layout Structure
+
+```javascript
+<div className="flex-1 min-h-0 flex flex-col px-4">
+  {/* Main scrollable container */}
+  <div
+    ref={scrollContainerRef}
+    onScroll={handleScroll}
+    className="bible-table-scroll flex-1 overflow-y-scroll overflow-x-scroll"
+    style={{
+      scrollbarWidth: 'none',
+      msOverflowStyle: 'none'
+    }}
+  >
+    <table
+      style={{
+        minWidth: `${Object.values(columnWidths).reduce((sum, w) => sum + w, 0)}px`,
+        width: '100%'
+      }}
+    >
+      {/* Table content */}
+    </table>
+  </div>
+
+  {/* Sticky scrollbar - outside main container */}
+  <div
+    ref={stickyScrollbarRef}
+    onScroll={handleStickyScroll}
+    className="sticky-horizontal-scroll border-t-2"
+    style={{
+      position: 'sticky',
+      bottom: 0,
+      zIndex: 10,
+      height: '20px',
+      overflowX: 'scroll',
+      overflowY: 'hidden'
+    }}
+  >
+    <div style={{ width: `${tableScrollWidth}px`, height: '100%' }} />
+  </div>
+</div>
+```
+
+```
+
+### ⚠️ Common Mistakes
+## ❌ Common Mistakes
+
+### 1. Scroll Loop (Infinite Loop)
+
+**Wrong:**
+```javascript
 const handleScroll = (e) => {
   stickyScrollbarRef.current.scrollLeft = e.target.scrollLeft
 }
 
-// Sticky → Main
 const handleStickyScroll = (e) => {
   scrollContainerRef.current.scrollLeft = e.target.scrollLeft
 }
 ```
+
+**Why it fails:** Each handler triggers the other, creating infinite loop.
+
+**Correct:**
+```javascript
+const isScrollingStickyRef = useRef(false)
+const isScrollingMainRef = useRef(false)
+
+const handleScroll = (e) => {
+  if (isScrollingStickyRef.current) {
+    isScrollingStickyRef.current = false
+    return  // Prevent loop
+  }
+  isScrollingMainRef.current = true
+  // ... sync code
+}
+```
+
+### 2. Measuring Container Instead of Table
+
+**Wrong:**
+```javascript
+const { scrollWidth } = container
+setTableScrollWidth(scrollWidth)
+```
+
+**Why it fails:** Container scrollWidth may not match actual table width when table has minWidth.
+
+**Correct:**
+```javascript
+const table = container.querySelector('table')
+const actualTableWidth = table ? table.offsetWidth : scrollWidth
+setTableScrollWidth(actualTableWidth)
+```
+
+### 3. Using overflow-x-hidden
+
+**Wrong:**
+```javascript
+<div className="overflow-x-hidden">
+```
+
+**Why it fails:** Prevents horizontal scrolling entirely.
+
+**Correct:**
+```javascript
+<div
+  className="overflow-x-scroll"
+  style={{ scrollbarWidth: 'none' }}  // Hide scrollbar visually
+>
+```
+
+### 4. Forgetting Bidirectional Sync
+
+**Wrong:**
+```javascript
+// Only sync one direction
+const handleScroll = (e) => {
+  stickyScrollbarRef.current.scrollLeft = e.target.scrollLeft
+}
+// Missing handleStickyScroll!
+```
+
+**Why it fails:** User can't drag sticky scrollbar to scroll table.
+
+**Correct:** Implement both handleScroll AND handleStickyScroll.
+
+
+### 🧪 Testing Strategy
+## ✅ Testing Strategy
+
+### Manual Testing Checklist
+
+- [ ] Drag sticky scrollbar → table scrolls horizontally
+- [ ] Scroll table with mouse/trackpad → sticky scrollbar moves
+- [ ] Resize column → sticky scrollbar width updates
+- [ ] Only ONE horizontal scrollbar visible (custom, not native)
+- [ ] Scrollbar stays visible when scrolling vertically
+- [ ] Test on wide monitor (2000px+) - ensure overflow still works
+- [ ] Test on narrow monitor (1366px) - ensure scrollbar appears
+- [ ] Dark mode - scrollbar styling correct
+- [ ] No infinite scroll loops (check browser console)
+
+### Automated Testing
+
+```javascript
+describe('Sticky Horizontal Scrollbar', () => {
+  it('syncs main container scroll to sticky scrollbar', () => {
+    const { container } = render(<TableView />)
+    const mainScroll = container.querySelector('.bible-table-scroll')
+    const stickyScroll = container.querySelector('.sticky-horizontal-scroll')
+
+    fireEvent.scroll(mainScroll, { target: { scrollLeft: 100 } })
+
+    expect(stickyScroll.scrollLeft).toBe(100)
+  })
+
+  it('syncs sticky scrollbar scroll to main container', () => {
+    const { container } = render(<TableView />)
+    const mainScroll = container.querySelector('.bible-table-scroll')
+    const stickyScroll = container.querySelector('.sticky-horizontal-scroll')
+
+    fireEvent.scroll(stickyScroll, { target: { scrollLeft: 200 } })
+
+    expect(mainScroll.scrollLeft).toBe(200)
+  })
+})
+```
+
+
+### Description
+## 📋 Overview
+
+The **Sticky Horizontal Scrollbar Pattern** provides a custom scrollbar that remains visible at the bottom of the viewport when scrolling through wide tables. This pattern is essential for tables where:
+- Content extends beyond viewport width
+- Users need easy horizontal navigation
+- Native browser scrollbars may scroll out of view
+
+## 🎯 Use Cases
+
+- Wide data tables (Bible, Lexicon, Teacher table views)
+- Gantt charts with horizontal timeline
+- Spreadsheet-like interfaces
+- Any horizontally scrolling content with vertical scroll
+
+## 📖 Bible Reference
+
+**RULE #19.12**: Sticky Horizontal Scrollbar Pattern
+See: TRAPID_BIBLE.md Chapter 19, RULE #19.12
+
+## 🐛 Common Issues
+
+**Bug History**: See TRAPID_LEXICON.md Chapter 19, §19.12
+- Scroll loop prevention
+- Table width detection
+- Native scrollbar conflicts
+- Overflow detection on wide monitors
 
 
 ---
@@ -8673,406 +8893,6 @@ Pattern for checkbox-based row selection with bulk actions
 
 ---
 
-## §19.31: Data-Dense Table Layout
-
-⚡ Optimization
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.31
-
-### Quick Summary
-Compact table layout for displaying many rows without excessive scrolling
-
-### Full Implementation
-
-**Row Padding:**
-```jsx
-// Compact data rows
-<tr className="py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800">
-  <td className="px-4 py-2.5">...</td>
-</tr>
-
-// Compact header
-<th className="px-4 py-2.5 text-xs font-medium">...</th>
-```
-
-**Cell Truncation:**
-```jsx
-<td
-  className="px-4 py-2.5 truncate overflow-hidden whitespace-nowrap max-w-[200px]"
-  title={fullContent}
->
-  {fullContent}
-</td>
-```
-
-**Expand for Full Content:**
-```jsx
-const [expandedRows, setExpandedRows] = useState(new Set())
-
-// Toggle expand on row click
-<tr onClick={() => toggleExpand(row.id)}>
-
-// Show full content when expanded
-{expandedRows.has(row.id) && (
-  <tr>
-    <td colSpan={visibleColumns.length} className="px-4 py-3 bg-gray-50 dark:bg-gray-800">
-      <div className="whitespace-pre-wrap">{fullContent}</div>
-    </td>
-  </tr>
-)}
-```
-
-### Common Mistakes
-- Using `py-6` padding (too spacious for data-dense tables)
-- Forgetting `title` attribute on truncated cells (no tooltip)
-- Not providing expansion mechanism for full content
-
-### When to Use
-- Data-heavy tables with > 50 rows
-- Dashboard views where screen space is limited
-- Tables with many columns that need horizontal scrolling
-- Lexicon/documentation tables with code snippets
-
----
-
-## §19.32: Zebra Striping Pattern
-
-🧩 Component
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.32
-
-### Quick Summary
-Alternating row colors to improve horizontal tracking in wide tables
-
-### Full Implementation
-
-**Basic Pattern:**
-```jsx
-{filteredData.map((row, index) => (
-  <tr
-    key={row.id}
-    className={`
-      ${index % 2 === 0
-        ? 'bg-white dark:bg-gray-900'
-        : 'bg-gray-100 dark:bg-gray-800/30'
-      }
-      hover:bg-blue-50 dark:hover:bg-blue-900/20
-    `}
-  >
-    ...
-  </tr>
-))}
-```
-
-**With Row Selection:**
-```jsx
-className={`
-  ${index % 2 === 0
-    ? 'bg-white dark:bg-gray-900'
-    : 'bg-gray-100 dark:bg-gray-800/30'
-  }
-  ${selectedRows.has(row.id)
-    ? 'bg-indigo-50 dark:bg-indigo-900/20'
-    : ''
-  }
-  hover:bg-blue-50 dark:hover:bg-blue-900/20
-`}
-```
-
-### Common Mistakes
-- Using too subtle opacity like `bg-gray-50/50` (insufficient contrast)
-- Removing zebra striping on hover (both should be visible)
-- Applying zebra to header rows
-- Using zebra on narrow tables with < 5 columns (unnecessary)
-
-### When to Use
-- Wide tables with > 7 columns
-- Tables where horizontal eye tracking is difficult
-- Data-dense layouts with compact row spacing
-
-### When NOT to Use
-- Narrow tables with < 5 columns
-- Tables with very few rows (< 10)
-- Tables where every other row has visual grouping already
-
----
-
-## §19.33: Sticky Horizontal Scrollbar
-
-🧩 Component
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.33
-
-### Quick Summary
-Always-visible scrollbar at bottom of table viewport for wide tables
-
-### Full Implementation
-
-**Setup Refs:**
-```jsx
-const tableContainerRef = useRef(null)
-const stickyScrollbarRef = useRef(null)
-const [scrollWidth, setScrollWidth] = useState(0)
-```
-
-**Sync Scroll Events:**
-```jsx
-const handleTableScroll = (e) => {
-  if (stickyScrollbarRef.current) {
-    stickyScrollbarRef.current.scrollLeft = e.target.scrollLeft
-  }
-}
-
-const handleStickyScroll = (e) => {
-  if (tableContainerRef.current) {
-    tableContainerRef.current.scrollLeft = e.target.scrollLeft
-  }
-}
-```
-
-**Track Width with ResizeObserver:**
-```jsx
-useEffect(() => {
-  const table = tableContainerRef.current?.querySelector('table')
-  if (!table) return
-
-  const resizeObserver = new ResizeObserver((entries) => {
-    for (let entry of entries) {
-      setScrollWidth(entry.target.scrollWidth)
-    }
-  })
-
-  resizeObserver.observe(table)
-  return () => resizeObserver.disconnect()
-}, [])
-```
-
-**Render Sticky Scrollbar:**
-```jsx
-<div className="flex flex-col flex-1 min-h-0">
-  {/* Main table container */}
-  <div
-    ref={tableContainerRef}
-    onScroll={handleTableScroll}
-    className="flex-1 overflow-auto"
-  >
-    <table>...</table>
-  </div>
-
-  {/* Sticky scrollbar */}
-  <div
-    ref={stickyScrollbarRef}
-    onScroll={handleStickyScroll}
-    className="overflow-x-auto overflow-y-hidden border-t-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
-    style={{ height: '16px' }}
-  >
-    <div style={{ width: `${scrollWidth}px`, height: '1px' }} />
-  </div>
-</div>
-```
-
-### Common Mistakes
-- Making scrollbar taller than 20px (wastes vertical space)
-- Making scrollbar shorter than 14px (hard to grab on touch devices)
-- Forgetting to sync scrollLeft bidirectionally
-- Not using ResizeObserver (scrollbar width won't update on column resize)
-
-### Testing Strategy
-- Test column resizing updates scrollbar width
-- Test scrolling main container updates sticky scrollbar
-- Test scrolling sticky scrollbar updates main container
-- Test on mobile/tablet touch devices
-
----
-
-## §19.34: Modern Table Header Styling
-
-🧩 Component
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.34
-
-### Quick Summary
-Glass-morphism effect for modern, clean table headers
-
-### Full Implementation
-
-```jsx
-<thead className="sticky top-0 z-10 backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-sm border-b border-gray-100 dark:border-gray-800">
-  <tr>
-    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600 dark:text-gray-400 tracking-wider">
-      Column Name
-    </th>
-  </tr>
-</thead>
-```
-
-**Breakdown of Classes:**
-- `backdrop-blur-md` - Glass-morphism blur effect
-- `bg-white/95 dark:bg-gray-900/95` - Semi-transparent background (95% opacity)
-- `shadow-sm` - Subtle shadow for depth
-- `border-b border-gray-100 dark:border-gray-800` - Thin bottom border
-- `text-xs` - Smaller font size
-- `font-medium` - Medium weight (not bold)
-- `text-gray-600 dark:text-gray-400` - Subtle text color
-- `tracking-wider` - Increased letter spacing
-
-### Common Mistakes
-- Using `bg-white` instead of `bg-white/95` (loses glass effect)
-- Using `font-bold` or `font-semibold` (too heavy)
-- Forgetting dark mode variants
-- Using bright or saturated header colors
-
-### Visual Effect
-The semi-transparent background with backdrop blur creates a modern "frosted glass" effect where content scrolling beneath the sticky header is slightly visible but blurred.
-
----
-
-## §19.35: Table Border Framing
-
-🧩 Component
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.35
-
-### Quick Summary
-Complete border frame for full-width tables to provide visual container
-
-### Full Implementation
-
-```jsx
-<table className="w-full border-l border-r border-gray-200 dark:border-gray-700">
-  <thead>...</thead>
-  <tbody>...</tbody>
-</table>
-```
-
-**Why Left/Right Borders Matter:**
-
-Without borders:
-```
-┌─────────────────────────────┐
-│ [Content blends with page]  │
-│ No clear table boundary     │
-└─────────────────────────────┘
-```
-
-With border framing:
-```
-┌─────────────────────────────┐
-│ ┌─────────────────────────┐ │
-│ │  Clear table boundary   │ │
-│ └─────────────────────────┘ │
-└─────────────────────────────┘
-```
-
-### When Critical
-- Full-width layouts without sidebar margins
-- Tables spanning entire viewport width
-- Dark mode where table edges blend with background
-- Data-dense tables where visual containment helps focus
-
-### Common Mistakes
-- Applying borders to container `<div>` instead of `<table>` element
-- Using only `border-b` or `border-t` (incomplete framing)
-- Skipping borders entirely on full-width tables
-
----
-
-## §19.36: Expand/Collapse Row Details
-
-🧩 Component
-
-**📖 Related Bible Rules:** TRAPID_BIBLE.md RULE #19.36
-
-### Quick Summary
-Row expansion pattern for showing detailed content in tables
-
-### Full Implementation
-
-**State Management:**
-```jsx
-const [expandedRows, setExpandedRows] = useState(new Set())
-
-const toggleExpand = (id) => {
-  setExpandedRows(prev => {
-    const next = new Set(prev)
-    if (next.has(id)) {
-      next.delete(id)
-    } else {
-      next.add(id)
-    }
-    return next
-  })
-}
-```
-
-**Render Pattern:**
-```jsx
-{filteredData.map((row, index) => (
-  <React.Fragment key={row.id}>
-    {/* Main row */}
-    <tr
-      onClick={() => toggleExpand(row.id)}
-      className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
-    >
-      <td className="px-4 py-2.5">
-        <span className="text-gray-400 dark:text-gray-600">
-          {expandedRows.has(row.id) ? '▼' : '▶'}
-        </span>
-      </td>
-      <td className="px-4 py-2.5">{row.title}</td>
-      {/* ... other columns */}
-    </tr>
-
-    {/* Expanded detail row */}
-    {expandedRows.has(row.id) && (
-      <tr className="bg-blue-50/20 dark:bg-gray-800/10">
-        <td colSpan={visibleColumns.length} className="px-8 py-4">
-          <div className="space-y-2">
-            <div className="text-xs text-gray-500">
-              Line {row.lineNumber} • Chapter {row.chapter}
-            </div>
-            <pre className="bg-gray-900 dark:bg-gray-950 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
-              {row.code}
-            </pre>
-          </div>
-        </td>
-      </tr>
-    )}
-  </React.Fragment>
-))}
-```
-
-**Click Event Handling:**
-```jsx
-// Stop propagation on nested interactive elements
-<button onClick={(e) => {
-  e.stopPropagation()
-  handleEdit(row)
-}}>
-  Edit
-</button>
-```
-
-### Common Mistakes
-- Making only icon clickable (bad UX, small touch target)
-- Forgetting `colSpan={visibleColumns.length}` (content constrained to first column)
-- Using array instead of Set for expandedRows (slow lookup for large datasets)
-- Not handling click propagation on nested buttons/links
-- Expanding row inline without visual separation
-
-### Performance Notes
-- Use `Set` for O(1) lookup instead of array O(n) lookup
-- Use `React.Fragment` to avoid extra DOM nesting
-- Consider virtualization for > 1000 rows with expansions
-
-### Testing Strategy
-- Test clicking entire row toggles expansion
-- Test nested buttons don't trigger row expansion
-- Test keyboard navigation (Enter/Space to expand)
-- Test with filtered/sorted data maintains expansion state
-
----
-
 
 # Chapter 20: Agent System & Automation
 
@@ -9414,7 +9234,7 @@ const getAgentIcon = (agentName) => {
 ---
 
 
-**Last Generated:** 2025-11-17 09:16 AEST
+**Last Generated:** 2025-11-17 10:43 AEST
 **Generated By:** `rake trapid:export_teacher`
 **Maintained By:** Development Team via Database UI
 **Review Schedule:** After adding new patterns or updating examples

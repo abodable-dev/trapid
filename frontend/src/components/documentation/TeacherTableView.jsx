@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react'
 import {
   MagnifyingGlassIcon,
@@ -34,7 +34,7 @@ const CHAPTER_NAMES = {
 }
 
 // Extract "Related To" category from section title - categorize by PRIMARY subject
-const extractRelatedTo = (title, chapter) => {
+const extractRelatedTo = (title) => {
   const titleLower = title.toLowerCase()
 
   // Priority: Check beginning of title for main subject (most specific first)
@@ -127,7 +127,6 @@ const parseSectionsFromMarkdown = (content) => {
     // Match chapter headers: # Chapter X:
     const chapterMatch = line.match(/^#\s+Chapter\s+(\d+):/)
     if (chapterMatch) {
-      currentChapter = parseInt(chapterMatch[1])
       return
     }
 
@@ -145,9 +144,9 @@ const parseSectionsFromMarkdown = (content) => {
       const chapterFromSection = parseInt(sectionParts[0])
       const title = sectionMatch[2].trim()
 
-      // Start new section
+      // Start new section (use unique ID with index to avoid duplicates)
       currentSection = {
-        id: sectionNumber,
+        id: `${sectionNumber}-${sections.length}`, // Unique ID to prevent duplicate keys
         sectionNumber: sectionNumber,
         chapter: chapterFromSection,
         chapterName: CHAPTER_NAMES[chapterFromSection] || `Chapter ${chapterFromSection}`,
@@ -180,15 +179,16 @@ const parseSectionsFromMarkdown = (content) => {
   return sections
 }
 
-// Define columns
+// Define columns (RULE #19.33: Increased widths to force horizontal overflow)
 const COLUMNS = [
   { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
-  { key: 'expand', label: '', resizable: false, sortable: false, filterable: false, width: 50 },
-  { key: 'section', label: 'Section §', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 120 },
-  { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200 },
-  { key: 'relatedTo', label: 'Related To', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 130 },
-  { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 400 }
+  { key: 'section', label: 'Section §', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150 },
+  { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 400 },
+  { key: 'relatedTo', label: 'Related To', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200 },
+  { key: 'title', label: 'Title', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 600 },
+  { key: 'content', label: 'Content', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 1200 }
 ]
+// Total: 2600px - ensures horizontal overflow on most screens
 
 const DEFAULT_COLUMN_WIDTHS = COLUMNS.reduce((acc, col) => {
   acc[col.key] = col.width
@@ -206,7 +206,6 @@ export default function TeacherTableView({ content }) {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('section')
   const [sortDir, setSortDir] = useState('asc')
-  const [expandedRows, setExpandedRows] = useState(new Set())
   const [selectedRows, setSelectedRows] = useState(new Set())
   const [columnFilters, setColumnFilters] = useState({})
 
@@ -223,8 +222,54 @@ export default function TeacherTableView({ content }) {
   // Column reordering state
   const [draggedColumn, setDraggedColumn] = useState(null)
 
+  // RULE #19.33: Sticky horizontal scrollbar refs
+  const scrollContainerRef = useRef(null)
+  const stickyScrollbarRef = useRef(null)
+  const isScrollingStickyRef = useRef(false)
+  const isScrollingMainRef = useRef(false)
+  const [tableScrollWidth, setTableScrollWidth] = useState(0)
+
+  // Track if initial load is complete to prevent saving stale data
+  const hasLoadedRef = useRef(false)
+
   // Parse sections from markdown content
   const sections = useMemo(() => parseSectionsFromMarkdown(content), [content])
+
+  // RULE #19.33: Scroll handlers with loop prevention
+  const handleScroll = (e) => {
+    if (isScrollingStickyRef.current) {
+      isScrollingStickyRef.current = false
+      return
+    }
+
+    isScrollingMainRef.current = true
+    const scrollLeft = e.target.scrollLeft
+
+    // Sync horizontal sticky scrollbar
+    if (stickyScrollbarRef.current) {
+      stickyScrollbarRef.current.scrollLeft = scrollLeft
+    }
+
+    setTimeout(() => { isScrollingMainRef.current = false }, 0)
+  }
+
+  const handleStickyScroll = (e) => {
+    if (isScrollingMainRef.current) {
+      isScrollingMainRef.current = false
+      return
+    }
+
+    isScrollingStickyRef.current = true
+    const scrollLeft = e.target.scrollLeft
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = scrollLeft
+    }
+
+    setTimeout(() => { isScrollingStickyRef.current = false }, 0)
+  }
+
+  // RULE #19.33: Version number to force-clear old localStorage when column widths change
+  const STATE_VERSION = 2 // Increment when DEFAULT_COLUMN_WIDTHS change
 
   // Load table state from localStorage on mount
   useEffect(() => {
@@ -232,6 +277,18 @@ export default function TeacherTableView({ content }) {
     if (savedState) {
       try {
         const state = JSON.parse(savedState)
+
+        // Check version - if old version, clear and use defaults
+        if (state.version !== STATE_VERSION) {
+          console.log('TeacherTableView: Clearing old localStorage (version mismatch)')
+          localStorage.removeItem('teacherTableViewState')
+          setColumnWidths(DEFAULT_COLUMN_WIDTHS)
+          setColumnOrder(DEFAULT_COLUMN_ORDER)
+          setVisibleColumns(DEFAULT_VISIBLE_COLUMNS)
+          hasLoadedRef.current = true
+          return
+        }
+
         setColumnWidths(state.columnWidths || DEFAULT_COLUMN_WIDTHS)
         setColumnOrder(state.columnOrder || DEFAULT_COLUMN_ORDER)
         setVisibleColumns(state.visibleColumns || DEFAULT_VISIBLE_COLUMNS)
@@ -241,11 +298,15 @@ export default function TeacherTableView({ content }) {
         console.error('Failed to load table state:', e)
       }
     }
+    hasLoadedRef.current = true
   }, [])
 
-  // Save table state to localStorage
+  // Save table state to localStorage (but only after initial load completes)
   useEffect(() => {
+    if (!hasLoadedRef.current) return // Don't save during initial load
+
     const state = {
+      version: STATE_VERSION,
       columnWidths,
       columnOrder,
       visibleColumns,
@@ -382,6 +443,9 @@ export default function TeacherTableView({ content }) {
         case 'title':
           result = result.filter(s => s.title?.toLowerCase().includes(value.toLowerCase()))
           break
+        case 'content':
+          result = result.filter(s => s.content?.toLowerCase().includes(value.toLowerCase()))
+          break
       }
     })
 
@@ -390,7 +454,7 @@ export default function TeacherTableView({ content }) {
       let aVal, bVal
 
       switch (sortBy) {
-        case 'section':
+        case 'section': {
           // Sort by section number (e.g., 0.1, 0.2, 19.1)
           const aParts = (a.sectionNumber || '').split('.').map(n => parseInt(n))
           const bParts = (b.sectionNumber || '').split('.').map(n => parseInt(n))
@@ -400,6 +464,7 @@ export default function TeacherTableView({ content }) {
             if (aNum !== bNum) return sortDir === 'asc' ? aNum - bNum : bNum - aNum
           }
           return 0
+        }
         case 'chapter':
           aVal = a.chapter
           bVal = b.chapter
@@ -424,6 +489,28 @@ export default function TeacherTableView({ content }) {
     return result
   }, [sections, search, columnFilters, sortBy, sortDir])
 
+  // RULE #19.33: Track table width with ResizeObserver
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const updateScrollbar = () => {
+      // IMPORTANT: Measure actual table element, not container
+      const table = container.querySelector('table')
+      const actualTableWidth = table ? table.offsetWidth : container.scrollWidth
+
+      setTableScrollWidth(actualTableWidth)
+    }
+
+    updateScrollbar()
+
+    // Update on resize (column resize, window resize, etc.)
+    const resizeObserver = new ResizeObserver(updateScrollbar)
+    resizeObserver.observe(container)
+
+    return () => resizeObserver.disconnect()
+  }, [filteredAndSorted, columnWidths])
+
   const handleSort = (column) => {
     if (sortBy === column) {
       setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
@@ -431,16 +518,6 @@ export default function TeacherTableView({ content }) {
       setSortBy(column)
       setSortDir('asc')
     }
-  }
-
-  const toggleRow = (id) => {
-    const newExpanded = new Set(expandedRows)
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id)
-    } else {
-      newExpanded.add(id)
-    }
-    setExpandedRows(newExpanded)
   }
 
   const SortIcon = ({ column }) => {
@@ -475,13 +552,6 @@ export default function TeacherTableView({ content }) {
           />
         )
 
-      case 'expand':
-        return (
-          <span className="text-gray-400 dark:text-gray-500 text-xs">
-            {expandedRows.has(section.id) ? '▼' : '▶'}
-          </span>
-        )
-
       case 'section':
         return <div className="font-mono font-medium">§{section.sectionNumber}</div>
 
@@ -509,6 +579,13 @@ export default function TeacherTableView({ content }) {
       case 'title':
         return <div className="font-medium">{section.title}</div>
 
+      case 'content':
+        return (
+          <div className="text-xs text-gray-700 dark:text-gray-300">
+            {section.content || '-'}
+          </div>
+        )
+
       default:
         return null
     }
@@ -517,6 +594,7 @@ export default function TeacherTableView({ content }) {
   return (
     <>
       <style>{`
+        /* Vertical scrollbar (keep visible) */
         .teacher-table-scroll {
           scrollbar-width: auto !important;
           scrollbar-color: #9CA3AF #E5E7EB !important;
@@ -547,6 +625,47 @@ export default function TeacherTableView({ content }) {
           border-color: #4B5563 !important;
         }
         .dark .teacher-table-scroll::-webkit-scrollbar-thumb:hover {
+          background: #D1D5DB !important;
+        }
+
+        /* RULE #19.33: Hide native horizontal scrollbar */
+        .teacher-table-scroll::-webkit-scrollbar-horizontal {
+          display: none !important;
+        }
+        .teacher-table-scroll::-webkit-scrollbar:horizontal {
+          display: none !important;
+          height: 0 !important;
+        }
+
+        /* Sticky horizontal scrollbar styling */
+        .sticky-horizontal-scroll {
+          overflow-x: scroll !important;
+          overflow-y: hidden !important;
+        }
+        .sticky-horizontal-scroll::-webkit-scrollbar {
+          -webkit-appearance: none !important;
+          height: 16px !important;
+        }
+        .sticky-horizontal-scroll::-webkit-scrollbar-track {
+          background: #E5E7EB !important;
+          border-radius: 8px !important;
+        }
+        .sticky-horizontal-scroll::-webkit-scrollbar-thumb {
+          background: #6B7280 !important;
+          border-radius: 8px !important;
+          border: 2px solid #E5E7EB !important;
+        }
+        .sticky-horizontal-scroll::-webkit-scrollbar-thumb:hover {
+          background: #4B5563 !important;
+        }
+        .dark .sticky-horizontal-scroll::-webkit-scrollbar-track {
+          background: #4B5563 !important;
+        }
+        .dark .sticky-horizontal-scroll::-webkit-scrollbar-thumb {
+          background: #9CA3AF !important;
+          border-color: #4B5563 !important;
+        }
+        .dark .sticky-horizontal-scroll::-webkit-scrollbar-thumb:hover {
           background: #D1D5DB !important;
         }
       `}</style>
@@ -600,7 +719,7 @@ export default function TeacherTableView({ content }) {
 
               <MenuItems className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5">
                 <div className="py-1">
-                  {COLUMNS.filter(col => col.key !== 'select' && col.key !== 'expand').map((column) => (
+                  {COLUMNS.filter(col => col.key !== 'select').map((column) => (
                     <MenuItem key={column.key}>
                       {({ focus }) => (
                         <button
@@ -637,9 +756,24 @@ export default function TeacherTableView({ content }) {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="teacher-table-scroll flex-1 overflow-y-auto overflow-x-auto relative bg-white dark:bg-gray-900 min-h-0">
-          <table className="w-full border-collapse">
+        {/* Table - RULE #19.33: Wrapped in flex container for sticky scrollbar */}
+        <div className="flex-1 min-h-0 flex flex-col px-4">
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="teacher-table-scroll flex-1 overflow-y-auto overflow-x-scroll relative bg-white dark:bg-gray-900"
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+          >
+          <table
+            className="w-full border-collapse border-l border-r border-gray-200 dark:border-gray-700"
+            style={{
+              minWidth: `${Object.values(columnWidths).reduce((sum, w) => sum + w, 0)}px`,
+              width: '100%'
+            }}
+          >
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 sticky top-0 z-20">
               <tr>
                 {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
@@ -728,50 +862,35 @@ export default function TeacherTableView({ content }) {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredAndSorted.map(section => (
-                <React.Fragment key={section.id}>
-                  <tr
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-150"
-                    onClick={() => toggleRow(section.id)}
-                  >
-                    {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
-                      const column = COLUMNS.find(c => c.key === colKey)
-                      if (!column) return null
+              {filteredAndSorted.map((section, index) => (
+                <tr
+                  key={section.id}
+                  className={`group border-b border-gray-100 dark:border-gray-800/50 hover:bg-blue-50/40 dark:hover:bg-gray-800/30 transition-all duration-150 hover:shadow-md ${
+                    index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-100 dark:bg-gray-800/30'
+                  }`}
+                >
+                  {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
+                    const column = COLUMNS.find(c => c.key === colKey)
+                    if (!column) return null
 
-                      return (
-                        <td
-                          key={colKey}
-                          style={{
-                            width: columnWidths[colKey],
-                            minWidth: columnWidths[colKey],
-                            maxWidth: columnWidths[colKey]
-                          }}
-                          className={`px-4 py-3 text-sm text-gray-900 dark:text-white ${
-                            colKey === 'expand' || colKey === 'select' ? 'text-center' : ''
-                          } ${colKey === 'title' || colKey === 'chapter' ? '' : 'whitespace-nowrap'}`}
-                        >
-                          {renderCellContent(section, colKey)}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                  {expandedRows.has(section.id) && (
-                    <tr className="bg-gray-50 dark:bg-gray-800/50">
-                      <td colSpan={columnOrder.filter(key => visibleColumns[key]).length} className="px-4 py-4">
-                        <div className="prose dark:prose-invert max-w-none text-sm">
-                          <div className="mb-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                            <span className="font-mono">Line {section.lineNumber}</span>
-                            <span>•</span>
-                            <span>Chapter {section.chapter}: {section.chapterName}</span>
-                          </div>
-                          <pre className="whitespace-pre-wrap text-xs bg-gray-100 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 overflow-auto">
-                            {section.content}
-                          </pre>
-                        </div>
+                    return (
+                      <td
+                        key={colKey}
+                        style={{
+                          width: columnWidths[colKey],
+                          minWidth: columnWidths[colKey],
+                          maxWidth: columnWidths[colKey]
+                        }}
+                        className={`${colKey === 'select' ? 'px-1' : 'px-4'} py-2.5 text-sm text-gray-900 dark:text-gray-100 ${
+                          colKey === 'select' ? 'text-center' : ''
+                        } truncate overflow-hidden whitespace-nowrap`}
+                        title={colKey === 'title' ? section.title : colKey === 'content' ? section.content : ''}
+                      >
+                        {renderCellContent(section, colKey)}
                       </td>
-                    </tr>
-                  )}
-                </React.Fragment>
+                    )
+                  })}
+                </tr>
               ))}
             </tbody>
           </table>
@@ -782,6 +901,27 @@ export default function TeacherTableView({ content }) {
             </div>
           )}
         </div>
+
+        {/* RULE #19.33: Sticky Horizontal Scrollbar - Always visible at bottom */}
+        <div
+          ref={stickyScrollbarRef}
+          onScroll={handleStickyScroll}
+          className="sticky-horizontal-scroll border-t-2 border-gray-400 dark:border-gray-500 flex-shrink-0"
+          style={{
+            position: 'sticky',
+            bottom: 0,
+            zIndex: 10,
+            height: '20px',
+            overflowX: 'scroll',
+            overflowY: 'hidden',
+            scrollbarWidth: 'auto',
+            scrollbarColor: '#6B7280 #E5E7EB',
+            backgroundColor: '#E5E7EB'
+          }}
+        >
+          <div style={{ width: `${tableScrollWidth}px`, height: '100%', backgroundColor: 'transparent' }} />
+        </div>
+      </div>
       </div>
     </>
   )

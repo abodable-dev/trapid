@@ -501,6 +501,270 @@ ${html}
     }
   }
 
+  const handleGetCompleteValidation = async () => {
+    try {
+      const logs = consoleCapture.getLogs()
+
+      // Get screen HTML code
+      const mainContent = document.querySelector('main') || document.body
+      const clone = mainContent.cloneNode(true)
+      clone.querySelectorAll('script, style, link[rel="stylesheet"]').forEach(el => el.remove())
+      let html = clone.outerHTML
+      html = simplifyHTMLUltraLight(html)
+
+      // Capture screenshot
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(document.body, {
+        logging: false,
+        useCORS: true,
+        scale: 0.3,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight
+      })
+
+      const pngDataUrl = canvas.toDataURL('image/png')
+      const pngResponse = await fetch(pngDataUrl)
+      const pngBlob = await pngResponse.blob()
+      const sizeKB = (pngBlob.size / 1024).toFixed(0)
+
+      // Format all console logs
+      const formattedLogs = logs.map(log => {
+        const time = new Date(log.timestamp).toLocaleTimeString()
+        return `[${time}] [${log.type.toUpperCase()}] ${log.message}`
+      }).join('\n')
+
+      // Validation checks
+      const errors = logs.filter(log => log.type === 'error')
+      const warnings = logs.filter(log => log.type === 'warn')
+      const doesMatch = errors.length === 0 && warnings.length === 0
+      const hasPastAll = doesMatch
+
+      // ═══════════════════════════════════════════════════════════════════
+      // ENHANCED: Capture Network Activity (per RULE #6)
+      // ═══════════════════════════════════════════════════════════════════
+      const networkData = []
+      const failedRequests = []
+      const slowRequests = []
+
+      if (window.performance && window.performance.getEntriesByType) {
+        const resources = window.performance.getEntriesByType('resource')
+        const navigation = window.performance.getEntriesByType('navigation')[0]
+
+        // Capture all API calls (fetch/XHR)
+        resources.forEach(resource => {
+          const isAPI = resource.name.includes('/api/') ||
+                       resource.initiatorType === 'fetch' ||
+                       resource.initiatorType === 'xmlhttprequest'
+
+          if (isAPI) {
+            const duration = (resource.duration || 0).toFixed(0)
+            const size = resource.transferSize || 0
+            const failed = resource.transferSize === 0 && resource.decodedBodySize === 0
+
+            const entry = {
+              url: resource.name,
+              method: resource.initiatorType,
+              duration: `${duration}ms`,
+              size: size > 0 ? `${(size / 1024).toFixed(1)}KB` : 'failed',
+              status: failed ? 'FAILED' : 'OK'
+            }
+
+            networkData.push(entry)
+
+            // Track failures
+            if (failed) {
+              failedRequests.push(entry)
+            }
+
+            // Track slow requests (>2s)
+            if (resource.duration > 2000) {
+              slowRequests.push(entry)
+            }
+          }
+        })
+
+        // Add page load timing
+        if (navigation) {
+          const loadTime = (navigation.loadEventEnd - navigation.fetchStart).toFixed(0)
+          networkData.unshift({
+            url: 'Page Load',
+            method: 'navigation',
+            duration: `${loadTime}ms`,
+            size: '-',
+            status: 'OK'
+          })
+        }
+      }
+
+      // Format network data
+      const formattedNetwork = networkData.map(req =>
+        `${req.status === 'FAILED' ? '🔴' : req.duration.includes('ms') && parseInt(req.duration) > 2000 ? '🟡' : '🟢'} ${req.method.toUpperCase().padEnd(12)} ${req.duration.padEnd(8)} ${req.size.padEnd(10)} ${req.url}`
+      ).join('\n')
+
+      // ═══════════════════════════════════════════════════════════════════
+      // ENHANCED: User Context (per RULE #6)
+      // ═══════════════════════════════════════════════════════════════════
+      const userAgent = navigator.userAgent
+      const browserInfo = {
+        browser: /Chrome/.test(userAgent) ? 'Chrome' :
+                /Firefox/.test(userAgent) ? 'Firefox' :
+                /Safari/.test(userAgent) ? 'Safari' :
+                /Edge/.test(userAgent) ? 'Edge' : 'Unknown',
+        version: userAgent.match(/(?:Chrome|Firefox|Safari|Edge)\/(\d+)/)?.[1] || 'Unknown',
+        platform: navigator.platform,
+        screenSize: `${window.screen.width}x${window.screen.height}`,
+        viewportSize: `${window.innerWidth}x${window.innerHeight}`,
+        devicePixelRatio: window.devicePixelRatio
+      }
+
+      // ═══════════════════════════════════════════════════════════════════
+      // ENHANCED: Current User & Role (if available)
+      // ═══════════════════════════════════════════════════════════════════
+      const currentUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null
+      const userRole = currentUser?.role || 'Unknown'
+      const userId = currentUser?.id || 'Unknown'
+
+      // Convert screenshot to base64 data URL for embedding in text
+      const screenshotDataUrl = pngDataUrl
+
+      // Combine everything with validation status + embedded screenshot + network data
+      let formatted = `╔════════════════════════════════════════════════════════════════════════╗
+║               🐛 LET'S DEBUG THIS! (RULE #6 Enhanced)                ║
+║  I've captured everything you need to fix this bug                    ║
+╚════════════════════════════════════════════════════════════════════════╝
+
+🎯 DEBUGGING WORKFLOW:
+1. Check the SCREENSHOT below - see what the user is actually seeing
+2. Compare SCREENSHOT with HTML CODE - do they match? Any rendering issues?
+3. Check CONSOLE for errors - any JavaScript errors or warnings?
+4. Check NETWORK for failed/slow requests - API issues?
+5. Review USER CONTEXT - browser-specific bug? Wrong role/permissions?
+
+📊 QUICK SUMMARY:
+${doesMatch ? '✅ Console Clean - No errors or warnings' : '🚨 ERRORS FOUND - Check console section below!'}
+🌐 Network: ${networkData.length} requests (${failedRequests.length} failed, ${slowRequests.length} slow)
+📸 Screenshot: ${sizeKB}KB (${canvas.width}x${canvas.height}px)
+👤 User: ${userRole} (ID: ${userId})
+🌍 Browser: ${browserInfo.browser} ${browserInfo.version} on ${browserInfo.platform}
+📍 URL: ${window.location.href}
+🕐 Captured: ${new Date().toLocaleString()}
+
+═══════════════════════════════════════════════════════════════════════════
+                    📸 STEP 1: CHECK THE SCREENSHOT
+═══════════════════════════════════════════════════════════════════════════
+
+I've embedded a PNG screenshot below (base64 format). This shows EXACTLY what the user is seeing.
+You can view it by:
+1. Pasting this entire message into Claude (I can see images in base64 data URLs)
+2. Copying the data URL to your browser address bar
+3. Saving as .html file and opening in browser
+
+Screenshot Details: ${sizeKB}KB (${canvas.width}x${canvas.height}px)
+
+${screenshotDataUrl}
+
+═══════════════════════════════════════════════════════════════════════════
+                    💻 STEP 2: CHECK THE HTML CODE
+═══════════════════════════════════════════════════════════════════════════
+
+This is the simplified HTML structure of the page. Compare this with the screenshot above.
+Ask yourself: Does the HTML match what's visible in the screenshot? Any missing elements?
+
+${html}
+
+═══════════════════════════════════════════════════════════════════════════
+                    🔴 STEP 3: CHECK THE CONSOLE
+═══════════════════════════════════════════════════════════════════════════
+
+${errors.length > 0 ? `🚨 FOUND ${errors.length} ERROR(S) - Start debugging here!` : '✅ No console errors'}
+${warnings.length > 0 ? `⚠️  FOUND ${warnings.length} WARNING(S) - May indicate issues` : '✅ No console warnings'}
+
+Total console logs captured: ${logs.length}
+
+${formattedLogs || '(No console logs captured)'}
+
+═══════════════════════════════════════════════════════════════════════════
+                    🌐 STEP 4: CHECK THE NETWORK
+═══════════════════════════════════════════════════════════════════════════
+
+${failedRequests.length > 0 ? `🔴 FOUND ${failedRequests.length} FAILED REQUEST(S) - API issues likely!` : '✅ No failed requests'}
+${slowRequests.length > 0 ? `🟡 FOUND ${slowRequests.length} SLOW REQUEST(S) - Performance issues` : '✅ No slow requests'}
+
+Total network requests: ${networkData.length}
+Legend: 🟢 OK | 🟡 Slow (>2s) | 🔴 Failed
+
+${formattedNetwork || '(No network activity captured)'}
+
+${failedRequests.length > 0 ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔴 FAILED REQUESTS DETAIL (${failedRequests.length} total):
+${failedRequests.map(req => `   ${req.url}`).join('\n')}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+` : ''}
+
+${slowRequests.length > 0 ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🟡 SLOW REQUESTS DETAIL (${slowRequests.length} total):
+${slowRequests.map(req => `   ${req.duration.padEnd(8)} ${req.url}`).join('\n')}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+` : ''}
+
+═══════════════════════════════════════════════════════════════════════════
+                    👤 STEP 5: CHECK USER CONTEXT
+═══════════════════════════════════════════════════════════════════════════
+
+Browser: ${browserInfo.browser} ${browserInfo.version}
+Platform: ${browserInfo.platform}
+Screen Size: ${browserInfo.screenSize}
+Viewport Size: ${browserInfo.viewportSize}
+Device Pixel Ratio: ${browserInfo.devicePixelRatio}
+
+User Role: ${userRole}
+User ID: ${userId}
+Current URL: ${window.location.href}
+Page Title: ${document.title}
+Timestamp: ${new Date().toLocaleString()}
+
+Is this a browser-specific bug? Permission issue? Wrong user role?
+
+═══════════════════════════════════════════════════════════════════════════
+                    ✅ DEBUGGING SUMMARY
+═══════════════════════════════════════════════════════════════════════════
+
+Let's debug this step by step:
+
+1. ✅ Screenshot embedded above - See what user sees
+2. ✅ HTML code provided - Compare with screenshot
+3. ${errors.length > 0 ? `🚨 ${errors.length} Console errors found - Check Step 3` : '✅ Console clean'}
+4. ${failedRequests.length > 0 ? `🔴 ${failedRequests.length} Network failures - Check Step 4` : '✅ Network clean'}
+5. ✅ User context captured - Check Step 5 for environment details
+
+${errors.length > 0 || failedRequests.length > 0 ?
+`🎯 START HERE: ${errors.length > 0 ? `Fix the ${errors.length} console error(s) first` : `Fix the ${failedRequests.length} failed network request(s)`}`
+: '✅ Everything looks clean - describe what the bug is and I\'ll help investigate!'}
+
+═══════════════════════════════════════════════════════════════════════════
+`
+
+      // Copy everything to clipboard as text (including embedded screenshot)
+      await navigator.clipboard.writeText(formatted)
+
+      setCopiedButton('validation')
+      setTimeout(() => setCopiedButton(null), 2000)
+      console.log(`📦 Complete validation: ${doesMatch ? 'PASSED ✅' : 'FAILED ❌'}`)
+      console.log(`   📊 ${logs.length} console logs, ${errors.length} errors, ${warnings.length} warnings`)
+      console.log(`   🌐 ${networkData.length} network requests, ${failedRequests.length} failed, ${slowRequests.length} slow`)
+      console.log(`   📸 ${sizeKB}KB screenshot embedded as base64`)
+      console.log(`   👤 User: ${userRole} (ID: ${userId})`)
+      console.log('✅ Everything copied to clipboard in ONE paste!')
+    } catch (err) {
+      console.error('Failed to get complete validation:', err)
+      alert('Failed to extract complete validation. Please try again.')
+    }
+  }
+
   // Only show in development or staging
   const isDev = import.meta.env.DEV
   const isStaging = window.location.hostname.includes('vercel.app') ||
@@ -703,6 +967,32 @@ ${html}
                 {errorCount > 0 && (
                   <span className="ml-0.5 px-1 py-0 rounded-full bg-red-600 text-white text-[9px] font-bold">
                     {errorCount}
+                  </span>
+                )}
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={handleGetCompleteValidation}
+            className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all ${
+              copiedButton === 'validation'
+                ? 'bg-green-600 text-white'
+                : 'bg-emerald-100 dark:bg-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-600'
+            }`}
+            title="Complete validation: Console + Screenshot + HTML + validation status (does match & have past all)"
+          >
+            {copiedButton === 'validation' ? (
+              <>
+                <CheckIcon className="h-2.5 w-2.5" />
+                Copied!
+              </>
+            ) : (
+              <>
+                ✓ Validate
+                {logCount > 0 && (
+                  <span className="ml-0.5 px-1 py-0 rounded-full bg-emerald-600 text-white text-[9px] font-bold">
+                    {logCount}
                   </span>
                 )}
               </>
