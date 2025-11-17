@@ -43,6 +43,7 @@ const parseSectionsFromMarkdown = (content) => {
   let currentSection = null
   let collectingContent = false
   let sectionCounter = 0
+  let globalCounter = 0 // Global unique counter for IDs
 
   lines.forEach((line, index) => {
     // Match chapter headers: # Chapter X:
@@ -62,11 +63,12 @@ const parseSectionsFromMarkdown = (content) => {
       }
 
       sectionCounter++
+      globalCounter++
       const sectionTitle = sectionMatch[1].trim()
 
       // Start new section
       currentSection = {
-        id: `${currentChapter}.${sectionCounter}`,
+        id: `section-${globalCounter}`, // Use globally unique ID
         sectionNumber: `${currentChapter}.${sectionCounter}`,
         chapter: currentChapter,
         chapterName: CHAPTER_NAMES[currentChapter] || `Chapter ${currentChapter}`,

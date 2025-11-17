@@ -25,6 +25,7 @@ const GitBranchVisualization = lazy(() => import('../components/settings/GitBran
 const CompanySettingsTab = lazy(() => import('../components/settings/CompanySettingsTab'))
 const AgentStatus = lazy(() => import('../components/settings/AgentStatus'))
 const AgentShortcutsTab = lazy(() => import('../components/settings/AgentShortcutsTab'))
+const UserManualTab = lazy(() => import('../components/settings/UserManualTab'))
 
 // Loading fallback component for lazy-loaded tabs
 function TabLoadingFallback() {
@@ -40,7 +41,7 @@ export default function SettingsPage() {
   const location = useLocation()
 
   // Map tab names to indices
-  const tabs = ['company', 'integrations', 'users', 'contact-roles', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'git', 'agents', 'claude-shortcuts', 'deployment']
+  const tabs = ['company', 'integrations', 'users', 'contact-roles', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'git', 'agents', 'claude-shortcuts', 'user-manual', 'deployment']
 
   // Get initial tab index from URL query parameter
   const getInitialTabIndex = () => {
@@ -339,6 +340,18 @@ export default function SettingsPage() {
                 }`
               }
             >
+              User Manual
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
               Deployment
             </Tab>
           </TabList>
@@ -480,6 +493,13 @@ export default function SettingsPage() {
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <AgentShortcutsTab />
+            </Suspense>
+          </TabPanel>
+
+          {/* User Manual Tab */}
+          <TabPanel>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <UserManualTab />
             </Suspense>
           </TabPanel>
 

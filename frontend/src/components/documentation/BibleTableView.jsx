@@ -234,22 +234,13 @@ export default function BibleTableView({ content }) {
     fetchRules()
   }, [content])
 
-  // RULE #19.20: Debounce search input (300ms delay)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search)
-    }, 300)
-
-    return () => clearTimeout(timer)
-  }, [search])
-
   // Filter and sort rules
   const filteredAndSorted = useMemo(() => {
     let result = [...rules]
 
-    // Apply search (using debounced value)
-    if (debouncedSearch) {
-      const query = debouncedSearch.toLowerCase()
+    // Apply search
+    if (search) {
+      const query = search.toLowerCase()
       result = result.filter(r =>
         r.ruleNumber?.toLowerCase().includes(query) ||
         r.title?.toLowerCase().includes(query) ||
@@ -314,7 +305,7 @@ export default function BibleTableView({ content }) {
     }
 
     return result
-  }, [rules, debouncedSearch, columnFilters, sortBy, sortDir])
+  }, [rules, search, columnFilters, sortBy, sortDir])
 
   // Initialize scrollbar on mount and content change
   useEffect(() => {
