@@ -4,6 +4,7 @@ import axios from 'axios'
 import packageJson from '../../../package.json'
 import BackButton from '../common/BackButton'
 import FloatingHelpButton from '../FloatingHelpButton'
+import InspiringBanner from '../InspiringBanner'
 import {
   Dialog,
   DialogBackdrop,
@@ -57,7 +58,7 @@ const navigation = [
   { name: 'Health', href: '/health', icon: PlusIcon },
   { name: 'Performance', href: '/system/performance', icon: CpuChipIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
-  { name: 'Trinity', href: '/documentation', icon: BookOpenIcon },
+  { name: 'Trinity', href: '/trinity', icon: BookOpenIcon },
   { name: 'DHTMLX Gantt', href: '/settings?tab=schedule-master&openGantt=dhtmlx', icon: ChartBarIcon },
 ]
 
@@ -395,10 +396,7 @@ export default function AppLayout({ children }) {
           <div aria-hidden="true" className="h-6 w-px bg-gray-200 lg:hidden dark:bg-white/10" />
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className={classNames(
-              "flex flex-1 items-center gap-x-4 lg:gap-x-6",
-              sidebarCollapsed ? "justify-end" : "justify-end"
-            )}>
+            <div className="flex flex-1 items-center gap-x-4 lg:gap-x-6">
               {/* Only show these icons when sidebar is NOT collapsed */}
               {!sidebarCollapsed && (
                 <>
@@ -425,6 +423,11 @@ export default function AppLayout({ children }) {
                   </button>
                 </>
               )}
+
+              {/* Inspiring Banner - centered in top bar */}
+              <div className="flex-1 flex justify-center px-4">
+                <InspiringBanner />
+              </div>
 
               {/* Help Button - always visible */}
               <FloatingHelpButton inline={true} />

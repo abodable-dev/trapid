@@ -307,6 +307,14 @@ Rails.application.routes.draw do
         end
       end
 
+      # Inspiring Quotes
+      resources :inspiring_quotes do
+        collection do
+          get :daily
+          get :random
+        end
+      end
+
       # Agent definitions
       resources :agents, only: [:index] do
         collection do

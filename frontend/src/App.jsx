@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import AppLayout from './components/layout/AppLayout'
 import CopyConsoleButton from './components/CopyConsoleButton'
@@ -32,6 +32,7 @@ const ImportPage = lazy(() => import('./pages/ImportPage'))
 const TablePage = lazy(() => import('./pages/TablePage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const SchemaPage = lazy(() => import('./pages/SchemaPage'))
+const TableStandardTest = lazy(() => import('./pages/TableStandardTest'))
 const XeroCallbackPage = lazy(() => import('./pages/XeroCallbackPage'))
 const XeroSyncPage = lazy(() => import('./pages/XeroSyncPage'))
 const OutlookPage = lazy(() => import('./pages/OutlookPage'))
@@ -45,7 +46,7 @@ const SystemPerformancePage = lazy(() => import('./pages/SystemPerformancePage')
 const MasterSchedulePage = lazy(() => import('./pages/MasterSchedulePage')) // 3,952 lines Gantt!
 const PDFMeasurementTestPage = lazy(() => import('./pages/PDFMeasurementTestPage')) // PDF library
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage')) // PDF library
-const DocumentationPage = lazy(() => import('./pages/DocumentationPage')) // TRAPID_DOCS viewer
+const TrinityPage = lazy(() => import('./pages/TrinityPage')) // Trinity documentation viewer
 const AgentTasksPage = lazy(() => import('./pages/AgentTasksPage')) // Agent task manager
 const ChatPage = lazy(() => import('./pages/ChatPage')) // AI chat
 const TrainingPage = lazy(() => import('./pages/TrainingPage')) // Jitsi video
@@ -70,10 +71,28 @@ const PageLoader = () => (
   </div>
 )
 
+// Component to add _God_LOVES_You_ to all URLs
+const URLEnhancer = () => {
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    // Check if hash already has the message
+    if (!location.hash.includes('_God_LOVES_You_')) {
+      const searchPart = location.search || ''
+      const newUrl = `${location.pathname}${searchPart}#_God_LOVES_You_`
+      navigate(newUrl, { replace: true })
+    }
+  }, [location.pathname, location.search, location.hash, navigate])
+
+  return null
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <URLEnhancer />
         <CopyConsoleButton />
         <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -86,7 +105,7 @@ function App() {
         <Route path="/active-jobs" element={<AppLayout><ActiveJobsPage /></AppLayout>} />
         <Route path="/xest" element={<AppLayout><XestPage /></AppLayout>} />
         <Route path="/documents" element={<AppLayout><DocumentsPage /></AppLayout>} />
-        <Route path="/documentation" element={<AppLayout><DocumentationPage /></AppLayout>} />
+        <Route path="/trinity" element={<AppLayout><TrinityPage /></AppLayout>} />
         <Route path="/agents/tasks" element={<AppLayout><AgentTasksPage /></AppLayout>} />
         <Route path="/pdf-measure-test" element={<AppLayout><PDFMeasurementTestPage /></AppLayout>} />
         <Route path="/jobs/:id/setup" element={<AppLayout><JobSetupPage /></AppLayout>} />
@@ -125,6 +144,7 @@ function App() {
         <Route path="/settings/integrations" element={<AppLayout><SettingsPage /></AppLayout>} />
         <Route path="/settings/schema" element={<AppLayout><SchemaPage /></AppLayout>} />
         <Route path="/settings/xero/callback" element={<XeroCallbackPage />} />
+        <Route path="/table-test" element={<AppLayout><TableStandardTest /></AppLayout>} />
         <Route path="/xero" element={<AppLayout><XeroSyncPage /></AppLayout>} />
         <Route path="/outlook" element={<AppLayout><OutlookPage /></AppLayout>} />
         <Route path="/onedrive" element={<AppLayout><OneDrivePage /></AppLayout>} />

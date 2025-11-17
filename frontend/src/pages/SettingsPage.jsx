@@ -26,6 +26,7 @@ const CompanySettingsTab = lazy(() => import('../components/settings/CompanySett
 const AgentStatus = lazy(() => import('../components/settings/AgentStatus'))
 const AgentShortcutsTab = lazy(() => import('../components/settings/AgentShortcutsTab'))
 const UserManualTab = lazy(() => import('../components/settings/UserManualTab'))
+const InspiringQuotesTab = lazy(() => import('../components/settings/InspiringQuotesTab'))
 
 // Loading fallback component for lazy-loaded tabs
 function TabLoadingFallback() {
@@ -41,7 +42,7 @@ export default function SettingsPage() {
   const location = useLocation()
 
   // Map tab names to indices
-  const tabs = ['company', 'integrations', 'users', 'contact-roles', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'git', 'agents', 'claude-shortcuts', 'user-manual', 'deployment']
+  const tabs = ['company', 'integrations', 'users', 'contact-roles', 'workflows', 'folder-templates', 'schedule-master', 'documentation', 'supervisor-checklist', 'public-holidays', 'xero', 'tables', 'schema', 'git', 'agents', 'claude-shortcuts', 'user-manual', 'inspiring-quotes', 'deployment']
 
   // Get initial tab index from URL query parameter
   const getInitialTabIndex = () => {
@@ -352,6 +353,18 @@ export default function SettingsPage() {
                 }`
               }
             >
+              Inspiring Quotes
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `rounded-lg py-2.5 px-4 text-sm font-medium leading-5 transition-all whitespace-nowrap flex-shrink-0
+                ${
+                  selected
+                    ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-400 shadow'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'
+                }`
+              }
+            >
               Deployment
             </Tab>
           </TabList>
@@ -500,6 +513,13 @@ export default function SettingsPage() {
           <TabPanel>
             <Suspense fallback={<TabLoadingFallback />}>
               <UserManualTab />
+            </Suspense>
+          </TabPanel>
+
+          {/* Inspiring Quotes Tab */}
+          <TabPanel>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <InspiringQuotesTab />
             </Suspense>
           </TabPanel>
 

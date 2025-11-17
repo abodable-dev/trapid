@@ -29,9 +29,11 @@ class Trinity < ApplicationRecord
   validates :category, inclusion: { in: CATEGORIES }
 
   # Section number optional, but must be formatted if present
-  # Accepts: B01.01, L01.02, T01.03 (category prefix + padded numbers)
+  # Accepts: B01.001, L01.002, T01.003 (category prefix + padded numbers, 3-digit format)
+  # Also accepts: B01.01, L01.02, T01.03 (2-digit format for backward compatibility)
   # Legacy: 19.1, 19.11A (for backward compatibility during migration)
-  validates :section_number, format: { with: /\A([BTL]\d{2}\.\d{2}|\d+\.\d+[A-Z]?)\z/, message: "must be in format BXX.YY, LXX.YY, TXX.YY or legacy X.Y" }, allow_nil: true
+  # TEMP-XXXXX (temporary during renumbering)
+  validates :section_number, format: { with: /\A([BTL]\d{2}\.\d{2,3}|\d+\.\d+[A-Z]?|TEMP-\d+)\z/, message: "must be in format BXX.YYY, LXX.YYY, TXX.YYY or legacy X.Y" }, allow_nil: true
   # Section number must be unique within chapter + category combination
   validates :section_number, uniqueness: { scope: [:chapter_number, :category], message: "already exists in this chapter for this category" }, allow_nil: true
 

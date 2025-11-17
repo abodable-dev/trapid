@@ -234,7 +234,7 @@ export default function Dashboard() {
               <span className="truncate">Import Spreadsheet</span>
             </Link>
             <Link
-              to="/documentation"
+              to="/trinity"
               className="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition shadow-sm"
             >
               <BookOpenIcon className="h-4 w-4 sm:h-5 sm:w-5" />

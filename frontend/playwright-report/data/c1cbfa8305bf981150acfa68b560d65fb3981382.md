@@ -1,0 +1,2305 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]: Console
+        - generic [ref=e7]: "469"
+      - generic [ref=e8]:
+        - button "Console 469" [ref=e9] [cursor=pointer]:
+          - img [ref=e10]
+          - text: Console
+          - generic [ref=e12]: "469"
+        - button "Console" [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+          - text: Console
+        - button "Clear" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+          - text: Clear
+        - button "Screenshot" [ref=e19] [cursor=pointer]
+        - button "Screenshot" [ref=e20] [cursor=pointer]:
+          - img [ref=e21]
+          - text: Screenshot
+        - button "Refresh" [ref=e23] [cursor=pointer]:
+          - img [ref=e24]
+          - text: Refresh
+        - button "Con/Screen 469" [ref=e26] [cursor=pointer]:
+          - text: Con/Screen
+          - generic [ref=e27]: "469"
+        - button "Con/Screen" [ref=e28] [cursor=pointer]:
+          - img [ref=e29]
+          - img [ref=e31]
+          - text: Con/Screen
+        - button "✓ Validate 469" [ref=e33] [cursor=pointer]:
+          - text: ✓ Validate
+          - generic [ref=e34]: "469"
+      - button "Hide console tools" [ref=e35] [cursor=pointer]:
+        - img [ref=e36]
+    - generic [ref=e38]:
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - img "Trapid" [ref=e42]
+          - button "Expand sidebar" [ref=e43] [cursor=pointer]:
+            - img [ref=e44]
+        - navigation [ref=e46]:
+          - list [ref=e47]:
+            - listitem [ref=e48]:
+              - list [ref=e49]:
+                - listitem [ref=e50]:
+                  - link "Dashboard" [ref=e51] [cursor=pointer]:
+                    - /url: /dashboard
+                    - img [ref=e52]
+                - listitem [ref=e54]:
+                  - link "Active Jobs" [ref=e55] [cursor=pointer]:
+                    - /url: /active-jobs
+                    - img [ref=e56]
+                - listitem [ref=e58]:
+                  - link "Xest" [ref=e59] [cursor=pointer]:
+                    - /url: /xest
+                    - img [ref=e60]
+                - listitem [ref=e62]:
+                  - link "Price Books" [ref=e63] [cursor=pointer]:
+                    - /url: /price-books
+                    - img [ref=e64]
+                - listitem [ref=e66]:
+                  - link "Contacts" [ref=e67] [cursor=pointer]:
+                    - /url: /contacts
+                    - img [ref=e68]
+                - listitem [ref=e70]:
+                  - link "Accounts" [ref=e71] [cursor=pointer]:
+                    - /url: /accounts
+                    - img [ref=e72]
+                - listitem [ref=e74]:
+                  - link "Documents" [ref=e75] [cursor=pointer]:
+                    - /url: /documents
+                    - img [ref=e76]
+                - listitem [ref=e78]:
+                  - link "Training" [ref=e79] [cursor=pointer]:
+                    - /url: /training
+                    - img [ref=e80]
+                - listitem [ref=e82]:
+                  - link "Outlook" [ref=e83] [cursor=pointer]:
+                    - /url: /outlook
+                    - img [ref=e84]
+                - listitem [ref=e86]:
+                  - link "OneDrive" [ref=e87] [cursor=pointer]:
+                    - /url: /onedrive
+                    - img [ref=e88]
+                - listitem [ref=e90]:
+                  - link "Health" [ref=e91] [cursor=pointer]:
+                    - /url: /health
+                    - img [ref=e92]
+                - listitem [ref=e94]:
+                  - link "Performance" [ref=e95] [cursor=pointer]:
+                    - /url: /system/performance
+                    - img [ref=e96]
+                - listitem [ref=e98]:
+                  - link "Settings" [ref=e99] [cursor=pointer]:
+                    - /url: /settings
+                    - img [ref=e100]
+                - listitem [ref=e103]:
+                  - link "Trinity" [ref=e104] [cursor=pointer]:
+                    - /url: /documentation
+                    - img [ref=e105]
+                - listitem [ref=e107]:
+                  - link "DHTMLX Gantt" [ref=e108] [cursor=pointer]:
+                    - /url: /settings?tab=schedule-master&openGantt=dhtmlx
+                    - img [ref=e109]
+            - listitem [ref=e111]:
+              - list [ref=e112]:
+                - listitem [ref=e113]:
+                  - link "Import Data" [ref=e114] [cursor=pointer]:
+                    - /url: /import
+                    - img [ref=e115]
+      - generic [ref=e117]:
+        - generic [ref=e120]:
+          - button "Get help" [ref=e121] [cursor=pointer]:
+            - img [ref=e122]
+          - button "Open user menu" [ref=e125] [cursor=pointer]:
+            - generic [ref=e127]: Open user menu
+            - generic [ref=e128]:
+              - generic [ref=e129]: User
+              - img [ref=e130]
+        - main [ref=e132]:
+          - generic [ref=e133]:
+            - button "Go back" [ref=e135] [cursor=pointer]:
+              - img [ref=e136]
+              - text: Back
+            - main [ref=e138]:
+              - heading "Account Settings" [level=1] [ref=e139]
+              - button "Go back" [ref=e141] [cursor=pointer]:
+                - img [ref=e142]
+                - text: Back
+              - navigation [ref=e145]:
+                - list [ref=e146]:
+                  - listitem [ref=e147]:
+                    - link "Profile" [ref=e148] [cursor=pointer]:
+                      - /url: /profile
+                  - listitem [ref=e149]:
+                    - link "Settings" [ref=e150] [cursor=pointer]:
+                      - /url: /settings
+                  - listitem [ref=e151]:
+                    - link "Integrations" [ref=e152] [cursor=pointer]:
+                      - /url: /settings/integrations
+              - generic [ref=e154]:
+                - tablist [ref=e156]:
+                  - tab "Company" [ref=e157] [cursor=pointer]
+                  - tab "Integrations" [ref=e158] [cursor=pointer]
+                  - tab "Users" [ref=e159] [cursor=pointer]
+                  - tab "Contact Roles" [ref=e160] [cursor=pointer]
+                  - tab "Workflows" [ref=e161] [cursor=pointer]
+                  - tab "Folder Templates" [ref=e162] [cursor=pointer]
+                  - tab "Schedule Master" [selected] [ref=e163] [cursor=pointer]
+                  - tab "Documentation" [ref=e164] [cursor=pointer]
+                  - tab "Supervisor Checklist" [ref=e165] [cursor=pointer]
+                  - tab "Public Holidays" [ref=e166] [cursor=pointer]
+                  - tab "Xero" [ref=e167] [cursor=pointer]
+                  - tab "Tables" [ref=e168] [cursor=pointer]
+                  - tab "Schema" [ref=e169] [cursor=pointer]
+                  - tab "Git Branches" [ref=e170] [cursor=pointer]
+                  - tab "Agents" [ref=e171] [cursor=pointer]
+                  - tab "Claude Shortcuts" [ref=e172] [cursor=pointer]
+                  - tab "User Manual" [ref=e173] [cursor=pointer]
+                  - tab "Deployment" [ref=e174] [cursor=pointer]
+                - tabpanel "Schedule Master" [ref=e176]:
+                  - generic [ref=e178]:
+                    - tablist [ref=e181]:
+                      - tab "Schedule Master Setup" [selected] [ref=e182] [cursor=pointer]
+                      - tab "Bug Hunter Tests" [ref=e183] [cursor=pointer]
+                      - tab "New Features" [ref=e184] [cursor=pointer]
+                    - tabpanel "Schedule Master Setup" [ref=e186]:
+                      - generic [ref=e187]:
+                        - generic [ref=e188]:
+                          - generic [ref=e189]:
+                            - heading "Schedule Templates" [level=2] [ref=e190]
+                            - paragraph [ref=e191]: Create reusable schedule templates with full task dependencies and automation
+                            - generic [ref=e193]:
+                              - img [ref=e194]
+                              - generic [ref=e196]: "Terminology:"
+                              - generic [ref=e197]:
+                                - generic [ref=e198]:
+                                  - strong [ref=e199]: SM
+                                  - text: = Schedule Master
+                                - generic [ref=e200]:
+                                  - strong [ref=e201]: SMT
+                                  - text: = Table (24 cols)
+                                - generic [ref=e202]:
+                                  - strong [ref=e203]: Gantt
+                                  - text: = Timeline chart
+                                - generic [ref=e204]:
+                                  - strong [ref=e205]: Task
+                                  - text: = Row + bar
+                                - generic [ref=e206]:
+                                  - strong [ref=e207]: Deps
+                                  - text: = Arrows
+                                - generic [ref=e208]:
+                                  - strong [ref=e209]: FS/SS/FF
+                                  - text: = Dep types
+                          - generic [ref=e210]:
+                            - button "Gantt Bible" [ref=e211] [cursor=pointer]:
+                              - img [ref=e212]
+                              - text: Gantt Bible
+                            - button "Gantt Bug Hunter" [ref=e214] [cursor=pointer]:
+                              - img [ref=e215]
+                              - text: Gantt Bug Hunter
+                            - button "Copy Docs" [ref=e218] [cursor=pointer]:
+                              - img [ref=e219]
+                              - text: Copy Docs
+                              - img [ref=e221]
+                            - button "New Template" [ref=e223] [cursor=pointer]:
+                              - img [ref=e224]
+                              - text: New Template
+                        - generic [ref=e226]:
+                          - combobox [ref=e227]:
+                            - option "Bug Hunter Schedule Master"
+                            - option "Schedule MAster (Default)" [selected]
+                          - button "Duplicate Template" [ref=e228] [cursor=pointer]:
+                            - img [ref=e229]
+                          - button "Export to Excel" [ref=e231] [cursor=pointer]:
+                            - img [ref=e232]
+                          - generic "Import from Excel" [ref=e234] [cursor=pointer]:
+                            - img [ref=e235]
+                          - button "View Gantt Chart" [ref=e237] [cursor=pointer]:
+                            - img [ref=e238]
+                        - generic [ref=e240]:
+                          - table [ref=e241]:
+                            - rowgroup [ref=e242]:
+                              - 'row "Select all rows # Task Name Supplier / Group Predecessors Duration Start Date Lock PO Req Auto PO Price Items Critical Tags Photo Cert Cert Lag Sup Check Auto Complete Subtasks Linked Tasks Manual Multi Order Time Call Up Plan Plan Sales Precon Final Certificate Site Photo Client Client Photo Photos Actions" [ref=e243]':
+                                - cell "Select all rows" [ref=e244]:
+                                  - generic [ref=e245]:
+                                    - img [ref=e247]
+                                    - checkbox "Select all rows" [ref=e249] [cursor=pointer]
+                                - cell "#" [ref=e251]:
+                                  - generic [ref=e252]:
+                                    - img [ref=e254]
+                                    - generic [ref=e256]: "#"
+                                - cell "Task Name" [ref=e257]:
+                                  - generic [ref=e258]:
+                                    - img [ref=e260]
+                                    - generic [ref=e263] [cursor=pointer]:
+                                      - generic [ref=e264]: Task Name
+                                      - img [ref=e265]
+                                - cell "Supplier / Group" [ref=e268]:
+                                  - generic [ref=e269]:
+                                    - img [ref=e271]
+                                    - generic [ref=e274] [cursor=pointer]:
+                                      - generic [ref=e275]: Supplier / Group
+                                      - img [ref=e276]
+                                - cell "Predecessors" [ref=e279]:
+                                  - generic [ref=e280]:
+                                    - img [ref=e282]
+                                    - generic [ref=e285] [cursor=pointer]:
+                                      - generic [ref=e286]: Predecessors
+                                      - img [ref=e287]
+                                - cell "Duration" [ref=e290]:
+                                  - generic [ref=e291]:
+                                    - img [ref=e293]
+                                    - generic [ref=e296] [cursor=pointer]:
+                                      - generic [ref=e297]: Duration
+                                      - img [ref=e298]
+                                - cell "Start Date" [ref=e301]:
+                                  - generic [ref=e302]:
+                                    - img [ref=e304]
+                                    - generic [ref=e307] [cursor=pointer]:
+                                      - generic [ref=e308]: Start Date
+                                      - img [ref=e309]
+                                    - img [ref=e311]
+                                - cell "Lock" [ref=e314]:
+                                  - generic [ref=e315]:
+                                    - img [ref=e317]
+                                    - generic [ref=e319] [cursor=pointer]: Lock
+                                - cell "PO Req" [ref=e321]:
+                                  - generic [ref=e322]:
+                                    - img [ref=e324]
+                                    - generic [ref=e327] [cursor=pointer]:
+                                      - generic [ref=e328]: PO Req
+                                      - img [ref=e329]
+                                - cell "Auto PO" [ref=e332]:
+                                  - generic [ref=e333]:
+                                    - img [ref=e335]
+                                    - generic [ref=e338] [cursor=pointer]:
+                                      - generic [ref=e339]: Auto PO
+                                      - img [ref=e340]
+                                - cell "Price Items" [ref=e343]:
+                                  - generic [ref=e344]:
+                                    - img [ref=e346]
+                                    - generic [ref=e349] [cursor=pointer]:
+                                      - generic [ref=e350]: Price Items
+                                      - img [ref=e351]
+                                - cell "Critical" [ref=e354]:
+                                  - generic [ref=e355]:
+                                    - img [ref=e357]
+                                    - generic [ref=e360] [cursor=pointer]:
+                                      - generic [ref=e361]: Critical
+                                      - img [ref=e362]
+                                - cell "Tags" [ref=e365]:
+                                  - generic [ref=e366]:
+                                    - img [ref=e368]
+                                    - generic [ref=e371] [cursor=pointer]:
+                                      - generic [ref=e372]: Tags
+                                      - img [ref=e373]
+                                - cell "Photo" [ref=e376]:
+                                  - generic [ref=e377]:
+                                    - img [ref=e379]
+                                    - generic [ref=e382] [cursor=pointer]:
+                                      - generic [ref=e383]: Photo
+                                      - img [ref=e384]
+                                - cell "Cert" [ref=e387]:
+                                  - generic [ref=e388]:
+                                    - img [ref=e390]
+                                    - generic [ref=e393] [cursor=pointer]:
+                                      - generic [ref=e394]: Cert
+                                      - img [ref=e395]
+                                - cell "Cert Lag" [ref=e398]:
+                                  - generic [ref=e399]:
+                                    - img [ref=e401]
+                                    - generic [ref=e404] [cursor=pointer]:
+                                      - generic [ref=e405]: Cert Lag
+                                      - img [ref=e406]
+                                - cell "Sup Check" [ref=e409]:
+                                  - generic [ref=e410]:
+                                    - img [ref=e412]
+                                    - generic [ref=e415] [cursor=pointer]:
+                                      - generic [ref=e416]: Sup Check
+                                      - img [ref=e417]
+                                - cell "Auto Complete" [ref=e420]:
+                                  - generic [ref=e421]:
+                                    - img [ref=e423]
+                                    - generic [ref=e426] [cursor=pointer]:
+                                      - generic [ref=e427]: Auto Complete
+                                      - img [ref=e428]
+                                - cell "Subtasks" [ref=e431]:
+                                  - generic [ref=e432]:
+                                    - img [ref=e434]
+                                    - generic [ref=e437] [cursor=pointer]:
+                                      - generic [ref=e438]: Subtasks
+                                      - img [ref=e439]
+                                - cell "Linked Tasks" [ref=e442]:
+                                  - generic [ref=e443]:
+                                    - img [ref=e445]
+                                    - generic [ref=e448] [cursor=pointer]:
+                                      - generic [ref=e449]: Linked Tasks
+                                      - img [ref=e450]
+                                - cell "Manual" [ref=e453]:
+                                  - generic [ref=e454]:
+                                    - img [ref=e456]
+                                    - generic [ref=e459] [cursor=pointer]:
+                                      - generic [ref=e460]: Manual
+                                      - img [ref=e461]
+                                - cell "Multi" [ref=e464]:
+                                  - generic [ref=e465]:
+                                    - img [ref=e467]
+                                    - generic [ref=e470] [cursor=pointer]:
+                                      - generic [ref=e471]: Multi
+                                      - img [ref=e472]
+                                - cell "Order Time" [ref=e475]:
+                                  - generic [ref=e476]:
+                                    - img [ref=e478]
+                                    - generic [ref=e481] [cursor=pointer]:
+                                      - generic [ref=e482]: Order Time
+                                      - img [ref=e483]
+                                - cell "Call Up" [ref=e486]:
+                                  - generic [ref=e487]:
+                                    - img [ref=e489]
+                                    - generic [ref=e492] [cursor=pointer]:
+                                      - generic [ref=e493]: Call Up
+                                      - img [ref=e494]
+                                - cell "Plan" [ref=e497]:
+                                  - generic [ref=e498]:
+                                    - img [ref=e500]
+                                    - generic [ref=e503] [cursor=pointer]:
+                                      - generic [ref=e504]: Plan
+                                      - img [ref=e505]
+                                - cell "Plan" [ref=e508]:
+                                  - generic [ref=e509]:
+                                    - img [ref=e511]
+                                    - generic [ref=e513] [cursor=pointer]: Plan
+                                - cell "Sales" [ref=e515]:
+                                  - generic [ref=e516]:
+                                    - img [ref=e518]
+                                    - generic [ref=e520] [cursor=pointer]: Sales
+                                - cell "Precon" [ref=e522]:
+                                  - generic [ref=e523]:
+                                    - img [ref=e525]
+                                    - generic [ref=e527] [cursor=pointer]: Precon
+                                - cell "Final Certificate" [ref=e529]:
+                                  - generic [ref=e530]:
+                                    - img [ref=e532]
+                                    - generic [ref=e534] [cursor=pointer]: Final Certificate
+                                - cell "Site" [ref=e536]:
+                                  - generic [ref=e537]:
+                                    - img [ref=e539]
+                                    - generic [ref=e541] [cursor=pointer]: Site
+                                - cell "Photo" [ref=e543]:
+                                  - generic [ref=e544]:
+                                    - img [ref=e546]
+                                    - generic [ref=e548] [cursor=pointer]: Photo
+                                - cell "Client" [ref=e550]:
+                                  - generic [ref=e551]:
+                                    - img [ref=e553]
+                                    - generic [ref=e555] [cursor=pointer]: Client
+                                - cell "Client Photo" [ref=e557]:
+                                  - generic [ref=e558]:
+                                    - img [ref=e560]
+                                    - generic [ref=e562] [cursor=pointer]: Client Photo
+                                - cell "Photos" [ref=e564]:
+                                  - generic [ref=e565]:
+                                    - img [ref=e567]
+                                    - generic [ref=e569] [cursor=pointer]: Photos
+                                - cell "Actions" [ref=e571]:
+                                  - generic [ref=e572]:
+                                    - img [ref=e574]
+                                    - generic [ref=e576]: Actions
+                              - row [ref=e577]:
+                                - cell [ref=e578]
+                                - cell [ref=e579]
+                                - cell [ref=e580]:
+                                  - textbox "Filter..." [ref=e581]
+                                - cell [ref=e582]:
+                                  - textbox "Filter..." [ref=e583]
+                                - cell [ref=e584]
+                                - cell [ref=e585]
+                                - cell [ref=e586]
+                                - cell [ref=e587]
+                                - cell [ref=e588]
+                                - cell [ref=e589]
+                                - cell [ref=e590]
+                                - cell [ref=e591]
+                                - cell [ref=e592]:
+                                  - textbox "Filter..." [ref=e593]
+                                - cell [ref=e594]
+                                - cell [ref=e595]
+                                - cell [ref=e596]
+                                - cell [ref=e597]
+                                - cell [ref=e598]
+                                - cell [ref=e599]
+                                - cell [ref=e600]
+                                - cell [ref=e601]
+                                - cell [ref=e602]
+                                - cell [ref=e603]
+                                - cell [ref=e604]
+                                - cell [ref=e605]
+                                - cell [ref=e606]
+                                - cell [ref=e607]
+                                - cell [ref=e608]
+                                - cell [ref=e609]
+                                - cell [ref=e610]
+                                - cell [ref=e611]
+                                - cell [ref=e612]
+                                - cell [ref=e613]
+                                - cell [ref=e614]
+                                - cell [ref=e615]
+                            - rowgroup [ref=e616]:
+                              - row "2 Task 2 Select supplier... 1FS 2 2 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e617]:
+                                - cell [ref=e618]:
+                                  - checkbox [ref=e619] [cursor=pointer]
+                                - cell "2" [ref=e620]
+                                - cell "Task 2" [ref=e621]:
+                                  - textbox [ref=e622]: Task 2
+                                - cell "Select supplier..." [ref=e623]:
+                                  - combobox [ref=e624]:
+                                    - option "Select supplier..." [selected]
+                                    - option "A1 Builders Finals Services Group"
+                                    - option "AIR CONDITIONING"
+                                    - option "ALARMS"
+                                    - option "APPLIANCES"
+                                    - option "AW GEOTECHNICS"
+                                    - option "Abodable"
+                                    - option "Accelerate Sustainability Assessments"
+                                    - option "Access Allways Consultants"
+                                    - option "Admin"
+                                    - option "Alex Wang Pty Ltd"
+                                    - option "All Clear Electrical"
+                                    - option "All Industry Safety QLD (AIS)"
+                                    - option "All Weather Trading"
+                                    - option "Aspect Joinery Pty Ltd"
+                                    - option "AusCoast Fire"
+                                    - option "Ausreo Pty Ltd"
+                                    - option "Austral - Rochedale"
+                                    - option "Austral Insulation"
+                                    - option "Australian Disability Homes"
+                                    - option "BALUSTRADING"
+                                    - option "BRICK HARDWARE"
+                                    - option "BRICKLAYER"
+                                    - option "BRICKS"
+                                    - option "BSK and associates"
+                                    - option "BWS Earthworks"
+                                    - option "Bank"
+                                    - option "Bittn Australia Pty Ltd"
+                                    - option "Braiden Brothers Carpentry"
+                                    - option "Building and Construction Supplies PTY Ltd"
+                                    - option "Bunnings"
+                                    - option "CABINET MAKER"
+                                    - option "CARPENTER"
+                                    - option "CBMA"
+                                    - option "CLOTHES LINES"
+                                    - option "COLOUR CONSULTANT"
+                                    - option "CONCRETE"
+                                    - option "CONCRETE CUTTING"
+                                    - option "CONCRETE PUMPING"
+                                    - option "CONCRETOR"
+                                    - option "CRANE"
+                                    - option "Carl Strong Tiling"
+                                    - option "Carpentry"
+                                    - option "Chromagen Australia Pty Ltd"
+                                    - option "Civic Shower Screens & Wardrobes"
+                                    - option "Cleaning Co"
+                                    - option "Client"
+                                    - option "Coastal Silt Fence"
+                                    - option "Concrete Co"
+                                    - option "Council"
+                                    - option "Cross Cranes"
+                                    - option "D.A.M Quality Plasterboard Finishes"
+                                    - option "DATA COMMUNICATIONS"
+                                    - option "DECORATIVE MOULDINGS"
+                                    - option "DEMOLITION"
+                                    - option "DOOR FURNITURE"
+                                    - option "DRAFTING"
+                                    - option "DRIVEWAY"
+                                    - option "Dinkum Dunnies"
+                                    - option "Direct Scaffold Pty LTD"
+                                    - option "ELECTRICAL"
+                                    - option "ENERGY"
+                                    - option "ENERGY RATING"
+                                    - option "ENGINEER"
+                                    - option "ENTRY DOORS"
+                                    - option "EXTERNAL CLADDING"
+                                    - option "Envy Plumbing"
+                                    - option "Excavation"
+                                    - option "FENCING"
+                                    - option "FIX-OUT MATERIALS"
+                                    - option "FLOOR COVERING"
+                                    - option "Ferris Town Planning Pty Ltd"
+                                    - option "Finlaysons Timber & Hardware Pty Ltd"
+                                    - option "Fletchers Transport Pty Ltd"
+                                    - option "Flooring Creations QLD"
+                                    - option "Fluid Building Approvals"
+                                    - option "GARAGE DOORS"
+                                    - option "GAS"
+                                    - option "GEN2612"
+                                    - option "GMA Certification Group"
+                                    - option "Gaswork Heavy Industries PTY Ltd"
+                                    - option "Gold Coast Gappng"
+                                    - option "Gold Coast Post Forming"
+                                    - option "H Design Hydraulic Engineering Group Pty Ltd"
+                                    - option "HARDWARE"
+                                    - option "HIRE"
+                                    - option "HOME AUTOMATION"
+                                    - option "HOT WATER SYSTEMS"
+                                    - option "HOUSE CLEAN"
+                                    - option "Hafele"
+                                    - option "Harvey Norman Commercial QLD"
+                                    - option "Harvey's Mechanical & Welding Services Pty Ltd"
+                                    - option "Heartwood Industries Pty Ltd"
+                                    - option "HighFields Turf"
+                                    - option "INSURANCE"
+                                    - option "INTERNAL DOORS"
+                                    - option "Icon Skip Bins"
+                                    - option "Insulhome"
+                                    - option "Internal Stairs"
+                                    - option "JJ & J Lyons Painter"
+                                    - option "JND Concrete"
+                                    - option "John Gordon Electrical"
+                                    - option "Joii Carpentry"
+                                    - option "Joii Flooring"
+                                    - option "Joii Landscaping"
+                                    - option "Joii Roofing"
+                                    - option "Joii Tiling"
+                                    - option "Jopa Queensland"
+                                    - option "Justin Stevens"
+                                    - option "Keeler Hardware"
+                                    - option "Kitchen Co"
+                                    - option "LAND"
+                                    - option "LANDSCAPING"
+                                    - option "LEGAL"
+                                    - option "LETTERBOXES"
+                                    - option "LIGHT FIT"
+                                    - option "La Rocca QLD Marble and Granite Pty Ltd"
+                                    - option "Latitude 28 Cabling Pty Ltd"
+                                    - option "Legal"
+                                    - option "Logan City Council"
+                                    - option "Logan Concrete Sawing and Drilling"
+                                    - option "Lovering Installations QLD"
+                                    - option "MACHINERY"
+                                    - option "MI Painting and Decorating Services"
+                                    - option "MI Painting and Decorating Services Marko Lvanovic"
+                                    - option "MIRRORS"
+                                    - option "MM Redland Bay"
+                                    - option "Mesh And Bar"
+                                    - option "NATIONAL TILES CO PTY LTD"
+                                    - option "Nu Style Trade Pty Ltd"
+                                    - option "OFFICE ADMIN"
+                                    - option "Opel Concrete Pty Ltd Opel"
+                                    - option "Open Electrical"
+                                    - option "Origin Energy"
+                                    - option "PAINTER"
+                                    - option "PAL Plumbing"
+                                    - option "PATIO"
+                                    - option "PLASTER BOARD"
+                                    - option "PLSL"
+                                    - option "PLUMBER"
+                                    - option "PLUMBING FITOFF GEAR"
+                                    - option "POOL"
+                                    - option "PRELIM"
+                                    - option "PRIVACY SCREENS"
+                                    - option "PRIVATE CERTIFIER"
+                                    - option "Painting Co"
+                                    - option "Plasterer"
+                                    - option "Plumbing Co"
+                                    - option "Pre Hung Doors (PHD)"
+                                    - option "QBCC"
+                                    - option "QFloors"
+                                    - option "QUICK SPEC"
+                                    - option "Queensland Gate Automation"
+                                    - option "Queensland Stairs (RALSAD)"
+                                    - option "RENDER"
+                                    - option "RETAINING WALL"
+                                    - option "RJF Installations"
+                                    - option "ROOF"
+                                    - option "Rapid Stone And Tiles Pty Ltd"
+                                    - option "ReadyMix Concrete"
+                                    - option "ReadyMix Concrete (Was Excel Concrete Pty Ltd)"
+                                    - option "Riki's Resealing"
+                                    - option "Robert Harder"
+                                    - option "Robs Carpentry"
+                                    - option "Roofing Co"
+                                    - option "Roofing Supplies"
+                                    - option "Rowcon Recycling"
+                                    - option "SAFETY AUDIT"
+                                    - option "SALES"
+                                    - option "SCAFFOLD"
+                                    - option "SEARCHES"
+                                    - option "SEDIMENT CONTROL"
+                                    - option "SEWAGE SYSTEMS"
+                                    - option "SHOWER SCREENS"
+                                    - option "SITE CLEAN"
+                                    - option "SITE WORKS"
+                                    - option "SKYLIGHTS"
+                                    - option "SOFFIT"
+                                    - option "STA Consulting Engineers"
+                                    - option "STAIRS"
+                                    - option "STEEL"
+                                    - option "STEEL MESH"
+                                    - option "SURVEYOR"
+                                    - option "Sams carpentry SEQ"
+                                    - option "Samwell Plumbing"
+                                    - option "Sediment Erosion Control Services"
+                                    - option "Select Water Tanks"
+                                    - option "Southern Star Windows (QLD)"
+                                    - option "Sparky"
+                                    - option "Spot On Plumbing and Drainage"
+                                    - option "Star Airconditioning"
+                                    - option "Stratus"
+                                    - option "Sunnycoast Concreting"
+                                    - option "Sunshine Coast Council"
+                                    - option "Sunstate Garage Doors (Travis Voigt TA)"
+                                    - option "Survey 360 Pty Ltd"
+                                    - option "Survey Mark"
+                                    - option "TEMPORARY FENCING"
+                                    - option "TEMPORARY POWER"
+                                    - option "TERMITE PROTECTION"
+                                    - option "TILE"
+                                    - option "TILER"
+                                    - option "TIMBER FLOORING"
+                                    - option "TIMBER FRAME"
+                                    - option "TL Electrical"
+                                    - option "TRUSSES"
+                                    - option "TURN KEY"
+                                    - option "Tekna Admin"
+                                    - option "Tekna Admin"
+                                    - option "Tekna Carpentry"
+                                    - option "Tekna Coach"
+                                    - option "Tekna Finishing Touches"
+                                    - option "Tekna Franchise"
+                                    - option "Tekna Homes"
+                                    - option "Tekna Insurance"
+                                    - option "Tekna Kitchen Labour"
+                                    - option "Tekna Kitchen Material"
+                                    - option "Tekna Marketing"
+                                    - option "Tekna Sales"
+                                    - option "Tekna Site"
+                                    - option "Tekna Supervisor"
+                                    - option "Tekna T3D"
+                                    - option "Testing Co"
+                                    - option "The One Group"
+                                    - option "The Truss Company"
+                                    - option "Tiling Co"
+                                    - option "Timber Supplier"
+                                    - option "Torsion Admin Pty Ltd"
+                                    - option "Torsion Quality Controller"
+                                    - option "Trade Tilers Centre"
+                                    - option "Trusses & Pre Nail"
+                                    - option "Unique Windows Services"
+                                    - option "United Waste Services"
+                                    - option "WARDROBE DOORS"
+                                    - option "WATER"
+                                    - option "WATER TANKS"
+                                    - option "WC HIRE"
+                                    - option "WET SEAL"
+                                    - option "WINDOWS"
+                                    - option "Wayke Waterproofing."
+                                    - option "Wayke Waterproofing. Ware"
+                                    - option "Work Place Health and Safety"
+                                - cell "1FS" [ref=e625]:
+                                  - button "1FS" [ref=e626] [cursor=pointer]
+                                - cell "2" [ref=e627]:
+                                  - spinbutton [ref=e628]: "2"
+                                - cell "2" [ref=e629]:
+                                  - generic [ref=e630]: "2"
+                                - cell "Unlocked - allows cascade updates" [ref=e631]:
+                                  - checkbox "Unlocked - allows cascade updates" [ref=e632]
+                                - cell [ref=e633]:
+                                  - checkbox [checked] [ref=e634]
+                                - cell "Select a supplier first" [ref=e635]:
+                                  - checkbox "Select a supplier first" [disabled] [ref=e636]
+                                - cell "0 items" [ref=e637]:
+                                  - button "0 items" [disabled] [ref=e638]
+                                - cell [ref=e639]:
+                                  - checkbox [ref=e640]
+                                - cell [ref=e641]:
+                                  - textbox "tag1, tag2" [ref=e642]
+                                - cell [ref=e643]:
+                                  - checkbox [ref=e644]
+                                - cell [ref=e645]:
+                                  - checkbox [ref=e646]
+                                - cell "10" [ref=e647]:
+                                  - spinbutton [disabled] [ref=e648]: "10"
+                                - cell [ref=e649]:
+                                  - checkbox [ref=e651]
+                                - cell "0 tasks" [ref=e652]:
+                                  - button "0 tasks" [ref=e653] [cursor=pointer]
+                                - cell "0 subtasks" [ref=e654]:
+                                  - button "0 subtasks" [ref=e655] [cursor=pointer]
+                                - cell "0 tasks" [ref=e656]:
+                                  - button "0 tasks" [ref=e657] [cursor=pointer]
+                                - cell [ref=e658]:
+                                  - checkbox [ref=e659] [cursor=pointer]
+                                - cell [ref=e660]:
+                                  - checkbox [ref=e661] [cursor=pointer]
+                                - cell [ref=e662]:
+                                  - checkbox [ref=e663] [cursor=pointer]
+                                - cell [ref=e664]:
+                                  - checkbox [ref=e665] [cursor=pointer]
+                                - cell [ref=e666]:
+                                  - checkbox [ref=e667] [cursor=pointer]
+                                - cell "Toggle Plan" [ref=e668]:
+                                  - checkbox "Toggle Plan" [ref=e669] [cursor=pointer]
+                                - cell "Toggle Sales" [ref=e670]:
+                                  - checkbox "Toggle Sales" [ref=e671] [cursor=pointer]
+                                - cell "Toggle Precon" [ref=e672]:
+                                  - checkbox "Toggle Precon" [ref=e673] [cursor=pointer]
+                                - cell "Toggle Final Certificate" [ref=e674]:
+                                  - checkbox "Toggle Final Certificate" [ref=e675] [cursor=pointer]
+                                - cell "Toggle Site" [ref=e676]:
+                                  - checkbox "Toggle Site" [ref=e677] [cursor=pointer]
+                                - cell "Toggle Photo" [ref=e678]:
+                                  - checkbox "Toggle Photo" [ref=e679] [cursor=pointer]
+                                - cell "Toggle Client" [ref=e680]:
+                                  - checkbox "Toggle Client" [ref=e681] [cursor=pointer]
+                                - cell "Toggle Client Photo" [ref=e682]:
+                                  - checkbox "Toggle Client Photo" [ref=e683] [cursor=pointer]
+                                - cell "Toggle Photos" [ref=e684]:
+                                  - checkbox "Toggle Photos" [ref=e685] [cursor=pointer]
+                                - cell [ref=e686]:
+                                  - generic [ref=e687]:
+                                    - button "Move up" [ref=e688] [cursor=pointer]:
+                                      - img [ref=e689]
+                                    - button "Move down" [ref=e691] [cursor=pointer]:
+                                      - img [ref=e692]
+                                    - button "Delete" [ref=e694] [cursor=pointer]:
+                                      - img [ref=e695]
+                              - row "3 Task 3 Select supplier... 1FS 2 2 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e697]:
+                                - cell [ref=e698]:
+                                  - checkbox [ref=e699] [cursor=pointer]
+                                - cell "3" [ref=e700]
+                                - cell "Task 3" [ref=e701]:
+                                  - textbox [ref=e702]: Task 3
+                                - cell "Select supplier..." [ref=e703]:
+                                  - combobox [ref=e704]:
+                                    - option "Select supplier..." [selected]
+                                    - option "A1 Builders Finals Services Group"
+                                    - option "AIR CONDITIONING"
+                                    - option "ALARMS"
+                                    - option "APPLIANCES"
+                                    - option "AW GEOTECHNICS"
+                                    - option "Abodable"
+                                    - option "Accelerate Sustainability Assessments"
+                                    - option "Access Allways Consultants"
+                                    - option "Admin"
+                                    - option "Alex Wang Pty Ltd"
+                                    - option "All Clear Electrical"
+                                    - option "All Industry Safety QLD (AIS)"
+                                    - option "All Weather Trading"
+                                    - option "Aspect Joinery Pty Ltd"
+                                    - option "AusCoast Fire"
+                                    - option "Ausreo Pty Ltd"
+                                    - option "Austral - Rochedale"
+                                    - option "Austral Insulation"
+                                    - option "Australian Disability Homes"
+                                    - option "BALUSTRADING"
+                                    - option "BRICK HARDWARE"
+                                    - option "BRICKLAYER"
+                                    - option "BRICKS"
+                                    - option "BSK and associates"
+                                    - option "BWS Earthworks"
+                                    - option "Bank"
+                                    - option "Bittn Australia Pty Ltd"
+                                    - option "Braiden Brothers Carpentry"
+                                    - option "Building and Construction Supplies PTY Ltd"
+                                    - option "Bunnings"
+                                    - option "CABINET MAKER"
+                                    - option "CARPENTER"
+                                    - option "CBMA"
+                                    - option "CLOTHES LINES"
+                                    - option "COLOUR CONSULTANT"
+                                    - option "CONCRETE"
+                                    - option "CONCRETE CUTTING"
+                                    - option "CONCRETE PUMPING"
+                                    - option "CONCRETOR"
+                                    - option "CRANE"
+                                    - option "Carl Strong Tiling"
+                                    - option "Carpentry"
+                                    - option "Chromagen Australia Pty Ltd"
+                                    - option "Civic Shower Screens & Wardrobes"
+                                    - option "Cleaning Co"
+                                    - option "Client"
+                                    - option "Coastal Silt Fence"
+                                    - option "Concrete Co"
+                                    - option "Council"
+                                    - option "Cross Cranes"
+                                    - option "D.A.M Quality Plasterboard Finishes"
+                                    - option "DATA COMMUNICATIONS"
+                                    - option "DECORATIVE MOULDINGS"
+                                    - option "DEMOLITION"
+                                    - option "DOOR FURNITURE"
+                                    - option "DRAFTING"
+                                    - option "DRIVEWAY"
+                                    - option "Dinkum Dunnies"
+                                    - option "Direct Scaffold Pty LTD"
+                                    - option "ELECTRICAL"
+                                    - option "ENERGY"
+                                    - option "ENERGY RATING"
+                                    - option "ENGINEER"
+                                    - option "ENTRY DOORS"
+                                    - option "EXTERNAL CLADDING"
+                                    - option "Envy Plumbing"
+                                    - option "Excavation"
+                                    - option "FENCING"
+                                    - option "FIX-OUT MATERIALS"
+                                    - option "FLOOR COVERING"
+                                    - option "Ferris Town Planning Pty Ltd"
+                                    - option "Finlaysons Timber & Hardware Pty Ltd"
+                                    - option "Fletchers Transport Pty Ltd"
+                                    - option "Flooring Creations QLD"
+                                    - option "Fluid Building Approvals"
+                                    - option "GARAGE DOORS"
+                                    - option "GAS"
+                                    - option "GEN2612"
+                                    - option "GMA Certification Group"
+                                    - option "Gaswork Heavy Industries PTY Ltd"
+                                    - option "Gold Coast Gappng"
+                                    - option "Gold Coast Post Forming"
+                                    - option "H Design Hydraulic Engineering Group Pty Ltd"
+                                    - option "HARDWARE"
+                                    - option "HIRE"
+                                    - option "HOME AUTOMATION"
+                                    - option "HOT WATER SYSTEMS"
+                                    - option "HOUSE CLEAN"
+                                    - option "Hafele"
+                                    - option "Harvey Norman Commercial QLD"
+                                    - option "Harvey's Mechanical & Welding Services Pty Ltd"
+                                    - option "Heartwood Industries Pty Ltd"
+                                    - option "HighFields Turf"
+                                    - option "INSURANCE"
+                                    - option "INTERNAL DOORS"
+                                    - option "Icon Skip Bins"
+                                    - option "Insulhome"
+                                    - option "Internal Stairs"
+                                    - option "JJ & J Lyons Painter"
+                                    - option "JND Concrete"
+                                    - option "John Gordon Electrical"
+                                    - option "Joii Carpentry"
+                                    - option "Joii Flooring"
+                                    - option "Joii Landscaping"
+                                    - option "Joii Roofing"
+                                    - option "Joii Tiling"
+                                    - option "Jopa Queensland"
+                                    - option "Justin Stevens"
+                                    - option "Keeler Hardware"
+                                    - option "Kitchen Co"
+                                    - option "LAND"
+                                    - option "LANDSCAPING"
+                                    - option "LEGAL"
+                                    - option "LETTERBOXES"
+                                    - option "LIGHT FIT"
+                                    - option "La Rocca QLD Marble and Granite Pty Ltd"
+                                    - option "Latitude 28 Cabling Pty Ltd"
+                                    - option "Legal"
+                                    - option "Logan City Council"
+                                    - option "Logan Concrete Sawing and Drilling"
+                                    - option "Lovering Installations QLD"
+                                    - option "MACHINERY"
+                                    - option "MI Painting and Decorating Services"
+                                    - option "MI Painting and Decorating Services Marko Lvanovic"
+                                    - option "MIRRORS"
+                                    - option "MM Redland Bay"
+                                    - option "Mesh And Bar"
+                                    - option "NATIONAL TILES CO PTY LTD"
+                                    - option "Nu Style Trade Pty Ltd"
+                                    - option "OFFICE ADMIN"
+                                    - option "Opel Concrete Pty Ltd Opel"
+                                    - option "Open Electrical"
+                                    - option "Origin Energy"
+                                    - option "PAINTER"
+                                    - option "PAL Plumbing"
+                                    - option "PATIO"
+                                    - option "PLASTER BOARD"
+                                    - option "PLSL"
+                                    - option "PLUMBER"
+                                    - option "PLUMBING FITOFF GEAR"
+                                    - option "POOL"
+                                    - option "PRELIM"
+                                    - option "PRIVACY SCREENS"
+                                    - option "PRIVATE CERTIFIER"
+                                    - option "Painting Co"
+                                    - option "Plasterer"
+                                    - option "Plumbing Co"
+                                    - option "Pre Hung Doors (PHD)"
+                                    - option "QBCC"
+                                    - option "QFloors"
+                                    - option "QUICK SPEC"
+                                    - option "Queensland Gate Automation"
+                                    - option "Queensland Stairs (RALSAD)"
+                                    - option "RENDER"
+                                    - option "RETAINING WALL"
+                                    - option "RJF Installations"
+                                    - option "ROOF"
+                                    - option "Rapid Stone And Tiles Pty Ltd"
+                                    - option "ReadyMix Concrete"
+                                    - option "ReadyMix Concrete (Was Excel Concrete Pty Ltd)"
+                                    - option "Riki's Resealing"
+                                    - option "Robert Harder"
+                                    - option "Robs Carpentry"
+                                    - option "Roofing Co"
+                                    - option "Roofing Supplies"
+                                    - option "Rowcon Recycling"
+                                    - option "SAFETY AUDIT"
+                                    - option "SALES"
+                                    - option "SCAFFOLD"
+                                    - option "SEARCHES"
+                                    - option "SEDIMENT CONTROL"
+                                    - option "SEWAGE SYSTEMS"
+                                    - option "SHOWER SCREENS"
+                                    - option "SITE CLEAN"
+                                    - option "SITE WORKS"
+                                    - option "SKYLIGHTS"
+                                    - option "SOFFIT"
+                                    - option "STA Consulting Engineers"
+                                    - option "STAIRS"
+                                    - option "STEEL"
+                                    - option "STEEL MESH"
+                                    - option "SURVEYOR"
+                                    - option "Sams carpentry SEQ"
+                                    - option "Samwell Plumbing"
+                                    - option "Sediment Erosion Control Services"
+                                    - option "Select Water Tanks"
+                                    - option "Southern Star Windows (QLD)"
+                                    - option "Sparky"
+                                    - option "Spot On Plumbing and Drainage"
+                                    - option "Star Airconditioning"
+                                    - option "Stratus"
+                                    - option "Sunnycoast Concreting"
+                                    - option "Sunshine Coast Council"
+                                    - option "Sunstate Garage Doors (Travis Voigt TA)"
+                                    - option "Survey 360 Pty Ltd"
+                                    - option "Survey Mark"
+                                    - option "TEMPORARY FENCING"
+                                    - option "TEMPORARY POWER"
+                                    - option "TERMITE PROTECTION"
+                                    - option "TILE"
+                                    - option "TILER"
+                                    - option "TIMBER FLOORING"
+                                    - option "TIMBER FRAME"
+                                    - option "TL Electrical"
+                                    - option "TRUSSES"
+                                    - option "TURN KEY"
+                                    - option "Tekna Admin"
+                                    - option "Tekna Admin"
+                                    - option "Tekna Carpentry"
+                                    - option "Tekna Coach"
+                                    - option "Tekna Finishing Touches"
+                                    - option "Tekna Franchise"
+                                    - option "Tekna Homes"
+                                    - option "Tekna Insurance"
+                                    - option "Tekna Kitchen Labour"
+                                    - option "Tekna Kitchen Material"
+                                    - option "Tekna Marketing"
+                                    - option "Tekna Sales"
+                                    - option "Tekna Site"
+                                    - option "Tekna Supervisor"
+                                    - option "Tekna T3D"
+                                    - option "Testing Co"
+                                    - option "The One Group"
+                                    - option "The Truss Company"
+                                    - option "Tiling Co"
+                                    - option "Timber Supplier"
+                                    - option "Torsion Admin Pty Ltd"
+                                    - option "Torsion Quality Controller"
+                                    - option "Trade Tilers Centre"
+                                    - option "Trusses & Pre Nail"
+                                    - option "Unique Windows Services"
+                                    - option "United Waste Services"
+                                    - option "WARDROBE DOORS"
+                                    - option "WATER"
+                                    - option "WATER TANKS"
+                                    - option "WC HIRE"
+                                    - option "WET SEAL"
+                                    - option "WINDOWS"
+                                    - option "Wayke Waterproofing."
+                                    - option "Wayke Waterproofing. Ware"
+                                    - option "Work Place Health and Safety"
+                                - cell "1FS" [ref=e705]:
+                                  - button "1FS" [ref=e706] [cursor=pointer]
+                                - cell "2" [ref=e707]:
+                                  - spinbutton [ref=e708]: "2"
+                                - cell "2" [ref=e709]:
+                                  - generic [ref=e710]: "2"
+                                - cell "Unlocked - allows cascade updates" [ref=e711]:
+                                  - checkbox "Unlocked - allows cascade updates" [ref=e712]
+                                - cell [ref=e713]:
+                                  - checkbox [checked] [ref=e714]
+                                - cell "Select a supplier first" [ref=e715]:
+                                  - checkbox "Select a supplier first" [disabled] [ref=e716]
+                                - cell "0 items" [ref=e717]:
+                                  - button "0 items" [disabled] [ref=e718]
+                                - cell [ref=e719]:
+                                  - checkbox [ref=e720]
+                                - cell [ref=e721]:
+                                  - textbox "tag1, tag2" [ref=e722]
+                                - cell [ref=e723]:
+                                  - checkbox [ref=e724]
+                                - cell [ref=e725]:
+                                  - checkbox [ref=e726]
+                                - cell "10" [ref=e727]:
+                                  - spinbutton [disabled] [ref=e728]: "10"
+                                - cell [ref=e729]:
+                                  - checkbox [ref=e731]
+                                - cell "0 tasks" [ref=e732]:
+                                  - button "0 tasks" [ref=e733] [cursor=pointer]
+                                - cell "0 subtasks" [ref=e734]:
+                                  - button "0 subtasks" [ref=e735] [cursor=pointer]
+                                - cell "0 tasks" [ref=e736]:
+                                  - button "0 tasks" [ref=e737] [cursor=pointer]
+                                - cell [ref=e738]:
+                                  - checkbox [ref=e739] [cursor=pointer]
+                                - cell [ref=e740]:
+                                  - checkbox [ref=e741] [cursor=pointer]
+                                - cell [ref=e742]:
+                                  - checkbox [ref=e743] [cursor=pointer]
+                                - cell [ref=e744]:
+                                  - checkbox [ref=e745] [cursor=pointer]
+                                - cell [ref=e746]:
+                                  - checkbox [ref=e747] [cursor=pointer]
+                                - cell "Toggle Plan" [ref=e748]:
+                                  - checkbox "Toggle Plan" [ref=e749] [cursor=pointer]
+                                - cell "Toggle Sales" [ref=e750]:
+                                  - checkbox "Toggle Sales" [ref=e751] [cursor=pointer]
+                                - cell "Toggle Precon" [ref=e752]:
+                                  - checkbox "Toggle Precon" [ref=e753] [cursor=pointer]
+                                - cell "Toggle Final Certificate" [ref=e754]:
+                                  - checkbox "Toggle Final Certificate" [ref=e755] [cursor=pointer]
+                                - cell "Toggle Site" [ref=e756]:
+                                  - checkbox "Toggle Site" [ref=e757] [cursor=pointer]
+                                - cell "Toggle Photo" [ref=e758]:
+                                  - checkbox "Toggle Photo" [ref=e759] [cursor=pointer]
+                                - cell "Toggle Client" [ref=e760]:
+                                  - checkbox "Toggle Client" [ref=e761] [cursor=pointer]
+                                - cell "Toggle Client Photo" [ref=e762]:
+                                  - checkbox "Toggle Client Photo" [ref=e763] [cursor=pointer]
+                                - cell "Toggle Photos" [ref=e764]:
+                                  - checkbox "Toggle Photos" [ref=e765] [cursor=pointer]
+                                - cell [ref=e766]:
+                                  - generic [ref=e767]:
+                                    - button "Move up" [ref=e768] [cursor=pointer]:
+                                      - img [ref=e769]
+                                    - button "Move down" [ref=e771] [cursor=pointer]:
+                                      - img [ref=e772]
+                                    - button "Delete" [ref=e774] [cursor=pointer]:
+                                      - img [ref=e775]
+                              - row "4 Task 4 Select supplier... 3FS 2 4 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e777]:
+                                - cell [ref=e778]:
+                                  - checkbox [ref=e779] [cursor=pointer]
+                                - cell "4" [ref=e780]
+                                - cell "Task 4" [ref=e781]:
+                                  - textbox [ref=e782]: Task 4
+                                - cell "Select supplier..." [ref=e783]:
+                                  - combobox [ref=e784]:
+                                    - option "Select supplier..." [selected]
+                                    - option "A1 Builders Finals Services Group"
+                                    - option "AIR CONDITIONING"
+                                    - option "ALARMS"
+                                    - option "APPLIANCES"
+                                    - option "AW GEOTECHNICS"
+                                    - option "Abodable"
+                                    - option "Accelerate Sustainability Assessments"
+                                    - option "Access Allways Consultants"
+                                    - option "Admin"
+                                    - option "Alex Wang Pty Ltd"
+                                    - option "All Clear Electrical"
+                                    - option "All Industry Safety QLD (AIS)"
+                                    - option "All Weather Trading"
+                                    - option "Aspect Joinery Pty Ltd"
+                                    - option "AusCoast Fire"
+                                    - option "Ausreo Pty Ltd"
+                                    - option "Austral - Rochedale"
+                                    - option "Austral Insulation"
+                                    - option "Australian Disability Homes"
+                                    - option "BALUSTRADING"
+                                    - option "BRICK HARDWARE"
+                                    - option "BRICKLAYER"
+                                    - option "BRICKS"
+                                    - option "BSK and associates"
+                                    - option "BWS Earthworks"
+                                    - option "Bank"
+                                    - option "Bittn Australia Pty Ltd"
+                                    - option "Braiden Brothers Carpentry"
+                                    - option "Building and Construction Supplies PTY Ltd"
+                                    - option "Bunnings"
+                                    - option "CABINET MAKER"
+                                    - option "CARPENTER"
+                                    - option "CBMA"
+                                    - option "CLOTHES LINES"
+                                    - option "COLOUR CONSULTANT"
+                                    - option "CONCRETE"
+                                    - option "CONCRETE CUTTING"
+                                    - option "CONCRETE PUMPING"
+                                    - option "CONCRETOR"
+                                    - option "CRANE"
+                                    - option "Carl Strong Tiling"
+                                    - option "Carpentry"
+                                    - option "Chromagen Australia Pty Ltd"
+                                    - option "Civic Shower Screens & Wardrobes"
+                                    - option "Cleaning Co"
+                                    - option "Client"
+                                    - option "Coastal Silt Fence"
+                                    - option "Concrete Co"
+                                    - option "Council"
+                                    - option "Cross Cranes"
+                                    - option "D.A.M Quality Plasterboard Finishes"
+                                    - option "DATA COMMUNICATIONS"
+                                    - option "DECORATIVE MOULDINGS"
+                                    - option "DEMOLITION"
+                                    - option "DOOR FURNITURE"
+                                    - option "DRAFTING"
+                                    - option "DRIVEWAY"
+                                    - option "Dinkum Dunnies"
+                                    - option "Direct Scaffold Pty LTD"
+                                    - option "ELECTRICAL"
+                                    - option "ENERGY"
+                                    - option "ENERGY RATING"
+                                    - option "ENGINEER"
+                                    - option "ENTRY DOORS"
+                                    - option "EXTERNAL CLADDING"
+                                    - option "Envy Plumbing"
+                                    - option "Excavation"
+                                    - option "FENCING"
+                                    - option "FIX-OUT MATERIALS"
+                                    - option "FLOOR COVERING"
+                                    - option "Ferris Town Planning Pty Ltd"
+                                    - option "Finlaysons Timber & Hardware Pty Ltd"
+                                    - option "Fletchers Transport Pty Ltd"
+                                    - option "Flooring Creations QLD"
+                                    - option "Fluid Building Approvals"
+                                    - option "GARAGE DOORS"
+                                    - option "GAS"
+                                    - option "GEN2612"
+                                    - option "GMA Certification Group"
+                                    - option "Gaswork Heavy Industries PTY Ltd"
+                                    - option "Gold Coast Gappng"
+                                    - option "Gold Coast Post Forming"
+                                    - option "H Design Hydraulic Engineering Group Pty Ltd"
+                                    - option "HARDWARE"
+                                    - option "HIRE"
+                                    - option "HOME AUTOMATION"
+                                    - option "HOT WATER SYSTEMS"
+                                    - option "HOUSE CLEAN"
+                                    - option "Hafele"
+                                    - option "Harvey Norman Commercial QLD"
+                                    - option "Harvey's Mechanical & Welding Services Pty Ltd"
+                                    - option "Heartwood Industries Pty Ltd"
+                                    - option "HighFields Turf"
+                                    - option "INSURANCE"
+                                    - option "INTERNAL DOORS"
+                                    - option "Icon Skip Bins"
+                                    - option "Insulhome"
+                                    - option "Internal Stairs"
+                                    - option "JJ & J Lyons Painter"
+                                    - option "JND Concrete"
+                                    - option "John Gordon Electrical"
+                                    - option "Joii Carpentry"
+                                    - option "Joii Flooring"
+                                    - option "Joii Landscaping"
+                                    - option "Joii Roofing"
+                                    - option "Joii Tiling"
+                                    - option "Jopa Queensland"
+                                    - option "Justin Stevens"
+                                    - option "Keeler Hardware"
+                                    - option "Kitchen Co"
+                                    - option "LAND"
+                                    - option "LANDSCAPING"
+                                    - option "LEGAL"
+                                    - option "LETTERBOXES"
+                                    - option "LIGHT FIT"
+                                    - option "La Rocca QLD Marble and Granite Pty Ltd"
+                                    - option "Latitude 28 Cabling Pty Ltd"
+                                    - option "Legal"
+                                    - option "Logan City Council"
+                                    - option "Logan Concrete Sawing and Drilling"
+                                    - option "Lovering Installations QLD"
+                                    - option "MACHINERY"
+                                    - option "MI Painting and Decorating Services"
+                                    - option "MI Painting and Decorating Services Marko Lvanovic"
+                                    - option "MIRRORS"
+                                    - option "MM Redland Bay"
+                                    - option "Mesh And Bar"
+                                    - option "NATIONAL TILES CO PTY LTD"
+                                    - option "Nu Style Trade Pty Ltd"
+                                    - option "OFFICE ADMIN"
+                                    - option "Opel Concrete Pty Ltd Opel"
+                                    - option "Open Electrical"
+                                    - option "Origin Energy"
+                                    - option "PAINTER"
+                                    - option "PAL Plumbing"
+                                    - option "PATIO"
+                                    - option "PLASTER BOARD"
+                                    - option "PLSL"
+                                    - option "PLUMBER"
+                                    - option "PLUMBING FITOFF GEAR"
+                                    - option "POOL"
+                                    - option "PRELIM"
+                                    - option "PRIVACY SCREENS"
+                                    - option "PRIVATE CERTIFIER"
+                                    - option "Painting Co"
+                                    - option "Plasterer"
+                                    - option "Plumbing Co"
+                                    - option "Pre Hung Doors (PHD)"
+                                    - option "QBCC"
+                                    - option "QFloors"
+                                    - option "QUICK SPEC"
+                                    - option "Queensland Gate Automation"
+                                    - option "Queensland Stairs (RALSAD)"
+                                    - option "RENDER"
+                                    - option "RETAINING WALL"
+                                    - option "RJF Installations"
+                                    - option "ROOF"
+                                    - option "Rapid Stone And Tiles Pty Ltd"
+                                    - option "ReadyMix Concrete"
+                                    - option "ReadyMix Concrete (Was Excel Concrete Pty Ltd)"
+                                    - option "Riki's Resealing"
+                                    - option "Robert Harder"
+                                    - option "Robs Carpentry"
+                                    - option "Roofing Co"
+                                    - option "Roofing Supplies"
+                                    - option "Rowcon Recycling"
+                                    - option "SAFETY AUDIT"
+                                    - option "SALES"
+                                    - option "SCAFFOLD"
+                                    - option "SEARCHES"
+                                    - option "SEDIMENT CONTROL"
+                                    - option "SEWAGE SYSTEMS"
+                                    - option "SHOWER SCREENS"
+                                    - option "SITE CLEAN"
+                                    - option "SITE WORKS"
+                                    - option "SKYLIGHTS"
+                                    - option "SOFFIT"
+                                    - option "STA Consulting Engineers"
+                                    - option "STAIRS"
+                                    - option "STEEL"
+                                    - option "STEEL MESH"
+                                    - option "SURVEYOR"
+                                    - option "Sams carpentry SEQ"
+                                    - option "Samwell Plumbing"
+                                    - option "Sediment Erosion Control Services"
+                                    - option "Select Water Tanks"
+                                    - option "Southern Star Windows (QLD)"
+                                    - option "Sparky"
+                                    - option "Spot On Plumbing and Drainage"
+                                    - option "Star Airconditioning"
+                                    - option "Stratus"
+                                    - option "Sunnycoast Concreting"
+                                    - option "Sunshine Coast Council"
+                                    - option "Sunstate Garage Doors (Travis Voigt TA)"
+                                    - option "Survey 360 Pty Ltd"
+                                    - option "Survey Mark"
+                                    - option "TEMPORARY FENCING"
+                                    - option "TEMPORARY POWER"
+                                    - option "TERMITE PROTECTION"
+                                    - option "TILE"
+                                    - option "TILER"
+                                    - option "TIMBER FLOORING"
+                                    - option "TIMBER FRAME"
+                                    - option "TL Electrical"
+                                    - option "TRUSSES"
+                                    - option "TURN KEY"
+                                    - option "Tekna Admin"
+                                    - option "Tekna Admin"
+                                    - option "Tekna Carpentry"
+                                    - option "Tekna Coach"
+                                    - option "Tekna Finishing Touches"
+                                    - option "Tekna Franchise"
+                                    - option "Tekna Homes"
+                                    - option "Tekna Insurance"
+                                    - option "Tekna Kitchen Labour"
+                                    - option "Tekna Kitchen Material"
+                                    - option "Tekna Marketing"
+                                    - option "Tekna Sales"
+                                    - option "Tekna Site"
+                                    - option "Tekna Supervisor"
+                                    - option "Tekna T3D"
+                                    - option "Testing Co"
+                                    - option "The One Group"
+                                    - option "The Truss Company"
+                                    - option "Tiling Co"
+                                    - option "Timber Supplier"
+                                    - option "Torsion Admin Pty Ltd"
+                                    - option "Torsion Quality Controller"
+                                    - option "Trade Tilers Centre"
+                                    - option "Trusses & Pre Nail"
+                                    - option "Unique Windows Services"
+                                    - option "United Waste Services"
+                                    - option "WARDROBE DOORS"
+                                    - option "WATER"
+                                    - option "WATER TANKS"
+                                    - option "WC HIRE"
+                                    - option "WET SEAL"
+                                    - option "WINDOWS"
+                                    - option "Wayke Waterproofing."
+                                    - option "Wayke Waterproofing. Ware"
+                                    - option "Work Place Health and Safety"
+                                - cell "3FS" [ref=e785]:
+                                  - button "3FS" [ref=e786] [cursor=pointer]
+                                - cell "2" [ref=e787]:
+                                  - spinbutton [ref=e788]: "2"
+                                - cell "4" [ref=e789]:
+                                  - generic [ref=e790]: "4"
+                                - cell "Unlocked - allows cascade updates" [ref=e791]:
+                                  - checkbox "Unlocked - allows cascade updates" [ref=e792]
+                                - cell [ref=e793]:
+                                  - checkbox [checked] [ref=e794]
+                                - cell "Select a supplier first" [ref=e795]:
+                                  - checkbox "Select a supplier first" [disabled] [ref=e796]
+                                - cell "0 items" [ref=e797]:
+                                  - button "0 items" [disabled] [ref=e798]
+                                - cell [ref=e799]:
+                                  - checkbox [ref=e800]
+                                - cell [ref=e801]:
+                                  - textbox "tag1, tag2" [ref=e802]
+                                - cell [ref=e803]:
+                                  - checkbox [ref=e804]
+                                - cell [ref=e805]:
+                                  - checkbox [ref=e806]
+                                - cell "10" [ref=e807]:
+                                  - spinbutton [disabled] [ref=e808]: "10"
+                                - cell [ref=e809]:
+                                  - checkbox [ref=e811]
+                                - cell "0 tasks" [ref=e812]:
+                                  - button "0 tasks" [ref=e813] [cursor=pointer]
+                                - cell "0 subtasks" [ref=e814]:
+                                  - button "0 subtasks" [ref=e815] [cursor=pointer]
+                                - cell "0 tasks" [ref=e816]:
+                                  - button "0 tasks" [ref=e817] [cursor=pointer]
+                                - cell [ref=e818]:
+                                  - checkbox [ref=e819] [cursor=pointer]
+                                - cell [ref=e820]:
+                                  - checkbox [ref=e821] [cursor=pointer]
+                                - cell [ref=e822]:
+                                  - checkbox [ref=e823] [cursor=pointer]
+                                - cell [ref=e824]:
+                                  - checkbox [ref=e825] [cursor=pointer]
+                                - cell [ref=e826]:
+                                  - checkbox [ref=e827] [cursor=pointer]
+                                - cell "Toggle Plan" [ref=e828]:
+                                  - checkbox "Toggle Plan" [ref=e829] [cursor=pointer]
+                                - cell "Toggle Sales" [ref=e830]:
+                                  - checkbox "Toggle Sales" [ref=e831] [cursor=pointer]
+                                - cell "Toggle Precon" [ref=e832]:
+                                  - checkbox "Toggle Precon" [ref=e833] [cursor=pointer]
+                                - cell "Toggle Final Certificate" [ref=e834]:
+                                  - checkbox "Toggle Final Certificate" [ref=e835] [cursor=pointer]
+                                - cell "Toggle Site" [ref=e836]:
+                                  - checkbox "Toggle Site" [ref=e837] [cursor=pointer]
+                                - cell "Toggle Photo" [ref=e838]:
+                                  - checkbox "Toggle Photo" [ref=e839] [cursor=pointer]
+                                - cell "Toggle Client" [ref=e840]:
+                                  - checkbox "Toggle Client" [ref=e841] [cursor=pointer]
+                                - cell "Toggle Client Photo" [ref=e842]:
+                                  - checkbox "Toggle Client Photo" [ref=e843] [cursor=pointer]
+                                - cell "Toggle Photos" [ref=e844]:
+                                  - checkbox "Toggle Photos" [ref=e845] [cursor=pointer]
+                                - cell [ref=e846]:
+                                  - generic [ref=e847]:
+                                    - button "Move up" [ref=e848] [cursor=pointer]:
+                                      - img [ref=e849]
+                                    - button "Move down" [ref=e851] [cursor=pointer]:
+                                      - img [ref=e852]
+                                    - button "Delete" [ref=e854] [cursor=pointer]:
+                                      - img [ref=e855]
+                              - row "1 Task 1 Select supplier... None -3 0 Locked - prevents cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e857]:
+                                - cell [ref=e858]:
+                                  - checkbox [ref=e859] [cursor=pointer]
+                                - cell "1" [ref=e860]
+                                - cell "Task 1" [ref=e861]:
+                                  - textbox [ref=e862]: Task 1
+                                - cell "Select supplier..." [ref=e863]:
+                                  - combobox [ref=e864]:
+                                    - option "Select supplier..." [selected]
+                                    - option "A1 Builders Finals Services Group"
+                                    - option "AIR CONDITIONING"
+                                    - option "ALARMS"
+                                    - option "APPLIANCES"
+                                    - option "AW GEOTECHNICS"
+                                    - option "Abodable"
+                                    - option "Accelerate Sustainability Assessments"
+                                    - option "Access Allways Consultants"
+                                    - option "Admin"
+                                    - option "Alex Wang Pty Ltd"
+                                    - option "All Clear Electrical"
+                                    - option "All Industry Safety QLD (AIS)"
+                                    - option "All Weather Trading"
+                                    - option "Aspect Joinery Pty Ltd"
+                                    - option "AusCoast Fire"
+                                    - option "Ausreo Pty Ltd"
+                                    - option "Austral - Rochedale"
+                                    - option "Austral Insulation"
+                                    - option "Australian Disability Homes"
+                                    - option "BALUSTRADING"
+                                    - option "BRICK HARDWARE"
+                                    - option "BRICKLAYER"
+                                    - option "BRICKS"
+                                    - option "BSK and associates"
+                                    - option "BWS Earthworks"
+                                    - option "Bank"
+                                    - option "Bittn Australia Pty Ltd"
+                                    - option "Braiden Brothers Carpentry"
+                                    - option "Building and Construction Supplies PTY Ltd"
+                                    - option "Bunnings"
+                                    - option "CABINET MAKER"
+                                    - option "CARPENTER"
+                                    - option "CBMA"
+                                    - option "CLOTHES LINES"
+                                    - option "COLOUR CONSULTANT"
+                                    - option "CONCRETE"
+                                    - option "CONCRETE CUTTING"
+                                    - option "CONCRETE PUMPING"
+                                    - option "CONCRETOR"
+                                    - option "CRANE"
+                                    - option "Carl Strong Tiling"
+                                    - option "Carpentry"
+                                    - option "Chromagen Australia Pty Ltd"
+                                    - option "Civic Shower Screens & Wardrobes"
+                                    - option "Cleaning Co"
+                                    - option "Client"
+                                    - option "Coastal Silt Fence"
+                                    - option "Concrete Co"
+                                    - option "Council"
+                                    - option "Cross Cranes"
+                                    - option "D.A.M Quality Plasterboard Finishes"
+                                    - option "DATA COMMUNICATIONS"
+                                    - option "DECORATIVE MOULDINGS"
+                                    - option "DEMOLITION"
+                                    - option "DOOR FURNITURE"
+                                    - option "DRAFTING"
+                                    - option "DRIVEWAY"
+                                    - option "Dinkum Dunnies"
+                                    - option "Direct Scaffold Pty LTD"
+                                    - option "ELECTRICAL"
+                                    - option "ENERGY"
+                                    - option "ENERGY RATING"
+                                    - option "ENGINEER"
+                                    - option "ENTRY DOORS"
+                                    - option "EXTERNAL CLADDING"
+                                    - option "Envy Plumbing"
+                                    - option "Excavation"
+                                    - option "FENCING"
+                                    - option "FIX-OUT MATERIALS"
+                                    - option "FLOOR COVERING"
+                                    - option "Ferris Town Planning Pty Ltd"
+                                    - option "Finlaysons Timber & Hardware Pty Ltd"
+                                    - option "Fletchers Transport Pty Ltd"
+                                    - option "Flooring Creations QLD"
+                                    - option "Fluid Building Approvals"
+                                    - option "GARAGE DOORS"
+                                    - option "GAS"
+                                    - option "GEN2612"
+                                    - option "GMA Certification Group"
+                                    - option "Gaswork Heavy Industries PTY Ltd"
+                                    - option "Gold Coast Gappng"
+                                    - option "Gold Coast Post Forming"
+                                    - option "H Design Hydraulic Engineering Group Pty Ltd"
+                                    - option "HARDWARE"
+                                    - option "HIRE"
+                                    - option "HOME AUTOMATION"
+                                    - option "HOT WATER SYSTEMS"
+                                    - option "HOUSE CLEAN"
+                                    - option "Hafele"
+                                    - option "Harvey Norman Commercial QLD"
+                                    - option "Harvey's Mechanical & Welding Services Pty Ltd"
+                                    - option "Heartwood Industries Pty Ltd"
+                                    - option "HighFields Turf"
+                                    - option "INSURANCE"
+                                    - option "INTERNAL DOORS"
+                                    - option "Icon Skip Bins"
+                                    - option "Insulhome"
+                                    - option "Internal Stairs"
+                                    - option "JJ & J Lyons Painter"
+                                    - option "JND Concrete"
+                                    - option "John Gordon Electrical"
+                                    - option "Joii Carpentry"
+                                    - option "Joii Flooring"
+                                    - option "Joii Landscaping"
+                                    - option "Joii Roofing"
+                                    - option "Joii Tiling"
+                                    - option "Jopa Queensland"
+                                    - option "Justin Stevens"
+                                    - option "Keeler Hardware"
+                                    - option "Kitchen Co"
+                                    - option "LAND"
+                                    - option "LANDSCAPING"
+                                    - option "LEGAL"
+                                    - option "LETTERBOXES"
+                                    - option "LIGHT FIT"
+                                    - option "La Rocca QLD Marble and Granite Pty Ltd"
+                                    - option "Latitude 28 Cabling Pty Ltd"
+                                    - option "Legal"
+                                    - option "Logan City Council"
+                                    - option "Logan Concrete Sawing and Drilling"
+                                    - option "Lovering Installations QLD"
+                                    - option "MACHINERY"
+                                    - option "MI Painting and Decorating Services"
+                                    - option "MI Painting and Decorating Services Marko Lvanovic"
+                                    - option "MIRRORS"
+                                    - option "MM Redland Bay"
+                                    - option "Mesh And Bar"
+                                    - option "NATIONAL TILES CO PTY LTD"
+                                    - option "Nu Style Trade Pty Ltd"
+                                    - option "OFFICE ADMIN"
+                                    - option "Opel Concrete Pty Ltd Opel"
+                                    - option "Open Electrical"
+                                    - option "Origin Energy"
+                                    - option "PAINTER"
+                                    - option "PAL Plumbing"
+                                    - option "PATIO"
+                                    - option "PLASTER BOARD"
+                                    - option "PLSL"
+                                    - option "PLUMBER"
+                                    - option "PLUMBING FITOFF GEAR"
+                                    - option "POOL"
+                                    - option "PRELIM"
+                                    - option "PRIVACY SCREENS"
+                                    - option "PRIVATE CERTIFIER"
+                                    - option "Painting Co"
+                                    - option "Plasterer"
+                                    - option "Plumbing Co"
+                                    - option "Pre Hung Doors (PHD)"
+                                    - option "QBCC"
+                                    - option "QFloors"
+                                    - option "QUICK SPEC"
+                                    - option "Queensland Gate Automation"
+                                    - option "Queensland Stairs (RALSAD)"
+                                    - option "RENDER"
+                                    - option "RETAINING WALL"
+                                    - option "RJF Installations"
+                                    - option "ROOF"
+                                    - option "Rapid Stone And Tiles Pty Ltd"
+                                    - option "ReadyMix Concrete"
+                                    - option "ReadyMix Concrete (Was Excel Concrete Pty Ltd)"
+                                    - option "Riki's Resealing"
+                                    - option "Robert Harder"
+                                    - option "Robs Carpentry"
+                                    - option "Roofing Co"
+                                    - option "Roofing Supplies"
+                                    - option "Rowcon Recycling"
+                                    - option "SAFETY AUDIT"
+                                    - option "SALES"
+                                    - option "SCAFFOLD"
+                                    - option "SEARCHES"
+                                    - option "SEDIMENT CONTROL"
+                                    - option "SEWAGE SYSTEMS"
+                                    - option "SHOWER SCREENS"
+                                    - option "SITE CLEAN"
+                                    - option "SITE WORKS"
+                                    - option "SKYLIGHTS"
+                                    - option "SOFFIT"
+                                    - option "STA Consulting Engineers"
+                                    - option "STAIRS"
+                                    - option "STEEL"
+                                    - option "STEEL MESH"
+                                    - option "SURVEYOR"
+                                    - option "Sams carpentry SEQ"
+                                    - option "Samwell Plumbing"
+                                    - option "Sediment Erosion Control Services"
+                                    - option "Select Water Tanks"
+                                    - option "Southern Star Windows (QLD)"
+                                    - option "Sparky"
+                                    - option "Spot On Plumbing and Drainage"
+                                    - option "Star Airconditioning"
+                                    - option "Stratus"
+                                    - option "Sunnycoast Concreting"
+                                    - option "Sunshine Coast Council"
+                                    - option "Sunstate Garage Doors (Travis Voigt TA)"
+                                    - option "Survey 360 Pty Ltd"
+                                    - option "Survey Mark"
+                                    - option "TEMPORARY FENCING"
+                                    - option "TEMPORARY POWER"
+                                    - option "TERMITE PROTECTION"
+                                    - option "TILE"
+                                    - option "TILER"
+                                    - option "TIMBER FLOORING"
+                                    - option "TIMBER FRAME"
+                                    - option "TL Electrical"
+                                    - option "TRUSSES"
+                                    - option "TURN KEY"
+                                    - option "Tekna Admin"
+                                    - option "Tekna Admin"
+                                    - option "Tekna Carpentry"
+                                    - option "Tekna Coach"
+                                    - option "Tekna Finishing Touches"
+                                    - option "Tekna Franchise"
+                                    - option "Tekna Homes"
+                                    - option "Tekna Insurance"
+                                    - option "Tekna Kitchen Labour"
+                                    - option "Tekna Kitchen Material"
+                                    - option "Tekna Marketing"
+                                    - option "Tekna Sales"
+                                    - option "Tekna Site"
+                                    - option "Tekna Supervisor"
+                                    - option "Tekna T3D"
+                                    - option "Testing Co"
+                                    - option "The One Group"
+                                    - option "The Truss Company"
+                                    - option "Tiling Co"
+                                    - option "Timber Supplier"
+                                    - option "Torsion Admin Pty Ltd"
+                                    - option "Torsion Quality Controller"
+                                    - option "Trade Tilers Centre"
+                                    - option "Trusses & Pre Nail"
+                                    - option "Unique Windows Services"
+                                    - option "United Waste Services"
+                                    - option "WARDROBE DOORS"
+                                    - option "WATER"
+                                    - option "WATER TANKS"
+                                    - option "WC HIRE"
+                                    - option "WET SEAL"
+                                    - option "WINDOWS"
+                                    - option "Wayke Waterproofing."
+                                    - option "Wayke Waterproofing. Ware"
+                                    - option "Work Place Health and Safety"
+                                - cell "None" [ref=e865]:
+                                  - button "None" [ref=e866] [cursor=pointer]
+                                - cell "-3" [ref=e867]:
+                                  - spinbutton [ref=e868]: "-3"
+                                - cell "0" [ref=e869]:
+                                  - generic [ref=e870]: "0"
+                                - cell "Locked - prevents cascade updates" [ref=e871]:
+                                  - checkbox "Locked - prevents cascade updates" [checked] [ref=e872]
+                                - cell [ref=e873]:
+                                  - checkbox [checked] [ref=e874]
+                                - cell "Select a supplier first" [ref=e875]:
+                                  - checkbox "Select a supplier first" [disabled] [ref=e876]
+                                - cell "0 items" [ref=e877]:
+                                  - button "0 items" [disabled] [ref=e878]
+                                - cell [ref=e879]:
+                                  - checkbox [ref=e880]
+                                - cell [ref=e881]:
+                                  - textbox "tag1, tag2" [ref=e882]
+                                - cell [ref=e883]:
+                                  - checkbox [ref=e884]
+                                - cell [ref=e885]:
+                                  - checkbox [ref=e886]
+                                - cell "10" [ref=e887]:
+                                  - spinbutton [disabled] [ref=e888]: "10"
+                                - cell [ref=e889]:
+                                  - checkbox [ref=e891]
+                                - cell "0 tasks" [ref=e892]:
+                                  - button "0 tasks" [ref=e893] [cursor=pointer]
+                                - cell "0 subtasks" [ref=e894]:
+                                  - button "0 subtasks" [ref=e895] [cursor=pointer]
+                                - cell "0 tasks" [ref=e896]:
+                                  - button "0 tasks" [ref=e897] [cursor=pointer]
+                                - cell [ref=e898]:
+                                  - checkbox [ref=e899] [cursor=pointer]
+                                - cell [ref=e900]:
+                                  - checkbox [ref=e901] [cursor=pointer]
+                                - cell [ref=e902]:
+                                  - checkbox [ref=e903] [cursor=pointer]
+                                - cell [ref=e904]:
+                                  - checkbox [ref=e905] [cursor=pointer]
+                                - cell [ref=e906]:
+                                  - checkbox [ref=e907] [cursor=pointer]
+                                - cell "Toggle Plan" [ref=e908]:
+                                  - checkbox "Toggle Plan" [ref=e909] [cursor=pointer]
+                                - cell "Toggle Sales" [ref=e910]:
+                                  - checkbox "Toggle Sales" [ref=e911] [cursor=pointer]
+                                - cell "Toggle Precon" [ref=e912]:
+                                  - checkbox "Toggle Precon" [ref=e913] [cursor=pointer]
+                                - cell "Toggle Final Certificate" [ref=e914]:
+                                  - checkbox "Toggle Final Certificate" [ref=e915] [cursor=pointer]
+                                - cell "Toggle Site" [ref=e916]:
+                                  - checkbox "Toggle Site" [ref=e917] [cursor=pointer]
+                                - cell "Toggle Photo" [ref=e918]:
+                                  - checkbox "Toggle Photo" [ref=e919] [cursor=pointer]
+                                - cell "Toggle Client" [ref=e920]:
+                                  - checkbox "Toggle Client" [ref=e921] [cursor=pointer]
+                                - cell "Toggle Client Photo" [ref=e922]:
+                                  - checkbox "Toggle Client Photo" [ref=e923] [cursor=pointer]
+                                - cell "Toggle Photos" [ref=e924]:
+                                  - checkbox "Toggle Photos" [ref=e925] [cursor=pointer]
+                                - cell [ref=e926]:
+                                  - generic [ref=e927]:
+                                    - button "Move down" [ref=e928] [cursor=pointer]:
+                                      - img [ref=e929]
+                                    - button "Delete" [ref=e931] [cursor=pointer]:
+                                      - img [ref=e932]
+                              - row "5 Task 5 Select supplier... 4FS 2 6 Unlocked - allows cascade updates Select a supplier first 0 items 10 0 tasks 0 subtasks 0 tasks Toggle Plan Toggle Sales Toggle Precon Toggle Final Certificate Toggle Site Toggle Photo Toggle Client Toggle Client Photo Toggle Photos" [ref=e934]:
+                                - cell [ref=e935]:
+                                  - checkbox [ref=e936] [cursor=pointer]
+                                - cell "5" [ref=e937]
+                                - cell "Task 5" [ref=e938]:
+                                  - textbox [ref=e939]: Task 5
+                                - cell "Select supplier..." [ref=e940]:
+                                  - combobox [ref=e941]:
+                                    - option "Select supplier..." [selected]
+                                    - option "A1 Builders Finals Services Group"
+                                    - option "AIR CONDITIONING"
+                                    - option "ALARMS"
+                                    - option "APPLIANCES"
+                                    - option "AW GEOTECHNICS"
+                                    - option "Abodable"
+                                    - option "Accelerate Sustainability Assessments"
+                                    - option "Access Allways Consultants"
+                                    - option "Admin"
+                                    - option "Alex Wang Pty Ltd"
+                                    - option "All Clear Electrical"
+                                    - option "All Industry Safety QLD (AIS)"
+                                    - option "All Weather Trading"
+                                    - option "Aspect Joinery Pty Ltd"
+                                    - option "AusCoast Fire"
+                                    - option "Ausreo Pty Ltd"
+                                    - option "Austral - Rochedale"
+                                    - option "Austral Insulation"
+                                    - option "Australian Disability Homes"
+                                    - option "BALUSTRADING"
+                                    - option "BRICK HARDWARE"
+                                    - option "BRICKLAYER"
+                                    - option "BRICKS"
+                                    - option "BSK and associates"
+                                    - option "BWS Earthworks"
+                                    - option "Bank"
+                                    - option "Bittn Australia Pty Ltd"
+                                    - option "Braiden Brothers Carpentry"
+                                    - option "Building and Construction Supplies PTY Ltd"
+                                    - option "Bunnings"
+                                    - option "CABINET MAKER"
+                                    - option "CARPENTER"
+                                    - option "CBMA"
+                                    - option "CLOTHES LINES"
+                                    - option "COLOUR CONSULTANT"
+                                    - option "CONCRETE"
+                                    - option "CONCRETE CUTTING"
+                                    - option "CONCRETE PUMPING"
+                                    - option "CONCRETOR"
+                                    - option "CRANE"
+                                    - option "Carl Strong Tiling"
+                                    - option "Carpentry"
+                                    - option "Chromagen Australia Pty Ltd"
+                                    - option "Civic Shower Screens & Wardrobes"
+                                    - option "Cleaning Co"
+                                    - option "Client"
+                                    - option "Coastal Silt Fence"
+                                    - option "Concrete Co"
+                                    - option "Council"
+                                    - option "Cross Cranes"
+                                    - option "D.A.M Quality Plasterboard Finishes"
+                                    - option "DATA COMMUNICATIONS"
+                                    - option "DECORATIVE MOULDINGS"
+                                    - option "DEMOLITION"
+                                    - option "DOOR FURNITURE"
+                                    - option "DRAFTING"
+                                    - option "DRIVEWAY"
+                                    - option "Dinkum Dunnies"
+                                    - option "Direct Scaffold Pty LTD"
+                                    - option "ELECTRICAL"
+                                    - option "ENERGY"
+                                    - option "ENERGY RATING"
+                                    - option "ENGINEER"
+                                    - option "ENTRY DOORS"
+                                    - option "EXTERNAL CLADDING"
+                                    - option "Envy Plumbing"
+                                    - option "Excavation"
+                                    - option "FENCING"
+                                    - option "FIX-OUT MATERIALS"
+                                    - option "FLOOR COVERING"
+                                    - option "Ferris Town Planning Pty Ltd"
+                                    - option "Finlaysons Timber & Hardware Pty Ltd"
+                                    - option "Fletchers Transport Pty Ltd"
+                                    - option "Flooring Creations QLD"
+                                    - option "Fluid Building Approvals"
+                                    - option "GARAGE DOORS"
+                                    - option "GAS"
+                                    - option "GEN2612"
+                                    - option "GMA Certification Group"
+                                    - option "Gaswork Heavy Industries PTY Ltd"
+                                    - option "Gold Coast Gappng"
+                                    - option "Gold Coast Post Forming"
+                                    - option "H Design Hydraulic Engineering Group Pty Ltd"
+                                    - option "HARDWARE"
+                                    - option "HIRE"
+                                    - option "HOME AUTOMATION"
+                                    - option "HOT WATER SYSTEMS"
+                                    - option "HOUSE CLEAN"
+                                    - option "Hafele"
+                                    - option "Harvey Norman Commercial QLD"
+                                    - option "Harvey's Mechanical & Welding Services Pty Ltd"
+                                    - option "Heartwood Industries Pty Ltd"
+                                    - option "HighFields Turf"
+                                    - option "INSURANCE"
+                                    - option "INTERNAL DOORS"
+                                    - option "Icon Skip Bins"
+                                    - option "Insulhome"
+                                    - option "Internal Stairs"
+                                    - option "JJ & J Lyons Painter"
+                                    - option "JND Concrete"
+                                    - option "John Gordon Electrical"
+                                    - option "Joii Carpentry"
+                                    - option "Joii Flooring"
+                                    - option "Joii Landscaping"
+                                    - option "Joii Roofing"
+                                    - option "Joii Tiling"
+                                    - option "Jopa Queensland"
+                                    - option "Justin Stevens"
+                                    - option "Keeler Hardware"
+                                    - option "Kitchen Co"
+                                    - option "LAND"
+                                    - option "LANDSCAPING"
+                                    - option "LEGAL"
+                                    - option "LETTERBOXES"
+                                    - option "LIGHT FIT"
+                                    - option "La Rocca QLD Marble and Granite Pty Ltd"
+                                    - option "Latitude 28 Cabling Pty Ltd"
+                                    - option "Legal"
+                                    - option "Logan City Council"
+                                    - option "Logan Concrete Sawing and Drilling"
+                                    - option "Lovering Installations QLD"
+                                    - option "MACHINERY"
+                                    - option "MI Painting and Decorating Services"
+                                    - option "MI Painting and Decorating Services Marko Lvanovic"
+                                    - option "MIRRORS"
+                                    - option "MM Redland Bay"
+                                    - option "Mesh And Bar"
+                                    - option "NATIONAL TILES CO PTY LTD"
+                                    - option "Nu Style Trade Pty Ltd"
+                                    - option "OFFICE ADMIN"
+                                    - option "Opel Concrete Pty Ltd Opel"
+                                    - option "Open Electrical"
+                                    - option "Origin Energy"
+                                    - option "PAINTER"
+                                    - option "PAL Plumbing"
+                                    - option "PATIO"
+                                    - option "PLASTER BOARD"
+                                    - option "PLSL"
+                                    - option "PLUMBER"
+                                    - option "PLUMBING FITOFF GEAR"
+                                    - option "POOL"
+                                    - option "PRELIM"
+                                    - option "PRIVACY SCREENS"
+                                    - option "PRIVATE CERTIFIER"
+                                    - option "Painting Co"
+                                    - option "Plasterer"
+                                    - option "Plumbing Co"
+                                    - option "Pre Hung Doors (PHD)"
+                                    - option "QBCC"
+                                    - option "QFloors"
+                                    - option "QUICK SPEC"
+                                    - option "Queensland Gate Automation"
+                                    - option "Queensland Stairs (RALSAD)"
+                                    - option "RENDER"
+                                    - option "RETAINING WALL"
+                                    - option "RJF Installations"
+                                    - option "ROOF"
+                                    - option "Rapid Stone And Tiles Pty Ltd"
+                                    - option "ReadyMix Concrete"
+                                    - option "ReadyMix Concrete (Was Excel Concrete Pty Ltd)"
+                                    - option "Riki's Resealing"
+                                    - option "Robert Harder"
+                                    - option "Robs Carpentry"
+                                    - option "Roofing Co"
+                                    - option "Roofing Supplies"
+                                    - option "Rowcon Recycling"
+                                    - option "SAFETY AUDIT"
+                                    - option "SALES"
+                                    - option "SCAFFOLD"
+                                    - option "SEARCHES"
+                                    - option "SEDIMENT CONTROL"
+                                    - option "SEWAGE SYSTEMS"
+                                    - option "SHOWER SCREENS"
+                                    - option "SITE CLEAN"
+                                    - option "SITE WORKS"
+                                    - option "SKYLIGHTS"
+                                    - option "SOFFIT"
+                                    - option "STA Consulting Engineers"
+                                    - option "STAIRS"
+                                    - option "STEEL"
+                                    - option "STEEL MESH"
+                                    - option "SURVEYOR"
+                                    - option "Sams carpentry SEQ"
+                                    - option "Samwell Plumbing"
+                                    - option "Sediment Erosion Control Services"
+                                    - option "Select Water Tanks"
+                                    - option "Southern Star Windows (QLD)"
+                                    - option "Sparky"
+                                    - option "Spot On Plumbing and Drainage"
+                                    - option "Star Airconditioning"
+                                    - option "Stratus"
+                                    - option "Sunnycoast Concreting"
+                                    - option "Sunshine Coast Council"
+                                    - option "Sunstate Garage Doors (Travis Voigt TA)"
+                                    - option "Survey 360 Pty Ltd"
+                                    - option "Survey Mark"
+                                    - option "TEMPORARY FENCING"
+                                    - option "TEMPORARY POWER"
+                                    - option "TERMITE PROTECTION"
+                                    - option "TILE"
+                                    - option "TILER"
+                                    - option "TIMBER FLOORING"
+                                    - option "TIMBER FRAME"
+                                    - option "TL Electrical"
+                                    - option "TRUSSES"
+                                    - option "TURN KEY"
+                                    - option "Tekna Admin"
+                                    - option "Tekna Admin"
+                                    - option "Tekna Carpentry"
+                                    - option "Tekna Coach"
+                                    - option "Tekna Finishing Touches"
+                                    - option "Tekna Franchise"
+                                    - option "Tekna Homes"
+                                    - option "Tekna Insurance"
+                                    - option "Tekna Kitchen Labour"
+                                    - option "Tekna Kitchen Material"
+                                    - option "Tekna Marketing"
+                                    - option "Tekna Sales"
+                                    - option "Tekna Site"
+                                    - option "Tekna Supervisor"
+                                    - option "Tekna T3D"
+                                    - option "Testing Co"
+                                    - option "The One Group"
+                                    - option "The Truss Company"
+                                    - option "Tiling Co"
+                                    - option "Timber Supplier"
+                                    - option "Torsion Admin Pty Ltd"
+                                    - option "Torsion Quality Controller"
+                                    - option "Trade Tilers Centre"
+                                    - option "Trusses & Pre Nail"
+                                    - option "Unique Windows Services"
+                                    - option "United Waste Services"
+                                    - option "WARDROBE DOORS"
+                                    - option "WATER"
+                                    - option "WATER TANKS"
+                                    - option "WC HIRE"
+                                    - option "WET SEAL"
+                                    - option "WINDOWS"
+                                    - option "Wayke Waterproofing."
+                                    - option "Wayke Waterproofing. Ware"
+                                    - option "Work Place Health and Safety"
+                                - cell "4FS" [ref=e942]:
+                                  - button "4FS" [ref=e943] [cursor=pointer]
+                                - cell "2" [ref=e944]:
+                                  - spinbutton [ref=e945]: "2"
+                                - cell "6" [ref=e946]:
+                                  - generic [ref=e947]: "6"
+                                - cell "Unlocked - allows cascade updates" [ref=e948]:
+                                  - checkbox "Unlocked - allows cascade updates" [ref=e949]
+                                - cell [ref=e950]:
+                                  - checkbox [checked] [ref=e951]
+                                - cell "Select a supplier first" [ref=e952]:
+                                  - checkbox "Select a supplier first" [disabled] [ref=e953]
+                                - cell "0 items" [ref=e954]:
+                                  - button "0 items" [disabled] [ref=e955]
+                                - cell [ref=e956]:
+                                  - checkbox [ref=e957]
+                                - cell [ref=e958]:
+                                  - textbox "tag1, tag2" [ref=e959]
+                                - cell [ref=e960]:
+                                  - checkbox [ref=e961]
+                                - cell [ref=e962]:
+                                  - checkbox [ref=e963]
+                                - cell "10" [ref=e964]:
+                                  - spinbutton [disabled] [ref=e965]: "10"
+                                - cell [ref=e966]:
+                                  - checkbox [ref=e968]
+                                - cell "0 tasks" [ref=e969]:
+                                  - button "0 tasks" [ref=e970] [cursor=pointer]
+                                - cell "0 subtasks" [ref=e971]:
+                                  - button "0 subtasks" [ref=e972] [cursor=pointer]
+                                - cell "0 tasks" [ref=e973]:
+                                  - button "0 tasks" [ref=e974] [cursor=pointer]
+                                - cell [ref=e975]:
+                                  - checkbox [ref=e976] [cursor=pointer]
+                                - cell [ref=e977]:
+                                  - checkbox [ref=e978] [cursor=pointer]
+                                - cell [ref=e979]:
+                                  - checkbox [ref=e980] [cursor=pointer]
+                                - cell [ref=e981]:
+                                  - checkbox [ref=e982] [cursor=pointer]
+                                - cell [ref=e983]:
+                                  - checkbox [ref=e984] [cursor=pointer]
+                                - cell "Toggle Plan" [ref=e985]:
+                                  - checkbox "Toggle Plan" [ref=e986] [cursor=pointer]
+                                - cell "Toggle Sales" [ref=e987]:
+                                  - checkbox "Toggle Sales" [ref=e988] [cursor=pointer]
+                                - cell "Toggle Precon" [ref=e989]:
+                                  - checkbox "Toggle Precon" [ref=e990] [cursor=pointer]
+                                - cell "Toggle Final Certificate" [ref=e991]:
+                                  - checkbox "Toggle Final Certificate" [ref=e992] [cursor=pointer]
+                                - cell "Toggle Site" [ref=e993]:
+                                  - checkbox "Toggle Site" [ref=e994] [cursor=pointer]
+                                - cell "Toggle Photo" [ref=e995]:
+                                  - checkbox "Toggle Photo" [ref=e996] [cursor=pointer]
+                                - cell "Toggle Client" [ref=e997]:
+                                  - checkbox "Toggle Client" [ref=e998] [cursor=pointer]
+                                - cell "Toggle Client Photo" [ref=e999]:
+                                  - checkbox "Toggle Client Photo" [ref=e1000] [cursor=pointer]
+                                - cell "Toggle Photos" [ref=e1001]:
+                                  - checkbox "Toggle Photos" [ref=e1002] [cursor=pointer]
+                                - cell [ref=e1003]:
+                                  - generic [ref=e1004]:
+                                    - button "Move up" [ref=e1005] [cursor=pointer]:
+                                      - img [ref=e1006]
+                                    - button "Delete" [ref=e1008] [cursor=pointer]:
+                                      - img [ref=e1009]
+                          - button "Add Row" [ref=e1012] [cursor=pointer]:
+                            - img [ref=e1013]
+                            - text: Add Row
+                        - generic [ref=e1016]:
+                          - generic [ref=e1017]:
+                            - generic [ref=e1018]:
+                              - heading "DHTMLX Gantt View (Trial)" [level=2] [ref=e1019]
+                              - paragraph [ref=e1020]: 30-day PRO trial with auto-scheduling, critical path, and advanced features
+                            - generic [ref=e1021]:
+                              - generic [ref=e1022]:
+                                - textbox "Search tasks..." [ref=e1023]
+                                - img [ref=e1024]
+                              - generic [ref=e1026]:
+                                - button "Day" [ref=e1027] [cursor=pointer]
+                                - button "Week" [ref=e1028] [cursor=pointer]
+                                - button "Month" [ref=e1029] [cursor=pointer]
+                              - generic [ref=e1030]:
+                                - button "↶ Undo" [disabled] [ref=e1031]
+                                - button "↷ Redo" [disabled] [ref=e1032]
+                              - button "Hide Checkboxes" [ref=e1033] [cursor=pointer]
+                              - button "#" [ref=e1034] [cursor=pointer]
+                              - button "Columns" [ref=e1036] [cursor=pointer]:
+                                - img [ref=e1037]
+                                - text: Columns
+                              - button "Close" [ref=e1039] [cursor=pointer]:
+                                - img [ref=e1040]
+                          - generic [ref=e1043]:
+                            - generic [ref=e1044]:
+                              - treegrid [ref=e1048]:
+                                - row "# Task Name Predecessors Supplier/Group Duration Confirm Supplier Confirm Start Complete Lock New task" [ref=e1049]:
+                                  - columnheader "#" [ref=e1050]
+                                  - columnheader "Task Name" [ref=e1051]
+                                  - columnheader "Predecessors" [ref=e1052]
+                                  - columnheader "Supplier/Group" [ref=e1053]
+                                  - columnheader "Duration" [ref=e1054]
+                                  - columnheader "Confirm" [ref=e1055]
+                                  - columnheader "Supplier Confirm" [ref=e1056]
+                                  - columnheader "Start" [ref=e1057]
+                                  - columnheader "Complete" [ref=e1058]
+                                  - columnheader "Lock" [ref=e1059]
+                                  - columnheader "New task" [ref=e1060] [cursor=pointer]: 
+                                - rowgroup [ref=e1061]:
+                                  - 'row "Task: Task 1 Duration: -3 days Start: 2025-11-23 End: 2025-11-19" [level=1] [ref=e1062]':
+                                    - gridcell "#1" [ref=e1063]:
+                                      - generic [ref=e1064]: "#1"
+                                    - gridcell "Task 1" [ref=e1065]:
+                                      - generic [ref=e1066]: Task 1
+                                    - gridcell "-" [ref=e1067]:
+                                      - generic [ref=e1068]: "-"
+                                    - gridcell "-" [ref=e1069]:
+                                      - generic [ref=e1070]: "-"
+                                    - gridcell "-3 days" [ref=e1071]:
+                                      - generic [ref=e1072]: "-3 days"
+                                    - gridcell [ref=e1073]:
+                                      - checkbox [ref=e1075]
+                                    - gridcell [ref=e1076]:
+                                      - checkbox [ref=e1078]
+                                    - gridcell [ref=e1079]:
+                                      - checkbox [ref=e1081]
+                                    - gridcell [ref=e1082]:
+                                      - checkbox [ref=e1084]
+                                    - gridcell [ref=e1085]:
+                                      - checkbox [checked] [ref=e1087]
+                                    - gridcell "New task" [ref=e1088]:
+                                      - button "New task" [ref=e1089] [cursor=pointer]: 
+                                  - 'row "Task: Task 2 Duration: -1 days Start: 2025-11-24 End: 2025-11-21" [level=1] [ref=e1090]':
+                                    - gridcell "#2" [ref=e1091]:
+                                      - generic [ref=e1092]: "#2"
+                                    - gridcell "Task 2" [ref=e1093]:
+                                      - generic [ref=e1094]: Task 2
+                                    - gridcell "1FS" [ref=e1095]:
+                                      - generic [ref=e1096]: 1FS
+                                    - gridcell "-" [ref=e1097]:
+                                      - generic [ref=e1098]: "-"
+                                    - gridcell "-1 days" [ref=e1099]:
+                                      - generic [ref=e1100]: "-1 days"
+                                    - gridcell [ref=e1101]:
+                                      - checkbox [ref=e1103]
+                                    - gridcell [ref=e1104]:
+                                      - checkbox [ref=e1106]
+                                    - gridcell [ref=e1107]:
+                                      - checkbox [ref=e1109]
+                                    - gridcell [ref=e1110]:
+                                      - checkbox [ref=e1112]
+                                    - gridcell [ref=e1113]:
+                                      - checkbox [ref=e1115]
+                                    - gridcell "New task" [ref=e1116]:
+                                      - button "New task" [ref=e1117] [cursor=pointer]: 
+                                  - 'row "Task: Task 3 Duration: -1 days Start: 2025-11-24 End: 2025-11-21" [level=1] [ref=e1118]':
+                                    - gridcell "#3" [ref=e1119]:
+                                      - generic [ref=e1120]: "#3"
+                                    - gridcell "Task 3" [ref=e1121]:
+                                      - generic [ref=e1122]: Task 3
+                                    - gridcell "1FS" [ref=e1123]:
+                                      - generic [ref=e1124]: 1FS
+                                    - gridcell "-" [ref=e1125]:
+                                      - generic [ref=e1126]: "-"
+                                    - gridcell "-1 days" [ref=e1127]:
+                                      - generic [ref=e1128]: "-1 days"
+                                    - gridcell [ref=e1129]:
+                                      - checkbox [ref=e1131]
+                                    - gridcell [ref=e1132]:
+                                      - checkbox [ref=e1134]
+                                    - gridcell [ref=e1135]:
+                                      - checkbox [ref=e1137]
+                                    - gridcell [ref=e1138]:
+                                      - checkbox [ref=e1140]
+                                    - gridcell [ref=e1141]:
+                                      - checkbox [ref=e1143]
+                                    - gridcell "New task" [ref=e1144]:
+                                      - button "New task" [ref=e1145] [cursor=pointer]: 
+                                  - 'row "Task: Task 4 Duration: 0 days Start: 2025-11-25 End: 2025-11-25" [level=1] [ref=e1146]':
+                                    - gridcell "#4" [ref=e1147]:
+                                      - generic [ref=e1148]: "#4"
+                                    - gridcell "Task 4" [ref=e1149]:
+                                      - generic [ref=e1150]: Task 4
+                                    - gridcell "3FS" [ref=e1151]:
+                                      - generic [ref=e1152]: 3FS
+                                    - gridcell "-" [ref=e1153]:
+                                      - generic [ref=e1154]: "-"
+                                    - gridcell "-" [ref=e1155]:
+                                      - generic [ref=e1156]: "-"
+                                    - gridcell [ref=e1157]:
+                                      - checkbox [ref=e1159]
+                                    - gridcell [ref=e1160]:
+                                      - checkbox [ref=e1162]
+                                    - gridcell [ref=e1163]:
+                                      - checkbox [ref=e1165]
+                                    - gridcell [ref=e1166]:
+                                      - checkbox [ref=e1168]
+                                    - gridcell [ref=e1169]:
+                                      - checkbox [ref=e1171]
+                                    - gridcell "New task" [ref=e1172]:
+                                      - button "New task" [ref=e1173] [cursor=pointer]: 
+                                  - 'row "Task: Task 5 Duration: 1 days Start: 2025-11-26 End: 2025-11-27" [level=1] [ref=e1174]':
+                                    - gridcell "#5" [ref=e1175]:
+                                      - generic [ref=e1176]: "#5"
+                                    - gridcell "Task 5" [ref=e1177]:
+                                      - generic [ref=e1178]: Task 5
+                                    - gridcell "4FS" [ref=e1179]:
+                                      - generic [ref=e1180]: 4FS
+                                    - gridcell "-" [ref=e1181]:
+                                      - generic [ref=e1182]: "-"
+                                    - gridcell "1 day" [ref=e1183]:
+                                      - generic [ref=e1184]: 1 day
+                                    - gridcell [ref=e1185]:
+                                      - checkbox [ref=e1187]
+                                    - gridcell [ref=e1188]:
+                                      - checkbox [ref=e1190]
+                                    - gridcell [ref=e1191]:
+                                      - checkbox [ref=e1193]
+                                    - gridcell [ref=e1194]:
+                                      - checkbox [ref=e1196]
+                                    - gridcell [ref=e1197]:
+                                      - checkbox [ref=e1199]
+                                    - gridcell "New task" [ref=e1200]:
+                                      - button "New task" [ref=e1201] [cursor=pointer]: 
+                              - generic [ref=e1209]:
+                                - generic [ref=e1210]:
+                                  - generic [ref=e1211]:
+                                    - generic "November 2025" [ref=e1212]
+                                    - generic "December 2025" [ref=e1213]:
+                                      - generic [ref=e1214]: December 2025
+                                  - generic [ref=e1215]:
+                                    - generic "13" [ref=e1216]
+                                    - generic "14" [ref=e1217]
+                                    - generic "15" [ref=e1218]
+                                    - generic "16" [ref=e1219]
+                                    - generic "17" [ref=e1220]
+                                    - generic "18" [ref=e1221]
+                                    - generic "19" [ref=e1222]
+                                    - generic "20" [ref=e1223]
+                                    - generic "21" [ref=e1224]
+                                    - generic "22" [ref=e1225]
+                                    - generic "23" [ref=e1226]
+                                    - generic "24" [ref=e1227]
+                                    - generic "25" [ref=e1228]
+                                    - generic "26" [ref=e1229]
+                                    - generic "27" [ref=e1230]
+                                    - generic "28" [ref=e1231]
+                                    - generic "29" [ref=e1232]
+                                    - generic "30" [ref=e1233]
+                                    - generic "01" [ref=e1234]
+                                    - generic "02" [ref=e1235]
+                                    - generic "03" [ref=e1236]
+                                    - generic "04" [ref=e1237]
+                                    - generic "05" [ref=e1238]
+                                    - generic "06" [ref=e1239]
+                                    - generic "07" [ref=e1240]
+                                    - generic "08" [ref=e1241]
+                                    - generic "09" [ref=e1242]
+                                - generic [ref=e1243]:
+                                  - generic:
+                                    - img "Link Task 1 (end) Task 2 (start)":
+                                      - generic [ref=e1260] [cursor=pointer]: 
+                                    - img "Link Task 1 (end) Task 3 (start)":
+                                      - generic [ref=e1277] [cursor=pointer]: 
+                                    - img "Link Task 3 (end) Task 4 (start)":
+                                      - generic [ref=e1294] [cursor=pointer]: 
+                                    - img "Link Task 4 (end) Task 5 (start)":
+                                      - generic [ref=e1311] [cursor=pointer]: 
+                                  - generic [ref=e1312]:
+                                    - 'img "Task: Task 1 Duration: -3 days Start: 2025-11-23 End: 2025-11-19"':
+                                      - generic [ref=e1313]: Task 1
+                                      - generic [ref=e1314]: ◄
+                                      - generic [ref=e1315]: ►
+                                    - 'img "Task: Task 2 Duration: -1 days Start: 2025-11-24 End: 2025-11-21"':
+                                      - generic [ref=e1318]: Task 2
+                                      - generic [ref=e1319]: ◄
+                                      - generic [ref=e1320]: ►
+                                    - 'img "Task: Task 3 Duration: -1 days Start: 2025-11-24 End: 2025-11-21"':
+                                      - generic [ref=e1323]: Task 3
+                                      - generic [ref=e1324]: ◄
+                                      - generic [ref=e1325]: ►
+                                    - 'img "Task: Task 4 Duration: 0 days Start: 2025-11-25 End: 2025-11-25"':
+                                      - generic [ref=e1328]: Task 4
+                                      - generic [ref=e1329]: ◄
+                                      - generic [ref=e1330]: ►
+                                    - 'img "Task: Task 5 Duration: 1 days Start: 2025-11-26 End: 2025-11-27" [ref=e1333]':
+                                      - generic [ref=e1335]: Task 5
+                                      - generic [ref=e1336]: ◄
+                                      - generic [ref=e1337]: ►
+                            - iframe [ref=e1344]:
+                              
+                          - generic [ref=e1346]:
+                            - generic [ref=e1347]: "Trial Features: Auto-scheduling • Critical Path • Undo/Redo • Drag Links • Resource Management"
+                            - generic [ref=e1350]:
+                              - img [ref=e1351]
+                              - generic [ref=e1353]: "Terminology:"
+                              - generic [ref=e1354]:
+                                - generic [ref=e1355]:
+                                  - strong [ref=e1356]: SM
+                                  - text: = Schedule Master
+                                - generic [ref=e1357]:
+                                  - strong [ref=e1358]: SMT
+                                  - text: = Table (24 cols)
+                                - generic [ref=e1359]:
+                                  - strong [ref=e1360]: Gantt
+                                  - text: = Timeline chart
+                                - generic [ref=e1361]:
+                                  - strong [ref=e1362]: Task
+                                  - text: = Row + bar
+                                - generic [ref=e1363]:
+                                  - strong [ref=e1364]: Deps
+                                  - text: = Arrows
+                                - generic [ref=e1365]:
+                                  - strong [ref=e1366]: FS/SS/FF
+                                  - text: = Dep types
+                            - generic [ref=e1367]: Double-click task to edit dependencies
+  - generic [ref=e1369]:
+    - heading "🧪 Visual Test Running..." [level=2] [ref=e1370]
+    - paragraph [ref=e1371]: ✅ PASS - Test completed successfully in 6.8s!
+    - generic [ref=e1372]:
+      - generic [ref=e1373]: "✅ Selected task: Task 1"
+      - generic [ref=e1374]: "✅ Original start date: 11/18/2025"
+      - generic [ref=e1375]: ✅ Found 2 dependent task(s)
+      - generic [ref=e1376]: ✅ Moving task 5 days forward (11/18/2025 → 11/23/2025)
+      - generic [ref=e1377]: "🔄 Calling backend API for task #299..."
+      - generic [ref=e1378]: ✅ Backend cascade triggered - updated 5 task(s)
+      - generic [ref=e1379]: ✅ All 2 dependent task(s) cascaded correctly
+      - generic [ref=e1380]: ✅ Task "Task 2" moved correctly (+5 days)
+      - generic [ref=e1381]: ✅ Task "Task 3" moved correctly (+5 days)
+      - generic [ref=e1382]: ✅ Unlocked task - cascade will recalculate position
+      - generic [ref=e1383]: ✅ TEST PASSED
+```

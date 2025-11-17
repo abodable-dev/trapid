@@ -17,7 +17,7 @@ import Breadcrumb from '../components/documentation/Breadcrumb'
 import UserManualTableView from '../components/documentation/UserManualTableView'
 import TrinityTableView from '../components/documentation/TrinityTableView'
 
-export default function DocumentationPage() {
+export default function TrinityPage() {
   const [searchParams, setSearchParams] = useSearchParams()
 
   // Document state
@@ -65,16 +65,16 @@ export default function DocumentationPage() {
     loadDocs()
   }, [])
 
-  // Auto-select Bible if no doc selected
+  // Auto-select Bible if no tab selected
   useEffect(() => {
-    if (docs.length > 0 && !searchParams.get('doc')) {
-      setSearchParams({ doc: 'bible' })
+    if (docs.length > 0 && !searchParams.get('tab')) {
+      setSearchParams({ tab: 'bible' })
     }
   }, [docs])
 
-  // Load content when doc changes
+  // Load content when tab changes
   useEffect(() => {
-    const docId = searchParams.get('doc')
+    const docId = searchParams.get('tab')
     if (docId && docs.length > 0) {
       const doc = docs.find(d => d.id === docId)
       setSelectedDoc(doc)
@@ -294,7 +294,7 @@ export default function DocumentationPage() {
   }
 
   const handleDocSelect = (doc) => {
-    setSearchParams({ doc: doc.id })
+    setSearchParams({ tab: doc.id })
     setSearchQuery('')
     setSelectedEntry(null)
   }

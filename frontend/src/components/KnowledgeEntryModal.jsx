@@ -9,13 +9,19 @@ const CATEGORIES = [
 ]
 
 const KNOWLEDGE_TYPES = [
-  { value: 'bug', label: '🐛 Bug', emoji: '🐛' },
-  { value: 'architecture', label: '🏗️ Architecture', emoji: '🏗️' },
-  { value: 'test', label: '📊 Test', emoji: '📊' },
-  { value: 'performance', label: '📈 Performance', emoji: '📈' },
-  { value: 'dev_note', label: '🎓 Dev Note', emoji: '🎓' },
-  { value: 'common_issue', label: '🔍 Common Issue', emoji: '🔍' },
-  { value: 'terminology', label: '📖 Terminology', emoji: '📖' },
+  // Bible types
+  { value: 'rule', label: '📜 Rule', emoji: '📜', category: 'bible' },
+
+  // Teacher types
+  { value: 'component', label: '🧩 Component', emoji: '🧩', category: 'teacher' },
+  { value: 'util', label: '🔧 Util', emoji: '🔧', category: 'teacher' },
+  { value: 'feature', label: '✨ Feature', emoji: '✨', category: 'teacher' },
+  { value: 'integration', label: '🔗 Integration', emoji: '🔗', category: 'teacher' },
+
+  // Lexicon types
+  { value: 'bug', label: '🐛 Bug', emoji: '🐛', category: 'lexicon' },
+  { value: 'architecture', label: '🏗️ Architecture', emoji: '🏗️', category: 'lexicon' },
+  { value: 'dev_note', label: '🎓 Dev Note', emoji: '🎓', category: 'lexicon' },
 ]
 
 const STATUSES = [
@@ -113,7 +119,17 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
   }, [entry, chapterNumber, chapterName, isOpen])
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    // If category changes, reset entry_type to first valid type for that category
+    if (field === 'category') {
+      const validTypes = KNOWLEDGE_TYPES.filter(t => t.category === value)
+      const defaultType = validTypes[0]?.value || 'bug'
+      setFormData((prev) => ({ ...prev, [field]: value, entry_type: defaultType }))
+    } else if (field === 'entry_type' && Array.isArray(value)) {
+      // Convert array to comma-separated string for backend
+      setFormData((prev) => ({ ...prev, [field]: value.join(',') }))
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }))
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -206,23 +222,48 @@ export default function KnowledgeEntryModal({ isOpen, onClose, onSave, chapterNu
                     </select>
                   </div>
 
-                  {/* Knowledge Type */}
+                  {/* Knowledge Type - Multi-select checkboxes */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Knowledge Type
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Knowledge Type(s)
                     </label>
-                    <select
-                      value={formData.entry_type}
-                      onChange={(e) => handleChange('entry_type', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
-                      required
-                    >
-                      {KNOWLEDGE_TYPES.map((type) => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="space-y-2 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800">
+                      {KNOWLEDGE_TYPES
+                        .filter((type) => type.category === formData.category)
+                        .map((type) => (
+                          <label
+                            key={type.value}
+                            className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={
+                                formData.entry_type
+                                  ? formData.entry_type.split(',').includes(type.value)
+                                  : false
+                              }
+                              onChange={(e) => {
+                                // Parse current types (comma-separated string)
+                                const currentTypes = formData.entry_type
+                                  ? formData.entry_type.split(',').filter(t => t)
+                                  : []
+
+                                if (e.target.checked) {
+                                  // Add type
+                                  handleChange('entry_type', [...currentTypes, type.value])
+                                } else {
+                                  // Remove type
+                                  handleChange('entry_type', currentTypes.filter(t => t !== type.value))
+                                }
+                              }}
+                              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              {type.label}
+                            </span>
+                          </label>
+                        ))}
+                    </div>
                   </div>
 
                   {/* Title */}

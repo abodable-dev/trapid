@@ -9,10 +9,14 @@ import {
   ArrowDownIcon,
   FunnelIcon,
   EyeIcon,
+  EyeSlashIcon,
   Bars3Icon,
   ChevronUpIcon,
   ChevronDownIcon,
-  CheckIcon
+  CheckIcon,
+  EllipsisVerticalIcon,
+  ArrowUpTrayIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline'
 
 const CHAPTER_NAMES = {
@@ -73,6 +77,8 @@ const COLUMNS = [
   { key: 'dense_index', label: 'Dense Index', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 400, tooltip: 'Searchable index (no formatting)' },
   { key: 'status', label: 'Status', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 140 },
   { key: 'severity', label: 'Severity', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120 },
+  { key: 'price', label: 'Price', resizable: true, sortable: true, filterable: false, width: 140, showSum: true, sumType: 'currency', tooltip: 'Price in AUD - shows total in footer' },
+  { key: 'quantity', label: 'Qty', resizable: true, sortable: true, filterable: false, width: 100, showSum: true, sumType: 'number', tooltip: 'Quantity - shows total in footer' },
   { key: 'audit', label: 'Audit', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Last modification date and user' }
 ]
 
@@ -88,9 +94,22 @@ const DEFAULT_VISIBLE_COLUMNS = COLUMNS.reduce((acc, col) => {
   return acc
 }, {})
 
-export default function TrinityTableView({ entries, onEdit, onDelete, stats, category = null, customActions = null }) {
+export default function TrinityTableView({
+  entries,
+  onEdit,
+  onDelete,
+  stats,
+  category = null,
+  customActions = null,
+  enableImport = false,
+  enableExport = false,
+  onImport = null,
+  onExport = null
+}) {
   // category can be: null (show all), 'bible', 'teacher', or 'lexicon'
   // customActions: optional array of custom button elements to display after Columns button
+  // enableImport/enableExport: show import/export options in three-dot menu
+  // onImport/onExport: callback functions for import/export actions
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('chapter')
   const [sortDir, setSortDir] = useState('asc')
@@ -130,6 +149,11 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
 
   // Inline column filters (Chapter 20.1)
   const [columnFilters, setColumnFilters] = useState({})
+  const [showFilters, setShowFilters] = useState(true) // Toggle to show/hide filter inputs
+
+  // Cascade filters - Excel-style dropdown filters that can be applied in any order
+  const [cascadeFilters, setCascadeFilters] = useState([]) // Array of {id, column, value, label}
+  const [showCascadeDropdown, setShowCascadeDropdown] = useState(false)
 
   // Component multi-select checkbox state
   const [selectedComponents, setSelectedComponents] = useState(new Set())
@@ -137,6 +161,12 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
 
   // Modal state for viewing full row details
   const [selectedEntry, setSelectedEntry] = useState(null)
+  const [selectedColumn, setSelectedColumn] = useState(null)
+
+  // Text editing modal state
+  const [showTextEditModal, setShowTextEditModal] = useState(false)
+  const [textEditField, setTextEditField] = useState('') // 'title' or 'content'
+  const [textEditValue, setTextEditValue] = useState('')
 
   // Chapter 19 compliance: Column state management
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
@@ -150,6 +180,7 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
 
   // Column reordering state
   const [draggedColumn, setDraggedColumn] = useState(null)
+  const [dropTargetColumn, setDropTargetColumn] = useState(null)
 
   // Sticky horizontal scrollbar state
   const [tableScrollWidth, setTableScrollWidth] = useState(0)
@@ -292,16 +323,31 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
   // Column reordering handlers (Chapter 20.5)
   const handleDragStart = (e, columnKey) => {
     setDraggedColumn(columnKey)
+    setDropTargetColumn(null)
   }
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e, targetColumnKey) => {
     e.preventDefault()
+    if (draggedColumn && draggedColumn !== targetColumnKey) {
+      setDropTargetColumn(targetColumnKey)
+    }
+  }
+
+  const handleDragEnd = () => {
+    setDraggedColumn(null)
+    setDropTargetColumn(null)
+    // Force a re-render to update the table display
+    setTimeout(() => {
+      // Trigger re-render by updating state
+      setColumnOrder(prev => [...prev])
+    }, 0)
   }
 
   const handleDrop = (e, targetColumnKey) => {
     e.preventDefault()
     if (!draggedColumn || draggedColumn === targetColumnKey) {
       setDraggedColumn(null)
+      setDropTargetColumn(null)
       return
     }
 
@@ -314,6 +360,12 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
 
     setColumnOrder(newOrder)
     setDraggedColumn(null)
+    setDropTargetColumn(null)
+    // Force a re-render to update the table display
+    setTimeout(() => {
+      // Trigger re-render by updating state
+      setColumnOrder(prev => [...prev])
+    }, 0)
   }
 
   // Column visibility toggle (Chapter 20.10)
@@ -450,6 +502,35 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
       }
     })
 
+    // Apply cascade filters - Excel-style filters applied in order
+    cascadeFilters.forEach(filter => {
+      if (!filter.value) return
+
+      const key = filter.column
+      const value = filter.value
+
+      switch (key) {
+        case 'category':
+          result = result.filter(e => e.category === value)
+          break
+        case 'type':
+          result = result.filter(e => e.entry_type === value)
+          break
+        case 'status':
+          result = result.filter(e => e.status === value)
+          break
+        case 'severity':
+          result = result.filter(e => e.severity === value)
+          break
+        case 'component':
+          result = result.filter(e => e.component === value)
+          break
+        case 'chapter':
+          result = result.filter(e => e.chapter_number === parseInt(value))
+          break
+      }
+    })
+
     // Apply global filters (legacy)
     if (filters.chapter !== 'all') {
       result = result.filter(e => e.chapter_number === parseInt(filters.chapter))
@@ -544,7 +625,7 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
     })
 
     return result
-  }, [entries, search, filters, sortBy, sortDir, columnFilters, category])
+  }, [entries, search, filters, sortBy, sortDir, columnFilters, category, cascadeFilters, selectedComponents])
 
   const handleSort = (column) => {
     if (sortBy === column) {
@@ -626,25 +707,41 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
           return <span className="text-gray-400">-</span>
         }
 
-        // Format section number as X.YY (e.g., 2.01, 2.10, 19.11)
-        // Handle both "X.Y" format and "X-Y" format (which should be converted to "X.Y")
+        // Format section number with category prefix: B01.001, L12.003, T05.001 (3-digit)
         let formattedSection = entry.section_number
 
-        if (entry.section_number.includes('.')) {
-          // Already has dot notation - just ensure padding
-          const parts = entry.section_number.split('.')
-          if (parts.length === 2) {
-            const [chapter, section] = parts
-            // Only pad if section is a number (not already padded or formatted)
-            const sectionNum = section.trim()
-            formattedSection = sectionNum.length === 1
-              ? `${chapter}.${sectionNum.padStart(2, '0')}`
-              : `${chapter}.${sectionNum}`
-          }
-        } else if (entry.section_number.includes('-')) {
-          // Has hyphen - this is likely a range that was incorrectly stored
-          // For now, display as-is but this indicates data quality issue
+        // Check if section_number already has a B/L/T prefix (2-digit or 3-digit)
+        const alreadyHasPrefix = /^[BLT]\d{2}\.\d{2,3}$/.test(entry.section_number)
+
+        if (alreadyHasPrefix) {
+          // Already correctly formatted - use as is
           formattedSection = entry.section_number
+        } else if (entry.section_number.startsWith('TEMP-')) {
+          // Temporary number during migration - show as is
+          formattedSection = entry.section_number
+        } else {
+          // Need to add prefix and padding
+          const categoryPrefix = {
+            'bible': 'B',
+            'lexicon': 'L',
+            'teacher': 'T'
+          }[entry.category] || ''
+
+          if (entry.section_number.includes('.')) {
+            // Already has dot notation - add prefix and ensure padding
+            const parts = entry.section_number.split('.')
+            if (parts.length === 2) {
+              const [chapter, section] = parts
+              const chapterPadded = String(chapter).padStart(2, '0')
+              // Use 3-digit section padding for consistency
+              const sectionPadded = String(section).padStart(3, '0')
+              formattedSection = `${categoryPrefix}${chapterPadded}.${sectionPadded}`
+            }
+          } else if (entry.section_number.includes('-')) {
+            // Has hyphen - this is likely a range that was incorrectly stored
+            // For now, display as-is but this indicates data quality issue
+            formattedSection = entry.section_number
+          }
         }
 
         return (
@@ -680,14 +777,17 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
       case 'title':
         if (editingRowId === entry.id) {
           return (
-            <input
-              type="text"
-              value={editingData.title || ''}
-              onChange={(e) => setEditingData({ ...editingData, title: e.target.value })}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 font-medium"
-              autoFocus
-            />
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setTextEditField('title')
+                setTextEditValue(editingData.title || '')
+                setShowTextEditModal(true)
+              }}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 font-medium text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer truncate"
+            >
+              {editingData.title || 'Click to edit...'}
+            </button>
           )
         }
         return <div className="truncate font-medium">{entry.title}</div>
@@ -695,13 +795,17 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
       case 'content':
         if (editingRowId === entry.id) {
           return (
-            <textarea
-              value={editingData.description || ''}
-              onChange={(e) => setEditingData({ ...editingData, description: e.target.value })}
-              onClick={(e) => e.stopPropagation()}
-              rows={2}
-              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"
-            />
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setTextEditField('content')
+                setTextEditValue(editingData.description || '')
+                setShowTextEditModal(true)
+              }}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer truncate"
+            >
+              {editingData.description || 'Click to edit...'}
+            </button>
           )
         }
 
@@ -754,6 +858,7 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
               value={editingData.component || ''}
               onChange={(e) => setEditingData({ ...editingData, component: e.target.value })}
               onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
               className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             />
           )
@@ -767,7 +872,11 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
               value={editingData.status || entry.status || ''}
               onChange={(e) => setEditingData({ ...editingData, status: e.target.value })}
               onClick={(e) => e.stopPropagation()}
-              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              onMouseDown={(e) => {
+                // Allow the dropdown to open
+                e.stopPropagation()
+              }}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
               <option value="">Select Status</option>
               <option value="open">⚡ Open</option>
@@ -793,7 +902,11 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
               value={editingData.severity || entry.severity || ''}
               onChange={(e) => setEditingData({ ...editingData, severity: e.target.value })}
               onClick={(e) => e.stopPropagation()}
-              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              onMouseDown={(e) => {
+                // Allow the dropdown to open
+                e.stopPropagation()
+              }}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
               <option value="">Select Severity</option>
               <option value="low">Low</option>
@@ -840,6 +953,25 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
             <div className="font-medium">{formattedDate}</div>
             <div className="text-gray-500 dark:text-gray-500">{formattedTime}</div>
             <div className="text-gray-500 dark:text-gray-500 italic">{updatedBy}</div>
+          </div>
+        )
+
+      case 'price':
+        // Currency column - right-aligned with AUD formatting
+        return (
+          <div className="text-right font-medium">
+            {entry.price != null ? new Intl.NumberFormat('en-AU', {
+              style: 'currency',
+              currency: 'AUD'
+            }).format(entry.price) : '-'}
+          </div>
+        )
+
+      case 'quantity':
+        // Number column - right-aligned
+        return (
+          <div className="text-right font-medium">
+            {entry.quantity != null ? entry.quantity.toLocaleString('en-AU') : '-'}
           </div>
         )
 
@@ -942,15 +1074,18 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
             </button>
           </div>
 
-          {/* Clear All Filters Button */}
-          {Object.values(columnFilters).some(v => v) && (
-            <button
-              onClick={() => setColumnFilters({})}
-              className="ml-auto px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-xs font-medium rounded-lg transition-colors"
-            >
-              Clear All Filters
-            </button>
-          )}
+          {/* Filter Controls */}
+          <div className="ml-auto flex items-center gap-2">
+            {/* Clear All Filters Button */}
+            {Object.values(columnFilters).some(v => v) && (
+              <button
+                onClick={() => setColumnFilters({})}
+                className="px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-xs font-medium rounded-lg transition-colors"
+              >
+                Clear All Filters
+              </button>
+            )}
+          </div>
         </div>
         )}
 
@@ -975,38 +1110,142 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
             )}
           </div>
 
-          {/* Column Visibility Toggle (Chapter 20.10) */}
-          <Menu as="div" className="relative inline-block text-left">
-            <MenuButton className="inline-flex items-center gap-x-2 rounded-lg bg-white dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 h-[42px]">
-              <EyeIcon className="h-5 w-5" />
-              Columns
-            </MenuButton>
+          {/* Cascade Filters Button - Excel-style popup - Always visible */}
+          <div className="relative">
+            <button
+              onClick={() => setShowCascadeDropdown(!showCascadeDropdown)}
+              className="px-3 h-[42px] bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-800 dark:text-purple-200 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              title="Excel-style cascade filters"
+            >
+              <FunnelIcon className="w-4 h-4" />
+              Filters
+              {cascadeFilters.length > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] bg-purple-600 text-white rounded-full text-[10px] font-bold">
+                  {cascadeFilters.length}
+                </span>
+              )}
+            </button>
 
-            <MenuItems className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5">
-              <div className="py-1">
-                {COLUMNS.filter(col => col.key !== 'select').map((column) => (
-                  <MenuItem key={column.key}>
-                    {({ focus }) => (
+            {/* Excel-style dropdown panel */}
+            {showCascadeDropdown && (
+              <div className="absolute top-full right-0 mt-1 w-80 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl z-50">
+                <div className="p-3 space-y-3">
+                  {/* Header */}
+                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Cascade Filters
+                    </span>
+                    <button
+                      onClick={() => setShowCascadeDropdown(false)}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Search filter values */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Search Filter Values:
+                    </label>
+                    <div className="relative">
+                      <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search values..."
+                        className="w-full text-xs pl-7 pr-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Add filter with checkboxes for values */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Select Column & Values:
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        const column = e.target.value
+                        if (!column) return
+
+                        // Get unique values for this column from CURRENT filtered results
+                        const uniqueValues = [...new Set(filteredAndSorted.map(entry => {
+                          switch(column) {
+                            case 'category': return entry.category
+                            case 'type': return entry.entry_type
+                            case 'status': return entry.status
+                            case 'severity': return entry.severity
+                            case 'component': return entry.component
+                            default: return null
+                          }
+                        }).filter(Boolean))]
+
+                        if (uniqueValues.length > 0) {
+                          const value = uniqueValues[0]
+                          const label = column === 'category' ? (value === 'bible' ? '📖 Bible' : value === 'teacher' ? '🔧 Teacher' : '📕 Lexicon') : value
+                          setCascadeFilters([...cascadeFilters, {
+                            id: Date.now(),
+                            column,
+                            value,
+                            label: `${column}: ${label}`
+                          }])
+                        }
+                        e.target.value = ''
+                      }}
+                      className="w-full text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="">Select column...</option>
+                      <option value="category">Category</option>
+                      <option value="type">Type</option>
+                      <option value="status">Status</option>
+                      <option value="severity">Severity</option>
+                      <option value="component">Component</option>
+                    </select>
+                  </div>
+
+                  {/* Active filters list */}
+                  {cascadeFilters.length > 0 ? (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        Active Filters ({cascadeFilters.length}):
+                      </label>
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                        {cascadeFilters.map((filter, index) => (
+                          <div
+                            key={filter.id}
+                            className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 px-2.5 py-1.5 rounded border border-gray-200 dark:border-gray-600"
+                          >
+                            <span className="text-xs text-gray-700 dark:text-gray-300">
+                              <span className="font-semibold text-purple-600 dark:text-purple-400">{index + 1}.</span> {filter.label}
+                            </span>
+                            <button
+                              onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.id !== filter.id))}
+                              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-bold"
+                              title="Remove filter"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Clear all button */}
                       <button
-                        onClick={() => handleToggleColumn(column.key)}
-                        className={`${
-                          focus ? 'bg-gray-100 dark:bg-gray-700' : ''
-                        } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                        onClick={() => setCascadeFilters([])}
+                        className="w-full mt-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-xs font-medium rounded transition-colors"
                       >
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns[column.key]}
-                          onChange={() => {}}
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
-                        />
-                        <span className="ml-3">{column.label}</span>
+                        Clear All Filters
                       </button>
-                    )}
-                  </MenuItem>
-                ))}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3 bg-gray-50 dark:bg-gray-700/30 rounded">
+                      No filters applied
+                    </div>
+                  )}
+                </div>
               </div>
-            </MenuItems>
-          </Menu>
+            )}
+          </div>
 
           {/* Custom Action Buttons (Chapter 20: Add, Import, etc.) */}
           {customActions && customActions}
@@ -1018,7 +1257,7 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
               setEditModeActive(!editModeActive)
               setShowDeleteButton(!editModeActive) // Show delete when entering edit mode
             }}
-            className="inline-flex items-center gap-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
+            className="inline-flex items-center gap-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px] ml-auto"
           >
             <PencilIcon className="h-4 w-4" />
             {editModeActive ? 'Lock Cells' : 'Edit'}
@@ -1064,60 +1303,28 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
             </>
           )}
 
-          {/* Delete and Export Buttons - Only visible when rows selected and edit mode active */}
-          {selectedRows.size > 0 && editModeActive && !editingRowId && (
+          {/* Delete Button - Only visible when rows selected (Export available in three-dot menu) */}
+          {selectedRows.size > 0 && !editingRowId && (
             <>
-              {editModeActive && (
-                <button
-                  onClick={() => {
-                    if (confirm(`Are you sure you want to delete ${selectedRows.size} ${selectedRows.size === 1 ? 'entry' : 'entries'}?`)) {
-                      const selectedEntryIds = Array.from(selectedRows)
-                      selectedEntryIds.forEach(id => {
-                        fetch(`http://localhost:3000/api/v1/trinity/${id}`, {
-                          method: 'DELETE'
-                        }).catch(error => console.error('Error deleting entry:', error))
-                      })
-                      setSelectedRows(new Set())
-                      setShowDeleteButton(false)
-                      alert('Entries deleted successfully!')
-                      window.location.reload()
-                    }
-                  }}
-                  className="inline-flex items-center gap-2 px-4 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
-                >
-                  <XMarkIcon className="h-4 w-4" />
-                  Delete
-                </button>
-              )}
               <button
                 onClick={() => {
-                  const selectedEntryIds = Array.from(selectedRows)
-                  const selectedEntries = filteredAndSorted.filter(e => selectedEntryIds.includes(e.id))
-                  const csvContent = [
-                    ['Chapter', 'Section', 'Type', 'Title', 'Content', 'Component', 'Status', 'Severity'].join(','),
-                    ...selectedEntries.map(e => [
-                      `"${e.chapter_number} - ${CHAPTER_NAMES[e.chapter_number] || e.chapter_name}"`,
-                      e.section_number || '',
-                      e.entry_type || '',
-                      `"${e.title?.replace(/"/g, '""')}"`,
-                      `"${(e.description || e.details || e.scenario || '')?.replace(/"/g, '""')}"`,
-                      `"${e.component?.replace(/"/g, '""') || ''}"`,
-                      e.status || '',
-                      e.severity || ''
-                    ].join(','))
-                  ].join('\n')
-
-                  const blob = new Blob([csvContent], { type: 'text/csv' })
-                  const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  a.download = `trinity-export-${new Date().toISOString().split('T')[0]}.csv`
-                  a.click()
-                  URL.revokeObjectURL(url)
+                  if (confirm(`Are you sure you want to delete ${selectedRows.size} ${selectedRows.size === 1 ? 'entry' : 'entries'}?`)) {
+                    const selectedEntryIds = Array.from(selectedRows)
+                    selectedEntryIds.forEach(id => {
+                      fetch(`http://localhost:3000/api/v1/trinity/${id}`, {
+                        method: 'DELETE'
+                      }).catch(error => console.error('Error deleting entry:', error))
+                    })
+                    setSelectedRows(new Set())
+                    setShowDeleteButton(false)
+                    alert('Entries deleted successfully!')
+                    window.location.reload()
+                  }
                 }}
-                className="inline-flex items-center gap-2 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
+                className="inline-flex items-center gap-2 px-4 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px]"
               >
-                Export
+                <TrashIcon className="h-4 w-4" />
+                Delete ({selectedRows.size})
               </button>
               <button
                 onClick={() => {
@@ -1131,6 +1338,107 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
               </button>
             </>
           )}
+
+          {/* Three-Dot Menu - Table Options - Always on far right */}
+          <Menu as="div" className="relative inline-block text-left">
+            <MenuButton className="inline-flex items-center justify-center rounded-lg bg-blue-600 hover:bg-blue-700 p-2 text-white border border-blue-600 dark:border-blue-500 h-[42px] w-[42px] transition-colors">
+              <EllipsisVerticalIcon className="h-6 w-6" />
+            </MenuButton>
+
+            <MenuItems className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 dark:divide-gray-700">
+              {/* Columns submenu */}
+              <div className="py-1">
+                <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Columns
+                </div>
+                {COLUMNS.filter(col => col.key !== 'select').map((column) => (
+                  <MenuItem key={column.key}>
+                    {({ focus }) => (
+                      <button
+                        onClick={() => handleToggleColumn(column.key)}
+                        className={`${
+                          focus ? 'bg-gray-100 dark:bg-gray-700' : ''
+                        } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns[column.key]}
+                          onChange={() => {}}
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                        />
+                        <span className="ml-3">{column.label}</span>
+                      </button>
+                    )}
+                  </MenuItem>
+                ))}
+              </div>
+
+              {/* Filter toggle */}
+              <div className="py-1">
+                <MenuItem>
+                  {({ focus }) => (
+                    <button
+                      onClick={() => setShowFilters(!showFilters)}
+                      className={`${
+                        focus ? 'bg-gray-100 dark:bg-gray-700' : ''
+                      } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                    >
+                      {showFilters ? (
+                        <>
+                          <EyeSlashIcon className="h-5 w-5 mr-3 text-blue-600 dark:text-blue-400" />
+                          <span>Hide Filters</span>
+                        </>
+                      ) : (
+                        <>
+                          <EyeIcon className="h-5 w-5 mr-3 text-gray-600 dark:text-gray-400" />
+                          <span>Show Filters</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </MenuItem>
+              </div>
+
+              {/* Import/Export options - only show if enabled */}
+              {(enableImport || enableExport) && (
+                <div className="py-1">
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Data
+                  </div>
+                  {enableImport && (
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          onClick={() => onImport && onImport()}
+                          className={`${
+                            focus ? 'bg-gray-100 dark:bg-gray-700' : ''
+                          } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                        >
+                          <ArrowDownTrayIcon className="h-5 w-5 mr-3 text-gray-600 dark:text-gray-400" />
+                          <span>Import</span>
+                        </button>
+                      )}
+                    </MenuItem>
+                  )}
+                  {enableExport && (
+                    <MenuItem>
+                      {({ focus }) => (
+                        <button
+                          onClick={() => onExport && onExport()}
+                          className={`${
+                            focus ? 'bg-gray-100 dark:bg-gray-700' : ''
+                          } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                        >
+                          <ArrowUpTrayIcon className="h-5 w-5 mr-3 text-gray-600 dark:text-gray-400" />
+                          <span>Export</span>
+                        </button>
+                      )}
+                    </MenuItem>
+                  )}
+                </div>
+              )}
+            </MenuItems>
+          </Menu>
         </div>
 
         {/* Search Results Count (Chapter 20.20) */}
@@ -1212,7 +1520,7 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
             scrollbarColor: '#2563EB #E0E7FF'
           }}
         >
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
             <thead className="sticky top-0 z-10 backdrop-blur-sm bg-blue-600 dark:bg-blue-800">
             <tr className="border-b border-blue-700 dark:border-blue-900">
               {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
@@ -1222,22 +1530,30 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                 return (
                   <th
                     key={colKey}
-                    draggable={column.resizable}
-                    onDragStart={(e) => handleDragStart(e, colKey)}
-                    onDragOver={handleDragOver}
+                    onDragOver={(e) => handleDragOver(e, colKey)}
                     onDrop={(e) => handleDrop(e, colKey)}
-                    onClick={() => column.sortable && handleSort(colKey)}
+                    onClick={(e) => {
+                      // Only sort if clicking on the column content, not resize handle or drag icon
+                      if (column.sortable && !e.defaultPrevented) {
+                        handleSort(colKey)
+                      }
+                    }}
                     style={{
                       width: columnWidths[colKey],
                       minWidth: columnWidths[colKey],
                       position: 'relative',
                       fontSize: '18px',
                       fontWeight: 'bold',
-                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                      // Visual drop indicator - green border when this is the drop target
+                      borderLeft: dropTargetColumn === colKey ? '4px solid #10b981' : undefined,
+                      borderRight: dropTargetColumn === colKey ? '4px solid #10b981' : undefined,
                     }}
                     className={`group ${colKey === 'select' ? 'px-1 py-4' : 'px-6 py-4'} ${colKey === 'select' ? 'text-center' : 'text-left'} text-white tracking-wide transition-colors ${
                       column.sortable ? 'cursor-pointer hover:bg-blue-700 dark:hover:bg-blue-900' : ''
-                    } ${draggedColumn === colKey ? 'bg-blue-700 dark:bg-blue-900' : ''}`}
+                    } ${draggedColumn === colKey ? 'bg-blue-700 dark:bg-blue-900 opacity-50' : ''} ${
+                      dropTargetColumn === colKey ? 'bg-green-600 dark:bg-green-700' : ''
+                    }`}
                   >
                     {/* Select All Checkbox (Chapter 20.1) */}
                     {colKey === 'select' ? (
@@ -1254,7 +1570,26 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                       <>
                         <div className="flex items-center gap-1">
                           {column.resizable && (
-                            <Bars3Icon className="h-4 w-4 text-gray-400 trinity-drag-handle" />
+                            <div
+                              draggable
+                              onDragStart={(e) => {
+                                e.stopPropagation()
+                                handleDragStart(e, colKey)
+                                e.dataTransfer.effectAllowed = 'move'
+                              }}
+                              onDragEnd={(e) => {
+                                e.stopPropagation()
+                                handleDragEnd()
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                              }}
+                              className="cursor-grab active:cursor-grabbing"
+                              title="Drag to reorder column"
+                            >
+                              <Bars3Icon className="h-4 w-4 text-gray-200 hover:text-white transition-colors" />
+                            </div>
                           )}
                           <span>{column.label}</span>
                           {column.sortable && <SortIcon column={colKey} />}
@@ -1263,15 +1598,20 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                         {/* Column Resize Handle */}
                         {column.resizable && (
                           <div
-                            onMouseDown={(e) => handleResizeStart(e, colKey)}
+                            onMouseDown={(e) => {
+                              e.stopPropagation()
+                              handleResizeStart(e, colKey)
+                            }}
                             onClick={(e) => e.stopPropagation()}
-                            className="absolute right-0 top-0 bottom-0 w-1 hover:w-1.5 bg-transparent hover:bg-blue-400 cursor-col-resize z-20"
+                            onDoubleClick={(e) => e.stopPropagation()}
+                            className="absolute right-0 top-0 bottom-0 w-2 hover:w-3 bg-transparent hover:bg-blue-300 dark:hover:bg-blue-500 cursor-col-resize z-20 transition-all"
                             style={{ cursor: 'col-resize' }}
+                            title="Drag to resize column"
                           />
                         )}
 
-                        {/* Inline Column Filter (Chapter 20.1) */}
-                        {column.filterable && column.filterType === 'text' && (
+                        {/* Inline Column Filter (Chapter 20.1) - Show only if showFilters is true */}
+                        {showFilters && column.filterable && column.filterType === 'text' && (
                           <input
                             type="text"
                             placeholder="Filter..."
@@ -1282,7 +1622,7 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                           />
                         )}
 
-                        {column.filterable && column.filterType === 'dropdown' && colKey !== 'component' && (
+                        {showFilters && column.filterable && column.filterType === 'dropdown' && colKey !== 'component' && (
                           <select
                             value={columnFilters[colKey] || ''}
                             onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
@@ -1371,8 +1711,8 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                           </select>
                         )}
 
-                        {/* Component multi-select checkboxes */}
-                        {column.filterable && colKey === 'component' && (
+                        {/* Component multi-select checkboxes - Show only if showFilters is true */}
+                        {showFilters && column.filterable && colKey === 'component' && (
                           <div className="relative mt-1">
                             <button
                               onClick={(e) => {
@@ -1409,6 +1749,11 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                             )}
                           </div>
                         )}
+
+                        {/* Empty spacer for columns without filters - maintains alignment - Show only if showFilters is true */}
+                        {showFilters && !column.filterable && (
+                          <div className="mt-1 h-[26px]"></div>
+                        )}
                       </>
                     )}
 
@@ -1424,9 +1769,11 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                 className={`${
                   editingRowId === entry.id
                     ? 'bg-blue-100 dark:bg-blue-900/50 ring-2 ring-blue-500'
-                    : index % 2 === 0
-                      ? 'bg-white dark:bg-gray-900'
-                      : 'bg-blue-50 dark:bg-blue-900/20'
+                    : selectedRows.has(entry.id)
+                      ? 'bg-blue-200 dark:bg-blue-800/60 ring-2 ring-blue-400 dark:ring-blue-500'
+                      : index % 2 === 0
+                        ? 'bg-white dark:bg-gray-900'
+                        : 'bg-blue-50 dark:bg-blue-900/20'
                 } hover:bg-blue-100 dark:hover:bg-blue-800/30 transition-colors duration-150`}
               >
                 {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
@@ -1449,6 +1796,15 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                         }
                       }}
                       onClick={(e) => {
+                        // Single-click on Title or Content columns ONLY to open detail modal (only when not in edit mode)
+                        const textColumns = ['title', 'content'];
+                        if (textColumns.includes(colKey) && !editModeActive) {
+                          e.stopPropagation();
+                          setSelectedEntry(entry);
+                          setSelectedColumn(colKey); // Track which column was clicked
+                          return;
+                        }
+
                         // Single-click on status/severity to start editing (only in edit mode)
                         if (editModeActive && (colKey === 'status' || colKey === 'severity')) {
                           e.stopPropagation();
@@ -1467,9 +1823,46 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                       }}
                       className={`${colKey === 'select' ? 'px-1 py-1' : 'px-3 py-1'} text-gray-900 dark:text-white ${
-                        colKey === 'select' ? 'text-center' : ''
-                      } ${editModeActive && ['title', 'content', 'component', 'status', 'severity'].includes(colKey) && editingRowId !== entry.id ? 'cursor-pointer hover:bg-yellow-50 dark:hover:bg-yellow-900/20' : ''} whitespace-nowrap overflow-hidden text-ellipsis max-w-0`}
-                      title={editModeActive && editingRowId !== entry.id && ['title', 'content', 'component'].includes(colKey) ? 'Double-click to edit' : editModeActive && editingRowId !== entry.id && ['status', 'severity'].includes(colKey) ? 'Click to edit' : ''}
+                        colKey === 'select' ? 'text-center' : ['price', 'quantity'].includes(colKey) ? 'text-right' : ''
+                      } ${
+                        // Non-edit mode: highlight clickable title/content cells
+                        ['title', 'content'].includes(colKey) && !editModeActive ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20' :
+                        // Edit mode: highlight editable cells based on selection state
+                        editModeActive && ['title', 'content', 'component', 'status', 'severity'].includes(colKey) && editingRowId !== entry.id ?
+                          (selectedRows.size > 0 ?
+                            // If rows selected: only highlight editable cells in selected rows
+                            (selectedRows.has(entry.id) ? 'cursor-pointer bg-yellow-100 dark:bg-yellow-900/40 hover:bg-yellow-200 dark:hover:bg-yellow-900/60 border border-yellow-400 dark:border-yellow-600' : '') :
+                            // If no rows selected: highlight ALL editable cells
+                            'cursor-pointer bg-yellow-100 dark:bg-yellow-900/40 hover:bg-yellow-200 dark:hover:bg-yellow-900/60 border border-yellow-400 dark:border-yellow-600'
+                          ) : ''
+                      } whitespace-nowrap overflow-hidden text-ellipsis max-w-0`}
+                      title={
+                        !editModeActive && (() => {
+                          // Show full text tooltip for all text columns
+                          if (colKey === 'title') {
+                            return entry.title || ''
+                          } else if (colKey === 'content') {
+                            let contentText = ''
+                            if (entry.category === 'bible') {
+                              contentText = entry.description || entry.details || entry.examples || ''
+                            } else if (entry.category === 'teacher') {
+                              contentText = entry.summary || entry.description || entry.code_example || ''
+                            } else if (entry.category === 'lexicon') {
+                              contentText = entry.scenario || entry.description || entry.solution || ''
+                            } else {
+                              contentText = entry.description || entry.details || entry.summary || ''
+                            }
+                            return contentText || ''
+                          } else if (colKey === 'dense_index') {
+                            return entry.dense_index || ''
+                          } else if (colKey === 'component') {
+                            return entry.component || ''
+                          }
+                          return ''
+                        })() ||
+                        (editModeActive && editingRowId !== entry.id && ['title', 'content', 'component'].includes(colKey) ? 'Double-click to edit' : '') ||
+                        (editModeActive && editingRowId !== entry.id && ['status', 'severity'].includes(colKey) ? 'Click to edit' : '')
+                      }
                     >
                       {renderCellContent(entry, colKey)}
                     </td>
@@ -1478,6 +1871,67 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
               </tr>
             ))}
           </tbody>
+
+          {/* Table Footer - shows sums for currency/numeric columns */}
+          <tfoot className="sticky bottom-0 z-10 bg-blue-600 dark:bg-blue-800 border-t-2 border-blue-700 dark:border-blue-900">
+            <tr>
+              {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
+                const column = COLUMNS.find(c => c.key === colKey)
+                if (!column) return null
+
+                // Calculate sum for currency/numeric columns
+                // If rows are selected, sum only selected rows; otherwise sum all
+                let sum = null
+                if (column.showSum) {
+                  const rowsToSum = selectedRows.size > 0
+                    ? filteredAndSorted.filter(entry => selectedRows.has(entry.id))
+                    : filteredAndSorted
+
+                  sum = rowsToSum.reduce((total, entry) => {
+                    const value = entry[colKey]
+                    // Handle numeric values
+                    const numValue = typeof value === 'number' ? value : parseFloat(value)
+                    return total + (isNaN(numValue) ? 0 : numValue)
+                  }, 0)
+                }
+
+                return (
+                  <td
+                    key={colKey}
+                    style={{
+                      width: columnWidths[colKey],
+                      minWidth: columnWidths[colKey],
+                    }}
+                    className={`${colKey === 'select' ? 'px-1 py-3' : 'px-6 py-3'} ${
+                      colKey === 'select' ? 'text-center' : column.showSum ? 'text-right' : 'text-left'
+                    } text-sm font-semibold text-white`}
+                  >
+                    {colKey === 'select' ? (
+                      // Empty cell for checkbox column
+                      ''
+                    ) : column.showSum ? (
+                      // Display sum (right-aligned) - format based on sumType
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="text-blue-100">{selectedRows.size > 0 ? 'Selected:' : 'Total:'}</span>
+                        <span className="font-bold text-white">
+                          {column.sumType === 'currency'
+                            ? new Intl.NumberFormat('en-AU', {
+                                style: 'currency',
+                                currency: 'AUD'
+                              }).format(sum)
+                            : sum.toLocaleString('en-AU')
+                          }
+                        </span>
+                      </div>
+                    ) : (
+                      // Empty cell for non-sum columns
+                      ''
+                    )}
+                  </td>
+                )
+              })}
+            </tr>
+          </tfoot>
         </table>
 
         {filteredAndSorted.length === 0 && (
@@ -1492,7 +1946,10 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
       {selectedEntry && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={() => setSelectedEntry(null)}
+          onClick={() => {
+            setSelectedEntry(null)
+            setSelectedColumn(null)
+          }}
         >
           <div
             className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
@@ -1502,12 +1959,17 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
             <div className="sticky top-0 bg-blue-600 dark:bg-blue-800 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium opacity-90">
-                  Ch {selectedEntry.chapter_number} · {selectedEntry.section_number || 'No Section'}
+                  {selectedColumn === 'title' ? 'Title' : selectedColumn === 'content' ? 'Content' : 'Details'}
                 </div>
-                <h2 className="text-xl font-bold mt-1">{selectedEntry.title}</h2>
+                <h2 className="text-xl font-bold mt-1">
+                  {selectedColumn === 'title' ? selectedEntry.title : selectedColumn === 'content' ? 'Content Details' : selectedEntry.title}
+                </h2>
               </div>
               <button
-                onClick={() => setSelectedEntry(null)}
+                onClick={() => {
+                  setSelectedEntry(null)
+                  setSelectedColumn(null)
+                }}
                 className="p-2 hover:bg-blue-700 dark:hover:bg-blue-900 rounded-lg transition-colors"
               >
                 <XMarkIcon className="w-6 h-6" />
@@ -1516,12 +1978,36 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
 
             {/* Modal Content */}
             <div className="p-6 space-y-6">
-              {/* Metadata */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Show only the clicked column's content */}
+              {selectedColumn === 'title' && (
                 <div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Category</div>
-                  <div className="mt-1 text-sm font-medium text-gray-900 dark:text-white">
-                    {selectedEntry.category === 'bible' && '📖 Bible'}
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white whitespace-pre-wrap">
+                    {selectedEntry.title}
+                  </div>
+                </div>
+              )}
+
+              {selectedColumn === 'content' && (
+                <div>
+                  <div className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                    {/* Show content based on category */}
+                    {selectedEntry.category === 'bible' && (selectedEntry.description || selectedEntry.details || selectedEntry.examples || 'No content available')}
+                    {selectedEntry.category === 'teacher' && (selectedEntry.summary || selectedEntry.description || selectedEntry.code_example || 'No content available')}
+                    {selectedEntry.category === 'lexicon' && (selectedEntry.scenario || selectedEntry.description || selectedEntry.solution || 'No content available')}
+                    {selectedEntry.category === 'inspiring_quotes' && (selectedEntry.description || 'No content available')}
+                    {!['bible', 'teacher', 'lexicon', 'inspiring_quotes'].includes(selectedEntry.category) && (selectedEntry.description || selectedEntry.content || 'No content available')}
+                  </div>
+                </div>
+              )}
+
+              {/* Fallback: show metadata if no specific column selected */}
+              {!selectedColumn && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Category</div>
+                      <div className="mt-1 text-sm font-medium text-gray-900 dark:text-white">
+                        {selectedEntry.category === 'bible' && '📖 Bible'}
                     {selectedEntry.category === 'teacher' && '🔧 Teacher'}
                     {selectedEntry.category === 'lexicon' && '📕 Lexicon'}
                   </div>
@@ -1672,12 +2158,22 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                 </>
               )}
 
+              {/* Dense Index - Searchable Content */}
+              {selectedEntry.dense_index && (
+                <div>
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-2">Dense Index (Searchable)</div>
+                  <div className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap bg-gray-50 dark:bg-gray-900 p-4 rounded-lg font-mono text-xs leading-relaxed max-h-96 overflow-y-auto">{selectedEntry.dense_index}</div>
+                </div>
+              )}
+
               {/* Related Rules */}
               {selectedEntry.related_rules && (
                 <div>
                   <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-2">Related Rules</div>
                   <div className="text-sm text-gray-900 dark:text-white">{selectedEntry.related_rules}</div>
                 </div>
+              )}
+                </>
               )}
 
               {/* Action Buttons */}
@@ -1697,10 +2193,109 @@ export default function TrinityTableView({ entries, onEdit, onDelete, stats, cat
                   Delete
                 </button>
                 <button
-                  onClick={() => setSelectedEntry(null)}
+                  onClick={() => {
+                    setSelectedEntry(null)
+                    setSelectedColumn(null)
+                  }}
                   className="ml-auto inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Text Editing Modal */}
+      {showTextEditModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" onClick={() => setShowTextEditModal(false)}>
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-black/50 dark:bg-black/70 transition-opacity" aria-hidden="true" />
+
+            {/* Modal Dialog */}
+            <div
+              className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col border border-gray-200 dark:border-gray-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Edit {textEditField === 'title' ? 'Title' : 'Content'}
+                </h3>
+                <button
+                  onClick={() => setShowTextEditModal(false)}
+                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 px-6 py-4 overflow-y-auto">
+                <textarea
+                  value={textEditValue}
+                  onChange={(e) => setTextEditValue(e.target.value)}
+                  rows={textEditField === 'title' ? 4 : 12}
+                  placeholder={`Enter ${textEditField === 'title' ? 'title' : 'content'}...`}
+                  className="w-full px-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none"
+                  autoFocus
+                  onFocus={(e) => e.target.select()}
+                />
+
+                {/* Tools Row */}
+                <div className="mt-4 flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
+                    <span className="font-medium">{textEditValue.length}</span>
+                    <span className="text-xs">characters</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+                    </svg>
+                    <span className="font-medium">
+                      {textEditValue.trim().split(/\s+/).filter(w => w.length > 0).length}
+                    </span>
+                    <span className="text-xs">words</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25" />
+                    </svg>
+                    <span className="font-medium">
+                      {textEditValue.split('\n').length}
+                    </span>
+                    <span className="text-xs">lines</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                <button
+                  onClick={() => setShowTextEditModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (textEditField === 'title') {
+                      setEditingData({ ...editingData, title: textEditValue })
+                    } else if (textEditField === 'content') {
+                      setEditingData({ ...editingData, description: textEditValue })
+                    }
+                    setShowTextEditModal(false)
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                >
+                  Save
                 </button>
               </div>
             </div>
