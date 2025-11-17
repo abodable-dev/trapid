@@ -208,6 +208,8 @@ export default function TeacherTableView({ content }) {
   const [sortDir, setSortDir] = useState('asc')
   const [selectedRows, setSelectedRows] = useState(new Set())
   const [columnFilters, setColumnFilters] = useState({})
+  const [sections, setSections] = useState([]) // API data
+  const [loading, setLoading] = useState(true) // Loading state
 
   // Column state management
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
@@ -232,8 +234,43 @@ export default function TeacherTableView({ content }) {
   // Track if initial load is complete to prevent saving stale data
   const hasLoadedRef = useRef(false)
 
-  // Parse sections from markdown content
-  const sections = useMemo(() => parseSectionsFromMarkdown(content), [content])
+  // Fetch sections from API (instead of parsing markdown)
+  useEffect(() => {
+    const fetchSections = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/v1/documentation_entries?category=teacher')
+        const data = await response.json()
+
+        if (data.success) {
+          // Transform API data to match component structure
+          const transformedSections = data.data.map(entry => ({
+            id: entry.id,
+            sectionNumber: entry.section_number || '',
+            chapter: entry.chapter_number,
+            chapterName: entry.chapter_name,
+            title: entry.title,
+            relatedTo: extractRelatedTo(entry.title, entry.chapter_number),
+            content: entry.summary || entry.description || '',
+            codeExample: entry.code_example,
+            commonMistakes: entry.common_mistakes,
+            testingStrategy: entry.testing_strategy,
+            relatedRules: entry.related_rules,
+            difficulty: entry.difficulty
+          }))
+          setSections(transformedSections)
+        }
+      } catch (error) {
+        console.error('Failed to fetch Teacher entries:', error)
+        // Fallback to markdown parsing if API fails
+        setSections(parseSectionsFromMarkdown(content))
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchSections()
+  }, [content])
 
   // RULE #19.33: Scroll handlers with loop prevention
   const handleScroll = (e) => {
@@ -862,7 +899,17 @@ export default function TeacherTableView({ content }) {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredAndSorted.map((section, index) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={columnOrder.filter(key => visibleColumns[key]).length} className="text-center py-12">
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <span className="text-gray-600 dark:text-gray-400">Loading Teacher entries...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredAndSorted.map((section, index) => (
                 <tr
                   key={section.id}
                   className={`group border-b border-gray-100 dark:border-gray-800/50 hover:bg-blue-50/40 dark:hover:bg-gray-800/30 transition-all duration-150 hover:shadow-md ${
@@ -891,7 +938,8 @@ export default function TeacherTableView({ content }) {
                     )
                   })}
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
 
