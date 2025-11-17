@@ -34,7 +34,8 @@ namespace :trapid do
       17 => "Workflows",
       18 => "Custom Tables",
       19 => "UI/UX",
-      20 => "Agents"
+      20 => "Agents",
+      21 => "Agent System & Automation"
     }
 
     imported_count = 0
@@ -94,23 +95,23 @@ namespace :trapid do
       description = body.gsub(/```[\w]*\n.*?```/m, '[Code example - see code_example field]').strip
 
       # Check if rule already exists
-      existing_rule = BibleRule.find_by(chapter_number: chapter_num, rule_number: rule_number)
+      existing_rule = Trinity.bible_entries.find_by(chapter_number: chapter_num, section_number: rule_number)
 
       if existing_rule
         puts "  ⏭️  Skipping RULE ##{rule_number} (already exists)"
         skipped_count += 1
       else
         begin
-          BibleRule.create!(
+          Trinity.create!(
+            category: 'bible',
             chapter_number: chapter_num,
             chapter_name: chapter_names[chapter_num],
-            rule_number: rule_number,
+            section_number: rule_number,
             title: title,
-            rule_type: rule_type,
+            entry_type: rule_type || 'rule',
             description: description,
             code_example: code_examples.presence,
-            cross_references: cross_refs.presence,
-            sort_order: imported_count
+            related_rules: cross_refs.presence
           )
           puts "  ✅ Imported RULE ##{rule_number}: #{title.truncate(60)}"
           imported_count += 1
@@ -124,7 +125,7 @@ namespace :trapid do
     puts "✅ Import complete!"
     puts "   Imported: #{imported_count} rules"
     puts "   Skipped:  #{skipped_count} rules (already existed)"
-    puts "   Total:    #{BibleRule.count} rules in database"
+    puts "   Total:    #{Trinity.bible_entries.count} rules in database"
     puts "=" * 60
   end
 
@@ -178,8 +179,8 @@ namespace :trapid do
 
     HEADER
 
-    # Group rules by chapter
-    (0..20).each do |chapter_num|
+    # Group rules by chapter (0-21 to include Agent System chapter)
+    (0..21).each do |chapter_num|
       rules = Trinity.bible_entries.by_chapter(chapter_num).ordered
       next if rules.empty?
 

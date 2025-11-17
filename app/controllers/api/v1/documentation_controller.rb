@@ -16,7 +16,7 @@ module Api
             icon: '📖',
             audience: 'Developers',
             path: 'TRAPID_BIBLE.md',
-            chapters: 20
+            chapters: 21
           },
           {
             id: 'teacher',
@@ -39,6 +39,16 @@ module Api
             chapters: 20,
             has_database: true,
             api_path: '/api/v1/documentation_entries?category=lexicon'
+          },
+          {
+            id: 'trinity',
+            name: 'Trinity',
+            description: 'Complete database table (Bible + Teacher + Lexicon)',
+            icon: '✨',
+            audience: 'Developers',
+            chapters: 21,
+            has_database: true,
+            api_path: '/api/v1/trinity'
           },
           {
             id: 'user-manual',
