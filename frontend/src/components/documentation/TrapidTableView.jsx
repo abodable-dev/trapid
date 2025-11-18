@@ -2108,7 +2108,7 @@ export default function TrapidTableView({
                         fontSize: '14px',
                         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                       }}
-                      className={`${colKey === 'select' ? 'px-1 py-1' : 'px-3 py-1'} ${
+                      className={`group relative ${colKey === 'select' ? 'px-1 py-1' : 'px-3 py-1'} ${
                         // Gray out computed columns when in edit mode
                         editModeActive && column.isComputed ? 'text-gray-400 dark:text-gray-600' : 'text-gray-900 dark:text-white'
                       } ${
@@ -2120,55 +2120,33 @@ export default function TrapidTableView({
                         // Edit mode: make all cells clickable except select and computed
                         editModeActive && colKey !== 'select' && !column.isComputed ? 'cursor-pointer' : ''
                       } whitespace-nowrap overflow-hidden text-ellipsis max-w-0`}
-                      title={
-                        editModeActive && colKey !== 'select' ? (
-                          // Edit mode: show field type and format instructions
-                          column.isComputed ? 'Computed field (auto-calculated, not editable)' :
-                          colKey === 'section' ? 'Single Line Text - Click to edit' :
-                          colKey === 'email' ? 'Email - Format: example@domain.com - Click to edit' :
-                          colKey === 'phone' ? 'Phone - Format: (03) 9123 4567 or 1300 123 456 - Click to edit' :
-                          colKey === 'mobile' ? 'Mobile - Format: 0407 397 541 - Click to edit' :
-                          colKey === 'is_active' ? 'Boolean - Click checkbox to toggle true/false' :
-                          colKey === 'discount' ? 'Percentage - Enter number (shown as %) - Click to edit' :
-                          colKey === 'status' ? 'Choice - Select from dropdown: Active, Inactive, Open, Fixed, By Design, Monitoring' :
-                          colKey === 'component' ? 'Multi Lookup - Enter component name (e.g., Auth, Chat, Jobs) - Click to edit' :
-                          colKey === 'price' ? 'Currency - Enter amount in AUD - Click to edit' :
-                          colKey === 'quantity' ? 'Number - Enter any number (decimals allowed) - Click to edit' :
-                          colKey === 'whole_number' ? 'Whole Number - Enter integers only (no decimals) - Click to edit' :
-                          colKey === 'severity' ? 'Choice - Select from dropdown: Low, Medium, High, Critical' :
-                          colKey === 'updated_at' ? 'Date - Auto-updated timestamp (not editable)' :
-                          colKey === 'document_link' ? 'Document Link - Enter URL (e.g., https://example.com/doc.pdf) - Click to edit' :
-                          colKey === 'content' ? 'Multi Line Text - Click to open text editor' :
-                          colKey === 'title' ? 'Single Line Text - Click to open text editor' :
-                          column.tooltip || 'Click to edit'
-                        ) : (
-                          // Not in edit mode: show content or column description
-                          !editModeActive && (() => {
-                            // Show full text tooltip for text columns
-                            if (colKey === 'title') {
-                              return entry.title || column.tooltip || ''
-                            } else if (colKey === 'content') {
-                              let contentText = ''
-                              if (entry.category === 'bible') {
-                                contentText = entry.description || entry.details || entry.examples || ''
-                              } else if (entry.category === 'teacher') {
-                                contentText = entry.summary || entry.description || entry.code_example || ''
-                              } else if (entry.category === 'lexicon') {
-                                contentText = entry.scenario || entry.description || entry.solution || ''
-                              } else {
-                                contentText = entry.description || entry.details || entry.summary || ''
-                              }
-                              return contentText || column.tooltip || ''
-                            } else if (colKey === 'dense_index') {
-                              return entry.dense_index || ''
-                            } else if (colKey === 'component') {
-                              return entry.component || column.tooltip || ''
-                            }
-                            return column.tooltip || ''
-                          })()
-                        )
-                      }
                     >
+                      {/* Instant tooltip for edit mode - shows on hover with no delay */}
+                      {editModeActive && colKey !== 'select' && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg whitespace-normal w-max max-w-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-75 z-50 pointer-events-none">
+                          {column.isComputed ? 'Computed field (auto-calculated, not editable)' :
+                           colKey === 'section' ? 'Single Line Text - Click to edit' :
+                           colKey === 'email' ? 'Email - Format: example@domain.com - Click to edit' :
+                           colKey === 'phone' ? 'Phone - Format: (03) 9123 4567 or 1300 123 456 - Click to edit' :
+                           colKey === 'mobile' ? 'Mobile - Format: 0407 397 541 - Click to edit' :
+                           colKey === 'is_active' ? 'Boolean - Click checkbox to toggle true/false' :
+                           colKey === 'discount' ? 'Percentage - Enter number (shown as %) - Click to edit' :
+                           colKey === 'status' ? 'Choice - Select from dropdown: Active, Inactive, Open, Fixed, By Design, Monitoring' :
+                           colKey === 'component' ? 'Multi Lookup - Enter component name (e.g., Auth, Chat, Jobs) - Click to edit' :
+                           colKey === 'price' ? 'Currency - Enter amount in AUD - Click to edit' :
+                           colKey === 'quantity' ? 'Number - Enter any number (decimals allowed) - Click to edit' :
+                           colKey === 'whole_number' ? 'Whole Number - Enter integers only (no decimals) - Click to edit' :
+                           colKey === 'severity' ? 'Choice - Select from dropdown: Low, Medium, High, Critical' :
+                           colKey === 'updated_at' ? 'Date - Auto-updated timestamp (not editable)' :
+                           colKey === 'document_link' ? 'Document Link - Enter URL (e.g., https://example.com/doc.pdf) - Click to edit' :
+                           colKey === 'content' ? 'Multi Line Text - Click to open text editor' :
+                           colKey === 'title' ? 'Single Line Text - Click to open text editor' :
+                           column.tooltip || 'Click to edit'}
+                          {/* Tooltip arrow */}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                        </div>
+                      )}
+
                       {renderCellContent(entry, colKey)}
                     </td>
                   )
