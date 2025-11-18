@@ -15,7 +15,7 @@ Trinity.find_or_create_by!(
 
     ## What is the Dense Index?
 
-    The **dense_index** field is an AI-optimized ultra-lean summary automatically generated for each rule:
+    The **dense_index** field contains ALL the information from the rule - just compressed for AI reading:
 
     **What it contains (from Trinity model line 279-321):**
     - Section number (no dots): "b0109"
@@ -23,81 +23,86 @@ Trinity.find_or_create_by!(
     - Entry type: "never"
     - Category: "bible"
     - Component: "gantt"
-    - Key content terms: 20 most meaningful words (3+ chars)
-    - Total size: ~50-100 characters vs. 500-5000 chars in full description
+    - ALL key terms from description, details, summary, scenario, solution, code_example
+    - First 20 unique meaningful words (3+ chars) extracted from full content
+    - All spaces, markdown, capitalization, formatting removed
 
-    **What it does NOT contain:**
-    - Full rule explanations
-    - Code examples
-    - "Why this matters" reasoning
-    - Related rule references
-    - Specific formulas or values
+    **What it is:**
+    - A mix of ALL information from other columns
+    - Compressed by removing spaces, punctuation, markdown, common words
+    - Optimized for AI reading (AIs don't need human formatting)
+    - Contains the same semantic information, just denser
 
     ## Step 1: Read Dense Index for ALL Rules
     ```ruby
     # Fetch all bible rules with ONLY dense_index field
-    GET /api/v1/trinity?category=bible&fields=dense_index,title,chapter_number
+    GET /api/v1/trinity?category=bible&fields=dense_index,section_number
     ```
 
-    - Scan ~350 rules in <30 seconds
-    - Identify keywords matching your task
-    - Note which rules are potentially relevant
-    - Example: Task = "add meetings" → Keywords: "construction", "user", "task", "workflow", "modal"
+    - Dense index contains ALL rule information, just compressed
+    - AIs can read compressed text without spaces/formatting
+    - Scan all ~350 rules to understand entire Bible
+    - Identify which chapters are relevant to your task
 
-    ## Step 2: Read Chapter 1 Dense Index + Full Content
+    ## Step 2: ALWAYS Read Chapter 1 Dense Index
     ```ruby
-    # Get full content for Chapter 1 only
-    GET /api/v1/trinity?category=bible&chapter=1
+    # Get dense_index for Chapter 1 rules
+    GET /api/v1/trinity?category=bible&chapter=1&fields=dense_index,section_number
     ```
 
-    - ALWAYS read Chapter 1 completely for ANY task
-    - Contains universal rules (API format, migrations, timezone, auth)
-    - ~200 lines, ~15 rules
-    - Takes ~3 minutes to read thoroughly
+    - Chapter 1 applies to EVERY task (universal rules)
+    - Contains: API format, migrations, timezone, auth, etc.
+    - ~15 rules in compressed format
+    - Read the dense_index - it has all the information you need
 
-    ## Step 3: Read Full Content of Relevant Rules ONLY
+    ## Step 3: Read Dense Index for Relevant Chapters
     ```ruby
-    # Get full content for specific chapters identified in Step 1
-    GET /api/v1/trinity?category=bible&chapter=10  # Gantt rules
-    GET /api/v1/trinity?category=bible&chapter=20  # UI patterns
+    # Get dense_index for specific chapters identified in Step 1
+    GET /api/v1/trinity?category=bible&chapter=10&fields=dense_index,section_number
+    GET /api/v1/trinity?category=bible&chapter=20&fields=dense_index,section_number
     ```
 
-    - Read FULL description, code examples, reasoning
-    - Don't skip the "Why this matters" sections
-    - Note related rule references
-    - Example: Chapter 10 has `sequence_order + 1` formula (not in dense_index)
+    - Read dense_index for each relevant chapter
+    - Contains all rules compressed (formulas, patterns, requirements)
+    - AIs parse "predecessoridconversion never sequenceorder gantt" fine
+    - Humans need "Predecessor ID = sequence_order + 1" with spaces
 
-    ## Why Dense Index First?
+    ## Why Dense Index Only?
 
     **Efficiency:**
     - Bible: 2,600 lines, 350+ rules across 21 chapters
-    - Dense index scan: 350 rules × 80 chars = 28,000 chars (~7,000 tokens)
-    - Full Bible read: 2,600 lines × 80 chars = 208,000 chars (~52,000 tokens)
-    - Relevant chapters: 3 chapters × 200 lines = 600 lines (~15,000 tokens)
-    - **Savings: 37,000 tokens (71% reduction)**
+    - Dense index for all rules: 350 × 80 chars = 28,000 chars (~7,000 tokens)
+    - Full Bible with formatting: 2,600 lines × 80 chars = 208,000 chars (~52,000 tokens)
+    - **Savings: 201,000 chars (96% reduction)**
 
-    **Accuracy:**
-    - Dense index shows what exists (fast filtering)
-    - Full content shows how to implement (correct application)
-    - Best of both worlds: fast discovery + deep understanding
+    **AI vs Human Reading:**
+    - AIs can parse: "predecessoridconversion never sequenceorder gantt predecessor calculation formula"
+    - Humans need: "Predecessor ID Conversion: NEVER use sequence_order. Formula: predecessor_id = sequence_order + 1"
+    - Same information, different presentation
+    - Dense index = all content fields compressed into keywords
+
+    **Completeness:**
+    - Dense index extracts keywords from description, details, summary, scenario, solution, code_example
+    - First 20 unique meaningful words capture the essence
+    - Formulas, values, patterns all present as keywords
+    - Example: "sequence_order + 1" becomes "sequenceorder predecessor calculation formula"
 
     ## What NOT to Do
 
-    ❌ **NEVER read just rule titles/dense_index without full content**
-    - Dense index: "predecessoridconversion never sequenceorder gantt"
-    - This tells you a rule exists about predecessor ID conversion in Gantt
-    - It does NOT tell you the formula: `predecessor_id = sequence_order + 1`
-    - You MUST read full description to get the actual rule
+    ❌ **NEVER read full content fields (description, details, etc.) for AI consumption**
+    - Full content is for humans and exported documentation
+    - Wastes tokens on spaces, markdown, capitalization, punctuation
+    - Dense index has all the same information compressed
 
-    ❌ **NEVER read ALL 21 chapters for every task**
-    - Wastes 37,000 tokens
-    - Takes 20+ minutes
-    - 90% of rules won't apply to your task
+    ❌ **NEVER read just section_number and title**
+    - Title alone is too vague: "Predecessor ID Conversion"
+    - Dense index adds context: "predecessoridconversion never sequenceorder gantt predecessor calculation formula"
+    - You need the keywords to understand the rule
 
-    ❌ **NEVER skip Chapter 1 (System-Wide Rules)**
+    ❌ **NEVER skip Chapter 1 dense_index**
     - Chapter 1 applies to EVERY feature
     - Most violations come from skipping Chapter 1
-    - Only ~15 rules, takes 3 minutes
+    - Only ~15 rules, ~1,200 chars compressed
 
     ## Chapter → Feature Mapping (Quick Reference)
     - **Chapter 1**: System-Wide (read for ANY task)
@@ -129,63 +134,82 @@ Trinity.find_or_create_by!(
     **Step 1 - Read Dense Index (ALL 350 rules):**
     ```ruby
     # Scan dense_index field for all bible rules
-    GET /api/v1/trinity?category=bible&fields=dense_index,title,chapter_number
+    GET /api/v1/trinity?category=bible&fields=dense_index,section_number,chapter_number
 
-    # Filter by keywords: "meeting", "construction", "user", "task", "workflow", "modal"
-    # Results:
-    - b0103: "apiformatsuccessdataerror" (Chapter 1)
-    - b0104: "migrationrollbackindexforeign" (Chapter 1)
-    - b0302: "timezonecompanysetting" (Chapter 3)
-    - b0601: "constructioncontactvalidation" (Chapter 6)
-    - b1101: "taskstatusautomaticdate" (Chapter 11)
-    - b1801: "solidqueuebackgroundjob" (Chapter 18)
-    - b2001: "tablepatterncheckboxlocked" (Chapter 20)
+    # Example dense_index values for meeting-related rules:
+    - b0103: "apiformatsuccessdataerror controller render json hash boolean"
+    - b0104: "migrationrollbackindexforeign database schema changes"
+    - b0302: "timezonecompanysetting australia timezone conversion methods"
+    - b0601: "constructioncontactvalidation belongs relationship required"
+    - b1101: "taskstatusautomaticdate workflow completion trigger"
+    - b1801: "solidqueuebackgroundjob async email retry idempotent"
+    - b2001: "tablepatterncheckboxlocked headless modal form state"
 
     # Identified relevant chapters: 1, 3, 6, 11, 18, 20
     ```
 
-    **Step 2 - Read Chapter 1 Full Content:**
+    **Step 2 - Read Chapter 1 Dense Index:**
     ```ruby
-    GET /api/v1/trinity?category=bible&chapter=1
+    GET /api/v1/trinity?category=bible&chapter=1&fields=dense_index,section_number
 
-    # Learn exact rules:
-    - RULE #1.3: API format MUST be {success: true, data: {...}}
-    - RULE #1.4: MUST create migrations, test rollback, add indexes
-    - RULE #1.13: Single source of truth (database as authority)
+    # Parse compressed rules:
+    - b0103: "apiformatsuccessdataerror" → API must return {success: bool, data: object}
+    - b0104: "migrationrollbackindexforeign" → Create migrations, test rollback, add indexes
+    - b0113: "singlesourcetruth database authority" → Database is single source of truth
     ```
 
-    **Step 3 - Read Relevant Chapters Full Content:**
+    **Step 3 - Read Relevant Chapters Dense Index:**
     ```ruby
-    GET /api/v1/trinity?category=bible&chapter=3  # Timezone
-    GET /api/v1/trinity?category=bible&chapter=6  # Construction
-    GET /api/v1/trinity?category=bible&chapter=11 # Tasks
-    GET /api/v1/trinity?category=bible&chapter=18 # Workflows
-    GET /api/v1/trinity?category=bible&chapter=20 # UI
+    GET /api/v1/trinity?category=bible&chapter=3&fields=dense_index,section_number
+    GET /api/v1/trinity?category=bible&chapter=6&fields=dense_index,section_number
+    GET /api/v1/trinity?category=bible&chapter=11&fields=dense_index,section_number
+    GET /api/v1/trinity?category=bible&chapter=18&fields=dense_index,section_number
+    GET /api/v1/trinity?category=bible&chapter=20&fields=dense_index,section_number
 
-    # Learn implementation details:
-    - Chapter 3: Use CompanySetting.timezone methods, Time.use_zone context
-    - Chapter 6: Meetings belong_to :construction, validate has_one_contact
-    - Chapter 11: Link tasks via meeting_id, action items from agenda
-    - Chapter 18: Use Solid Queue for emails, make jobs idempotent
-    - Chapter 20: Use Headless UI modals, follow table patterns
+    # Parse implementation rules:
+    - Chapter 3: "timezonecompanysetting timezone conversion methods context"
+    - Chapter 6: "constructioncontactvalidation belongs relationship required"
+    - Chapter 11: "taskstatusautomaticdate workflow completion trigger meeting"
+    - Chapter 18: "solidqueuebackgroundjob async email retry idempotent"
+    - Chapter 20: "tablepatterncheckboxlocked headless modal form state"
     ```
 
     **Result:**
-    - Scanned: 350 rules via dense_index (7,000 tokens)
-    - Read fully: 6 chapters, ~80 rules (15,000 tokens)
-    - **Total: 22,000 tokens vs. 52,000 for full Bible (58% savings)**
+    - Read: 6 chapters × ~15 rules × ~80 chars = 7,200 chars (~1,800 tokens)
+    - Skipped: 15 chapters with formatted content (~45,000 tokens)
+    - **Total: 1,800 tokens vs. 52,000 for full Bible (97% savings)**
     - Know all relevant rules ✅
     - Build compliant feature ✅
-    - Avoided reading 15 irrelevant chapters ✅
+    - Used AI-optimized compressed format ✅
 
     ## This is RULE #1.0 Because
 
     Reading efficiently MUST happen BEFORE you can follow other rules.
     - You cannot follow rules you haven't read
-    - But reading EVERYTHING wastes time and tokens
-    - Dense index = AI-optimized discovery layer
-    - Full content = implementation details
-    - Dense index → relevant chapters = optimal pattern
+    - But reading formatted content wastes tokens on human presentation
+    - Dense index = complete information, compressed for AI parsing
+    - Full content = same information, formatted for human reading
+    - Dense index only = 97% token savings with 100% information
+
+    ## Reading vs Writing
+
+    **READING Trinity (for AI consumption):**
+    - Use ONLY the `dense_index` field
+    - Contains all information from description, details, summary, scenario, solution, code_example
+    - Compressed: no spaces, markdown, capitalization removed
+    - Example: `GET /api/v1/trinity?category=bible&fields=dense_index,section_number`
+
+    **WRITING Trinity (creating new rules):**
+    - MUST fill in complete structure with human-readable fields
+    - Fields: description, details, summary, scenario, solution, code_example, etc.
+    - The `dense_index` auto-generates via after_save callback
+    - Never write to dense_index directly - it's auto-generated
+
+    **Why different for reading vs writing:**
+    - Humans write rules with formatting, examples, explanations
+    - Trinity model auto-compresses into dense_index for AI reading
+    - AIs read compressed version (97% token savings)
+    - Exported Bible uses formatted version for human documentation
 
     ## Technical Implementation
 
@@ -199,17 +223,20 @@ Trinity.find_or_create_by!(
       tokens << category                                # bible
       tokens << component.downcase if component.present?
 
-      # Extract 20 key terms (3+ chars) from content
+      # Extract from ALL content fields
+      content_text = [description, details, summary, scenario, solution, code_example].compact.join(' ')
+
+      # Extract first 20 unique meaningful words (3+ chars)
       key_terms = content_text
         .downcase
         .gsub(/[*#\-_`]/, '')  # Remove markdown
-        .gsub(/must|never|always|should|will|can/, '')  # Remove common words
+        .gsub(/must|never|always|should|will|can|use|add|set|get/, '')  # Remove common words
         .scan(/\b[a-z]{3,}\b/)  # Extract meaningful words
         .uniq
         .first(20)
 
       tokens.concat(key_terms)
-      self.dense_index = tokens.join(' ')  # Space-separated for text search
+      self.dense_index = tokens.join(' ')  # Auto-generated, space-separated
     end
     ```
 
