@@ -452,11 +452,9 @@ variables.each_with_index do |variable_name, index|
       puts "[#{index + 1}/#{variables.count}] Skipped: '#{variable_name}' (already exists)"
       skip_count += 1
     else
-      UnrealVariable.create!(
-        variable_name: variable_name,
-        claude_value: 0,
-        is_active: true
-      )
+      attrs = { variable_name: variable_name, claude_value: 0 }
+      attrs[:is_active] = true if UnrealVariable.column_names.include?('is_active')
+      UnrealVariable.create!(attrs)
       puts "[#{index + 1}/#{variables.count}] Created: '#{variable_name}'"
       success_count += 1
     end
