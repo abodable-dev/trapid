@@ -7,6 +7,15 @@ module Api
       def signup
         user = User.new(signup_params)
 
+        # Auto-approve Tekna employees
+        if user.email&.end_with?('@tekna.com.au')
+          user.role ||= 'user'  # Default role for Tekna employees
+          Rails.logger.info "Auto-approving Tekna employee: #{user.email}"
+        else
+          # Non-Tekna emails default to user role as well
+          user.role ||= 'user'
+        end
+
         if user.save
           token = JsonWebToken.encode(user_id: user.id)
           render json: {
@@ -31,6 +40,9 @@ module Api
         user = User.find_by(email: login_params[:email])
 
         if user&.authenticate(login_params[:password])
+          # Update last login timestamp
+          user.update_column(:last_login_at, Time.current)
+
           token = JsonWebToken.encode(user_id: user.id)
           render json: {
             success: true,

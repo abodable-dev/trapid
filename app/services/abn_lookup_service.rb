@@ -1,6 +1,7 @@
 class AbnLookupService
   require 'net/http'
   require 'uri'
+  require 'rexml/document'
 
   # ABR Web Services GUID - You need to register at https://abr.business.gov.au/Tools/WebServices
   # For now, using the test GUID. Replace with your production GUID.
@@ -92,7 +93,6 @@ class AbnLookupService
     end
 
     # Parse XML response
-    require 'rexml/document'
     doc = REXML::Document.new(response.body)
 
     # Check for exceptions

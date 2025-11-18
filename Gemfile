@@ -54,11 +54,16 @@ gem "caxlsx_rails", "~> 0.6.3"  # Rails integration for Excel export
 # Image management and scraping
 gem "cloudinary", "~> 2.1"  # Cloud image storage and CDN
 gem "httparty", "~> 0.22"  # HTTP requests for image scraping
+gem "http", "~> 5.1"  # HTTP client for OAuth token refresh
 gem "mini_magick", "~> 4.12"  # Image processing
 
 # OAuth2 for Xero integration
 gem "oauth2", "~> 2.0"  # OAuth2 authentication for Xero API
 gem "fuzzy_match", "~> 2.1"  # Fuzzy string matching for contact sync
+gem "rexml"  # XML parsing for ABN lookup service
+
+# SMS integration
+gem "twilio-ruby", "~> 7.3"  # Twilio SDK for SMS messaging
 
 # AI integration for plan analysis
 gem "anthropic", "~> 0.1.0"  # Claude API for AI-powered plan review
@@ -72,5 +77,17 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Ruby LSP for modern IDE support
+  gem "ruby-lsp", require: false
+
+  # Testing framework
+  gem "rspec-rails", "~> 7.1"
+  gem "factory_bot_rails", "~> 6.4"
+  gem "faker", "~> 3.5"
+  gem "shoulda-matchers", "~> 6.4"
+  gem "webmock", "~> 3.24"
+  gem "vcr", "~> 6.3"
+  gem "simplecov", "~> 0.22", require: false
 end
 gem "dentaku"

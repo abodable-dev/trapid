@@ -4,7 +4,7 @@ class XeroContactSyncService
   attr_reader :stats
 
   SIMILARITY_THRESHOLD = 0.85
-  RATE_LIMIT_SLEEP = 1 # seconds between API calls to avoid rate limits
+  RATE_LIMIT_SLEEP = 1200 # milliseconds between API calls (1.2s) to avoid Xero rate limits (60 requests per minute)
 
   def initialize
     @xero_client = XeroApiClient.new

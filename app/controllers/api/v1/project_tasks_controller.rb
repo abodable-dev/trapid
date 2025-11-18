@@ -2,7 +2,7 @@ module Api
   module V1
     class ProjectTasksController < ApplicationController
       before_action :set_project
-      before_action :set_task, only: [:show, :update, :destroy]
+      before_action :set_task, only: [:show, :update, :destroy, :auto_complete_subtasks]
 
       # GET /api/v1/projects/:project_id/tasks
       def index
@@ -66,6 +66,23 @@ module Api
       def destroy
         @task.destroy
         render json: { success: true }, status: :ok
+      end
+
+      # POST /api/v1/projects/:project_id/tasks/:id/auto_complete_subtasks
+      def auto_complete_subtasks
+        user_name = @current_user&.name || 'System'
+        completed_count = @task.auto_complete_all_subtasks!(user_name)
+
+        render json: {
+          success: true,
+          completed_count: completed_count,
+          message: "Auto-completed #{completed_count} subtask(s)"
+        }
+      rescue StandardError => e
+        render json: {
+          success: false,
+          error: e.message
+        }, status: :unprocessable_entity
       end
 
       private

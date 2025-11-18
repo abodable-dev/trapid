@@ -243,7 +243,7 @@ module Api
         # Send file
         send_data package.to_stream.read,
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          filename: "#{@supplier.name.parameterize}_pricebook_#{Date.today}.xlsx"
+          filename: "#{@supplier.name.parameterize}_pricebook_#{CompanySetting.today}.xlsx"
       end
 
       # POST /api/v1/suppliers/:id/pricebook/import

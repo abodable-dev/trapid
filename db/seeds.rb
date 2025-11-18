@@ -222,3 +222,259 @@ FolderTemplate.seed_defaults
 
 puts "Created #{FolderTemplate.count} folder templates"
 puts "Folder Templates seed complete!"
+
+# Gold Standard Items (Demo Price Book) Seed Data
+puts "\n" + "="*50
+puts "Seeding Gold Standard Items (Demo Price Book)..."
+
+gold_standard_items = [
+  {
+    section: 'CONC-001',
+    email: 'sales@boral.com.au',
+    phone: '1300 134 002',
+    mobile: '0412 345 678',
+    title: '25MPa Concrete Mix',
+    type: 'Concrete',
+    is_active: true,
+    discount: 5,
+    component: 'Boral',
+    status: 'active',
+    price: 285.00,
+    quantity: 15,
+    whole_number: 3,
+    unit: 'm³',
+    severity: 'low',
+    content: 'Standard 25MPa concrete mix for slabs and footings'
+  },
+  {
+    section: 'CONC-002',
+    email: 'sales@boral.com.au',
+    phone: '1300 134 002',
+    title: '32MPa Concrete Mix',
+    type: 'Concrete',
+    is_active: true,
+    discount: 7.5,
+    component: 'Boral',
+    status: 'active',
+    price: 315.00,
+    quantity: 8,
+    whole_number: 5,
+    unit: 'm³',
+    severity: 'low',
+    content: 'High strength concrete for structural elements'
+  },
+  {
+    section: 'TIMB-001',
+    email: 'orders@bunnings.com.au',
+    phone: '1300 366 852',
+    title: '90x45 MGP10 Pine',
+    type: 'Timber',
+    is_active: true,
+    discount: 0,
+    component: 'Bunnings',
+    status: 'active',
+    price: 12.50,
+    quantity: 250,
+    unit: 'lm',
+    severity: 'medium',
+    content: 'Standard framing timber - price fluctuates with market'
+  },
+  {
+    section: 'TIMB-002',
+    title: '140x45 MGP10 Pine',
+    type: 'Timber',
+    component: 'Bunnings',
+    status: 'active',
+    price: 18.90,
+    quantity: 180,
+    unit: 'lm',
+    severity: 'medium',
+    content: 'Larger framing timber for bearers and joists'
+  },
+  {
+    section: 'STEEL-001',
+    title: '150UC30 Universal Column',
+    type: 'Steel',
+    component: 'OneSteel',
+    status: 'active',
+    price: 2450.00,
+    quantity: 2,
+    unit: 'tonne',
+    severity: 'high',
+    content: 'Structural steel - HIGH VOLATILITY - lock in prices ASAP'
+  },
+  {
+    section: 'STEEL-002',
+    title: 'N12 Reinforcing Bar',
+    type: 'Steel',
+    component: 'OneSteel',
+    price: 1850.00,
+    unit: 'tonne',
+    status: 'active',
+    severity: 'high',
+    content: 'Rebar for concrete reinforcement - volatile pricing'
+  },
+  {
+    section: 'GYPS-001',
+    title: '13mm Gyprock Plasterboard',
+    type: 'Plasterboard',
+    component: 'CSR',
+    price: 18.50,
+    unit: 'sheet',
+    status: 'active',
+    severity: 'low',
+    content: 'Standard internal wall lining 2400x1200mm'
+  },
+  {
+    section: 'GYPS-002',
+    title: '16mm Moisture Resistant Gyprock',
+    type: 'Plasterboard',
+    component: 'CSR',
+    price: 24.90,
+    unit: 'sheet',
+    status: 'active',
+    severity: 'low',
+    content: 'Green board for wet areas 2400x1200mm'
+  },
+  {
+    section: 'INSUL-001',
+    title: 'R2.5 Ceiling Batts',
+    type: 'Insulation',
+    component: 'CSR',
+    price: 45.00,
+    unit: 'pack',
+    status: 'active',
+    severity: 'low',
+    content: 'Pink batts for ceiling insulation - 10m² coverage'
+  },
+  {
+    section: 'INSUL-002',
+    title: 'R1.5 Wall Batts',
+    type: 'Insulation',
+    component: 'CSR',
+    price: 38.00,
+    unit: 'pack',
+    status: 'active',
+    severity: 'low',
+    content: 'Pink batts for wall insulation - 8.6m² coverage'
+  },
+  {
+    section: 'TILE-001',
+    title: '600x600 Porcelain Tile White',
+    type: 'Tiles',
+    component: 'Beaumont',
+    price: 42.00,
+    unit: 'm²',
+    status: 'active',
+    severity: 'medium',
+    content: 'Discontinued line - limited stock remaining'
+  },
+  {
+    section: 'TILE-002',
+    title: '300x300 Ceramic Floor Tile Grey',
+    type: 'Tiles',
+    component: 'Beaumont',
+    price: 28.50,
+    unit: 'm²',
+    status: 'active',
+    severity: 'low',
+    content: 'Popular grey floor tile for bathrooms and laundries'
+  },
+  {
+    section: 'PAINT-001',
+    title: 'Dulux Wash&Wear Low Sheen White',
+    type: 'Paint',
+    component: 'Dulux',
+    price: 89.00,
+    unit: '10L',
+    status: 'active',
+    severity: 'low',
+    content: 'Premium interior paint - most popular choice'
+  },
+  {
+    section: 'PAINT-002',
+    title: 'Dulux Weathershield Exterior White',
+    type: 'Paint',
+    component: 'Dulux',
+    price: 115.00,
+    unit: '10L',
+    status: 'active',
+    severity: 'low',
+    content: 'Exterior paint with UV protection'
+  },
+  {
+    section: 'ROOF-001',
+    title: 'Colorbond Roofing Surfmist',
+    type: 'Roofing',
+    component: 'BlueScope',
+    price: 18.50,
+    unit: 'lm',
+    status: 'active',
+    severity: 'medium',
+    content: 'Most popular roof color - stock levels vary'
+  },
+  {
+    section: 'ROOF-002',
+    title: 'Terracotta Roof Tiles',
+    type: 'Roofing',
+    component: 'Monier',
+    price: 65.00,
+    unit: 'm²',
+    status: 'inactive',
+    severity: 'critical',
+    content: 'DISCONTINUED - supplier no longer producing'
+  },
+  {
+    section: 'ELEC-001',
+    title: '2.5mm² Twin & Earth Cable',
+    type: 'Electrical',
+    component: 'Clipsal',
+    price: 3.80,
+    unit: 'lm',
+    status: 'active',
+    severity: 'high',
+    content: 'Copper wire - price sensitive to commodity markets'
+  },
+  {
+    section: 'PLUMB-001',
+    title: '20mm Copper Pipe',
+    type: 'Plumbing',
+    component: 'Reece',
+    price: 12.50,
+    unit: 'lm',
+    status: 'active',
+    severity: 'high',
+    content: 'Hot water pipe - volatile copper pricing'
+  },
+  {
+    section: 'PLUMB-002',
+    title: '90mm PVC Stormwater Pipe',
+    type: 'Plumbing',
+    component: 'Reece',
+    price: 8.90,
+    unit: 'lm',
+    status: 'active',
+    severity: 'low',
+    content: 'Standard stormwater drainage pipe'
+  },
+  {
+    section: 'SAND-001',
+    title: 'Bricklayers Sand',
+    type: 'Landscaping',
+    component: 'Local Quarry',
+    price: 45.00,
+    unit: 'tonne',
+    status: 'active',
+    severity: 'low',
+    content: 'Fine sand for bricklaying and paving'
+  }
+]
+
+gold_standard_items.each do |item_data|
+  GoldStandardItem.find_or_create_by!(section: item_data[:section]) do |item|
+    item.assign_attributes(item_data)
+  end
+end
+
+puts "Created #{GoldStandardItem.count} gold standard items"
+puts "Gold Standard Items seed complete!"

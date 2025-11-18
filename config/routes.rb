@@ -18,10 +18,6 @@ Rails.application.routes.draw do
       post 'auth/login', to: 'authentication#login'
       get 'auth/me', to: 'authentication#me'
 
-      # OmniAuth routes
-      get 'auth/microsoft_office365/callback', to: 'omniauth_callbacks#microsoft_office365'
-      get 'auth/failure', to: 'omniauth_callbacks#failure'
-
       # Import routes
       post 'imports/upload', to: 'imports#upload'
       post 'imports/execute', to: 'imports#execute'
@@ -41,6 +37,11 @@ Rails.application.routes.draw do
       # Git integration
       get 'git/branch_status', to: 'git#branch_status'
 
+      # System & Performance Monitoring
+      get 'system/health', to: 'system#health'
+      get 'system/performance', to: 'system#performance'
+      get 'system/metrics', to: 'system#metrics'
+
       # Health checks
       get 'health/pricebook', to: 'health#pricebook'
       get 'health/pricebook/missing_items', to: 'health#missing_items'
@@ -53,6 +54,9 @@ Rails.application.routes.draw do
           get :emails
           get :documentation_tabs
         end
+
+        # Construction contacts (nested under constructions)
+        resources :construction_contacts, only: [:index, :create, :update, :destroy]
 
         # Schedule tasks (nested under constructions)
         resources :schedule_tasks, only: [:index, :create] do
@@ -70,6 +74,9 @@ Rails.application.routes.draw do
             post :validate
           end
         end
+
+        # Rain logs (nested under constructions)
+        resources :rain_logs, only: [:index, :show, :create, :update, :destroy]
 
       end
 
@@ -116,6 +123,15 @@ Rails.application.routes.draw do
           get :available_documents
           post :attach_documents
         end
+        # Payments nested under purchase orders
+        resources :payments, only: [:index, :create]
+      end
+
+      # Payments (standalone routes)
+      resources :payments, only: [:show, :update, :destroy] do
+        member do
+          post :sync_to_xero
+        end
       end
 
       # Price Book management
@@ -141,6 +157,9 @@ Rails.application.routes.draw do
         end
       end
 
+      # Gold Standard Items (Demo/Reference Price Book)
+      resources :gold_standard_items, only: [:index, :create, :update, :destroy]
+
       # Suppliers management
       resources :suppliers do
         collection do
@@ -158,6 +177,9 @@ Rails.application.routes.draw do
         end
       end
 
+      # Contact roles management
+      resources :contact_roles, only: [ :index, :create, :update, :destroy ]
+
       # Contacts management
       resources :contacts do
         collection do
@@ -174,8 +196,21 @@ Rails.application.routes.draw do
           delete :delete_price_column
           get :activities
           post :link_xero_contact
+          post :portal_user, to: 'contacts#create_portal_user'
+          patch :portal_user, to: 'contacts#update_portal_user'
+          delete :portal_user, to: 'contacts#delete_portal_user'
         end
+
+        # Contact relationships (nested under contacts)
+        resources :relationships, controller: 'contact_relationships', only: [:index, :create, :show, :update, :destroy]
+
+        # SMS messages (nested under contacts)
+        resources :sms_messages, only: [:index, :create]
       end
+
+      # SMS webhooks (Twilio callbacks - not nested)
+      post 'sms/webhook', to: 'sms_messages#webhook'
+      post 'sms/status', to: 'sms_messages#status_webhook'
 
       # Chat messages
       resources :chat_messages, only: [:index, :create, :destroy] do
@@ -190,15 +225,7 @@ Rails.application.routes.draw do
       end
 
       # Users management
-      resources :users, only: [:index, :show, :update, :destroy] do
-        member do
-          post :reset_password
-        end
-      end
-
-      # User Roles and Groups management
-      resources :user_roles, only: [:index, :create, :destroy]
-      resources :user_groups, only: [:index, :create, :destroy]
+      resources :users, only: [:index, :show, :update, :destroy]
 
       # Workflow management
       resources :workflow_definitions
@@ -238,7 +265,9 @@ Rails.application.routes.draw do
       resources :designs
 
       # Company Settings
-      resource :company_settings, only: [:show, :update]
+      resource :company_settings, only: [:show, :update] do
+        post :test_twilio, on: :collection
+      end
 
       # Folder Templates for OneDrive sync
       resources :folder_templates do
@@ -256,12 +285,72 @@ Rails.application.routes.draw do
       post 'setup/sync_documentation_categories', to: 'setup#sync_documentation_categories'
       post 'setup/sync_supervisor_checklists', to: 'setup#sync_supervisor_checklists'
       post 'setup/sync_schedule_templates', to: 'setup#sync_schedule_templates'
-      post 'setup/sync_folder_templates', to: 'setup#sync_folder_templates'  # Folder templates sync endpoint
+      post 'setup/sync_folder_templates', to: 'setup#sync_folder_templates'
 
       # Documentation Categories (Global)
       resources :documentation_categories do
         collection do
           post :reorder
+        end
+      end
+
+      # TRAPID_DOCS Documentation Viewer
+      get 'documentation', to: 'documentation#index'
+      get 'documentation/search', to: 'documentation#search'
+      get 'documentation/:id', to: 'documentation#show'
+
+      # Trinity (Bible + Lexicon + Teacher combined)
+      resources :trinity do
+        collection do
+          get :stats
+          get :constants
+          get :search
+          post :export_lexicon
+          post :export_teacher
+        end
+      end
+
+      # Inspiring Quotes
+      resources :inspiring_quotes do
+        collection do
+          get :daily
+          get :random
+        end
+      end
+
+      # Agent definitions
+      resources :agents, only: [:index] do
+        collection do
+          get :shortcuts
+        end
+      end
+
+      # User roles
+      resources :roles, only: [:index]
+
+      # Contact types
+      resources :contact_types, only: [:index]
+
+      # Legacy routes for backwards compatibility
+      resources :documentation_entries, controller: 'trinity' do
+        collection do
+          get :stats
+          post :export_lexicon
+          post :export_teacher
+        end
+      end
+
+      resources :documented_bugs, controller: 'trinity' do
+        collection do
+          get :stats
+          post :export_to_markdown, action: :export_lexicon
+        end
+      end
+
+      # Agent Definitions (Chapter 20)
+      resources :agent_definitions, param: :agent_id do
+        member do
+          post :record_run
         end
       end
 
@@ -288,10 +377,20 @@ Rails.application.routes.draw do
             post :bulk_update
             post :reorder
           end
+          member do
+            get :audit_logs
+          end
         end
       end
 
-      # Bug Hunter Tests for Gantt Testing
+      # Public Holidays
+      resources :public_holidays, only: [:index, :create, :destroy] do
+        collection do
+          get :dates
+        end
+      end
+
+      # Bug Hunter Tests
       resources :bug_hunter_tests, only: [:index] do
         collection do
           get :history
@@ -302,10 +401,10 @@ Rails.application.routes.draw do
         end
       end
 
-      # Public Holidays
-      resources :public_holidays, only: [:index, :create, :destroy] do
+      # Agent Status
+      resources :agents, only: [] do
         collection do
-          get :dates
+          get :status
         end
       end
 

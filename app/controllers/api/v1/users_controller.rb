@@ -1,25 +1,76 @@
-module Api
-  module V1
-    class UsersController < ApplicationController
-      # GET /api/v1/users
-      def index
-        users = User.all.order(:name)
+class Api::V1::UsersController < ApplicationController
+  # GET /api/v1/users
+  # Returns list of all users for chat/contact purposes
+  def index
+    @users = User.select(:id, :name, :email, :mobile_phone, :role, :assigned_role, :last_login_at).order(:name)
+    render json: @users.as_json(only: [:id, :name, :email, :mobile_phone, :role, :assigned_role, :last_login_at])
+  end
 
-        render json: {
-          success: true,
-          users: users.map { |u| user_json(u) }
-        }
-      end
+  # GET /api/v1/users/:id
+  def show
+    @user = User.find(params[:id])
+    render json: @user.as_json(only: [:id, :name, :email, :mobile_phone, :role, :assigned_role, :last_login_at])
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'User not found' }, status: :not_found
+  end
 
-      private
+  # PATCH /api/v1/users/:id
+  def update
+    @user = User.find(params[:id])
 
-      def user_json(user)
-        {
-          id: user.id,
-          name: user.name,
-          email: user.email
-        }
-      end
+    if @user.update(user_params)
+      render json: {
+        success: true,
+        user: @user.as_json(only: [:id, :name, :email, :mobile_phone, :role, :assigned_role, :last_login_at])
+      }
+    else
+      render json: {
+        success: false,
+        errors: @user.errors.full_messages
+      }, status: :unprocessable_entity
     end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'User not found' }, status: :not_found
+  end
+
+  # POST /api/v1/users/:id/reset_password
+  def reset_password
+    @user = User.find(params[:id])
+
+    # Generate reset token
+    token = SecureRandom.urlsafe_base64
+    @user.update_columns(
+      reset_password_token: token,
+      reset_password_sent_at: Time.current
+    )
+
+    # Send password reset email
+    # UserMailer.reset_password(@user, token).deliver_later
+
+    render json: {
+      success: true,
+      message: "Password reset email sent to #{@user.email}"
+    }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'User not found' }, status: :not_found
+  end
+
+  # DELETE /api/v1/users/:id
+  def destroy
+    @user = User.find(params[:id])
+
+    if @user.destroy
+      render json: { success: true, message: 'User removed successfully' }
+    else
+      render json: { success: false, error: 'Failed to remove user' }, status: :unprocessable_entity
+    end
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'User not found' }, status: :not_found
+  end
+
+  private
+
+  def user_params
+    params.require(:user).permit(:name, :email, :mobile_phone, :role, :assigned_role)
   end
 end

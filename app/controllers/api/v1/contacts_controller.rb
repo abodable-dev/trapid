@@ -1,7 +1,7 @@
 module Api
   module V1
     class ContactsController < ApplicationController
-      before_action :set_contact, only: [:show, :update, :destroy, :activities, :link_xero_contact]
+      before_action :set_contact, only: [:show, :update, :destroy, :activities, :link_xero_contact, :create_portal_user, :update_portal_user, :delete_portal_user]
 
       # GET /api/v1/contacts
       def index
@@ -48,8 +48,11 @@ module Api
         render json: {
           success: true,
           contacts: @contacts.as_json(
-            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas, :xero_id, :sync_with_xero, :last_synced_at],
-            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
+            only: [:id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website, :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas, :xero_id, :sync_with_xero, :last_synced_at, :total_purchase_orders_count, :total_purchase_orders_value, :trapid_rating],
+            include: {
+              portal_user: { only: [:id, :email, :portal_type, :active] }
+            },
+            methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?, :display_name]
           )
         }
       end
@@ -59,36 +62,55 @@ module Api
         # If this contact is a supplier, include their supplier-specific data
         contact_json = @contact.as_json(
           only: [
-            :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :website,
+            :id, :full_name, :first_name, :last_name, :email, :mobile_phone, :office_phone, :fax_phone, :website,
             :tax_number, :xero_id, :sync_with_xero, :last_synced_at, :xero_sync_error,
             :sys_type_id, :deleted, :parent_id, :parent,
             :drive_id, :folder_id, :contact_region_id, :contact_region, :branch, :created_at, :updated_at,
-            :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas
+            :contact_types, :primary_contact_type, :rating, :response_rate, :avg_response_time, :is_active, :supplier_code, :address, :notes, :lgas,
+            # Xero fields
+            :bank_bsb, :bank_account_number, :bank_account_name,
+            :default_purchase_account, :default_sales_account,
+            :bill_due_day, :bill_due_type, :sales_due_day, :sales_due_type,
+            :xero_contact_number, :xero_contact_status, :xero_account_number, :company_number, :default_discount,
+            :accounts_receivable_outstanding, :accounts_receivable_overdue,
+            :accounts_payable_outstanding, :accounts_payable_overdue
           ],
+          include: {
+            contact_persons: { only: [:id, :first_name, :last_name, :email, :include_in_emails, :is_primary, :xero_contact_person_id] },
+            contact_addresses: { only: [:id, :address_type, :line1, :line2, :line3, :line4, :city, :region, :postal_code, :country, :attention_to, :is_primary] },
+            contact_groups: { only: [:id, :name, :status, :xero_contact_group_id] },
+            portal_user: { only: [:id, :email, :portal_type, :active, :last_login_at, :created_at] }
+          },
           methods: [:is_customer?, :is_supplier?, :is_sales?, :is_land_agent?]
         )
 
         # If contact is a supplier, add pricebook items and purchase orders
         if @contact.is_supplier?
           # Get items where this contact is the supplier OR default_supplier OR has provided a quote (in price_histories)
-          items_as_supplier = @contact.pricebook_items.distinct
-          items_as_default_supplier = PricebookItem.where(default_supplier_id: @contact.id).distinct
-          items_with_price_history = PricebookItem.joins(:price_histories).where(price_histories: { supplier_id: @contact.id }).distinct
+          # Optimized to use a single query with LEFT JOIN instead of 3 separate queries
+          all_items = PricebookItem
+            .left_joins(:price_histories)
+            .where(
+              "pricebook_items.supplier_id = ? OR pricebook_items.default_supplier_id = ? OR price_histories.supplier_id = ?",
+              @contact.id, @contact.id, @contact.id
+            )
+            .includes(:price_histories)
+            .distinct
+            .order(:item_code)
 
-          # Combine all three and get unique items
-          all_item_ids = (items_as_supplier.pluck(:id) + items_as_default_supplier.pluck(:id) + items_with_price_history.pluck(:id)).uniq
-          all_items = PricebookItem.where(id: all_item_ids).order(:item_code)
-
-          contact_json[:pricebook_items_count] = all_items.count
+          contact_json[:pricebook_items_count] = all_items.size # Use size instead of count to avoid extra query
           contact_json[:purchase_orders_count] = @contact.purchase_orders.count
 
           # Build items with price histories specific to this contact
           contact_json[:pricebook_items] = all_items.map do |item|
-            # Get price histories for this contact only
+            # Filter preloaded price histories for this contact (no N+1)
             price_histories = item.price_histories
-              .where(supplier_id: @contact.id)
-              .order(date_effective: :desc, created_at: :desc)
-              .as_json(only: [:id, :old_price, :new_price, :date_effective, :lga, :change_reason, :user_name, :created_at])
+              .select { |ph| ph.supplier_id == @contact.id }
+              .sort_by { |ph| [(ph.date_effective || Time.at(0)).to_time, (ph.created_at || Time.at(0)).to_time] }
+              .reverse
+              .map do |ph|
+                ph.as_json(only: [:id, :old_price, :new_price, :date_effective, :lga, :change_reason, :user_name, :created_at])
+              end
 
             item.as_json(
               only: [:id, :item_code, :item_name, :category, :current_price, :unit, :price_last_updated_at]
@@ -118,7 +140,12 @@ module Api
 
       # PATCH /api/v1/contacts/:id
       def update
-        if @contact.update(contact_params)
+        # Handle contact groups separately
+        if params[:contact][:contact_group_ids] || params[:contact][:new_contact_group_names]
+          handle_contact_groups
+        end
+
+        if @contact.update(contact_params.except(:contact_group_ids, :new_contact_group_names))
           render json: {
             success: true,
             contact: @contact.as_json(
@@ -369,7 +396,7 @@ module Api
         source_id = params[:source_id]
         categories = params[:categories] # Optional array of categories to filter by
         set_as_default = params[:set_as_default] != false # Default to true unless explicitly false
-        effective_date = params[:effective_date].present? ? Date.parse(params[:effective_date]) : Date.today
+        effective_date = params[:effective_date].present? ? Date.parse(params[:effective_date]) : CompanySetting.today
 
         # Which price to copy: 'active' (default), 'latest', or 'oldest'
         # - active: Most recent date_effective (current active price)
@@ -676,7 +703,7 @@ module Api
             item_id = update[:item_id]
             new_price = update[:new_price].to_f
             change_reason = update[:change_reason].presence || 'bulk_update'
-            date_effective = update[:date_effective].present? ? Date.parse(update[:date_effective].to_s) : Date.today
+            date_effective = update[:date_effective].present? ? Date.parse(update[:date_effective].to_s) : CompanySetting.today
 
             # Validate item exists
             item = PricebookItem.find_by(id: item_id)
@@ -817,18 +844,43 @@ module Api
 
       # GET /api/v1/contacts/:id/activities
       def activities
-        activities = @contact.contact_activities.recent.limit(50)
+        # Get contact activities
+        contact_activities = @contact.contact_activities.recent.limit(50).map do |activity|
+          {
+            id: "activity_#{activity.id}",
+            activity_type: activity.activity_type,
+            description: activity.description,
+            metadata: activity.metadata,
+            occurred_at: activity.occurred_at,
+            created_at: activity.created_at,
+            performed_by: activity.performed_by
+          }
+        end
+
+        # Get SMS messages
+        sms_messages = @contact.sms_messages.recent.limit(50).map do |sms|
+          {
+            id: "sms_#{sms.id}",
+            activity_type: sms.direction == 'outbound' ? 'sms_sent' : 'sms_received',
+            description: "SMS #{sms.direction == 'outbound' ? 'sent to' : 'received from'} #{sms.direction == 'outbound' ? sms.to_phone : sms.from_phone}: #{sms.body.truncate(100)}",
+            metadata: {
+              sms_id: sms.id,
+              body: sms.body,
+              status: sms.status,
+              direction: sms.direction
+            },
+            occurred_at: sms.sent_at || sms.received_at || sms.created_at,
+            created_at: sms.created_at,
+            performed_by: sms.user
+          }
+        end
+
+        # Combine and sort by occurred_at
+        all_activities = (contact_activities + sms_messages).sort_by { |a| a[:occurred_at] }.reverse.take(50)
 
         render json: {
           success: true,
-          activities: activities.as_json(
-            only: [:id, :activity_type, :description, :metadata, :occurred_at, :created_at],
-            include: {
-              performed_by: {
-                only: [:id, :type]
-              }
-            }
-          )
+          activities: all_activities
         }
       end
 
@@ -914,12 +966,120 @@ module Api
         end
       end
 
+      # POST /api/v1/contacts/:id/portal_user
+      def create_portal_user
+        portal_type = params[:portal_type] || 'supplier'
+        email = params[:email]
+        password = params[:password]
+
+        if email.blank? || password.blank?
+          return render json: {
+            success: false,
+            error: "Email and password are required"
+          }, status: :unprocessable_entity
+        end
+
+        begin
+          @contact.enable_portal!(portal_type, email: email, password: password)
+
+          # Note: Password should be displayed to user immediately in the UI
+          # and then securely transmitted separately (e.g., via email)
+          # We no longer return it in the API response for security
+          render json: {
+            success: true,
+            portal_user: @contact.portal_user.as_json(only: [:id, :email, :portal_type, :active, :created_at]),
+            message: 'Portal access enabled successfully. Password has been set.'
+          }
+        rescue => e
+          render json: {
+            success: false,
+            error: e.message
+          }, status: :unprocessable_entity
+        end
+      end
+
+      # PATCH /api/v1/contacts/:id/portal_user
+      def update_portal_user
+        portal_user = @contact.portal_user
+
+        unless portal_user
+          return render json: {
+            success: false,
+            error: "No portal user exists for this contact"
+          }, status: :not_found
+        end
+
+        update_params = {}
+        update_params[:email] = params[:email] if params[:email].present?
+        update_params[:password] = params[:password] if params[:password].present?
+        update_params[:portal_type] = params[:portal_type] if params[:portal_type].present?
+        update_params[:active] = params[:active] unless params[:active].nil?
+
+        if portal_user.update(update_params)
+          response_data = {
+            success: true,
+            portal_user: portal_user.as_json(only: [:id, :email, :portal_type, :active, :created_at])
+          }
+          # Add message if password was changed
+          if params[:password].present?
+            response_data[:message] = 'Portal user updated successfully. Password has been changed.'
+          end
+          render json: response_data
+        else
+          render json: {
+            success: false,
+            errors: portal_user.errors.full_messages
+          }, status: :unprocessable_entity
+        end
+      end
+
+      # DELETE /api/v1/contacts/:id/portal_user
+      def delete_portal_user
+        portal_user = @contact.portal_user
+
+        unless portal_user
+          return render json: {
+            success: false,
+            error: "No portal user exists for this contact"
+          }, status: :not_found
+        end
+
+        portal_user.destroy
+        @contact.update(portal_enabled: false)
+
+        render json: {
+          success: true,
+          message: "Portal user deleted successfully"
+        }
+      end
+
       private
 
       def set_contact
         @contact = Contact.find(params[:id])
       rescue ActiveRecord::RecordNotFound
         render json: { success: false, error: "Contact not found" }, status: :not_found
+      end
+
+      def handle_contact_groups
+        # Clear existing group memberships
+        @contact.contact_group_memberships.destroy_all
+
+        # Add to existing groups
+        if params[:contact][:contact_group_ids].present?
+          params[:contact][:contact_group_ids].each do |group_id|
+            group = ContactGroup.find(group_id)
+            @contact.contact_group_memberships.create!(contact_group: group)
+          end
+        end
+
+        # Create new groups and add contact to them
+        if params[:contact][:new_contact_group_names].present?
+          params[:contact][:new_contact_group_names].each do |group_name|
+            group = ContactGroup.find_or_create_by!(name: group_name, status: 'ACTIVE')
+            @contact.contact_group_memberships.create!(contact_group: group) unless @contact.contact_groups.include?(group)
+          end
+        end
       end
 
       def contact_params
@@ -930,6 +1090,7 @@ module Api
           :email,
           :mobile_phone,
           :office_phone,
+          :fax_phone,
           :website,
           :tax_number,
           :xero_id,
@@ -951,8 +1112,29 @@ module Api
           :supplier_code,
           :address,
           :notes,
+          # Xero sync fields
+          :bank_bsb,
+          :bank_account_number,
+          :bank_account_name,
+          :default_purchase_account,
+          :default_sales_account,
+          :bill_due_day,
+          :bill_due_type,
+          :sales_due_day,
+          :sales_due_type,
+          :xero_contact_number,
+          :xero_contact_status,
+          :xero_account_number,
+          :company_number,
+          :default_discount,
           contact_types: [],
-          lgas: []
+          lgas: [],
+          contact_group_ids: [],
+          new_contact_group_names: [],
+          # Nested attributes for contact persons
+          contact_persons_attributes: [:id, :first_name, :last_name, :email, :mobile, :role, :include_in_emails, :is_primary, :_destroy],
+          # Nested attributes for contact addresses
+          contact_addresses_attributes: [:id, :address_type, :line1, :line2, :line3, :line4, :city, :region, :postal_code, :country, :attention_to, :is_primary, :_destroy]
         )
       end
     end

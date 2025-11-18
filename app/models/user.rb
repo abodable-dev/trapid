@@ -1,8 +1,9 @@
 class User < ApplicationRecord
-  has_secure_password
+  has_secure_password validations: false  # Disable default validations to make password optional for OAuth
 
   has_many :grok_plans, dependent: :destroy
   has_many :chat_messages, dependent: :destroy
+  has_many :schedule_template_row_audits, dependent: :nullify
 
   # Role constants
   ROLES = %w[user admin product_owner estimator supervisor builder].freeze
@@ -12,8 +13,8 @@ class User < ApplicationRecord
 
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :name, presence: true
-  validates :password, length: { minimum: 12 }, if: -> { new_record? || !password.nil? }
-  validate :password_complexity, if: -> { new_record? || !password.nil? }
+  validates :password, length: { minimum: 12 }, if: :password_required?
+  validate :password_complexity, if: :password_required?
   validates :role, inclusion: { in: ROLES }
   validates :assigned_role, inclusion: { in: ASSIGNABLE_ROLES }, allow_nil: true
 
@@ -59,7 +60,28 @@ class User < ApplicationRecord
     admin? || builder?
   end
 
+  # OAuth helper methods
+  def self.from_omniauth(auth)
+    where(provider: auth.provider, uid: auth.uid).first_or_create do |user|
+      user.email = auth.info.email
+      user.name = auth.info.name
+      user.oauth_token = auth.credentials.token
+      user.oauth_expires_at = Time.at(auth.credentials.expires_at) if auth.credentials.expires_at
+      user.role = 'user'  # Default role for new OAuth users
+      user.password = SecureRandom.hex(32)  # Set random password for OAuth users
+    end
+  end
+
+  def oauth_user?
+    provider.present? && uid.present?
+  end
+
   private
+
+  def password_required?
+    # Password is required for non-OAuth users or when explicitly setting password
+    !oauth_user? && (new_record? || password.present?)
+  end
 
   def password_complexity
     return if password.blank?

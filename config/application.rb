@@ -33,7 +33,9 @@ module Backend
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # Set default timezone to Australia/Brisbane (matches company_settings default)
+    # This can be overridden per-company via CompanySetting.instance.timezone
+    config.time_zone = "Australia/Brisbane"
     # config.eager_load_paths << Rails.root.join("extras")
 
     # Only loads a smaller set of middleware suitable for API only apps.
@@ -41,9 +43,7 @@ module Backend
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
 
-    # Add back session and cookie middleware for OmniAuth support
-    config.middleware.use ActionDispatch::Cookies
-    config.middleware.use ActionDispatch::Session::CookieStore, key: '_trapid_session'
+    # Enable Rack::Attack for rate limiting
     config.middleware.use Rack::Attack
 
     # Configure ActiveRecord encryption to use environment variables

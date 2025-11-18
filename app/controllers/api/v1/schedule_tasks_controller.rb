@@ -367,14 +367,72 @@ module Api
       def parse_predecessors(value)
         return [] if value.blank?
 
-        if value.is_a?(String)
-          # Split by comma and convert to integers
-          value.split(',').map(&:strip).map(&:to_i).reject(&:zero?)
-        elsif value.is_a?(Array)
-          value
-        else
-          [value.to_i].reject(&:zero?)
+        # If already an array, return it
+        return value if value.is_a?(Array)
+
+        # Convert to string and parse
+        value_str = value.to_s.strip
+        return [] if value_str.empty?
+
+        predecessors = []
+
+        # Split by comma first to handle multiple dependencies
+        parts = value_str.split(',').map(&:strip)
+
+        parts.each do |part|
+          # Handle '&' separated dependencies (e.g., "0 & 0+7d")
+          if part.include?('&')
+            part.split('&').map(&:strip).each do |subpart|
+              predecessors << parse_single_predecessor(subpart)
+            end
+          # Handle '/' separated dependencies (e.g., "93/55 +1d")
+          elsif part.include?('/')
+            # Split by / and check if there's a lag at the end
+            if part =~ /(.+)\s+(\+\d+[a-z]+)$/i
+              # Has a lag time (e.g., "93/55 +1d")
+              dep_ids = $1.split('/').map(&:strip)
+              lag = $2.strip
+              dep_ids.each do |dep_id|
+                predecessors << parse_single_predecessor(dep_id, lag)
+              end
+            else
+              # No lag time, just split by /
+              part.split('/').map(&:strip).each do |dep_id|
+                predecessors << parse_single_predecessor(dep_id)
+              end
+            end
+          else
+            # Simple dependency (e.g., "42" or "8" or "10+7d")
+            predecessors << parse_single_predecessor(part)
+          end
         end
+
+        # Remove any nil values and return unique dependencies
+        predecessors.compact.uniq
+      end
+
+      # Parse a single predecessor string like "8", "10+7d", "0+7d"
+      def parse_single_predecessor(dep_str, default_lag = nil)
+        return nil if dep_str.blank?
+
+        dep_str = dep_str.strip
+
+        # Check if there's a lag time (e.g., "10+7d" or "0+7d")
+        if dep_str =~ /^(\d+)\s*(\+\d+[a-z]+)$/i
+          task_id = $1.to_i
+          lag = $2.strip
+          return { "id" => task_id, "lag" => lag } if task_id > 0
+        elsif default_lag
+          # Use provided lag
+          task_id = dep_str.to_i
+          return { "id" => task_id, "lag" => default_lag } if task_id > 0
+        else
+          # No lag, just task ID
+          task_id = dep_str.to_i
+          return { "id" => task_id } if task_id > 0
+        end
+
+        nil
       end
 
       def task_to_json(task)

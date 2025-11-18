@@ -28,9 +28,57 @@ module Api
         # Set current user for audit logging
         Thread.current[:current_audit_user_id] = @current_user&.id
 
+        # DEBUG: Log what we're receiving
+        Rails.logger.info "🔵 UPDATE ROW #{@row.id} - Received params: #{row_params.inspect}"
+        Rails.logger.info "🔵 BEFORE UPDATE - manually_positioned: #{@row.manually_positioned}, supplier_confirm: #{@row.supplier_confirm}"
+
+        # VALIDATION: start_date is stored as "days from project start" (not a timestamp)
+        # Valid range: 0 to 9999 days (0 = project start, ~27 years max)
+        # Note: This is NOT a Unix timestamp - it's a relative day offset
+        if row_params[:start_date].present?
+          start_date_int = row_params[:start_date].to_i
+          if start_date_int < 0 || start_date_int > 9999
+            Rails.logger.error "❌ REJECTED INVALID start_date: #{row_params[:start_date]} for row #{@row.id} (must be 0-9999 days from project start)"
+            render json: {
+              error: "Invalid start_date: #{row_params[:start_date]} (must be between 0 and 9999 days from project start)",
+              current_value: @row.start_date
+            }, status: :unprocessable_entity
+            return
+          end
+        end
+
+        # Track which attributes are changing for cascade detection
+        changed_attrs = []
+        [:start_date, :duration].each do |attr|
+          changed_attrs << attr if row_params.key?(attr) && row_params[attr] != @row.send(attr)
+        end
+
         if @row.update(row_params)
-          render json: row_json(@row)
+          # Reload to get fresh data from database
+          @row.reload
+          Rails.logger.info "✅ AFTER UPDATE - manually_positioned: #{@row.manually_positioned}, supplier_confirm: #{@row.supplier_confirm}"
+
+          # ANTI-LOOP FIX: Don't manually cascade here - the after_update callback handles it!
+          # Get affected tasks from thread-local (set by cascade callback)
+          affected_tasks = Thread.current[:cascade_affected_tasks] || [@row]
+          Thread.current[:cascade_affected_tasks] = nil # Clear it
+
+          # Return all affected tasks (original + cascaded)
+          response_json = if affected_tasks.length > 1
+            Rails.logger.info "🔄 CASCADE: Returning #{affected_tasks.length} affected tasks"
+            {
+              task: row_json(@row),
+              cascaded_tasks: affected_tasks.reject { |t| t.id == @row.id }.map { |t| row_json(t) }
+            }
+          else
+            row_json(@row)
+          end
+
+          Rails.logger.info "📤 SENDING RESPONSE - manually_positioned: #{response_json[:manually_positioned] rescue 'N/A'}, supplier_confirm: #{response_json[:supplier_confirm] rescue 'N/A'}"
+
+          render json: response_json
         else
+          Rails.logger.error "❌ UPDATE FAILED - Errors: #{@row.errors.full_messages}"
           render json: { errors: @row.errors.full_messages }, status: :unprocessable_entity
         end
       ensure
@@ -76,14 +124,61 @@ module Api
         row_ids = params[:row_ids] || []
 
         ActiveRecord::Base.transaction do
+          # Step 1: Get all rows and build old sequence mapping (id -> old_sequence)
+          all_rows = @template.schedule_template_rows.order(:sequence_order)
+          old_sequence_map = {}
+          all_rows.each_with_index do |row, idx|
+            old_sequence_map[row.id] = idx + 1  # 1-based sequence
+          end
+
+          # Step 2: Build new sequence mapping (id -> new_sequence)
+          new_sequence_map = {}
+          row_ids.each_with_index do |row_id, index|
+            new_sequence_map[row_id] = index + 1  # 1-based sequence
+          end
+
+          # Step 3: Build reverse mapping (old_sequence -> new_sequence)
+          sequence_changes = {}
+          old_sequence_map.each do |row_id, old_seq|
+            new_seq = new_sequence_map[row_id]
+            sequence_changes[old_seq] = new_seq if old_seq != new_seq
+          end
+
+          Rails.logger.info "🔄 REORDER - Old to New mapping: #{sequence_changes.inspect}"
+
+          # Step 4: Update sequence_order for all rows
           row_ids.each_with_index do |row_id, index|
             row = @template.schedule_template_rows.find(row_id)
-            row.update!(sequence_order: index)
+            row.update_column(:sequence_order, index)
+          end
+
+          # Step 5: Update predecessor_ids for all rows that reference moved tasks
+          if sequence_changes.any?
+            all_rows.each do |row|
+              next if row.predecessor_ids.blank?
+
+              updated_predecessors = row.predecessor_ids.map do |pred|
+                pred_id = pred['id'].to_i
+                new_pred_id = sequence_changes[pred_id] || pred_id
+
+                if new_pred_id != pred_id
+                  Rails.logger.info "  📝 Row #{row.id}: Updating predecessor #{pred_id} -> #{new_pred_id}"
+                end
+
+                { 'id' => new_pred_id, 'type' => pred['type'], 'lag' => pred['lag'] }
+              end
+
+              if updated_predecessors != row.predecessor_ids
+                row.update_column(:predecessor_ids, updated_predecessors)
+              end
+            end
           end
         end
 
         render json: { success: true }
       rescue StandardError => e
+        Rails.logger.error "❌ REORDER FAILED: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
         render json: { error: e.message }, status: :unprocessable_entity
       end
 
@@ -112,7 +207,7 @@ module Api
       end
 
       def check_can_edit_templates
-        unless @current_user.can_create_templates?
+        unless @current_user&.can_create_templates?
           render json: { error: 'Unauthorized' }, status: :forbidden
         end
       end
@@ -146,7 +241,9 @@ module Api
           :supplier_confirm,
           :start,
           :complete,
+          :dependencies_broken,
           predecessor_ids: [:id, :type, :lag],
+          broken_predecessor_ids: [:id, :type, :lag],
           price_book_item_ids: [],
           documentation_category_ids: [],
           supervisor_checklist_template_ids: [],
@@ -187,7 +284,9 @@ module Api
           :supplier_confirm,
           :start,
           :complete,
+          :dependencies_broken,
           predecessor_ids: [:id, :type, :lag],
+          broken_predecessor_ids: [:id, :type, :lag],
           price_book_item_ids: [],
           documentation_category_ids: [],
           supervisor_checklist_template_ids: [],
@@ -208,6 +307,7 @@ module Api
           assigned_user_id: row.assigned_user_id,
           predecessor_ids: row.predecessor_ids,
           predecessor_display: row.predecessor_display,
+          predecessor_display_names: row.predecessor_display_names,
           po_required: row.po_required,
           create_po_on_job_start: row.create_po_on_job_start,
           price_book_item_ids: row.price_book_item_ids,
@@ -241,7 +341,9 @@ module Api
           confirm: row.confirm,
           supplier_confirm: row.supplier_confirm,
           start: row.start,
-          complete: row.complete
+          complete: row.complete,
+          dependencies_broken: row.dependencies_broken,
+          broken_predecessor_ids: row.broken_predecessor_ids
         }
       end
 
