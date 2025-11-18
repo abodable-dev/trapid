@@ -4,8 +4,12 @@ class PurchaseOrder < ApplicationRecord
   belongs_to :supplier, optional: true, counter_cache: true
   belongs_to :estimate, optional: true
   has_many :line_items, class_name: 'PurchaseOrderLineItem', dependent: :destroy
+  has_many :payments, dependent: :destroy
   has_many :project_tasks, dependent: :nullify
   has_many :schedule_tasks, dependent: :nullify
+  has_many :workflow_instances, as: :subject, dependent: :destroy
+  has_many :purchase_order_documents, dependent: :destroy
+  has_many :document_tasks, through: :purchase_order_documents
 
   # Nested attributes
   accepts_nested_attributes_for :line_items, allow_destroy: true
@@ -51,9 +55,11 @@ class PurchaseOrder < ApplicationRecord
   scope :by_status, ->(status) { where(status: status) if status.present? }
   scope :by_construction, ->(construction_id) { where(construction_id: construction_id) if construction_id.present? }
   scope :recent, -> { order(created_at: :desc) }
-  scope :overdue, -> { where('required_date < ? AND status NOT IN (?)', Date.today, ['received', 'cancelled']) }
+  scope :overdue, -> { where('required_date < ? AND status NOT IN (?)', CompanySetting.today, ['received', 'cancelled']) }
   scope :pending_approval, -> { where(status: 'pending') }
   scope :for_schedule, -> { where(creates_schedule_tasks: true) }
+  scope :visible_to_suppliers, -> { where(visible_to_supplier: true) }
+  scope :by_supplier, ->(supplier_id) { where(supplier_id: supplier_id) if supplier_id.present? }
 
   # Instance methods
   def calculate_totals
@@ -97,11 +103,11 @@ class PurchaseOrder < ApplicationRecord
   end
 
   def send_to_supplier!
-    update(status: 'sent', ordered_date: Date.today)
+    update(status: 'sent', ordered_date: CompanySetting.today)
   end
 
   def mark_received!
-    update(status: 'received', received_date: Date.today)
+    update(status: 'received', received_date: CompanySetting.today)
   end
 
   def can_edit?
@@ -148,6 +154,23 @@ class PurchaseOrder < ApplicationRecord
     warnings
   end
 
+  # Workflow helper methods
+  def active_workflow
+    workflow_instances.find_by(status: ['pending', 'in_progress'])
+  end
+
+  def has_active_workflow?
+    active_workflow.present?
+  end
+
+  def workflow_status
+    active_workflow&.status || 'none'
+  end
+
+  def current_workflow_step
+    active_workflow&.workflow_steps&.find_by(status: ['pending', 'in_progress'])
+  end
+
   # Determine payment status based on invoice amount
   # Returns the appropriate payment_status based on invoice amount vs PO total
   def determine_payment_status(invoice_amount)
@@ -190,6 +213,33 @@ class PurchaseOrder < ApplicationRecord
     end
 
     new_status
+  end
+
+  # Portal-specific methods
+  def make_visible_to_supplier!
+    update!(visible_to_supplier: true)
+  end
+
+  def hide_from_supplier!
+    update!(visible_to_supplier: false)
+  end
+
+  def payment_schedule_summary
+    return [] unless payment_schedule.is_a?(Array)
+    payment_schedule
+  end
+
+  def portal_summary
+    {
+      po_number: purchase_order_number,
+      status: status,
+      total: total,
+      ordered_date: ordered_date,
+      required_date: required_date,
+      payment_status: payment_status,
+      payments_received: payments.sum(:amount),
+      payment_schedule: payment_schedule_summary
+    }
   end
 
   private

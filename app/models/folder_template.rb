@@ -73,7 +73,7 @@ class FolderTemplate < ApplicationRecord
 
   def self.create_tekna_residential_template
     template = create!(
-      name: "Tekna Standard Residential",
+      name: "Std Job Default Folders",
       template_type: "residential",
       is_system_default: true,
       is_active: true

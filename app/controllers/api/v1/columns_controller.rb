@@ -214,14 +214,18 @@ module Api
 
           # Build search query across all searchable columns
           if searchable_columns.any?
-            search_conditions = searchable_columns.map { |col| "#{col} ILIKE :search" }.join(' OR ')
+            # Sanitize column names to prevent SQL injection
+            search_conditions = searchable_columns.map { |col|
+              "#{model.connection.quote_column_name(col)} ILIKE :search"
+            }.join(' OR ')
             records = model.where(search_conditions, search: "%#{search_term}%")
               .limit(20)
               .order(:id)
           else
-            # Fallback: just search the display column
+            # Fallback: just search the display column (sanitized)
+            quoted_column = model.connection.quote_column_name(column.lookup_display_column)
             records = model.where(
-              "#{column.lookup_display_column} ILIKE :search",
+              "#{quoted_column} ILIKE :search",
               search: "%#{search_term}%"
             ).limit(20).order(:id)
           end

@@ -257,6 +257,41 @@ class XeroApiClient
     { success: false, error: e.message }
   end
 
+  # Fetch chart of accounts from Xero
+  def get_accounts
+    response = make_request(:get, 'Accounts')
+
+    if response[:success]
+      accounts = response[:data]['Accounts'] || []
+
+      # Update local database
+      accounts.each do |account|
+        # Skip accounts without a code or name
+        next if account['Code'].blank? || account['Name'].blank?
+
+        XeroAccount.find_or_initialize_by(code: account['Code']).tap do |xero_account|
+          xero_account.name = account['Name']
+          xero_account.account_type = account['Type']
+          xero_account.tax_type = account['TaxType']
+          xero_account.description = account['Description']
+          xero_account.active = account['Status'] == 'ACTIVE'
+          xero_account.account_class = account['Class']
+          xero_account.system_account = account['SystemAccount'] || false
+          xero_account.enable_payments_to_account = account['EnablePaymentsToAccount'] || false
+          xero_account.show_in_expense_claims = account['ShowInExpenseClaims'] || false
+          xero_account.save!
+        end
+      end
+
+      { success: true, accounts: XeroAccount.active.order(:code) }
+    else
+      { success: false, error: 'Failed to fetch accounts from Xero' }
+    end
+  rescue StandardError => e
+    Rails.logger.error("Error fetching Xero accounts: #{e.message}")
+    { success: false, error: e.message }
+  end
+
   private
 
   def credentials_present?

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_18_200720) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_18_030128) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -746,15 +746,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_200720) do
     t.index ["xero_payment_id"], name: "index_payments_on_xero_payment_id"
   end
 
-  create_table "permissions", force: :cascade do |t|
-    t.string "name"
-    t.text "description"
-    t.string "category"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.boolean "enabled"
-  end
-
   create_table "portal_access_logs", force: :cascade do |t|
     t.bigint "portal_user_id", null: false
     t.string "action"
@@ -1065,13 +1056,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_200720) do
     t.index ["created_by_user_id"], name: "index_rain_logs_on_created_by_user_id"
     t.index ["date"], name: "index_rain_logs_on_date"
     t.index ["source"], name: "index_rain_logs_on_source"
-  end
-
-  create_table "role_permissions", force: :cascade do |t|
-    t.string "role"
-    t.integer "permission_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
   end
 
   create_table "roles", force: :cascade do |t|
@@ -1664,14 +1648,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_200720) do
     t.string "supplier_trade"
     t.string "product_id"
     t.string "contact_region"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_permissions", force: :cascade do |t|
-    t.integer "user_id"
-    t.integer "permission_id"
-    t.boolean "granted"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end

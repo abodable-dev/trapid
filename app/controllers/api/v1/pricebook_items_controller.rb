@@ -61,18 +61,28 @@ module Api
         end
 
         # Pagination - Added DoS protection by capping limit at 1000
+        # Exception: When filtering by supplier_id, allow unlimited results (for Schedule Master auto-PO)
         page = [params[:page]&.to_i || 1, 1].max # Ensure page is at least 1
         limit = (params[:limit] || params[:per_page])&.to_i || 100
-        limit = [[limit, 1].max, 1000].min # Cap between 1 and 1000
-        offset = (page - 1) * limit
+
+        # Allow unlimited results when filtering by supplier_id
+        if params[:supplier_id].present? && limit == 0
+          limit = nil # No limit
+        else
+          limit = [[limit, 1].max, 1000].min # Cap between 1 and 1000
+        end
+
+        offset = (page - 1) * (limit || 0)
 
         total_count = @items.is_a?(Array) ? @items.count : @items.count
 
         # Apply pagination
         if @items.is_a?(Array)
-          paginated_items = @items[offset, limit] || []
+          paginated_items = limit ? (@items[offset, limit] || []) : @items
         else
-          @items = @items.limit(limit).offset(offset)
+          if limit
+            @items = @items.limit(limit).offset(offset)
+          end
           paginated_items = @items
         end
 
@@ -121,7 +131,7 @@ module Api
             page: page,
             limit: limit,
             total_count: total_count,
-            total_pages: (total_count.to_f / limit).ceil
+            total_pages: limit ? (total_count.to_f / limit).ceil : 1
           },
           filters: {
             categories: PricebookItem.categories,
@@ -222,7 +232,7 @@ module Api
                   supplier_id: new_supplier_id,
                   old_price: existing_price&.new_price || item.current_price,
                   new_price: item.current_price,
-                  date_effective: Date.today,
+                  date_effective: CompanySetting.today,
                   change_reason: "Updated to match current default price when setting as default supplier"
                 )
                 results[:prices_updated] += 1
@@ -248,7 +258,7 @@ module Api
                   supplier_id: new_supplier_id,
                   old_price: new_price, # For new entries, old and new are the same
                   new_price: new_price,
-                  date_effective: Date.today,
+                  date_effective: CompanySetting.today,
                   change_reason: "Initial price set when assigning as default supplier"
                 )
                 results[:prices_updated] += 1
@@ -259,7 +269,7 @@ module Api
                   supplier_id: new_supplier_id,
                   old_price: existing_price.new_price,
                   new_price: new_price,
-                  date_effective: Date.today,
+                  date_effective: CompanySetting.today,
                   change_reason: "Price updated when setting as default supplier"
                 )
                 results[:prices_updated] += 1
@@ -416,7 +426,7 @@ module Api
             new_price: params[:price],
             supplier_id: params[:supplier_id],
             lga: params[:lga],
-            date_effective: params[:date_effective] || Date.today,
+            date_effective: params[:date_effective] || CompanySetting.today,
             change_reason: 'manual_price_update'
           )
 
@@ -581,7 +591,7 @@ module Api
       # GET /api/v1/pricebook/price_health_check
       def price_health_check
         issues = []
-        today = Date.today
+        today = CompanySetting.today
 
         # Find all items with default suppliers
         items_with_defaults = PricebookItem.includes(:default_supplier, :price_histories)

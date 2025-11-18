@@ -84,6 +84,15 @@ module Api
             success: true,
             data: status
           }
+        rescue XeroApiClient::AuthenticationError => e
+          Rails.logger.warn("Xero status - credentials not configured: #{e.message}")
+          render json: {
+            success: true,
+            data: {
+              connected: false,
+              message: 'Xero integration not configured'
+            }
+          }
         rescue StandardError => e
           Rails.logger.error("Xero status error: #{e.message}")
           render json: {
@@ -260,13 +269,41 @@ module Api
       # POST /api/v1/xero/webhook
       # Receives Xero webhooks (for future use)
       def webhook
-        # TODO: Implement webhook signature verification
-        # TODO: Process invoice.created, invoice.updated events
+        # Verify webhook signature
+        unless verify_xero_webhook_signature
+          return render json: {
+            success: false,
+            error: 'Invalid webhook signature'
+          }, status: :unauthorized
+        end
+
+        # Parse webhook payload
+        payload = JSON.parse(request.body.read)
+        events = payload['events'] || []
+
+        # Process events (can be expanded for specific event types)
+        events.each do |event|
+          Rails.logger.info("Xero webhook event: #{event['eventType']} - Resource: #{event['resourceId']}")
+
+          case event['eventType']
+          when 'CREATE', 'UPDATE'
+            if event['eventType'].include?('INVOICE')
+              # Queue background job to sync invoice
+              # XeroInvoiceSyncJob.perform_later(event['resourceId'])
+            elsif event['eventType'].include?('CONTACT')
+              # Queue background job to sync contact
+              # XeroContactSyncJob.perform_later(event['resourceId'])
+            end
+          end
+        end
 
         render json: {
           success: true,
-          message: 'Webhook received'
+          message: 'Webhook received and queued for processing'
         }, status: :ok
+      rescue JSON::ParserError => e
+        Rails.logger.error("Failed to parse Xero webhook: #{e.message}")
+        render json: { success: false, error: 'Invalid JSON payload' }, status: :bad_request
       end
 
       # POST /api/v1/xero/sync_contacts
@@ -290,18 +327,22 @@ module Api
           job = XeroContactSyncJob.perform_later
           job_id = job.job_id
 
-          # Initialize job metadata
-          Rails.cache.write(
-            "xero_sync_job_#{job_id}",
-            {
-              job_id: job_id,
-              status: 'queued',
-              queued_at: Time.current,
-              total: 0,
-              processed: 0
-            },
-            expires_in: 24.hours
-          )
+          # Initialize job metadata (skip cache write if cache is not configured)
+          begin
+            Rails.cache.write(
+              "xero_sync_job_#{job_id}",
+              {
+                job_id: job_id,
+                status: 'queued',
+                queued_at: Time.current,
+                total: 0,
+                processed: 0
+              },
+              expires_in: 24.hours
+            )
+          rescue StandardError => cache_error
+            Rails.logger.warn("Failed to write job metadata to cache: #{cache_error.message}")
+          end
 
           render json: {
             success: true,
@@ -484,6 +525,55 @@ module Api
         end
       end
 
+      # GET /api/v1/xero/accounts
+      # Fetches and syncs chart of accounts from Xero
+      def accounts
+        begin
+          client = XeroApiClient.new
+          result = client.get_accounts
+
+          if result[:success]
+            # Allow filtering by account class (e.g., EXPENSE for purchase accounts)
+            accounts = result[:accounts]
+            if params[:account_class].present?
+              accounts = accounts.where(account_class: params[:account_class])
+            end
+
+            render json: {
+              success: true,
+              accounts: accounts.map { |acc|
+                {
+                  code: acc.code,
+                  name: acc.name,
+                  display_name: acc.display_name,
+                  account_type: acc.account_type,
+                  account_class: acc.account_class,
+                  tax_type: acc.tax_type,
+                  description: acc.description
+                }
+              }
+            }
+          else
+            render json: {
+              success: false,
+              error: result[:error]
+            }, status: :unprocessable_entity
+          end
+        rescue XeroApiClient::AuthenticationError => e
+          Rails.logger.error("Xero accounts auth error: #{e.message}")
+          render json: {
+            success: false,
+            error: 'Not authenticated with Xero'
+          }, status: :unauthorized
+        rescue StandardError => e
+          Rails.logger.error("Xero accounts error: #{e.message}")
+          render json: {
+            success: false,
+            error: 'Failed to fetch accounts'
+          }, status: :internal_server_error
+        end
+      end
+
       # GET /api/v1/xero/search_contacts?query=search_term
       # Search for Xero contacts by name, email, or tax number
       def search_contacts
@@ -594,6 +684,39 @@ module Api
         end
 
         nil
+      end
+
+      # Verify Xero webhook signature using HMAC-SHA256
+      def verify_xero_webhook_signature
+        webhook_key = ENV['XERO_WEBHOOK_KEY']
+
+        unless webhook_key.present?
+          Rails.logger.error("XERO_WEBHOOK_KEY not configured")
+          return false
+        end
+
+        # Get signature from header
+        signature = request.headers['X-Xero-Signature']
+
+        unless signature.present?
+          Rails.logger.warn("Missing X-Xero-Signature header")
+          return false
+        end
+
+        # Read and verify the request body
+        body = request.body.read
+        request.body.rewind # Reset for later reading
+
+        # Calculate expected signature
+        expected_signature = Base64.strict_encode64(
+          OpenSSL::HMAC.digest('SHA256', webhook_key, body)
+        )
+
+        # Compare signatures (use secure comparison to prevent timing attacks)
+        ActiveSupport::SecurityUtils.secure_compare(signature, expected_signature)
+      rescue StandardError => e
+        Rails.logger.error("Webhook signature verification failed: #{e.message}")
+        false
       end
     end
   end

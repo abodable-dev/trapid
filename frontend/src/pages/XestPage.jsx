@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { BeakerIcon, PlusIcon, TrashIcon, LinkIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
+import UnrealVariablesTab from '../components/xest/UnrealVariablesTab'
 
 export default function XestPage() {
+  const [activeTab, setActiveTab] = useState('estimate')
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
   const [pricebookItems, setPricebookItems] = useState([])
@@ -207,6 +209,34 @@ export default function XestPage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="border-b border-gray-200 dark:border-gray-700">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('estimate')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+              activeTab === 'estimate'
+                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            Quick Estimate
+          </button>
+          <button
+            onClick={() => setActiveTab('unreal')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+              activeTab === 'unreal'
+                ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            Unreal Variables
+          </button>
+        </nav>
+      </div>
+
+      {activeTab === 'estimate' && (
+        <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column - Add Items Form */}
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 space-y-4">
@@ -486,7 +516,7 @@ export default function XestPage() {
         </div>
       </div>
 
-      {/* Schedule Link Modal */}
+      {/* Schedule Link Modal  */}
       {showScheduleLinkModal && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
@@ -534,6 +564,10 @@ export default function XestPage() {
           </div>
         </div>
       )}
+        </>
+      )}
+
+      {activeTab === 'unreal' && <UnrealVariablesTab />}
     </div>
   )
 }

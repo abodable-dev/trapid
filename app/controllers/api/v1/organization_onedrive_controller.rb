@@ -91,18 +91,23 @@ module Api
 
           Rails.logger.info "=== OneDrive Connection Completed Successfully ==="
 
+          # Dynamically determine frontend URL based on request origin
+          frontend_url = get_frontend_url_from_request
+
           # Redirect to frontend settings page with success message
-          redirect_to "#{ENV['FRONTEND_URL']}/settings?onedrive=connected", allow_other_host: true
+          redirect_to "#{frontend_url}/settings?onedrive=connected", allow_other_host: true
 
         rescue MicrosoftGraphClient::AuthenticationError => e
           Rails.logger.error "=== OneDrive Authentication Failed ==="
           Rails.logger.error "Error: #{e.message}"
-          redirect_to "#{ENV['FRONTEND_URL']}/settings?onedrive=error&message=#{CGI.escape(e.message)}", allow_other_host: true
+          frontend_url = get_frontend_url_from_request
+          redirect_to "#{frontend_url}/settings?onedrive=error&message=#{CGI.escape(e.message)}", allow_other_host: true
         rescue StandardError => e
           Rails.logger.error "=== OneDrive Connection Failed ==="
           Rails.logger.error "Error: #{e.message}"
           Rails.logger.error e.backtrace.join("\n")
-          redirect_to "#{ENV['FRONTEND_URL']}/settings?onedrive=error&message=#{CGI.escape(e.message)}", allow_other_host: true
+          frontend_url = get_frontend_url_from_request
+          redirect_to "#{frontend_url}/settings?onedrive=error&message=#{CGI.escape(e.message)}", allow_other_host: true
         end
       end
 
@@ -648,6 +653,35 @@ module Api
           Rails.logger.error "[OneDrive Sync] Backtrace:\n#{e.backtrace.join("\n")}"
           render json: { error: "Failed to sync images: #{e.message}" }, status: :internal_server_error
         end
+      end
+
+      private
+
+      # Dynamically determine the frontend URL from the request
+      # This ensures OAuth redirects work correctly across different environments
+      def get_frontend_url_from_request
+        # Try to get the origin from the Referer header (where the user initiated the OAuth flow)
+        referer = request.referer
+
+        if referer.present?
+          uri = URI.parse(referer)
+          frontend_url = "#{uri.scheme}://#{uri.host}"
+          frontend_url += ":#{uri.port}" if uri.port && ![80, 443].include?(uri.port)
+          Rails.logger.info "Using frontend URL from referer: #{frontend_url}"
+          return frontend_url
+        end
+
+        # Fallback to Origin header if Referer is not present
+        origin = request.headers['Origin']
+        if origin.present?
+          Rails.logger.info "Using frontend URL from Origin header: #{origin}"
+          return origin
+        end
+
+        # Final fallback to environment variable
+        frontend_url = ENV['FRONTEND_URL'] || 'https://trapid.vercel.app'
+        Rails.logger.info "Using frontend URL from ENV (fallback): #{frontend_url}"
+        frontend_url
       end
     end
   end
