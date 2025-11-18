@@ -204,7 +204,6 @@ export default function GoldStandardTableTab() {
       </div>
 
       <TrapidTableView
-        category="price_book_gold_standard"
         entries={data}
         columns={GOLD_STANDARD_COLUMNS}
         onEdit={handleEdit}
