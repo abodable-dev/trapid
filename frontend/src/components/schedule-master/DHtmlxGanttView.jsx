@@ -4479,12 +4479,13 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-hidden"
+      className="fixed inset-0 bg-white flex items-center justify-center z-50 overflow-hidden"
       style={{
         transform: 'translateZ(0)',
         willChange: 'transform',
         backfaceVisibility: 'hidden',
-        animation: 'fadeIn 0.15s ease-out'
+        animation: 'fadeIn 0.15s ease-out',
+        backgroundColor: '#ffffff !important'
       }}
     >
       <div
@@ -5515,7 +5516,7 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
 
       {/* Drag Conflict Modal */}
       {dragConflict && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style={{ zIndex: 2147483647 }}>
+        <div className="fixed inset-0 bg-white flex items-center justify-center" style={{ zIndex: 2147483647, backgroundColor: '#ffffff !important' }}>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4">
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -5620,8 +5621,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
       {/* Position Dialog - when unchecking all checkboxes */}
       {showPositionDialog && positionDialogTask && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
-          style={{ zIndex: 10000 }}
+          className="fixed inset-0 bg-white flex items-center justify-center"
+          style={{ zIndex: 10000, backgroundColor: '#ffffff !important' }}
           onClick={(e) => {
             // Close dialog if clicking outside
             if (e.target === e.currentTarget) {

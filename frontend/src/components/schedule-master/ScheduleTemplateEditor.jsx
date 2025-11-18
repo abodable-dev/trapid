@@ -1816,7 +1816,7 @@ export default function ScheduleTemplateEditor() {
   })()
 
   return (
-    <div className="max-w-full px-4 py-6">
+    <div className="max-w-full px-4 py-6 bg-white dark:bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
