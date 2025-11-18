@@ -226,7 +226,7 @@ class Api::V1::BugHunterTestsController < ApplicationController
       'thursday' => true,
       'friday' => true,
       'saturday' => false,
-      'sunday' => true
+      'sunday' => false
     }
 
     # Helper: Check if a date is a working day
