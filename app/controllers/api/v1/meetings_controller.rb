@@ -1,5 +1,4 @@
 class Api::V1::MeetingsController < ApplicationController
-  before_action :authenticate_request
   before_action :set_meeting, only: [:show, :update, :destroy, :start, :complete, :cancel]
 
   # GET /api/v1/meetings
