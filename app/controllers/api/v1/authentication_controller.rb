@@ -30,7 +30,8 @@ module Api
             id: dev_user.id,
             email: dev_user.email,
             name: dev_user.name,
-            role: dev_user.role
+            role: dev_user.role,
+            permissions: dev_user.permissions
           }
         }
       end
@@ -56,7 +57,9 @@ module Api
             user: {
               id: user.id,
               email: user.email,
-              name: user.name
+              name: user.name,
+              role: user.role,
+              permissions: user.permissions
             }
           }, status: :created
         else
@@ -82,7 +85,9 @@ module Api
             user: {
               id: user.id,
               email: user.email,
-              name: user.name
+              name: user.name,
+              role: user.role,
+              permissions: user.permissions
             }
           }
         else
@@ -100,7 +105,9 @@ module Api
           user: {
             id: @current_user.id,
             email: @current_user.email,
-            name: @current_user.name
+            name: @current_user.name,
+            role: @current_user.role,
+            permissions: @current_user.permissions
           }
         }
       end
