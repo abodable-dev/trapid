@@ -3367,6 +3367,7 @@ export default function TrapidTableView({
         </div>
       )}
     </div>
+    </div>
     </>
   )
 }
