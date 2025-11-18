@@ -618,6 +618,7 @@ export default function TrapidTableView({
           bVal = b.entry_type || ''
           break
         case 'audit':
+        case 'updated_at':
           aVal = a.updated_at ? new Date(a.updated_at).getTime() : 0
           bVal = b.updated_at ? new Date(b.updated_at).getTime() : 0
           break
@@ -965,6 +966,7 @@ export default function TrapidTableView({
         )
 
       case 'audit':
+      case 'updated_at':
         if (!entry.updated_at) {
           return <span className="text-gray-400 text-xs">Never</span>
         }

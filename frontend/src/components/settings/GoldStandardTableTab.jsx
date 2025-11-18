@@ -17,7 +17,7 @@ const GOLD_STANDARD_COLUMNS = [
   { key: 'quantity', label: 'Number', resizable: true, sortable: true, filterable: false, width: 100, showSum: true, sumType: 'number', tooltip: 'Number field with sum - Quantity' },
   { key: 'whole_number', label: 'Whole Number', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'number', tooltip: 'Whole Number - Integers only (no decimals). Example: Units, Count, Days' },
   { key: 'total_cost', label: 'Computed', resizable: true, sortable: true, filterable: false, width: 140, showSum: true, sumType: 'currency', tooltip: 'Computed - Formula: price × quantity. Can also do lookups to other tables and multiply/add values', isComputed: true, computeFunction: (entry) => (entry.price || 0) * (entry.quantity || 0) },
-  { key: 'audit', label: 'Date/Time', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Date/time field - Last updated timestamp' },
+  { key: 'updated_at', label: 'Date', resizable: true, sortable: true, filterable: false, width: 140, tooltip: 'Date field - Last updated date' },
   { key: 'content', label: 'Multi Line Text', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 300, tooltip: 'Multi-line text field - Notes and comments' }
 ]
 
