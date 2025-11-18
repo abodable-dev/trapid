@@ -2017,13 +2017,13 @@ export default function TrapidTableView({
                       } ${
                         // Non-edit mode: highlight clickable title/content cells
                         ['title', 'content'].includes(colKey) && !editModeActive ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20' :
-                        // Edit mode: highlight editable cells based on selection state
+                        // Edit mode: highlight editable cells with orange border only
                         editModeActive && ['title', 'content', 'component', 'status', 'severity'].includes(colKey) && editingRowId !== entry.id ?
                           (selectedRows.size > 0 ?
                             // If rows selected: only highlight editable cells in selected rows
-                            (selectedRows.has(entry.id) ? 'cursor-pointer bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 border-2 border-orange-400 dark:border-orange-500 ring-1 ring-orange-300 dark:ring-orange-600' : '') :
+                            (selectedRows.has(entry.id) ? 'cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-900/30 border-2 border-orange-400 dark:border-orange-500' : '') :
                             // If no rows selected: highlight ALL editable cells
-                            'cursor-pointer bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 border-2 border-orange-400 dark:border-orange-500 ring-1 ring-orange-300 dark:ring-orange-600'
+                            'cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-900/30 border-2 border-orange-400 dark:border-orange-500'
                           ) : ''
                       } whitespace-nowrap overflow-hidden text-ellipsis max-w-0`}
                       title={
