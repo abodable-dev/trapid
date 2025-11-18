@@ -15,7 +15,7 @@ import KnowledgeEntryModal from '../components/KnowledgeEntryModal'
 import LoadingSkeleton from '../components/documentation/LoadingSkeleton'
 import Breadcrumb from '../components/documentation/Breadcrumb'
 import UserManualTableView from '../components/documentation/UserManualTableView'
-import TrinityTableView from '../components/documentation/TrinityTableView'
+import TrapidTableView from '../components/documentation/TrapidTableView'
 
 export default function TrinityPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -676,7 +676,7 @@ export default function TrinityPage() {
 
           {/* Table View */}
           <div className="flex-1 min-h-0">
-            <TrinityTableView
+            <TrapidTableView
               category="bible"
               entries={entries}
               onEdit={handleEditEntry}
@@ -773,7 +773,7 @@ export default function TrinityPage() {
 
           {/* Table View */}
           <div className="flex-1 min-h-0">
-            <TrinityTableView
+            <TrapidTableView
               category="lexicon"
               entries={entries}
               onEdit={handleEditEntry}
@@ -867,7 +867,7 @@ export default function TrinityPage() {
 
           {/* Table View */}
           <div className="flex-1 overflow-hidden">
-            <TrinityTableView
+            <TrapidTableView
               category="teacher"
               entries={entries}
               onEdit={handleEditEntry}
@@ -1003,7 +1003,7 @@ export default function TrinityPage() {
 
           {/* Table View */}
           <div className="flex-1 min-h-0">
-            <TrinityTableView
+            <TrapidTableView
               entries={entries}
               onEdit={handleEditEntry}
               onDelete={handleDeleteEntry}

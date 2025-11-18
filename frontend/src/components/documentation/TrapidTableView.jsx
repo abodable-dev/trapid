@@ -82,7 +82,7 @@ const DEFAULT_TRINITY_COLUMNS = [
   { key: 'audit', label: 'Audit', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Last modification date and user' }
 ]
 
-export default function TrinityTableView({
+export default function TrapidTableView({
   entries,
   onEdit,
   onDelete,
@@ -197,7 +197,8 @@ export default function TrinityTableView({
 
   // Load table state from localStorage on mount (Chapter 20.5B)
   useEffect(() => {
-    const savedState = localStorage.getItem('lexiconTableViewState')
+    const storageKey = `trapidTableViewState_${category || 'default'}`
+    const savedState = localStorage.getItem(storageKey)
     if (savedState) {
       try {
         const state = JSON.parse(savedState)
@@ -210,10 +211,11 @@ export default function TrinityTableView({
         console.error('Failed to load table state:', e)
       }
     }
-  }, [])
+  }, [category])
 
   // Save table state to localStorage whenever it changes (Chapter 20.5B)
   useEffect(() => {
+    const storageKey = `trapidTableViewState_${category || 'default'}`
     const state = {
       columnWidths,
       columnOrder,
@@ -221,8 +223,8 @@ export default function TrinityTableView({
       sortBy,
       sortDir
     }
-    localStorage.setItem('lexiconTableViewState', JSON.stringify(state))
-  }, [columnWidths, columnOrder, visibleColumns, sortBy, sortDir])
+    localStorage.setItem(storageKey, JSON.stringify(state))
+  }, [columnWidths, columnOrder, visibleColumns, sortBy, sortDir, category])
 
   // Column resizing handlers (Chapter 20.4)
   const handleResizeStart = (e, columnKey) => {
@@ -1087,31 +1089,31 @@ export default function TrinityTableView({
   return (
     <>
       <style>{`
-        /* Trinity table scrollbar styling - blue theme */
-        .trinity-table-scroll::-webkit-scrollbar {
+        /* Trapid table scrollbar styling - blue theme */
+        .trapid-table-scroll::-webkit-scrollbar {
           width: 12px;
           height: 12px;
         }
-        .trinity-table-scroll::-webkit-scrollbar-track {
+        .trapid-table-scroll::-webkit-scrollbar-track {
           background: #E0E7FF;
           border-radius: 6px;
         }
-        .trinity-table-scroll::-webkit-scrollbar-thumb {
+        .trapid-table-scroll::-webkit-scrollbar-thumb {
           background: #2563EB;
           border-radius: 6px;
           border: 2px solid #E0E7FF;
         }
-        .trinity-table-scroll::-webkit-scrollbar-thumb:hover {
+        .trapid-table-scroll::-webkit-scrollbar-thumb:hover {
           background: #1D4ED8;
         }
-        .dark .trinity-table-scroll::-webkit-scrollbar-track {
+        .dark .trapid-table-scroll::-webkit-scrollbar-track {
           background: #1E293B;
         }
-        .dark .trinity-table-scroll::-webkit-scrollbar-thumb {
+        .dark .trapid-table-scroll::-webkit-scrollbar-thumb {
           background: #1E40AF;
           border-color: #1E293B;
         }
-        .dark .trinity-table-scroll::-webkit-scrollbar-thumb:hover {
+        .dark .trapid-table-scroll::-webkit-scrollbar-thumb:hover {
           background: #1E3A8A;
         }
 
@@ -1468,6 +1470,7 @@ export default function TrinityTableView({
                         } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
                       >
                         <input
+                          key={`checkbox-${column.key}`}
                           type="checkbox"
                           checked={visibleColumns[column.key]}
                           onChange={() => {}}
@@ -1620,7 +1623,7 @@ export default function TrinityTableView({
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="trinity-table-scroll flex-1 overflow-y-scroll overflow-x-scroll relative bg-white dark:bg-gray-900"
+          className="trapid-table-scroll flex-1 overflow-y-scroll overflow-x-scroll relative bg-white dark:bg-gray-900"
           style={{
             scrollbarWidth: 'thin',
             scrollbarColor: '#2563EB #FFFFFF'

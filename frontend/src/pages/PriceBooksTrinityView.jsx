@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
-import TrinityTableView from '../components/documentation/TrinityTableView'
+import TrapidTableView from '../components/documentation/TrapidTableView'
 
 // Define price book-specific columns
 const PRICEBOOK_COLUMNS = [
@@ -136,7 +136,7 @@ export default function PriceBooksTrinityView() {
 
   return (
     <div className="h-full bg-gray-50 dark:bg-gray-900">
-      <TrinityTableView
+      <TrapidTableView
         category="pricebook"
         entries={trinityEntries}
         columns={PRICEBOOK_COLUMNS}

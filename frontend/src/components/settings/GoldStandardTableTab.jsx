@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { PlusIcon } from '@heroicons/react/24/outline'
-import TrinityTableView from '../documentation/TrinityTableView'
+import TrapidTableView from '../documentation/TrapidTableView'
 
 // Define price book gold standard columns - showing unique column types only
 const GOLD_STANDARD_COLUMNS = [
@@ -411,7 +411,7 @@ The form would validate required fields and save to the database.`
         </div>
       </div>
 
-      <TrinityTableView
+      <TrapidTableView
         category="price_book_gold_standard"
         entries={data}
         columns={GOLD_STANDARD_COLUMNS}

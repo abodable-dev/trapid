@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../api'
-import TrinityTableView from '../documentation/TrinityTableView'
+import TrapidTableView from '../documentation/TrapidTableView'
 import {
   UserIcon,
   EnvelopeIcon,
@@ -109,7 +109,7 @@ export default function UserManagementTab() {
 
   return (
     <div className="h-full flex flex-col">
-      <TrinityTableView
+      <TrapidTableView
         entries={users}
         onEdit={handleEdit}
         onDelete={handleDelete}

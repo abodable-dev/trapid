@@ -19,7 +19,7 @@ import { useNavigate } from 'react-router-dom'
 import NewJobModal from '../components/jobs/NewJobModal'
 import CsvImportJobModal from '../components/jobs/CsvImportJobModal'
 import ColumnVisibilityModal from '../components/modals/ColumnVisibilityModal'
-import TrinityTableView from '../components/documentation/TrinityTableView'
+import TrapidTableView from '../components/documentation/TrapidTableView'
 
 export default function ActiveJobsPage() {
   const navigate = useNavigate()
@@ -884,7 +884,7 @@ export default function ActiveJobsPage() {
       ) : (
         /* Trinity Table Implementation */
         <div className="flex-1 overflow-hidden">
-          <TrinityTableView
+          <TrapidTableView
             entries={trinityJobs}
             onEdit={(entry) => {
               console.log('Edit job:', entry._original)
