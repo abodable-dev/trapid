@@ -2123,7 +2123,7 @@ export default function TrapidTableView({
                     >
                       {/* Instant tooltip for edit mode - shows on hover with no delay */}
                       {editModeActive && colKey !== 'select' && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg whitespace-normal w-max max-w-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-75 z-50 pointer-events-none">
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg whitespace-normal w-max max-w-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-none z-[100] pointer-events-none">
                           {column.isComputed ? 'Computed field (auto-calculated, not editable)' :
                            colKey === 'section' ? 'Single Line Text - Click to edit' :
                            colKey === 'email' ? 'Email - Format: example@domain.com - Click to edit' :
