@@ -8,6 +8,8 @@ import {
   FolderIcon,
   ArrowUpTrayIcon,
   CalendarIcon,
+  ChevronDoubleLeftIcon,
+  ChevronDoubleRightIcon,
 } from '@heroicons/react/24/outline'
 import { api } from '../../api'
 
@@ -19,6 +21,11 @@ export default function ExplorerSidebar({ onUploadClick }) {
   const [loadingPriceBooks, setLoadingPriceBooks] = useState(true)
   const [jobsExpanded, setJobsExpanded] = useState(true)
   const [priceBooksExpanded, setPriceBooksExpanded] = useState(true)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    // Load from localStorage on mount
+    const saved = localStorage.getItem('sidebarCollapsed')
+    return saved === 'true'
+  })
 
   useEffect(() => {
     loadActiveJobs()
@@ -68,194 +75,272 @@ export default function ExplorerSidebar({ onUploadClick }) {
     return location.pathname === path
   }
 
+  const toggleSidebar = () => {
+    const newState = !sidebarCollapsed
+    setSidebarCollapsed(newState)
+    localStorage.setItem('sidebarCollapsed', newState.toString())
+  }
+
   return (
-    <div className="w-64 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col">
-      {/* Upload Button */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+    <div className={`h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col transition-all duration-300 ${
+      sidebarCollapsed ? 'w-16' : 'w-64'
+    }`}>
+      {/* Toggle Button */}
+      <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+        {!sidebarCollapsed && <div className="text-xs font-semibold text-gray-500 dark:text-gray-400">MENU</div>}
         <button
-          onClick={onUploadClick}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium text-sm"
+          onClick={toggleSidebar}
+          className={`p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors ${
+            sidebarCollapsed ? 'mx-auto' : ''
+          }`}
+          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          <ArrowUpTrayIcon className="h-5 w-5" />
-          Upload Spreadsheet
+          {sidebarCollapsed ? (
+            <ChevronDoubleRightIcon className="h-5 w-5 text-gray-500" />
+          ) : (
+            <ChevronDoubleLeftIcon className="h-5 w-5 text-gray-500" />
+          )}
         </button>
       </div>
+
+      {/* Upload Button */}
+      {!sidebarCollapsed && (
+        <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+          <button
+            onClick={onUploadClick}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium text-sm"
+          >
+            <ArrowUpTrayIcon className="h-5 w-5" />
+            Upload Spreadsheet
+          </button>
+        </div>
+      )}
+      {sidebarCollapsed && (
+        <div className="p-2 border-b border-gray-200 dark:border-gray-800">
+          <button
+            onClick={onUploadClick}
+            className="w-full flex items-center justify-center p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+            title="Upload Spreadsheet"
+          >
+            <ArrowUpTrayIcon className="h-5 w-5" />
+          </button>
+        </div>
+      )}
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
         {/* All Tables */}
-        <div className="p-4">
+        <div className={sidebarCollapsed ? 'p-2' : 'p-4'}>
           <Link
             to="/dashboard"
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+            className={`flex items-center ${sidebarCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2'} rounded-lg transition-colors ${
               isActiveRoute('/dashboard')
                 ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
+            title={sidebarCollapsed ? 'All Tables' : ''}
           >
-            <FolderIcon className="h-5 w-5" />
-            <span className="font-medium text-sm">All Tables</span>
+            <FolderIcon className="h-5 w-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="font-medium text-sm">All Tables</span>}
           </Link>
         </div>
 
         {/* Meetings */}
-        <div className="px-4 pb-4">
+        <div className={sidebarCollapsed ? 'px-2 pb-2' : 'px-4 pb-4'}>
           <Link
             to="/meetings"
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+            className={`flex items-center ${sidebarCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2'} rounded-lg transition-colors ${
               isActiveRoute('/meetings')
                 ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
+            title={sidebarCollapsed ? 'Meetings' : ''}
           >
-            <CalendarIcon className="h-5 w-5" />
-            <span className="font-medium text-sm">Meetings</span>
+            <CalendarIcon className="h-5 w-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="font-medium text-sm">Meetings</span>}
           </Link>
         </div>
 
         {/* Settings Header */}
-        <div className="border-t border-gray-200 dark:border-gray-800 pt-4 pb-2 px-4">
-          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            Settings
-          </h3>
-        </div>
+        {!sidebarCollapsed && (
+          <div className="border-t border-gray-200 dark:border-gray-800 pt-4 pb-2 px-4">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Settings
+            </h3>
+          </div>
+        )}
+        {sidebarCollapsed && (
+          <div className="border-t border-gray-200 dark:border-gray-800 my-2"></div>
+        )}
 
         {/* Active Jobs Section */}
         <div>
-          <div className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800">
+          {sidebarCollapsed ? (
             <Link
               to="/active-jobs"
-              className={`flex items-center gap-3 flex-1 ${
+              className={`flex items-center justify-center p-2.5 mx-2 mb-2 rounded-lg transition-colors ${
                 isActiveRoute('/active-jobs')
-                  ? 'text-indigo-700 dark:text-indigo-400'
-                  : 'text-gray-900 dark:text-white'
+                  ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
+              title="Active Jobs"
             >
-              <BriefcaseIcon className={`h-5 w-5 ${
-                isActiveRoute('/active-jobs')
-                  ? 'text-indigo-600 dark:text-indigo-400'
-                  : 'text-gray-500 dark:text-gray-400'
-              }`} />
-              <span className="font-medium text-sm">
-                Active Jobs
-              </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
-                {activeJobs.length}
-              </span>
+              <BriefcaseIcon className="h-5 w-5 flex-shrink-0" />
             </Link>
-            <button
-              onClick={() => setJobsExpanded(!jobsExpanded)}
-              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
-            >
-              <ChevronRightIcon
-                className={`h-4 w-4 text-gray-400 transition-transform ${
-                  jobsExpanded ? 'rotate-90' : ''
-                }`}
-              />
-            </button>
-          </div>
+          ) : (
+            <>
+              <div className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800">
+                <Link
+                  to="/active-jobs"
+                  className={`flex items-center gap-3 flex-1 ${
+                    isActiveRoute('/active-jobs')
+                      ? 'text-indigo-700 dark:text-indigo-400'
+                      : 'text-gray-900 dark:text-white'
+                  }`}
+                >
+                  <BriefcaseIcon className={`h-5 w-5 ${
+                    isActiveRoute('/active-jobs')
+                      ? 'text-indigo-600 dark:text-indigo-400'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`} />
+                  <span className="font-medium text-sm">
+                    Active Jobs
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                    {activeJobs.length}
+                  </span>
+                </Link>
+                <button
+                  onClick={() => setJobsExpanded(!jobsExpanded)}
+                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                >
+                  <ChevronRightIcon
+                    className={`h-4 w-4 text-gray-400 transition-transform ${
+                      jobsExpanded ? 'rotate-90' : ''
+                    }`}
+                  />
+                </button>
+              </div>
 
-          {jobsExpanded && (
-            <div className="pb-2">
-              {loadingJobs ? (
-                <div className="px-4 py-2">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Loading...</div>
-                </div>
-              ) : activeJobs.length === 0 ? (
-                <div className="px-4 py-2">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    No active jobs yet
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-0.5">
-                  {activeJobs.map((job) => (
-                    <Link
-                      key={job.id}
-                      to={`/tables/${job.id}`}
-                      className={`flex items-center gap-2 px-4 pl-12 py-2 text-sm transition-colors ${
-                        isActiveRoute(`/tables/${job.id}`)
-                          ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
-                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
-                      }`}
-                    >
-                      <span className="truncate">{job.name}</span>
-                    </Link>
-                  ))}
+              {jobsExpanded && (
+                <div className="pb-2">
+                  {loadingJobs ? (
+                    <div className="px-4 py-2">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Loading...</div>
+                    </div>
+                  ) : activeJobs.length === 0 ? (
+                    <div className="px-4 py-2">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        No active jobs yet
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-0.5">
+                      {activeJobs.map((job) => (
+                        <Link
+                          key={job.id}
+                          to={`/tables/${job.id}`}
+                          className={`flex items-center gap-2 px-4 pl-12 py-2 text-sm transition-colors ${
+                            isActiveRoute(`/tables/${job.id}`)
+                              ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
+                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+                          }`}
+                        >
+                          <span className="truncate">{job.name}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  <Link
+                    to="/dashboard?search=job"
+                    className="flex items-center gap-2 px-4 pl-12 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                    <span>View all jobs</span>
+                  </Link>
                 </div>
               )}
-
-              <Link
-                to="/dashboard?search=job"
-                className="flex items-center gap-2 px-4 pl-12 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-              >
-                <PlusIcon className="h-4 w-4" />
-                <span>View all jobs</span>
-              </Link>
-            </div>
+            </>
           )}
         </div>
 
         {/* Price Books Section */}
         <div>
-          <button
-            onClick={() => setPriceBooksExpanded(!priceBooksExpanded)}
-            className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <CurrencyDollarIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              <span className="font-medium text-sm text-gray-900 dark:text-white">
-                Price Books
-              </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
-                {priceBooks.length}
-              </span>
-            </div>
-            <ChevronRightIcon
-              className={`h-4 w-4 text-gray-400 transition-transform ${
-                priceBooksExpanded ? 'rotate-90' : ''
+          {sidebarCollapsed ? (
+            <Link
+              to="/price-books"
+              className={`flex items-center justify-center p-2.5 mx-2 mb-2 rounded-lg transition-colors ${
+                isActiveRoute('/price-books')
+                  ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
-            />
-          </button>
+              title="Price Books"
+            >
+              <CurrencyDollarIcon className="h-5 w-5 flex-shrink-0" />
+            </Link>
+          ) : (
+            <>
+              <button
+                onClick={() => setPriceBooksExpanded(!priceBooksExpanded)}
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <CurrencyDollarIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  <span className="font-medium text-sm text-gray-900 dark:text-white">
+                    Price Books
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                    {priceBooks.length}
+                  </span>
+                </div>
+                <ChevronRightIcon
+                  className={`h-4 w-4 text-gray-400 transition-transform ${
+                    priceBooksExpanded ? 'rotate-90' : ''
+                  }`}
+                />
+              </button>
 
-          {priceBooksExpanded && (
-            <div className="pb-2">
-              {loadingPriceBooks ? (
-                <div className="px-4 py-2">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Loading...</div>
-                </div>
-              ) : priceBooks.length === 0 ? (
-                <div className="px-4 py-2">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    No price books yet
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-0.5">
-                  {priceBooks.map((priceBook) => (
-                    <Link
-                      key={priceBook.id}
-                      to={`/tables/${priceBook.id}`}
-                      className={`flex items-center gap-2 px-4 pl-12 py-2 text-sm transition-colors ${
-                        isActiveRoute(`/tables/${priceBook.id}`)
-                          ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
-                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
-                      }`}
-                    >
-                      <span className="truncate">{priceBook.name}</span>
-                    </Link>
-                  ))}
+              {priceBooksExpanded && (
+                <div className="pb-2">
+                  {loadingPriceBooks ? (
+                    <div className="px-4 py-2">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Loading...</div>
+                    </div>
+                  ) : priceBooks.length === 0 ? (
+                    <div className="px-4 py-2">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        No price books yet
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-0.5">
+                      {priceBooks.map((priceBook) => (
+                        <Link
+                          key={priceBook.id}
+                          to={`/tables/${priceBook.id}`}
+                          className={`flex items-center gap-2 px-4 pl-12 py-2 text-sm transition-colors ${
+                            isActiveRoute(`/tables/${priceBook.id}`)
+                              ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
+                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+                          }`}
+                        >
+                          <span className="truncate">{priceBook.name}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  <Link
+                    to="/dashboard?search=price"
+                    className="flex items-center gap-2 px-4 pl-12 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                    <span>View all price books</span>
+                  </Link>
                 </div>
               )}
-
-              <Link
-                to="/dashboard?search=price"
-                className="flex items-center gap-2 px-4 pl-12 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-              >
-                <PlusIcon className="h-4 w-4" />
-                <span>View all price books</span>
-              </Link>
-            </div>
+            </>
           )}
         </div>
       </div>
