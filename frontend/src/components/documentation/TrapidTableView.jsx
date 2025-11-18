@@ -519,26 +519,20 @@ export default function TrapidTableView({
       const key = filter.column
       const value = filter.value
 
-      switch (key) {
-        case 'category':
-          result = result.filter(e => e.category === value)
-          break
-        case 'type':
-          result = result.filter(e => e.entry_type === value)
-          break
-        case 'status':
-          result = result.filter(e => e.status === value)
-          break
-        case 'severity':
-          result = result.filter(e => e.severity === value)
-          break
-        case 'component':
-          result = result.filter(e => e.component === value)
-          break
-        case 'chapter':
-          result = result.filter(e => e.chapter_number === parseInt(value))
-          break
-      }
+      // Generic filter that works for any column
+      result = result.filter(entry => {
+        const entryValue = entry[key]
+        // Handle different value types
+        if (typeof value === 'boolean') {
+          return entryValue === value
+        }
+        // Handle numeric comparison
+        if (typeof entryValue === 'number' && !isNaN(parseFloat(value))) {
+          return entryValue === parseFloat(value)
+        }
+        // Handle string comparison (case-insensitive)
+        return String(entryValue).toLowerCase() === String(value).toLowerCase()
+      })
     })
 
     // Apply global filters (legacy)
@@ -1433,29 +1427,20 @@ export default function TrapidTableView({
                     </label>
                     <select
                       onChange={(e) => {
-                        const column = e.target.value
-                        if (!column) return
+                        const columnKey = e.target.value
+                        if (!columnKey) return
 
                         // Get unique values for this column from CURRENT filtered results
-                        const uniqueValues = [...new Set(filteredAndSorted.map(entry => {
-                          switch(column) {
-                            case 'category': return entry.category
-                            case 'type': return entry.entry_type
-                            case 'status': return entry.status
-                            case 'severity': return entry.severity
-                            case 'component': return entry.component
-                            default: return null
-                          }
-                        }).filter(Boolean))]
+                        const uniqueValues = [...new Set(filteredAndSorted.map(entry => entry[columnKey]).filter(val => val !== null && val !== undefined && val !== ''))]
 
                         if (uniqueValues.length > 0) {
                           const value = uniqueValues[0]
-                          const label = column === 'category' ? (value === 'bible' ? '📖 Bible' : value === 'teacher' ? '🔧 Teacher' : '📕 Lexicon') : value
+                          const columnLabel = COLUMNS.find(c => c.key === columnKey)?.label || columnKey
                           setCascadeFilters([...cascadeFilters, {
                             id: Date.now(),
-                            column,
+                            column: columnKey,
                             value,
-                            label: `${column}: ${label}`
+                            label: `${columnLabel}: ${value}`
                           }])
                         }
                         e.target.value = ''
@@ -1463,11 +1448,9 @@ export default function TrapidTableView({
                       className="w-full text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white"
                     >
                       <option key="cascade-empty" value="">Select column...</option>
-                      <option key="cascade-category" value="category">Category</option>
-                      <option key="cascade-type" value="type">Type</option>
-                      <option key="cascade-status" value="status">Status</option>
-                      <option key="cascade-severity" value="severity">Severity</option>
-                      <option key="cascade-component" value="component">Component</option>
+                      {COLUMNS.filter(col => col.filterable && col.key !== 'select').map(col => (
+                        <option key={`cascade-${col.key}`} value={col.key}>{col.label}</option>
+                      ))}
                     </select>
                   </div>
 
