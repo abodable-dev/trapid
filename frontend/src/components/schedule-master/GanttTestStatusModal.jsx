@@ -577,9 +577,9 @@ export default function GanttTestStatusModal({ isOpen, onClose, onOpenGantt, tem
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
-        {/* Backdrop */}
+        {/* Backdrop - lighter opacity so Gantt is visible during visual tests */}
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+          className="fixed inset-0 bg-black bg-opacity-20 dark:bg-opacity-30 transition-opacity"
           onClick={onClose}
         />
 
