@@ -39,7 +39,7 @@ class Api::V1::GoldStandardItemsController < ApplicationController
     params.require(:gold_standard_item).permit(
       :section, :email, :phone, :mobile, :title, :category_type, :is_active,
       :discount, :component, :status, :price, :quantity, :unit,
-      :severity, :content, :category
+      :severity, :content, :category, :document_link
     )
   end
 end

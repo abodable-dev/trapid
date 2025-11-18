@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_18_021137) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_18_030128) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -560,6 +560,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_021137) do
     t.string "mobile"
     t.string "title"
     t.string "category_type"
+    t.string "document_link"
   end
 
   create_table "grok_plans", force: :cascade do |t|
