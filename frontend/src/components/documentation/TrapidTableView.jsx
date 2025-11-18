@@ -2066,6 +2066,28 @@ export default function TrapidTableView({
         )}
       </div>
       {/* End bordered container */}
+
+      {/* Sticky horizontal scrollbar (RULE #20.33) */}
+      {tableScrollWidth > 0 && (
+        <div
+          ref={stickyScrollbarRef}
+          className="sticky bottom-0 left-0 right-0 z-20 overflow-x-auto overflow-y-hidden bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700"
+          style={{ height: '20px' }}
+          onScroll={(e) => {
+            if (isScrollingMainRef.current) {
+              isScrollingMainRef.current = false
+              return
+            }
+            const { scrollLeft } = e.target
+            if (scrollContainerRef.current) {
+              isScrollingStickyRef.current = true
+              scrollContainerRef.current.scrollLeft = scrollLeft
+            }
+          }}
+        >
+          <div style={{ width: `${tableScrollWidth}px`, height: '1px' }}></div>
+        </div>
+      )}
       </div>
 
       {/* Full Entry Details Modal */}
