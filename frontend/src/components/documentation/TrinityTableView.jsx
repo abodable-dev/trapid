@@ -64,8 +64,8 @@ const SEVERITY_COLORS = {
   critical: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
 }
 
-// Define columns (Chapter 20: Checkbox column must be first, locked, and minimal size)
-const COLUMNS = [
+// Define default columns for Trinity documentation (Chapter 20: Checkbox column must be first, locked, and minimal size)
+const DEFAULT_TRINITY_COLUMNS = [
   { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32 },
   { key: 'category', label: 'Category', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 100, tooltip: 'Bible, Teacher, or Lexicon' },
   { key: 'chapter', label: 'Chapter', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200, tooltip: 'Chapter number and name' },
@@ -82,18 +82,6 @@ const COLUMNS = [
   { key: 'audit', label: 'Audit', resizable: true, sortable: true, filterable: false, width: 180, tooltip: 'Last modification date and user' }
 ]
 
-const DEFAULT_COLUMN_WIDTHS = COLUMNS.reduce((acc, col) => {
-  acc[col.key] = col.width
-  return acc
-}, {})
-
-const DEFAULT_COLUMN_ORDER = COLUMNS.map(c => c.key)
-
-const DEFAULT_VISIBLE_COLUMNS = COLUMNS.reduce((acc, col) => {
-  acc[col.key] = true
-  return acc
-}, {})
-
 export default function TrinityTableView({
   entries,
   onEdit,
@@ -104,8 +92,23 @@ export default function TrinityTableView({
   enableImport = false,
   enableExport = false,
   onImport = null,
-  onExport = null
+  onExport = null,
+  columns = null  // NEW: Custom columns definition (if not provided, uses DEFAULT_TRINITY_COLUMNS)
 }) {
+  // Use custom columns if provided, otherwise use default Trinity columns
+  const COLUMNS = columns || DEFAULT_TRINITY_COLUMNS
+
+  const DEFAULT_COLUMN_WIDTHS = COLUMNS.reduce((acc, col) => {
+    acc[col.key] = col.width
+    return acc
+  }, {})
+
+  const DEFAULT_COLUMN_ORDER = COLUMNS.map(c => c.key)
+
+  const DEFAULT_VISIBLE_COLUMNS = COLUMNS.reduce((acc, col) => {
+    acc[col.key] = true
+    return acc
+  }, {})
   // category can be: null (show all), 'bible', 'teacher', or 'lexicon'
   // customActions: optional array of custom button elements to display after Columns button
   // enableImport/enableExport: show import/export options in three-dot menu
@@ -616,6 +619,29 @@ export default function TrinityTableView({
           aVal = a.updated_at ? new Date(a.updated_at).getTime() : 0
           bVal = b.updated_at ? new Date(b.updated_at).getTime() : 0
           break
+        case 'price':
+          aVal = a.price || 0
+          bVal = b.price || 0
+          break
+        case 'quantity':
+          aVal = a.quantity || 0
+          bVal = b.quantity || 0
+          break
+        case 'discount':
+          aVal = a.discount || 0
+          bVal = b.discount || 0
+          break
+        case 'total_cost':
+          // Computed column - use the compute function
+          const column = COLUMNS.find(c => c.key === sortBy)
+          if (column?.isComputed && column?.computeFunction) {
+            aVal = column.computeFunction(a) || 0
+            bVal = column.computeFunction(b) || 0
+          } else {
+            aVal = 0
+            bVal = 0
+          }
+          break
         default:
           return 0
       }
@@ -654,6 +680,16 @@ export default function TrinityTableView({
     const chapters = [...new Set(entries.map(e => e.chapter_number))].sort((a, b) => a - b)
     return chapters.map(num => ({ value: num, label: `Ch ${num}: ${CHAPTER_NAMES[num]}` }))
   }, [entries])
+
+  const uniqueComponents = useMemo(() => {
+    return [...new Set(entries.map(e => e.component).filter(Boolean))].sort()
+  }, [entries])
+
+  // Get unique values for any column - generic helper
+  const getUniqueValuesForColumn = (columnKey) => {
+    const values = [...new Set(entries.map(e => e[columnKey] || e.entry_type).filter(Boolean))]
+    return values.sort()
+  }
 
   const getColumnLabel = (key) => {
     const column = COLUMNS.find(c => c.key === key)
@@ -879,11 +915,11 @@ export default function TrinityTableView({
               }}
               className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
-              <option value="">Select Status</option>
-              <option value="open">⚡ Open</option>
-              <option value="fixed">✅ Fixed</option>
-              <option value="by_design">⚠️ By Design</option>
-              <option value="monitoring">🔄 Monitoring</option>
+              <option key="status-empty" value="">Select Status</option>
+              <option key="status-open" value="open">⚡ Open</option>
+              <option key="status-fixed" value="fixed">✅ Fixed</option>
+              <option key="status-by-design" value="by_design">⚠️ By Design</option>
+              <option key="status-monitoring" value="monitoring">🔄 Monitoring</option>
             </select>
           )
         }
@@ -909,11 +945,11 @@ export default function TrinityTableView({
               }}
               className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
-              <option value="">Select Severity</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
+              <option key="severity-empty" value="">Select Severity</option>
+              <option key="severity-low" value="low">Low</option>
+              <option key="severity-medium" value="medium">Medium</option>
+              <option key="severity-high" value="high">High</option>
+              <option key="severity-critical" value="critical">Critical</option>
             </select>
           )
         }
@@ -931,29 +967,17 @@ export default function TrinityTableView({
           return <span className="text-gray-400 text-xs">Never</span>
         }
 
-        // Format timestamp to Australian format
+        // Format date only (no time)
         const updatedDate = new Date(entry.updated_at)
         const formattedDate = updatedDate.toLocaleDateString('en-AU', {
           day: '2-digit',
           month: 'short',
           year: 'numeric'
         })
-        const formattedTime = updatedDate.toLocaleTimeString('en-AU', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        })
-
-        // Show who made the update from the database, or fallback to current user
-        const updatedBy = entry.updated_by
-          ? `by ${entry.updated_by}`
-          : `by ${getCurrentUser()} via Claude`
 
         return (
-          <div className="text-xs text-gray-600 dark:text-gray-400">
-            <div className="font-medium">{formattedDate}</div>
-            <div className="text-gray-500 dark:text-gray-500">{formattedTime}</div>
-            <div className="text-gray-500 dark:text-gray-500 italic">{updatedBy}</div>
+          <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+            {formattedDate}
           </div>
         )
 
@@ -975,6 +999,85 @@ export default function TrinityTableView({
             {entry.quantity != null ? entry.quantity.toLocaleString('en-AU') : '-'}
           </div>
         )
+
+      case 'email':
+        // Email column with mailto link
+        return entry.email ? (
+          <a
+            href={`mailto:${entry.email}`}
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {entry.email}
+          </a>
+        ) : (
+          <span className="text-gray-400">-</span>
+        )
+
+      case 'phone':
+        // Landline phone column with tel link
+        return entry.phone ? (
+          <a
+            href={`tel:${entry.phone.replace(/[\s()]/g, '')}`}
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {entry.phone}
+          </a>
+        ) : (
+          <span className="text-gray-400">-</span>
+        )
+
+      case 'mobile':
+        // Mobile phone column with tel link
+        return entry.mobile ? (
+          <a
+            href={`tel:${entry.mobile.replace(/\s/g, '')}`}
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {entry.mobile}
+          </a>
+        ) : (
+          <span className="text-gray-400">-</span>
+        )
+
+      case 'is_active':
+        // Boolean column with checkmark/x
+        return (
+          <div className="text-center">
+            {entry.is_active ? (
+              <span className="text-green-600 dark:text-green-400 text-lg">✓</span>
+            ) : (
+              <span className="text-red-600 dark:text-red-400 text-lg">✗</span>
+            )}
+          </div>
+        )
+
+      case 'discount':
+        // Percentage column - right-aligned with % symbol
+        return (
+          <div className="text-right font-medium">
+            {entry.discount != null ? `${entry.discount}%` : '-'}
+          </div>
+        )
+
+      case 'total_cost':
+        // Computed column - calculated value (e.g., price × quantity)
+        // Find the column definition to get the compute function
+        const column = COLUMNS.find(col => col.key === columnKey)
+        if (column?.isComputed && column?.computeFunction) {
+          const computedValue = column.computeFunction(entry)
+          return (
+            <div className="text-right font-medium bg-blue-50 dark:bg-blue-900/20">
+              {computedValue != null ? new Intl.NumberFormat('en-AU', {
+                style: 'currency',
+                currency: 'AUD'
+              }).format(computedValue) : '-'}
+            </div>
+          )
+        }
+        return <span className="text-gray-400">-</span>
 
       default:
         return null
@@ -1197,12 +1300,12 @@ export default function TrinityTableView({
                       }}
                       className="w-full text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white"
                     >
-                      <option value="">Select column...</option>
-                      <option value="category">Category</option>
-                      <option value="type">Type</option>
-                      <option value="status">Status</option>
-                      <option value="severity">Severity</option>
-                      <option value="component">Component</option>
+                      <option key="cascade-empty" value="">Select column...</option>
+                      <option key="cascade-category" value="category">Category</option>
+                      <option key="cascade-type" value="type">Type</option>
+                      <option key="cascade-status" value="status">Status</option>
+                      <option key="cascade-severity" value="severity">Severity</option>
+                      <option key="cascade-component" value="component">Component</option>
                     </select>
                   </div>
 
@@ -1348,12 +1451,13 @@ export default function TrinityTableView({
               <EllipsisVerticalIcon className="h-6 w-6" />
             </MenuButton>
 
-            <MenuItems className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 dark:divide-gray-700">
+            <MenuItems className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 dark:divide-gray-700 max-h-[80vh] overflow-y-auto">
               {/* Columns submenu */}
               <div className="py-1">
-                <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide sticky top-0 bg-white dark:bg-gray-800 z-10">
                   Columns
                 </div>
+                <div className="max-h-64 overflow-y-auto">
                 {COLUMNS.filter(col => col.key !== 'select').map((column) => (
                   <MenuItem key={column.key}>
                     {({ focus }) => (
@@ -1374,6 +1478,7 @@ export default function TrinityTableView({
                     )}
                   </MenuItem>
                 ))}
+                </div>
               </div>
 
               {/* Filter toggle */}
@@ -1463,7 +1568,7 @@ export default function TrinityTableView({
             onChange={(e) => setFilters({ ...filters, chapter: e.target.value })}
             className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
-            <option value="all">All Chapters</option>
+            <option key="chapter-all" value="all">All Chapters</option>
             {uniqueChapters.map(ch => (
               <option key={ch.value} value={ch.value}>{ch.label}</option>
             ))}
@@ -1474,11 +1579,11 @@ export default function TrinityTableView({
             onChange={(e) => setFilters({ ...filters, type: e.target.value })}
             className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
-            <option value="all">All Types</option>
-            <option value="bug">🐛 Bugs</option>
-            <option value="architecture">🏛️ Architecture</option>
-            <option value="test">📊 Tests</option>
-            <option value="note">🎓 Notes</option>
+            <option key="type-all" value="all">All Types</option>
+            <option key="type-bug" value="bug">🐛 Bugs</option>
+            <option key="type-architecture" value="architecture">🏛️ Architecture</option>
+            <option key="type-test" value="test">📊 Tests</option>
+            <option key="type-note" value="note">🎓 Notes</option>
           </select>
 
           <select
@@ -1486,11 +1591,11 @@ export default function TrinityTableView({
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
-            <option value="all">All Status</option>
-            <option value="open">⚡ Open</option>
-            <option value="fixed">✅ Fixed</option>
-            <option value="by_design">⚠️ By Design</option>
-            <option value="monitoring">🔄 Monitoring</option>
+            <option key="filter-status-all" value="all">All Status</option>
+            <option key="filter-status-open" value="open">⚡ Open</option>
+            <option key="filter-status-fixed" value="fixed">✅ Fixed</option>
+            <option key="filter-status-by-design" value="by_design">⚠️ By Design</option>
+            <option key="filter-status-monitoring" value="monitoring">🔄 Monitoring</option>
           </select>
 
           <select
@@ -1498,11 +1603,11 @@ export default function TrinityTableView({
             onChange={(e) => setFilters({ ...filters, severity: e.target.value })}
             className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
-            <option value="all">All Severity</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
+            <option key="filter-severity-all" value="all">All Severity</option>
+            <option key="filter-severity-low" value="low">Low</option>
+            <option key="filter-severity-medium" value="medium">Medium</option>
+            <option key="filter-severity-high" value="high">High</option>
+            <option key="filter-severity-critical" value="critical">Critical</option>
           </select>
 
           <div className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
@@ -1515,7 +1620,7 @@ export default function TrinityTableView({
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="trinity-table-scroll flex-1 overflow-y-scroll overflow-x-auto relative bg-white dark:bg-gray-900"
+          className="trinity-table-scroll flex-1 overflow-y-scroll overflow-x-scroll relative bg-white dark:bg-gray-900"
           style={{
             scrollbarWidth: 'thin',
             scrollbarColor: '#2563EB #FFFFFF'
@@ -1594,7 +1699,7 @@ export default function TrinityTableView({
                               <Bars3Icon className="h-4 w-4 text-gray-200 hover:text-white transition-colors" />
                             </div>
                           )}
-                          <span>{column.label}</span>
+                          <span title={column.tooltip || column.label}>{column.label}</span>
                           {column.sortable && <SortIcon column={colKey} />}
                         </div>
 
@@ -1632,12 +1737,12 @@ export default function TrinityTableView({
                             onClick={(e) => e.stopPropagation()}
                             className="mt-1 w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white placeholder-blue-200 dark:placeholder-blue-300"
                           >
-                            <option value="">All</option>
+                            <option key="inline-all" value="">All</option>
                             {colKey === 'category' && (
                               <>
-                                <option value="bible">📖 Bible</option>
-                                <option value="teacher">🔧 Teacher</option>
-                                <option value="lexicon">📕 Lexicon</option>
+                                <option key="inline-cat-bible" value="bible">📖 Bible</option>
+                                <option key="inline-cat-teacher" value="teacher">🔧 Teacher</option>
+                                <option key="inline-cat-lexicon" value="lexicon">📕 Lexicon</option>
                               </>
                             )}
                             {colKey === 'chapter' && uniqueChapters.map(ch => (
@@ -1646,71 +1751,79 @@ export default function TrinityTableView({
                             {colKey === 'type' && (
                               <>
                                 {/* Lexicon types */}
-                                <option value="bug">🐛 Bug</option>
-                                <option value="architecture">🏗️ Architecture</option>
-                                <option value="test">📊 Test</option>
-                                <option value="performance">📈 Performance</option>
-                                <option value="dev_note">🎓 Dev Note</option>
-                                <option value="common_issue">🔍 Common Issue</option>
+                                <option key="inline-type-bug" value="bug">🐛 Bug</option>
+                                <option key="inline-type-architecture" value="architecture">🏗️ Architecture</option>
+                                <option key="inline-type-test" value="test">📊 Test</option>
+                                <option key="inline-type-performance" value="performance">📈 Performance</option>
+                                <option key="inline-type-dev-note" value="dev_note">🎓 Dev Note</option>
+                                <option key="inline-type-common-issue" value="common_issue">🔍 Common Issue</option>
                                 {/* Teacher types */}
-                                <option value="component">🧩 Component</option>
-                                <option value="feature">✨ Feature</option>
-                                <option value="util">🔧 Util</option>
-                                <option value="hook">🪝 Hook</option>
-                                <option value="integration">🔌 Integration</option>
-                                <option value="optimization">⚡ Optimization</option>
-                                <option value="dropdown_md">📋 Dropdown Md</option>
+                                <option key="inline-type-component" value="component">🧩 Component</option>
+                                <option key="inline-type-feature" value="feature">✨ Feature</option>
+                                <option key="inline-type-util" value="util">🔧 Util</option>
+                                <option key="inline-type-hook" value="hook">🪝 Hook</option>
+                                <option key="inline-type-integration" value="integration">🔌 Integration</option>
+                                <option key="inline-type-optimization" value="optimization">⚡ Optimization</option>
+                                <option key="inline-type-dropdown-md" value="dropdown_md">📋 Dropdown Md</option>
                                 {/* Bible types */}
-                                <option value="MUST">✅ Must</option>
-                                <option value="NEVER">❌ Never</option>
-                                <option value="ALWAYS">🔄 Always</option>
-                                <option value="PROTECTED">🔒 Protected</option>
-                                <option value="CONFIG">⚙️ Config</option>
-                                <option value="rule">📖 Rule</option>
-                                <option value="REFERENCE">📚 Reference</option>
+                                <option key="inline-type-must" value="MUST">✅ Must</option>
+                                <option key="inline-type-never" value="NEVER">❌ Never</option>
+                                <option key="inline-type-always" value="ALWAYS">🔄 Always</option>
+                                <option key="inline-type-protected" value="PROTECTED">🔒 Protected</option>
+                                <option key="inline-type-config" value="CONFIG">⚙️ Config</option>
+                                <option key="inline-type-rule" value="rule">📖 Rule</option>
+                                <option key="inline-type-reference" value="REFERENCE">📚 Reference</option>
                               </>
                             )}
                             {colKey === 'status' && (
                               <>
-                                <option value="open">Open</option>
-                                <option value="fixed">Fixed</option>
-                                <option value="by_design">By Design</option>
-                                <option value="monitoring">Monitoring</option>
+                                <option key="active" value="active">Active</option>
+                                <option key="inactive" value="inactive">Inactive</option>
+                                <option key="open" value="open">Open</option>
+                                <option key="fixed" value="fixed">Fixed</option>
+                                <option key="by_design" value="by_design">By Design</option>
+                                <option key="monitoring" value="monitoring">Monitoring</option>
                               </>
                             )}
                             {colKey === 'severity' && (
                               <>
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                                <option value="critical">Critical</option>
+                                <option key="low" value="low">Low</option>
+                                <option key="medium" value="medium">Medium</option>
+                                <option key="high" value="high">High</option>
+                                <option key="critical" value="critical">Critical</option>
                               </>
                             )}
                             {colKey === 'trinity' && (
                               <>
-                                <option value="bible">📖 Bible</option>
-                                <option value="teacher">🔧 Teacher</option>
-                                <option value="lexicon">📕 Lexicon</option>
+                                <option key="inline-trinity-bible" value="bible">📖 Bible</option>
+                                <option key="inline-trinity-teacher" value="teacher">🔧 Teacher</option>
+                                <option key="inline-trinity-lexicon" value="lexicon">📕 Lexicon</option>
                               </>
                             )}
                             {colKey === 'component' && (
                               <>
-                                <option value="Auth">Auth</option>
-                                <option value="Chat">Chat</option>
-                                <option value="DynamicTables">DynamicTables</option>
-                                <option value="Email">Email</option>
-                                <option value="Gantt">Gantt</option>
-                                <option value="Jobs">Jobs</option>
-                                <option value="OneDrive">OneDrive</option>
-                                <option value="Payments">Payments</option>
-                                <option value="PurchaseOrders">PurchaseOrders</option>
-                                <option value="Settings">Settings</option>
-                                <option value="Table">Table</option>
-                                <option value="Tasks">Tasks</option>
-                                <option value="Weather">Weather</option>
-                                <option value="Xero">Xero</option>
+                                <option key="inline-comp-auth" value="Auth">Auth</option>
+                                <option key="inline-comp-chat" value="Chat">Chat</option>
+                                <option key="inline-comp-dynamic" value="DynamicTables">DynamicTables</option>
+                                <option key="inline-comp-email" value="Email">Email</option>
+                                <option key="inline-comp-gantt" value="Gantt">Gantt</option>
+                                <option key="inline-comp-jobs" value="Jobs">Jobs</option>
+                                <option key="inline-comp-onedrive" value="OneDrive">OneDrive</option>
+                                <option key="inline-comp-payments" value="Payments">Payments</option>
+                                <option key="inline-comp-pos" value="PurchaseOrders">PurchaseOrders</option>
+                                <option key="inline-comp-settings" value="Settings">Settings</option>
+                                <option key="inline-comp-table" value="Table">Table</option>
+                                <option key="inline-comp-tasks" value="Tasks">Tasks</option>
+                                <option key="inline-comp-weather" value="Weather">Weather</option>
+                                <option key="inline-comp-xero" value="Xero">Xero</option>
                               </>
                             )}
+                            {/* Generic fallback for other dropdown columns - dynamically populate from data */}
+                            {!['category', 'chapter', 'type', 'status', 'severity', 'trinity', 'component'].includes(colKey) &&
+                              getUniqueValuesForColumn(colKey).map(value => (
+                                <option key={value} value={value}>{value}</option>
+                              ))
+                            }
                           </select>
                         )}
 
@@ -1728,8 +1841,8 @@ export default function TrinityTableView({
                               <span>▼</span>
                             </button>
                             {showComponentDropdown && (
-                              <div className="absolute top-full left-0 mt-1 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg text-xs z-50 min-w-full" onClick={(e) => e.stopPropagation()}>
-                                {['Auth', 'Chat', 'DynamicTables', 'Email', 'Gantt', 'Jobs', 'OneDrive', 'Payments', 'PurchaseOrders', 'Settings', 'Table', 'Tasks', 'Weather', 'Xero'].map(comp => (
+                              <div className="absolute bottom-full left-0 mb-1 p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg text-xs z-[100] min-w-full max-h-64 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                                {uniqueComponents.map(comp => (
                                   <label key={comp} className="flex items-center space-x-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 px-1 rounded cursor-pointer text-gray-900 dark:text-white whitespace-nowrap">
                                     <input
                                       type="checkbox"
@@ -1891,7 +2004,13 @@ export default function TrinityTableView({
                     : filteredAndSorted
 
                   sum = rowsToSum.reduce((total, entry) => {
-                    const value = entry[colKey]
+                    // For computed columns, use the compute function
+                    let value
+                    if (column.isComputed && column.computeFunction) {
+                      value = column.computeFunction(entry)
+                    } else {
+                      value = entry[colKey]
+                    }
                     // Handle numeric values
                     const numValue = typeof value === 'number' ? value : parseFloat(value)
                     return total + (isNaN(numValue) ? 0 : numValue)

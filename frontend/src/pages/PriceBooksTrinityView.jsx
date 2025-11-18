@@ -4,6 +4,20 @@ import { PlusIcon } from '@heroicons/react/24/outline'
 import { api } from '../api'
 import TrinityTableView from '../components/documentation/TrinityTableView'
 
+// Define price book-specific columns
+const PRICEBOOK_COLUMNS = [
+  { key: 'select', label: '', resizable: false, sortable: false, filterable: false, width: 32 },
+  { key: 'section', label: 'Code', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 150, tooltip: 'Item code' },
+  { key: 'title', label: 'Item Name', resizable: true, sortable: true, filterable: true, filterType: 'text', width: 300 },
+  { key: 'type', label: 'Category', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 180 },
+  { key: 'component', label: 'Supplier', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 200 },
+  { key: 'price', label: 'Price', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'currency', tooltip: 'Current price in AUD' },
+  { key: 'unit', label: 'Unit', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 100 },
+  { key: 'status', label: 'Status', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120 },
+  { key: 'severity', label: 'Risk', resizable: true, sortable: true, filterable: true, filterType: 'dropdown', width: 120, tooltip: 'Price risk level' },
+  { key: 'content', label: 'Notes', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 300 }
+]
+
 export default function PriceBooksTrinityView() {
   const navigate = useNavigate()
   const [items, setItems] = useState([])
@@ -23,9 +37,12 @@ export default function PriceBooksTrinityView() {
         }
       })
 
-      if (response.success) {
-        setItems(response.data || [])
-      }
+      console.log('Price book API response:', response)
+
+      // API returns { items: [...], pagination: {...} }
+      const itemsData = response.items || []
+      console.log('Price book items loaded:', itemsData.length, itemsData.slice(0, 2))
+      setItems(itemsData)
     } catch (error) {
       console.error('Failed to load price book items:', error)
     } finally {
@@ -42,26 +59,37 @@ export default function PriceBooksTrinityView() {
     section_number: item.item_code || '',
     title: item.item_name || '',
     entry_type: item.category || '',
-    content: item.description || '',
-    component: item.supplier_name || '',
-    status: item.status || 'active',
-    severity: item.risk_level || 'low',
+    content: item.notes || '',
+    description: item.notes || '',
+    component: item.supplier?.name || item.default_supplier?.name || '',
+    status: item.is_active ? 'active' : 'inactive',
+    severity: item.risk?.level || 'low',
 
     // Price book specific fields
-    price: item.price || 0,
+    price: parseFloat(item.current_price) || 0,
     quantity: item.quantity || 0,
-    unit: item.unit || '',
+    unit: item.unit_of_measure || '',
     brand: item.brand || '',
     gst_code: item.gst_code || '',
-    supplier_code: item.supplier_code || '',
+    supplier_id: item.supplier_id,
+    default_supplier_id: item.default_supplier_id,
     requires_photo: item.requires_photo,
     requires_spec: item.requires_spec,
     photo_attached: item.photo_attached,
     spec_attached: item.spec_attached,
+    price_freshness: item.price_freshness?.status || 'unknown',
+    risk_score: item.risk?.score || 0,
 
     // Store original for reference
     _original: item
   }))
+
+  // Log transformation result (use useEffect to avoid setState during render)
+  useEffect(() => {
+    if (trinityEntries.length > 0) {
+      console.log('Trinity entries transformed:', trinityEntries.length, trinityEntries.slice(0, 2))
+    }
+  }, [trinityEntries.length])
 
   const handleEdit = (entry) => {
     // Navigate to detail page
@@ -111,6 +139,7 @@ export default function PriceBooksTrinityView() {
       <TrinityTableView
         category="pricebook"
         entries={trinityEntries}
+        columns={PRICEBOOK_COLUMNS}
         onEdit={handleEdit}
         onDelete={handleDelete}
         enableImport={true}
