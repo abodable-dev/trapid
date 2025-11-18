@@ -344,7 +344,7 @@ export default function GoldStandardTableTab() {
     email: '',
     phone: '',
     mobile: '',
-    type: '',
+    category_type: '',
     is_active: true,
     discount: 0,
     component: '',
@@ -356,25 +356,29 @@ export default function GoldStandardTableTab() {
 
   // Fetch gold standard items from API
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch('/api/v1/gold_standard_items')
-        if (!response.ok) throw new Error('Failed to fetch gold standard items')
-        const items = await response.json()
-        setData(items)
-        setError(null)
-      } catch (err) {
-        console.error('Error fetching gold standard items:', err)
-        setError(err.message)
-        // Fallback to sample data if API fails
-        setData(SAMPLE_DATA)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
+    fetchGoldStandardItems()
   }, [])
+
+  const fetchGoldStandardItems = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/v1/gold_standard_items')
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`)
+      }
+      const items = await response.json()
+      console.log('Fetched items from API:', items.length)
+      setData(items)
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching gold standard items:', err)
+      setError(err.message)
+      // Fallback to sample data if API fails
+      setData(SAMPLE_DATA)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleEdit = async (entry) => {
     try {
@@ -423,7 +427,7 @@ export default function GoldStandardTableTab() {
       email: '',
       phone: '',
       mobile: '',
-      type: '',
+      category_type: '',
       is_active: true,
       discount: 0,
       component: '',
@@ -443,15 +447,22 @@ export default function GoldStandardTableTab() {
         body: JSON.stringify({ gold_standard_item: newItem })
       })
 
-      if (!response.ok) throw new Error('Failed to create item')
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Failed to create item: ${response.status} ${errorText}`)
+      }
 
       const createdItem = await response.json()
-      setData(prevData => [...prevData, createdItem])
-      setShowAddModal(false)
       console.log('Created:', createdItem)
+
+      // Close modal first for better UX
+      setShowAddModal(false)
+
+      // Reload all items from API to ensure consistency
+      await fetchGoldStandardItems()
     } catch (err) {
       console.error('Error creating item:', err)
-      alert(`Failed to create item: ${err.message}`)
+      alert(`Failed to save item: ${err.message}`)
     }
   }
 
@@ -614,8 +625,8 @@ export default function GoldStandardTableTab() {
                   Category (Lookup)
                 </label>
                 <select
-                  value={newItem.type}
-                  onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
+                  value={newItem.category_type}
+                  onChange={(e) => setNewItem({ ...newItem, category_type: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 >
                   <option value="">Select a category...</option>
