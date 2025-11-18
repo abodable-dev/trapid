@@ -1973,10 +1973,10 @@ export default function TrapidTableView({
                     ? 'bg-blue-100 dark:bg-blue-900/50 ring-2 ring-blue-500'
                     : selectedRows.has(entry.id)
                       ? 'bg-blue-200 dark:bg-blue-800/60 ring-2 ring-blue-400 dark:ring-blue-500'
-                      : editModeActive
+                      : index % 2 === 0
                         ? 'bg-white dark:bg-gray-900'
-                        : index % 2 === 0
-                          ? 'bg-white dark:bg-gray-900'
+                        : editModeActive
+                          ? 'bg-orange-50 dark:bg-orange-900/20'
                           : 'bg-blue-50 dark:bg-blue-900/20'
                 } ${!editModeActive ? 'cursor-pointer' : ''} ${editModeActive ? 'hover:bg-orange-100 dark:hover:bg-orange-800/30' : 'hover:bg-blue-100 dark:hover:bg-blue-800/30'} transition-colors duration-150`}
               >
