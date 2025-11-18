@@ -172,6 +172,10 @@ export default function TrapidTableView({
   const [textEditValue, setTextEditValue] = useState('')
   const textEditTextareaRef = useRef(null)
 
+  // Editable modal state (for double-click row editing)
+  const [showEditableModal, setShowEditableModal] = useState(false)
+  const [modalEditData, setModalEditData] = useState(null)
+
   // Chapter 19 compliance: Column state management
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
   const [columnOrder, setColumnOrder] = useState(DEFAULT_COLUMN_ORDER)
@@ -1956,6 +1960,14 @@ export default function TrapidTableView({
             {filteredAndSorted.map((entry, index) => (
               <tr
                 key={entry.id}
+                onDoubleClick={(e) => {
+                  // Double-click row when NOT in edit mode to open editable modal
+                  if (!editModeActive) {
+                    e.stopPropagation()
+                    setModalEditData({...entry})
+                    setShowEditableModal(true)
+                  }
+                }}
                 className={`${
                   editingRowId === entry.id
                     ? 'bg-blue-100 dark:bg-blue-900/50 ring-2 ring-blue-500'
@@ -1964,7 +1976,7 @@ export default function TrapidTableView({
                       : index % 2 === 0
                         ? 'bg-white dark:bg-gray-900'
                         : 'bg-blue-50 dark:bg-blue-900/20'
-                } hover:bg-blue-100 dark:hover:bg-blue-800/30 transition-colors duration-150`}
+                } ${!editModeActive ? 'cursor-pointer' : ''} hover:bg-blue-100 dark:hover:bg-blue-800/30 transition-colors duration-150`}
               >
                 {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
                   const column = COLUMNS.find(c => c.key === colKey)
@@ -2730,6 +2742,173 @@ export default function TrapidTableView({
                   Save
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Editable Modal - Double-click row to open */}
+      {showEditableModal && modalEditData && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setShowEditableModal(false)
+            setModalEditData(null)
+          }}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white px-6 py-5 rounded-t-lg flex items-center justify-between z-10 shadow-lg">
+              <div>
+                <h2 className="text-2xl font-bold">Edit Item</h2>
+                <p className="text-blue-100 text-sm mt-1">Make changes to all fields</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowEditableModal(false)
+                  setModalEditData(null)
+                }}
+                className="p-2 hover:bg-blue-700 dark:hover:bg-blue-900 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Content - Form Fields */}
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {COLUMNS.filter(col => col.key !== 'select' && col.key !== 'total_cost' && !col.isComputed).map((column) => (
+                  <div key={column.key} className={column.key === 'content' ? 'md:col-span-2' : ''}>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      {column.label}
+                    </label>
+
+                    {/* Text inputs */}
+                    {['section', 'email', 'phone', 'mobile', 'title', 'category_type', 'document_link'].includes(column.key) && (
+                      <input
+                        type={column.key === 'email' ? 'email' : column.key === 'document_link' ? 'url' : 'text'}
+                        value={modalEditData[column.key] || ''}
+                        onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    )}
+
+                    {/* Number inputs */}
+                    {['price', 'quantity', 'discount', 'whole_number'].includes(column.key) && (
+                      <input
+                        type="number"
+                        step={column.key === 'price' ? '0.01' : column.key === 'whole_number' ? '1' : 'any'}
+                        value={modalEditData[column.key] || ''}
+                        onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    )}
+
+                    {/* Boolean checkbox */}
+                    {column.key === 'is_active' && (
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={modalEditData[column.key] || false}
+                          onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: e.target.checked })}
+                          className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Active</span>
+                      </div>
+                    )}
+
+                    {/* Status dropdown */}
+                    {column.key === 'status' && (
+                      <select
+                        value={modalEditData[column.key] || 'active'}
+                        onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="open">Open</option>
+                        <option value="fixed">Fixed</option>
+                        <option value="by_design">By Design</option>
+                        <option value="monitoring">Monitoring</option>
+                      </select>
+                    )}
+
+                    {/* Severity dropdown */}
+                    {column.key === 'severity' && (
+                      <select
+                        value={modalEditData[column.key] || ''}
+                        onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">None</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                      </select>
+                    )}
+
+                    {/* Component text input */}
+                    {column.key === 'component' && (
+                      <input
+                        type="text"
+                        value={modalEditData[column.key] || ''}
+                        onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: e.target.value })}
+                        placeholder="e.g., Auth, Chat, Jobs"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    )}
+
+                    {/* Multi-line content */}
+                    {column.key === 'content' && (
+                      <textarea
+                        value={modalEditData[column.key] || ''}
+                        onChange={(e) => setModalEditData({ ...modalEditData, [column.key]: e.target.value })}
+                        rows={6}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                        placeholder="Enter notes or details..."
+                      />
+                    )}
+
+                    {/* Date field - read only */}
+                    {column.key === 'updated_at' && (
+                      <input
+                        type="text"
+                        value={modalEditData[column.key] ? new Date(modalEditData[column.key]).toLocaleString('en-AU') : 'Never'}
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Footer - Action Buttons */}
+            <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 px-6 py-4 rounded-b-lg flex items-center justify-end gap-3 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => {
+                  setShowEditableModal(false)
+                  setModalEditData(null)
+                }}
+                className="px-6 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  // Call the onEdit callback with the updated data
+                  onEdit(modalEditData)
+                  setShowEditableModal(false)
+                  setModalEditData(null)
+                }}
+                className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-lg hover:shadow-xl"
+              >
+                Save Changes
+              </button>
             </div>
           </div>
         </div>
