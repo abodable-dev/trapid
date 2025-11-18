@@ -181,7 +181,7 @@ class ScheduleCascadeService
       'thursday' => true,
       'friday' => true,
       'saturday' => false,
-      'sunday' => true
+      'sunday' => false
     }
 
     # Get day name in lowercase (e.g., "monday", "tuesday")
