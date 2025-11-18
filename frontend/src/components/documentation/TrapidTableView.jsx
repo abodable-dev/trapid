@@ -149,6 +149,7 @@ export default function TrapidTableView({
   // Inline editing state (Chapter 20.2)
   const [editingRowId, setEditingRowId] = useState(null)
   const [editingData, setEditingData] = useState({})
+  const [validationError, setValidationError] = useState(null)
 
   // Inline column filters (Chapter 20.1)
   const [columnFilters, setColumnFilters] = useState({})
@@ -262,6 +263,31 @@ export default function TrapidTableView({
       }
     }
   }, [resizingColumn, resizeStartX, resizeStartWidth])
+
+  // Validation function for field values
+  const validateField = (key, value) => {
+    if (key === 'email' && value) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(value)) {
+        return 'Invalid email format. Example: example@domain.com'
+      }
+    }
+    if (key === 'mobile' && value) {
+      // Australian mobile: 04XX XXX XXX (10 digits)
+      const mobileRegex = /^04\d{2}\s?\d{3}\s?\d{3}$/
+      if (!mobileRegex.test(value.replace(/\s/g, ''))) {
+        return 'Invalid mobile format. Example: 0407 397 541'
+      }
+    }
+    if (key === 'phone' && value) {
+      // Australian landline: (0X) XXXX XXXX or 1300/1800 numbers
+      const phoneRegex = /^(\(0\d\)\s?\d{4}\s?\d{4}|1[38]00\s?\d{3}\s?\d{3})$/
+      if (!phoneRegex.test(value.replace(/\s/g, ''))) {
+        return 'Invalid phone format. Example: (03) 9123 4567 or 1300 123 456'
+      }
+    }
+    return null
+  }
 
   // Scroll handlers for sticky horizontal scrollbar (RULE #20.33)
   const handleScroll = (e) => {
@@ -1280,6 +1306,21 @@ export default function TrapidTableView({
           </div>
         )}
 
+        {/* Validation Error Banner - Shows when validation fails */}
+        {validationError && (
+          <div className="bg-gradient-to-r from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 text-white px-6 py-3 border-b-4 border-red-400 dark:border-red-500 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-8 h-8 bg-white/20 rounded-full backdrop-blur-sm">
+                <span className="text-xl">⚠️</span>
+              </div>
+              <div>
+                <h4 className="font-bold">Validation Error</h4>
+                <p className="text-sm text-red-100">{validationError}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header with Search, Filters, and Column Visibility (Chapter 20.20, #19.10) */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-4 flex-shrink-0">
         {/* Quick Filter Buttons - Only show when viewing all categories */}
@@ -2083,6 +2124,20 @@ export default function TrapidTableView({
                         if (editModeActive && colKey !== 'select' && !column.isComputed) {
                           e.stopPropagation();
                           if (editingRowId !== entry.id) {
+                            // Validate current editing data before switching rows
+                            if (editingRowId !== null && Object.keys(editingData).length > 0) {
+                              const errors = []
+                              Object.keys(editingData).forEach(key => {
+                                const error = validateField(key, editingData[key])
+                                if (error) errors.push(error)
+                              })
+                              if (errors.length > 0) {
+                                setValidationError(errors[0]) // Show first error
+                                setTimeout(() => setValidationError(null), 4000) // Clear after 4 seconds
+                                return // Don't switch rows if validation fails
+                              }
+                            }
+                            setValidationError(null)
                             setEditingRowId(entry.id);
                             setEditingData(entry);
                             setSelectedRows(new Set([entry.id]));
