@@ -487,6 +487,9 @@ Rails.application.routes.draw do
       # Estimate Reviews (AI Plan Analysis)
       resources :estimate_reviews, only: [:show, :destroy]
 
+      # Unreal Variables management
+      resources :unreal_variables
+
       # External integrations (API endpoints for third-party systems)
       namespace :external do
         post 'unreal_estimates', to: 'unreal_estimates#create'
