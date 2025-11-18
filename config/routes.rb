@@ -17,6 +17,7 @@ Rails.application.routes.draw do
       post 'auth/signup', to: 'authentication#signup'
       post 'auth/login', to: 'authentication#login'
       get 'auth/me', to: 'authentication#me'
+      get 'auth/dev_login', to: 'authentication#dev_login'  # Dev mode only
 
       # Import routes
       post 'imports/upload', to: 'imports#upload'
