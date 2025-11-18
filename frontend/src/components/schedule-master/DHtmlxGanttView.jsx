@@ -495,6 +495,17 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
     // Initial column configuration
     gantt.config.columns = [
       {
+        name: 'lock_position',
+        label: 'Lock',
+        width: 70,
+        align: 'center',
+        resize: true,
+        template: (task) => {
+          const checked = task.$manuallyPositioned || task.manually_positioned ? 'checked' : ''
+          return `<input type="checkbox" class="gantt-lock-checkbox" data-task-id="${task.id}" ${checked} />`
+        }
+      },
+      {
         name: 'task_number',
         label: '#',
         width: 40,
@@ -588,17 +599,6 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
           }
         }
       ] : []),
-      {
-        name: 'lock_position',
-        label: 'Lock',
-        width: 70,
-        align: 'center',
-        resize: true,
-        template: (task) => {
-          const checked = task.$manuallyPositioned || task.manually_positioned ? 'checked' : ''
-          return `<input type="checkbox" class="gantt-lock-checkbox" data-task-id="${task.id}" ${checked} />`
-        }
-      },
       {
         name: 'add',
         label: '',
@@ -1076,14 +1076,24 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
                 lag: 0
               })
 
-              // Clear dependencies_broken flag
-              successorTask.dependencies_broken = false
-              successorTask.$dependenciesBroken = false
+              // Remove from broken_predecessor_ids
+              if (successorTask.broken_predecessor_ids) {
+                successorTask.broken_predecessor_ids = successorTask.broken_predecessor_ids.filter(pred => {
+                  const predId = typeof pred === 'object' ? pred.id : pred
+                  return predId !== predecessorTaskNumber
+                })
+              }
+
+              // Clear dependencies_broken flag if no more broken dependencies
+              const hasMoreBrokenDeps = successorTask.broken_predecessor_ids && successorTask.broken_predecessor_ids.length > 0
+              successorTask.dependencies_broken = hasMoreBrokenDeps
+              successorTask.$dependenciesBroken = hasMoreBrokenDeps
 
               // Save to backend
               onUpdateTaskRef.current(successorTaskId, {
                 predecessor_ids: successorTask.predecessor_ids,
-                dependencies_broken: false
+                broken_predecessor_ids: successorTask.broken_predecessor_ids || [],
+                dependencies_broken: hasMoreBrokenDeps
               }, { skipReload: true })
 
               // Update the Gantt chart
@@ -1516,10 +1526,13 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
       const task = gantt.getTask(id)
       const wasRealDrag = task && task.$originalStart !== undefined
 
+      console.log(`🔍 Drag detection: task=${id}, hasOriginalStart=${!!task?.$originalStart}, isLoadingData=${isLoadingData.current}, isDragging=${isDragging.current}`)
+
       // CRITICAL: Suppress ONLY spurious drag events during programmatic data loading
       // gantt.parse() triggers drag events, causing infinite loop of re-renders and flickering
       // BUT: Let real user drags proceed even if isLoadingData is true (they override the lock)
-      if (isLoadingData.current && !wasRealDrag) {
+      // ALSO: If isDragging is already true, this is a continuation of a real drag
+      if (isLoadingData.current && !wasRealDrag && !isDragging.current) {
         console.log('⏸️ Suppressing spurious drag event during data load')
         // Reset isDragging but NOT isLoadingData (we're still loading)
         // Defer to prevent render flicker
@@ -1660,14 +1673,17 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
             if (!successorTask || !successorTask.id) return
             if (successorTask.predecessor_ids && successorTask.predecessor_ids.length > 0) {
               const dependsOnThisTask = successorTask.predecessor_ids.some(pred => {
-                const predId = typeof pred === 'object' ? pred.id : pred
-                return predId === task.id
+                const predData = typeof pred === 'object' ? pred : { id: pred, type: 'FS', lag: 0 }
+                // predData.id is a task NUMBER (1-based), need to convert to task ID
+                const predecessorTask = tasks[predData.id - 1]
+                return predecessorTask && predecessorTask.id === task.id
               })
 
               if (dependsOnThisTask) {
-                // Check if this successor is locked (has any status checkbox checked)
+                // Check if this successor is locked (has any status checkbox checked OR Lock checkbox checked)
                 const isLocked = successorTask.confirm || successorTask.supplier_confirm ||
-                                successorTask.start || successorTask.complete
+                                successorTask.start || successorTask.complete ||
+                                successorTask.$manuallyPositioned || successorTask.manually_positioned
                 if (isLocked) {
                   console.log('🔒 Found locked successor:', successorTask.id, successorTask.text)
                   lockedSuccessors.push(successorTask)
@@ -1675,67 +1691,6 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
               }
             }
           })
-
-          if (lockedSuccessors.length > 0) {
-            // Show warning dialog
-            console.log('⚠️ Moving this task will break dependencies with locked successors')
-            const successorNames = lockedSuccessors.map(s => `#${s.id} ${s.text}`).join(', ')
-            const confirmed = window.confirm(
-              `Warning: Moving this task will break dependencies!\n\n` +
-              `The following locked tasks depend on this task:\n${successorNames}\n\n` +
-              `Do you want to:\n` +
-              `• YES: Drop dependencies (successor tasks will show checkered pattern)\n` +
-              `• NO: Cancel move and keep dependencies intact`
-            )
-
-            if (confirmed) {
-              // User chose to drop dependencies
-              console.log('✂️ Dropping dependencies for locked successor tasks')
-
-              // Batch all updates to prevent shake/flicker
-              gantt.batchUpdate(() => {
-                // Remove this task from each successor's predecessor_ids and mark as broken
-                lockedSuccessors.forEach(successorTask => {
-                  // Remove this task from predecessor_ids
-                  successorTask.predecessor_ids = successorTask.predecessor_ids.filter(pred => {
-                    const predId = typeof pred === 'object' ? pred.id : pred
-                    return predId !== task.id
-                  })
-
-                  // Mark dependencies as broken
-                  successorTask.dependencies_broken = true
-                  successorTask.$dependenciesBroken = true
-
-                  console.log('🔗❌ Marked task', successorTask.id, 'with broken dependencies')
-
-                  // Save the successor task with broken dependencies
-                  const updateData = {
-                    predecessor_ids: successorTask.predecessor_ids,
-                    dependencies_broken: true
-                  }
-                  onUpdateTaskRef.current(successorTask.id, updateData, { skipReload: true })
-
-                  // Update UI
-                  gantt.updateTask(successorTask.id)
-                })
-              })
-              // batchUpdate automatically renders once at the end - no manual render needed
-            } else {
-              // User cancelled - revert the task to original position
-              console.log('↩️ User cancelled - reverting to original position')
-              task.start_date = originalStart
-              gantt.updateTask(task.id) // This handles the visual update, no render needed
-
-              // Defer flag resets to prevent render flicker
-              requestAnimationFrame(() => {
-                isDragging.current = false
-                isLoadingData.current = false
-              })
-
-              delete task.$originalStart
-              return false // Stop further processing
-            }
-          }
 
           // BETWEEN: Check for UNLOCKED successors that would need to cascade
           console.log('🔍 Checking for unlocked successor tasks that may need to cascade')
@@ -1756,14 +1711,17 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
             if (allPredecessors.length > 0) {
               // Find if this successor depends on the moved task (in either active or broken deps)
               const dependency = allPredecessors.find(pred => {
-                const predId = typeof pred === 'object' ? (pred.id || pred['id']) : pred
-                return Number(predId) === Number(task.id)
+                const predData = typeof pred === 'object' ? pred : { id: pred, type: 'FS', lag: 0 }
+                // predData.id is a task NUMBER (1-based), need to convert to task ID
+                const predecessorTask = tasks[predData.id - 1]
+                return predecessorTask && predecessorTask.id === task.id
               })
 
               if (dependency) {
                 // Check if this successor is NOT locked
                 const isLocked = successorTask.confirm || successorTask.supplier_confirm ||
-                                successorTask.start || successorTask.complete
+                                successorTask.start || successorTask.complete ||
+                                successorTask.$manuallyPositioned || successorTask.manually_positioned
 
                 if (!isLocked) {
                   console.log(`🔎 Checking Task #${successorTask.id} "${successorTask.text}" for locked successors...`)
@@ -1909,16 +1867,34 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
           })
 
           // Handle cascade and blocked successors - Show custom modal
-          if (blockedSuccessors.length > 0 || unlockedSuccessorsToMove.length > 0) {
+          // Also show modal if there are locked successors that need dependencies broken
+          if (lockedSuccessors.length > 0 || blockedSuccessors.length > 0 || unlockedSuccessorsToMove.length > 0) {
             console.log('📋 Opening cascade dependencies modal')
+            console.log(`  - Locked successors: ${lockedSuccessors.length}`)
             console.log(`  - Unlocked successors: ${unlockedSuccessorsToMove.length}`)
             console.log(`  - Blocked successors: ${blockedSuccessors.length}`)
+
+            // Convert locked successors to blocked format for the modal
+            // Locked successors are tasks that have the Lock or status checkboxes checked
+            const lockedSuccessorsForModal = lockedSuccessors.map(ls => ({
+              task: ls,
+              requiredStart: null, // Not applicable for locked tasks
+              lockedSuccessors: [] // These ARE the locked successors themselves
+            }))
+
+            console.log('🔍 Locked successors for modal:', lockedSuccessorsForModal.length, lockedSuccessorsForModal.map(ls => `#${ls.task.id} ${ls.task.text}`))
+            console.log('🔍 Other blocked successors:', blockedSuccessors.length, blockedSuccessors.map(b => `#${b.task.id} ${b.task.text}`))
+
+            // Combine locked successors with other blocked successors
+            const allBlockedSuccessors = [...lockedSuccessorsForModal, ...blockedSuccessors]
+
+            console.log('🔍 All blocked successors for modal:', allBlockedSuccessors.length, allBlockedSuccessors.map(b => `#${b.task.id} ${b.task.text} (locked children: ${b.lockedSuccessors.length})`))
 
             // Open the cascade modal
             setCascadeModal({
               movedTask: task,
               unlockedSuccessors: unlockedSuccessorsToMove,
-              blockedSuccessors: blockedSuccessors,
+              blockedSuccessors: allBlockedSuccessors,
               originalStart: originalStart
             })
 
@@ -4102,6 +4078,12 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
     // Convert links to DHTMLX format
     ganttLinks = []
     validTasks.forEach((task, index) => {
+      // Skip creating links if this task has broken dependencies
+      if (task.dependencies_broken) {
+        console.log(`⏭️ Skipping links for task ${task.id} - dependencies are broken`)
+        return
+      }
+
       if (task.predecessor_ids && task.predecessor_ids.length > 0) {
         task.predecessor_ids.forEach(pred => {
           const predData = typeof pred === 'object' ? pred : { id: pred, type: 'FS', lag: 0 }
@@ -4512,6 +4494,52 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
             <p className="text-sm text-gray-500 mt-1">
               30-day PRO trial with auto-scheduling, critical path, and advanced features
             </p>
+          </div>
+
+          {/* Debug Reset Button - Center where grid meets gantt */}
+          <div className="flex-1 flex justify-center">
+            <button
+              onClick={() => {
+                if (!window.confirm('⚠️ DEBUG: Reset all tasks?\n\nThis will:\n• Clear all Lock flags\n• Clear all status checkboxes\n• Restore all broken dependencies\n\nContinue?')) return
+
+                console.log('🔧 DEBUG RESET: Starting...')
+                const updates = []
+
+                gantt.eachTask((task) => {
+                  const updateData = {
+                    manually_positioned: false,
+                    confirm: false,
+                    supplier_confirm: false,
+                    start: false,
+                    complete: false,
+                    dependencies_broken: false
+                  }
+
+                  // Restore broken dependencies if any
+                  if (task.broken_predecessor_ids && task.broken_predecessor_ids.length > 0) {
+                    updateData.predecessor_ids = [
+                      ...(task.predecessor_ids || []),
+                      ...task.broken_predecessor_ids
+                    ]
+                    updateData.broken_predecessor_ids = []
+                  }
+
+                  console.log(`🔧 Resetting task ${task.id}:`, updateData)
+                  updates.push({ id: task.id, updates: updateData })
+                })
+
+                // Apply all updates
+                updates.forEach(({ id, updates: updateData }) => {
+                  onUpdateTaskRef.current(id, updateData, { skipReload: false })
+                })
+
+                console.log(`✅ DEBUG RESET: Complete - reset ${updates.length} tasks`)
+              }}
+              className="px-6 py-3 text-base font-bold rounded-lg transition-colors bg-yellow-400 text-black hover:bg-yellow-500 border-3 border-black shadow-lg"
+              title="DEBUG: Reset all flags and restore broken dependencies"
+            >
+              🔧 DEBUG RESET
+            </button>
           </div>
 
           {/* Search, Zoom Controls, Column Visibility Dropdown and Close Button */}
@@ -4954,8 +4982,8 @@ export default function DHtmlxGanttView({ isOpen, onClose, tasks, templateId, ca
         }
 
         .dhtmlx-gantt-container .gantt_task_line {
-          background-color: #3b82f6;
-          border-color: #2563eb;
+          background-color: #60a5fa;
+          border-color: #3b82f6;
           position: relative !important;
         }
 

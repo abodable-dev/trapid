@@ -17,7 +17,8 @@ import {
   CheckIcon,
   EllipsisVerticalIcon,
   ArrowUpTrayIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  ViewColumnsIcon
 } from '@heroicons/react/24/outline'
 
 const CHAPTER_NAMES = {
@@ -94,7 +95,8 @@ export default function TrapidTableView({
   enableExport = false,
   onImport = null,
   onExport = null,
-  columns = null  // NEW: Custom columns definition (if not provided, uses DEFAULT_TRINITY_COLUMNS)
+  columns = null,  // NEW: Custom columns definition (if not provided, uses DEFAULT_TRINITY_COLUMNS)
+  tableId = 'default'  // NEW: Unique identifier for this table (for saving filters per table)
 }) {
   // Use custom columns if provided, otherwise use default Trinity columns
   const COLUMNS = columns || DEFAULT_TRINITY_COLUMNS
@@ -152,6 +154,9 @@ export default function TrapidTableView({
   const [editingData, setEditingData] = useState({})
   const [validationError, setValidationError] = useState(null)
 
+  // Column visibility dropdown state
+  const [showColumnsDropdown, setShowColumnsDropdown] = useState(false)
+
   // Inline column filters (Chapter 20.1)
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilters, setShowFilters] = useState(true) // Toggle to show/hide filter inputs
@@ -159,6 +164,29 @@ export default function TrapidTableView({
   // Cascade filters - Excel-style dropdown filters that can be applied in any order
   const [cascadeFilters, setCascadeFilters] = useState([]) // Array of {id, column, value, label}
   const [showCascadeDropdown, setShowCascadeDropdown] = useState(false)
+
+  // Saved custom filters - load from localStorage on mount (per table)
+  const [savedFilters, setSavedFilters] = useState(() => {
+    try {
+      const stored = localStorage.getItem(`trapid-saved-filters-${tableId}`)
+      return stored ? JSON.parse(stored) : []
+    } catch (error) {
+      console.error('Error loading saved filters:', error)
+      return []
+    }
+  })
+  const [filterName, setFilterName] = useState('') // Name for saving current filter combo
+  const [selectedCascadeColumn, setSelectedCascadeColumn] = useState('') // Currently selected column in cascade filter
+  const [cascadeInputValue, setCascadeInputValue] = useState('') // Input value for text-based filters
+
+  // Save filters to localStorage whenever they change (per table)
+  useEffect(() => {
+    try {
+      localStorage.setItem(`trapid-saved-filters-${tableId}`, JSON.stringify(savedFilters))
+    } catch (error) {
+      console.error('Error saving filters to localStorage:', error)
+    }
+  }, [savedFilters, tableId])
 
   // Component multi-select checkbox state
   const [selectedComponents, setSelectedComponents] = useState(new Set())
@@ -1477,72 +1505,8 @@ export default function TrapidTableView({
 
         {/* Header with Search, Filters, and Column Visibility (Chapter 20.20, #19.10) */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-4 flex-shrink-0">
-        {/* Quick Filter Buttons - Only show when viewing all categories */}
-        {!category && (
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Filters:</span>
-
-          {/* Category Filter Buttons */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => handleColumnFilterChange('category', '')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                !columnFilters.category
-                  ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 ring-2 ring-indigo-500'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              ✨ All Categories
-            </button>
-            <button
-              onClick={() => handleColumnFilterChange('category', 'bible')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                columnFilters.category === 'bible'
-                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 ring-2 ring-purple-500'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
-              }`}
-            >
-              📖 Bible
-            </button>
-            <button
-              onClick={() => handleColumnFilterChange('category', 'teacher')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                columnFilters.category === 'teacher'
-                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 ring-2 ring-blue-500'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-              }`}
-            >
-              🔧 Teacher
-            </button>
-            <button
-              onClick={() => handleColumnFilterChange('category', 'lexicon')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                columnFilters.category === 'lexicon'
-                  ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 ring-2 ring-orange-500'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-900/20'
-              }`}
-            >
-              📕 Lexicon
-            </button>
-          </div>
-
-          {/* Filter Controls */}
-          <div className="ml-auto flex items-center gap-2">
-            {/* Clear All Filters Button */}
-            {Object.values(columnFilters).some(v => v) && (
-              <button
-                onClick={() => setColumnFilters({})}
-                className="px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-xs font-medium rounded-lg transition-colors"
-              >
-                Clear All Filters
-              </button>
-            )}
-          </div>
-        </div>
-        )}
-
         {/* Search Box with Clear Button (Chapter 20.20) */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-end gap-3">
           <div className="relative flex-1">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
@@ -1559,143 +1523,6 @@ export default function TrapidTableView({
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
-            )}
-          </div>
-
-          {/* Cascade Filters Button - Excel-style popup - Always visible */}
-          <div className="relative group">
-            <button
-              onClick={() => setShowCascadeDropdown(!showCascadeDropdown)}
-              className="px-3 h-[42px] bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-800 dark:text-purple-200 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
-            >
-              <FunnelIcon className="w-4 h-4" />
-              Filters
-              {cascadeFilters.length > 0 && (
-                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] bg-purple-600 text-white rounded-full text-[10px] font-bold">
-                  {cascadeFilters.length}
-                </span>
-              )}
-            </button>
-
-            {/* Instant tooltip */}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-none z-[100] pointer-events-none">
-              Excel-style cascade filters
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[-1px] border-4 border-transparent border-b-gray-900 dark:border-b-gray-700"></div>
-            </div>
-
-            {/* Excel-style dropdown panel */}
-            {showCascadeDropdown && (
-              <div className="fixed inset-0 bg-black/30 z-50 flex items-start justify-center pt-20" onClick={() => setShowCascadeDropdown(false)}>
-                <div
-                  className="w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-y-auto"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                <div className="p-3 space-y-3">
-                  {/* Header */}
-                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Cascade Filters
-                    </span>
-                    <button
-                      onClick={() => setShowCascadeDropdown(false)}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  {/* Search filter values */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      Search Filter Values:
-                    </label>
-                    <div className="relative">
-                      <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search values..."
-                        className="w-full text-xs pl-7 pr-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Add filter with checkboxes for values */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      Select Column & Values:
-                    </label>
-                    <select
-                      onChange={(e) => {
-                        const columnKey = e.target.value
-                        if (!columnKey) return
-
-                        // Get unique values for this column from CURRENT filtered results
-                        const uniqueValues = [...new Set(filteredAndSorted.map(entry => entry[columnKey]).filter(val => val !== null && val !== undefined && val !== ''))]
-
-                        if (uniqueValues.length > 0) {
-                          const value = uniqueValues[0]
-                          const columnLabel = COLUMNS.find(c => c.key === columnKey)?.label || columnKey
-                          setCascadeFilters([...cascadeFilters, {
-                            id: Date.now(),
-                            column: columnKey,
-                            value,
-                            label: `${columnLabel}: ${value}`
-                          }])
-                        }
-                        e.target.value = ''
-                      }}
-                      size="10"
-                      className="w-full text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white max-h-64 overflow-y-auto"
-                    >
-                      <option key="cascade-empty" value="">Select column...</option>
-                      {COLUMNS.filter(col => col.key !== 'select' && !col.isComputed).map(col => (
-                        <option key={`cascade-${col.key}`} value={col.key}>{col.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Active filters list */}
-                  {cascadeFilters.length > 0 ? (
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                        Active Filters ({cascadeFilters.length}):
-                      </label>
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                        {cascadeFilters.map((filter, index) => (
-                          <div
-                            key={filter.id}
-                            className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 px-2.5 py-1.5 rounded border border-gray-200 dark:border-gray-600"
-                          >
-                            <span className="text-xs text-gray-700 dark:text-gray-300">
-                              <span className="font-semibold text-purple-600 dark:text-purple-400">{index + 1}.</span> {filter.label}
-                            </span>
-                            <button
-                              onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.id !== filter.id))}
-                              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-bold"
-                              title="Remove filter"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Clear all button */}
-                      <button
-                        onClick={() => setCascadeFilters([])}
-                        className="w-full mt-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-xs font-medium rounded transition-colors"
-                      >
-                        Clear All Filters
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3 bg-gray-50 dark:bg-gray-700/30 rounded">
-                      No filters applied
-                    </div>
-                  )}
-                </div>
-                </div>
-              </div>
             )}
           </div>
 
@@ -1808,36 +1635,6 @@ export default function TrapidTableView({
             </MenuButton>
 
             <MenuItems className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 dark:divide-gray-700 max-h-[80vh] overflow-y-auto">
-              {/* Columns submenu */}
-              <div className="py-1">
-                <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide sticky top-0 bg-white dark:bg-gray-800 z-10">
-                  Columns
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                {COLUMNS.filter(col => col.key !== 'select').map((column) => (
-                  <MenuItem key={column.key}>
-                    {({ focus }) => (
-                      <button
-                        onClick={() => handleToggleColumn(column.key)}
-                        className={`${
-                          focus ? 'bg-gray-100 dark:bg-gray-700' : ''
-                        } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
-                      >
-                        <input
-                          key={`checkbox-${column.key}`}
-                          type="checkbox"
-                          checked={visibleColumns[column.key]}
-                          onChange={() => {}}
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
-                        />
-                        <span className="ml-3">{column.label}</span>
-                      </button>
-                    )}
-                  </MenuItem>
-                ))}
-                </div>
-              </div>
-
               {/* Filter toggle */}
               <div className="py-1">
                 <MenuItem>
@@ -1859,6 +1656,21 @@ export default function TrapidTableView({
                           <span>Show Filters</span>
                         </>
                       )}
+                    </button>
+                  )}
+                </MenuItem>
+
+                {/* Columns toggle */}
+                <MenuItem>
+                  {({ focus }) => (
+                    <button
+                      onClick={() => setShowColumnsDropdown(!showColumnsDropdown)}
+                      className={`${
+                        focus ? 'bg-gray-100 dark:bg-gray-700' : ''
+                      } group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}
+                    >
+                      <ViewColumnsIcon className="h-5 w-5 mr-3 text-gray-600 dark:text-gray-400" />
+                      <span>Columns</span>
                     </button>
                   )}
                 </MenuItem>
@@ -1904,6 +1716,50 @@ export default function TrapidTableView({
               )}
             </MenuItems>
           </Menu>
+
+          {/* Columns dropdown - appears when triggered from three-dot menu */}
+          {showColumnsDropdown && (
+            <>
+              {/* Backdrop */}
+              <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowColumnsDropdown(false)} />
+              {/* Dropdown positioned in center */}
+              <div
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-y-auto z-[60]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-4">
+                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2 mb-3">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      Show/Hide Columns
+                    </span>
+                    <button
+                      onClick={() => setShowColumnsDropdown(false)}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {COLUMNS.filter(col => col.key !== 'select').map((column) => (
+                      <button
+                        key={column.key}
+                        onClick={() => handleToggleColumn(column.key)}
+                        className="group flex w-full items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns[column.key]}
+                          onChange={() => {}}
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                        />
+                        <span className="ml-3">{column.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Search Results Count (Chapter 20.20) */}
@@ -1915,58 +1771,358 @@ export default function TrapidTableView({
 
         {/* Filters */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <FunnelIcon className="w-4 h-4 text-gray-400" />
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Filters:</span>
+          {/* Cascade Filters Button - Excel-style popup */}
+          <div className="relative group">
+            <button
+              onClick={() => setShowCascadeDropdown(!showCascadeDropdown)}
+              className="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 text-purple-800 dark:text-purple-200 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <FunnelIcon className="w-4 h-4" />
+              Filters
+              {cascadeFilters.length > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] bg-purple-600 text-white rounded-full text-[10px] font-bold">
+                  {cascadeFilters.length}
+                </span>
+              )}
+            </button>
+
+            {/* Excel-style dropdown panel */}
+            {showCascadeDropdown && (
+              <>
+                {/* Backdrop */}
+                <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowCascadeDropdown(false)} />
+                {/* Dropdown positioned to the right of button */}
+                <div
+                  className="absolute left-full top-0 ml-2 w-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-[80vh] overflow-y-auto z-[60]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                <div className="p-3 space-y-3">
+                  {/* Header */}
+                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Cascade Filters
+                    </span>
+                    <button
+                      onClick={() => setShowCascadeDropdown(false)}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Add filter with different input types */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Select Column & Values:
+                    </label>
+                    <select
+                      value={selectedCascadeColumn}
+                      onChange={(e) => setSelectedCascadeColumn(e.target.value)}
+                      className="w-full text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white mb-2"
+                    >
+                      <option value="">Select column...</option>
+                      {COLUMNS.filter(col => col.key !== 'select' && !col.isComputed).map(col => (
+                        <option key={`cascade-${col.key}`} value={col.key}>{col.label}</option>
+                      ))}
+                    </select>
+
+                    {/* Show appropriate input based on column type */}
+                    {selectedCascadeColumn && (() => {
+                      const column = COLUMNS.find(c => c.key === selectedCascadeColumn)
+                      const columnLabel = column?.label || selectedCascadeColumn
+
+                      // Boolean type - show sliding toggle switch
+                      if (selectedCascadeColumn === 'boolean') {
+                        const hasYesFilter = cascadeFilters.some(f => f.column === selectedCascadeColumn && f.value === true)
+                        const hasNoFilter = cascadeFilters.some(f => f.column === selectedCascadeColumn && f.value === false)
+                        const currentState = hasYesFilter ? true : hasNoFilter ? false : null
+
+                        return (
+                          <div className="space-y-2">
+                            <button
+                              onClick={() => {
+                                if (currentState === true) {
+                                  // Switch to No
+                                  const filtered = cascadeFilters.filter(f => f.column !== selectedCascadeColumn)
+                                  setCascadeFilters([...filtered, {
+                                    id: Date.now(),
+                                    column: selectedCascadeColumn,
+                                    value: false,
+                                    label: `${columnLabel}: No`
+                                  }])
+                                } else {
+                                  // Switch to Yes (from No or null)
+                                  const filtered = cascadeFilters.filter(f => f.column !== selectedCascadeColumn)
+                                  setCascadeFilters([...filtered, {
+                                    id: Date.now(),
+                                    column: selectedCascadeColumn,
+                                    value: true,
+                                    label: `${columnLabel}: Yes`
+                                  }])
+                                }
+                              }}
+                              className={`relative w-full h-12 rounded-full transition-all ${
+                                currentState === true ? 'bg-green-600' : currentState === false ? 'bg-red-600' : 'bg-gray-400 dark:bg-gray-600'
+                              }`}
+                            >
+                              <div className={`absolute top-1 w-10 h-10 bg-white rounded-full shadow-lg transition-all duration-200 flex items-center justify-center text-lg font-bold ${
+                                currentState === true ? 'right-1 translate-x-0' : 'left-1 translate-x-0'
+                              }`}>
+                                {currentState === true ? '✓' : currentState === false ? '✗' : '-'}
+                              </div>
+                              <div className="flex items-center justify-between px-3 text-white font-medium text-sm">
+                                <span className={currentState === false ? 'font-bold' : 'opacity-70'}>No</span>
+                                <span className={currentState === true ? 'font-bold' : 'opacity-70'}>Yes</span>
+                              </div>
+                            </button>
+                            {currentState !== null && (
+                              <button
+                                onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.column !== selectedCascadeColumn))}
+                                className="w-full text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                              >
+                                Clear filter
+                              </button>
+                            )}
+                          </div>
+                        )
+                      }
+
+                      // Text fields - check filterType='text' instead of specific column names
+                      if (column?.filterType === 'text') {
+                        return (
+                          <div className="flex gap-1">
+                            <input
+                              type="text"
+                              value={cascadeInputValue}
+                              onChange={(e) => setCascadeInputValue(e.target.value)}
+                              placeholder={`Enter ${columnLabel.toLowerCase()}...`}
+                              className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && cascadeInputValue.trim()) {
+                                  setCascadeFilters([...cascadeFilters, {
+                                    id: Date.now(),
+                                    column: selectedCascadeColumn,
+                                    value: cascadeInputValue.trim(),
+                                    label: `${columnLabel}: ${cascadeInputValue.trim()}`
+                                  }])
+                                  setCascadeInputValue('')
+                                  setSelectedCascadeColumn('')
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={() => {
+                                if (cascadeInputValue.trim()) {
+                                  setCascadeFilters([...cascadeFilters, {
+                                    id: Date.now(),
+                                    column: selectedCascadeColumn,
+                                    value: cascadeInputValue.trim(),
+                                    label: `${columnLabel}: ${cascadeInputValue.trim()}`
+                                  }])
+                                  setCascadeInputValue('')
+                                  setSelectedCascadeColumn('')
+                                }
+                              }}
+                              disabled={!cascadeInputValue.trim()}
+                              className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Add
+                            </button>
+                          </div>
+                        )
+                      }
+
+                      // Dropdown/Lookup fields - show checkboxes with search filter
+                      const uniqueValues = [...new Set(filteredAndSorted.map(entry => entry[selectedCascadeColumn]).filter(val => val !== null && val !== undefined && val !== ''))]
+                      const filteredValues = uniqueValues.filter(val =>
+                        val.toString().toLowerCase().includes(cascadeInputValue.toLowerCase())
+                      )
+
+                      return (
+                        <div>
+                          <input
+                            type="text"
+                            value={cascadeInputValue}
+                            onChange={(e) => setCascadeInputValue(e.target.value)}
+                            placeholder={`Type to search ${columnLabel.toLowerCase()}...`}
+                            className="w-full text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400 mb-2"
+                          />
+                          <div className="max-h-48 overflow-y-auto space-y-1 border border-gray-300 dark:border-gray-600 rounded p-2 bg-white dark:bg-gray-800">
+                            {filteredValues.length > 0 ? filteredValues.map(val => (
+                              <label key={val} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setCascadeFilters([...cascadeFilters, {
+                                        id: Date.now(),
+                                        column: selectedCascadeColumn,
+                                        value: val,
+                                        label: `${columnLabel}: ${val}`
+                                      }])
+                                    } else {
+                                      setCascadeFilters(cascadeFilters.filter(f => !(f.column === selectedCascadeColumn && f.value === val)))
+                                    }
+                                  }}
+                                  checked={cascadeFilters.some(f => f.column === selectedCascadeColumn && f.value === val)}
+                                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-xs text-gray-700 dark:text-gray-300">{val}</span>
+                              </label>
+                            )) : (
+                              <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">
+                                No matches found
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </div>
+
+                  {/* Active filters list */}
+                  {cascadeFilters.length > 0 ? (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        Active Filters ({cascadeFilters.length}):
+                      </label>
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                        {cascadeFilters.map((filter, index) => (
+                          <div
+                            key={filter.id}
+                            className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-2.5 py-1.5 rounded border border-gray-200 dark:border-gray-600"
+                          >
+                            <div className="flex flex-col gap-0.5">
+                              <button
+                                onClick={() => {
+                                  if (index === 0) return
+                                  const newFilters = [...cascadeFilters]
+                                  const temp = newFilters[index]
+                                  newFilters[index] = newFilters[index - 1]
+                                  newFilters[index - 1] = temp
+                                  setCascadeFilters(newFilters)
+                                }}
+                                disabled={index === 0}
+                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-xs leading-none"
+                              >
+                                ▲
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (index === cascadeFilters.length - 1) return
+                                  const newFilters = [...cascadeFilters]
+                                  const temp = newFilters[index]
+                                  newFilters[index] = newFilters[index + 1]
+                                  newFilters[index + 1] = temp
+                                  setCascadeFilters(newFilters)
+                                }}
+                                disabled={index === cascadeFilters.length - 1}
+                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-30 disabled:cursor-not-allowed text-xs leading-none"
+                              >
+                                ▼
+                              </button>
+                            </div>
+                            <span className="flex-1 text-xs text-gray-700 dark:text-gray-300">
+                              <span className="font-semibold text-purple-600 dark:text-purple-400">{index + 1}.</span> {filter.label}
+                            </span>
+                            <button
+                              onClick={() => setCascadeFilters(cascadeFilters.filter(f => f.id !== filter.id))}
+                              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-bold"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Clear all button */}
+                      <button
+                        onClick={() => setCascadeFilters([])}
+                        className="w-full mt-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-xs font-medium rounded transition-colors"
+                      >
+                        Clear All Filters
+                      </button>
+
+                      {/* Save current filter combo */}
+                      <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                          Save This Filter Combo:
+                        </label>
+                        <div className="flex gap-1">
+                          <input
+                            type="text"
+                            value={filterName}
+                            onChange={(e) => setFilterName(e.target.value)}
+                            placeholder="Filter name..."
+                            className="flex-1 text-xs px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 dark:text-white placeholder-gray-400"
+                          />
+                          <button
+                            onClick={() => {
+                              if (!filterName.trim()) return
+                              setSavedFilters([...savedFilters, {
+                                id: Date.now(),
+                                name: filterName,
+                                filters: cascadeFilters.map(f => ({ column: f.column, value: f.value, label: f.label }))
+                              }])
+                              setFilterName('')
+                            }}
+                            disabled={!filterName.trim()}
+                            className="px-3 py-1.5 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-800 dark:text-green-200 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-3 bg-gray-50 dark:bg-gray-700/30 rounded">
+                      No filters applied
+                    </div>
+                  )}
+
+                  {/* Saved filters list */}
+                  {savedFilters.length > 0 && (
+                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        Saved Filters ({savedFilters.length}):
+                      </label>
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                        {savedFilters.map((saved) => (
+                          <div
+                            key={saved.id}
+                            className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 px-2.5 py-1.5 rounded border border-green-200 dark:border-green-800"
+                          >
+                            <button
+                              onClick={() => {
+                                setCascadeFilters(saved.filters.map(f => ({
+                                  id: Date.now() + Math.random(),
+                                  column: f.column,
+                                  value: f.value,
+                                  label: f.label
+                                })))
+                              }}
+                              className="flex-1 text-left text-xs text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 font-medium"
+                            >
+                              {saved.name} ({saved.filters.length} filters)
+                            </button>
+                            <button
+                              onClick={() => setSavedFilters(savedFilters.filter(f => f.id !== saved.id))}
+                              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-bold ml-2"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                </div>
+              </>
+            )}
           </div>
 
-          <select
-            value={filters.chapter}
-            onChange={(e) => setFilters({ ...filters, chapter: e.target.value })}
-            className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          >
-            <option key="chapter-all" value="all">All Chapters</option>
-            {uniqueChapters.map((ch, idx) => (
-              <option key={`chapter-${ch.value || idx}`} value={ch.value}>{ch.label}</option>
-            ))}
-          </select>
-
-          <select
-            value={filters.type}
-            onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-            className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          >
-            <option key="type-all" value="all">All Types</option>
-            <option key="type-bug" value="bug">🐛 Bugs</option>
-            <option key="type-architecture" value="architecture">🏛️ Architecture</option>
-            <option key="type-test" value="test">📊 Tests</option>
-            <option key="type-note" value="note">🎓 Notes</option>
-          </select>
-
-          <select
-            value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          >
-            <option key="filter-status-all" value="all">All Status</option>
-            <option key="filter-status-open" value="open">⚡ Open</option>
-            <option key="filter-status-fixed" value="fixed">✅ Fixed</option>
-            <option key="filter-status-by-design" value="by_design">⚠️ By Design</option>
-            <option key="filter-status-monitoring" value="monitoring">🔄 Monitoring</option>
-          </select>
-
-          <select
-            value={filters.severity}
-            onChange={(e) => setFilters({ ...filters, severity: e.target.value })}
-            className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          >
-            <option key="filter-severity-all" value="all">All Severity</option>
-            <option key="filter-severity-low" value="low">Low</option>
-            <option key="filter-severity-medium" value="medium">Medium</option>
-            <option key="filter-severity-high" value="high">High</option>
-            <option key="filter-severity-critical" value="critical">Critical</option>
-          </select>
-
+          {/* Showing count */}
           <div className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
             Showing {filteredAndSorted.length} of {entries.length} entries
           </div>
@@ -1981,7 +2137,8 @@ export default function TrapidTableView({
           style={{
             scrollbarWidth: 'thin',
             scrollbarColor: '#2563EB #FFFFFF',
-            maxHeight: 'calc(100vh - 320px)' // Footer always visible
+            maxHeight: 'calc(100vh - 320px)', // Footer always visible
+            minHeight: '600px' // Minimum 10 rows visible to prevent dropdown cutoff
           }}
         >
           <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
@@ -2009,11 +2166,13 @@ export default function TrapidTableView({
                       fontSize: '18px',
                       fontWeight: 'bold',
                       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                      verticalAlign: 'top',
+                      height: '100px',
                       // Visual drop indicator - green border when this is the drop target
                       borderLeft: dropTargetColumn === colKey ? '4px solid #10b981' : undefined,
                       borderRight: dropTargetColumn === colKey ? '4px solid #10b981' : undefined,
                     }}
-                    className={`group ${colKey === 'select' ? 'px-1 py-4' : 'px-6 py-4'} ${colKey === 'select' ? 'text-center' : 'text-left'} text-white tracking-wide transition-colors ${
+                    className={`group align-top ${colKey === 'select' ? 'px-1 py-4' : 'px-6 pt-4 pb-2'} ${colKey === 'select' ? 'text-center' : 'text-left'} text-white tracking-wide transition-colors ${
                       column.sortable ? 'cursor-pointer hover:bg-blue-700 dark:hover:bg-blue-900' : ''
                     } ${draggedColumn === colKey ? 'bg-blue-700 dark:bg-blue-900 opacity-50' : ''} ${
                       dropTargetColumn === colKey ? 'bg-green-600 dark:bg-green-700' : ''
@@ -2033,8 +2192,8 @@ export default function TrapidTableView({
                         />
                       </div>
                     ) : (
-                      <>
-                        <div className="flex items-center gap-1">
+                      <div className="flex flex-col justify-between h-full gap-2">
+                        <div className="flex items-start gap-1">
                           {column.resizable && (
                             <div
                               draggable
@@ -2052,12 +2211,11 @@ export default function TrapidTableView({
                                 e.stopPropagation()
                               }}
                               className="cursor-grab active:cursor-grabbing"
-                              title="Drag to reorder column"
                             >
                               <Bars3Icon className="h-4 w-4 text-gray-200 hover:text-white transition-colors" />
                             </div>
                           )}
-                          <span title={column.tooltip || column.label}>{column.label}</span>
+                          <span>{column.label}</span>
                           {column.sortable && <SortIcon column={colKey} />}
                         </div>
 
@@ -2072,7 +2230,6 @@ export default function TrapidTableView({
                             onDoubleClick={(e) => e.stopPropagation()}
                             className="absolute right-0 top-0 bottom-0 w-2 hover:w-3 bg-transparent hover:bg-blue-300 dark:hover:bg-blue-500 cursor-col-resize z-20 transition-all"
                             style={{ cursor: 'col-resize' }}
-                            title="Drag to resize column"
                           />
                         )}
 
@@ -2084,7 +2241,7 @@ export default function TrapidTableView({
                             value={columnFilters[colKey] || ''}
                             onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
-                            className="mt-1 w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white placeholder-blue-200 dark:placeholder-blue-300"
+                            className="w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white placeholder-blue-200 dark:placeholder-blue-300"
                           />
                         )}
 
@@ -2093,7 +2250,7 @@ export default function TrapidTableView({
                             value={columnFilters[colKey] || ''}
                             onChange={(e) => handleColumnFilterChange(colKey, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
-                            className="mt-1 w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white placeholder-blue-200 dark:placeholder-blue-300"
+                            className="w-full text-xs px-2 py-1 border border-blue-400 dark:border-blue-700 rounded focus:ring-1 focus:ring-white focus:border-white bg-blue-500 dark:bg-blue-700 text-white placeholder-blue-200 dark:placeholder-blue-300"
                           >
                             <option key="inline-all" value="">All</option>
                             {colKey === 'category' && (
@@ -2187,7 +2344,7 @@ export default function TrapidTableView({
 
                         {/* Component multi-select checkboxes - Show only if showFilters is true */}
                         {showFilters && column.filterable && colKey === 'component' && (
-                          <div className="relative mt-1">
+                          <div className="relative">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
@@ -2226,9 +2383,9 @@ export default function TrapidTableView({
 
                         {/* Empty spacer for columns without filters - maintains alignment - Show only if showFilters is true */}
                         {showFilters && !column.filterable && (
-                          <div className="mt-1 h-[26px]"></div>
+                          <div className="h-[26px]"></div>
                         )}
-                      </>
+                      </div>
                     )}
 
                   </th>
@@ -2333,32 +2490,6 @@ export default function TrapidTableView({
                         editModeActive && colKey !== 'select' && !column.isComputed ? 'cursor-pointer' : ''
                       } whitespace-nowrap overflow-hidden text-ellipsis max-w-0`}
                     >
-                      {/* Instant tooltip for edit mode - shows on hover with no delay */}
-                      {editModeActive && colKey !== 'select' && (
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg whitespace-normal w-max max-w-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-none z-[100] pointer-events-none">
-                          {column.isComputed ? '🔒 This column is NOT editable - Computed field (auto-calculated)' :
-                           colKey === 'section' ? 'Single Line Text - Max 255 characters - Click to edit' :
-                           colKey === 'email' ? 'Email - Format: example@domain.com - Click to edit' :
-                           colKey === 'phone' ? 'Phone - Format: (03) 9123 4567 or 1300 123 456 - Click to edit' :
-                           colKey === 'mobile' ? 'Mobile - Format: 0407 397 541 - Click to edit' :
-                           colKey === 'is_active' ? 'Boolean - Click checkbox to toggle true/false' :
-                           colKey === 'discount' ? 'Percentage - Enter number (shown as %) - Click to edit' :
-                           colKey === 'status' ? 'Choice - Select from dropdown: Active, Inactive, Open, Fixed, By Design, Monitoring' :
-                           colKey === 'component' ? 'Multi Lookup - Max 100 characters - Enter component name (e.g., Auth, Chat, Jobs) - Click to edit' :
-                           colKey === 'price' ? 'Currency - Enter amount in AUD - Click to edit' :
-                           colKey === 'quantity' ? 'Number - Enter any number (decimals allowed) - Click to edit' :
-                           colKey === 'whole_number' ? 'Whole Number - Enter integers only (no decimals) - Click to edit' :
-                           colKey === 'severity' ? 'Choice - Select from dropdown: Low, Medium, High, Critical' :
-                           colKey === 'updated_at' ? '🔒 This column is NOT editable - Date - Auto-updated timestamp' :
-                           colKey === 'document_link' ? 'Document Link - Max 2048 characters - Enter URL (e.g., https://example.com/doc.pdf) - Click to edit' :
-                           colKey === 'content' ? 'Multi Line Text - Unlimited characters - Click to open text editor' :
-                           colKey === 'title' ? 'Single Line Text - Max 255 characters - Click to open text editor' :
-                           column.tooltip || 'Click to edit'}
-                          {/* Tooltip arrow pointing up */}
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[-1px] border-4 border-transparent border-b-gray-900 dark:border-b-gray-700"></div>
-                        </div>
-                      )}
-
                       {renderCellContent(entry, colKey)}
                     </td>
                   )
