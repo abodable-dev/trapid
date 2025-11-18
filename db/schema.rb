@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_17_200115) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_18_014024) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -540,6 +540,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_200115) do
     t.index ["template_type"], name: "index_folder_templates_on_template_type"
   end
 
+  create_table "gold_standard_items", force: :cascade do |t|
+    t.string "category"
+    t.string "section"
+    t.string "email"
+    t.string "phone"
+    t.boolean "is_active"
+    t.decimal "discount"
+    t.decimal "price"
+    t.integer "quantity"
+    t.text "content"
+    t.string "component"
+    t.string "status"
+    t.string "updated_by"
+    t.jsonb "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "grok_plans", force: :cascade do |t|
     t.string "title"
     t.text "description"
@@ -1047,15 +1065,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_200115) do
     t.index ["position"], name: "index_roles_on_position"
   end
 
-  create_table "sam_quick_est_items", force: :cascade do |t|
-    t.string "item_code", null: false
-    t.string "item_name", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.decimal "claude_estimate", precision: 10, scale: 2
-    t.index ["item_code"], name: "index_sam_quick_est_items_on_item_code", unique: true
-  end
-
   create_table "schedule_task_checklist_items", force: :cascade do |t|
     t.bigint "schedule_task_id", null: false
     t.string "name", null: false
@@ -1472,11 +1481,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_200115) do
     t.index ["user_id"], name: "index_task_updates_on_user_id"
   end
 
-  create_table "teaching_patterns", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "trinity", force: :cascade do |t|
     t.integer "chapter_number", null: false
     t.string "chapter_name", null: false
@@ -1527,58 +1531,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_200115) do
     t.index ["section_number"], name: "index_trinity_on_section_number"
     t.index ["severity"], name: "index_trinity_on_severity"
     t.index ["status"], name: "index_trinity_on_status"
-  end
-
-  create_table "unreal_variables", force: :cascade do |t|
-    t.string "variable_name"
-    t.decimal "claude_value", precision: 10, scale: 2
-    t.boolean "is_active", default: true
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_9_30_upload_4b12581f", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.string "parenttype"
-    t.string "drive_id"
-    t.date "folder_id"
-    t.string "code"
-    t.string "description"
-    t.string "unit"
-    t.decimal "range_id", precision: 15, scale: 2
-    t.string "range"
-    t.decimal "rangetype", precision: 15, scale: 2
-    t.date "colour_spec_id"
-    t.string "colour_spec"
-    t.date "colour_spectype"
-    t.decimal "tedmodel_id", precision: 15, scale: 2
-    t.string "tedmodel"
-    t.date "tedmodeltype"
-    t.decimal "price", precision: 15, scale: 2
-    t.string "default_supplier"
-    t.string "brand_linked"
-    t.string "budget_zone"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_document_tab_3728eb5f", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_document_tab_7a84cd47", force: :cascade do |t|
-    t.decimal "budget", precision: 15, scale: 2, default: "0.0"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_document_tab_dd6cfcbf", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
   end
 
   create_table "user_import_1761885699_f0f78b8e7fc2f1fc_78992af1", force: :cascade do |t|
@@ -1665,292 +1617,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_200115) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "user_import_1762055288_0481fe89c8986d83_77240a42", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.string "parenttype"
-    t.string "drive_id"
-    t.date "folder_id"
-    t.datetime "start_date"
-    t.string "title"
-    t.string "ba_approval_no"
-    t.string "ba_received_date"
-    t.string "covenant_approval_received"
-    t.string "plumbing_permit_no"
-    t.string "ted_number"
-    t.boolean "locked"
-    t.decimal "contract_value", precision: 15, scale: 2
-    t.decimal "live_profit", precision: 15, scale: 2
-    t.decimal "live", precision: 15, scale: 2
-    t.string "status"
-    t.decimal "certifier_job_no", precision: 15, scale: 2
-    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
-    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
-    t.boolean "xenna_lock"
-    t.boolean "is_kitchen"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_import_1762056023_72d2ca00717e243d_deed2265", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.string "parenttype"
-    t.string "drive_id"
-    t.date "folder_id"
-    t.datetime "start_date"
-    t.string "title"
-    t.string "ba_approval_no"
-    t.string "ba_received_date"
-    t.string "covenant_approval_received"
-    t.string "plumbing_permit_no"
-    t.string "ted_number"
-    t.boolean "locked"
-    t.decimal "contract_value", precision: 15, scale: 2
-    t.decimal "live_profit", precision: 15, scale: 2
-    t.decimal "live", precision: 15, scale: 2
-    t.string "status"
-    t.decimal "certifier_job_no", precision: 15, scale: 2
-    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
-    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
-    t.boolean "xenna_lock"
-    t.boolean "is_kitchen"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_import_1762056365_8affa6c58b11050f_ab07b46b", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.string "parenttype"
-    t.string "drive_id"
-    t.date "folder_id"
-    t.datetime "start_date"
-    t.string "title"
-    t.string "ba_approval_no"
-    t.string "ba_received_date"
-    t.string "covenant_approval_received"
-    t.string "plumbing_permit_no"
-    t.string "ted_number"
-    t.boolean "locked"
-    t.decimal "contract_value", precision: 15, scale: 2
-    t.decimal "live_profit", precision: 15, scale: 2
-    t.decimal "live", precision: 15, scale: 2
-    t.string "status"
-    t.decimal "certifier_job_no", precision: 15, scale: 2
-    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
-    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
-    t.boolean "xenna_lock"
-    t.boolean "is_kitchen"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_import_1762056499_7562a44878bae0dd_dc223e1a", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.string "parenttype"
-    t.string "drive_id"
-    t.date "folder_id"
-    t.datetime "start_date"
-    t.string "title"
-    t.string "ba_approval_no"
-    t.string "ba_received_date"
-    t.string "covenant_approval_received"
-    t.string "plumbing_permit_no"
-    t.string "ted_number"
-    t.boolean "locked"
-    t.decimal "contract_value", precision: 15, scale: 2
-    t.decimal "live_profit", precision: 15, scale: 2
-    t.decimal "live", precision: 15, scale: 2
-    t.string "status"
-    t.decimal "certifier_job_no", precision: 15, scale: 2
-    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
-    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
-    t.boolean "xenna_lock"
-    t.boolean "is_kitchen"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_import_1762059420_a11f2f8f92defc9a_d30f6065", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.string "parenttype"
-    t.string "drive_id"
-    t.date "folder_id"
-    t.string "code"
-    t.string "description"
-    t.string "unit"
-    t.decimal "range_id", precision: 15, scale: 2
-    t.string "range"
-    t.decimal "rangetype", precision: 15, scale: 2
-    t.date "colour_spec_id"
-    t.string "colour_spec"
-    t.date "colour_spectype"
-    t.decimal "tedmodel_id", precision: 15, scale: 2
-    t.string "tedmodel"
-    t.date "tedmodeltype"
-    t.decimal "price", precision: 15, scale: 2
-    t.string "default_supplier"
-    t.string "brand_linked"
-    t.string "budget_zone"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_import_1762060168_19920751913157a9_6fcf00a3", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.string "parenttype"
-    t.string "drive_id"
-    t.date "folder_id"
-    t.string "code"
-    t.string "description"
-    t.string "unit"
-    t.decimal "range_id", precision: 15, scale: 2
-    t.string "range"
-    t.decimal "rangetype", precision: 15, scale: 2
-    t.date "colour_spec_id"
-    t.string "colour_spec"
-    t.date "colour_spectype"
-    t.decimal "tedmodel_id", precision: 15, scale: 2
-    t.string "tedmodel"
-    t.date "tedmodeltype"
-    t.decimal "price", precision: 15, scale: 2
-    t.string "default_supplier"
-    t.string "brand_linked"
-    t.string "budget_zone"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_import_1762125311_b06c355ec069b654_2f8eb576", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.string "parenttype"
-    t.string "drive_id"
-    t.date "folder_id"
-    t.datetime "start_date"
-    t.string "title"
-    t.string "ba_approval_no"
-    t.string "ba_received_date"
-    t.string "covenant_approval_received"
-    t.string "plumbing_permit_no"
-    t.string "ted_number"
-    t.boolean "locked"
-    t.decimal "contract_value", precision: 15, scale: 2
-    t.decimal "live_profit", precision: 15, scale: 2
-    t.decimal "live", precision: 15, scale: 2
-    t.string "status"
-    t.decimal "certifier_job_no", precision: 15, scale: 2
-    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
-    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
-    t.boolean "xenna_lock"
-    t.boolean "is_kitchen"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_import_1762125512_3346546a6ffb8b8b_2afd6efb", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.string "parenttype"
-    t.string "drive_id"
-    t.date "folder_id"
-    t.string "code"
-    t.string "description"
-    t.string "unit"
-    t.decimal "range_id", precision: 15, scale: 2
-    t.string "range"
-    t.decimal "rangetype", precision: 15, scale: 2
-    t.date "colour_spec_id"
-    t.string "colour_spec"
-    t.date "colour_spectype"
-    t.decimal "tedmodel_id", precision: 15, scale: 2
-    t.string "tedmodel"
-    t.date "tedmodeltype"
-    t.decimal "price", precision: 15, scale: 2
-    t.string "default_supplier"
-    t.string "brand_linked"
-    t.string "budget_zone"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_import_1762125782_81846cbb9a44cbce_a99dc734", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.string "parenttype"
-    t.string "drive_id"
-    t.date "folder_id"
-    t.datetime "start_date"
-    t.string "title"
-    t.string "ba_approval_no"
-    t.string "ba_received_date"
-    t.string "covenant_approval_received"
-    t.string "plumbing_permit_no"
-    t.string "ted_number"
-    t.boolean "locked"
-    t.decimal "contract_value", precision: 15, scale: 2
-    t.decimal "live_profit", precision: 15, scale: 2
-    t.decimal "live", precision: 15, scale: 2
-    t.string "status"
-    t.decimal "certifier_job_no", precision: 15, scale: 2
-    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
-    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
-    t.boolean "xenna_lock"
-    t.boolean "is_kitchen"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_import_1762126561_e200f5e7e0826b1e_new_558a778c", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.decimal "parenttype", precision: 15, scale: 2
-    t.string "drive_id"
-    t.date "folder_id"
-    t.string "code"
-    t.string "description"
-    t.string "unit"
-    t.decimal "range_id", precision: 15, scale: 2
-    t.string "range"
-    t.decimal "rangetype", precision: 15, scale: 2
-    t.date "colour_spec_id"
-    t.string "colour_spec"
-    t.date "colour_spectype"
-    t.decimal "tedmodel_id", precision: 15, scale: 2
-    t.string "tedmodel"
-    t.date "tedmodeltype"
-    t.decimal "price", precision: 15, scale: 2
-    t.string "default_supplier"
-    t.string "brand_linked"
-    t.string "budget_zone"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "user_import_1762157582_8e8e2d2b69a47e74_4b7d5585", force: :cascade do |t|
     t.string "item_code"
     t.string "item_name"
@@ -1981,101 +1647,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_17_200115) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "user_jakes_new_test_0e0f1d21", force: :cascade do |t|
-    t.string "name"
-    t.string "email"
-    t.string "phone"
-    t.string "status"
-    t.date "created_date"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_newimport_93f20d2d", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.string "parenttype"
-    t.string "drive_id"
-    t.date "folder_id"
-    t.datetime "start_date"
-    t.string "title"
-    t.string "ba_approval_no"
-    t.string "ba_received_date"
-    t.string "covenant_approval_received"
-    t.string "plumbing_permit_no"
-    t.string "ted_number"
-    t.boolean "locked"
-    t.decimal "contract_value", precision: 15, scale: 2
-    t.decimal "live_profit", precision: 15, scale: 2
-    t.decimal "live", precision: 15, scale: 2
-    t.string "status"
-    t.decimal "certifier_job_no", precision: 15, scale: 2
-    t.decimal "xero_total_invoices_ex_gst", precision: 15, scale: 2
-    t.decimal "total_expenses_ex_gst", precision: 15, scale: 2
-    t.boolean "xenna_lock"
-    t.boolean "is_kitchen"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_price_book_705651a0", force: :cascade do |t|
-    t.string "name", default: "0"
-    t.string "email"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_pricinggggg_c9716c90", force: :cascade do |t|
-    t.date "sys_type_id"
-    t.string "deleted"
-    t.string "parent_id"
-    t.string "parent"
-    t.string "parenttype"
-    t.string "drive_id"
-    t.date "folder_id"
-    t.string "code"
-    t.string "description"
-    t.string "unit"
-    t.decimal "range_id", precision: 15, scale: 2
-    t.string "range"
-    t.decimal "rangetype", precision: 15, scale: 2
-    t.date "colour_spec_id"
-    t.string "colour_spec"
-    t.date "colour_spectype"
-    t.decimal "tedmodel_id", precision: 15, scale: 2
-    t.string "tedmodel"
-    t.date "tedmodeltype"
-    t.decimal "price", precision: 15, scale: 2
-    t.string "default_supplier"
-    t.string "brand_linked"
-    t.string "budget_zone"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_testing_table_9297d36e", force: :cascade do |t|
-    t.string "name"
-    t.string "email"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "user_untitled_table_3b80ee42", force: :cascade do |t|
     t.string "address"
     t.decimal "contract_price", precision: 15, scale: 2
     t.string "test_phone2"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
-  create_table "user_untitled_table_61d507e5", force: :cascade do |t|
-    t.string "name"
-    t.string "email"
-    t.string "phone"
-    t.string "status"
-    t.date "created_date"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
