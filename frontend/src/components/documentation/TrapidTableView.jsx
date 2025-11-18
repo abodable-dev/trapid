@@ -1956,7 +1956,7 @@ export default function TrapidTableView({
               })}
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className={`bg-white dark:bg-gray-900 divide-y ${editModeActive ? 'divide-orange-300 dark:divide-orange-700' : 'divide-gray-200 dark:divide-gray-700'}`}>
             {filteredAndSorted.map((entry, index) => (
               <tr
                 key={entry.id}
@@ -1973,10 +1973,12 @@ export default function TrapidTableView({
                     ? 'bg-blue-100 dark:bg-blue-900/50 ring-2 ring-blue-500'
                     : selectedRows.has(entry.id)
                       ? 'bg-blue-200 dark:bg-blue-800/60 ring-2 ring-blue-400 dark:ring-blue-500'
-                      : index % 2 === 0
+                      : editModeActive
                         ? 'bg-white dark:bg-gray-900'
-                        : 'bg-blue-50 dark:bg-blue-900/20'
-                } ${!editModeActive ? 'cursor-pointer' : ''} hover:bg-blue-100 dark:hover:bg-blue-800/30 transition-colors duration-150`}
+                        : index % 2 === 0
+                          ? 'bg-white dark:bg-gray-900'
+                          : 'bg-blue-50 dark:bg-blue-900/20'
+                } ${!editModeActive ? 'cursor-pointer' : ''} ${editModeActive ? 'hover:bg-orange-100 dark:hover:bg-orange-800/30' : 'hover:bg-blue-100 dark:hover:bg-blue-800/30'} transition-colors duration-150`}
               >
                 {columnOrder.filter(key => visibleColumns[key]).map(colKey => {
                   const column = COLUMNS.find(c => c.key === colKey)
@@ -2028,15 +2030,7 @@ export default function TrapidTableView({
                         colKey === 'select' ? 'text-center' : ['price', 'quantity'].includes(colKey) ? 'text-right' : ''
                       } ${
                         // Non-edit mode: highlight clickable title/content cells
-                        ['title', 'content'].includes(colKey) && !editModeActive ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20' :
-                        // Edit mode: highlight editable cells with orange border only
-                        editModeActive && ['title', 'content', 'component', 'status', 'severity'].includes(colKey) && editingRowId !== entry.id ?
-                          (selectedRows.size > 0 ?
-                            // If rows selected: only highlight editable cells in selected rows
-                            (selectedRows.has(entry.id) ? 'cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-900/30 border-2 border-orange-400 dark:border-orange-500' : '') :
-                            // If no rows selected: highlight ALL editable cells
-                            'cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-900/30 border-2 border-orange-400 dark:border-orange-500'
-                          ) : ''
+                        ['title', 'content'].includes(colKey) && !editModeActive ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20' : ''
                       } whitespace-nowrap overflow-hidden text-ellipsis max-w-0`}
                       title={
                         !editModeActive && (() => {
