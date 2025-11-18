@@ -160,21 +160,26 @@ test.describe('Gantt Cascade Functionality', () => {
     const visualButton = e2eTestRow.locator('button').filter({ hasText: '' }).first(); // Eye icon SVG
     await visualButton.click();
 
-    // Wait for visual test to complete and modal to close
-    console.log('⏳ Waiting for visual test to complete...');
-    // The visual test modal should appear, run the test, and then auto-close
-    // Wait up to 30 seconds for it to complete
-    await page.waitForTimeout(30000); // Visual test takes ~6-10 seconds based on logs
-    console.log('✅ Visual test completed');
-
-    // Wait for Gantt to load
+    // Wait for Gantt to load and be visible (with longer timeout for modal to process)
     console.log('🔍 Waiting for Gantt chart to load...');
-    await page.waitForSelector('.gantt_task_line', { timeout: 15000 });
-    console.log('✅ Gantt loaded');
+    await page.waitForSelector('.gantt_task_line', { timeout: 45000 }); // Increased from 15s to 45s
+    console.log('✅ Gantt chart detected in DOM');
 
-    // Wait extra time for DHtmlx Gantt to fully initialize
-    await page.waitForTimeout(2000);
-    console.log('✅ Gantt initialization complete');
+    // Wait for tasks to be actually visible (not just in DOM)
+    console.log('👁️ Verifying Gantt tasks are rendered and visible...');
+    await page.waitForFunction(() => {
+      const tasks = document.querySelectorAll('.gantt_task_line');
+      if (tasks.length === 0) return false;
+      // Check if first task is actually visible (has dimensions)
+      const firstTask = tasks[0];
+      const rect = firstTask.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    }, { timeout: 15000 });
+    console.log('✅ Gantt tasks are visible and rendered');
+
+    // Extra wait for Gantt to fully stabilize
+    await page.waitForTimeout(3000);
+    console.log('✅ Gantt fully initialized and stable');
 
     // ========================================================================
     // 🔬 BUG-HUNTER DIAGNOSTIC MONITORING (Permanent Feature)
