@@ -1011,6 +1011,19 @@ export default function TrapidTableView({
 
       case 'price':
         // Currency column - right-aligned with AUD formatting
+        if (editingRowId === entry.id) {
+          return (
+            <input
+              type="number"
+              step="0.01"
+              value={editingData.price || ''}
+              onChange={(e) => setEditingData({ ...editingData, price: parseFloat(e.target.value) || 0 })}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-right"
+            />
+          )
+        }
         return (
           <div className="text-right font-medium">
             {entry.price != null ? new Intl.NumberFormat('en-AU', {
@@ -1021,15 +1034,41 @@ export default function TrapidTableView({
         )
 
       case 'quantity':
+      case 'whole_number':
         // Number column - right-aligned
+        if (editingRowId === entry.id) {
+          return (
+            <input
+              type="number"
+              step={columnKey === 'whole_number' ? '1' : 'any'}
+              value={editingData[columnKey] || ''}
+              onChange={(e) => setEditingData({ ...editingData, [columnKey]: parseFloat(e.target.value) || 0 })}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-right"
+            />
+          )
+        }
         return (
           <div className="text-right font-medium">
-            {entry.quantity != null ? entry.quantity.toLocaleString('en-AU') : '-'}
+            {entry[columnKey] != null ? entry[columnKey].toLocaleString('en-AU') : '-'}
           </div>
         )
 
       case 'email':
         // Email column with mailto link
+        if (editingRowId === entry.id) {
+          return (
+            <input
+              type="email"
+              value={editingData.email || ''}
+              onChange={(e) => setEditingData({ ...editingData, email: e.target.value })}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+          )
+        }
         return entry.email ? (
           <a
             href={`mailto:${entry.email}`}
@@ -1044,6 +1083,19 @@ export default function TrapidTableView({
 
       case 'phone':
         // Landline phone column with tel link
+        if (editingRowId === entry.id) {
+          return (
+            <input
+              type="tel"
+              value={editingData.phone || ''}
+              onChange={(e) => setEditingData({ ...editingData, phone: e.target.value })}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
+              placeholder="(03) 9123 4567"
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+          )
+        }
         return entry.phone ? (
           <a
             href={`tel:${entry.phone.replace(/[\s()]/g, '')}`}
@@ -1058,6 +1110,19 @@ export default function TrapidTableView({
 
       case 'mobile':
         // Mobile phone column with tel link
+        if (editingRowId === entry.id) {
+          return (
+            <input
+              type="tel"
+              value={editingData.mobile || ''}
+              onChange={(e) => setEditingData({ ...editingData, mobile: e.target.value })}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
+              placeholder="0407 397 541"
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+          )
+        }
         return entry.mobile ? (
           <a
             href={`tel:${entry.mobile.replace(/\s/g, '')}`}
@@ -1072,6 +1137,19 @@ export default function TrapidTableView({
 
       case 'is_active':
         // Boolean column with checkmark/x
+        if (editingRowId === entry.id) {
+          return (
+            <div className="text-center">
+              <input
+                type="checkbox"
+                checked={editingData.is_active || false}
+                onChange={(e) => setEditingData({ ...editingData, is_active: e.target.checked })}
+                onClick={(e) => e.stopPropagation()}
+                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+            </div>
+          )
+        }
         return (
           <div className="text-center">
             {entry.is_active ? (
@@ -1084,6 +1162,19 @@ export default function TrapidTableView({
 
       case 'discount':
         // Percentage column - right-aligned with % symbol
+        if (editingRowId === entry.id) {
+          return (
+            <input
+              type="number"
+              step="0.1"
+              value={editingData.discount || ''}
+              onChange={(e) => setEditingData({ ...editingData, discount: parseFloat(e.target.value) || 0 })}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
+              className="w-full px-2 py-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-right"
+            />
+          )
+        }
         return (
           <div className="text-right font-medium">
             {entry.discount != null ? `${entry.discount}%` : '-'}
@@ -1988,16 +2079,7 @@ export default function TrapidTableView({
                     <td
                       key={colKey}
                       onDoubleClick={(e) => {
-                        // Double-click any editable cell to start editing (only in edit mode)
-                        const editableCells = ['title', 'content', 'component', 'status', 'severity']
-                        if (editModeActive && editableCells.includes(colKey)) {
-                          e.stopPropagation();
-                          if (editingRowId !== entry.id) {
-                            setEditingRowId(entry.id);
-                            setEditingData(entry);
-                            setSelectedRows(new Set([entry.id]));
-                          }
-                        }
+                        // Double-click row when NOT in edit mode to open editable modal (handled at row level)
                       }}
                       onClick={(e) => {
                         // Single-click on Title or Content columns ONLY to open detail modal (only when not in edit mode)
@@ -2009,8 +2091,8 @@ export default function TrapidTableView({
                           return;
                         }
 
-                        // Single-click on status/severity to start editing (only in edit mode)
-                        if (editModeActive && (colKey === 'status' || colKey === 'severity')) {
+                        // In edit mode: make ALL cells editable on click (except select and computed)
+                        if (editModeActive && colKey !== 'select' && !column.isComputed) {
                           e.stopPropagation();
                           if (editingRowId !== entry.id) {
                             setEditingRowId(entry.id);
@@ -2034,6 +2116,9 @@ export default function TrapidTableView({
                       } ${
                         // Non-edit mode: highlight clickable title/content cells
                         ['title', 'content'].includes(colKey) && !editModeActive ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20' : ''
+                      } ${
+                        // Edit mode: make all cells clickable except select and computed
+                        editModeActive && colKey !== 'select' && !column.isComputed ? 'cursor-pointer' : ''
                       } whitespace-nowrap overflow-hidden text-ellipsis max-w-0`}
                       title={
                         !editModeActive && (() => {
