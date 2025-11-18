@@ -14,14 +14,12 @@ export default function AccountsLayout({ children }) {
     <main>
       <h1 className="sr-only">Account Settings</h1>
 
-      {/* Back Button */}
-      <div className="px-4 sm:px-6 lg:px-8 pt-4 mb-4">
-        <BackButton />
-      </div>
-
       <header className="border-b border-gray-200 dark:border-white/5">
         {/* Secondary navigation */}
-        <nav className="flex overflow-x-auto py-4">
+        <nav className="flex overflow-x-auto py-4 items-center">
+          <div className="px-4 sm:px-6 lg:px-8 flex-shrink-0">
+            <BackButton />
+          </div>
           <ul
             role="list"
             className="flex min-w-full flex-none gap-x-6 px-4 text-sm/6 font-semibold text-gray-500 sm:px-6 lg:px-8 dark:text-gray-400"

@@ -397,6 +397,9 @@ export default function AppLayout({ children }) {
 
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex flex-1 items-center gap-x-4 lg:gap-x-6">
+              {/* Back Button - compact icon-only version */}
+              <BackButton className="!text-gray-400 hover:!text-gray-500 dark:hover:!text-white !gap-0.5 shrink-0" />
+
               {/* Only show these icons when sidebar is NOT collapsed */}
               {!sidebarCollapsed && (
                 <>
@@ -510,9 +513,6 @@ export default function AppLayout({ children }) {
           sidebarCollapsed ? "lg:pt-10" : ""
         )}>
           <div className="px-4 sm:px-6 lg:px-8">
-            <div className="mb-4">
-              <BackButton />
-            </div>
             {children}
           </div>
         </main>
