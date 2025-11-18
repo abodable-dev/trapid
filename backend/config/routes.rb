@@ -157,6 +157,9 @@ Rails.application.routes.draw do
         end
       end
 
+      # Gold Standard Items (Demo/Reference Price Book)
+      resources :gold_standard_items, only: [:index, :create, :update, :destroy]
+
       # Suppliers management
       resources :suppliers do
         collection do

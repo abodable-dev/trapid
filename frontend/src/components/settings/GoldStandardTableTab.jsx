@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import TrapidTableView from '../documentation/TrapidTableView'
 
@@ -334,25 +334,75 @@ const SAMPLE_DATA = [
 ]
 
 export default function GoldStandardTableTab() {
-  const [data, setData] = useState(SAMPLE_DATA)
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const handleEdit = (entry) => {
-    console.log('Edit:', entry)
-    // Update the entry in the data array
-    setData(prevData =>
-      prevData.map(item => item.id === entry.id ? entry : item)
-    )
+  // Fetch gold standard items from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/v1/gold_standard_items')
+        if (!response.ok) throw new Error('Failed to fetch gold standard items')
+        const items = await response.json()
+        setData(items)
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching gold standard items:', err)
+        setError(err.message)
+        // Fallback to sample data if API fails
+        setData(SAMPLE_DATA)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const handleEdit = async (entry) => {
+    try {
+      const response = await fetch(`/api/v1/gold_standard_items/${entry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gold_standard_item: entry })
+      })
+
+      if (!response.ok) throw new Error('Failed to update item')
+
+      const updatedItem = await response.json()
+      setData(prevData =>
+        prevData.map(item => item.id === updatedItem.id ? updatedItem : item)
+      )
+      console.log('Updated:', updatedItem)
+    } catch (err) {
+      console.error('Error updating item:', err)
+      alert(`Failed to update item: ${err.message}`)
+    }
   }
 
-  const handleDelete = (entry) => {
-    console.log('Delete:', entry)
-    // Remove the entry from the data array
-    setData(prevData =>
-      prevData.filter(item => item.id !== entry.id)
-    )
+  const handleDelete = async (entry) => {
+    if (!confirm('Are you sure you want to delete this item?')) return
+
+    try {
+      const response = await fetch(`/api/v1/gold_standard_items/${entry.id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) throw new Error('Failed to delete item')
+
+      setData(prevData =>
+        prevData.filter(item => item.id !== entry.id)
+      )
+      console.log('Deleted:', entry)
+    } catch (err) {
+      console.error('Error deleting item:', err)
+      alert(`Failed to delete item: ${err.message}`)
+    }
   }
 
-  const handleAddNew = () => {
+  const handleAddNew = async () => {
+    // For now, just show the message - we'll implement a proper form later
     const message = `Add New Item
 
 This would open a modal form with fields for:
@@ -378,6 +428,17 @@ The form would validate required fields and save to the database.`
     alert('Export functionality - see console for data structure')
   }
 
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading gold standard items...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -388,6 +449,14 @@ The form would validate required fields and save to the database.`
           This table demonstrates all Trapid Table View column types for Price Books - showing all features,
           filtering options, and table features using realistic construction material pricing data.
         </p>
+
+        {error && (
+          <div className="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
+            <p className="text-sm text-yellow-800 dark:text-yellow-300">
+              <strong>Note:</strong> Using sample data due to API error: {error}
+            </p>
+          </div>
+        )}
 
         <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
           <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">

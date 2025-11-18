@@ -679,7 +679,7 @@ export default function TrapidTableView({
   }
 
   const uniqueChapters = useMemo(() => {
-    const chapters = [...new Set(entries.map(e => e.chapter_number))].sort((a, b) => a - b)
+    const chapters = [...new Set(entries.map(e => e.chapter_number).filter(Boolean))].sort((a, b) => a - b)
     return chapters.map(num => ({ value: num, label: `Ch ${num}: ${CHAPTER_NAMES[num]}` }))
   }, [entries])
 
@@ -1572,8 +1572,8 @@ export default function TrapidTableView({
             className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
             <option key="chapter-all" value="all">All Chapters</option>
-            {uniqueChapters.map(ch => (
-              <option key={ch.value} value={ch.value}>{ch.label}</option>
+            {uniqueChapters.map((ch, idx) => (
+              <option key={`chapter-${ch.value || idx}`} value={ch.value}>{ch.label}</option>
             ))}
           </select>
 
@@ -1823,8 +1823,8 @@ export default function TrapidTableView({
                             )}
                             {/* Generic fallback for other dropdown columns - dynamically populate from data */}
                             {!['category', 'chapter', 'type', 'status', 'severity', 'trinity', 'component'].includes(colKey) &&
-                              getUniqueValuesForColumn(colKey).map(value => (
-                                <option key={value} value={value}>{value}</option>
+                              getUniqueValuesForColumn(colKey).map((value, idx) => (
+                                <option key={`${colKey}-${value}-${idx}`} value={value}>{value}</option>
                               ))
                             }
                           </select>
