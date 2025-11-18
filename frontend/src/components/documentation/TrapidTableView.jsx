@@ -1623,10 +1623,11 @@ export default function TrapidTableView({
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="trapid-table-scroll flex-1 overflow-y-scroll overflow-x-scroll relative bg-white dark:bg-gray-900"
+          className="trapid-table-scroll flex-1 overflow-y-auto overflow-x-scroll relative bg-white dark:bg-gray-900"
           style={{
             scrollbarWidth: 'thin',
-            scrollbarColor: '#2563EB #FFFFFF'
+            scrollbarColor: '#2563EB #FFFFFF',
+            maxHeight: 'calc(100vh - 320px)' // Footer always visible
           }}
         >
           <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
