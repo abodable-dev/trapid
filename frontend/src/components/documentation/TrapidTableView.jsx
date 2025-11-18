@@ -1956,7 +1956,7 @@ export default function TrapidTableView({
               })}
             </tr>
           </thead>
-          <tbody className={`bg-white dark:bg-gray-900 divide-y ${editModeActive ? 'divide-orange-300 dark:divide-orange-700' : 'divide-gray-200 dark:divide-gray-700'}`}>
+          <tbody className="bg-white dark:bg-gray-900">
             {filteredAndSorted.map((entry, index) => (
               <tr
                 key={entry.id}
