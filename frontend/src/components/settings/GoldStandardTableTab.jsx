@@ -18,6 +18,7 @@ const GOLD_STANDARD_COLUMNS = [
   { key: 'whole_number', label: 'Whole Number', resizable: true, sortable: true, filterable: false, width: 120, showSum: true, sumType: 'number', tooltip: 'Whole Number - Integers only (no decimals). Example: Units, Count, Days' },
   { key: 'total_cost', label: 'Computed', resizable: true, sortable: true, filterable: false, width: 140, showSum: true, sumType: 'currency', tooltip: 'Computed - Formula: price × quantity. Can also do lookups to other tables and multiply/add values', isComputed: true, computeFunction: (entry) => (entry.price || 0) * (entry.quantity || 0) },
   { key: 'updated_at', label: 'Date', resizable: true, sortable: true, filterable: false, width: 140, tooltip: 'Date field - Last updated date' },
+  { key: 'document_link', label: 'Document Link', resizable: true, sortable: false, filterable: false, width: 180, tooltip: 'Clickable link to external document or file' },
   { key: 'content', label: 'Multi Line Text', resizable: true, sortable: false, filterable: true, filterType: 'text', width: 300, tooltip: 'Multi-line text field - Notes and comments' }
 ]
 
@@ -38,7 +39,8 @@ export default function GoldStandardTableTab() {
     status: 'active',
     price: 0,
     quantity: 0,
-    content: ''
+    content: '',
+    document_link: ''
   })
 
   // Fetch gold standard items from API
@@ -119,7 +121,8 @@ export default function GoldStandardTableTab() {
       status: 'active',
       price: 0,
       quantity: 0,
-      content: ''
+      content: '',
+      document_link: ''
     })
     setShowAddModal(true)
   }
@@ -434,6 +437,20 @@ export default function GoldStandardTableTab() {
                 </div>
               </div>
 
+              {/* Document Link */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Document Link (URL)
+                </label>
+                <input
+                  type="url"
+                  value={newItem.document_link}
+                  onChange={(e) => setNewItem({ ...newItem, document_link: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="https://example.com/document.pdf"
+                />
+              </div>
+
               {/* Multi Line Text */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -450,7 +467,7 @@ export default function GoldStandardTableTab() {
 
               {/* Auto-populated timestamp note */}
               <div className="text-sm text-gray-500 dark:text-gray-400 italic">
-                Date/Time will be auto-populated when the item is created
+                Date will be auto-populated when the item is created
               </div>
             </div>
 
