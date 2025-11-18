@@ -2114,9 +2114,9 @@ export default function TrapidTableView({
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg whitespace-normal w-max max-w-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-none z-[100] pointer-events-none">
                           {column.isComputed ? '🔒 This column is NOT editable - Computed field (auto-calculated)' :
                            colKey === 'section' ? 'Single Line Text - Max 255 characters - Click to edit' :
-                           colKey === 'email' ? 'Email - Max 254 characters - Format: example@domain.com - Click to edit' :
-                           colKey === 'phone' ? 'Phone - Max 20 characters - Format: (03) 9123 4567 or 1300 123 456 - Click to edit' :
-                           colKey === 'mobile' ? 'Mobile - Max 15 characters - Format: 0407 397 541 - Click to edit' :
+                           colKey === 'email' ? 'Email - Format: example@domain.com - Click to edit' :
+                           colKey === 'phone' ? 'Phone - Format: (03) 9123 4567 or 1300 123 456 - Click to edit' :
+                           colKey === 'mobile' ? 'Mobile - Format: 0407 397 541 - Click to edit' :
                            colKey === 'is_active' ? 'Boolean - Click checkbox to toggle true/false' :
                            colKey === 'discount' ? 'Percentage - Enter number (shown as %) - Click to edit' :
                            colKey === 'status' ? 'Choice - Select from dropdown: Active, Inactive, Open, Fixed, By Design, Monitoring' :
