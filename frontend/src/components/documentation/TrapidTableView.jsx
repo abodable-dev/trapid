@@ -1153,6 +1153,44 @@ export default function TrapidTableView({
       <div className="h-full flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
       {/* Bordered container wrapping toolbar and table */}
       <div className="flex-1 min-h-0 flex flex-col mx-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+
+        {/* Edit Mode Banner - Shows when edit mode is active */}
+        {editModeActive && (
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 text-white px-6 py-4 border-b-4 border-orange-400 dark:border-orange-500">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center w-12 h-12 bg-white/20 rounded-full backdrop-blur-sm">
+                  <PencilIcon className="h-6 w-6 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold flex items-center gap-2">
+                    <span>Edit Mode Active</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 animate-pulse">
+                      LIVE
+                    </span>
+                  </h3>
+                  <p className="text-sm text-orange-100 mt-0.5">
+                    Click any cell to start editing • Changes save immediately • Exit when done
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setEditModeActive(false)
+                  setEditingRowId(null)
+                  setEditingData({})
+                  setShowDeleteButton(false)
+                  setSelectedRows(new Set())
+                }}
+                className="px-6 py-2.5 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2 backdrop-blur-sm"
+              >
+                <XMarkIcon className="h-5 w-5" />
+                Exit Edit Mode
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header with Search, Filters, and Column Visibility (Chapter 20.20, #19.10) */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-4 flex-shrink-0">
         {/* Quick Filter Buttons - Only show when viewing all categories */}
@@ -1386,11 +1424,21 @@ export default function TrapidTableView({
               // Toggle edit mode - unlock all cells
               setEditModeActive(!editModeActive)
               setShowDeleteButton(!editModeActive) // Show delete when entering edit mode
+              if (!editModeActive) {
+                // Entering edit mode - clear any selections
+                setEditingRowId(null)
+                setEditingData({})
+                setSelectedRows(new Set())
+              }
             }}
-            className="inline-flex items-center gap-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors h-[42px] ml-auto"
+            className={`inline-flex items-center gap-2 px-4 text-sm font-bold rounded-lg transition-all h-[42px] ml-auto ${
+              editModeActive
+                ? 'bg-orange-600 hover:bg-orange-700 text-white ring-4 ring-orange-400/50 shadow-lg shadow-orange-500/50 animate-pulse'
+                : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg'
+            }`}
           >
-            <PencilIcon className="h-4 w-4" />
-            {editModeActive ? 'Lock Cells' : 'Edit'}
+            <PencilIcon className={`h-5 w-5 ${editModeActive ? 'animate-bounce' : ''}`} />
+            {editModeActive ? '🔓 Editing' : '✏️ Edit'}
           </button>
 
           {/* Inline Editing Buttons - Always visible when row is being edited */}
@@ -1973,9 +2021,9 @@ export default function TrapidTableView({
                         editModeActive && ['title', 'content', 'component', 'status', 'severity'].includes(colKey) && editingRowId !== entry.id ?
                           (selectedRows.size > 0 ?
                             // If rows selected: only highlight editable cells in selected rows
-                            (selectedRows.has(entry.id) ? 'cursor-pointer bg-yellow-100 dark:bg-yellow-900/40 hover:bg-yellow-200 dark:hover:bg-yellow-900/60 border border-yellow-400 dark:border-yellow-600' : '') :
+                            (selectedRows.has(entry.id) ? 'cursor-pointer bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 border-2 border-orange-400 dark:border-orange-500 ring-1 ring-orange-300 dark:ring-orange-600' : '') :
                             // If no rows selected: highlight ALL editable cells
-                            'cursor-pointer bg-yellow-100 dark:bg-yellow-900/40 hover:bg-yellow-200 dark:hover:bg-yellow-900/60 border border-yellow-400 dark:border-yellow-600'
+                            'cursor-pointer bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50 border-2 border-orange-400 dark:border-orange-500 ring-1 ring-orange-300 dark:ring-orange-600'
                           ) : ''
                       } whitespace-nowrap overflow-hidden text-ellipsis max-w-0`}
                       title={
