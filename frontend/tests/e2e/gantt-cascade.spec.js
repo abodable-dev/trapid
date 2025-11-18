@@ -161,6 +161,13 @@ test.describe('Gantt Cascade Functionality', () => {
     await visualButton.click();
     await page.waitForTimeout(3000);
 
+    // Wait for visual test modal to appear and then disappear
+    console.log('⏳ Waiting for visual test modal to complete...');
+    await page.waitForSelector('text=Visual Test Running', { timeout: 15000 });
+    console.log('✅ Visual test modal appeared');
+    await page.waitForSelector('text=Visual Test Running', { state: 'hidden', timeout: 30000 });
+    console.log('✅ Visual test modal closed');
+
     // Wait for Gantt to load
     console.log('🔍 Waiting for Gantt chart to load...');
     await page.waitForSelector('.gantt_task_line', { timeout: 15000 });
