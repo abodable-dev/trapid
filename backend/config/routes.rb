@@ -122,6 +122,13 @@ Rails.application.routes.draw do
         end
       end
 
+      # Meeting Types configuration
+      resources :meeting_types, only: [:index, :show, :create, :update, :destroy] do
+        collection do
+          get :categories
+        end
+      end
+
       # Purchase Orders management
       resources :purchase_orders do
         collection do

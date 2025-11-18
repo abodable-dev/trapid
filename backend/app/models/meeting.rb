@@ -1,7 +1,8 @@
 class Meeting < ApplicationRecord
   # Associations
-  belongs_to :construction
+  belongs_to :construction, optional: true
   belongs_to :created_by, class_name: 'User'
+  belongs_to :meeting_type
   has_many :meeting_participants, dependent: :destroy
   has_many :meeting_agenda_items, -> { order(:sequence_order) }, dependent: :destroy
   has_many :users, through: :meeting_participants
@@ -11,9 +12,6 @@ class Meeting < ApplicationRecord
   validates :title, presence: true
   validates :start_time, presence: true
   validates :end_time, presence: true
-  validates :meeting_type, presence: true, inclusion: {
-    in: %w[site_visit client_meeting team_meeting safety_meeting progress_review other]
-  }
   validates :status, presence: true, inclusion: {
     in: %w[scheduled in_progress completed cancelled]
   }

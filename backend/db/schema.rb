@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_18_224127) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_18_234935) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_stat_statements"
@@ -708,6 +708,32 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_224127) do
     t.check_constraint "user_id IS NOT NULL AND contact_id IS NULL OR user_id IS NULL AND contact_id IS NOT NULL", name: "meeting_participants_must_have_user_or_contact"
   end
 
+  create_table "meeting_types", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.string "category"
+    t.string "icon"
+    t.string "color"
+    t.integer "default_duration_minutes", default: 60
+    t.text "required_participant_types"
+    t.text "optional_participant_types"
+    t.integer "minimum_participants"
+    t.integer "maximum_participants"
+    t.text "default_agenda_items"
+    t.text "required_fields"
+    t.text "optional_fields"
+    t.text "custom_fields"
+    t.text "required_documents"
+    t.text "notification_settings"
+    t.boolean "is_active", default: true
+    t.boolean "is_system_default", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_meeting_types_on_category"
+    t.index ["is_active"], name: "index_meeting_types_on_is_active"
+    t.index ["name"], name: "index_meeting_types_on_name", unique: true
+  end
+
   create_table "meetings", force: :cascade do |t|
     t.string "title", null: false
     t.text "description"
@@ -723,10 +749,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_224127) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "meeting_type_id", null: false
     t.index ["construction_id", "start_time"], name: "index_meetings_on_construction_id_and_start_time"
     t.index ["construction_id"], name: "index_meetings_on_construction_id"
     t.index ["created_by_id"], name: "index_meetings_on_created_by_id"
     t.index ["meeting_type"], name: "index_meetings_on_meeting_type"
+    t.index ["meeting_type_id"], name: "index_meetings_on_meeting_type_id"
     t.index ["start_time"], name: "index_meetings_on_start_time"
     t.index ["status"], name: "index_meetings_on_status"
   end
@@ -1907,6 +1935,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_18_224127) do
   add_foreign_key "meeting_participants", "meetings"
   add_foreign_key "meeting_participants", "users"
   add_foreign_key "meetings", "constructions"
+  add_foreign_key "meetings", "meeting_types"
   add_foreign_key "meetings", "users", column: "created_by_id"
   add_foreign_key "one_drive_credentials", "constructions"
   add_foreign_key "organization_one_drive_credentials", "users", column: "connected_by_id"
